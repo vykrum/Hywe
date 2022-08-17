@@ -1,5 +1,6 @@
 # H Y W E
 
-The objective of this site is to utilize SVG to visualize an experimental space planning concept that is being worked on in F#
+An experimental space layout planning concept that is being worked on in F#
+The objective of this site is to isualize results with Scalable Vector Graphics (SVG)
 
 https://vykrum.github.io/Hywe/
