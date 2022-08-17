@@ -24,7 +24,6 @@ let cluster (cd: (int*int) list) (cr:string) : Node =
                     .Elt()  
     }
 
-
 type Model =
     {
         cluster1 : int
@@ -33,8 +32,8 @@ type Model =
 
 let initModel =
     {
-        cluster1 = 20
-        cluster2 = 20
+        cluster1 = 10
+        cluster2 = 10
     }
 
 type Message =
@@ -61,7 +60,7 @@ let view model dispatch =
             input{
                 attr.``class`` "slider"
                 attr.``type`` "range"
-                attr.min "1"
+                attr.min "3"
                 attr.max "50"
                 attr.value "20"
                 bind.input.int model.cluster1 (fun v -> dispatch (SetCluster1 v))
@@ -73,16 +72,14 @@ let view model dispatch =
             input{
                 attr.``class`` "slider"
                 attr.``type`` "range"
-                attr.min "1"
+                attr.min "0"
                 attr.max "50"
                 attr.value "20"
                 bind.input.int model.cluster2 (fun v -> dispatch (SetCluster2 v))
             }
         }
 
-        cluster hxXY02 "rgb(54,54,54)"
-
-        
+        cluster hxXY02 "rgb(54,54,54)" 
     }
 
 type MyApp() =
