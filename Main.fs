@@ -8,18 +8,19 @@ open Hexel
 type svC = Template<
       """ <polygon 
       points="0,0,-10,10,-10,20,0,30,10,20,10,10" 
-      fill="lime"
-      stroke="lime"
+      fill="${cl}"
+      stroke="${cl}"
       transform="translate${tr}"
       />""">
 
-let cluster (cd: (int*int) list) : Node =
+let cluster (cd: (int*int) list) (cr:string) : Node =
     svg {
          attr.width (400)
          attr.height (400)
          for c in cd do
                 svC() 
                     .tr($"{c}")
+                    .cl($"{cr}")
                     .Elt()  
     }
 
@@ -60,7 +61,7 @@ let view model dispatch =
             
         }
 
-        cluster hxXY02   
+        cluster hxXY02 "rgb(54,54,54)"
     }
 
 type MyApp() =
