@@ -24,22 +24,27 @@ let cluster (cd: (int*int) list) (cr:string) : Node =
                     .Elt()  
     }
 
+
 type Model =
     {
         cluster1 : int
+        cluster2 : int
     }
 
 let initModel =
     {
         cluster1 = 20
+        cluster2 = 20
     }
 
 type Message =
     | SetCluster1 of int
+    | SetCluster2 of int
 
 let update message model =
     match message with
     | SetCluster1 value -> { model with cluster1 = value }
+    | SetCluster2 value -> { model with cluster2 = value }
 
 let view model dispatch =
 
@@ -50,18 +55,34 @@ let view model dispatch =
         let hxXY02 = List.map (fun (x,y)-> (x + hxShfX), (y + hxShfY)) hxXY01
 
         concat {
-        p {
-            "Base:"   
-            input {
-                attr.``type`` "number"
-                attr.id "counter"
-                attr.``class`` "input"
+        $"Base : {model.cluster1}"
+        div{
+            attr.``class`` "slidecontainer"
+            input{
+                attr.``class`` "slider"
+                attr.``type`` "range"
+                attr.min "1"
+                attr.max "50"
+                attr.value "20"
                 bind.input.int model.cluster1 (fun v -> dispatch (SetCluster1 v))
             }
-            
+        }
+        $"Cluster 1 : {model.cluster2}"
+        div{
+            attr.``class`` "slidecontainer"
+            input{
+                attr.``class`` "slider"
+                attr.``type`` "range"
+                attr.min "1"
+                attr.max "50"
+                attr.value "20"
+                bind.input.int model.cluster2 (fun v -> dispatch (SetCluster2 v))
+            }
         }
 
         cluster hxXY02 "rgb(54,54,54)"
+
+        
     }
 
 type MyApp() =
