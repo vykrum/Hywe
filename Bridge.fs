@@ -34,7 +34,7 @@ let crd (hst : Hxl list list) =
 
 let cls (cnt : int list) =
     let hsHx01 = nui [Host(0,1,0.0),cnt|>List.head] [] |> List.head |> List.rev
-    let hsHx02 = List.take ((List.length cnt) - 1) hsHx01
+    let hsHx02 = (List.take ((List.length cnt) - 1) hsHx01) |> List.rev
     let hsHx03 = List.zip hsHx02 (List.tail cnt)
     let hsHx04 = hsHx01 :: (List.map (fun x -> List.tail x)(nui hsHx03 hsHx01))
     hsHx04 |> crd
