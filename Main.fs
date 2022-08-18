@@ -7,42 +7,77 @@ open Bridge
 
 type Model =
     {
-        cluster1 : int
-        cluster2 : int
+        host : int
+        cls1 : int
+        cls2 : int
+        cls3 : int
     }
 
 let initModel =
     {
-        cluster1 = 10
-        cluster2 = 10
+        host = 10
+        cls1 = 10
+        cls2 = 10
+        cls3 = 10
     }
 
 type Message =
-    | SetCluster1 of int
-    | SetCluster2 of int
+    | SetHost of int
+    | SetCls1 of int
+    | SetCls2 of int
+    | SetCls3 of int
 
 let update message model =
     match message with
-    | SetCluster1 value -> { model with cluster1 = value }
-    | SetCluster2 value -> { model with cluster2 = value }
+    | SetHost value -> { model with host = value }
+    | SetCls1 value -> { model with cls1 = value }
+    | SetCls2 value -> { model with cls2 = value }
+    | SetCls3 value -> { model with cls3 = value }
 
 let view model dispatch =
 
         concat {
-        $"Base : {model.cluster1}"
         div{
-            attr.``class`` "slidecontainer"
             input{
                 attr.``class`` "slider"
                 attr.``type`` "range"
+                attr.id "host"
                 attr.min "3"
                 attr.max "61"
                 attr.value "20"
-                bind.input.int model.cluster1 (fun v -> dispatch (SetCluster1 v))
+                attr.label $"{model.host}"
+                bind.input.int model.host (fun a -> dispatch (SetHost a))
+            }
+            input{
+                attr.``class`` "slider"
+                attr.``type`` "range"
+                attr.id "cls1"
+                attr.min "0"
+                attr.max "58"
+                attr.value "17"
+                bind.input.int model.cls1 (fun b -> dispatch (SetCls1 b))
+            }
+            input{
+                attr.``class`` "slider"
+                attr.``type`` "range"
+                attr.id "cls2"
+                attr.min "0"
+                attr.max "58"
+                attr.value "17"
+                bind.input.int model.cls2 (fun c -> dispatch (SetCls2 c))
+            }
+            input{
+                attr.``class`` "slider"
+                attr.``type`` "range"
+                attr.id "cls3"
+                attr.min "0"
+                attr.max "58"
+                attr.value "17"
+                bind.input.int model.cls3 (fun d -> dispatch (SetCls3 d))
             }
         }
-
-        cluster (bas model.cluster1) "rgb(54,54,54)" 
+       
+        cluster (List.zip (cls ([model.host;model.cls1;model.cls2;model.cls3])) (["#bccfd3";"#867869";"#687b7f";"#c6bdb4" ]))
     }
 
 type MyApp() =

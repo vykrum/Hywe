@@ -12,21 +12,29 @@ type svC = Template<
       transform="translate${tr}"
       />""">
 
-let cluster (cd: (int*int) list) (cr:string) : Node =
+let cluster (cd: ((int*int) list *string) list) : Node =
     svg {
          attr.width (400)
          attr.height (400)
          for c in cd do
-                svC() 
-                    .tr($"{c}")
-                    .cl($"{cr}")
-                    .Elt()  
+             for xy in (c |> fst) do
+                    svC() 
+                        .tr($"{xy}")
+                        .cl($"{c |> snd}")
+                        .Elt()  
     }
 
-let bas (cnt : int) = 
-    let hsHx01 = nui [Host(0,1,0.0),cnt] []
-    let hxXY01 = List.map (fun x -> x |> xyz |> vxy) hsHx01.[0]
-    let hxShfX = 0 - (hxXY01 |> List.minBy(fun (x,_) -> x) |> fst) + 40
-    let hxShfY = 0 - (hxXY01 |> List.minBy(fun (_,x) -> x) |> snd) + 40
-    let hxXY02 = List.map (fun (x,y)-> (x + hxShfX), (y + hxShfY)) hxXY01
+
+let crd (hst : Hxl list list) = 
+    let hxXY01 = List.map(fun a -> List.map (fun x -> x |> xyz |> vxy) a) hst
+    let hxShfX = 0 - ((List.concat hxXY01) |> List.minBy(fun (x,_) -> x) |> fst) + 40
+    let hxShfY = 0 - ((List.concat hxXY01) |> List.minBy(fun (_,x) -> x) |> snd) + 40
+    let hxXY02 = List.map(fun a -> List.map (fun (x,y)-> (x + hxShfX), (y + hxShfY))a) hxXY01
     hxXY02
+
+let cls (cnt : int list) =
+    let hsHx01 = nui [Host(0,1,0.0),cnt|>List.head] [] |> List.head |> List.rev
+    let hsHx02 = List.take ((List.length cnt) - 1) hsHx01
+    let hsHx03 = List.zip hsHx02 (List.tail cnt)
+    let hsHx04 = hsHx01 :: (List.map (fun x -> List.tail x)(nui hsHx03 hsHx01))
+    hsHx04 |> crd
