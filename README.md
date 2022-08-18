@@ -1,6 +1,11 @@
+![Hywe Banner](/wwwroot/hyweBanner.jpg)
+
 # H Y W E
 
-<p> An experimental space layout planning concept that is being worked on in F# </p>
-<p>The objective of this site is to isualize results with Scalable Vector Graphics (SVG)</p>
+ **H**exagon **Y**ielding **W**oven **E**xplorations 
 
-<p> https://vykrum.github.io/Hywe/ </p>
+An experimental space layout planning concept coded in F#
+
+Visualization and testing with Scalable Vector Graphics (SVG)
+
+[H Y W E](https://vykrum.github.io/Hywe/)
