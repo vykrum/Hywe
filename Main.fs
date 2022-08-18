@@ -41,18 +41,6 @@ let view model dispatch =
                 bind.input.int model.cluster1 (fun v -> dispatch (SetCluster1 v))
             }
         }
-        $"Cluster 1 : {model.cluster2}"
-        div{
-            attr.``class`` "slidecontainer"
-            input{
-                attr.``class`` "slider"
-                attr.``type`` "range"
-                attr.min "0"
-                attr.max "50"
-                attr.value "20"
-                bind.input.int model.cluster2 (fun v -> dispatch (SetCluster2 v))
-            }
-        }
 
         cluster (bas model.cluster1) "rgb(54,54,54)" 
     }
