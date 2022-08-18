@@ -15,7 +15,7 @@ type Model =
 
 let initModel =
     {
-        host = 10
+        host = 13
         cls1 = 10
         cls2 = 10
         cls3 = 10
@@ -43,9 +43,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "host"
                 attr.min "3"
-                attr.max "61"
-                attr.value "20"
-                attr.label $"{model.host}"
+                attr.max "23"
                 bind.input.int model.host (fun a -> dispatch (SetHost a))
             }
             input{
@@ -53,8 +51,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls1"
                 attr.min "0"
-                attr.max "58"
-                attr.value "17"
+                attr.max "20"
                 bind.input.int model.cls1 (fun b -> dispatch (SetCls1 b))
             }
             input{
@@ -62,8 +59,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls2"
                 attr.min "0"
-                attr.max "58"
-                attr.value "17"
+                attr.max "20"
                 bind.input.int model.cls2 (fun c -> dispatch (SetCls2 c))
             }
             input{
@@ -71,8 +67,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls3"
                 attr.min "0"
-                attr.max "58"
-                attr.value "17"
+                attr.max "20"
                 bind.input.int model.cls3 (fun d -> dispatch (SetCls3 d))
             }
         }
