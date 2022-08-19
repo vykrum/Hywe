@@ -42,7 +42,7 @@ body {
 /*Numeric Slider*/
 .slider {
     -webkit-appearance: none;
-    width: 95%;
+    width: 100%;
     height: 4px;
     border-radius: 2px;
     background: #d3d3d3;
@@ -63,25 +63,29 @@ body {
  }
 
 #host {
-    background: #bccfd3;
-    margin-left: 15px;
-    margin-right: -15px;
+    background: #363636;
 }
 
 #cls1 {
-    background: #867869;
-    margin-left: 15px;
-    margin-right: -15px;
+    background: #bccfd3;
 }
 
 #cls2 {
-    background: #687b7f;
-    margin-left: 15px;
-    margin-right: -15px;
+    background: #867869;
 }
 
 #cls3 {
+    background: #687b7f;
+}
+
+#cls4 {
     background: #c6bdb4;
-    margin-left: 15px;
-    margin-right: -15px;
+}
+
+#cls5 {
+    background: #3496a3;
+}
+
+#cls6 {
+    background: #eabdb5;
 }

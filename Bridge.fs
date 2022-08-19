@@ -4,7 +4,7 @@ open Bolero
 open Bolero.Html
 open Hexel
 
-type svC = Template<
+type hxgn = Template<
       """ <polygon 
       points="0,0,-10,10,-10,20,0,30,10,20,10,10" 
       fill="${cl}"
@@ -14,15 +14,20 @@ type svC = Template<
 
 let cluster (cd: ((int*int) list *string) list) : Node =
     svg {
+         "xmlns:xlink" => "http://www.w3.org/1999/xlink"
+         "xmlns" => "http://www.w3.org/2000/svg"
+         attr.download "hywe.svg"
          attr.width (400)
          attr.height (400)
          for c in cd do
              for xy in (c |> fst) do
-                    svC() 
+                    hxgn() 
                         .tr($"{xy}")
                         .cl($"{c |> snd}")
                         .Elt()  
-    }
+        }
+    
+    
 
 
 let crd (hst : Hxl list list) = 
