@@ -1,4 +1,4 @@
-![Hywe Banner](/wwwroot/hyweBanner.jpg)
+![Hywe Banner](/wwwroot/hyweLogoBanner.png)
 
 # H Y W E
 
