@@ -1,8 +1,8 @@
-![Hywe Banner](/wwwroot/hyweBanner.jpg)
+![Hywe Banner](/wwwroot/hyweLogoBanner.png)
 
 # H Y W E
 
- **H**exagon **Y**ielding **W**oven **E**xplorations 
+ **H**exagrid **Y**ielding **W**oven **E**xplorations 
 
 An experimental space layout planning concept coded in F#
 
