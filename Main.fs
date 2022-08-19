@@ -73,6 +73,8 @@ let view model dispatch =
         }
        
         cluster (List.zip (cls ([model.host;model.cls1;model.cls2;model.cls3])) (["#bccfd3";"#867869";"#687b7f";"#c6bdb4" ]))
+
+        
     }
 
 type MyApp() =
