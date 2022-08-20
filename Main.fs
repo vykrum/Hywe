@@ -47,9 +47,16 @@ let update message model =
     | SetCls6 value -> { model with cls6 = value }
 
 let view model dispatch =
-
         concat {
         div{
+            p{
+                "An experimental space layout planning concept being developed as a plain WebAssembly application that runs dynamic content on the client side directly in the user's browser."
+            }   
+            
+            p{
+                "In the current state, seven sliders control the magnitude of clusters of a corresponding color. The first cluster serves as the host to the other six"
+            }
+
             input{
                 attr.``class`` "slider"
                 attr.``type`` "range"
