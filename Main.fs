@@ -54,7 +54,7 @@ let view model dispatch =
             }   
             
             p{
-                "In the current state, seven sliders control the magnitude of clusters of a corresponding color. The first cluster serves as the host to the other six"
+                "This early stage design tool controls the magnitude of clusters through sliders of a corresponding color. The first/host cluster cannot be eliminated, otherwise drag the slider to its minimum to eliminate"
             }
 
             input{
@@ -62,7 +62,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "host"
                 attr.min "7"
-                attr.max "18"
+                attr.max "25"
                 bind.input.int model.host (fun a -> dispatch (SetHost a))
             }
             input{
@@ -70,7 +70,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls1"
                 attr.min "0"
-                attr.max "18"
+                attr.max "25"
                 bind.input.int model.cls1 (fun b -> dispatch (SetCls1 b))
             }
             input{
@@ -78,7 +78,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls2"
                 attr.min "0"
-                attr.max "18"
+                attr.max "25"
                 bind.input.int model.cls2 (fun c -> dispatch (SetCls2 c))
             }
             input{
@@ -86,7 +86,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls3"
                 attr.min "0"
-                attr.max "18"
+                attr.max "25"
                 bind.input.int model.cls3 (fun d -> dispatch (SetCls3 d))
             }
             input{
@@ -94,7 +94,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls4"
                 attr.min "0"
-                attr.max "18"
+                attr.max "25"
                 bind.input.int model.cls4 (fun e -> dispatch (SetCls4 e))
             }
             input{
@@ -102,7 +102,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls5"
                 attr.min "0"
-                attr.max "17"
+                attr.max "25"
                 bind.input.int model.cls5 (fun f -> dispatch (SetCls5 f))
             }
             input{
@@ -110,7 +110,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls6"
                 attr.min "0"
-                attr.max "18"
+                attr.max "25"
                 bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
             }
         }
