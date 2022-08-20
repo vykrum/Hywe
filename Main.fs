@@ -51,7 +51,7 @@ let view model dispatch =
         div{
             br
             p{
-                "Hywe is an early stage spatial layout design tool. Sliders control the magnitude of clusters with a corresponding color. The first / host cluster cannot be eliminated, otherwise drag the slider to its minimum to eliminate the associated cluster"
+                "Hywe is a space layout planning concept being developed as an early stage design tool. Sliders control the magnitude of clusters with a corresponding color. The first / host cluster cannot be eliminated, otherwise drag the slider to its minimum to eliminate the associated cluster"
             }
             br
             input{
