@@ -51,11 +51,7 @@ let view model dispatch =
         div{
             br
             p{
-                "Hywe is the implementation of a space layout planning concept being developed as a plain WebAssembly application that runs dynamic content on the client side directly in the user's browser."
-            }   
-            br
-            p{
-                "This early stage design tool controls the magnitude of clusters through sliders of a corresponding color. The first / host cluster cannot be eliminated, otherwise drag the slider to its minimum to eliminate the associated cluster"
+                "Hywe is an early stage design tool. Sliders control the magnitude of clusters with a corresponding color. The first / host cluster cannot be eliminated, otherwise drag the slider to its minimum to eliminate the associated cluster"
             }
             br
             input{
