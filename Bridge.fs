@@ -12,13 +12,13 @@ type hxgn = Template<
       transform="translate${tr}"
       />""">
 
-let cluster (cd: ((int*int) list *string) list) : Node =
+let cluster (cd: ((int*int) list *string) list) wdt hgt : Node =
     svg {
          "xmlns:xlink" => "http://www.w3.org/1999/xlink"
          "xmlns" => "http://www.w3.org/2000/svg"
          attr.download "hywe.svg"
-         attr.width (400)
-         attr.height (400)
+         attr.width wdt
+         attr.height hgt
          for c in cd do
              for xy in (c |> fst) do
                     hxgn() 
@@ -26,16 +26,15 @@ let cluster (cd: ((int*int) list *string) list) : Node =
                         .cl($"{c |> snd}")
                         .Elt()  
         }
-    
-    
-
 
 let crd (hst : Hxl list list) = 
     let hxXY01 = List.map(fun a -> List.map (fun x -> x |> xyz |> vxy) a) hst
     let hxShfX = 0 - ((List.concat hxXY01) |> List.minBy(fun (x,_) -> x) |> fst) + 40
     let hxShfY = 0 - ((List.concat hxXY01) |> List.minBy(fun (_,x) -> x) |> snd) + 40
+    let hxMxmX = ((List.concat hxXY01) |> List.maxBy(fun (x,_) -> x) |> fst) + hxShfX + 40
+    let hxMxmY = ((List.concat hxXY01) |> List.maxBy(fun (_,x) -> x) |> snd) + hxShfY + 40
     let hxXY02 = List.map(fun a -> List.map (fun (x,y)-> (x + hxShfX), (y + hxShfY))a) hxXY01
-    hxXY02
+    (hxXY02,hxMxmX,hxMxmY)
 
 let cls (cnt : int list) =
     let hsHx01 = nui [Host(0,1,0.0),cnt|>List.head] [] |> List.head |> List.rev

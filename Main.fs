@@ -51,7 +51,7 @@ let view model dispatch =
         div{
             br
             p{
-                "Hywe is a space layout planning concept being developed as an early stage design tool. Sliders control the magnitude of clusters with a corresponding color. The first / host cluster cannot be eliminated, otherwise drag the slider to its minimum to eliminate the associated cluster"
+                "Hywe is a space layout planning concept being developed as an early stage design tool. Sliders control the magnitude of clusters with a corresponding color. Except for the first, clusters can be eliminated by dragging the slider to minimum"
             }
             br
             input{
@@ -111,9 +111,10 @@ let view model dispatch =
                 bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
             }
         }
+        let (a,b,c) = cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])
+        let clrs = ["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]
+        cluster (List.zip a clrs) b c
         
-        cluster (List.zip (cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])) (["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]))
-
     }
 
 type MyApp() =
