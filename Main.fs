@@ -49,11 +49,18 @@ let update message model =
 let view model dispatch =
         concat {
         div{
-            br
-            p{
-                "Hywe is a space layout planning concept being developed as an early stage design tool. Sliders control the magnitude of clusters with a corresponding color. Except for the first, clusters can be eliminated by dragging the slider to minimum"
+            div{
+                br
+                p{
+                    attr.id "dscr"
+                    "Hywe is a space layout planning concept being developed as an early stage design tool."
+                    br
+                    "Manipulate the color coded sliders to control the cluster size of corresponding color."
+                }
+                br
+            
             }
-            br
+            
             input{
                 attr.``class`` "slider"
                 attr.``type`` "range"
@@ -111,9 +118,13 @@ let view model dispatch =
                 bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
             }
         }
-        let (a,b,c) = cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])
-        let clrs = ["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]
-        cluster (List.zip a clrs) b c
+        div{ 
+            let (loc,wdt,hgt) = cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])
+            let clrs = ["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]
+            let hywe = cluster (List.zip loc clrs) wdt hgt
+            hywe
+        }
+        
         
     }
 

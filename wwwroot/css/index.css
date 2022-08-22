@@ -21,6 +21,8 @@ body {
   min-height: 100%;
 }
 
+
+
 #counter {
   width: 80px;
 }
@@ -61,6 +63,10 @@ body {
     background: #363636;
     cursor: pointer;
  }
+
+#dscr {
+    margin-left: 15px;
+}
 
 #host {
     background: #363636;
