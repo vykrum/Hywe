@@ -55,7 +55,7 @@ let view model dispatch =
                     attr.id "dscr"
                     "Hywe is a space layout planning concept being developed as an early stage design tool."
                     br
-                    "Manipulate the color coded sliders to control the cluster size of a corresponding color."
+                    "Manipulate the color coded sliders to control the cluster size of corresponding colors."
                 }
                 br
             
@@ -65,6 +65,7 @@ let view model dispatch =
                 attr.``class`` "slider"
                 attr.``type`` "range"
                 attr.id "host"
+
                 attr.min "7"
                 attr.max "25"
                 bind.input.int model.host (fun a -> dispatch (SetHost a))
