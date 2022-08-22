@@ -55,7 +55,7 @@ let view model dispatch =
                     attr.id "dscr"
                     "Hywe is a space layout planning concept being developed as an early stage design tool."
                     br
-                    "Manipulate the color coded sliders to control the cluster size of corresponding color."
+                    "Manipulate the color coded sliders to control the cluster size of a corresponding color."
                 }
                 br
             
