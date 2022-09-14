@@ -103,7 +103,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls4"
                 attr.min "0"
-                attr.max "15"
+                attr.max "25"
                 bind.input.int model.cls4 (fun e -> dispatch (SetCls4 e))
             }
             input{
