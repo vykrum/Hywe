@@ -18,7 +18,7 @@ type Model =
 
 let initModel =
     {
-        host = 7
+        host = 6
         cls1 = 12
         cls2 = 8
         cls3 = 16
@@ -47,7 +47,12 @@ let update message model =
     | SetCls6 value -> { model with cls6 = value }
 
 let view model dispatch =
+        
         concat {
+
+        let (loc,wdt,hgt) = cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])
+        let clrs = ["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]
+
         div{
             div{
                 br
@@ -58,7 +63,6 @@ let view model dispatch =
                     "Manipulate the color coded sliders to control the cluster size of corresponding colors."
                 }
                 br
-            
             }
             
             input{
@@ -66,7 +70,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "host"
 
-                attr.min "7"
+                attr.min "6"
                 attr.max "25"
                 bind.input.int model.host (fun a -> dispatch (SetHost a))
             }
@@ -99,7 +103,7 @@ let view model dispatch =
                 attr.``type`` "range"
                 attr.id "cls4"
                 attr.min "0"
-                attr.max "25"
+                attr.max "15"
                 bind.input.int model.cls4 (fun e -> dispatch (SetCls4 e))
             }
             input{
@@ -120,13 +124,10 @@ let view model dispatch =
             }
         }
         div{ 
-            let (loc,wdt,hgt) = cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])
-            let clrs = ["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]
-            let hywe = cluster (List.zip loc clrs) wdt hgt
-            hywe
+            attr.``class`` "hywe"
+            attr.``type`` "svg"
+            cluster (List.zip loc clrs) wdt hgt
         }
-        
-        
     }
 
 type MyApp() =
