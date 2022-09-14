@@ -70,8 +70,8 @@ module Hexel
                         let ac3 = acc |> List.map(fun x -> List.filter (fun y -> y.Avl=true)x)
                         let h00 = (List.map (fun x -> List.tryHead x ) ac3)
                         let h02 = List.map2 (fun x y -> match x with 
-                                                                    | Some x -> x
-                                                                    | None -> y) h00 h02
+                                                        | Some x -> x
+                                                        | None -> y) h00 h02
                         let hxc = List.zip c02 h02
                         let occ = [occ @ (acc |> List.concat) @ h02] |> List.concat 
                         nux hxc occ (mxc-1) acc
