@@ -50,8 +50,8 @@ let view model dispatch =
         
         concat {
 
-        let (loc,wdt,hgt) = cls ([model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6])
-        let clrs = ["#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"]
+        let (loc,wdt,hgt) = cls ([|model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
+        let clrs = [|"#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
 
         div{
             div{
@@ -126,7 +126,7 @@ let view model dispatch =
         div{ 
             attr.``class`` "hywe"
             attr.``type`` "svg"
-            cluster (List.zip loc clrs) wdt hgt
+            cluster (Array.zip loc clrs) wdt hgt
         }
     }
 
