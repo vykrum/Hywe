@@ -49,10 +49,6 @@ let update message model =
 let view model dispatch =
         
         concat {
-
-        let (loc,wdt,hgt) = cls ([|model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
-        let clrs = [|"#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
-
         div{
             div{
                 br
@@ -64,7 +60,6 @@ let view model dispatch =
                 }
                 br
             }
-            
             input{
                 attr.``class`` "slider"
                 attr.``type`` "range"
@@ -123,6 +118,8 @@ let view model dispatch =
                 bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
             }
         }
+        let (loc,wdt,hgt) = cls ([|model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
+        let clrs = [|"#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
         div{ 
             attr.``class`` "hywe"
             attr.``type`` "svg"
