@@ -1,19 +1,19 @@
 module Hexel
 
     // Hexel
-    type Hxl = { Avl : bool; Loc : int * int * int }
+    type Hxl = { Avl : int; Loc : int * int * int }
 
     // Adjacent Hexels
     let adj (hxl : Hxl) = 
         match hxl.Avl with 
-        | false -> hxl |> Array.singleton
-        | true -> 
+        | x when x<1 -> hxl |> Array.singleton
+        | _ -> 
                 let (x,y,z) = hxl.Loc
-                Array.map (fun x -> {Avl = true ; Loc= x}) 
+                Array.map (fun x -> {Avl = 6 ; Loc= x}) 
                     (Array.map3 (fun a b c -> 
                         ((a + x), (b + y), (c + z))) 
-                        [|0; -1; -2; -1; 1; 2; 1|] 
-                        [|0; -2; 0; 2; 2; 0; -2|] 
+                        [|0; 1; -1; -2; -1; 1; 2|] 
+                        [|0; -2; -2; 0; 2; 2; 0|] 
                         [|0; 0; 0; 0; 0; 0; 0|])
 
     // Except Hexels
@@ -25,15 +25,18 @@ module Hexel
         hx2 |> Array.map (fun (x,y) -> 
                 match (y.Length) with 
                 | 1 -> y |> Array.head
-                | _ -> {Avl = false ; Loc= x} )
+                | _ -> {Avl = 0 ; Loc= x} )
 
     // Available Hexels
     let chk (hxl : Hxl) (occ : Hxl[]) = 
         match hxl.Avl with
-        | true -> match ((exc ([|[|hxl|];occ|]|> Array.concat) (adj hxl)) |> Array.length) with 
-                        | 0 -> {hxl with Avl = false}
-                        | _ -> hxl
-        | false -> hxl
+        | 0 -> hxl
+        | x -> 
+                    let av = (exc ([|[|hxl|];occ|]|> Array.concat) (adj hxl)) |> Array.length
+                    match av with 
+                    | 0 -> {hxl with Avl = 0}
+                    | _ -> {hxl with Avl = av}
+    
 
     // Incremental Hexels
     let inc (hxl : (int * Hxl)[]) (occ : Hxl[]) = 
@@ -70,7 +73,7 @@ module Hexel
                         let oc1 = [|(Array.concat ac1) ; occ|] |> Array.concat |> Array.distinct
                         let ac2 = ac1 |> Array.map(fun x ->Array.map(fun y -> chk y oc1)x)
                         let acc = ac2 |> Array.map(fun x -> Array.distinct x)
-                        let ac3 = acc |> Array.map(fun x -> Array.filter (fun y -> y.Avl = true)x)
+                        let ac3 = acc |> Array.map(fun x -> Array.filter (fun y -> y.Avl > 0)x)
                         let h00 = (Array.map (fun x -> Array.tryHead x ) ac3)
                         let h02 = Array.map2 (fun x y -> match x with 
                                                                     | Some x -> x

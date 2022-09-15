@@ -39,7 +39,7 @@ let crd (hst : Hxl[][]) =
     (hxXY02,hxMxmX,hxMxmY)
 
 let cls (cnt : int[]) =
-    let hsHx01 = nui [|cnt|>Array.head,{Avl=true;Loc=(0,1,0)}|] [||] |> Array.head |> Array.rev
+    let hsHx01 = nui [|cnt|>Array.head,{Avl=6;Loc=(0,1,0)}|] [||] |> Array.head |> Array.rev
     let hsHx02 = (Array.take ((Array.length cnt) - 1) hsHx01) |> Array.rev
     let hsHx03 = Array.zip (Array.tail cnt) hsHx02
     let hsHx04 = [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)(nui hsHx03 hsHx01))|] |> Array.concat
