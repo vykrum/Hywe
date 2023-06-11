@@ -5,6 +5,7 @@
 		<ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
 	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="Location.fs" />
 		<Compile Include="Hexel.fs" />
 		<Compile Include="Bridge.fs" />
 		<Compile Include="Main.fs" />

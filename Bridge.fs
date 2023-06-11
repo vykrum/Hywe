@@ -2,7 +2,7 @@
 
 open Bolero
 open Bolero.Html
-open Hexel
+open Location
 
 type hxgn = Template<
       """ <polygon 
@@ -10,23 +10,43 @@ type hxgn = Template<
       fill="${cl}"
       stroke="${cl}"
       transform="translate${tr}"
+      opacity = "0.5"
       />""">
 
+          
+type svtx = Template<
+    """<text 
+    x="${xx}" 
+    y="${yy}"
+    font-size = "8px"
+    text-align = "center"
+    fill = "#808080"
+    >${nm}</text> """>
           
 // Scaled Hexel xy
 let scl = 10
 let vxy (x,y,_) = x * scl, y * scl
 
-let cluster (cd: ((int*int)[] *string)[]) wdt hgt : Node =
+let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
     svg {
          attr.width wdt
          attr.height hgt
          for c in cd do
-             for xy in (c |> fst) do
+             let (lc,n,cr) = c
+             let x1 = lc |> Array.tryLast
+             let x,y = match x1 with 
+                         | None -> -10,-10
+                         | Some a -> a
+             for xy in lc do
                     hxgn() 
                         .tr($"{xy}")
-                        .cl($"{c |> snd}")
+                        .cl($"{cr}")
                         .Elt()
+             svtx()
+                   .xx($"{x}")
+                   .yy($"{y}")
+                   .nm($"{n}")
+                   .Elt()
         }
 
 let crd (hst : Hxl[][]) = 
