@@ -2,6 +2,7 @@
 
 open Bolero
 open Bolero.Html
+open Hexel
 open Location
 
 type hxgn = Template<
@@ -11,7 +12,7 @@ type hxgn = Template<
       stroke="${cl}"
       transform="translate${tr}"
       opacity = "0.5"
-      />""">
+      >""">
 
           
 type svtx = Template<
@@ -23,9 +24,13 @@ type svtx = Template<
     fill = "#808080"
     >${nm}</text> """>
           
-// Scaled Hexel xy
+// Scaled Location xy
 let scl = 10
 let vxy (x,y,_) = x * scl, y * scl
+
+// Location to Coordinates
+let cdn (loc:Hxl[]) (scl:int) =
+    Array.map (fun x -> (x.loc.x*scl),(x.loc.y*scl)) loc
 
 let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
     svg {
@@ -50,7 +55,7 @@ let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
         }
 
 let crd (hst : Hxl[][]) = 
-    let hxXY01 = Array.map(fun a -> Array.map (fun x -> x.Loc |> vxy) a) hst
+    let hxXY01 = Array.map (fun x -> cdn x scl) hst
     let hxShfX = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (x,_) -> x) |> fst) + 40
     let hxShfY = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (_,x) -> x) |> snd) + 40
     let hxMxmX = ((Array.concat hxXY01) |> Array.maxBy(fun (x,_) -> x) |> fst) + hxShfX + 40
@@ -58,8 +63,10 @@ let crd (hst : Hxl[][]) =
     let hxXY02 = Array.map(fun a -> Array.map (fun (x,y)-> (x + hxShfX), (y + hxShfY))a) hxXY01
     (hxXY02,hxMxmX,hxMxmY)
 
+
+
 let cls (cnt : int[]) =
-    let hsHx01 = nui [|cnt|>Array.head,{Avl=6;Loc=(0,1,0)}|] [||] |> Array.head |> Array.rev
+    let hsHx01 = nui [|cnt|>Array.head,Hexel.identity|] [||] |> Array.head |> Array.rev
     let hsHx02 = (Array.take ((Array.length cnt) - 1) hsHx01) |> Array.rev
     let hsHx03 = Array.zip (Array.tail cnt) hsHx02
     let hsHx04 = [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)(nui hsHx03 hsHx01))|] |> Array.concat
