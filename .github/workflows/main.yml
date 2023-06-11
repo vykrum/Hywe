@@ -1,4 +1,4 @@
-name: Build and Deploy to GitHub Pages
+name: Deploy Bolero App to GitHub Pages
 
 on:
   push:
@@ -13,19 +13,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
         with:
-          node-version: 16
+          dotnet-version: 6.0.x
 
-      - name: Install dependencies
-        run: npm install
+      - name: Build Bolero app
+        run: dotnet build --configuration Release
 
-      - name: Build
-        run: npm run build
+      - name: Publish Bolero app
+        run: dotnet publish --configuration Release --output ./publish
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.0
         with:
           branch: gh-pages
-          folder: ./Hywe
+          folder: ./publish/wwwroot
