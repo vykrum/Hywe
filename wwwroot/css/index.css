@@ -45,7 +45,7 @@ body {
 /*Numeric Slider*/
 .slider {
     -webkit-appearance: none;
-    width: 85%;
+    width: 75%;
     height: 4px;
     margin-left: 10px;
     border-radius: 2px;

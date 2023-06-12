@@ -11,7 +11,7 @@ type hxgn = Template<
       fill="${cl}"
       stroke="${cl}"
       transform="translate${tr}"
-      opacity = "0.5"
+      opacity = "1"
       >""">
 
           
