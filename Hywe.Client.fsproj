@@ -12,6 +12,11 @@
 		<Compile Include="Startup.fs" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Content Include="Images\favicon-32x32.png" />
+	  <Content Include="Images\hyweLogoAcronym.png" />
+	  <Content Include="Images\hyweLogoBanner.png" />
+	</ItemGroup>
+	<ItemGroup>
 		<ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
 	</ItemGroup>
 	<ItemGroup>
