@@ -206,11 +206,13 @@ let view model dispatch =
         let lbls = [|model.lblh;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
         let clrs = [|"#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
         div{ 
+            attr.id "svgClus"
             attr.``class`` "hywe"
             attr.``type`` "svg"
             cluster (Array.zip3 loc lbls clrs) wdt hgt
         }
     }
+
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
