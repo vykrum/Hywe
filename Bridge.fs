@@ -11,7 +11,7 @@ type hxgn = Template<
       fill="${cl}"
       stroke="${cl}"
       transform="translate${tr}"
-      opacity = "0.5"
+      opacity = "0.75"
       >""">
 
           
@@ -19,9 +19,10 @@ type svtx = Template<
     """<text 
     x="${xx}" 
     y="${yy}"
-    font-size = "8px"
+    font-size = "10px"
     text-align = "center"
     fill = "#808080"
+    opacity = "1"
     >${nm}</text> """>
           
 // Scaled Location xy
@@ -37,7 +38,7 @@ let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
          attr.height hgt
          for c in cd do
              let (lc,n,cr) = c
-             let x1 = lc |> Array.tryLast
+             let x1 = lc |> Array.tryItem ((Array.length lc)/3)
              let x,y = match x1 with 
                          | None -> -10,-10
                          | Some a -> a

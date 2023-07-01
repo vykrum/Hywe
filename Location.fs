@@ -195,8 +195,8 @@ let clusters
 
                 (clsts loc occ acc (cnt-1))
                 
-    let a = clsts loc occ acc cnt
+    let cls = clsts loc occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
-    a
+    cls
 
