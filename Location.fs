@@ -1,11 +1,7 @@
 module Location
 
 type Loc = 
-    { 
-        x : int
-        y : int
-        z : int
-    }
+    | XY of int * int
 
 type Sqn = 
     | EECW
@@ -24,45 +20,42 @@ type Sqn =
 // Sequences     
 let sequence (sqn:Sqn) =  
     match sqn with 
-    | EECW -> [|0,0,0; 2,0,0; 1,-2,0; -1,-2,0; -2,0,0; -1,2,0; 1,2,0|]
-    | EECC -> [|0,0,0; 2,0,0; 1,2,0; -1,2,0; -2,0,0; -1,-2,0; 1,-2,0|]
-    | SECW -> [|0,0,0; 1,-2,0; -1,-2,0; -2,0,0; -1,2,0; 1,2,0; 2,0,0|]
-    | SECC -> [|0,0,0; 1,-2,0; 2,0,0; 1,2,0; -1,2,0; -2,0,0; -1,-2,0|]
-    | SWCW -> [|0,0,0; -1,-2,0; -2,0,0; -1,2,0; 1,2,0; 2,0,0; 1,-2,0|]
-    | SWCC -> [|0,0,0; -1,-2,0; 1,-2,0; 2,0,0; 1,2,0; -1,2,0; -2,0,0|]
-    | WWCW -> [|0,0,0; -2,0,0; -1,2,0; 1,2,0; 2,0,0; 1,-2,0; -1,-2,0|]
-    | WWCC -> [|0,0,0; -2,0,0; -1,-2,0; 1,-2,0; 2,0,0; 1,2,0; -1,2,0|]
-    | NWCW -> [|0,0,0; -1,2,0; 1,2,0; 2,0,0; 1,-2,0; -1,-2,0; -2,0,0|]
-    | NWCC -> [|0,0,0; -1,2,0; -2,0,0; -1,-2,0; 1,-2,0; 2,0,0; 1,2,0|]
-    | NECW -> [|0,0,0; 1,2,0; 2,0,0; 1,-2,0; -1,-2,0; -2,0,0; -1,2,0|]
-    | NECC -> [|0,0,0; 1,2,0; -1,2,0; -2,0,0; -1,-2,0; 1,-2,0; 2,0,0|]
+    | EECW -> [|0,0; 2,0; 1,-2; -1,-2; -2,0; -1,2; 1,2|]
+    | EECC -> [|0,0; 2,0; 1,2; -1,2; -2,0; -1,-2; 1,-2|]
+    | SECW -> [|0,0; 1,-2; -1,-2; -2,0; -1,2; 1,2; 2,0|]
+    | SECC -> [|0,0; 1,-2; 2,0; 1,2; -1,2; -2,0; -1,-2|]
+    | SWCW -> [|0,0; -1,-2; -2,0; -1,2; 1,2; 2,0; 1,-2|]
+    | SWCC -> [|0,0; -1,-2; 1,-2; 2,0; 1,2; -1,2; -2,0|]
+    | WWCW -> [|0,0; -2,0; -1,2; 1,2; 2,0; 1,-2; -1,-2|]
+    | WWCC -> [|0,0; -2,0; -1,-2; 1,-2; 2,0; 1,2; -1,2|]
+    | NWCW -> [|0,0; -1,2; 1,2; 2,0; 1,-2; -1,-2; -2,0|]
+    | NWCC -> [|0,0; -1,2; -2,0; -1,-2; 1,-2; 2,0; 1,2|]
+    | NECW -> [|0,0; 1,2; 2,0; 1,-2; -1,-2; -2,0; -1,2|]
+    | NECC -> [|0,0; 1,2; -1,2; -2,0; -1,-2; 1,-2; 2,0|]
 
 // Identity Location
 let identity = 
-    {
-        x = 0
-        y = 0
-        z = 0
-    }
+    XY(0,0)
 
 // Adjacent Location
 let adjacent 
     (sqn: Sqn)
     (loc: Loc) = 
-    Array.map (fun (a,b,c) ->
-            {
-                x = a + loc.x 
-                y = b + loc.y
-                z = c + loc.z
-            })
-            (sequence sqn)
+    Array.map (fun (a,b) -> 
+    let (XY (x,y)) = loc
+    XY(x+a,y+b) )(sequence sqn)
 
 // Increment Location
 let increment 
     (sqn : Sqn)
     (loc : Loc * int) 
     (occ : Loc[]) = 
-    let occ = Array.concat [|occ; [|(fst loc)|]; [|identity|]|]
+    let occ = Array.concat 
+                [|
+                    occ
+                    [|(fst loc)|]
+                    [|identity|]
+                |]
     match loc with 
     | x,y when y >= 0 -> 
         let inc1 = x 
@@ -137,18 +130,18 @@ let increments
 
     replaceDuplicate sqn loc inc occ
 
-// Cluster Locations
+// Clusters
 let clusters 
     (sqn : Sqn)
-    (loc : (Loc*int)[])
+    (bas : (Loc*int)[])
     (occ : Loc[]) = 
     
     let cnt = 
-            loc
+            bas
             |> Array.map (fun x -> snd x)
             |> Array.max
-    let acc = Array.chunkBySize 1 loc
-    let occ = Array.append occ (getLocs loc)  
+    let acc = Array.chunkBySize 1 bas
+    let occ = Array.append occ (getLocs bas)  
     
     let rec clsts 
         (loc: (Loc*int)[])
@@ -195,8 +188,30 @@ let clusters
 
                 (clsts loc occ acc (cnt-1))
                 
-    let cls = clsts loc occ acc cnt
+    let cls = clsts bas occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
-    cls
+    let cl0 = 
+        cls
+        |> Array.map(fun x -> getLocs x)
+        
+    // Locations to Clusters
+    let bs1 = getLocs bas
+    let oc1 = Array.concat
+                [|
+                    occ 
+                    (getLocs(Array.concat cls))
+                |] 
+    let cl1 = cls |> Array.map (fun x -> Array.partition(fun y -> (available sqn y oc1) = 0)x)
+    let cr1 = Array.map (fun x -> getLocs (fst x)) cl1
+            |> Array.map(fun x -> Array.except (getLocs bas)x)
+    let ed1 = Array.map (fun x -> getLocs (snd x)) cl1
+            |> Array.map(fun x -> Array.except (getLocs bas)x)
+    
+    {|
+        Base = bs1
+        Locs = cl0; 
+        Core = cr1; 
+        Edge = ed1
+    |}
 

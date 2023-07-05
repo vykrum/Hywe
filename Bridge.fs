@@ -2,7 +2,6 @@
 
 open Bolero
 open Bolero.Html
-open Hexel
 open Location
 
 type hxgn = Template<
@@ -12,6 +11,7 @@ type hxgn = Template<
       stroke="${cl}"
       transform="translate${tr}"
       opacity = "0.75"
+      stroke-opacity="0.125"
       >""">
 
           
@@ -29,8 +29,8 @@ type svtx = Template<
 let scl = 10
 
 // Location to Coordinates
-let cdn (loc:Hxl[]) (scl:int) =
-    Array.map (fun x -> (x.loc.x*scl),(x.loc.y*scl)) loc
+let cdn (loc:Loc[]) (scl:int) =
+    Array.map (fun (XY(x,y)) -> ((x*scl),(y*scl))) loc
 
 let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
     svg {
@@ -54,7 +54,7 @@ let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
                    .Elt()
         }
 
-let crd (hst : Hxl[][]) = 
+let crd (hst : Loc[][]) = 
     let hxXY01 = Array.map (fun x -> cdn x scl) hst
     let hxShfX = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (x,_) -> x) |> fst) + 40
     let hxShfY = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (_,x) -> x) |> snd) + 40
@@ -65,15 +65,15 @@ let crd (hst : Hxl[][]) =
 
 let cls (cnt : int[]) =
     let hsHx01 = 
-        nui [|cnt|>Array.head,Hexel.identity|] [||] 
+        (Location.clusters SECW [|identity,cnt|>Array.head|] [||]).Locs
         |> Array.head 
         |> Array.rev
     let hsHx02 = 
         (Array.take ((Array.length cnt) - 1) hsHx01) 
         |> Array.rev
     let hsHx03 = 
-        Array.zip (Array.tail cnt) hsHx02
+        Array.zip hsHx02 (Array.tail cnt) 
     let hsHx04 = 
-        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)(nui hsHx03 hsHx01))|] 
+        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)((Location.clusters SECW hsHx03 hsHx01).Locs))|] 
         |> Array.concat
     hsHx04 |> crd
