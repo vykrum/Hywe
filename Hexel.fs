@@ -33,11 +33,11 @@ let sequence (sqn:Sqn) =
     | NECW -> [|0,0; 1,2; 2,0; 1,-2; -1,-2; -2,0; -1,2|]
     | NECC -> [|0,0; 1,2; -1,2; -2,0; -1,-2; 1,-2; 2,0|]
 
-// Identity Hxlation
+// Identity Hexel
 let identity = 
     OG(0,0)
 
-// Adjacent Hxlation
+// Adjacent Hexels
 let adjacent 
     (sqn: Sqn)
     (hxo: Hxl) = 
@@ -45,7 +45,7 @@ let adjacent
     let (OG (x,y)) = hxo
     OG(x+a,y+b) )(sequence sqn)
 
-// Increment Hxlation
+// Increment Hexel
 let increment 
     (sqn : Sqn)
     (hxo : Hxl * int) 
@@ -77,14 +77,14 @@ let increment
         | None -> (identity,-1)
     | _ -> (identity,-1)
 
-// Get Hxlation from tuple 
+// Get Hexel from tuple 
 let getHxls 
     (hxo : (Hxl*int)[]) = 
     hxo
     |> Array.map(fun x 
                     -> fst x)
 
-// Available Adjacent Hxlations
+// Available Adjacent Hexels
 let available 
     (sqn : Sqn)
     (hxo : (Hxl*int))
