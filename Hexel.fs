@@ -1,7 +1,7 @@
-module Location
+module Hexel
 
-type Loc = 
-    | XY of int * int
+type Hxl = 
+    | OG of int * int
 
 type Sqn = 
     | EECW
@@ -33,30 +33,30 @@ let sequence (sqn:Sqn) =
     | NECW -> [|0,0; 1,2; 2,0; 1,-2; -1,-2; -2,0; -1,2|]
     | NECC -> [|0,0; 1,2; -1,2; -2,0; -1,-2; 1,-2; 2,0|]
 
-// Identity Location
+// Identity Hxlation
 let identity = 
-    XY(0,0)
+    OG(0,0)
 
-// Adjacent Location
+// Adjacent Hxlation
 let adjacent 
     (sqn: Sqn)
-    (loc: Loc) = 
+    (hxo: Hxl) = 
     Array.map (fun (a,b) -> 
-    let (XY (x,y)) = loc
-    XY(x+a,y+b) )(sequence sqn)
+    let (OG (x,y)) = hxo
+    OG(x+a,y+b) )(sequence sqn)
 
-// Increment Location
+// Increment Hxlation
 let increment 
     (sqn : Sqn)
-    (loc : Loc * int) 
-    (occ : Loc[]) = 
+    (hxo : Hxl * int) 
+    (occ : Hxl[]) = 
     let occ = Array.concat 
                 [|
                     occ
-                    [|(fst loc)|]
+                    [|(fst hxo)|]
                     [|identity|]
                 |]
-    match loc with 
+    match hxo with 
     | x,y when y >= 0 -> 
         let inc1 = x 
                 |> adjacent sqn
@@ -77,49 +77,50 @@ let increment
         | None -> (identity,-1)
     | _ -> (identity,-1)
 
-// Get Location from tuple 
-let getLocs 
-    (loc : (Loc*int)[]) = 
-    loc
+// Get Hxlation from tuple 
+let getHxls 
+    (hxo : (Hxl*int)[]) = 
+    hxo
     |> Array.map(fun x 
                     -> fst x)
 
-// Available Adjacent Locations
+// Available Adjacent Hxlations
 let available 
     (sqn : Sqn)
-    (loc : (Loc*int))
-    (occ : Loc[]) = 
-    loc 
+    (hxo : (Hxl*int))
+    (occ : Hxl[]) = 
+    hxo 
     |> fst 
     |> adjacent sqn
-    |> Array.except (Array.append occ [|(fst loc)|] )
+    |> Array.except (Array.append occ [|(fst hxo)|])
     |> Array.length
 
-// Increment Locations
+// Increment Hexels
 let increments 
     (sqn : Sqn)
-    (loc : (Loc*int)[]) 
-    (occ : Loc[]) = 
-    let occ = Array.append occ (getLocs loc)
+    (hxo : (Hxl*int)[]) 
+    (occ : Hxl[]) = 
+    
+    let occ = Array.append occ (getHxls hxo)
     let inc = 
         Array.scan (fun ac st -> 
         let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|] )
         increment sqn st (Array.append[|fst ac|] occ )) 
-            loc[0] loc
+            hxo[0] hxo
             |> Array.tail
     
     let replaceDuplicate 
         (sqn : Sqn)
-        (loc : (Loc*int)[]) 
-        (inc : (Loc*int)[]) 
-        (occ : Loc[]) =
+        (hxo : (Hxl*int)[]) 
+        (inc : (Hxl*int)[]) 
+        (occ : Hxl[]) =
         let in1 = Array.map (fun x -> snd x)inc
-        let lc1 = getLocs loc 
-        let ic1 = getLocs inc 
+        let lc1 = getHxls hxo 
+        let ic1 = getHxls inc 
         let oc1 = Array.concat[|occ;lc1;ic1|]
         let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
         let bl1 = Array.map2 (fun x y -> x=y) [|0..(Array.length ic1)-1|] id1   
-        let tp1 = Array.zip3 bl1 ic1 loc  
+        let tp1 = Array.zip3 bl1 ic1 hxo  
         tp1 |> Array.map2 (fun d (a,b,c) 
                             -> match a with 
                                 | true -> b,d
@@ -128,25 +129,25 @@ let increments
                                         | false -> (fst c),-1
                                         | true -> fst(increment sqn c oc1),d) in1
 
-    replaceDuplicate sqn loc inc occ
+    replaceDuplicate sqn hxo inc occ
 
 // Clusters
 let clusters 
     (sqn : Sqn)
-    (bas : (Loc*int)[])
-    (occ : Loc[]) = 
+    (bas : (Hxl*int)[])
+    (occ : Hxl[]) = 
     
     let cnt = 
             bas
             |> Array.map (fun x -> snd x)
             |> Array.max
     let acc = Array.chunkBySize 1 bas
-    let occ = Array.append occ (getLocs bas)  
+    let occ = Array.append occ (getHxls bas)  
     
     let rec clsts 
-        (loc: (Loc*int)[])
-        (occ : Loc[])
-        (acc:(Loc*int)[][])
+        (hxo: (Hxl*int)[])
+        (occ : Hxl[])
+        (acc:(Hxl*int)[][])
         (cnt : int) = 
         match cnt with 
         | c when c < 1 -> acc
@@ -154,15 +155,15 @@ let clusters
                 let occ = 
                     acc 
                     |> Array.concat 
-                    |> getLocs
+                    |> getHxls
                     |> Array.append occ
-                    |> Array.append (getLocs loc)
+                    |> Array.append (getHxls hxo)
                     |> Array.append [|identity|]
                     |> Array.distinct
 
                 let rpt = Array.map (fun x 
-                                        -> (snd x)-1) loc
-                let loc =  
+                                        -> (snd x)-1) hxo
+                let Hxl =  
                     acc
                     |> Array.map (fun x
                                     -> Array.filter (fun a 
@@ -176,7 +177,7 @@ let clusters
                     |> Array.map2 (fun x y 
                                     -> fst y,  x) rpt
                 
-                let inc = increments sqn loc occ
+                let inc = increments sqn Hxl occ
                 
                             
                 let acc = Array.map2  (fun x y
@@ -184,34 +185,37 @@ let clusters
                             acc
                             (Array.chunkBySize 1 inc)
 
-                let occ = Array.concat[|getLocs (Array.concat [|Array.concat acc; inc;loc|]);occ|]
+                let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|]
 
-                (clsts loc occ acc (cnt-1))
+                (clsts Hxl occ acc (cnt-1))
                 
     let cls = clsts bas occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
     let cl0 = 
         cls
-        |> Array.map(fun x -> getLocs x)
+        |> Array.map(fun x -> getHxls x)
         
-    // Locations to Clusters
-    let bs1 = getLocs bas
+    // Hxlations to Clusters
+    let bs1 = getHxls bas
     let oc1 = Array.concat
                 [|
                     occ 
-                    (getLocs(Array.concat cls))
+                    (getHxls(Array.concat cls))
                 |] 
-    let cl1 = cls |> Array.map (fun x -> Array.partition(fun y -> (available sqn y oc1) = 0)x)
-    let cr1 = Array.map (fun x -> getLocs (fst x)) cl1
-            |> Array.map(fun x -> Array.except (getLocs bas)x)
-    let ed1 = Array.map (fun x -> getLocs (snd x)) cl1
-            |> Array.map(fun x -> Array.except (getLocs bas)x)
+    let cl1 = 
+        cls 
+        |> Array.map (fun x -> Array.partition(fun y -> (available sqn y oc1) = 0)x)
+    let cr1 = 
+        Array.map (fun x -> getHxls (fst x)) cl1
+            |> Array.map(fun x -> Array.except (getHxls bas)x)
+    let ed1 = 
+        Array.map (fun x -> getHxls (snd x)) cl1
+            |> Array.map(fun x -> Array.except (getHxls bas)x)
     
     {|
         Base = bs1
-        Locs = cl0; 
-        Core = cr1; 
+        Hxls = cl0
+        Core = cr1
         Edge = ed1
     |}
-

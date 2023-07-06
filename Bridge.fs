@@ -2,7 +2,7 @@
 
 open Bolero
 open Bolero.Html
-open Location
+open Hexel
 
 type hxgn = Template<
       """ <polygon 
@@ -25,12 +25,8 @@ type svtx = Template<
     opacity = "1"
     >${nm}</text> """>
           
-// Scaled Location xy
+// Hexel Scale
 let scl = 10
-
-// Location to Coordinates
-let cdn (loc:Loc[]) (scl:int) =
-    Array.map (fun (XY(x,y)) -> ((x*scl),(y*scl))) loc
 
 let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
     svg {
@@ -54,8 +50,13 @@ let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
                    .Elt()
         }
 
-let crd (hst : Loc[][]) = 
-    let hxXY01 = Array.map (fun x -> cdn x scl) hst
+let crd (scl : int) (hxo : Hxl[][]) = 
+    
+    // Location to Coordinates
+    let cdn (hxo:Hxl[]) (scl:int) =
+        Array.map (fun (OG(x,y)) -> ((x*scl),(y*scl))) hxo
+
+    let hxXY01 = Array.map (fun x -> cdn x scl) hxo
     let hxShfX = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (x,_) -> x) |> fst) + 40
     let hxShfY = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (_,x) -> x) |> snd) + 40
     let hxMxmX = ((Array.concat hxXY01) |> Array.maxBy(fun (x,_) -> x) |> fst) + hxShfX + 40
@@ -64,16 +65,20 @@ let crd (hst : Loc[][]) =
     (hxXY02,hxMxmX,hxMxmY)
 
 let cls (cnt : int[]) =
+    // Host Cluster
     let hsHx01 = 
-        (Location.clusters SECW [|identity,cnt|>Array.head|] [||]).Locs
+        (Hexel.clusters SECW [|identity,cnt|>Array.head|] [||]).Hxls
         |> Array.head 
         |> Array.rev
+    // Base Hexels
     let hsHx02 = 
         (Array.take ((Array.length cnt) - 1) hsHx01) 
         |> Array.rev
+    // Size * Base
     let hsHx03 = 
         Array.zip hsHx02 (Array.tail cnt) 
     let hsHx04 = 
-        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)((Location.clusters SECW hsHx03 hsHx01).Locs))|] 
+        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)((Hexel.clusters SECW hsHx03 hsHx01).Hxls))|] 
         |> Array.concat
-    hsHx04 |> crd
+    // Scaled Coordinates
+    hsHx04 |> crd scl
