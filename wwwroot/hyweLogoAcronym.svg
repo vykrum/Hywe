@@ -1,0 +1,15 @@
+<svg version="1.1"
+     width="250" height="45"
+     viewBox="0 0 850 125"
+     xmlns="http://www.w3.org/2000/svg">
+  
+  <style>
+    .Segoe {
+      font: italic 40px Segoe Script;
+      fill: rgb(192,192,192,1);
+    }
+  </style>
+  <rect width="850" height="125" fill="rgb(54,54,54,1)"/>
+  <text x="75" y="75" class="Segoe" >Hexagrid Yielded Woven Entity</text>
+
+</svg>
