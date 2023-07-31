@@ -132,7 +132,7 @@ let increments
                                         | true -> fst(increment sqn c oc1),d) in1
     replaceDuplicate sqn hxo inc occ
 
-// Clusters
+// Clusters (Base, Hxls, Core, Brdr, Avbl)
 let clusters 
     (sqn : Sqn)
     (bas : (Hxl*int)[])
@@ -189,7 +189,37 @@ let clusters
                 let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|]
 
                 (clsts Hxl occ acc (cnt-1))
-                
+
+    // Boundry Hexels Ring
+    let bndSqn 
+        (sqn : Sqn) 
+        (hxl : Hxl[]) = 
+        let rec arr 
+            (sqn : Sqn) 
+            (hxl : Hxl[]) 
+            (acc : Hxl[]) 
+            (cnt : int)
+            (opt : bool) = 
+            match cnt with 
+            | a when cnt <= 1 -> acc
+            | _ -> 
+                let hxl = Array.except acc hxl
+                let hx1 = ((Array.filter (fun x -> Array.contains x hxl) 
+                                (adjacent sqn (Array.last acc))))                
+                let hx2 = match opt with 
+                                | false -> Array.tryHead hx1
+                                | true -> Array.tryLast hx1
+                let hx3 = match hx2 with 
+                                | Some a -> [|a|]
+                                | None -> [||]
+                let acc = Array.append acc  hx3
+                arr sqn hxl acc (cnt-1) opt
+        let a1 = arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+        let b1 = Array.length a1 = Array.length hxl
+        match b1 with 
+        | true -> a1
+        | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+
     let cls = clsts bas occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
@@ -206,6 +236,8 @@ let clusters
                         -> Array.partition(fun x 
                                             -> (available sqn x y)>0)y)
     let bd1 = Array.map(fun x -> fst x) cl3
+    let bd2 = Array.map (fun x -> bndSqn sqn x) bd1
+    
     // Core Hexels
     let cr1 = Array.map(fun x -> snd x) cl3
     
@@ -216,17 +248,18 @@ let clusters
                 |] 
     
     let cl4 = 
-        bd1
+        bd2
         |> Array.map(Array.partition(fun x-> (available sqn x oc1)>0))
     // Available Hexels
     let av1= Array.map(fun x -> fst x) cl4
     // Border Hexels
-    let sh1= Array.map(fun x -> fst x) cl4
+    let br1= Array.map(fun x -> snd x) cl4
     
     {|
         Base = bs1
         Hxls = cl1
         Core = cr1
-        Brdr = sh1
+        Prph = bd2
+        Brdr = br1
         Avbl = av1
     |}
