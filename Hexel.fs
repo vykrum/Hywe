@@ -1,8 +1,10 @@
 module Hexel
 
+[<Struct>]
 type Hxl = 
     | OG of int * int
 
+[<Struct>]
 type Sqn = 
     | EECW
     | EECC
@@ -20,18 +22,18 @@ type Sqn =
 // Sequences
 let sequence (sqn:Sqn) =  
     match sqn with 
-    | EECW -> [|0,0; 2,0; 1,-2; -1,-2; -2,0; -1,2; 1,2|]
-    | EECC -> [|0,0; 2,0; 1,2; -1,2; -2,0; -1,-2; 1,-2|]
-    | SECW -> [|0,0; 1,-2; -1,-2; -2,0; -1,2; 1,2; 2,0|]
-    | SECC -> [|0,0; 1,-2; 2,0; 1,2; -1,2; -2,0; -1,-2|]
-    | SWCW -> [|0,0; -1,-2; -2,0; -1,2; 1,2; 2,0; 1,-2|]
-    | SWCC -> [|0,0; -1,-2; 1,-2; 2,0; 1,2; -1,2; -2,0|]
-    | WWCW -> [|0,0; -2,0; -1,2; 1,2; 2,0; 1,-2; -1,-2|]
-    | WWCC -> [|0,0; -2,0; -1,-2; 1,-2; 2,0; 1,2; -1,2|]
-    | NWCW -> [|0,0; -1,2; 1,2; 2,0; 1,-2; -1,-2; -2,0|]
-    | NWCC -> [|0,0; -1,2; -2,0; -1,-2; 1,-2; 2,0; 1,2|]
-    | NECW -> [|0,0; 1,2; 2,0; 1,-2; -1,-2; -2,0; -1,2|]
-    | NECC -> [|0,0; 1,2; -1,2; -2,0; -1,-2; 1,-2; 2,0|]
+    | EECW -> [|0y,0y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y|]
+    | EECC -> [|0y,0y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y|]
+    | SECW -> [|0y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y|]
+    | SECC -> [|0y,0y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y|]
+    | SWCW -> [|0y,0y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y|]
+    | SWCC -> [|0y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y|]
+    | WWCW -> [|0y,0y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y|]
+    | WWCC -> [|0y,0y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y|]
+    | NWCW -> [|0y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y|]
+    | NWCC -> [|0y,0y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y|]
+    | NECW -> [|0y,0y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y|]
+    | NECC -> [|0y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y|]
 
 // Identity Hexel
 let identity = 
@@ -43,7 +45,7 @@ let adjacent
     (hxo: Hxl) = 
     Array.map (fun (a,b) -> 
     let (OG (x,y)) = hxo
-    OG(x+a,y+b) )(sequence sqn)
+    OG(x+ int a,y+ int b) )(sequence sqn)
 
 // Increment Hexel
 let increment 
@@ -90,12 +92,13 @@ let available
     (hxo : obj)
     (occ : Hxl[]) = 
     let hx1 = match hxo with 
-                | :? (Hxl*int) as (a,_)->  a
+                | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
                 | _ -> identity
     hx1 
     |> adjacent sqn
-    |> Array.except (Array.append occ [|hx1|])
+    |> Array.except 
+        (Array.append occ [|hx1|])
     |> Array.length
 
 // Increment Hexels
@@ -237,7 +240,7 @@ let clusters
                                             -> (available sqn x y)>0)y)
     let bd1 = Array.map(fun x -> fst x) cl3
     let bd2 = Array.map (fun x -> bndSqn sqn x) bd1
-    
+    //let bd2 = Array.map2 (fun x y -> Array.except [|x|] y) bs1 bd1
     // Core Hexels
     let cr1 = Array.map(fun x -> snd x) cl3
     
