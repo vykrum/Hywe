@@ -21,7 +21,7 @@ type hxgn = Template<
       stroke="${cl}"
       transform="translate${tr}"
       opacity = "0.75"
-      stroke-opacity="0.125"
+      stroke-opacity="0.175"
       >""">
           
 type svtx = Template<
