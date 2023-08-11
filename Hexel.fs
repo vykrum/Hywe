@@ -6,34 +6,12 @@ type Hxl =
 
 [<Struct>]
 type Sqn = 
-    | VCEE
-    | VAEE
-    | VCSE
-    | VASE
-    | VCSW
-    | VASW
-    | VCWW
-    | VAWW
-    | VCNW
-    | VANW
-    | VCNE
-    | VANE
-    | HCNN
-    | HANN
-    | HCNE
-    | HANE
-    | HCSE
-    | HASE
-    | HCSS
-    | HASS
-    | HCSW
-    | HASW
-    | HCNW
-    | HANW
+    // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
+    | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
+    | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
 // Sequence Variations
 let sequence (sqn:Sqn) =  
-    // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
     match sqn with 
     | VCEE -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0x2; 0x1,0x2|]
     | VAEE -> [|0x0,0x0; 0x2,0x0; 0x1,0x2; 0xFFFFFFFF,0x2; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0xFFFFFFFE; 0x1,0xFFFFFFFE|]
@@ -68,6 +46,7 @@ let identity =
 let adjacent 
     (sqn: Sqn)
     (hxo: Hxl) = 
+    
     Array.map (fun (a,b) -> 
     let (OG (x,y)) = hxo
     OG(x+a, y+b))(sequence sqn)
@@ -105,7 +84,7 @@ let increment
         | None -> (identity,0xFFFFFFFF)
     | _ -> (identity,0xFFFFFFFF)
 
-// Get Hexel from tuple
+// Get Hexel from Tuple
 let getHxls 
     (hxo : (Hxl*int)[]) = 
     
@@ -166,12 +145,13 @@ let increments
     
     replaceDuplicate sqn hxo inc occ
 
-// Clusters (Base, Hxls, Core, Brdr, Avbl)
+// Clusters 
 let clusters 
     (sqn : Sqn)
     (bas : (Hxl*int)[])
     (occ : Hxl[]) = 
     
+    // Output : Base, Hxls, Core, Brdr, Avbl
     let cnt = 
             bas
             |> Array.map (fun x -> snd x)
