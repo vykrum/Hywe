@@ -4,7 +4,7 @@ open Bolero
 open Bolero.Html
 open Hexel
 
-type hxgn = Template<
+type hxg1 = Template<
       """ <polygon 
       points="0,0,-10,10,-10,20,0,30,10,20,10,10" 
       fill="${cl}"
@@ -14,6 +14,15 @@ type hxgn = Template<
       stroke-opacity="0.125"
       >""">
 
+type hxgn = Template<
+      """ <polygon 
+      points="0,0,10,10,20,10,30,0,20,-10,10,-10" 
+      fill="${cl}"
+      stroke="${cl}"
+      transform="translate${tr}"
+      opacity = "0.75"
+      stroke-opacity="0.125"
+      >""">
           
 type svtx = Template<
     """<text 
@@ -65,9 +74,10 @@ let crd (scl : int) (hxo : Hxl[][]) =
     (hxXY02,hxMxmX,hxMxmY)
 
 let cls (cnt : int[]) =
+    let sqn = HCNN
     // Host Cluster
     let hsHx01 = 
-        (Hexel.clusters SECW [|identity,cnt|>Array.head|] [||]).Hxls
+        (Hexel.clusters sqn [|identity,cnt|>Array.head|] [||]).Hxls
         |> Array.head 
         |> Array.rev
     // Base Hexels
@@ -78,7 +88,7 @@ let cls (cnt : int[]) =
     let hsHx03 = 
         Array.zip hsHx02 (Array.tail cnt) 
     let hsHx04 = 
-        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)((Hexel.clusters SECW hsHx03 hsHx01).Hxls))|] 
+        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)((Hexel.clusters sqn hsHx03 hsHx01).Hxls))|] 
         |> Array.concat
     // Scaled Coordinates
     hsHx04 |> crd scl

@@ -6,34 +6,58 @@ type Hxl =
 
 [<Struct>]
 type Sqn = 
-    | EECW
-    | EECC
-    | SECW
-    | SECC
-    | SWCW
-    | SWCC
-    | WWCW
-    | WWCC
-    | NWCW
-    | NWCC
-    | NECW
-    | NECC
+    | VCEE
+    | VAEE
+    | VCSE
+    | VASE
+    | VCSW
+    | VASW
+    | VCWW
+    | VAWW
+    | VCNW
+    | VANW
+    | VCNE
+    | VANE
+    | HCNN
+    | HANN
+    | HCNE
+    | HANE
+    | HCSE
+    | HASE
+    | HCSS
+    | HASS
+    | HCSW
+    | HASW
+    | HCNW
+    | HANW
 
-// Sequences
+// Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
 let sequence (sqn:Sqn) =  
     match sqn with 
-    | EECW -> [|0y,0y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y|]
-    | EECC -> [|0y,0y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y|]
-    | SECW -> [|0y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y|]
-    | SECC -> [|0y,0y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y|]
-    | SWCW -> [|0y,0y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y|]
-    | SWCC -> [|0y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y|]
-    | WWCW -> [|0y,0y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y|]
-    | WWCC -> [|0y,0y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y|]
-    | NWCW -> [|0y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y|]
-    | NWCC -> [|0y,0y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y|]
-    | NECW -> [|0y,0y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y|]
-    | NECC -> [|0y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y|]
+    | VCEE -> [|0y,0y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y|]
+    | VAEE -> [|0y,0y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y|]
+    | VCSE -> [|0y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y|]
+    | VASE -> [|0y,0y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y|]
+    | VCSW -> [|0y,0y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y|]
+    | VASW -> [|0y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y|]
+    | VCWW -> [|0y,0y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y|]
+    | VAWW -> [|0y,0y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y|]
+    | VCNW -> [|0y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y|]
+    | VANW -> [|0y,0y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y|]
+    | VCNE -> [|0y,0y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y|]
+    | VANE -> [|0y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y|]
+    | HCNN -> [|0y,0y; 0y,2y; 2y,1y; 2y,-1y; 0y,-2y; -2y,-1y; -2y,1y|]
+    | HANN -> [|0y,0y; 0y,2y; -2y,1y; -2y,-1y; 0y,-2y; 2y,-1y; 2y,1y|]
+    | HCNE -> [|0y,0y; 2y,1y; 2y,-1y; 0y,-2y; -2y,-1y; -2y,1y; 0y,2y|]
+    | HANE -> [|0y,0y; 2y,1y; 0y,2y; -2y,1y; -2y,-1y; 0y,-2y; 2y,-1y|]
+    | HCSE -> [|0y,0y; 2y,-1y; 0y,-2y; -2y,-1y; -2y,1y; 0y,2y; 2y,1y|]
+    | HASE -> [|0y,0y; 2y,-1y; 2y,1y; 0y,2y; -2y,1y; -2y,-1y; 0y,-2y|]
+    | HCSS -> [|0y,0y; 0y,-2y; -2y,-1y; -2y,1y; 0y,2y; 2y,1y; 2y,-1y|]
+    | HASS -> [|0y,0y; 0y,-2y; 2y,-1y; 2y,1y; 0y,2y; -2y,1y; -2y,-1y|]
+    | HCSW -> [|0y,0y; -2y,-1y; -2y,1y; 0y,2y; 2y,1y; 2y,-1y; 0y,-2y|]
+    | HASW -> [|0y,0y; -2y,-1y; 0y,-2y; 2y,-1y; 2y,1y; 0y,2y; -2y,1y|]
+    | HCNW -> [|0y,0y; -2y,1y; 0y,2y; 2y,1y; 2y,-1y; 0y,-2y; -2y,-1y|]
+    | HANW -> [|0y,0y; -2y,1y; -2y,-1y; 0y,-2y; 2y,-1y; 2y,1y; 0y,2y|]
 
 // Identity Hexel
 let identity = 
@@ -52,6 +76,7 @@ let increment
     (sqn : Sqn)
     (hxo : Hxl * int) 
     (occ : Hxl[]) = 
+    
     let occ = Array.concat 
                 [|
                     occ
@@ -82,6 +107,7 @@ let increment
 // Get Hexel from tuple
 let getHxls 
     (hxo : (Hxl*int)[]) = 
+    
     hxo
     |> Array.map(fun x 
                     -> fst x)
@@ -91,6 +117,7 @@ let available
     (sqn : Sqn)
     (hxo : obj)
     (occ : Hxl[]) = 
+    
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
@@ -106,6 +133,7 @@ let increments
     (sqn : Sqn)
     (hxo : (Hxl*int)[]) 
     (occ : Hxl[]) = 
+    
     let occ = Array.append occ (getHxls hxo)
     let inc = 
         Array.scan (fun ac st -> 
@@ -119,6 +147,7 @@ let increments
         (hxo : (Hxl*int)[]) 
         (inc : (Hxl*int)[]) 
         (occ : Hxl[]) =
+        
         let in1 = Array.map (fun x -> snd x)inc
         let lc1 = getHxls hxo 
         let ic1 = getHxls inc 
@@ -133,6 +162,7 @@ let increments
                                         match ((available sqn c oc1)>0) with 
                                         | false -> (fst c),-1
                                         | true -> fst(increment sqn c oc1),d) in1
+    
     replaceDuplicate sqn hxo inc occ
 
 // Clusters (Base, Hxls, Core, Brdr, Avbl)
@@ -153,6 +183,7 @@ let clusters
         (occ : Hxl[])
         (acc:(Hxl*int)[][])
         (cnt : int) = 
+        
         match cnt with 
         | c when c < 1 -> acc
         | _ -> 
@@ -179,11 +210,10 @@ let clusters
                                         | Some a -> a 
                                         | None -> (identity,-1))                
                     |> Array.map2 (fun x y 
-                                    -> fst y,  x) rpt
+                                    -> fst y, x) rpt
                 
                 let inc = increments sqn Hxl occ
-                
-                            
+                          
                 let acc = Array.map2  (fun x y
                                         -> Array.append x y) 
                             acc
@@ -197,6 +227,7 @@ let clusters
     let bndSqn 
         (sqn : Sqn) 
         (hxl : Hxl[]) = 
+        
         let rec arr 
             (sqn : Sqn) 
             (hxl : Hxl[]) 
@@ -217,7 +248,10 @@ let clusters
                                 | None -> [||]
                 let acc = Array.append acc  hx3
                 arr sqn hxl acc (cnt-1) opt
-        let a1 = arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+        let a1 = 
+            match hxl with 
+            | [||] -> [||]
+            | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
         let b1 = Array.length a1 = Array.length hxl
         match b1 with 
         | true -> a1
@@ -240,7 +274,7 @@ let clusters
                                             -> (available sqn x y)>0)y)
     let bd1 = Array.map(fun x -> fst x) cl3
     let bd2 = Array.map (fun x -> bndSqn sqn x) bd1
-    //let bd2 = Array.map2 (fun x y -> Array.except [|x|] y) bs1 bd1
+    
     // Core Hexels
     let cr1 = Array.map(fun x -> snd x) cl3
     
@@ -253,8 +287,10 @@ let clusters
     let cl4 = 
         bd2
         |> Array.map(Array.partition(fun x-> (available sqn x oc1)>0))
+    
     // Available Hexels
     let av1= Array.map(fun x -> fst x) cl4
+    
     // Border Hexels
     let br1= Array.map(fun x -> snd x) cl4
     
