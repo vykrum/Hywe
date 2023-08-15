@@ -96,7 +96,7 @@ let view model dispatch =
                     }
                 div{
                     img{
-                    attr.width "250"
+                    attr.width "200"
                     attr.height "45"
                     attr.src "https://vykrum.github.io/Hywe/hyweLogoAcronym.png"
                     }

@@ -17,7 +17,7 @@ html, body {
     font-size: 20px;
     font-weight: normal;
     padding-left: 10px;
-    padding-right: -10px;
+    padding-right: 10px;
     padding-bottom: 7px;
 }
 #description {
