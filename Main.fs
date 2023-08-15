@@ -78,34 +78,61 @@ let view model dispatch =
         
         concat {
         div{
+            attr.``class`` "flex-container-1"
             div{
-                br
+                attr.``class`` "flex-container-2"
+                attr.id "header"
+                a{
+                    attr.href "https://github.com/vykrum/Hywe"
+                    attr.target "blank"
+                    img{
+                        attr.width "30"
+                        attr.height "30"
+                        attr.src "https://vykrum.github.io/Hywe/favicon-32x32.png"
+                    }
+                }
+                div{
+                    attr.id "title"
+                    " H Y W E"
+                    }
+                div{
+                    img{
+                    attr.width "250"
+                    attr.height "45"
+                    attr.src "https://vykrum.github.io/Hywe/hyweLogoAcronym.png"
+                    }
+                }
+                }
+            div{
+                attr.id "description"
                 p{
-                    attr.id "dscr"
                     "Hywe is a space layout planning concept being developed as an early stage design interface."
                     br
                     "Manipulating the color coded sliders controls the scale of corresponding clusters."
                 }
-                br
             }
+        }
+        div{
+            br
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
                     attr.id "host"
-                    attr.width "5"
                     attr.min "6"
                     attr.max "25"
                     bind.input.int model.host (fun a -> dispatch (SetHost a))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "host"
                     bind.input.string model.lblh (fun a -> dispatch (LblHost a))
                 }
             }
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
@@ -115,13 +142,14 @@ let view model dispatch =
                     bind.input.int model.cls1 (fun b -> dispatch (SetCls1 b))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "cls1"
                     bind.input.string model.lbl1 (fun a -> dispatch (LblCls1 a))
                 }
             }
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
@@ -131,13 +159,14 @@ let view model dispatch =
                     bind.input.int model.cls2 (fun c -> dispatch (SetCls2 c))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "cls2"
                     bind.input.string model.lbl2 (fun a -> dispatch (LblCls2 a))
                 }
             }
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
@@ -147,13 +176,14 @@ let view model dispatch =
                     bind.input.int model.cls3 (fun d -> dispatch (SetCls3 d))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "cls3"
                     bind.input.string model.lbl3 (fun a -> dispatch (LblCls3 a))
                 }
             }
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
@@ -163,13 +193,14 @@ let view model dispatch =
                     bind.input.int model.cls4 (fun e -> dispatch (SetCls4 e))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "cls4"
                     bind.input.string model.lbl4 (fun a -> dispatch (LblCls4 a))
                 }
             }
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
@@ -179,13 +210,14 @@ let view model dispatch =
                     bind.input.int model.cls5 (fun e -> dispatch (SetCls5 e))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "cls5"
                     bind.input.string model.lbl5 (fun a -> dispatch (LblCls5 a))
                 }
             }
             div{
+                attr.``class`` "flex-container-2"
                 input{
                     attr.``class`` "slider"
                     attr.``type`` "range"
@@ -195,21 +227,33 @@ let view model dispatch =
                     bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
                 }
                 input{
-                    attr.``class`` "counter"
+                    attr.``class`` "label"
                     attr.``type`` "text"
                     attr.id "cls6"
                     bind.input.string model.lbl6 (fun a -> dispatch (LblCls6 a))
                 }
             }   
-        }
+            }
         let (loc,wdt,hgt) = cls ([|model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
         let lbls = [|model.lblh;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
         let clrs = [|"#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
-        div{ 
-            attr.id "svgClus"
-            attr.``class`` "hywe"
-            attr.``type`` "svg"
+        div{
+            attr.``class`` "center"
             cluster (Array.zip3 loc lbls clrs) wdt hgt
+            }
+        footer{
+            a{
+                attr.href "https://twitter.com/_hywe_"
+                attr.target "blank"
+                img{
+                    attr.width "30"
+                    attr.height "30"
+                    attr.align "right"
+                    attr.src "https://vykrum.github.io/Hywe/X.png"
+                    
+                    }
+            }
+            
         }
     }
 
