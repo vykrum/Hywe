@@ -242,6 +242,7 @@ let view model dispatch =
             }
         footer{
             a{
+                attr.id "footer"
                 attr.href "https://twitter.com/_hywe_"
                 attr.target "blank"
                 img{

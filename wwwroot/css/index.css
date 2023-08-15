@@ -1,9 +1,10 @@
 html, body {
   width: 99%;
+  height: 99%
 }
 
 #header {
-    width: 100%;
+    width: 99%;
     height: 37px;
     opacity: 1;
     background: #363636;
@@ -24,7 +25,13 @@ html, body {
     padding-left: 15px;
     padding-right: -10px;
 }
-
+#footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 99%;
+    padding-bottom: 10px;
+}
 .center {
     margin: auto;
     display: block;
@@ -35,7 +42,7 @@ html, body {
 
 .flex-container-1 {
     display: flex;
-    width: 100%;
+    width: 99%;
     flex-direction: column;
     background: #d3d3d3;
     color: #363636;
