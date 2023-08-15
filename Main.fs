@@ -234,7 +234,7 @@ let view model dispatch =
             }
         let (loc,wdt,hgt) = cls ([|model.host;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
         let lbls = [|model.lblh;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
-        let clrs = [|"#363636";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
+        let clrs = [|"#ececce";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
         div{
             attr.``class`` "center"
             cluster (Array.zip3 loc lbls clrs) wdt hgt

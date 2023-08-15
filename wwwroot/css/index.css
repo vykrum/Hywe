@@ -47,12 +47,11 @@ html, body {
     display: flex;
     width: 100%;
     flex-direction: column;
-    background: #d3d3d3;
+    background: #d3d3d1;
     color: #363636;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 16px;
     font-weight: normal;
-    
     margin-left: 0px;
     margin-bottom: 10px;
 }
@@ -69,7 +68,7 @@ html, body {
     height: 4px;
     margin-left: 10px;
     border-radius: 2px;
-    background: #d3d3d3;
+    background: #d3d3d1;
     outline: none;
     opacity: 0.9;
     -webkit-transition: .2s;
@@ -86,8 +85,7 @@ html, body {
 
 
 #host {
-    background: #363636;
-    color: whitesmoke;
+    background: #ececce;
     border: none;
 }
 
