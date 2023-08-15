@@ -55,7 +55,7 @@ html, body {
 .flex-container-2 {
     display: flex;
     flex-direction: row;
-    width: 100%;
+    width: 99%;
     padding-top: 10px;
 }
 
