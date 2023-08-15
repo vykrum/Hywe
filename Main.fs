@@ -74,9 +74,8 @@ let update message model =
     | LblCls5 value -> { model with lbl5 = value }
     | LblCls6 value -> { model with lbl6 = value }
 
-let view model dispatch =
-        
-        concat {
+let view model dispatch =      
+    concat {
         div{
             attr.``class`` "flex-container-1"
             div{
@@ -256,7 +255,6 @@ let view model dispatch =
             
         }
     }
-
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
