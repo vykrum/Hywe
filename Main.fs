@@ -112,7 +112,6 @@ let view model dispatch =
             }
         }
         div{
-            br
             div{
                 attr.``class`` "flex-container-2"
                 input{

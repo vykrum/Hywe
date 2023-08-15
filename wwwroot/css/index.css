@@ -1,6 +1,6 @@
 html, body {
-  width: 99%;
-  height: 99%
+    width: 99%;
+    height: 99%; 
 }
 
 #header {
@@ -22,7 +22,7 @@ html, body {
     padding-bottom: 7px;
 }
 #description {
-    padding-left: 15px;
+    padding-left: 12px;
     padding-right: -10px;
 }
 #footer {
