@@ -43,7 +43,7 @@ let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
          attr.height hgt
          for c in cd do
              let (lc,n,cr) = c
-             let x1 = lc |> Array.tryItem ((Array.length lc)/3)
+             let x1 = lc |> Array.tryItem ((Array.length lc)/2)
              let x,y = match x1 with 
                          | None -> -10,-10
                          | Some a -> a
@@ -92,3 +92,5 @@ let cls (cnt : int[]) =
         |> Array.concat
     // Scaled Coordinates
     hsHx04 |> crd scl
+
+

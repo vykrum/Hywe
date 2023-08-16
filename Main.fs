@@ -248,7 +248,7 @@ let view model dispatch =
                     attr.width "30"
                     attr.height "30"
                     attr.align "right"
-                    attr.src "https://vykrum.github.io/Hywe/X.png"
+                    attr.src "https://vykrum.github.io/Hywe/X.svg"
                     
                     }
             }
