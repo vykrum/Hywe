@@ -1,16 +1,15 @@
 module Hexel
 
-[<Struct>]
 type Hxl = 
     | OG of int * int
+    | OP of int * int
 
-[<Struct>]
 type Sqn = 
     // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
     | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
     | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
-// Sequence Variation
+// Sequence Variations
 let sequence (sqn:Sqn) =  
     match sqn with 
     | VCEE -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0x2; 0x1,0x2|]
@@ -42,14 +41,32 @@ let sequence (sqn:Sqn) =
 let identity = 
     OG(0x0,0x0)
 
+// Standardize type
+let allOG (hxo:Hxl[]) = 
+    hxo
+    |> Array.map(fun x -> 
+    match x with 
+    | OP (a , b) -> OG (a,b)
+    | _ -> x)
+
+// Get Hexel from Tuple
+let getHxls 
+    (hxo : (Hxl*int)[]) = 
+    
+    hxo
+    |> Array.map(fun x 
+                    -> fst x)
+                    
 // Adjacent Hexels
 let adjacent 
     (sqn: Sqn)
     (hxo: Hxl) = 
     
-    Array.map (fun (a,b) -> 
-    let (OG (x,y)) = hxo
-    OG(x+a, y+b))(sequence sqn)
+    match hxo with 
+    | OG (x,y) -> Array.map 
+                    (fun (a,b) -> 
+                    OG(x+a, y+b))(sequence sqn)
+    | OP (x,y) -> [|OP(x,y)|]
 
 // Increment Hexel
 let increment 
@@ -62,7 +79,7 @@ let increment
                     occ
                     [|(fst hxo)|]
                     [|identity|]
-                |]
+                |] |> allOG
     match hxo with 
     | x,y when y >= 0x0 -> 
         let inc1 = x 
@@ -84,13 +101,7 @@ let increment
         | None -> (identity,0xFFFFFFFF)
     | _ -> (identity,0xFFFFFFFF)
 
-// Get Hexel from Tuple
-let getHxls 
-    (hxo : (Hxl*int)[]) = 
-    
-    hxo
-    |> Array.map(fun x 
-                    -> fst x)
+
 
 // Available Adjacent Hexels
 let available 
@@ -98,6 +109,7 @@ let available
     (hxo : obj)
     (occ : Hxl[]) = 
     
+    let occ = occ |> allOG
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
@@ -114,10 +126,10 @@ let increments
     (hxo : (Hxl*int)[]) 
     (occ : Hxl[]) = 
     
-    let occ = Array.append occ (getHxls hxo)
+    let occ = (Array.append occ (getHxls hxo)) |> allOG
     let inc = 
         Array.scan (fun ac st -> 
-        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|] )
+        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allOG
         increment sqn st (Array.append[|fst ac|] occ )) 
             hxo[0] hxo
             |> Array.tail
@@ -131,7 +143,7 @@ let increments
         let in1 = Array.map (fun x -> snd x)inc
         let lc1 = getHxls hxo 
         let ic1 = getHxls inc 
-        let oc1 = Array.concat[|occ;lc1;ic1|]
+        let oc1 = Array.concat[|occ;lc1;ic1|] |> allOG
         let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
         let bl1 = Array.map2 (fun x y -> x=y) [|(0x0)..(Array.length ic1)-(0x1)|] id1   
         let tp1 = Array.zip3 bl1 ic1 hxo  
@@ -157,7 +169,7 @@ let clusters
             |> Array.map (fun x -> snd x)
             |> Array.max
     let acc = Array.chunkBySize 1 bas
-    let occ = Array.append occ (getHxls bas)  
+    let occ = (Array.append occ (getHxls bas)) |> allOG 
     
     let rec clsts 
         (hxo: (Hxl*int)[])
@@ -176,6 +188,7 @@ let clusters
                     |> Array.append (getHxls hxo)
                     |> Array.append [|identity|]
                     |> Array.distinct
+                    |> allOG
 
                 let rpt = Array.map (fun x 
                                         -> (snd x) - 0x1) hxo
@@ -200,7 +213,7 @@ let clusters
                             acc
                             (Array.chunkBySize 1 inc)
 
-                let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|]
+                let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allOG
 
                 (clsts Hxl occ acc (cnt - 0x1))
 
@@ -263,7 +276,7 @@ let clusters
                 [|
                     occ 
                     (getHxls(Array.concat cls))
-                |] 
+                |] |> allOG
     
     let cl4 = 
         bd2

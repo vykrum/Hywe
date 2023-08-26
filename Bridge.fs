@@ -63,7 +63,9 @@ let crd (scl : int) (hxo : Hxl[][]) =
     
     // Location to Coordinates
     let cdn (hxo:Hxl[]) (scl:int) =
-        Array.map (fun (OG(x,y)) -> ((x*scl),(y*scl))) hxo
+        Array.map (fun a -> match a with 
+                            |OG(x,y) -> ((x*scl),(y*scl))
+                            |OP(x,y) -> ((x*scl),(y*scl))) hxo
 
     let hxXY01 = Array.map (fun x -> cdn x scl) hxo
     let hxShfX = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (x,_) -> x) |> fst) + 40
