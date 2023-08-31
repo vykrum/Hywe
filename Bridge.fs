@@ -37,12 +37,13 @@ type svtx = Template<
 // Hexel Scale
 let scl = 10
 
-let cluster (cd: ((int*int)[] * string * string)[]) wdt hgt : Node =
+let cluster (cd: ((int*int*int)[] * string * string)[]) wdt hgt : Node =
     svg {
          attr.width wdt
          attr.height hgt
          for c in cd do
-             let (lc,n,cr) = c
+             let (lc1,n,cr) = c
+             let lc = Array.map(fun (a,b,_) -> a,b) lc1 
              let x1 = lc |> Array.tryItem ((Array.length lc)/2)
              let x,y = match x1 with 
                          | None -> -10,-10
@@ -64,15 +65,19 @@ let crd (scl : int) (hxo : Hxl[][]) =
     // Location to Coordinates
     let cdn (hxo:Hxl[]) (scl:int) =
         Array.map (fun a -> match a with 
-                            |OG(x,y) -> ((x*scl),(y*scl))
-                            |OP(x,y) -> ((x*scl),(y*scl))) hxo
+                            |OG(x,y,z) -> ((x*scl),(y*scl),z)
+                            |OP(x,y,z) -> ((x*scl),(y*scl),z)) hxo
 
     let hxXY01 = Array.map (fun x -> cdn x scl) hxo
-    let hxShfX = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (x,_) -> x) |> fst) + 40
-    let hxShfY = 0 - ((Array.concat hxXY01) |> Array.minBy(fun (_,x) -> x) |> snd) + 40
-    let hxMxmX = ((Array.concat hxXY01) |> Array.maxBy(fun (x,_) -> x) |> fst) + hxShfX + 40
-    let hxMxmY = ((Array.concat hxXY01) |> Array.maxBy(fun (_,x) -> x) |> snd) + hxShfY + 40
-    let hxXY02 = Array.map(fun a -> Array.map (fun (x,y)-> (x + hxShfX), (y + hxShfY))a) hxXY01
+    let (a,_,_) = (Array.concat hxXY01) |> Array.minBy(fun (x,_,_) -> x)
+    let hxShfX = 0 - a + 40
+    let (_,b,_) = (Array.concat hxXY01) |> Array.minBy(fun (_,x,_) -> x)
+    let hxShfY = 0 - b + 40
+    let (c,_,_) = (Array.concat hxXY01) |> Array.maxBy(fun (x,_,_) -> x)
+    let hxMxmX = c + hxShfX + 40
+    let (_,d,_) = (Array.concat hxXY01) |> Array.maxBy(fun (_,x,_) -> x)
+    let hxMxmY = d + hxShfY + 40
+    let hxXY02 = Array.map(fun aa -> Array.map (fun (x,y,z)-> (x + hxShfX), (y + hxShfY),z)aa) hxXY01
     (hxXY02,hxMxmX,hxMxmY)
 
 let cls (cnt : int[]) =

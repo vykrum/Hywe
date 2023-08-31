@@ -1,8 +1,8 @@
 module Hexel
 
 type Hxl = 
-    | OG of int * int
-    | OP of int * int
+    | OG of int * int * int
+    | OP of int * int * int
 
 type Sqn = 
     // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
@@ -39,14 +39,14 @@ let sequence (sqn:Sqn) =
 
 // Identity Hexel
 let identity = 
-    OG(0x0,0x0)
+    OG(0x0,0x0, 0x0)
 
 // Standardize type
 let allOG (hxo:Hxl[]) = 
     hxo
     |> Array.map(fun x -> 
     match x with 
-    | OP (a , b) -> OG (a,b)
+    | OP (a,b,c) -> OG (a,b,c)
     | _ -> x)
 
 // Get Hexel from Tuple
@@ -63,10 +63,10 @@ let adjacent
     (hxo: Hxl) = 
     
     match hxo with 
-    | OG (x,y) -> Array.map 
-                    (fun (a,b) -> 
-                    OG(x+a, y+b))(sequence sqn)
-    | OP (x,y) -> [|OP(x,y)|]
+    | OG (x,y,z) -> Array.map 
+                        (fun (a,b) -> 
+                        OG(x+a, y+b,z))(sequence sqn)
+    | OP (x,y,z) -> [|OP(x,y,z)|]
 
 // Increment Hexel
 let increment 
@@ -100,8 +100,6 @@ let increment
         | Some a -> a, y
         | None -> (identity,0xFFFFFFFF)
     | _ -> (identity,0xFFFFFFFF)
-
-
 
 // Available Adjacent Hexels
 let available 
