@@ -41,13 +41,24 @@ let sequence (sqn:Sqn) =
 let identity = 
     OG(0x0,0x0, 0x0)
 
+// Get Coordinates
+let hxlCrd (hxl : Hxl) = 
+    match hxl with 
+    | OG (a,b,c) -> (a,b,c)
+    | OP (a,b,c) -> (a,b,c)
+    
+
+// Available Edge Count
+let avlEdg (hxl : Hxl) = 
+    match hxl with 
+    | OG (a,b,c) -> 0
+    | OP (a,b,c) -> 0
+    
 // Standardize type
 let allOG (hxo:Hxl[]) = 
     hxo
-    |> Array.map(fun x -> 
-    match x with 
-    | OP (a,b,c) -> OG (a,b,c)
-    | _ -> x)
+    |> Array.map(fun x -> hxlCrd x)
+    |> Array.map(fun x -> OG x)
 
 // Get Hexel from Tuple
 let getHxls 
