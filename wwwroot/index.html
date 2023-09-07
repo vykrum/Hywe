@@ -12,7 +12,10 @@
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
 </head>
 <body>
-    <div id="main">Loading...<img src="loading.gif" style="width:100%;height:100%;"></div>
+    <div id="main">
+        <p>Loading...</p>
+        <img src="loading.gif" style="width:100%;height:100%;">
+    </div>
     
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
