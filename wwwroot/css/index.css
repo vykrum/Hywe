@@ -5,8 +5,13 @@ html, body {
     margin-left: 0px;
     margin-right: 0px;
 }
-.bgnd {
-    background: url(https://vykrum.github.io/Hywe/loading.png) repeat top center;
+
+#loading {
+    color: black;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    padding-left: 10px;
 }
 #header {
     width: 100%;
