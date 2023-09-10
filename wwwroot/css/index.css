@@ -7,15 +7,14 @@ html, body {
 }
 
 #loading {
-    color: white;
+    color:darkgrey;
     background-color: #363636;
     margin-top: 0px;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-left: 8px;
+    padding-top: 3px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 18px;
     font-weight: normal;
-    text-align: center;
 }
 #header {
     width: 100%;
