@@ -1,16 +1,17 @@
 module Hexel
 
 type Hxl = 
-    | OG of int * int * int
-    | OP of int * int * int
-
+    | OG of x:int * y:int * z:int
+    | OP of x:int * y:int * z:int
+  
 type Sqn = 
     // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
     | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
     | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
 // Sequence Variations
-let sequence (sqn:Sqn) =  
+let sequence 
+    (sqn:Sqn) =  
     match sqn with 
     | VCEE -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0x2; 0x1,0x2|]
     | VAEE -> [|0x0,0x0; 0x2,0x0; 0x1,0x2; 0xFFFFFFFF,0x2; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0xFFFFFFFE; 0x1,0xFFFFFFFE|]
@@ -42,20 +43,16 @@ let identity =
     OG(0x0,0x0, 0x0)
 
 // Get Coordinates
-let hxlCrd (hxl : Hxl) = 
+let hxlCrd 
+    (hxl : Hxl) = 
     match hxl with 
     | OG (a,b,c) -> (a,b,c)
     | OP (a,b,c) -> (a,b,c)
-    
 
-// Available Edge Count
-let avlEdg (hxl : Hxl) = 
-    match hxl with 
-    | OG (a,b,c) -> 0
-    | OP (a,b,c) -> 0
-    
 // Standardize type
-let allOG (hxo:Hxl[]) = 
+let allOG 
+    (hxo:Hxl[]) = 
+    
     hxo
     |> Array.map(fun x -> hxlCrd x)
     |> Array.map(fun x -> OG x)
@@ -172,7 +169,7 @@ let clusters
     (bas : (Hxl*int)[])
     (occ : Hxl[]) = 
     
-    // Output : Base, Hxls, Core, Brdr, Avbl
+    // Output : Base, Hxls, Core, Prph, Brdr, Avbl
     let cnt = 
             bas
             |> Array.map (fun x -> snd x)
@@ -251,21 +248,57 @@ let clusters
                                 | None -> [||]
                 let acc = Array.append acc  hx3
                 arr sqn hxl acc (cnt-1) opt
+        
         let a1 = 
             match hxl with 
             | [||] -> [||]
             | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+
         let b1 = Array.length a1 = Array.length hxl
+        
         match b1 with 
         | true -> a1
         | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
 
-    let cls = clsts bas occ acc cnt
+    // Hexel Ring Segment Sequence
+    let cntSqn
+        (sqn : Sqn)
+        (hxl : Hxl[]) = 
+    
+        let rec ctSq 
+            (sqn : Sqn)
+            (hxl : Hxl[])
+            (acc : Hxl[])
+            (cnt : int) = 
+            match cnt with 
+            | a when a<=1 -> acc
+            | _ -> 
+                    let b = Array.last acc
+                    let hxl = Array.except [|b|] hxl
+                    let d = (adjacent sqn b) |> Array.tail
+                    let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.tryHead
+                    let f = match e with 
+                                | Some a -> [|a|]
+                                | None -> [||]
+                    let acc = Array.append acc f
+                    ctSq sqn hxl acc (cnt-1)
+        let cnt = Array.length(hxl)
+        let arr =  ctSq sqn hxl ([|Array.head hxl|]) cnt
+        let bln = cnt = Array.length(arr)
+        match bln with 
+        | true -> arr
+        | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+    
+
+    let cls = 
+        clsts bas occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
+
     let cl1 = 
         cls
         |> Array.map(fun x -> getHxls x)
+    
     let bs1 = getHxls bas
     
     // Bounding Hexels
@@ -293,6 +326,7 @@ let clusters
     
     // Available Hexels
     let av1= Array.map(fun x -> fst x) cl4
+    let av2 = av1 |> Array.map(fun x -> cntSqn sqn x)
     
     // Border Hexels
     let br1= Array.map(fun x -> snd x) cl4
@@ -303,5 +337,5 @@ let clusters
         Core = cr1
         Prph = bd2
         Brdr = br1
-        Avbl = av1
+        Avbl = av2
     |}
