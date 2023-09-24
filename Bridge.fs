@@ -3,6 +3,7 @@
 open Bolero
 open Bolero.Html
 open Hexel
+open Coxel
 
 type hxg1 = Template<
       """ <polygon 
@@ -84,8 +85,8 @@ let cls (cnt : int[]) =
     let sqn = HCNN
     // Host Cluster
     let hsHx01 = 
-        (Hexel.clusters sqn [|identity,cnt|>Array.head|] [||]).Hxls
-        |> Array.head 
+        (Coxel.coxel sqn [|identity,cnt|>Array.head,"Host"|] [||]
+        |> Array.head).Hxls
         |> Array.rev
     // Base Hexels
     let hsHx02 = 
@@ -93,9 +94,9 @@ let cls (cnt : int[]) =
         |> Array.rev
     // Size * Base
     let hsHx03 = 
-        Array.zip hsHx02 (Array.tail cnt) 
+        Array.zip3 hsHx02 (Array.tail cnt) [|"";"";"";"";"";""|]
     let hsHx04 = 
-        [|[|hsHx01|] ; (Array.map (fun x -> Array.tail x)((Hexel.clusters sqn hsHx03 hsHx01).Hxls))|] 
+        [|[|hsHx01|] ; Array.map (fun x -> Array.tail (x.Hxls))(Coxel.coxel sqn hsHx03 hsHx01)|] 
         |> Array.concat
     // Scaled Coordinates
     hsHx04 |> crd scl

@@ -9,6 +9,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="Hexel.fs" />
+		<Compile Include="Coxel.fs" />
 		<Compile Include="Bridge.fs" />
 		<Compile Include="Parse.fs" />
 		<Compile Include="Main.fs" />
