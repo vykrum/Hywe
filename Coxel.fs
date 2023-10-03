@@ -5,6 +5,7 @@ open Hexel
 type Cxl = 
     {
         Name : string
+        Posn : string
         Size : int
         Seqn : Sqn
         Base : Hxl
@@ -19,6 +20,7 @@ let coxel
         
     let bas = Array.map(fun (x,_,y,_) -> x,y) ini
     let szn = Array.map(fun (_,_,y,z) -> y,z) ini
+    let idn = Array.map (fun(x,y,_,_)->x,y) ini
 
     let cnt = 
             bas
@@ -83,16 +85,17 @@ let coxel
         cls
         |> Array.map(fun x -> getHxls x)
         
-    let bs1 =  (getHxls bas)
+    let bs1 =  Array.zip (getHxls bas) idn
     
     let cxl = Array.map3 (fun x y z -> 
                                             {
                                                 Name = snd x
+                                                Posn = snd y
                                                 Size = fst x
                                                 Seqn = sqn
-                                                Base = y
+                                                Base = fst y
                                                 Hxls = z
-                                            })szn bs1 cl1
+                                            })szn idn cl1
     cxl
 
 // Coxel Hexel Groups

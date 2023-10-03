@@ -85,7 +85,7 @@ let cls (cnt : int[]) =
     let sqn = HCNN
     // Host Cluster
     let hsHx01 = 
-        (Coxel.coxel sqn [|identity,cnt|>Array.head,"Host"|] [||]
+        (Coxel.coxel sqn [|identity,"",cnt|>Array.head,"Host"|] [||]
         |> Array.head).Hxls
         |> Array.rev
     // Base Hexels
@@ -94,10 +94,12 @@ let cls (cnt : int[]) =
         |> Array.rev
     // Size * Base
     let hsHx03 = 
-        Array.zip3 hsHx02 (Array.tail cnt) [|"";"";"";"";"";""|]
+        let a = Array.zip hsHx02 [|"";"";"";"";"";""|]
+        let b = Array.zip (Array.tail cnt) [|"";"";"";"";"";""|]
+        Array.map2 (fun x y -> (fst x, snd x, fst y, snd y)) a b      
     let hsHx04 = 
         [|[|hsHx01|] ; Array.map (fun x -> Array.tail (x.Hxls))(Coxel.coxel sqn hsHx03 hsHx01)|] 
-        |> Array.concat
+        |> Array.concat  
     // Scaled Coordinates
     hsHx04 |> crd scl
 
