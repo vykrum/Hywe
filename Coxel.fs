@@ -14,11 +14,11 @@ type Cxl =
 // Coxel
 let coxel 
     (sqn : Sqn)
-    (ini : (Hxl*int*string)[])
+    (ini : (Hxl*string*int*string)[])
     (occ : Hxl[]) = 
-    
-    let bas = Array.map(fun (x,y,z) -> x,y) ini
-    let szn = Array.map(fun (x,y,z) -> y,z) ini
+        
+    let bas = Array.map(fun (x,_,y,_) -> x,y) ini
+    let szn = Array.map(fun (_,_,y,z) -> y,z) ini
 
     let cnt = 
             bas
@@ -26,13 +26,13 @@ let coxel
             |> Array.max
     let acc = Array.chunkBySize 1 bas
     let occ = (Array.append occ (getHxls bas)) |> allOG 
-    
+        
     let rec clsts 
         (hxo: (Hxl*int)[])
         (occ : Hxl[])
         (acc:(Hxl*int)[][])
         (cnt : int) = 
-        
+            
         match cnt with 
         | c when c < 0x1 -> acc
         | _ -> 
@@ -61,9 +61,9 @@ let coxel
                                         | None -> (identity,0xFFFFFFFF))                
                     |> Array.map2 (fun x y 
                                     -> fst y, x) rpt
-                
+                    
                 let inc = increments sqn Hxl occ
-                          
+                            
                 let acc = Array.map2  (fun x y
                                         -> Array.append x y) 
                             acc
@@ -82,9 +82,9 @@ let coxel
     let cl1 = 
         cls
         |> Array.map(fun x -> getHxls x)
-    
+        
     let bs1 =  (getHxls bas)
-  
+    
     let cxl = Array.map3 (fun x y z -> 
                                             {
                                                 Name = snd x
