@@ -2,23 +2,34 @@
 
 open Hexel
 
+type Prp = 
+    | Label of string
+    | Refid of string
+    | Count of int
+
 type Cxl = 
     {
-        Name : string
-        Posn : string
-        Size : int
+        Name : Prp
+        Rfid : Prp
+        Size : Prp
         Seqn : Sqn
         Base : Hxl
         Hxls : Hxl[]
-    }  
+    }
+
+let prpVlu (prp : Prp) = 
+    match prp with 
+    | Label prp -> prp
+    | Refid prp -> prp
+    | Count prp -> prp.ToString()
 
 // Coxel
 let coxel 
     (sqn : Sqn)
-    (ini : (Hxl*string*int*string)[])
+    (ini : (Hxl*Prp*Prp*Prp)[])
     (occ : Hxl[]) = 
         
-    let bas = Array.map(fun (x,_,y,_) -> x,y) ini
+    let bas = Array.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
     let szn = Array.map(fun (_,_,y,z) -> y,z) ini
     let idn = Array.map (fun(x,y,_,_)->x,y) ini
 
@@ -85,12 +96,10 @@ let coxel
         cls
         |> Array.map(fun x -> getHxls x)
         
-    let bs1 =  Array.zip (getHxls bas) idn
-    
     let cxl = Array.map3 (fun x y z -> 
                                             {
                                                 Name = snd x
-                                                Posn = snd y
+                                                Rfid = snd y
                                                 Size = fst x
                                                 Seqn = sqn
                                                 Base = fst y
@@ -98,7 +107,7 @@ let coxel
                                             })szn idn cl1
     cxl
 
-// Coxel Hexel Groups
+// Classify Coxel Hexels
 let cxlHxl
     (cxl : Cxl) 
     (occ : Hxl[]) = 
@@ -107,7 +116,7 @@ let cxlHxl
     let bndSqn 
         (sqn : Sqn) 
         (hxl : Hxl[]) = 
-    
+        
         let rec arr 
             (sqn : Sqn) 
             (hxl : Hxl[]) 
@@ -128,14 +137,14 @@ let cxlHxl
                                 | None -> [||]
                 let acc = Array.append acc  hx3
                 arr sqn hxl acc (cnt-1) opt
-        
+            
         let a1 = 
             match hxl with 
             | [||] -> [||]
             | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
 
         let b1 = Array.length a1 = Array.length hxl
-        
+            
         match b1 with 
         | true -> a1
         | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
@@ -144,7 +153,7 @@ let cxlHxl
     let cntSqn
         (sqn : Sqn)
         (hxl : Hxl[]) = 
-    
+        
         let rec ctSq 
             (sqn : Sqn)
             (hxl : Hxl[])
@@ -175,27 +184,27 @@ let cxlHxl
     let cl3 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) cl2
     let bd1 = fst  cl3
     let bd2 = bndSqn cxl.Seqn bd1
-    
+        
     // Core Hexels
     let cr1 = snd cl3
-    
+        
     let oc1 = Array.concat
                 [|
                     occ 
                     cxl.Hxls
                 |] |> allOG
-    
+        
     let cl4 = Array.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
-    
+        
     // Available Hexels
     let av1= fst cl4
     let av2 = cntSqn cxl.Seqn av1
-    
+        
     // Border Hexels
     let br1= snd cl4
 
     // Output : Base, Hxls, Core, Prph, Brdr, Avbl
-    
+        
     {|
         Base = cxl.Base
         Hxls = cl1
@@ -203,5 +212,4 @@ let cxlHxl
         Prph = bd2
         Brdr = br1
         Avbl = av2
-    |}    
-    
+    |}  
