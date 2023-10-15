@@ -2,6 +2,12 @@
 
 open Hexel
 
+/// Properties
+type Prp = 
+    | Label of string
+    | Refid of string
+    | Count of int
+
 type Cxl = 
     {
         Name : Prp
@@ -19,11 +25,12 @@ let prpVlu
     | Refid prp -> prp
     | Count prp -> prp.ToString()
 
-// Coxel
+/// Coxel
 let coxel 
     (sqn : Sqn)
     (ini : (Hxl*Prp*Prp*Prp)[])
-    (occ : Hxl[]) =   
+    (occ : Hxl[]) = 
+        
     let bas = Array.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
     let szn = Array.map(fun (_,_,y,z) -> y,z) ini
     let idn = Array.map (fun(x,y,_,_)->x,y) ini
@@ -102,10 +109,11 @@ let coxel
                                             })szn idn cl1
     cxl
 
-// Classify Coxel Hexels
+/// Classify Coxel Hexels
 let cxlHxl
     (cxl : Cxl) 
     (occ : Hxl[]) = 
+
     // Boundry Hexels Ring
     let bndSqn 
         (sqn : Sqn) 
@@ -198,7 +206,6 @@ let cxlHxl
     let br1= snd cl4
 
     // Output : Base, Hxls, Core, Prph, Brdr, Avbl
-        
     {|
         Base = cxl.Base
         Hxls = cl1
@@ -206,4 +213,5 @@ let cxlHxl
         Prph = bd2
         Brdr = br1
         Avbl = av2
-    |}
+    |}    
+
