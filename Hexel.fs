@@ -21,7 +21,7 @@ type Prp =
 /// adjacent hexels and the position of the first of the six adjaent hexels </summary>
 /// <remarks> 
 /// <para>
-/// Horizontal refers to a Flat Top hexagonal grid
+/// Horizontal refers to a 'Flat Top' hexagonal grid
 /// 
 ///  ___ N N ___     ___     ___     ___     ___     ___
 /// /N W\___/N E\___/   \___/   \___/   \___/   \___/   \
@@ -31,7 +31,7 @@ type Prp =
 /// 
 /// </para>
 /// <para>
-/// Vertical refers to a Pointy Top hexagonal grid 
+/// Vertical refers to a 'Pointy Top' hexagonal grid 
 /// 
 ///   |NW |NE|   |   |   |   |   |   |   |   |   |   |
 ///  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\ 
@@ -42,8 +42,7 @@ type Prp =
 ///   |SW |SE|   |   |   |   |   |   |   |   |   |   |
 /// 
 /// </para>
-/// </remarks>
-    
+/// </remarks>  
 type Sqn =   
     /// <typeparam name="SQ11"> Orientation:Vertical, Flow:Clockwise, Start:East </typeparam>
     /// <typeparam name="SQ12"> Orientation:Vertical, Flow:Anti-Clockwise, Start:East </typeparam>
