@@ -2,11 +2,6 @@
 
 open Hexel
 
-type Prp = 
-    | Label of string
-    | Refid of string
-    | Count of int
-
 type Cxl = 
     {
         Name : Prp
@@ -15,9 +10,10 @@ type Cxl =
         Seqn : Sqn
         Base : Hxl
         Hxls : Hxl[]
-    }
+    }  
 
-let prpVlu (prp : Prp) = 
+let prpVlu 
+    (prp : Prp) = 
     match prp with 
     | Label prp -> prp
     | Refid prp -> prp
@@ -27,8 +23,7 @@ let prpVlu (prp : Prp) =
 let coxel 
     (sqn : Sqn)
     (ini : (Hxl*Prp*Prp*Prp)[])
-    (occ : Hxl[]) = 
-        
+    (occ : Hxl[]) =   
     let bas = Array.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
     let szn = Array.map(fun (_,_,y,z) -> y,z) ini
     let idn = Array.map (fun(x,y,_,_)->x,y) ini
@@ -111,7 +106,6 @@ let coxel
 let cxlHxl
     (cxl : Cxl) 
     (occ : Hxl[]) = 
-
     // Boundry Hexels Ring
     let bndSqn 
         (sqn : Sqn) 
@@ -212,4 +206,4 @@ let cxlHxl
         Prph = bd2
         Brdr = br1
         Avbl = av2
-    |}  
+    |}

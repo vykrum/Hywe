@@ -66,8 +66,8 @@ let crd (scl : int) (hxo : Hxl[][]) =
     // Location to Coordinates
     let cdn (hxo:Hxl[]) (scl:int) =
         Array.map (fun a -> match a with 
-                            |OG(x,y,z) -> ((x*scl),(y*scl),z)
-                            |OP(x,y,z) -> ((x*scl),(y*scl),z)) hxo
+                            |AV(x,y,z) -> ((x*scl),(y*scl),z)
+                            |RV(x,y,z) -> ((x*scl),(y*scl),z)) hxo
 
     let hxXY01 = Array.map (fun x -> cdn x scl) hxo
     let (a,_,_) = (Array.concat hxXY01) |> Array.minBy(fun (x,_,_) -> x)
@@ -82,7 +82,7 @@ let crd (scl : int) (hxo : Hxl[][]) =
     (hxXY02,hxMxmX,hxMxmY)
 
 let cls (cnt : int[]) =
-    let sqn = HCNN
+    let sqn = SQ23
     // Host Cluster
     let hsHx01 = 
         (Coxel.coxel sqn [|identity,Refid "",Count (cnt|>Array.head),Label "Host"|] [||]
