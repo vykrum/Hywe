@@ -1,21 +1,23 @@
 /// <summary> Hexel is a location representing an irregular hexagonal module.
 /// Collections of hexels in a hexagonal grid form Coxels.
-/// A hexel can have a maximum of six neighbouring/adjacent hexels
+/// A hexel can have a maximum of six neighbouring/adjacent hexels.
 /// All neighbouring hexels share at least one common edge </summary>
 module Hexel
+///
 
-/// <summary> Hexel types: Categorization based on location availabity </summary>
-///<typeparam name="AV"> AvaiIable Hexels </typeparam>
-///<typeparam name="RV"> Reserved Hexels </typeparam>
+/// <summary> Hexel types: Categorization based on location availabity. </summary>
+///<typeparam name="AV"> AvaiIable Hexels. </typeparam>
+///<typeparam name="RV"> Reserved Hexels. </typeparam>
 type Hxl = 
     | AV of x:int * y:int * z:int
     | RV of x:int * y:int * z:int
+///
 
 /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
-/// adjacent hexels and the position of the first of the six adjaent hexels </summary>
+/// adjacent hexels and the position of the first of the six adjaent hexels. </summary>
 /// <remarks> 
 /// <para>
-/// Horizontal refers to a Flat Top hexagonal grid
+/// Horizontal refers to a Flat Top hexagonal grid.
 /// 
 ///  ___ N N ___     ___     ___     ___     ___     ___
 /// /N W\___/N E\___/   \___/   \___/   \___/   \___/   \
@@ -25,7 +27,7 @@ type Hxl =
 /// 
 /// </para>
 /// <para>
-/// Vertical refers to a Pointy Top hexagonal grid 
+/// Vertical refers to a Pointy Top hexagonal grid. 
 /// 
 ///   |NW |NE|   |   |   |   |   |   |   |   |   |   |
 ///  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\ 
@@ -64,12 +66,13 @@ type Hxl =
 type Sqn =  
     | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
     | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+///
 
-/// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel
-/// Each array begins with the location of Host hexel followed by the rest in a particular order
+/// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel.
+/// Each array begins with the location of Host hexel followed by the rest in a particular order.
 /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2 </summary>
 /// <param name="sqn"> Sequence to follow. </param>
-/// <returns> An array of  surrounding two dimensional location coordinates </returns>
+/// <returns> An array of two dimensional surrounding locations. </returns>
 let sequence 
     (sqn:Sqn) =  
     match sqn with 
@@ -97,21 +100,26 @@ let sequence
     | SQ32 -> [|0x0,0x0; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2; 0xFFFFFFFE,0x1|]
     | SQ33 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0x0,0x2; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0xFFFFFFFE,0xFFFFFFFF|]
     | SQ34 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
-    
-/// <summary> Identity Hexel </summary>
-/// <returns> Available (AV) Hexel at global origin </returns>
+///
+
+/// <summary> Identity Hexel. </summary>
+/// <returns> Available (AV) Hexel at global origin. </returns>
 let identity = 
     AV(0x0,0x0, 0x0)
+///
 
-/// <summary> Extract coordinates from hxl </summary>
-/// <returns> Tuple of integers representing three dimensional coordinates </returns>
+/// <summary> Extract coordinates from hexel. </summary>
+/// <param name="hexel"> Hexel of type AV/RV. </param>
+/// <returns> Tuple of integers representing three dimensional coordinates. </returns>
 let hxlCrd 
     (hxl : Hxl) = 
     match hxl with 
     | AV (a,b,c) -> (a,b,c)
     | RV (a,b,c) -> (a,b,c)
+///
 
-/// <summary> Standardize hexel type </summary>
+/// <summary> Standardize hexel type. </summary>
+/// <param name="hxl"> An array of hexels. </param>
 /// <returns> Converts all hexels to type AV </returns>
 let allOG 
     (hxl:Hxl[]) = 
@@ -119,27 +127,29 @@ let allOG
     |> Array.map(fun x -> hxlCrd x)
     |> Array.map(fun x -> AV x)
 
-/// <summary> Get Hexel from Tuple </summary>
+/// <summary> Get Hexel from Tuple. </summary>
 let getHxls 
-    (hxo : (Hxl*int)[]) =    
+    (hxo : (Hxl*int)[]) = 
     hxo
     |> Array.map(fun x 
                     -> fst x)
-                        
-/// <summary> Adjacent Hexels </summary>
+///
+
+/// <summary> Adjacent Hexels. </summary>
 /// <param name="sqn"> Sequence to follow. </param>
-/// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
+/// <param name="hxo"> Base hexel. </param> 
 /// <returns> An array of six adjacent hexels. </returns>
 let adjacent 
     (sqn: Sqn)
-    (hxo: Hxl) =      
+    (hxo: Hxl) =
     match hxo with 
     | AV (x,y,z) -> Array.map 
                         (fun (a,b) -> 
                         AV(x+a, y+b,z))(sequence sqn)
     | RV (x,y,z) -> [|RV(x,y,z)|]
+///
 
-/// <summary> Increment Hexel </summary>
+/// <summary> Increment Hexel. </summary>
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
 /// <param name="occ"> Occupied/Unavailable hexels. </param>
@@ -174,12 +184,17 @@ let increment
         | Some a -> a, y
         | None -> (identity,0xFFFFFFFF)
     | _ -> (identity,0xFFFFFFFF)
+///
 
-/// <summary> Available Adjacent Hexels </summary>
+/// <summary> Available Adjacent Hexels. </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="hxo"> Hexel or Tuple containing Base hexel of collection and size. </param> 
+/// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+/// <returns> The count of unoccupied surrounding hexels. </returns>
 let available 
     (sqn : Sqn)
     (hxo : obj)
-    (occ : Hxl[]) =    
+    (occ : Hxl[]) =  
     let occ = occ |> allOG
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
@@ -190,12 +205,17 @@ let available
     |> Array.except 
         (Array.append occ [|hx1|])
     |> Array.length
+///
 
-/// <summary> Increment Hexels </summary>
+/// <summary> Increment Hexels. </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
+/// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+/// <returns> Array of Tuples containing Base hexel of collection and reduced size. </returns>
 let increments 
     (sqn : Sqn)
     (hxo : (Hxl*int)[]) 
-    (occ : Hxl[]) =     
+    (occ : Hxl[]) = 
     let occ = (Array.append occ (getHxls hxo)) |> allOG
     let inc = 
         Array.scan (fun ac st -> 
@@ -203,12 +223,19 @@ let increments
         increment sqn st (Array.append[|fst ac|] occ )) 
             hxo[0] hxo
             |> Array.tail
-        
+    ///
+    
+    /// <summary> Generate alternate hexel in cases where there are overlapping hexels </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
+    /// <param name="hxo"> Array of Tuples containing Incremental hexel of collection and reduced size. </param>
+    /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+    /// <returns> Array of Tuples containing alternate incremental hexel of collection and reduced size. </returns>
     let replaceDuplicate 
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
         (inc : (Hxl*int)[]) 
-        (occ : Hxl[]) =      
+        (occ : Hxl[]) =   
         let in1 = Array.map (fun x -> snd x)inc
         let lc1 = getHxls hxo 
         let ic1 = getHxls inc 
@@ -225,4 +252,3 @@ let increments
                                         | true -> fst(increment sqn c oc1),d) in1
         
     replaceDuplicate sqn hxo inc occ
-

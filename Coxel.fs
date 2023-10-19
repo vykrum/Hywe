@@ -1,13 +1,26 @@
 ﻿module Coxel
 
 open Hexel
+///
 
-/// Properties
+/// <summary> Coxels are primarily a collections of unique hexels </summary>
+/// <summary> Coxel type properties </summary>
+/// <typeparam name="Label"> Name </typeparam>
+/// <typeparam name="Refid"> Unique reference ID </typeparam>
+/// <typeparam name="Count"> ANumber of hexels in Coxel </typeparam>
 type Prp = 
     | Label of string
     | Refid of string
     | Count of int
+///
 
+/// <summary> Coxel type consists of hexels and properties. </summary>
+/// <typeparam name="Name"> Coxel Name. </typeparam>
+/// <typeparam name="Rfid"> Reference ID. </typeparam>
+/// <typeparam name="Size"> Number of hexels. </typeparam>
+/// <typeparam name="Seqn"> Sequence of hexel arrangement. </typeparam>
+/// <typeparam name="Base"> Base hexel. </typeparam>
+/// <typeparam name="Hxls"> Constituent Hexels. </typeparam>
 type Cxl = 
     {
         Name : Prp
@@ -17,15 +30,25 @@ type Cxl =
         Base : Hxl
         Hxls : Hxl[]
     }  
+///
 
+/// <summary> Property value types </summary>
+/// <typeparam name="Label">  Name of coxel. </typeparam>
+/// <typeparam name="Refid">  Reference ID. </typeparam>
+/// <typeparam name="Count">  Number of hexels as a string. </typeparam>
 let prpVlu 
     (prp : Prp) = 
     match prp with 
     | Label prp -> prp
     | Refid prp -> prp
     | Count prp -> prp.ToString()
+///
 
-/// Coxel
+/// <summary> Creating an array of coxels. </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
+/// <param name="occ"> Hexels that are unavailable. </param>
+/// <returns> An array of coxels. </returns>
 let coxel 
     (sqn : Sqn)
     (ini : (Hxl*Prp*Prp*Prp)[])
@@ -108,17 +131,28 @@ let coxel
                                                 Hxls = z
                                             })szn idn cl1
     cxl
+///
 
-/// Classify Coxel Hexels
+/// <summary> Categorize constituent Hexels within a Coxel. </summary>
+/// <param name="cxl"> A coxel. </param>
+/// <param name="occ"> Hexels that are unavailable. </param>
+/// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
 let cxlHxl
     (cxl : Cxl) 
     (occ : Hxl[]) = 
-
-    // Boundry Hexels Ring
+    /// <summary> Boundry Hexels Ring. </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxl"> All constituent hexels. </param>
+    /// <returns> Boundary/Peripheral hexels. </returns>
     let bndSqn 
         (sqn : Sqn) 
         (hxl : Hxl[]) = 
-        
+        /// <summary> Arrange/sort hexels in continuous sequence. </summary>
+        /// <param name="sqn"> Sequence to follow. </param>
+        /// <param name="hxl"> Array of hexels. </param>
+        /// <param name="acc"> Accumulator for recursive function. </param>
+        /// <param name="cnt"> Counter. </param>
+        /// <returns> Array of sorted hexels </returns>
         let rec arr 
             (sqn : Sqn) 
             (hxl : Hxl[]) 
@@ -151,11 +185,10 @@ let cxlHxl
         | true -> a1
         | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
 
-    // Hexel Ring Segment Sequence
+    /// <summary> Hexel Ring Segment Sequence. </summary>
     let cntSqn
         (sqn : Sqn)
-        (hxl : Hxl[]) = 
-        
+        (hxl : Hxl[]) =      
         let rec ctSq 
             (sqn : Sqn)
             (hxl : Hxl[])
@@ -181,13 +214,13 @@ let cxlHxl
         | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
 
     let cl1 = cxl.Hxls
-    // Bounding Hexels
+    /// Bounding Hexels
     let cl2 =  Array.tail cl1
     let cl3 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) cl2
     let bd1 = fst  cl3
     let bd2 = bndSqn cxl.Seqn bd1
         
-    // Core Hexels
+    /// Core Hexels
     let cr1 = snd cl3
         
     let oc1 = Array.concat
@@ -198,14 +231,13 @@ let cxlHxl
         
     let cl4 = Array.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
         
-    // Available Hexels
+    /// Available Hexels
     let av1= fst cl4
     let av2 = cntSqn cxl.Seqn av1
         
-    // Border Hexels
+    /// Border Hexels
     let br1= snd cl4
-
-    // Output : Base, Hxls, Core, Prph, Brdr, Avbl
+ 
     {|
         Base = cxl.Base
         Hxls = cl1
@@ -213,5 +245,4 @@ let cxlHxl
         Prph = bd2
         Brdr = br1
         Avbl = av2
-    |}    
-
+    |}
