@@ -126,8 +126,10 @@ let allOG
     hxl
     |> Array.map(fun x -> hxlCrd x)
     |> Array.map(fun x -> AV x)
+///
 
 /// <summary> Get Hexel from Tuple. </summary>
+/// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
 let getHxls 
     (hxo : (Hxl*int)[]) = 
     hxo
