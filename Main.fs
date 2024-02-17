@@ -105,7 +105,7 @@ let view model dispatch =
             div{
                 attr.id "description"
                 p{
-                    "Hywe is a space layout planning concept being developed as an early stage design interface."
+                    "Hywe is a space layout planning concept currently undergoing its formative stages of development being developed as an early stage design interface."
                     br
                     "Manipulating the color coded sliders controls the scale of corresponding clusters."
                 }
