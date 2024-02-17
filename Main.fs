@@ -122,8 +122,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.host (fun a -> dispatch (SetHost a))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "host"
+                    attr.``type`` "text"
+                    $" {model.host * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "host"
                     bind.input.string model.lblh (fun a -> dispatch (LblHost a))
@@ -139,8 +145,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.cls1 (fun b -> dispatch (SetCls1 b))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "cls1"
+                    attr.``type`` "text"
+                    $" {model.cls1 * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "cls1"
                     bind.input.string model.lbl1 (fun a -> dispatch (LblCls1 a))
@@ -156,8 +168,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.cls2 (fun c -> dispatch (SetCls2 c))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "cls2"
+                    attr.``type`` "text"
+                    $" {model.cls2 * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "cls2"
                     bind.input.string model.lbl2 (fun a -> dispatch (LblCls2 a))
@@ -173,8 +191,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.cls3 (fun d -> dispatch (SetCls3 d))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "cls3"
+                    attr.``type`` "text"
+                    $" {model.cls3 * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "cls3"
                     bind.input.string model.lbl3 (fun a -> dispatch (LblCls3 a))
@@ -190,8 +214,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.cls4 (fun e -> dispatch (SetCls4 e))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "cls4"
+                    attr.``type`` "text"
+                    $" {model.cls4 * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "cls4"
                     bind.input.string model.lbl4 (fun a -> dispatch (LblCls4 a))
@@ -207,8 +237,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.cls5 (fun e -> dispatch (SetCls5 e))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "cls5"
+                    attr.``type`` "text"
+                    $" {model.cls5 * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "cls5"
                     bind.input.string model.lbl5 (fun a -> dispatch (LblCls5 a))
@@ -224,8 +260,14 @@ let view model dispatch =
                     attr.max "25"
                     bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
                 }
-                input{
+                label{
                     attr.``class`` "label"
+                    attr.id "cls6"
+                    attr.``type`` "text"
+                    $"{model.cls6 * 4}%%"
+                }
+                input{
+                    attr.``class`` "input"
                     attr.``type`` "text"
                     attr.id "cls6"
                     bind.input.string model.lbl6 (fun a -> dispatch (LblCls6 a))

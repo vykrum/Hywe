@@ -74,7 +74,7 @@ html, body {
 
 .slider {
     -webkit-appearance: none;
-    width: 85%;
+    width: 80%;
     height: 4px;
     margin-left: 10px;
     border-radius: 2px;
@@ -85,12 +85,22 @@ html, body {
     transition: opacity .2s;
 }
 
-.label {
+.input {
     width: 15%;
     border-radius: 4px;
     margin-right: 5px;
     font-size: 10px;
     opacity: 0.85;
+    text-align: center;
+}
+
+.label {
+    width: 25px;
+    border-radius: 4px;
+    margin-right: 5px;
+    font-size: 10px;
+    opacity: 0.85;
+    text-align: center;
 }
 
 
