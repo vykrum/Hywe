@@ -23,6 +23,7 @@ type Model =
         lbl6 : string
     }
 
+// Default Input
 let initModel =
     {
         cls0 = 6
