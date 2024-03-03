@@ -118,6 +118,28 @@ let hxlCrd
     | RV (a,b,c) -> (a,b,c)
 ///
 
+/// <summary> Valid Hexels. </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="hxl"> Hexel whose coordinates need to be validated. </param> 
+/// <returns> Valid hexel coordinates. </returns>
+let hxlVld 
+    (sqn : Sqn)
+    (hxl : Hxl) = 
+        let crx,cry,crz = hxlCrd hxl
+        let vld = match sqn with
+                        | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
+                            -> match crx,cry with 
+                                | a,b when (b%4 = 0) -> (a + (a%2)), b, crz
+                                | _ , b-> crx, (b + (b%2)), crz
+                        | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+                            -> match crx,cry with 
+                                | a,b when (a%4 = 0) -> a, (b + (b%2)), crz
+                                | a , _->  (a + (a%2)), cry, crz
+        match hxl with
+        | AV(_) -> AV(vld)
+        | RV(_) -> RV(vld)
+///
+
 /// <summary> Standardize hexel type. </summary>
 /// <param name="hxl"> An array of hexels. </param>
 /// <returns> Converts all hexels to type AV </returns>
