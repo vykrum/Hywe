@@ -8,9 +8,9 @@
 	  <Content Remove="wwwroot\twitter.svg" />
 	</ItemGroup>
 	<ItemGroup>
-		<Content Include="Xml\space.xml" />
 		<Compile Include="Hexel.fs" />
 		<Compile Include="Coxel.fs" />
+		<Compile Include="Shapes.fs" />
 		<Compile Include="Bridge.fs" />
 		<Compile Include="Parse.fs" />
 		<Compile Include="Main.fs" />
@@ -24,5 +24,8 @@
 		<PackageReference Include="Bolero.Build" Version="0.*" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.8" />
 		<PackageReference Include="System.Net.Http.Json" Version="7.0.1" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Xml\" />
 	</ItemGroup>
 </Project>
