@@ -5,7 +5,7 @@ env:
 # Controls when the action will run
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build-and-deploy:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '20' # Update to use Node.js 20
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
