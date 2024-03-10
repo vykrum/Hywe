@@ -7,7 +7,7 @@ open Hexel
 /// <param name="org"> Start Hexel. </param> 
 /// <param name="lgt"> Sequence Length. </param> 
 /// <param name="vrt"> Vertical / Horizontal. </param> 
-/// <returns> Array of sequential Hexels. </returns>
+/// <returns> Array of Sequential Reserved Hexels. </returns>
 let hxlOrt 
     (sqn : Sqn)
     (org : Hxl)
