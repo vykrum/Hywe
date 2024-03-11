@@ -5,16 +5,6 @@ open Bolero.Html
 open Hexel
 open Coxel
 
-type hxg1 = Template<
-      """ <polygon 
-      points="0,0,-10,10,-10,20,0,30,10,20,10,10" 
-      fill="${cl}"
-      stroke="${cl}"
-      transform="translate${tr}"
-      opacity = "0.75"
-      stroke-opacity="0.125"
-      >""">
-
 type hxgn = Template<
       """ <polygon 
       points="0,0,10,10,20,10,30,0,20,-10,10,-10" 
@@ -38,26 +28,31 @@ type svtx = Template<
 // Hexel Scale
 let scl = 10
 
-let cluster (cd: ((int*int*int)[] * string * string)[]) wdt hgt : Node =
+/// <summary> Coxel SVG composition </summary>
+/// <param name="prp"> Coxel Array of Hexel coordinates (array) * Name * Color </param>
+/// <param name="wdt"> Width </param>
+/// <param name="hgt"> Height </param>
+/// <returns> SVG of Coxel composition </returns>
+let cluster (prp: ((int*int*int)[] * string * string)[]) wdt hgt : Node =
     svg {
          attr.width wdt
          attr.height hgt
-         for c in cd do
-             let (lc1,n,cr) = c
-             let lc = Array.map(fun (a,b,_) -> a,b) lc1 
-             let x1 = lc |> Array.tryItem ((Array.length lc)/2)
-             let x,y = match x1 with 
+         for cmp in prp do
+             let (xyz,label,color) = cmp
+             let xy = Array.map(fun (a,b,_) -> a,b) xyz 
+             let xx = xy |> Array.tryItem ((Array.length xy)/2)
+             let x,y = match xx with 
                          | None -> -10,-10
                          | Some a -> a
-             for xy in lc do
+             for locn in xy do
                     hxgn() 
-                        .tr($"{xy}")
-                        .cl($"{cr}")
+                        .tr($"{locn}")
+                        .cl($"{color}")
                         .Elt()
              svtx()
                    .xx($"{x}")
                    .yy($"{y}")
-                   .nm($"{n}")
+                   .nm($"{label}")
                    .Elt()
         }
 

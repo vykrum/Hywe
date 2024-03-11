@@ -32,3 +32,4 @@ let hxlOrt
                     |> Array.map (fun x -> [|RV(x,hxy,hxz);RV(x+2,hxy+1,hxz)|])
                     |> Array.concat
                     |> Array.take ((lgt/2)+1)
+///
