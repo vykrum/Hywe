@@ -5,6 +5,20 @@ open Bolero.Html
 open Hexel
 open Coxel
 
+type Shp = 
+    | HxgFlt
+    | HxgPnt
+
+let shape 
+    (shp : Shp)
+    (scl : int) = 
+    let sh = match shp with 
+                | HxgFlt -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
+                | HxgPnt -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
+    sh 
+        |> Array.map (fun x -> string (x * scl)) 
+        |> String.concat ","
+
 type hxgn = Template<
       """ <polygon 
       points="0,0,10,10,20,10,30,0,20,-10,10,-10" 

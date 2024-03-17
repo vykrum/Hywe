@@ -1,6 +1,7 @@
-﻿module Shapes
+﻿module Shape
 
 open Hexel
+
 
 /// <summary> Ortogonal Hexel Sequence </summary>
 /// <param name="sqn"> Sequence to follow. </param>
