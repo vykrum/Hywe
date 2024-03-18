@@ -6,8 +6,9 @@ open Hexel
 open Coxel
 
 type Shp = 
-    | HxgFlt
-    | HxgPnt
+    | HxFl
+    | HxPt
+    | QdSq
 
 /// <summary> Vertices based on shape </summary>
 /// <param name="shp"></param>
@@ -16,8 +17,9 @@ let vertices
     (shp : Shp)
     (scl : int) = 
     let vrtx = match shp with 
-                | HxgFlt -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
-                | HxgPnt -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
+                | HxFl -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
+                | HxPt -> [|0;0;1;1;2;0;2;-1;1;-2;0;-1|]
+                | QdSq -> [|0;0;1;0;2;0;2;-2;1;-2;0;-2|]
     vrtx 
         |> Array.map (fun x -> string (x * scl)) 
         |> String.concat ","
@@ -41,8 +43,6 @@ type svtx = Template<
     fill = "#808080"
     opacity = "1"
     >${nm}</text> """>
-          
-
 
 /// <summary> Coxel SVG composition </summary>
 /// <param name="prp"> Coxel Array of Hexel coordinates (array) * Name * Color </param>
@@ -85,20 +85,23 @@ let crd (scl : int) (hxo : Hxl[][]) =
 
     let hxXY01 = Array.map (fun x -> cdn x scl) hxo
     let (a,_,_) = (Array.concat hxXY01) |> Array.minBy(fun (x,_,_) -> x)
-    let hxShfX = 0 - a + 40
+    let hxShfX = 0 - a + (4*scl)
     let (_,b,_) = (Array.concat hxXY01) |> Array.minBy(fun (_,x,_) -> x)
-    let hxShfY = 0 - b + 40
+    let hxShfY = 0 - b + (4*scl)
     let (c,_,_) = (Array.concat hxXY01) |> Array.maxBy(fun (x,_,_) -> x)
-    let hxMxmX = c + hxShfX + 40
+    let hxMxmX = c + hxShfX + (4*scl)
     let (_,d,_) = (Array.concat hxXY01) |> Array.maxBy(fun (_,x,_) -> x)
-    let hxMxmY = d + hxShfY + 40
+    let hxMxmY = d + hxShfY + (4*scl)
     let hxXY02 = Array.map(fun aa -> Array.map (fun (x,y,z)-> (x + hxShfX), (y + hxShfY),z)aa) hxXY01
     (hxXY02,hxMxmX,hxMxmY)
 
 let cls 
     (scl : int)
+    (shp : Shp)
     (cnt : int[]) =
-    let sqn = SQ23
+    let sqn = match shp with
+                | HxFl -> SQ23
+                | HxPt | QdSq -> SQ11
     // Host Cluster
     let hsHx01 = 
         (Coxel.coxel sqn [|identity,Refid "",Count (cnt|>Array.head),Label "Host"|] [||]
@@ -122,5 +125,3 @@ let cls
         |> Array.concat  
     // Scaled Coordinates
     hsHx04 |> crd scl
-
-

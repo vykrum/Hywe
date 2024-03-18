@@ -84,6 +84,18 @@ html, body {
     -webkit-transition: .2s;
     transition: opacity .2s;
 }
+.slider-1 {
+    -webkit-appearance: none;
+    width: 50%;
+    height: 4px;
+    margin-left: 10px;
+    border-radius: 2px;
+    background: #d3d3d1;
+    outline: none;
+    opacity: 0.9;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
 
 .input {
     width: 15%;
@@ -135,6 +147,16 @@ html, body {
 }
 
 #cls6 {
+    background: #eabdb5;
+    border: none;
+}
+
+#shp1 {
+    background: #eabdb5;
+    border: none;
+}
+
+#scl1 {
     background: #eabdb5;
     border: none;
 }

@@ -21,6 +21,8 @@ type Model =
         lbl4 : string
         lbl5 : string
         lbl6 : string
+        shp1 : int
+        scl1 : int
     }
 
 // Default Input
@@ -40,6 +42,8 @@ let initModel =
         lbl4 = ""
         lbl5 = ""
         lbl6 = ""
+        shp1 = 1
+        scl1 = 10
     }
 
 type Message =
@@ -57,6 +61,8 @@ type Message =
     | LblCls4 of string
     | LblCls5 of string
     | LblCls6 of string
+    | SetShp1 of int
+    | SetScl1 of int
 
 let update message model =
     match message with
@@ -74,6 +80,8 @@ let update message model =
     | LblCls4 value -> { model with lbl4 = value }
     | LblCls5 value -> { model with lbl5 = value }
     | LblCls6 value -> { model with lbl6 = value }
+    | SetShp1 value -> { model with shp1 = value }
+    | SetScl1 value -> { model with scl1 = value }
 
 // Interface
 let view model dispatch =      
@@ -116,6 +124,34 @@ let view model dispatch =
                     "Hywe is a space layout planning concept currently undergoing its formative stages of development being developed as an early stage design interface."
                     br
                     "Manipulating the color coded sliders controls the scale of corresponding clusters."
+                }
+            }
+        }
+        // Shape and Scale Controls
+        div{
+            // Shape
+            div{
+                attr.``class`` "flex-container-1"
+                // Slider Shape
+                input{
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.id "shp1"
+                    attr.min "1"
+                    attr.max "3"
+                    bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
+                }
+            }
+            div{
+                attr.``class`` "flex-container-1"
+                // Slider Scale
+                input{
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.id "scl1"
+                    attr.min "5"
+                    attr.max "30"
+                    bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
                 }
             }
         }
@@ -311,10 +347,17 @@ let view model dispatch =
                 }
             }   
             }
-        // Scale
-        let scl = 10
 
-        let (loc,wdt,hgt) = cls scl ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
+
+        // Scale
+        let scl = model.scl1
+        // Shape
+        let shp = match model.shp1 with 
+                    | 1 -> HxFl
+                    | 2 -> HxPt
+                    | _ -> QdSq
+
+        let (loc,wdt,hgt) = cls scl shp ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
         
         // Cluster Names
         let lbls = [|model.lbl0;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
@@ -325,9 +368,10 @@ let view model dispatch =
         // The Clusters SVG
         div{
             attr.``class`` "center"
-            cluster (Array.zip3 loc lbls clrs) HxgFlt scl wdt hgt
+            cluster (Array.zip3 loc lbls clrs) shp scl wdt hgt
             }
         
+
         // Footer
         footer{
             a{
