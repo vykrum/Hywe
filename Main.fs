@@ -311,8 +311,10 @@ let view model dispatch =
                 }
             }   
             }
+        // Scale
+        let scl = 10
 
-        let (loc,wdt,hgt) = cls ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
+        let (loc,wdt,hgt) = cls scl ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
         
         // Cluster Names
         let lbls = [|model.lbl0;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
@@ -323,7 +325,7 @@ let view model dispatch =
         // The Clusters SVG
         div{
             attr.``class`` "center"
-            cluster (Array.zip3 loc lbls clrs) wdt hgt
+            cluster (Array.zip3 loc lbls clrs) HxgFlt scl wdt hgt
             }
         
         // Footer

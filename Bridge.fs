@@ -9,19 +9,22 @@ type Shp =
     | HxgFlt
     | HxgPnt
 
-let shape 
+/// <summary> Vertices based on shape </summary>
+/// <param name="shp"></param>
+/// <param name="scl"></param>
+let vertices 
     (shp : Shp)
     (scl : int) = 
-    let sh = match shp with 
+    let vrtx = match shp with 
                 | HxgFlt -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
                 | HxgPnt -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
-    sh 
+    vrtx 
         |> Array.map (fun x -> string (x * scl)) 
         |> String.concat ","
 
 type hxgn = Template<
       """ <polygon 
-      points="0,0,10,10,20,10,30,0,20,-10,10,-10" 
+      points="${pt}" 
       fill="${cl}"
       stroke="${cl}"
       transform="translate${tr}"
@@ -39,15 +42,16 @@ type svtx = Template<
     opacity = "1"
     >${nm}</text> """>
           
-// Hexel Scale
-let scl = 10
+
 
 /// <summary> Coxel SVG composition </summary>
 /// <param name="prp"> Coxel Array of Hexel coordinates (array) * Name * Color </param>
+/// <param name="shp"> Shape </param>
+/// <param name="scl"> Scale </param>
 /// <param name="wdt"> Width </param>
 /// <param name="hgt"> Height </param>
 /// <returns> SVG of Coxel composition </returns>
-let cluster (prp: ((int*int*int)[] * string * string)[]) wdt hgt : Node =
+let cluster (prp: ((int*int*int)[] * string * string)[]) shp scl wdt hgt : Node =
     svg {
          attr.width wdt
          attr.height hgt
@@ -59,7 +63,8 @@ let cluster (prp: ((int*int*int)[] * string * string)[]) wdt hgt : Node =
                          | None -> -10,-10
                          | Some a -> a
              for locn in xy do
-                    hxgn() 
+                    hxgn()
+                        .pt($"{vertices shp scl}")
                         .tr($"{locn}")
                         .cl($"{color}")
                         .Elt()
@@ -90,7 +95,9 @@ let crd (scl : int) (hxo : Hxl[][]) =
     let hxXY02 = Array.map(fun aa -> Array.map (fun (x,y,z)-> (x + hxShfX), (y + hxShfY),z)aa) hxXY01
     (hxXY02,hxMxmX,hxMxmY)
 
-let cls (cnt : int[]) =
+let cls 
+    (scl : int)
+    (cnt : int[]) =
     let sqn = SQ23
     // Host Cluster
     let hsHx01 = 
