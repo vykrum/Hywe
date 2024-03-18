@@ -347,8 +347,6 @@ let view model dispatch =
                 }
             }   
             }
-
-
         // Scale
         let scl = model.scl1
         // Shape
@@ -371,7 +369,6 @@ let view model dispatch =
             cluster (Array.zip3 loc lbls clrs) shp scl wdt hgt
             }
         
-
         // Footer
         footer{
             a{
