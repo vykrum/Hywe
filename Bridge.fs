@@ -5,10 +5,14 @@ open Bolero.Html
 open Hexel
 open Coxel
 
+/// <summary> Module shape in tessalated hexagonal grid. </summary>
+/// <typeparam name="HxFl"> Hexagon Flat-Top. </typeparam>
+/// <typeparam name="HxPt"> Hexagon Pointy-Top. </typeparam>
+/// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
+/// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
+/// <typeparam name="QdSq"> Square. </typeparam>
 type Shp = 
-    | HxFl
-    | HxPt
-    | QdSq
+    | HxFl | HxPt | RhHr | RhVr | QdSq
 
 /// <summary> Vertices based on shape </summary>
 /// <param name="shp"></param>
@@ -19,7 +23,9 @@ let vertices
     let vrtx = match shp with 
                 | HxFl -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
                 | HxPt -> [|0;0;1;1;2;0;2;-1;1;-2;0;-1|]
-                | QdSq -> [|0;0;1;0;2;0;2;-2;1;-2;0;-2|]
+                | RhHr -> [|0;0;2;1;4;0;2;-1|]
+                | RhVr -> [|0;0;1;2;2;0;1;-2|]
+                | QdSq -> [|0;0;2;0;2;-2;0;-2|]          
     vrtx 
         |> Array.map (fun x -> string (x * scl)) 
         |> String.concat ","
@@ -100,8 +106,8 @@ let cls
     (shp : Shp)
     (cnt : int[]) =
     let sqn = match shp with
-                | HxFl -> SQ23
-                | HxPt | QdSq -> SQ11
+                | HxFl | RhHr -> SQ23
+                | HxPt | QdSq | RhVr -> SQ21
     // Host Cluster
     let hsHx01 = 
         (Coxel.coxel sqn [|identity,Refid "",Count (cnt|>Array.head),Label "Host"|] [||]

@@ -138,7 +138,7 @@ let view model dispatch =
                     attr.``type`` "range"
                     attr.id "shp1"
                     attr.min "1"
-                    attr.max "3"
+                    attr.max "5"
                     bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
                 }
             }
@@ -353,6 +353,8 @@ let view model dispatch =
         let shp = match model.shp1 with 
                     | 1 -> HxFl
                     | 2 -> HxPt
+                    | 3 -> RhHr
+                    | 4 -> RhVr
                     | _ -> QdSq
 
         let (loc,wdt,hgt) = cls scl shp ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
