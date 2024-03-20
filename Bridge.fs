@@ -110,6 +110,7 @@ let cls
     (scl : int)
     (shp : Shp)
     (cnt : int[]) =
+    // Shape matched with appropriate sequence
     let sqn = match shp with
                 | HxFl | RhHr | PrAn -> SQ23
                 | HxPt | QdSq | RhVr | PrFl -> SQ21
