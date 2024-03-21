@@ -4,6 +4,7 @@ open Bolero
 open Bolero.Html
 open Hexel
 open Coxel
+///
 
 /// <summary> Module shape in tessalated hexagonal grid. </summary>
 /// <typeparam name="HxFl"> Hexagon Flat-Top. </typeparam>
@@ -15,6 +16,7 @@ open Coxel
 /// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
 type Shp = 
     | HxFl | HxPt | QdSq | PrFl | PrAn | RhHr | RhVr
+///
 
 /// <summary> Vertices based on shape </summary>
 /// <param name="shp"></param>
@@ -54,6 +56,7 @@ type svtx = Template<
     fill = "#808080"
     opacity = "1"
     >${nm}</text> """>
+///
 
 /// <summary> Coxel SVG composition </summary>
 /// <param name="prp"> Coxel Array of Hexel coordinates (array) * Name * Color </param>

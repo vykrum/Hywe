@@ -358,12 +358,16 @@ let cntSqn
                 let b = Array.last acc
                 let hxl = Array.except [|b|] hxl
                 let d = (adjacent sqn b) |> Array.tail
-                let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.tryHead
+                let e = d |> Array.filter
+                            (fun x -> Array.contains x hxl) 
+                            |> Array.tryHead
                 let f = match e with 
                             | Some a -> [|a|]
                             | None -> [||]
                 let acc = Array.append acc f
                 ctSq sqn hxl acc (cnt-1)
+    let hxl = hxl |> Array.sortByDescending 
+                (fun x -> available sqn x hxl)
     let cnt = Array.length(hxl)
     let arr =  ctSq sqn hxl ([|Array.head hxl|]) cnt
     let bln = cnt = Array.length(arr)

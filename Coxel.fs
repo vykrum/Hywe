@@ -146,7 +146,7 @@ let cxlHxl
     let cl2 = match ((available cxl.Seqn cxl.Base cl1) > 0) with
                     | false -> cl1
                     | true -> Array.tail cl1
-    let cl3 = cl1 |> Array.Parallel.partition
+    let cl3 = cl2 |> Array.Parallel.partition
                 (fun x-> (available cxl.Seqn x cl2) > 0) 
     let bd1 = cl3 |> fst |> bndSqn cxl.Seqn
         
