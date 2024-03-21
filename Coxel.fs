@@ -63,7 +63,7 @@ let coxel
             |> Array.map (fun x -> snd x)
             |> Array.max
     let acc = Array.chunkBySize 1 bas
-    let occ = (Array.append occ (getHxls bas)) |> allOG 
+    let occ = (Array.append occ (getHxls bas)) |> allAV false 
         
     let rec clsts 
         (hxo: (Hxl*int)[])
@@ -82,7 +82,7 @@ let coxel
                     |> Array.append (getHxls hxo)
                     |> Array.append [|identity|]
                     |> Array.distinct
-                    |> allOG
+                    |> allAV false
 
                 let rpt = Array.map (fun x 
                                         -> (snd x) - 0x1) hxo
@@ -107,7 +107,7 @@ let coxel
                             acc
                             (Array.chunkBySize 1 inc)
 
-                let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allOG
+                let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allAV false
 
                 (clsts Hxl occ acc (cnt - 0x1))
 
@@ -138,15 +138,17 @@ let coxel
 /// <param name="occ"> Hexels that are unavailable. </param>
 /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
 let cxlHxl
-    (cxl : Cxl) 
+    (cxl : Cxl)     
     (occ : Hxl[]) = 
-    
-    let cl1 = cxl.Hxls
+
     /// Bounding Hexels
-    let cl2 =  Array.tail cl1
-    let cl3 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) cl2
-    let bd1 = fst  cl3
-    let bd2 = bndSqn cxl.Seqn bd1
+    let cl1 = cxl.Hxls
+    let cl2 = match ((available cxl.Seqn cxl.Base cl1) > 0) with
+                    | false -> cl1
+                    | true -> Array.tail cl1
+    let cl3 = cl1 |> Array.Parallel.partition
+                (fun x-> (available cxl.Seqn x cl2) > 0) 
+    let bd1 = cl3 |> fst |> bndSqn cxl.Seqn
         
     /// Core Hexels
     let cr1 = snd cl3
@@ -155,13 +157,13 @@ let cxlHxl
                 [|
                     occ 
                     cxl.Hxls
-                |] |> allOG
+                |] |> allAV false
         
-    let cl4 = Array.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
+    let cl4 = bd1 |> Array.Parallel.partition
+                (fun x-> (available cxl.Seqn x oc1) > 0)
         
     /// Available Hexels
-    let av1= fst cl4
-    let av2 = cntSqn cxl.Seqn av1
+    let av1= cl4 |> fst |> cntSqn cxl.Seqn
         
     /// Border Hexels
     let br1= snd cl4
@@ -170,7 +172,7 @@ let cxlHxl
         Base = cxl.Base
         Hxls = cl1
         Core = cr1
-        Prph = bd2
+        Prph = bd1
         Brdr = br1
-        Avbl = av2
-    |}
+        Avbl = av1
+    |}    

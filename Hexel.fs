@@ -153,14 +153,18 @@ let hxlVld
         | RV(_) -> RV(vld)
 ///
 
-/// <summary> Standardize hexel type. </summary>
+/// <summary> Standardize hexels to type AV </summary>
+/// <param name="rev"> If true, Standardize to type RV. </param>
 /// <param name="hxl"> An array of hexels. </param>
 /// <returns> Converts all hexels to type AV </returns>
-let allOG 
+let allAV 
+    (rev:bool)
     (hxl:Hxl[]) = 
     hxl
-    |> Array.map(fun x -> hxlCrd x)
-    |> Array.map(fun x -> AV x)
+    |> Array.Parallel.map(fun x -> hxlCrd x)
+    |> Array.Parallel.map(fun x -> match rev with 
+                                                    | true -> RV x
+                                                    | false -> AV x)
 ///
 
 /// <summary> Get Hexel from Tuple. </summary>
@@ -200,7 +204,7 @@ let increment
                     occ
                     [|(fst hxo)|]
                     [|identity|]
-                |] |> allOG
+                |] |> allAV false
     match hxo with 
     | x,y when y >= 0x0 -> 
         let inc1 = x 
@@ -232,7 +236,7 @@ let available
     (sqn : Sqn)
     (hxo : obj)
     (occ : Hxl[]) =  
-    let occ = occ |> allOG
+    let occ = occ |> allAV false
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
@@ -253,10 +257,10 @@ let increments
     (sqn : Sqn)
     (hxo : (Hxl*int)[]) 
     (occ : Hxl[]) = 
-    let occ = (Array.append occ (getHxls hxo)) |> allOG
+    let occ = (Array.append occ (getHxls hxo)) |> allAV false
     let inc = 
         Array.scan (fun ac st -> 
-        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allOG
+        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allAV false
         increment sqn st (Array.append[|fst ac|] occ )) 
             hxo[0] hxo
             |> Array.tail
@@ -276,7 +280,7 @@ let increments
         let in1 = Array.map (fun x -> snd x)inc
         let lc1 = getHxls hxo 
         let ic1 = getHxls inc 
-        let oc1 = Array.concat[|occ;lc1;ic1|] |> allOG
+        let oc1 = Array.concat[|occ;lc1;ic1|] |> allAV false
         let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
         let bl1 = Array.map2 (fun x y -> x=y) [|(0x0)..(Array.length ic1)-(0x1)|] id1   
         let tp1 = Array.zip3 bl1 ic1 hxo  
