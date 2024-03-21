@@ -1,4 +1,4 @@
-module Hyve.Client.Main
+module Hywe.Client.Main
 
 open Elmish
 open Bolero
