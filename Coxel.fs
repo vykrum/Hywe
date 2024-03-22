@@ -128,51 +128,52 @@ let coxel
                                                 Size = fst x
                                                 Seqn = sqn
                                                 Base = fst y
-                                                Hxls = z
+                                                Hxls = z 
+                                                    |> hxlTyp 
+                                                        sqn 
+                                                        (Array.append occ z)
                                             })szn idn cl1
     cxl
 ///
 
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>
 /// <param name="cxl"> A coxel. </param>
-/// <param name="occ"> Hexels that are unavailable. </param>
 /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
 let cxlHxl
-    (cxl : Cxl)     
-    (occ : Hxl[]) = 
+    (cxl : Cxl)  = 
 
-    /// Bounding Hexels
-    let cl1 = cxl.Hxls
-    let cl2 = match ((available cxl.Seqn cxl.Base cl1) > 0) with
-                    | false -> cl1
-                    | true -> Array.tail cl1
-    let cl3 = cl2 |> Array.Parallel.partition
-                (fun x-> (available cxl.Seqn x cl2) > 0) 
-    let bd1 = cl3 |> fst |> bndSqn cxl.Seqn
-        
-    /// Core Hexels
-    let cr1 = snd cl3
-        
-    let oc1 = Array.concat
-                [|
-                    occ 
-                    cxl.Hxls
-                |] |> allAV false
-        
-    let cl4 = bd1 |> Array.Parallel.partition
-                (fun x-> (available cxl.Seqn x oc1) > 0)
-        
-    /// Available Hexels
-    let av1= cl4 |> fst |> cntSqn cxl.Seqn
-        
-    /// Border Hexels
-    let br1= snd cl4
- 
+    let avrv = cxl.Hxls 
+            |> Array.Parallel.partition
+                (fun x -> x = AV(hxlCrd x))
+    let rv01 = (snd avrv) 
+            |> Array.Parallel.partition
+                (fun x-> (available 
+                    cxl.Seqn 
+                    (AV(hxlCrd x)) 
+                    (allAV false (cxl.Hxls))) < 1)
+    let av01 = match (snd rv01) with 
+                | [||] -> avrv |> fst |> bndSqn cxl.Seqn
+                | _ -> avrv |> fst |> cntSqn cxl.Seqn
+    let br01 = match (fst rv01) with 
+                | [||] -> rv01 |> snd |> bndSqn cxl.Seqn
+                | _ -> rv01 |> snd |> cntSqn cxl.Seqn
+         
+    let pr01 = match av01 with 
+                    | [||] -> br01
+                    | _ -> match br01 with 
+                            | [||] -> av01
+                            | _ -> match adjacent 
+                                    cxl.Seqn 
+                                    (Array.last av01) 
+                                    |> allAV true
+                                    |> Array.contains (Array.head br01) with 
+                                    | true -> Array.append av01 br01
+                                    | false -> Array.append av01 (Array.rev br01)
     {|
         Base = cxl.Base
-        Hxls = cl1
-        Core = cr1
-        Prph = bd1
-        Brdr = br1
-        Avbl = av1
-    |}    
+        Hxls = cxl.Hxls
+        Core = rv01 |> fst 
+        Prph = pr01
+        Brdr = br01
+        Avbl = av01 
+    |}  

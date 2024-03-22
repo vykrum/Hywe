@@ -248,6 +248,20 @@ let available
     |> Array.length
 ///
 
+///<summary> Assign Hexel type. </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+/// <param name="hxl"> All constituent hexels. </param>
+/// <returns> Reassigned Hexel Types </returns>
+let hxlTyp
+    (sqn : Sqn)
+    (occ : Hxl[])
+    (hxl : Hxl[]) = 
+    hxl |> Array.map (fun x -> match (available sqn x (Array.append occ hxl)) < 1 with 
+                                | true -> RV(hxlCrd x)
+                                | false -> AV(hxlCrd x))
+///
+
 /// <summary> Increment Hexels. </summary>
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
@@ -301,7 +315,7 @@ let increments
 /// <returns> Boundary/Peripheral hexels. </returns>
 let bndSqn 
     (sqn : Sqn) 
-    (hxl : Hxl[]) = 
+    (hxo : Hxl[]) = 
     /// <summary> Arrange/sort hexels in continuous sequence. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxl"> Array of hexels. </param>
@@ -328,7 +342,9 @@ let bndSqn
                             | None -> [||]
             let acc = Array.append acc  hx3
             arr sqn hxl acc (cnt-1) opt
-        
+
+    let hxl = hxo|> Array.sortByDescending 
+                (fun x -> available sqn x hxo)
     let a1 = 
         match hxl with 
         | [||] -> [||]
@@ -336,9 +352,14 @@ let bndSqn
 
     let b1 = Array.length a1 = Array.length hxl
         
-    match b1 with 
-    | true -> a1
-    | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+    let ar1 = match b1 with 
+                | true -> a1
+                | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+    match hxo with 
+    | [||] -> [||]
+    | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+            | true -> ar1
+            | false -> allAV true ar1
 ///
 
 /// <summary> Hexel Ring Segment Sequence. </summary>
@@ -346,14 +367,15 @@ let bndSqn
 /// <param name="hxl"> All constituent hexels. </param>
 let cntSqn
     (sqn : Sqn)
-    (hxl : Hxl[]) =      
+    (hxo : Hxl[]) =      
+    let hxl = allAV false hxo
     let rec ctSq 
         (sqn : Sqn)
         (hxl : Hxl[])
         (acc : Hxl[])
         (cnt : int) = 
         match cnt with 
-        | a when a<=1 -> acc
+        | x when x<=1 -> acc
         | _ -> 
                 let b = Array.last acc
                 let hxl = Array.except [|b|] hxl
@@ -366,11 +388,19 @@ let cntSqn
                             | None -> [||]
                 let acc = Array.append acc f
                 ctSq sqn hxl acc (cnt-1)
+
     let hxl = hxl |> Array.sortByDescending 
                 (fun x -> available sqn x hxl)
     let cnt = Array.length(hxl)
-    let arr =  ctSq sqn hxl ([|Array.head hxl|]) cnt
+    let arr =  match hxl with 
+                    | [||] -> [||]
+                    | _ -> ctSq sqn hxl ([|Array.head hxl|]) cnt
     let bln = cnt = Array.length(arr)
-    match bln with 
-    | true -> arr
-    | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+    let ar1 = match bln with 
+                | true -> arr
+                | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+    match hxo with 
+    | [||] -> [||]
+    | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+            | true -> ar1
+            | false -> allAV true ar1
