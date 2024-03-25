@@ -112,8 +112,11 @@ let spaceCxl
 
     // Generate base coxel
     let id,ct,lb = tree01 |> Array.concat |> Array.head
-    let accCxl = coxel seq ([|bas, id, ct, lb|]) occ
-    let oc1 = (Array.concat [|occ; [|bas|]; (Array.head accCxl).Hxls|])
+    let cti  = match ct with Count x -> Count (x-1) | _ -> Count 0
+    let ac1 = coxel seq ([|bas, id, cti, lb|]) occ
+    // Include base Hexel among base Coxel Hexels
+    let ac2 = {(Array.head ac1) with Cxl.Hxls = (Array.append [|bas|] (Array.head ac1).Hxls)}
+    let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
     let cxlCxl 
         (seq : Sqn)
@@ -122,13 +125,13 @@ let spaceCxl
         (acc : Cxl[]) = 
             
         let cnt = (Array.length tre) - 1
-        let bsId = 
+        let bsCx = 
                     acc 
                     |> Array.map(fun x -> x.Rfid,x) 
                     |> Map.ofArray
                     |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
                         
-        let chHx = bsId.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
         let chBs = Array.take cnt chHx
         let chPr = Array.tail tre
         let cxc1 = coxel 
@@ -161,4 +164,4 @@ let spaceCxl
                     | None -> acc
         a
 
-    cxCxCx seq tree01 oc1 accCxl
+    cxCxCx seq tree01 oc1 [|ac2|]
