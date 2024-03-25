@@ -1,7 +1,11 @@
 ﻿module Parse
 
+open Hexel
+open Coxel
+
+// Sample Space Program Input Format
 let spaceStr =
-     "(1/5/Foyer),(2/20/Living),(3/20/Dining),
+     "(1/15/Foyer),(2/20/Living),(3/20/Dining),
     (4/20/Staircase),(1.1/10/Study),(3.1/15/Bed-1),
     (3.2/15/Bed-2),(3.3/15/Bed-3),(3.4/15/Kitchen),
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
@@ -9,7 +13,7 @@ let spaceStr =
 
 let spaceSeq 
     (spaceStr:string) = 
-    
+        
     let spaceMap = 
         ((spaceStr.Replace ("\n",""))
             .Replace(" ",""))
@@ -36,7 +40,7 @@ let spaceSeq
         |> snd 
         |> Array.windowed 2 
         |> Array.map(fun x -> x[0],[|x[1]|])
-    
+        
     let spcKy03 = 
         spcKy01 
         |> Array.tail 
@@ -59,18 +63,102 @@ let spaceSeq
                         -> Array.append [|x|] y)
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
-    
+        
     let spcKy06 = 
         spcKy05 
         |> Array.map(fun x 
                         -> (Array.map (fun y 
                                         -> y, spaceMap 
                                         |> Map.find y))x)
-    
-    let spcKey = 
-        spcKy06 
+        
+    let spcKey =
+        spcKy06
         |> Array.map (fun z 
                         -> (Array.map (fun (x,y) 
                                         -> x, fst y, snd y))z)
-    
-    spcKey
+    spcKey    
+
+let spaceCxl 
+    (seq : Sqn)
+    (bas : Hxl)
+    (occ : Hxl[])
+    (str : string) = 
+    (*         
+    let avlReq 
+        (tr01 : (Prp*Prp*Prp)[][]) = 
+        let chlMap = 
+            tr01
+            |> Array.map(fun x -> Array.head x,Array.length x)
+            |> Array.map(fun ((a,_,_),b) ->  a, b-1) 
+            |> Map.ofArray
+            
+        let chdCnt = 
+            tr01
+            |> Array.map(fun x -> 
+                Array.map(fun (a,_,_) 
+                            -> Map.tryFind a chlMap)x)
+            |> Array.map (fun x 
+                            -> Array.map(fun y 
+                                            -> match y with 
+                                                | Some y -> y
+                                                | None -> 0)x)
+        chdCnt
+    *)
+    let tree01 = 
+        spaceSeq str 
+            |> Array.map (fun x -> 
+                Array.map(fun (a,b,c) 
+                            -> Refid a, Count b, Label c)x)
+
+    // Generate base coxel
+    let id,ct,lb = tree01 |> Array.concat |> Array.head
+    let accCxl = coxel seq ([|bas, id, ct, lb|]) occ
+    let oc1 = (Array.concat [|occ; [|bas|]; (Array.head accCxl).Hxls|])
+
+    let cxlCxl 
+        (seq : Sqn)
+        (tre : (Prp*Prp*Prp)[])
+        (occ : Hxl[])
+        (acc : Cxl[]) = 
+            
+        let cnt = (Array.length tre) - 1
+        let bsId = 
+                    acc 
+                    |> Array.map(fun x -> x.Rfid,x) 
+                    |> Map.ofArray
+                    |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
+                        
+        let chHx = bsId.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+        let chBs = Array.take cnt chHx
+        let chPr = Array.tail tre
+        let cxc1 = coxel 
+                    seq
+                    (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
+                    occ
+        // Reassigning Hexel types
+        let chHx1 = Array.map (fun x -> x.Hxls) cxc1
+        let chOc1 = allAV true (Array.append occ (Array.concat chHx1))
+        let chHx2 = Array.map (fun x -> hxlTyp seq chOc1 x) chHx1
+        let chHx3 = hxlTyp seq chOc1 (Array.map (fun x -> x.Base) cxc1)
+        let cxc2 = Array.map3 (fun x y z -> {x with Cxl.Hxls = y; Cxl.Base = z}) cxc1 chHx2 chHx3
+        cxc2
+
+    let rec cxCxCx
+        (seq : Sqn)
+        (tre : (Prp*Prp*Prp)[][])
+        (occ : Hxl[])
+        (acc : Cxl[]) =
+            
+        let a = match Array.tryHead tre with 
+                    | Some a 
+                        -> 
+                            let occ = Array.append occ (Array.concat (Array.map(fun x -> x.Hxls)acc))
+                            let tre = Array.tail tre
+                            let acc = Array.append 
+                                        acc 
+                                        (cxlCxl seq a occ acc)
+                            cxCxCx seq tre occ acc
+                    | None -> acc
+        a
+
+    cxCxCx seq tree01 oc1 accCxl

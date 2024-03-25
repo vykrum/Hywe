@@ -54,13 +54,13 @@ let coxel
     (ini : (Hxl*Prp*Prp*Prp)[])
     (occ : Hxl[]) = 
         
-    let bas = Array.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
-    let szn = Array.map(fun (_,_,y,z) -> y,z) ini
-    let idn = Array.map (fun(x,y,_,_)->x,y) ini
+    let bas = Array.Parallel.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
+    let szn = Array.Parallel.map(fun (_,_,y,z) -> y,z) ini
+    let idn = Array.Parallel.map (fun(x,y,_,_)->x,y) ini
 
     let cnt = 
             bas
-            |> Array.map (fun x -> snd x)
+            |> Array.Parallel.map (fun x -> snd x)
             |> Array.max
     let acc = Array.chunkBySize 1 bas
     let occ = (Array.append occ (getHxls bas)) |> allAV false 
@@ -84,19 +84,19 @@ let coxel
                     |> Array.distinct
                     |> allAV false
 
-                let rpt = Array.map (fun x 
-                                        -> (snd x) - 0x1) hxo
+                let rpt = Array.Parallel.map (fun x 
+                                                -> (snd x) - 0x1) hxo
                 let Hxl =  
                     acc
-                    |> Array.map (fun x
-                                    -> Array.filter (fun a 
-                                                        -> (available sqn a occ) > 0x0) x)
-                    |> Array.map (fun x 
-                                    -> Array.tryHead x)
-                    |> Array.map (fun x 
-                                    -> match x with
-                                        | Some a -> a 
-                                        | None -> (identity,0xFFFFFFFF))                
+                    |> Array.Parallel.map (fun x
+                                            -> Array.filter (fun a 
+                                                                        -> (available sqn a occ) > 0x0) x)
+                    |> Array.Parallel.map (fun x 
+                                            -> Array.tryHead x)
+                    |> Array.Parallel.map (fun x 
+                                                -> match x with
+                                                    | Some a -> a 
+                                                    | None -> (identity,0xFFFFFFFF))                
                     |> Array.map2 (fun x y 
                                     -> fst y, x) rpt
                     
@@ -112,28 +112,29 @@ let coxel
                 (clsts Hxl occ acc (cnt - 0x1))
 
 
+
     let cls = 
         clsts bas occ acc cnt
-            |> Array.map(fun x 
-                            -> Array.filter(fun (_,z) -> z >= 0) x)
-
+            |> Array.Parallel.map(fun x 
+                                    -> Array.filter(fun (_,z) -> z >= 0) x)
+        
     let cl1 = 
         cls
-        |> Array.map(fun x -> getHxls x)
+        |> Array.Parallel.map(fun x -> getHxls x)
+        |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x)<5)x)
         
     let cxl = Array.map3 (fun x y z -> 
+                                            let hx1 = z |> hxlTyp sqn (Array.append occ z)
                                             {
                                                 Name = snd x
                                                 Rfid = snd y
                                                 Size = fst x
                                                 Seqn = sqn
-                                                Base = fst y
-                                                Hxls = z 
-                                                    |> hxlTyp 
-                                                        sqn 
-                                                        (Array.append occ z)
+                                                Base = Array.head hx1
+                                                Hxls = hx1
                                             })szn idn cl1
     cxl
+
 ///
 
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>

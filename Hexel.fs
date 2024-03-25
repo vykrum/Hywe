@@ -240,7 +240,7 @@ let available
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
-                | _ -> identity
+                | _ -> RV(0,0,0)
     hx1 
     |> adjacent sqn
     |> Array.except 
