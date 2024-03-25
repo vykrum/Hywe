@@ -121,6 +121,7 @@ let cls
     let hsHx01 = 
         (Coxel.coxel sqn [|identity,Refid "",Count (cnt|>Array.head),Label "Host"|] [||]
         |> Array.head).Hxls
+        |> Array.append [|RV(0,0,0)|]
         |> Array.rev
     // Base Hexels
     let hsHx02 = 
@@ -136,7 +137,7 @@ let cls
                     [|Label"";Label"";Label"";Label"";Label"";Label""|]
         Array.map2 (fun x y -> (fst x, snd x, fst y, snd y)) a b      
     let hsHx04 = 
-        [|[|hsHx01|] ; Array.map (fun x -> Array.tail (x.Hxls))(Coxel.coxel sqn hsHx03 hsHx01)|] 
+        [|[|hsHx01|] ; Array.map (fun x -> (x.Hxls))(Coxel.coxel sqn hsHx03 hsHx01)|] 
         |> Array.concat  
     // Scaled Coordinates
     hsHx04 |> crd scl

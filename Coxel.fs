@@ -49,6 +49,7 @@ let prpVlu
 /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
 /// <param name="occ"> Hexels that are unavailable. </param>
 /// <returns> An array of coxels. </returns>
+
 let coxel 
     (sqn : Sqn)
     (ini : (Hxl*Prp*Prp*Prp)[])
@@ -56,7 +57,7 @@ let coxel
         
     let bas = Array.Parallel.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
     let szn = Array.Parallel.map(fun (_,_,y,z) -> y,z) ini
-    let idn = Array.Parallel.map (fun(x,y,_,_)->x,y) ini
+    let idn = Array.Parallel.map (fun(x,y,_,_)-> x,y) ini
 
     let cnt = 
             bas
@@ -107,7 +108,12 @@ let coxel
                             acc
                             (Array.chunkBySize 1 inc)
 
-                let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allAV false
+                let occ = Array.concat[|getHxls 
+                    (Array.concat [|
+                    Array.concat acc
+                    inc
+                    Hxl|]);occ|] 
+                        |> allAV false
 
                 (clsts Hxl occ acc (cnt - 0x1))
 
@@ -117,29 +123,33 @@ let coxel
         clsts bas occ acc cnt
             |> Array.Parallel.map(fun x 
                                     -> Array.filter(fun (_,z) -> z >= 0) x)
-    
+        
     // Avoid single unclustered cell towards the end
     let cl00 = 
         cls
         |> Array.Parallel.map(fun x -> getHxls x)
     let cl01 = 
         cl00
-        |> Array.Parallel.map(fun x -> Array.tail x)
-        |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
-    let cl1 = Array.map2 (fun x y -> Array.append [|Array.head x|] y) cl00 cl01
-        
+        |> Array.Parallel.map(fun x 
+                                -> Array.filter(fun y 
+                                                    -> (available sqn y x) < 5)x)
+         
+    let cl1 = Array.map2 (fun x y 
+                                -> Array.append [|Array.head x|] y) cl00 cl01
+
     let cxl = Array.map3 (fun x y z -> 
-                                            let hx1 = z |> hxlTyp sqn (Array.append occ z)
+                                            let hx1 = z 
+                                                    |> hxlTyp sqn (Array.append occ z)
+                                                
                                             {
                                                 Name = snd x
                                                 Rfid = snd y
                                                 Size = fst x
                                                 Seqn = sqn
                                                 Base = Array.head hx1
-                                                Hxls = hx1
+                                                Hxls = Array.except ([|Array.head hx1|]) hx1
                                             })szn idn cl1
     cxl
-
 ///
 
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>
