@@ -117,11 +117,16 @@ let coxel
         clsts bas occ acc cnt
             |> Array.Parallel.map(fun x 
                                     -> Array.filter(fun (_,z) -> z >= 0) x)
-        
-    let cl1 = 
+    
+    // Avoid single unclustered cell towards the end
+    let cl00 = 
         cls
         |> Array.Parallel.map(fun x -> getHxls x)
-        |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x)<5)x)
+    let cl01 = 
+        cl00
+        |> Array.Parallel.map(fun x -> Array.tail x)
+        |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
+    let cl1 = Array.map2 (fun x y -> Array.append [|Array.head x|] y) cl00 cl01
         
     let cxl = Array.map3 (fun x y z -> 
                                             let hx1 = z |> hxlTyp sqn (Array.append occ z)
