@@ -56,16 +56,16 @@ let vertex
     let hxCr = match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
                     -> match shp with
-                        | QdSq -> [|0,0; 2,0; 2,-2; 0,-2|]
-                        | RhVr -> [|0,0; 1,2; 2,0; 1,-2|]
-                        | PrFl -> [|0,0; 2,0; 1,-2; -1,-2|]
-                        | HxPt -> [|0,0; 1,1; 2,0; 2,-1; 1,-2; 0,-1|]
-                        | _ -> [|0,0; 1,1; 2,0; 2,-1; 1,-2; 0,-1|]
+                        | HxPt -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
+                        | QdSq -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
+                        | RhVr -> [|0x0,0x0; 0x1,0x2; 0x2,0x0; 0x1,0xFFFFFFFE|]
+                        | PrFl -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE|]
+                        | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,-2; 0x0,0xFFFFFFFF|]
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                    -> match shp with 
-                        | RhHr -> [|0,0; 2,1; 4,0; 2,-1|]
-                        | PrAn -> [|0,0; 2,1; 2,-1; 0,-2|]
-                        | HxFl -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
-                        | _ -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
+                    -> match shp with
+                        | HxFl -> [|0x0,0x0; 0x1,0x1; 0x2,0x1; 0x3,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFF|]
+                        | RhHr -> [|0x0,0x0; 0x2,0x1; 0x4,0x0; 0x2,0xFFFFFFFF|]
+                        | PrAn -> [|0x0,0x0; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE|]
+                        | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x1; 0x3,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFF|]
     let x, y, _ = hxl |> hxlCrd 
     hxCr |> Array.map(fun (a,b)-> a + x, b + y)
