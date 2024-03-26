@@ -3,6 +3,8 @@ module Hywe.Client.Main
 open Elmish
 open Bolero
 open Bolero.Html
+open Hexel
+open Shape
 open Bridge
 
 type Model =
@@ -21,6 +23,7 @@ type Model =
         lbl4 : string
         lbl5 : string
         lbl6 : string
+        sqn1 : int
         shp1 : int
         scl1 : int
     }
@@ -42,6 +45,7 @@ let initModel =
         lbl4 = ""
         lbl5 = ""
         lbl6 = ""
+        sqn1 = 1
         shp1 = 1
         scl1 = 10
     }
@@ -61,6 +65,7 @@ type Message =
     | LblCls4 of string
     | LblCls5 of string
     | LblCls6 of string
+    | SetSqn1 of int
     | SetShp1 of int
     | SetScl1 of int
 
@@ -80,6 +85,7 @@ let update message model =
     | LblCls4 value -> { model with lbl4 = value }
     | LblCls5 value -> { model with lbl5 = value }
     | LblCls6 value -> { model with lbl6 = value }
+    | SetSqn1 value -> { model with sqn1 = value }
     | SetShp1 value -> { model with shp1 = value }
     | SetScl1 value -> { model with scl1 = value }
 
@@ -127,7 +133,7 @@ let view model dispatch =
                 }
             }
         }
-        // Shape and Scale Controls
+        // Shape Sequence and Scale Controls
         div{
             // Shape
             div{
@@ -142,6 +148,20 @@ let view model dispatch =
                     bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
                 }
             }
+            // Sequence
+            div{
+                attr.``class`` "flex-container-1"
+                // Slider Sequence
+                input{
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.id "sqn1"
+                    attr.min "1"
+                    attr.max "24"
+                    bind.input.int model.scl1 (fun a -> dispatch (SetSqn1 a))
+                }
+            }
+            // Scale
             div{
                 attr.``class`` "flex-container-1"
                 // Slider Scale
@@ -349,6 +369,34 @@ let view model dispatch =
             }
         // Scale
         let scl = model.scl1
+        // Sequence
+        let sqn = match model.sqn1 with 
+                    | 1 -> SQ11
+                    | 2 -> SQ12
+                    | 3 -> SQ13
+                    | 4 -> SQ14
+                    | 5 -> SQ15
+                    | 6 -> SQ16
+                    | 7 -> SQ17
+                    | 8 -> SQ18
+                    | 9 -> SQ19
+                    | 10 -> SQ20
+                    | 11 -> SQ21
+                    | 12 -> SQ22
+                    | 13 -> SQ23
+                    | 14 -> SQ24
+                    | 15 -> SQ25
+                    | 16 -> SQ26
+                    | 17 -> SQ27
+                    | 18 -> SQ28
+                    | 19 -> SQ29
+                    | 20 -> SQ30
+                    | 21 -> SQ31
+                    | 22 -> SQ32
+                    | 23 -> SQ33
+                    | 24 -> SQ34
+                    | _ -> SQ11
+
         // Shape
         let shp = match model.shp1 with 
                     | 1 -> HxFl
@@ -357,9 +405,9 @@ let view model dispatch =
                     | 4 -> PrAn
                     | 5 -> PrFl
                     | 6 -> RhVr
-                    | _ -> RhHr
+                    | _ -> QdSq
 
-        let (loc,wdt,hgt) = cls scl shp ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
+        let (loc,wdt,hgt) = cls scl sqn ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
         
         // Cluster Names
         let lbls = [|model.lbl0;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
@@ -370,7 +418,7 @@ let view model dispatch =
         // The Clusters SVG
         div{
             attr.``class`` "center"
-            cluster (Array.zip3 loc lbls clrs) shp scl wdt hgt
+            cluster (Array.zip3 loc lbls clrs) shp sqn scl wdt hgt
             }
         
         // Footer

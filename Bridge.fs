@@ -4,38 +4,8 @@ open Bolero
 open Bolero.Html
 open Hexel
 open Coxel
+open Shape
 ///
-
-/// <summary> Module shape in tessalated hexagonal grid. </summary>
-/// <typeparam name="HxFl"> Hexagon Flat-Top. </typeparam>
-/// <typeparam name="HxPt"> Hexagon Pointy-Top. </typeparam>
-/// <typeparam name="QdSq"> Square. </typeparam>
-/// <typeparam name="PrFl"> Parallelogram Flat. </typeparam>
-/// <typeparam name="PrAn"> Parallelogram Angled. </typeparam>
-/// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
-/// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
-type Shp = 
-    | HxFl | HxPt | QdSq | PrFl | PrAn | RhHr | RhVr
-///
-
-/// <summary> Vertices based on shape </summary>
-/// <param name="shp"></param>
-/// <param name="scl"></param>
-let vertices 
-    (shp : Shp)
-    (scl : int) = 
-    let vrtx = match shp with 
-                | HxFl -> [|0;0;1;1;2;1;3;0;2;-1;1;-1|]
-                | HxPt -> [|0;0;1;1;2;0;2;-1;1;-2;0;-1|]
-                | QdSq -> [|0;0;2;0;2;-2;0;-2|]
-                | PrAn -> [|0;0;2;1;2;-1;0;-2|]
-                | PrFl -> [|0;0;2;0;1;-2;-1;-2|]
-                | RhHr -> [|0;0;2;1;4;0;2;-1|]
-                | RhVr -> [|0;0;1;2;2;0;1;-2|]
-                          
-    vrtx 
-        |> Array.map (fun x -> string (x * scl)) 
-        |> String.concat ","
 
 type hxgn = Template<
       """ <polygon 
@@ -65,10 +35,16 @@ type svtx = Template<
 /// <param name="wdt"> Width </param>
 /// <param name="hgt"> Height </param>
 /// <returns> SVG of Coxel composition </returns>
-let cluster (prp: ((int*int*int)[] * string * string)[]) shp scl wdt hgt : Node =
+let cluster (prp: ((int*int*int)[] * string * string)[]) shp sqn scl wdt hgt : Node =
     svg {
          attr.width wdt
          attr.height hgt
+         let vrtx = vertex sqn shp (AV(0,0,0))
+                    |> Array.map (fun (x,y) -> [|x;y|])
+                    |> Array.concat
+                    |> Array.map (fun x -> string (x * scl)) 
+                    |> String.concat ","
+                    
          for cmp in prp do
              let (xyz,label,color) = cmp
              let xy = Array.map(fun (a,b,_) -> a,b) xyz 
@@ -78,7 +54,7 @@ let cluster (prp: ((int*int*int)[] * string * string)[]) shp scl wdt hgt : Node 
                          | Some a -> a
              for locn in xy do
                     hxgn()
-                        .pt($"{vertices shp scl}")
+                        .pt($"{vrtx}")
                         .tr($"{locn}")
                         .cl($"{color}")
                         .Elt()
@@ -111,12 +87,8 @@ let crd (scl : int) (hxo : Hxl[][]) =
 
 let cls 
     (scl : int)
-    (shp : Shp)
+    (sqn : Sqn)
     (cnt : int[]) =
-    // Shape matched with appropriate sequence
-    let sqn = match shp with
-                | HxFl | RhHr | PrAn -> SQ23
-                | HxPt | QdSq | RhVr | PrFl -> SQ21
     // Host Cluster
     let hsHx01 = 
         (Coxel.coxel sqn [|identity,Refid "",Count (cnt|>Array.head),Label "Host"|] [||]

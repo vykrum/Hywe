@@ -1,7 +1,20 @@
 ﻿module Shape
 
 open Hexel
+///
 
+/// <summary> Module shape in tessalated hexagonal grid. </summary>
+/// <typeparam name="HxFl"> Hexagon Flat-Top. </typeparam>
+/// <typeparam name="HxPt"> Hexagon Pointy-Top. </typeparam>
+/// <typeparam name="QdSq"> Square. </typeparam>
+/// <typeparam name="PrFl"> Parallelogram Flat. </typeparam>
+/// <typeparam name="PrAn"> Parallelogram Angled. </typeparam>
+/// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
+/// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
+type Shp = 
+        | HxFl | HxPt | QdSq | RhHr | RhVr | PrFl | PrAn
+
+///
 
 /// <summary> Ortogonal Hexel Sequence </summary>
 /// <param name="sqn"> Sequence to follow. </param>
@@ -34,3 +47,25 @@ let hxlOrt
                     |> Array.concat
                     |> Array.take ((lgt/2)+1)
 ///
+
+// Hexel Vertices
+let vertex
+    (sqn : Sqn)
+    (shp : Shp)
+    (hxl : Hxl) = 
+    let hxCr = match sqn with 
+                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
+                    -> match shp with
+                        | QdSq -> [|0,0; 2,0; 2,-2; 0,-2|]
+                        | RhVr -> [|0,0; 1,2; 2,0; 1,-2|]
+                        | PrFl -> [|0,0; 2,0; 1,-2; -1,-2|]
+                        | HxPt -> [|0,0; 1,1; 2,0; 2,-1; 1,-2; 0,-1|]
+                        | _ -> [|0,0; 1,1; 2,0; 2,-1; 1,-2; 0,-1|]
+                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+                    -> match shp with 
+                        | RhHr -> [|0,0; 2,1; 4,0; 2,-1|]
+                        | PrAn -> [|0,0; 2,1; 2,-1; 0,-2|]
+                        | HxFl -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
+                        | _ -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
+    let x, y, _ = hxl |> hxlCrd 
+    hxCr |> Array.map(fun (a,b)-> a + x, b + y)
