@@ -23,8 +23,8 @@ type Model =
         lbl4 : string
         lbl5 : string
         lbl6 : string
-        sqn1 : int
         shp1 : int
+        sqn1 : int
         scl1 : int
     }
 
@@ -45,8 +45,8 @@ let initModel =
         lbl4 = ""
         lbl5 = ""
         lbl6 = ""
-        sqn1 = 1
         shp1 = 1
+        sqn1 = 1
         scl1 = 10
     }
 
@@ -65,8 +65,8 @@ type Message =
     | LblCls4 of string
     | LblCls5 of string
     | LblCls6 of string
-    | SetSqn1 of int
     | SetShp1 of int
+    | SetSqn1 of int
     | SetScl1 of int
 
 let update message model =
@@ -133,6 +133,7 @@ let view model dispatch =
                 }
             }
         }
+
         // Shape Sequence and Scale Controls
         div{
             // Shape
@@ -157,8 +158,8 @@ let view model dispatch =
                     attr.``type`` "range"
                     attr.id "sqn1"
                     attr.min "1"
-                    attr.max "24"
-                    bind.input.int model.scl1 (fun a -> dispatch (SetSqn1 a))
+                    attr.max "12"
+                    bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
                 }
             }
             // Scale
@@ -175,6 +176,7 @@ let view model dispatch =
                 }
             }
         }
+
         // Cluster Controls
         div{
             // Cluster 0
@@ -367,53 +369,88 @@ let view model dispatch =
                 }
             }   
             }
+
         // Scale
         let scl = model.scl1
-        // Sequence
-        let sqn = match model.sqn1 with 
-                    | 1 -> SQ11
-                    | 2 -> SQ12
-                    | 3 -> SQ13
-                    | 4 -> SQ14
-                    | 5 -> SQ15
-                    | 6 -> SQ16
-                    | 7 -> SQ17
-                    | 8 -> SQ18
-                    | 9 -> SQ19
-                    | 10 -> SQ20
-                    | 11 -> SQ21
-                    | 12 -> SQ22
-                    | 13 -> SQ23
-                    | 14 -> SQ24
-                    | 15 -> SQ25
-                    | 16 -> SQ26
-                    | 17 -> SQ27
-                    | 18 -> SQ28
-                    | 19 -> SQ29
-                    | 20 -> SQ30
-                    | 21 -> SQ31
-                    | 22 -> SQ32
-                    | 23 -> SQ33
-                    | 24 -> SQ34
-                    | _ -> SQ11
-
+        
         // Shape
         let shp = match model.shp1 with 
                     | 1 -> HxFl
                     | 2 -> HxPt
-                    | 3 -> QdSq
-                    | 4 -> PrAn
-                    | 5 -> PrFl
+                    | 3 -> PrAn
+                    | 4 -> PrFl
+                    | 5 -> RhHr
                     | 6 -> RhVr
                     | _ -> QdSq
 
-        let (loc,wdt,hgt) = cls scl sqn ([|model.cls0;model.cls1;model.cls2;model.cls3;model.cls4;model.cls5;model.cls6|])
+        // Sequence
+        let sqn = match model.sqn1 with 
+                    | 1 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ11
+                           |HxFl|PrAn|RhHr -> SQ23
+                    | 2 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ12
+                           |HxFl|PrAn|RhHr -> SQ24
+                    | 3 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ13
+                           |HxFl|PrAn|RhHr -> SQ25
+                    | 4 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ14
+                           |HxFl|PrAn|RhHr -> SQ26
+                    | 5 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ15
+                           |HxFl|PrAn|RhHr -> SQ27
+                    | 6 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ16
+                           |HxFl|PrAn|RhHr -> SQ28
+                    | 7 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ17
+                           |HxFl|PrAn|RhHr -> SQ29
+                    | 8 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ18
+                           |HxFl|PrAn|RhHr -> SQ30
+                    | 9 -> match shp with
+                           |HxPt|PrFl|RhVr|QdSq -> SQ19
+                           |HxFl|PrAn|RhHr -> SQ31
+                    | 10 -> match shp with
+                            |HxPt|PrFl|RhVr|QdSq -> SQ20
+                            |HxFl|PrAn|RhHr -> SQ32
+                    | 11 -> match shp with
+                            |HxPt|PrFl|RhVr|QdSq -> SQ21
+                            |HxFl|PrAn|RhHr -> SQ33
+                    | 12 -> match shp with
+                            |HxPt|PrFl|RhVr|QdSq -> SQ22
+                            |HxFl|PrAn|RhHr -> SQ34
+                    | _ -> SQ23
+                   
+        let (loc,wdt,hgt) = cls 
+                                scl 
+                                sqn 
+                                ([| model.cls0
+                                    model.cls1
+                                    model.cls2
+                                    model.cls3
+                                    model.cls4
+                                    model.cls5
+                                    model.cls6 |])
         
         // Cluster Names
-        let lbls = [|model.lbl0;model.lbl1;model.lbl2;model.lbl3;model.lbl4;model.lbl5;model.lbl6|]
+        let lbls = [| model.lbl0
+                      model.lbl1
+                      model.lbl2
+                      model.lbl3
+                      model.lbl4
+                      model.lbl5
+                      model.lbl6|]
         
         // Cluster Colors
-        let clrs = [|"#ececce";"#bccfd3";"#867869";"#687b7f";"#c6bdb4";"#3496a3";"#eabdb5"|]
+        let clrs = [|"#ececce"
+                     "#bccfd3"
+                     "#867869"
+                     "#687b7f"
+                     "#c6bdb4"
+                     "#3496a3"
+                     "#eabdb5"|]
         
         // The Clusters SVG
         div{
