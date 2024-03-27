@@ -73,7 +73,9 @@ let crd
     (hxo : Hxl[][]) = 
     
     // Location to Coordinates
-    let cdn (hxo:Hxl[]) (scl:int) =
+    let cdn 
+        (hxo:Hxl[]) 
+        (scl:int) =
         Array.map (fun a -> match a with 
                             |AV(x,y,z) -> ((x*scl),(y*scl),z)
                             |RV(x,y,z) -> ((x*scl),(y*scl),z)) hxo
@@ -90,6 +92,7 @@ let crd
     let hxXY02 = Array.map(fun aa -> Array.map (fun (x,y,z)-> (x + hxShfX), (y + hxShfY),z)aa) hxXY01
     (hxXY02,hxMxmX,hxMxmY)
 
+// Hexel Coordinates, Color and Name
 let cls 
     (scl : int)
     (sqn : Sqn)

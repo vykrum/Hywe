@@ -419,7 +419,7 @@ let view model dispatch =
                             |HxPt|PrFl|RhVr|QdSq -> VRCWNE
                             |HxFl|PrAn|RhHr -> HRCWNW
                     | 12 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> HRCCNW
+                            |HxPt|PrFl|RhVr|QdSq -> VRCCNE
                             |HxFl|PrAn|RhHr -> HRCCNW
                     | _ -> VRCWEE
                    
