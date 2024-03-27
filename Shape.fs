@@ -30,7 +30,7 @@ let hxlOrt
     let hxx,hxy,hxz = org |> hxlVld sqn |> hxlCrd
     let lgt = lgt + (lgt%2)         
     match sqn with
-    | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
+    | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
         -> match vrt with 
             | true -> [|hxy..4..(hxy+lgt+4)|]
                     |> Array.map (fun y -> [|RV(hxx,y,hxz);RV(hxx+1,y+2,hxz)|])
@@ -38,7 +38,7 @@ let hxlOrt
                     |> Array.take ((lgt/2)+1)
             | false -> Array.map (fun x -> RV (x,hxy,hxz)) [|hxx..2..(hxx+lgt+4)|]
                     |> Array.take ((lgt/2)+1)
-    | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
         -> match vrt with
             | true -> Array.map (fun y -> RV (hxx,y,hxz)) [|hxy..2..(hxy+lgt)|]
                     |> Array.take ((lgt/2)+1)
@@ -54,14 +54,14 @@ let vertex
     (shp : Shp)
     (hxl : Hxl) = 
     let hxCr = match sqn with 
-                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
+                | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
                     -> match shp with
                         | HxPt -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
                         | QdSq -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
                         | RhVr -> [|0x0,0x0; 0x1,0x2; 0x2,0x0; 0x1,0xFFFFFFFE|]
                         | PrFl -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE|]
                         | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,-2; 0x0,0xFFFFFFFF|]
-                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
                     -> match shp with
                         | HxFl -> [|0x0,0x0; 0x1,0x1; 0x2,0x1; 0x3,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFF|]
                         | RhHr -> [|0x0,0x0; 0x2,0x1; 0x4,0x0; 0x2,0xFFFFFFFF|]

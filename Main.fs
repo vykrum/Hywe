@@ -386,42 +386,42 @@ let view model dispatch =
         // Sequence
         let sqn = match model.sqn1 with 
                     | 1 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ11
-                           |HxFl|PrAn|RhHr -> SQ23
+                           |HxPt|PrFl|RhVr|QdSq -> VRCWEE
+                           |HxFl|PrAn|RhHr -> HRCWNN
                     | 2 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ12
-                           |HxFl|PrAn|RhHr -> SQ24
+                           |HxPt|PrFl|RhVr|QdSq -> VRCCEE
+                           |HxFl|PrAn|RhHr -> HRCCNN
                     | 3 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ13
-                           |HxFl|PrAn|RhHr -> SQ25
+                           |HxPt|PrFl|RhVr|QdSq -> VRCWSE
+                           |HxFl|PrAn|RhHr -> HRCWNE
                     | 4 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ14
-                           |HxFl|PrAn|RhHr -> SQ26
+                           |HxPt|PrFl|RhVr|QdSq -> VRCCSE
+                           |HxFl|PrAn|RhHr -> HRCCNE
                     | 5 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ15
-                           |HxFl|PrAn|RhHr -> SQ27
+                           |HxPt|PrFl|RhVr|QdSq -> VRCWSW
+                           |HxFl|PrAn|RhHr -> HRCWSE
                     | 6 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ16
-                           |HxFl|PrAn|RhHr -> SQ28
+                           |HxPt|PrFl|RhVr|QdSq -> VRCCSW
+                           |HxFl|PrAn|RhHr -> HRCCSE
                     | 7 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ17
-                           |HxFl|PrAn|RhHr -> SQ29
+                           |HxPt|PrFl|RhVr|QdSq -> VRCWWW
+                           |HxFl|PrAn|RhHr -> HRCWSS
                     | 8 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ18
-                           |HxFl|PrAn|RhHr -> SQ30
+                           |HxPt|PrFl|RhVr|QdSq -> VRCCWW
+                           |HxFl|PrAn|RhHr -> HRCCSS
                     | 9 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> SQ19
-                           |HxFl|PrAn|RhHr -> SQ31
+                           |HxPt|PrFl|RhVr|QdSq -> VRCWNW
+                           |HxFl|PrAn|RhHr -> HRCWSW
                     | 10 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> SQ20
-                            |HxFl|PrAn|RhHr -> SQ32
+                            |HxPt|PrFl|RhVr|QdSq -> VRCCNW
+                            |HxFl|PrAn|RhHr -> HRCCSW
                     | 11 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> SQ21
-                            |HxFl|PrAn|RhHr -> SQ33
+                            |HxPt|PrFl|RhVr|QdSq -> VRCWNE
+                            |HxFl|PrAn|RhHr -> HRCWNW
                     | 12 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> SQ22
-                            |HxFl|PrAn|RhHr -> SQ34
-                    | _ -> SQ23
+                            |HxPt|PrFl|RhVr|QdSq -> HRCCNW
+                            |HxFl|PrAn|RhHr -> HRCCNW
+                    | _ -> VRCWEE
                    
         let (loc,wdt,hgt) = cls 
                                 scl 
