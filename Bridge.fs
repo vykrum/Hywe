@@ -35,7 +35,9 @@ type svtx = Template<
 /// <param name="wdt"> Width </param>
 /// <param name="hgt"> Height </param>
 /// <returns> SVG of Coxel composition </returns>
-let cluster (prp: ((int*int*int)[] * string * string)[]) shp sqn scl wdt hgt : Node =
+let cluster 
+    (prp: ((int*int*int)[] * string * string)[]) 
+    shp sqn scl wdt hgt : Node =
     svg {
          attr.width wdt
          attr.height hgt
@@ -65,7 +67,10 @@ let cluster (prp: ((int*int*int)[] * string * string)[]) shp sqn scl wdt hgt : N
                    .Elt()
         }
 
-let crd (scl : int) (hxo : Hxl[][]) = 
+// Shift origin and scale
+let crd 
+    (scl : int) 
+    (hxo : Hxl[][]) = 
     
     // Location to Coordinates
     let cdn (hxo:Hxl[]) (scl:int) =
