@@ -103,18 +103,28 @@ html, body {
     margin-right: 5px;
     font-size: 10px;
     opacity: 0.85;
-    text-align: center;
+    text-align: right;
+    padding-right: 5px;
 }
 
-.label {
-    width: 25px;
+.label1 {
+    width: 40px;
     border-radius: 4px;
     margin-right: 5px;
     font-size: 10px;
     opacity: 0.85;
-    text-align: center;
+    text-align: right;
+    padding-right: 5px;
 }
-
+.label2 {
+    width: 15%;
+    border-radius: 4px;
+    margin-right: 5px;
+    font-size: 10px;
+    opacity: 0.85;
+    text-align: right;
+    padding-right: 5px;
+}
 
 #cls0 {
     background: #ececce;
@@ -152,16 +162,16 @@ html, body {
 }
 
 #sqn1 {
-    background: white;
+    background: #d3d3d1;
     border: none;
 }
 
 #shp1 {
-    background: white;
+    background: #d3d3d1;
     border: none;
 }
 
 #scl1 {
-    background: white;
+    background: #d3d3d1;
     border: none;
 }

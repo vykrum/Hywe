@@ -23,6 +23,7 @@ type svtx = Template<
     y="${yy}"
     font-size = "10px"
     text-align = "center"
+    text-anchor = "middle"
     fill = "#808080"
     opacity = "1"
     >${nm}</text> """>
@@ -50,7 +51,7 @@ let cluster
          for cmp in prp do
              let (xyz,label,color) = cmp
              let xy = Array.map(fun (a,b,_) -> a,b) xyz 
-             let xx = xy |> Array.tryItem ((Array.length xy)/2)
+             let xx = xy |> Array.tryHead
              let x,y = match xx with 
                          | None -> -10,-10
                          | Some a -> a
@@ -61,7 +62,7 @@ let cluster
                         .cl($"{color}")
                         .Elt()
              svtx()
-                   .xx($"{x}")
+                   .xx($"{x+10}")
                    .yy($"{y}")
                    .nm($"{label}")
                    .Elt()
@@ -118,6 +119,9 @@ let cls
         Array.map2 (fun x y -> (fst x, snd x, fst y, snd y)) a b      
     let hsHx04 = 
         [|[|hsHx01|] ; Array.map (fun x -> (x.Hxls))(Coxel.coxel sqn hsHx03 hsHx01)|] 
-        |> Array.concat  
+        |> Array.concat
+    let hsHx05 = Array.map(fun x -> (Array.sortBy(fun y -> available sqn y x)x)) hsHx04
+    
+    
     // Scaled Coordinates
-    hsHx04 |> crd scl
+    hsHx05 |> crd scl

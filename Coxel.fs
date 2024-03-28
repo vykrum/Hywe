@@ -49,7 +49,6 @@ let prpVlu
 /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
 /// <param name="occ"> Hexels that are unavailable. </param>
 /// <returns> An array of coxels. </returns>
-
 let coxel 
     (sqn : Sqn)
     (ini : (Hxl*Prp*Prp*Prp)[])

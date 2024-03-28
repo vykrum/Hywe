@@ -13,7 +13,6 @@ open Hexel
 /// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
 type Shp = 
         | HxFl | HxPt | QdSq | RhHr | RhVr | PrFl | PrAn
-
 ///
 
 /// <summary> Ortogonal Hexel Sequence </summary>
