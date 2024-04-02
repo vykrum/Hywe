@@ -112,15 +112,22 @@ let spaceCxl
 
     // Generate base coxel
     let id,ct,lb = tree01 |> Array.concat |> Array.head
-    let cti  = match ct with Count x -> Count (x-1) | _ -> Count 0
-    let ac1 = coxel seq ([|bas, id, cti, lb|]) occ
+    let cti  = match ct with 
+                | Count x when x>0 -> Count (x-1) 
+                | _ -> Count 0       
+    let ac1 = match cti with 
+                | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
+                | _ -> coxel seq ([|bas, id, cti, lb|]) occ
+    let bs1 = match cti with 
+                | Count a when a > 0 -> [|bas|]
+                | _ ->[||]
     // Include base Hexel among base Coxel Hexels
     let ac2 = [|{(Array.head ac1) with 
                     Cxl.Hxls = hxlTyp 
                         seq 
                         occ 
                         (Array.append 
-                        [|bas|] 
+                        bs1
                         (Array.head ac1).Hxls)}|]
     let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
@@ -129,8 +136,6 @@ let spaceCxl
         (tre : (Prp*Prp*Prp)[])
         (occ : Hxl[])
         (acc : Cxl[]) = 
-            
-        let cnt = (Array.length tre) - 1
         let bsCx = 
                     acc 
                     |> Array.map(fun x -> x.Rfid,x) 
@@ -138,7 +143,12 @@ let spaceCxl
                     |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
                         
         let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
-        let chBs = Array.take cnt chHx
+        let cnt = (Array.length tre) - 1
+        let chBs = match (Array.length chHx) >= cnt with 
+                    | true -> Array.take cnt chHx
+                    | false -> Array.append 
+                                chHx 
+                                (Array.replicate (cnt - (Array.length chHx)) identity)
         let chPr = Array.tail tre
         let cxc1 = coxel 
                     seq
