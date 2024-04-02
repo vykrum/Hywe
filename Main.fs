@@ -466,7 +466,7 @@ let view model dispatch =
                   
         let (loc,wdt,hgt) = cls 
                                 scl 
-                                sqn 
+                                sqn
                                 ([| model.cls0
                                     model.cls1
                                     model.cls2

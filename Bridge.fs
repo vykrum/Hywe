@@ -67,12 +67,16 @@ let cluster
                    .nm($"{label}")
                    .Elt()
         }
+///
 
-// Shift origin and scale
+/// <summary> Scale and Shift origin</summary>
+/// <param name="scl"> Scale </param>
+/// <param name="hxo"> Array of Hexels arrays </param>
+/// <returns> Property array to feed into the Cluster function 
+/// Hexel coordinates array * width * height </returns>
 let crd 
     (scl : int) 
     (hxo : Hxl[][]) = 
-    
     // Location to Coordinates
     let cdn 
         (hxo:Hxl[]) 
@@ -92,8 +96,14 @@ let crd
     let hxMxmY = d + hxShfY + (4*scl)
     let hxXY02 = Array.map(fun aa -> Array.map (fun (x,y,z)-> (x + hxShfX), (y + hxShfY),z)aa) hxXY01
     (hxXY02,hxMxmX,hxMxmY)
+///
 
-// Hexel Coordinates, Color and Name
+/// <summary> Hexel Coordinates, Color and Name </summary>
+/// <param name="scl"> Scale </param>
+/// <param name="sqn"> Sequence </param>
+/// <param name="cnt"> Cluster sizes array </param>
+/// <returns> Collection of Coxels  
+/// Coxel coordinates array * Color * Name </returns>
 let cls 
     (scl : int)
     (sqn : Sqn)
@@ -121,7 +131,6 @@ let cls
         [|[|hsHx01|] ; Array.map (fun x -> (x.Hxls))(Coxel.coxel sqn hsHx03 hsHx01)|] 
         |> Array.concat
     let hsHx05 = Array.map(fun x -> (Array.sortBy(fun y -> available sqn y x)x)) hsHx04
-    
     
     // Scaled Coordinates
     hsHx05 |> crd scl
