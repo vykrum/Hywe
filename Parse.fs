@@ -115,7 +115,13 @@ let spaceCxl
     let cti  = match ct with Count x -> Count (x-1) | _ -> Count 0
     let ac1 = coxel seq ([|bas, id, cti, lb|]) occ
     // Include base Hexel among base Coxel Hexels
-    let ac2 = {(Array.head ac1) with Cxl.Hxls = (Array.append [|bas|] (Array.head ac1).Hxls)}
+    let ac2 = [|{(Array.head ac1) with 
+                    Cxl.Hxls = hxlTyp 
+                        seq 
+                        occ 
+                        (Array.append 
+                        [|bas|] 
+                        (Array.head ac1).Hxls)}|]
     let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
     let cxlCxl 
@@ -164,4 +170,4 @@ let spaceCxl
                     | None -> acc
         a
 
-    cxCxCx seq tree01 oc1 [|ac2|]
+    cxCxCx seq tree01 oc1 ac2
