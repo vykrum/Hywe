@@ -10,7 +10,11 @@ let spaceStr =
     (3.2/15/Bed-2),(3.3/15/Bed-3),(3.4/15/Kitchen),
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
+///
 
+/// <summary> Categorize constituent Hexels within a Coxel. </summary>
+/// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
+/// <returns> Array of string arrays (RefId as string * Count as int * Label as string)
 let spaceSeq 
     (spaceStr:string) = 
         
@@ -77,7 +81,13 @@ let spaceSeq
                         -> (Array.map (fun (x,y) 
                                         -> x, fst y, snd y))z)
     spcKey    
+///
 
+/// <summary> Generate coxels based on string data. </summary>
+/// <param name="seq"> Sequence. </param>
+/// <param name="bas"> Base hexel. </param>
+/// <param name="occ"> Unavailable hexels. </param>
+/// <returns> Coxel array </returns>
 let spaceCxl 
     (seq : Sqn)
     (bas : Hxl)
