@@ -624,6 +624,7 @@ let view model dispatch =
             }    
             
         }   
+
         // Footer
         footer{
             a{
