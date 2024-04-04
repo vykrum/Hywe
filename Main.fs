@@ -500,6 +500,130 @@ let view model dispatch =
             cluster (Array.zip3 loc lbls clrs) shp sqn scl wdt hgt
             }
         
+        // Nested Clusters
+        div{
+            attr.``class`` "label1"
+            attr.``style`` $"background: #d3d3d1;border: none;width: 100%%; margin-left: 0px;padding-left: 10px;"
+            label{
+                    attr.``type`` "text"
+                    $" Foyer "
+                }
+            
+            div{
+                attr.``class`` "label1"
+                attr.``style`` "background: #85C1E9; border: none;"
+                label{
+                    attr.``type`` "text"
+                    $" Living "
+                    }
+                div{
+                    attr.``class`` "label1"
+                    attr.``style`` $"background: {clrs[3]}; border: none;"
+                    label{
+                        attr.``type`` "text"
+                        $" Dining "
+                    }
+                    div{
+                        attr.``class`` "label1"
+                        attr.``style`` $"background: #FCF3CF; border: none;"
+                        label{
+                            attr.``type`` "text"
+                            $" Kitchen "
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` $"background: #FADBD8; border: none;"
+                            label{
+                                attr.``type`` "text"
+                                $" Utility "
+                        }
+                        }
+                    }
+                    div{
+                        attr.``class`` "label1"
+                        attr.``style`` $"background: #FEF5E7; border: none;"
+                        label{
+                            attr.``type`` "text"
+                            $" Bed-1 "
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` $"background: #D4EFDF; border: none;"
+                            label{
+                                attr.``type`` "text"
+                                $" Bath-1 "
+                        }
+                        }
+                    }
+                    div{
+                        attr.``class`` "label1"
+                        attr.``style`` "background: #F5CBA7; border: none;"
+                        label{
+                            attr.``type`` "text"
+                            $" Bed-2 "
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` "background: #EBDEF0; border: none;"
+                            label{
+                                attr.``type`` "text"
+                                $" Closet-2 "
+                            }
+                            div{
+                                attr.``class`` "label1"
+                                attr.``style`` "background: #AED6F1; border: none;"
+                                label{
+                                    attr.``type`` "text"
+                                    $" Bath-2 "
+                                }
+                            }
+                        }
+                    }
+                    div{
+                        attr.``class`` "label1"
+                        attr.``style`` "background: #FCF3CF; border: none;"
+                        label{
+                            attr.``type`` "text"
+                            $" Bed-3 "
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` "background: #F0B27A; border: none;"
+                            label{
+                                attr.``type`` "text"
+                                $" Closet-3 "
+                            }
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` "background: #F5CBA7; border: none;"
+                            label{
+                                attr.``type`` "text"
+                                $" Bath-3 "
+                            }
+                        }
+                    }
+                }
+                div{
+                    attr.``class`` "label1"
+                    attr.``style`` "background: #D0ECE7; border: none;"
+                    label{
+                        attr.``type`` "text"
+                        $" Staircase "
+                    }
+                }
+            }
+            div{
+                attr.``class`` "label1"
+                attr.``style`` "background: #D6EAF8; border: none;"
+                label{
+                    attr.``type`` "text"
+                    $" Study "
+                }
+                    
+            }    
+            
+        }   
         // Footer
         footer{
             a{
