@@ -194,7 +194,7 @@ let view model dispatch =
                 
                 // Slider Shape
                 input{
-                    attr.``style`` $"background: #d3d3d1; border: none;"
+                    attr.``style`` $"background:#d3d3d1;border:none;"
                     attr.``class`` "slider"
                     attr.``type`` "range"
                     attr.min "1"
@@ -204,14 +204,14 @@ let view model dispatch =
                 // Shape Label
                 label{
                     attr.``class`` "label"
-                    attr.``style`` $"background: #d3d3d1; border: none;"
+                    attr.``style`` $"background:#d3d3d1;border:none;"
                     attr.``type`` "text"
                     $" shape "
                 }
                 // Shape Value
                 label{
                     attr.``class`` "label"
-                    attr.``style`` $"background: #d3d3d1; border: none; width: 15%%;"
+                    attr.``style`` $"background:#d3d3d1;border:none;width:15%%;"
                     attr.``type`` "text"
                     $"{shp}" 
                 }
@@ -221,7 +221,7 @@ let view model dispatch =
                 attr.``class`` "flex-container"
                 // Slider Sequence
                 input{
-                    attr.``style`` $"background: #d3d3d1; border: none;"
+                    attr.``style`` $"background: #d3d3d1;border:none;"
                     attr.``class`` "slider"
                     attr.``type`` "range"
                     attr.min "1"
@@ -231,7 +231,7 @@ let view model dispatch =
                 // Sequence Label
                 label{
                     attr.``class`` "label"
-                    attr.``style`` $"background: #d3d3d1; border: none;"
+                    attr.``style`` $"background:#d3d3d1;border:none;"
                     attr.``type`` "text"
                     $" sqnce "
                 }
@@ -248,7 +248,7 @@ let view model dispatch =
                 attr.``class`` "flex-container"
                 // Slider Scale
                 input{
-                    attr.``style`` $"background: #d3d3d1; border: none;"
+                    attr.``style`` $"background:#d3d3d1;border:none;"
                     attr.``class`` "slider"
                     attr.``type`` "range"
                     attr.min "5"
@@ -258,14 +258,14 @@ let view model dispatch =
                 // Scale Label
                 label{
                     attr.``class`` "label"
-                    attr.``style`` $"background: #d3d3d1; border: none;"
+                    attr.``style`` $"background:#d3d3d1;border:none;"
                     attr.``type`` "text"
                     $" scale "
                 }
                 // Scale Value
                 label{
                     attr.``class`` "label"
-                    attr.``style`` $"background: #d3d3d1; border: none; width: 15%%;"
+                    attr.``style`` $"background:#d3d3d1;border: none;width:15%%;"
                     attr.``type`` "text"
                     $"{model.scl1}" 
                 }
