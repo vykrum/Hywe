@@ -29,45 +29,6 @@ type svtx = Template<
     >${nm}</text> """>
 ///
 
-/// <summary> Coxel SVG composition </summary>
-/// <param name="prp"> Coxel Array of Hexel coordinates (array) * Name * Color </param>
-/// <param name="shp"> Shape </param>
-/// <param name="scl"> Scale </param>
-/// <param name="wdt"> Width </param>
-/// <param name="hgt"> Height </param>
-/// <returns> SVG of Coxel composition </returns>
-let cluster 
-    (prp: ((int*int*int)[] * string * string)[]) 
-    shp sqn scl wdt hgt : Node =
-    svg {
-         attr.width wdt
-         attr.height hgt
-         let vrtx = vertex sqn shp (AV(0,0,0))
-                    |> Array.map (fun (x,y) -> [|x;y|])
-                    |> Array.concat
-                    |> Array.map (fun x -> string (x * scl)) 
-                    |> String.concat ","
-                    
-         for cmp in prp do
-             let (xyz,label,color) = cmp
-             let xy = Array.map(fun (a,b,_) -> a,b) xyz 
-             let xx = xy |> Array.tryHead
-             let x,y = match xx with 
-                         | None -> -10,-10
-                         | Some a -> a
-             for locn in xy do
-                    hxgn()
-                        .pt($"{vrtx}")
-                        .tr($"{locn}")
-                        .cl($"{color}")
-                        .Elt()
-             svtx()
-                   .xx($"{x+10}")
-                   .yy($"{y}")
-                   .nm($"{label}")
-                   .Elt()
-        }
-///
 
 /// <summary> Scale and Shift origin</summary>
 /// <param name="scl"> Scale </param>
@@ -134,3 +95,43 @@ let cls
     
     // Scaled Coordinates
     hsHx05 |> crd scl
+///
+
+/// <summary> Coxel SVG composition </summary>
+/// <param name="prp"> Coxel Array of Hexel coordinates (array) * Name * Color </param>
+/// <param name="shp"> Shape </param>
+/// <param name="scl"> Scale </param>
+/// <param name="wdt"> Width </param>
+/// <param name="hgt"> Height </param>
+/// <returns> SVG of Coxel composition </returns>
+let cluster 
+    (prp: ((int*int*int)[] * string * string)[]) 
+    shp sqn scl wdt hgt : Node =
+    svg {
+         attr.width wdt
+         attr.height hgt
+         let vrtx = vertex sqn shp (AV(0,0,0))
+                    |> Array.map (fun (x,y) -> [|x;y|])
+                    |> Array.concat
+                    |> Array.map (fun x -> string (x * scl)) 
+                    |> String.concat ","
+                    
+         for cmp in prp do
+             let (xyz,label,color) = cmp
+             let xy = Array.map(fun (a,b,_) -> a,b) xyz 
+             let xx = xy |> Array.tryHead
+             let x,y = match xx with 
+                         | None -> -10,-10
+                         | Some a -> a
+             for locn in xy do
+                    hxgn()
+                        .pt($"{vrtx}")
+                        .tr($"{locn}")
+                        .cl($"{color}")
+                        .Elt()
+             svtx()
+                   .xx($"{x+10}")
+                   .yy($"{y}")
+                   .nm($"{label}")
+                   .Elt()
+        }
