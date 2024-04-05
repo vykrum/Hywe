@@ -712,7 +712,7 @@ let view model dispatch =
                             attr.``type`` "text"
                             attr.``class`` "label, input1"
                             attr.``style`` $"background:{cxClr[2]};"
-                            bind.input.string model.lbl0002 (fun a -> dispatch (SetLbl0002 a))
+                            bind.input.string model.lbl0003 (fun a -> dispatch (SetLbl0003 a))
                         }
                     // Refid 3
                     label{
