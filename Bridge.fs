@@ -29,7 +29,6 @@ type svtx = Template<
     >${nm}</text> """>
 ///
 
-
 /// <summary> Scale and Shift origin</summary>
 /// <param name="scl"> Scale </param>
 /// <param name="hxo"> Array of Hexels arrays </param>
