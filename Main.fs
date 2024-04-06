@@ -339,15 +339,36 @@ let view model dispatch =
                     model.cls5
                     model.cls6 |])
 
+        // Nested Coxel Colors
+        let cxClr = [|   
+            "#D3D3D1"
+            "#85C1E9"
+            "#D6DBDF"
+            "#FCF3CF"
+            "#FADBD8"
+            "#FEF5E7"
+            "#D4EFDF"
+            "#F5CBA7"
+            "#EBDEF0"
+            "#AED6F1"
+            "#FCF3CF"
+            "#F0B27A"
+            "#F5CBA7"
+            "#D0ECE7"
+            "#D6EAF8"
+                   |]
+  
+        // Prototype
         div{
             attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap"
+            attr.``style`` "flex-wrap: wrap; justify-content: center;"
+            
             // The Clusters SVG
             span{
-                attr.``style`` "width: 400px; height: 300px; margin-left: 75px"
+                attr.``style`` "width: 400px; height: 300px;"
                 cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 300
-                }
-            
+                } 
+
             // Cluster Controls
             span{
                 attr.``style`` "width: 550px"
@@ -621,516 +642,510 @@ let view model dispatch =
                         bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
                     }
                 }
-            }  
+            }
+
         }
         
-        // Nested Coxel Colors
-        let cxClr = [|   
-            "#D3D3D1"
-            "#85C1E9"
-            "#D6DBDF"
-            "#FCF3CF"
-            "#FADBD8"
-            "#FEF5E7"
-            "#D4EFDF"
-            "#F5CBA7"
-            "#EBDEF0"
-            "#AED6F1"
-            "#FCF3CF"
-            "#F0B27A"
-            "#F5CBA7"
-            "#D0ECE7"
-            "#D6EAF8"
-                   |]
-
         // Nested Coxels
         div{
-            attr.``class`` "label1"
-            attr.``style`` $"background:{cxClr[0]}; 
-                            border:none; 
-                            width:100%%; 
-                            margin-left:0px; 
-                            margin-top: 20px; 
-                            padding-left:10px;"
+            attr.``class`` "flex-container"
+            attr.``style`` "flex-wrap: wrap; justify-content: center;"
             
-            // Label 1
-            input{
-                    attr.``type`` "text"
-                    attr.``class`` "label, input1"
-                    attr.``style`` $"background:{cxClr[0]};"
-                    bind.input.string model.lbl0001 (fun a -> dispatch (SetLbl0001 a))
-                }
-            // Refid 1
-            label{
-                    attr.``type`` "text"
-                    attr.``class`` "label"
-                    attr.``style`` "test-align: right;"
-                    " [ 1 ] "
-                    }
-            // Slider 1
-            input{
-                attr.``class`` "slider1"
-                attr.``type`` "range"
-                attr.min "0"
-                attr.max "25"
-                bind.input.int model.cxl0001 (fun a -> dispatch (SetCxl0001 a))
+            // Placeholder for Coxel SVG
+            div{
+                attr.``style`` "width: 400px; height: 10px;"
             }
-            // Count 1
-            label{
-                    attr.``type`` "text"
-                    attr.``class`` "label"
-                    $"{model.cxl0001}"
-            }
-            
+            // Nested Coxels
             div{
                 attr.``class`` "label1"
-                attr.``style`` $"background:{cxClr[1]};"
-                // Label 2
+                attr.``style`` $"background:{cxClr[0]}; 
+                                border:none; 
+                                width:550px; 
+                                margin-left:0px; 
+                                margin-top: 20px; 
+                                padding-left:10px;"
+            
+                // Label 1
                 input{
                         attr.``type`` "text"
                         attr.``class`` "label, input1"
-                        attr.``style`` $"background:{cxClr[1]};"
-                        bind.input.string model.lbl0002 (fun a -> dispatch (SetLbl0002 a))
+                        attr.``style`` $"background:{cxClr[0]};"
+                        bind.input.string model.lbl0001 (fun a -> dispatch (SetLbl0001 a))
                     }
-                // Refid 2
+                // Refid 1
                 label{
                         attr.``type`` "text"
                         attr.``class`` "label"
                         attr.``style`` "test-align: right;"
-                        " [ 2 ] "
+                        " [ 1 ] "
                         }
-                // Slider 2
+                // Slider 1
                 input{
                     attr.``class`` "slider1"
                     attr.``type`` "range"
                     attr.min "0"
                     attr.max "25"
-                    bind.input.int model.cxl0002 (fun a -> dispatch (SetCxl0002 a))
+                    bind.input.int model.cxl0001 (fun a -> dispatch (SetCxl0001 a))
                 }
-                // Count 2
+                // Count 1
                 label{
                         attr.``type`` "text"
                         attr.``class`` "label"
-                        $"{model.cxl0002}"
+                        $"{model.cxl0001}"
                 }
+            
                 div{
                     attr.``class`` "label1"
-                    attr.``style`` $"background:{cxClr[2]};"
-                    // Label 3
+                    attr.``style`` $"background:{cxClr[1]};"
+                    // Label 2
                     input{
                             attr.``type`` "text"
                             attr.``class`` "label, input1"
-                            attr.``style`` $"background:{cxClr[2]};"
-                            bind.input.string model.lbl0003 (fun a -> dispatch (SetLbl0003 a))
+                            attr.``style`` $"background:{cxClr[1]};"
+                            bind.input.string model.lbl0002 (fun a -> dispatch (SetLbl0002 a))
                         }
-                    // Refid 3
+                    // Refid 2
                     label{
                             attr.``type`` "text"
                             attr.``class`` "label"
                             attr.``style`` "test-align: right;"
-                            " [ 3 ] "
+                            " [ 2 ] "
                             }
-                    // Slider 3
+                    // Slider 2
                     input{
                         attr.``class`` "slider1"
                         attr.``type`` "range"
                         attr.min "0"
                         attr.max "25"
-                        bind.input.int model.cxl0003 (fun a -> dispatch (SetCxl0003 a))
+                        bind.input.int model.cxl0002 (fun a -> dispatch (SetCxl0002 a))
                     }
-                    // Count 3
+                    // Count 2
                     label{
                             attr.``type`` "text"
                             attr.``class`` "label"
-                            $"{model.cxl0003}"
+                            $"{model.cxl0002}"
                     }
                     div{
                         attr.``class`` "label1"
-                        attr.``style`` $"background:{cxClr[3]};"
-                        // Label 3.1
+                        attr.``style`` $"background:{cxClr[2]};"
+                        // Label 3
                         input{
                                 attr.``type`` "text"
                                 attr.``class`` "label, input1"
-                                attr.``style`` $"background:{cxClr[3]};"
-                                bind.input.string model.lbl0031 (fun a -> dispatch (SetLbl0031 a))
+                                attr.``style`` $"background:{cxClr[2]};"
+                                bind.input.string model.lbl0003 (fun a -> dispatch (SetLbl0003 a))
                             }
-                        // Refid 3.1
+                        // Refid 3
                         label{
                                 attr.``type`` "text"
                                 attr.``class`` "label"
                                 attr.``style`` "test-align: right;"
-                                " [ 3.1 ] "
+                                " [ 3 ] "
                                 }
-                        // Slider 3.1
+                        // Slider 3
                         input{
                             attr.``class`` "slider1"
                             attr.``type`` "range"
                             attr.min "0"
                             attr.max "25"
-                            bind.input.int model.cxl0031 (fun a -> dispatch (SetCxl0031 a))
+                            bind.input.int model.cxl0003 (fun a -> dispatch (SetCxl0003 a))
                         }
-                        // Count 3.1
+                        // Count 3
                         label{
                                 attr.``type`` "text"
                                 attr.``class`` "label"
-                                $"{model.cxl0031}"
+                                $"{model.cxl0003}"
                         }
                         div{
                             attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[4]};"
-                            // Label 3.1.1
+                            attr.``style`` $"background:{cxClr[3]};"
+                            // Label 3.1
                             input{
                                     attr.``type`` "text"
                                     attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[4]};"
-                                    bind.input.string model.lbl0311 (fun a -> dispatch (SetLbl0311 a))
+                                    attr.``style`` $"background:{cxClr[3]};"
+                                    bind.input.string model.lbl0031 (fun a -> dispatch (SetLbl0031 a))
                                 }
-                            // Refid 3.1.1
+                            // Refid 3.1
                             label{
                                     attr.``type`` "text"
                                     attr.``class`` "label"
                                     attr.``style`` "test-align: right;"
-                                    " [ 3.1.1 ] "
+                                    " [ 3.1 ] "
                                     }
-                            // Slider 3.1.1
+                            // Slider 3.1
                             input{
                                 attr.``class`` "slider1"
                                 attr.``type`` "range"
                                 attr.min "0"
                                 attr.max "25"
-                                bind.input.int model.cxl0311 (fun a -> dispatch (SetCxl0311 a))
+                                bind.input.int model.cxl0031 (fun a -> dispatch (SetCxl0031 a))
                             }
-                            // Count 3.1.1
+                            // Count 3.1
                             label{
                                     attr.``type`` "text"
                                     attr.``class`` "label"
-                                    $"{model.cxl0311}"
-                            }
-                        }
-                    }
-                    div{
-                        attr.``class`` "label1"
-                        attr.``style`` $"background:{cxClr[5]};"
-                        // Label 3.2
-                        input{
-                                attr.``type`` "text"
-                                attr.``class`` "label, input1"
-                                attr.``style`` $"background:{cxClr[5]};"
-                                bind.input.string model.lbl0032 (fun a -> dispatch (SetLbl0032 a))
-                            }
-                        // Refid 3.2
-                        label{
-                                attr.``type`` "text"
-                                attr.``class`` "label"
-                                attr.``style`` "test-align: right;"
-                                " [ 3.2 ] "
-                                }
-                        // Slider 3.2
-                        input{
-                            attr.``class`` "slider1"
-                            attr.``type`` "range"
-                            attr.min "0"
-                            attr.max "25"
-                            bind.input.int model.cxl0032 (fun a -> dispatch (SetCxl0032 a))
-                        }
-                        // Count 3.2
-                        label{
-                                attr.``type`` "text"
-                                attr.``class`` "label"
-                                $"{model.cxl0032}"
-                        }
-                        div{
-                            attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[6]};"
-                            // Label 3.2.1
-                            input{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[6]};"
-                                    bind.input.string model.lbl0321 (fun a -> dispatch (SetLbl0321 a))
-                                }
-                            // Refid 3.2.1
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    attr.``style`` "test-align: right;"
-                                    " [ 3.2.1 ] "
-                                    }
-                            // Slider 3.2.1
-                            input{
-                                attr.``class`` "slider1"
-                                attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
-                                bind.input.int model.cxl0321 (fun a -> dispatch (SetCxl0321 a))
-                            }
-                            // Count 3.2.1
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    $"{model.cxl0321}"
-                            }
-                        }
-                    }
-                    div{
-                        attr.``class`` "label1"
-                        attr.``style`` $"background:{cxClr[7]};"
-                        // Label 3.3
-                        input{
-                                attr.``type`` "text"
-                                attr.``class`` "label, input1"
-                                attr.``style`` $"background:{cxClr[7]};"
-                                bind.input.string model.lbl0033 (fun a -> dispatch (SetLbl0033 a))
-                            }
-                        // Refid 3.3
-                        label{
-                                attr.``type`` "text"
-                                attr.``class`` "label"
-                                attr.``style`` "test-align: right;"
-                                " [ 3.3 ] "
-                                }
-                        // Slider 3.3
-                        input{
-                            attr.``class`` "slider1"
-                            attr.``type`` "range"
-                            attr.min "0"
-                            attr.max "25"
-                            bind.input.int model.cxl0033 (fun a -> dispatch (SetCxl0033 a))
-                        }
-                        // Count 3.3
-                        label{
-                                attr.``type`` "text"
-                                attr.``class`` "label"
-                                $"{model.cxl0033}"
-                        }
-                        div{
-                            attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[8]};"
-                            // Label 3.3.1
-                            input{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[8]};"
-                                    bind.input.string model.lbl0331 (fun a -> dispatch (SetLbl0331 a))
-                                }
-                            // Refid 3.3.1
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    attr.``style`` "test-align: right;"
-                                    " [ 3.3.1 ] "
-                                    }
-                            // Slider 3.3.1
-                            input{
-                                attr.``class`` "slider1"
-                                attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
-                                bind.input.int model.cxl0331 (fun a -> dispatch (SetCxl0331 a))
-                            }
-                            // Count 3.3.1
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    $"{model.cxl0331}"
+                                    $"{model.cxl0031}"
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[9]};"
-                                // Label 3.3.1.1
+                                attr.``style`` $"background:{cxClr[4]};"
+                                // Label 3.1.1
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[9]};"
-                                        bind.input.string model.lbl3311 (fun a -> dispatch (SetLbl3311 a))
+                                        attr.``style`` $"background:{cxClr[4]};"
+                                        bind.input.string model.lbl0311 (fun a -> dispatch (SetLbl0311 a))
                                     }
-                                // Refid 3.3.1.1
+                                // Refid 3.1.1
                                 label{
                                         attr.``type`` "text"
                                         attr.``class`` "label"
                                         attr.``style`` "test-align: right;"
-                                        " [ 3.3.1.1 ] "
+                                        " [ 3.1.1 ] "
                                         }
-                                // Slider 3.3.1.1
+                                // Slider 3.1.1
                                 input{
                                     attr.``class`` "slider1"
                                     attr.``type`` "range"
                                     attr.min "0"
                                     attr.max "25"
-                                    bind.input.int model.cxl3311 (fun a -> dispatch (SetCxl3311 a))
+                                    bind.input.int model.cxl0311 (fun a -> dispatch (SetCxl0311 a))
                                 }
-                                // Count 3.3.1.1
+                                // Count 3.1.1
                                 label{
                                         attr.``type`` "text"
                                         attr.``class`` "label"
-                                        $"{model.cxl3311}"
+                                        $"{model.cxl0311}"
+                                }
+                            }
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` $"background:{cxClr[5]};"
+                            // Label 3.2
+                            input{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label, input1"
+                                    attr.``style`` $"background:{cxClr[5]};"
+                                    bind.input.string model.lbl0032 (fun a -> dispatch (SetLbl0032 a))
+                                }
+                            // Refid 3.2
+                            label{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label"
+                                    attr.``style`` "test-align: right;"
+                                    " [ 3.2 ] "
+                                    }
+                            // Slider 3.2
+                            input{
+                                attr.``class`` "slider1"
+                                attr.``type`` "range"
+                                attr.min "0"
+                                attr.max "25"
+                                bind.input.int model.cxl0032 (fun a -> dispatch (SetCxl0032 a))
+                            }
+                            // Count 3.2
+                            label{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label"
+                                    $"{model.cxl0032}"
+                            }
+                            div{
+                                attr.``class`` "label1"
+                                attr.``style`` $"background:{cxClr[6]};"
+                                // Label 3.2.1
+                                input{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label, input1"
+                                        attr.``style`` $"background:{cxClr[6]};"
+                                        bind.input.string model.lbl0321 (fun a -> dispatch (SetLbl0321 a))
+                                    }
+                                // Refid 3.2.1
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        attr.``style`` "test-align: right;"
+                                        " [ 3.2.1 ] "
+                                        }
+                                // Slider 3.2.1
+                                input{
+                                    attr.``class`` "slider1"
+                                    attr.``type`` "range"
+                                    attr.min "0"
+                                    attr.max "25"
+                                    bind.input.int model.cxl0321 (fun a -> dispatch (SetCxl0321 a))
+                                }
+                                // Count 3.2.1
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        $"{model.cxl0321}"
+                                }
+                            }
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` $"background:{cxClr[7]};"
+                            // Label 3.3
+                            input{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label, input1"
+                                    attr.``style`` $"background:{cxClr[7]};"
+                                    bind.input.string model.lbl0033 (fun a -> dispatch (SetLbl0033 a))
+                                }
+                            // Refid 3.3
+                            label{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label"
+                                    attr.``style`` "test-align: right;"
+                                    " [ 3.3 ] "
+                                    }
+                            // Slider 3.3
+                            input{
+                                attr.``class`` "slider1"
+                                attr.``type`` "range"
+                                attr.min "0"
+                                attr.max "25"
+                                bind.input.int model.cxl0033 (fun a -> dispatch (SetCxl0033 a))
+                            }
+                            // Count 3.3
+                            label{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label"
+                                    $"{model.cxl0033}"
+                            }
+                            div{
+                                attr.``class`` "label1"
+                                attr.``style`` $"background:{cxClr[8]};"
+                                // Label 3.3.1
+                                input{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label, input1"
+                                        attr.``style`` $"background:{cxClr[8]};"
+                                        bind.input.string model.lbl0331 (fun a -> dispatch (SetLbl0331 a))
+                                    }
+                                // Refid 3.3.1
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        attr.``style`` "test-align: right;"
+                                        " [ 3.3.1 ] "
+                                        }
+                                // Slider 3.3.1
+                                input{
+                                    attr.``class`` "slider1"
+                                    attr.``type`` "range"
+                                    attr.min "0"
+                                    attr.max "25"
+                                    bind.input.int model.cxl0331 (fun a -> dispatch (SetCxl0331 a))
+                                }
+                                // Count 3.3.1
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        $"{model.cxl0331}"
+                                }
+                                div{
+                                    attr.``class`` "label1"
+                                    attr.``style`` $"background:{cxClr[9]};"
+                                    // Label 3.3.1.1
+                                    input{
+                                            attr.``type`` "text"
+                                            attr.``class`` "label, input1"
+                                            attr.``style`` $"background:{cxClr[9]};"
+                                            bind.input.string model.lbl3311 (fun a -> dispatch (SetLbl3311 a))
+                                        }
+                                    // Refid 3.3.1.1
+                                    label{
+                                            attr.``type`` "text"
+                                            attr.``class`` "label"
+                                            attr.``style`` "test-align: right;"
+                                            " [ 3.3.1.1 ] "
+                                            }
+                                    // Slider 3.3.1.1
+                                    input{
+                                        attr.``class`` "slider1"
+                                        attr.``type`` "range"
+                                        attr.min "0"
+                                        attr.max "25"
+                                        bind.input.int model.cxl3311 (fun a -> dispatch (SetCxl3311 a))
+                                    }
+                                    // Count 3.3.1.1
+                                    label{
+                                            attr.``type`` "text"
+                                            attr.``class`` "label"
+                                            $"{model.cxl3311}"
+                                    }
+                                }
+                            }
+                        }
+                        div{
+                            attr.``class`` "label1"
+                            attr.``style`` $"background:{cxClr[10]};"
+                            // Label 3.4
+                            input{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label, input1"
+                                    attr.``style`` $"background:{cxClr[10]};"
+                                    bind.input.string model.lbl0034 (fun a -> dispatch (SetLbl0034 a))
+                                }
+                            // Refid 3.4
+                            label{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label"
+                                    attr.``style`` "test-align: right;"
+                                    " [ 3.4 ] "
+                                    }
+                            // Slider 3.3
+                            input{
+                                attr.``class`` "slider1"
+                                attr.``type`` "range"
+                                attr.min "0"
+                                attr.max "25"
+                                bind.input.int model.cxl0034 (fun a -> dispatch (SetCxl0034 a))
+                            }
+                            // Count 3.4
+                            label{
+                                    attr.``type`` "text"
+                                    attr.``class`` "label"
+                                    $"{model.cxl0034}"
+                            }
+                            div{
+                                attr.``class`` "label1"
+                                attr.``style`` $"background:{cxClr[11]};"
+                                // Label 3.4.1
+                                input{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label, input1"
+                                        attr.``style`` $"background:{cxClr[11]};"
+                                        bind.input.string model.lbl0341 (fun a -> dispatch (SetLbl0341 a))
+                                    }
+                                // Refid 3.4.1
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        attr.``style`` "test-align: right;"
+                                        " [ 3.4.1 ] "
+                                        }
+                                // Slider 3.4.1
+                                input{
+                                    attr.``class`` "slider1"
+                                    attr.``type`` "range"
+                                    attr.min "0"
+                                    attr.max "25"
+                                    bind.input.int model.cxl0341 (fun a -> dispatch (SetCxl0341 a))
+                                }
+                                // Count 3.4.1
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        $"{model.cxl0341}"
+                                }
+                            }
+                            div{
+                                attr.``class`` "label1"
+                                attr.``style`` $"background:{cxClr[12]};"
+                                // Label 3.4.2
+                                input{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label, input1"
+                                        attr.``style`` $"background:{cxClr[12]};"
+                                        bind.input.string model.lbl0342 (fun a -> dispatch (SetLbl0342 a))
+                                    }
+                                // Refid 3.4.2
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        attr.``style`` "test-align: right;"
+                                        " [ 3.4.2 ] "
+                                        }
+                                // Slider 3.4.2
+                                input{
+                                    attr.``class`` "slider1"
+                                    attr.``type`` "range"
+                                    attr.min "0"
+                                    attr.max "25"
+                                    bind.input.int model.cxl0342 (fun a -> dispatch (SetCxl0342 a))
+                                }
+                                // Count 3.4.2
+                                label{
+                                        attr.``type`` "text"
+                                        attr.``class`` "label"
+                                        $"{model.cxl0342}"
                                 }
                             }
                         }
                     }
                     div{
                         attr.``class`` "label1"
-                        attr.``style`` $"background:{cxClr[10]};"
-                        // Label 3.4
+                        attr.``style`` $"background:{cxClr[13]};"
+                        // Label 2.1
                         input{
                                 attr.``type`` "text"
                                 attr.``class`` "label, input1"
-                                attr.``style`` $"background:{cxClr[10]};"
-                                bind.input.string model.lbl0034 (fun a -> dispatch (SetLbl0034 a))
+                                attr.``style`` $"background:{cxClr[13]};"
+                                bind.input.string model.lbl0021 (fun a -> dispatch (SetLbl0021 a))
                             }
-                        // Refid 3.4
+                        // Refid 2.1
                         label{
                                 attr.``type`` "text"
                                 attr.``class`` "label"
                                 attr.``style`` "test-align: right;"
-                                " [ 3.4 ] "
+                                " [ 2.1 ] "
                                 }
-                        // Slider 3.3
+                        // Slider 2.1
                         input{
                             attr.``class`` "slider1"
                             attr.``type`` "range"
                             attr.min "0"
                             attr.max "25"
-                            bind.input.int model.cxl0034 (fun a -> dispatch (SetCxl0034 a))
+                            bind.input.int model.cxl0021 (fun a -> dispatch (SetCxl0021 a))
                         }
-                        // Count 3.4
+                        // Count 2.1
                         label{
                                 attr.``type`` "text"
                                 attr.``class`` "label"
-                                $"{model.cxl0034}"
-                        }
-                        div{
-                            attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[11]};"
-                            // Label 3.4.1
-                            input{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[11]};"
-                                    bind.input.string model.lbl0341 (fun a -> dispatch (SetLbl0341 a))
-                                }
-                            // Refid 3.4.1
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    attr.``style`` "test-align: right;"
-                                    " [ 3.4.1 ] "
-                                    }
-                            // Slider 3.4.1
-                            input{
-                                attr.``class`` "slider1"
-                                attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
-                                bind.input.int model.cxl0341 (fun a -> dispatch (SetCxl0341 a))
-                            }
-                            // Count 3.4.1
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    $"{model.cxl0341}"
-                            }
-                        }
-                        div{
-                            attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[12]};"
-                            // Label 3.4.2
-                            input{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[12]};"
-                                    bind.input.string model.lbl0342 (fun a -> dispatch (SetLbl0342 a))
-                                }
-                            // Refid 3.4.2
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    attr.``style`` "test-align: right;"
-                                    " [ 3.4.2 ] "
-                                    }
-                            // Slider 3.4.2
-                            input{
-                                attr.``class`` "slider1"
-                                attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
-                                bind.input.int model.cxl0342 (fun a -> dispatch (SetCxl0342 a))
-                            }
-                            // Count 3.4.2
-                            label{
-                                    attr.``type`` "text"
-                                    attr.``class`` "label"
-                                    $"{model.cxl0342}"
-                            }
+                                $"{model.cxl0021}"
                         }
                     }
                 }
                 div{
                     attr.``class`` "label1"
-                    attr.``style`` $"background:{cxClr[13]};"
-                    // Label 2.1
+                    attr.``style`` $"background:{cxClr[14]};"
+                    // Label 1.1
                     input{
                             attr.``type`` "text"
                             attr.``class`` "label, input1"
-                            attr.``style`` $"background:{cxClr[13]};"
-                            bind.input.string model.lbl0021 (fun a -> dispatch (SetLbl0021 a))
+                            attr.``style`` $"background:{cxClr[14]};"
+                            bind.input.string model.lbl0011 (fun a -> dispatch (SetLbl0011 a))
                         }
-                    // Refid 2.1
+                    // Refid 1.1
                     label{
                             attr.``type`` "text"
                             attr.``class`` "label"
                             attr.``style`` "test-align: right;"
-                            " [ 2.1 ] "
+                            " [ 1.1 ] "
                             }
-                    // Slider 2.1
+                    // Slider 1.1
                     input{
                         attr.``class`` "slider1"
                         attr.``type`` "range"
                         attr.min "0"
                         attr.max "25"
-                        bind.input.int model.cxl0021 (fun a -> dispatch (SetCxl0021 a))
+                        bind.input.int model.cxl0011 (fun a -> dispatch (SetCxl0011 a))
                     }
-                    // Count 2.1
+                    // Count 1.1
                     label{
                             attr.``type`` "text"
                             attr.``class`` "label"
-                            $"{model.cxl0021}"
-                    }
-                }
+                            $"{model.cxl0011}"
+                    }     
+                } 
             }
-            div{
-                attr.``class`` "label1"
-                attr.``style`` $"background:{cxClr[14]};"
-                // Label 1.1
-                input{
-                        attr.``type`` "text"
-                        attr.``class`` "label, input1"
-                        attr.``style`` $"background:{cxClr[14]};"
-                        bind.input.string model.lbl0011 (fun a -> dispatch (SetLbl0011 a))
-                    }
-                // Refid 1.1
-                label{
-                        attr.``type`` "text"
-                        attr.``class`` "label"
-                        attr.``style`` "test-align: right;"
-                        " [ 1.1 ] "
-                        }
-                // Slider 1.1
-                input{
-                    attr.``class`` "slider1"
-                    attr.``type`` "range"
-                    attr.min "0"
-                    attr.max "25"
-                    bind.input.int model.cxl0011 (fun a -> dispatch (SetCxl0011 a))
-                }
-                // Count 1.1
-                label{
-                        attr.``type`` "text"
-                        attr.``class`` "label"
-                        $"{model.cxl0011}"
-                }     
-            } 
+
         }
+        
     }
 
 // Bolero component handling state updates and rendering the user interface
