@@ -10,7 +10,7 @@ html, body {
     display: flex;
     flex-direction: row;
     width: 100%;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Optima', Candara, Calibri;
     font-weight: normal;
     padding-top: 10px;
 }

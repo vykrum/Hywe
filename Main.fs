@@ -214,11 +214,19 @@ let view model dispatch =
     concat {
         // Header
         div{
-            attr.``style`` "margin-top: 0px;background: #d3d3d1; color: #363636; flex-direction: column;"
+            attr.``style`` "margin-top: 0px;
+                            background: #d3d3d1; 
+                            color: #363636; 
+                            flex-direction: column;"
             // Name and Logo
             div{
                 attr.``class`` "flex-container"
-                attr.``style`` "width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;"
+                attr.``style`` "width: 100%;
+                                height: 37px;
+                                opacity: 1;
+                                background: #363636;
+                                padding-left: 5px;
+                                padding-top: 5px;"
                 // Logo
                 a{
                     attr.href "https://github.com/vykrum/Hywe"
@@ -231,7 +239,13 @@ let view model dispatch =
                 }
                 // Title
                 div{
-                    attr.``style`` "color: white;font-family: 'Segoe UI';font-size: 20px;font-weight: normal;padding-left: 10px;padding-right: 10px;padding-bottom: 7px;"
+                    attr.``style`` "color: white;
+                                    font-family: 'Optima', Candara, Calibri;
+                                    font-size: 20px;
+                                    font-weight: normal;
+                                    padding-left: 10px;
+                                    padding-right: 10px;
+                                    padding-bottom: 7px;"
                     " H Y W E"
                     }
                 // Acronym
@@ -245,9 +259,9 @@ let view model dispatch =
                 }
             // Introduction
             div{
-                attr.``style`` "font-family: Segoe UI; font-size: 18px; color: #363636; padding-left: 12px;padding-right: 10px;padding-bottom: 5px;"
+                attr.``style`` "font-family: 'Optima', Candara, Calibri; font-size: 18px; color: #363636; padding-left: 12px;padding-right: 10px;padding-bottom: 5px;"
                 p{
-                    "Hywe is a space layout planning concept currently undergoing its formative stages of development being developed as an early stage design interface."
+                    "Hywe is a space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
                     br
                     "Manipulating the color coded sliders controls the scale of corresponding clusters."
                 }
