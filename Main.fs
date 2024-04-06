@@ -385,7 +385,7 @@ let view model dispatch =
 
             // Cluster Controls
             span{
-                attr.``style`` "width: 550px"
+                attr.``style`` "width: 550px; margin-left: 10px"
                 // Cluster 0
                 div{
                     attr.``class`` "flex-container"
@@ -675,7 +675,7 @@ let view model dispatch =
                 attr.``style`` $"background:{cxClr[0]}; 
                                 border:none; 
                                 width:550px; 
-                                margin-left:0px; 
+                                margin-left:10px; 
                                 margin-top: 20px; 
                                 padding-left:10px;"
             
