@@ -17,9 +17,11 @@ html, body {
 
 .slider {
     -webkit-appearance: none;
-    width: 80%;
+    width: 70%;
     height: 4px;
     margin-left: 10px;
+    margin-top: auto;
+    margin-bottom: auto;
     border-radius: 2px;
     background: #d3d3d1;
     outline: none;
@@ -29,13 +31,16 @@ html, body {
 }
 
 .label {
-    width: 40px;
+    width: 80px;
+    border: none;
     border-radius: 4px;
     margin-left: 3px;
     margin-right: 3px;
-    font-size: 10px;
+    margin-top: 3px;
+    margin-bottom: 2px;
+    font-size: 12px;
     opacity: 0.85;
-    text-align: right;
+    text-align: center;
     padding-left: 3px;
     padding-right: 3px;
 }
@@ -51,7 +56,7 @@ html, body {
     margin-left: 10px;
     margin-right: 10px;
     font-family: Segoe UI;
-    font-size: 18px;
+    font-size: 12px;
     opacity: 0.85;
     text-align: left;
     padding-top: 5px;
@@ -76,7 +81,7 @@ html, body {
 
 .input1 {
     border: none;
-    font-size: 18px;
+    font-size: 12px;
     width: 80px;
     text-align: left;
 }
