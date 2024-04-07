@@ -129,5 +129,5 @@ let cxlPrm
     vrBrIn
     |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
     |> Array.concat
-    |> Array.map (fun x -> fst x)
+    |> Array.map (fun ((_,x,y),_) -> x,y)
     |> Array.distinct
