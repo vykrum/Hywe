@@ -79,20 +79,22 @@ let cxlPrm
     let hxBd = (cxlHxl cxl).Prph 
             |> allAV false 
             |> bndSqn sqn
-                    
+                        
     // All hexel vertices
     let vrHx = Array.map(fun x -> vertex sqn HxPt x) hx1
     // Vertices shared Hexel Count 
     let vrHxCt = vrHx   
                 |> Array.concat 
-                |> Array.groupBy (fun n -> n)
+                |> Array.groupBy (fun (_,x,y) -> x,y)
                 |> Array.map (fun (x,y) -> x,Array.length y)
                 |> Map.ofArray
     // Boundary Hexel Vertices
     let vrBd = hxBd 
             |> Array.map(fun x -> vertex sqn HxPt x) 
     // Vertex Cell Count 
-    let vrBdCt = vrBd
+    let vrBdCt = 
+                let vrBd1 = Array.map(fun x -> Array.map(fun (a,b,c)->b,c)x)vrBd
+                vrBd1
                 |> Array.map(fun x 
                                 -> Array.map(fun y 
                                                 -> Map.find 
