@@ -146,7 +146,7 @@ let coxel
                                                 Size = fst x
                                                 Seqn = sqn
                                                 Base = Array.head hx1
-                                                Hxls = Array.except ([|Array.head hx1|]) hx1
+                                                Hxls = Array.except occ hx1
                                             })szn idn cl1
     cxl
 ///
