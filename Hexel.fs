@@ -313,7 +313,7 @@ let increments
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="hxl"> All constituent hexels. </param>
 /// <returns> Boundary/Peripheral hexels. </returns>
-let bndSqn 
+let bndSqn
     (sqn : Sqn) 
     (hxo : Hxl[]) = 
     /// <summary> Arrange/sort hexels in continuous sequence. </summary>
@@ -343,23 +343,35 @@ let bndSqn
             let acc = Array.append acc  hx3
             arr sqn hxl acc (cnt-1) opt
 
-    let hxl = hxo|> Array.sortByDescending 
+    let hxl = hxo
+            |> Array.sortByDescending 
                 (fun x -> available sqn x hxo)
     let a1 = 
         match hxl with 
         | [||] -> [||]
         | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
 
-    let b1 = Array.length a1 = Array.length hxl
+    let b1 = (Array.length a1) = Array.length hxl
         
     let ar1 = match b1 with 
                 | true -> a1
                 | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
-    match hxo with 
-    | [||] -> [||]
-    | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
-            | true -> ar1
-            | false -> allAV true ar1
+    let ar2 = 
+        match hxo with 
+        | [||] -> [||]
+        | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+                | true -> ar1
+                | false -> allAV true ar1
+        
+    // Arrange clockwise
+    let ar3 = Array.windowed 2 ar2
+    let bln = Array.map(fun x 
+                            ->  let cdx1,cdy1,_ = hxlCrd (Array.head x)
+                                let cdx2,cdy2,_ = hxlCrd (Array.last x)
+                                (cdx2 - cdx1 >= 0) && (cdy1 - cdy2 >= 0)) ar3
+    match Array.contains false bln with
+    | true -> Array.rev ar2
+    | false -> ar2
 ///
 
 /// <summary> Hexel Ring Segment Sequence. </summary>
