@@ -110,7 +110,7 @@ let cluster
          attr.width wdt
          attr.height hgt
          let vrtx = vertex sqn shp (AV(0,0,0))
-                    |> Array.map (fun (x,y) -> [|x;y|])
+                    |> Array.map (fun (_,x,y) -> [|x;y|])
                     |> Array.concat
                     |> Array.map (fun x -> string (x * scl)) 
                     |> String.concat ","
