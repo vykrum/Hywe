@@ -404,7 +404,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[0]};"
-                        $" {model.cls0 * 4}%%"
+                        $"{model.cls0 * 4}"
                     }
                     // Slider 0
                     input{
@@ -431,7 +431,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[1]};"
-                        $" {model.cls1 * 4}%%"
+                        $"{model.cls1 * 4}"
                     }
                     // Slider 1
                     input{
@@ -458,7 +458,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[2]};"
-                        $" {model.cls2 * 4}%%"
+                        $"{model.cls2 * 4}"
                     }
                     // Slider 2
                     input{
@@ -485,7 +485,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[3]};"
-                        $" {model.cls3 * 4}%%"
+                        $"{model.cls3 * 4}"
                     }
                     // Slider 3
                     input{
@@ -512,7 +512,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[4]};"
-                        $" {model.cls4 * 4}%%"
+                        $"{model.cls4 * 4}"
                     }
                     // Slider 4
                     input{
@@ -539,7 +539,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[5]};"
-                        $" {model.cls5 * 4}%%"
+                        $"{model.cls5 * 4}"
                     }
                     // Slider 5
                     input{
@@ -566,7 +566,7 @@ let view model dispatch =
                         attr.``class`` "label"
                         attr.``type`` "text"
                         attr.``style`` $"background: {clrs[6]};"
-                        $"{model.cls6 * 4}%%"
+                        $"{model.cls6 * 4}"
                     }
                     // Slider 6
                     input{
