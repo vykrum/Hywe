@@ -70,7 +70,7 @@ let vertex
     let x, y, _ = hxl |> hxlCrd 
     hxCr 
     |> Array.map(fun (a,b)-> a + x, b + y) 
-    |> Array.map2 ( fun inx (vrx,vry) -> string(inx),vrx,vry) [|0..5|]
+    |> Array.map2 ( fun inx (vrx,vry) -> string(inx),vrx,vry) [|0..(Array.length hxCr)-1|]
 
 // Coxel Perimeter Vertices
 let cxlPrm
