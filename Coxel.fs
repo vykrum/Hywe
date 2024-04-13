@@ -49,7 +49,7 @@ let prpVlu
 /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
 /// <param name="occ"> Hexels that are unavailable. </param>
 /// <returns> An array of coxels. </returns>
-let coxel 
+let coxel
     (sqn : Sqn)
     (ini : (Hxl*Prp*Prp*Prp)[])
     (occ : Hxl[]) = 
@@ -63,7 +63,7 @@ let coxel
             |> Array.Parallel.map (fun x -> snd x)
             |> Array.max
     let acc = Array.chunkBySize 1 bas
-    let occ = (Array.append occ (getHxls bas)) |> allAV false 
+    let oc1 = (Array.append occ (getHxls bas)) |> allAV false 
         
     let rec clsts 
         (hxo: (Hxl*int)[])
@@ -89,14 +89,13 @@ let coxel
                 let Hxl =  
                     acc
                     |> Array.Parallel.map (fun x
-                                            -> Array.filter (fun a 
-                                                                        -> (available sqn a occ) > 0x0) x)
+                                            -> Array.filter (fun a -> (available sqn a occ) > 0x0) x)
                     |> Array.Parallel.map (fun x 
                                             -> Array.tryHead x)
                     |> Array.Parallel.map (fun x 
-                                                -> match x with
-                                                    | Some a -> a 
-                                                    | None -> (identity,0xFFFFFFFF))                
+                                            -> match x with
+                                                | Some a -> a 
+                                                | None -> (identity,0xFFFFFFFF))                
                     |> Array.map2 (fun x y 
                                     -> fst y, x) rpt
                     
@@ -115,11 +114,9 @@ let coxel
                         |> allAV false
 
                 (clsts Hxl occ acc (cnt - 0x1))
-
-
-
+         
     let cls = 
-        clsts bas occ acc cnt
+        clsts bas oc1 acc cnt
             |> Array.Parallel.map(fun x 
                                     -> Array.filter(fun (_,z) -> z >= 0) x)
         
@@ -146,7 +143,9 @@ let coxel
                                                 Size = fst x
                                                 Seqn = sqn
                                                 Base = Array.head hx1
-                                                Hxls = Array.except occ hx1
+                                                Hxls = match Array.length hx1 > 1 with 
+                                                        | true -> Array.tail hx1
+                                                        | false -> [||]
                                             })szn idn cl1
     cxl
 ///
@@ -184,11 +183,24 @@ let cxlHxl
                                     |> Array.contains (Array.head br01) with 
                                     | true -> Array.append av01 br01
                                     | false -> Array.append av01 (Array.rev br01)
+    // Clockwise sequence
+    let pr02 = match Array.length pr01 > 2 with 
+                    | false -> pr01
+                    | true -> 
+                            let x1,y1,_ = hxlCrd (Array.last pr01)
+                            let x2,y2,_ = hxlCrd (Array.head pr01)
+                            let x3, y3,_ = hxlCrd (pr01[1])
+                            let gs = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
+                            match gs with 
+                            | 0 when x2 > x1 -> pr01
+                            | a when a < 0 -> pr01
+                            | _ -> Array.rev pr01
+
     {|
         Base = cxl.Base
         Hxls = cxl.Hxls
         Core = rv01 |> fst 
-        Prph = pr01
+        Prph = pr02 
         Brdr = br01
         Avbl = av01 
-    |}  
+    |}    
