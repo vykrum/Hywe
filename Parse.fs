@@ -124,10 +124,11 @@ let spaceCxl
     let id,ct,lb = tree01 |> Array.concat |> Array.head
     let cti  = match ct with 
                 | Count x when x>0 -> Count (x-1) 
-                | _ -> Count 0       
-    let ac1 = match cti with 
+                | _ -> Count 0 
+    let ac0 = match cti with 
                 | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
                 | _ -> coxel seq ([|bas, id, cti, lb|]) occ
+    let ac1 = [|{ac0[0] with Hxls = Array.except occ (Array.append [|ac0[0].Base|] ac0[0].Hxls)}|]
     let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
     let cxlCxl 
