@@ -76,12 +76,10 @@ let vertex
 let cxlPrm
     (sqn : Sqn)
     (cxl : Cxl) = 
-    let hx1 = cxl.Hxls 
+    let hx1 = cxl.Hxls |> allAV false 
     // Boundary Hexels
-    let hxBd = (cxlHxl cxl).Prph 
-            |> allAV false 
-            |> bndSqn sqn
-                        
+    let hxBd = (cxlHxl cxl).Prph
+            |> allAV false                    
     // All hexel vertices
     let vrHx = Array.map(fun x -> vertex sqn HxPt x) hx1
     // Vertices shared Hexel Count 
@@ -126,8 +124,10 @@ let cxlPrm
                                     | true ->   let a,b = Array.splitAt (y+1) x
                                                 Array.append b a  )a      
         b     
-    vrBrIn
-    |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
-    |> Array.concat
-    |> Array.map (fun ((_,x,y),_) -> x,y)
-    |> Array.distinct
+    let vrBrIn1 = vrBrIn
+                |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
+                |> Array.concat
+                |> Array.map (fun ((_,x,y),_) -> x,y)
+                |> Array.distinct
+    vrBrIn1
+///

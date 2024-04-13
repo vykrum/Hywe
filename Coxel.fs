@@ -155,6 +155,98 @@ let coxel
 /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
 let cxlHxl
     (cxl : Cxl)  = 
+    /// <summary> Hexel Ring Boundary Sequence. </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxl"> All constituent hexels. </param>
+    /// <returns> Boundary/Peripheral hexels. </returns>
+    let bndSqn
+        (sqn : Sqn) 
+        (hxo : Hxl[]) = 
+        /// <summary> Arrange/sort hexels in continuous sequence. </summary>
+        /// <param name="sqn"> Sequence to follow. </param>
+        /// <param name="hxl"> Array of hexels. </param>
+        /// <param name="acc"> Accumulator for recursive function. </param>
+        /// <param name="cnt"> Counter. </param>
+        /// <returns> Array of sorted hexels </returns>
+        let rec arr 
+            (sqn : Sqn) 
+            (hxl : Hxl[]) 
+            (acc : Hxl[]) 
+            (cnt : int)
+            (opt : bool) = 
+            match cnt with 
+            | a when cnt <= 0x1 -> acc
+            | _ -> 
+                let hxl = Array.except acc hxl
+                let hx1 = ((Array.filter (fun x -> Array.contains x hxl) 
+                                (adjacent sqn (Array.last acc))))                
+                let hx2 = match opt with 
+                                | false -> Array.tryHead hx1
+                                | true -> Array.tryLast hx1
+                let hx3 = match hx2 with 
+                                | Some a -> [|a|]
+                                | None -> [||]
+                let acc = Array.append acc  hx3
+                arr sqn hxl acc (cnt-1) opt
+
+        let hxl = hxo|> Array.sortByDescending 
+                    (fun x -> available sqn x hxo)
+        let a1 = 
+            match hxl with 
+            | [||] -> [||]
+            | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+
+        let b1 = Array.length a1 = Array.length hxl
+            
+        let ar1 = match b1 with 
+                    | true -> a1
+                    | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+        match hxo with 
+        | [||] -> [||]
+        | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+                | true -> Array.rev ar1
+                | false -> Array.rev (allAV true ar1)
+
+    /// <summary> Hexel Ring Segment Sequence. </summary>
+    let cntSqn
+        (sqn : Sqn)
+        (hxo : Hxl[]) =      
+        let hxl = allAV false hxo
+        let rec ctSq 
+            (sqn : Sqn)
+            (hxl : Hxl[])
+            (acc : Hxl[])
+            (cnt : int) = 
+            match cnt with 
+            | x when x<=1 -> acc
+            | _ -> 
+                    let b = Array.last acc
+                    let hxl = Array.except [|b|] hxl
+                    let d = (adjacent sqn b) |> Array.tail
+                    let e = d |> Array.filter
+                                (fun x -> Array.contains x hxl) 
+                                |> Array.tryHead
+                    let f = match e with 
+                                | Some a -> [|a|]
+                                | None -> [||]
+                    let acc = Array.append acc f
+                    ctSq sqn hxl acc (cnt-1)
+
+        let hxl = hxl |> Array.sortByDescending 
+                    (fun x -> available sqn x hxl)
+        let cnt = Array.length(hxl)
+        let arr =  match hxl with 
+                        | [||] -> [||]
+                        | _ -> ctSq sqn hxl ([|Array.head hxl|]) cnt
+        let bln = cnt = Array.length(arr)
+        let ar1 = match bln with 
+                    | true -> arr
+                    | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+        match hxo with 
+        | [||] -> [||]
+        | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+                | true -> ar1
+                | false -> allAV true ar1
 
     let avrv = cxl.Hxls 
             |> Array.Parallel.partition
@@ -203,4 +295,4 @@ let cxlHxl
         Prph = pr02 
         Brdr = br01
         Avbl = av01 
-    |}    
+    |}  
