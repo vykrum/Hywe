@@ -74,8 +74,8 @@ let vertex
 
 // Coxel Perimeter Vertices
 let cxlPrm
-    (sqn : Sqn)
     (cxl : Cxl) = 
+    let sqn = cxl.Seqn
     let hx1 = cxl.Hxls |> allAV false 
     // Boundary Hexels
     let hxBd = (cxlHxl cxl).Prph

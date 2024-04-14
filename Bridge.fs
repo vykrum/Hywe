@@ -58,6 +58,28 @@ let crd
     (hxXY02,hxMxmX,hxMxmY)
 ///
 
+/// <summary> Scale and Shift Vertices</summary>
+/// <param name="vtx"> Array of Vertices array </param>
+/// <param name="wdt"> Width (and Height) </param>
+/// <returns> Altered Vertices </returns>
+let crd1
+    (cxl : Cxl[])
+    (wdt : int) = 
+    let vtx = Array.map (fun x -> cxlPrm x) cxl
+    // Shift and Scale Vertices
+    let maxX = fst (Array.maxBy (fun (x,_) -> x) (Array.concat vtx))
+    let minX = fst (Array.minBy (fun (x,_) -> x) (Array.concat vtx))
+    let maxY = fst (Array.maxBy (fun (_,x) -> x) (Array.concat vtx))
+    let minY = fst (Array.minBy (fun (_,x) -> x) (Array.concat vtx))
+    let padd = 50
+    let shfX = padd - minX
+    let shfY = padd - (minY - maxY)
+    let scl1 = (wdt - (padd * 2)) / Array.max[|maxX - minX; maxY - minY|]
+    Array.map (fun x -> Array.map(fun (a,b) -> (a+shfX)*scl1,(b+shfY)*scl1)x) vtx
+
+
+
+
 /// <summary> Hexel Coordinates, Color and Name </summary>
 /// <param name="scl"> Scale </param>
 /// <param name="sqn"> Sequence </param>
