@@ -59,8 +59,8 @@ let crd
 ///
 
 /// <summary> Scale and Shift Vertices</summary>
-/// <param name="vtx"> Array of Vertices array </param>
-/// <param name="wdt"> Width (and Height) </param>
+/// <param name="cxl"> Array of coxels </param>
+/// <param name="wdt"> Width of SVG (and Height) </param>
 /// <returns> Altered Vertices </returns>
 let crd1
     (cxl : Cxl[])

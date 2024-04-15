@@ -275,50 +275,24 @@ let view model dispatch =
         let shp = match model.shp1 with 
                     | 1 -> HxFl
                     | 2 -> HxPt
-                    | 3 -> PrAn
-                    | 4 -> PrFl
-                    | 5 -> RhHr
-                    | 6 -> RhVr
-                    | _ -> QdSq
+                    | 3 -> SqFl
+                    | 4 -> SqPt
+                    | _ -> SqFl
 
         // Sequence
         let sqn = match model.sqn1 with 
                     | 1 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCWEE
-                           |HxFl|PrAn|RhHr -> HRCWNN
+                           |HxPt|SqPt -> VRCWEE
+                           |HxFl|SqFl -> HRCWNN
                     | 2 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCCEE
-                           |HxFl|PrAn|RhHr -> HRCCNN
+                           |HxPt|SqPt -> VRCCEE
+                           |HxFl|SqFl -> HRCCNN
                     | 3 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCWSE
-                           |HxFl|PrAn|RhHr -> HRCWNE
+                           |HxPt|SqPt -> VRCWSE
+                           |HxFl|SqFl -> HRCWNE
                     | 4 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCCSE
-                           |HxFl|PrAn|RhHr -> HRCCNE
-                    | 5 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCWSW
-                           |HxFl|PrAn|RhHr -> HRCWSE
-                    | 6 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCCSW
-                           |HxFl|PrAn|RhHr -> HRCCSE
-                    | 7 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCWWW
-                           |HxFl|PrAn|RhHr -> HRCWSS
-                    | 8 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCCWW
-                           |HxFl|PrAn|RhHr -> HRCCSS
-                    | 9 -> match shp with
-                           |HxPt|PrFl|RhVr|QdSq -> VRCWNW
-                           |HxFl|PrAn|RhHr -> HRCWSW
-                    | 10 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> VRCCNW
-                            |HxFl|PrAn|RhHr -> HRCCSW
-                    | 11 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> VRCWNE
-                            |HxFl|PrAn|RhHr -> HRCWNW
-                    | 12 -> match shp with
-                            |HxPt|PrFl|RhVr|QdSq -> VRCCNE
-                            |HxFl|PrAn|RhHr -> HRCCNW
+                           |HxPt|SqPt -> VRCCSE
+                           |HxFl|SqFl -> HRCCNE
                     | _ -> VRCWEE
 
         // Cluster Names
@@ -628,7 +602,7 @@ let view model dispatch =
                         attr.``class`` "slider"
                         attr.``type`` "range"
                         attr.min "1"
-                        attr.max "7"
+                        attr.max "4"
                         bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
                     }
                 }
