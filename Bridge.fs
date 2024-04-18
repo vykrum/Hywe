@@ -82,7 +82,7 @@ let nstdCxls
                     |> Array.map (fun x -> string (x * scl)) 
                     |> String.concat ","
 
-    let lbl = Array.map (fun x -> string x.Name) cxl
+    let lbl = Array.map (fun x -> prpVlu x.Name) cxl
     let crd = (Array.map (fun x -> x.Hxls) cxl) 
               |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
     // Shift and Scale Vertices
