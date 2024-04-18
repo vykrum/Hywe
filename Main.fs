@@ -80,20 +80,20 @@ let initModel =
         shp1 = 1
         sqn1 = 1
         scl1 = 10
-        cxl0001 = 4
-        cxl0002 = 5
-        cxl0003 = 4
-        cxl0011 = 3
-        cxl0021 = 4
-        cxl0031 = 5
-        cxl0032 = 6
-        cxl0033 = 6
-        cxl0034 = 6
-        cxl0311 = 8
-        cxl0321 = 3
-        cxl0331 = 4
-        cxl0341 = 3
-        cxl0342 = 4
+        cxl0001 = 7
+        cxl0002 = 12
+        cxl0003 = 12
+        cxl0011 = 8
+        cxl0021 = 10
+        cxl0031 = 12
+        cxl0032 = 12
+        cxl0033 = 12
+        cxl0034 = 12
+        cxl0311 = 6
+        cxl0321 = 8
+        cxl0331 = 6
+        cxl0341 = 5
+        cxl0342 = 6
         cxl3311 = 4
         lbl0001 = "Foyer"
         lbl0002 = "Living"
@@ -333,7 +333,7 @@ let view model dispatch =
         let cxClr = [|   
             "#D3D3D1"
             "#85C1E9"
-            "#D6DBDF"
+            "#C6BDB4"
             "#FCF3CF"
             "#FADBD8"
             "#FEF5E7"
@@ -353,7 +353,6 @@ let view model dispatch =
 
         let cxCxl = spaceCxl sqn (AV(1,2,0)) ((hxlOrt sqn (AV(-50,0,0)) 100 false)|> allAV true) spaceStr
        
-  
         // Prototype
         div{
             attr.``class`` "flex-container"
@@ -664,8 +663,8 @@ let view model dispatch =
                                 margin-right:10px;
                                 margin-top: 20px; 
                                 padding-left:10px;"
-                let minSld = "5"
-                let maxSld = "15"
+                let minSld = "0"
+                let maxSld = "25"
                 // Label 1
                 input{
                         attr.``type`` "text"
@@ -697,12 +696,12 @@ let view model dispatch =
             
                 div{
                     attr.``class`` "label1"
-                    attr.``style`` $"background:{cxClr[1]};"
+                    attr.``style`` $"background:{cxClr[2]};"
                     // Label 2
                     input{
                             attr.``type`` "text"
                             attr.``class`` "label, input1"
-                            attr.``style`` $"background:{cxClr[1]};"
+                            attr.``style`` $"background:{cxClr[2]};"
                             bind.input.string model.lbl0002 (fun a -> dispatch (SetLbl0002 a))
                         }
                     // Refid 2
@@ -728,12 +727,12 @@ let view model dispatch =
                     }
                     div{
                         attr.``class`` "label1"
-                        attr.``style`` $"background:{cxClr[2]};"
+                        attr.``style`` $"background:{cxClr[4]};"
                         // Label 3
                         input{
                                 attr.``type`` "text"
                                 attr.``class`` "label, input1"
-                                attr.``style`` $"background:{cxClr[2]};"
+                                attr.``style`` $"background:{cxClr[4]};"
                                 bind.input.string model.lbl0003 (fun a -> dispatch (SetLbl0003 a))
                             }
                         // Refid 3
@@ -759,12 +758,12 @@ let view model dispatch =
                         }
                         div{
                             attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[3]};"
+                            attr.``style`` $"background:{cxClr[5]};"
                             // Label 3.1
                             input{
                                     attr.``type`` "text"
                                     attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[3]};"
+                                    attr.``style`` $"background:{cxClr[5]};"
                                     bind.input.string model.lbl0031 (fun a -> dispatch (SetLbl0031 a))
                                 }
                             // Refid 3.1
@@ -790,12 +789,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[4]};"
+                                attr.``style`` $"background:{cxClr[9]};"
                                 // Label 3.1.1
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[4]};"
+                                        attr.``style`` $"background:{cxClr[9]};"
                                         bind.input.string model.lbl0311 (fun a -> dispatch (SetLbl0311 a))
                                     }
                                 // Refid 3.1.1
@@ -823,12 +822,12 @@ let view model dispatch =
                         }
                         div{
                             attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[5]};"
+                            attr.``style`` $"background:{cxClr[6]};"
                             // Label 3.2
                             input{
                                     attr.``type`` "text"
                                     attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[5]};"
+                                    attr.``style`` $"background:{cxClr[6]};"
                                     bind.input.string model.lbl0032 (fun a -> dispatch (SetLbl0032 a))
                                 }
                             // Refid 3.2
@@ -854,12 +853,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[6]};"
+                                attr.``style`` $"background:{cxClr[10]};"
                                 // Label 3.2.1
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[6]};"
+                                        attr.``style`` $"background:{cxClr[10]};"
                                         bind.input.string model.lbl0321 (fun a -> dispatch (SetLbl0321 a))
                                     }
                                 // Refid 3.2.1
@@ -918,12 +917,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[8]};"
+                                attr.``style`` $"background:{cxClr[11]};"
                                 // Label 3.3.1
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[8]};"
+                                        attr.``style`` $"background:{cxClr[11]};"
                                         bind.input.string model.lbl0331 (fun a -> dispatch (SetLbl0331 a))
                                     }
                                 // Refid 3.3.1
@@ -949,12 +948,12 @@ let view model dispatch =
                                 }
                                 div{
                                     attr.``class`` "label1"
-                                    attr.``style`` $"background:{cxClr[9]};"
+                                    attr.``style`` $"background:{cxClr[14]};"
                                     // Label 3.3.1.1
                                     input{
                                             attr.``type`` "text"
                                             attr.``class`` "label, input1"
-                                            attr.``style`` $"background:{cxClr[9]};"
+                                            attr.``style`` $"background:{cxClr[14]};"
                                             bind.input.string model.lbl3311 (fun a -> dispatch (SetLbl3311 a))
                                         }
                                     // Refid 3.3.1.1
@@ -983,12 +982,12 @@ let view model dispatch =
                         }
                         div{
                             attr.``class`` "label1"
-                            attr.``style`` $"background:{cxClr[10]};"
+                            attr.``style`` $"background:{cxClr[8]};"
                             // Label 3.4
                             input{
                                     attr.``type`` "text"
                                     attr.``class`` "label, input1"
-                                    attr.``style`` $"background:{cxClr[10]};"
+                                    attr.``style`` $"background:{cxClr[8]};"
                                     bind.input.string model.lbl0034 (fun a -> dispatch (SetLbl0034 a))
                                 }
                             // Refid 3.4
@@ -1014,12 +1013,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[11]};"
+                                attr.``style`` $"background:{cxClr[12]};"
                                 // Label 3.4.1
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[11]};"
+                                        attr.``style`` $"background:{cxClr[12]};"
                                         bind.input.string model.lbl0341 (fun a -> dispatch (SetLbl0341 a))
                                     }
                                 // Refid 3.4.1
@@ -1046,12 +1045,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[12]};"
+                                attr.``style`` $"background:{cxClr[13]};"
                                 // Label 3.4.2
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[12]};"
+                                        attr.``style`` $"background:{cxClr[13]};"
                                         bind.input.string model.lbl0342 (fun a -> dispatch (SetLbl0342 a))
                                     }
                                 // Refid 3.4.2
@@ -1080,12 +1079,12 @@ let view model dispatch =
                     }
                     div{
                         attr.``class`` "label1"
-                        attr.``style`` $"background:{cxClr[13]};"
+                        attr.``style`` $"background:{cxClr[3]};"
                         // Label 2.1
                         input{
                                 attr.``type`` "text"
                                 attr.``class`` "label, input1"
-                                attr.``style`` $"background:{cxClr[13]};"
+                                attr.``style`` $"background:{cxClr[3]};"
                                 bind.input.string model.lbl0021 (fun a -> dispatch (SetLbl0021 a))
                             }
                         // Refid 2.1
@@ -1113,12 +1112,12 @@ let view model dispatch =
                 }
                 div{
                     attr.``class`` "label1"
-                    attr.``style`` $"background:{cxClr[14]};"
+                    attr.``style`` $"background:{cxClr[1]};"
                     // Label 1.1
                     input{
                             attr.``type`` "text"
                             attr.``class`` "label, input1"
-                            attr.``style`` $"background:{cxClr[14]};"
+                            attr.``style`` $"background:{cxClr[1]};"
                             bind.input.string model.lbl0011 (fun a -> dispatch (SetLbl0011 a))
                         }
                     // Refid 1.1
