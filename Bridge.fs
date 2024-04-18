@@ -16,7 +16,14 @@ type hxgn = Template<
       opacity = "0.75"
       stroke-opacity="0.175"
       >""">
-          
+
+type plgn = Template<
+    """ <polygon 
+    points="${pt}" 
+    fill="${cl}"
+    opacity = "0.75"
+    >""">
+
 type svtx = Template<
     """<text 
     x="${xx}" 
@@ -58,27 +65,61 @@ let crd
     (hxXY02,hxMxmX,hxMxmY)
 ///
 
-/// <summary> Scale and Shift Vertices</summary>
+/// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>
+/// <param name="clr"> Array of colors </param>
 /// <param name="wdt"> Width of SVG (and Height) </param>
 /// <returns> Altered Vertices </returns>
-let crd1
+let nstdCxls
     (cxl : Cxl[])
+    (clr : string[])
+    (scl : int)
+    (shp : Shp)
     (wdt : int) = 
-    let vtx = Array.map (fun x -> cxlPrm x) cxl
+    let vrtx = vertex (Array.head cxl).Seqn shp (AV(0,0,0))
+                    |> Array.map (fun (_,x,y) -> [|x;y|])
+                    |> Array.concat
+                    |> Array.map (fun x -> string (x * scl)) 
+                    |> String.concat ","
+
+    let lbl = Array.map (fun x -> string x.Name) cxl
+    let crd = (Array.map (fun x -> x.Hxls) cxl) 
+              |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
     // Shift and Scale Vertices
-    let maxX = fst (Array.maxBy (fun (x,_) -> x) (Array.concat vtx))
-    let minX = fst (Array.minBy (fun (x,_) -> x) (Array.concat vtx))
-    let maxY = fst (Array.maxBy (fun (_,x) -> x) (Array.concat vtx))
-    let minY = fst (Array.minBy (fun (_,x) -> x) (Array.concat vtx))
-    let padd = 50
-    let shfX = padd - minX
-    let shfY = padd - (minY - maxY)
-    let scl1 = (wdt - (padd * 2)) / Array.max[|maxX - minX; maxY - minY|]
-    Array.map (fun x -> Array.map(fun (a,b) -> (a+shfX)*scl1,(b+shfY)*scl1)x) vtx
+    let padd = 5*scl
+    let crd1 = Array.map (fun x -> Array.map(fun (a,b,_) -> a*scl,b*scl)x) crd
+    let minX1 = fst (Array.minBy (fun (x,_) -> x) (Array.concat crd1))
+    let minY1 = snd (Array.minBy (fun (_,x) -> x) (Array.concat crd1))
+    let shfX = (-1 * minX1) + padd
+    let shfY = (-1 * minY1) + padd
+    let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
+    svg {
+         attr.width wdt
+         attr.height wdt
+         //attr.``style`` $"viewBox: {minX1} {minY1} {wdt} {wdt};"
+         let prp = Array.zip3 crd2 lbl clr
+                    
+         for cmp in prp do
+             let (xxyy,label,color) = cmp
+             let xy = Array.map(fun (a,b) -> a,b) xxyy
+             let xx = xy |> Array.tryHead
+             let x,y = match xx with 
+                         | None -> -10,-10
+                         | Some a -> a
 
-
-
+             for locn in xy do
+                    hxgn()
+                        .pt($"{vrtx}")
+                        .tr($"{locn}")
+                        .cl($"{color}")
+                        .Elt()
+                    svtx()
+                       .xx($"{x+10}")
+                       .yy($"{y}")
+                       .nm($"{label}")
+                       .Elt()
+        }
+///
 
 /// <summary> Hexel Coordinates, Color and Name </summary>
 /// <param name="scl"> Scale </param>

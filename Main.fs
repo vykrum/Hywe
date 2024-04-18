@@ -4,8 +4,10 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Hexel
+open Coxel
 open Shape
 open Bridge
+open Parse
 
 type Model =
     {
@@ -78,21 +80,21 @@ let initModel =
         shp1 = 1
         sqn1 = 1
         scl1 = 10
-        cxl0001 = 7
-        cxl0002 = 10
-        cxl0003 = 9
-        cxl0011 = 11
-        cxl0021 = 9
-        cxl0031 = 12
-        cxl0032 = 13
-        cxl0033 = 12
-        cxl0034 = 11
+        cxl0001 = 4
+        cxl0002 = 5
+        cxl0003 = 4
+        cxl0011 = 3
+        cxl0021 = 4
+        cxl0031 = 5
+        cxl0032 = 6
+        cxl0033 = 6
+        cxl0034 = 6
         cxl0311 = 8
-        cxl0321 = 6
-        cxl0331 = 5
-        cxl0341 = 5
-        cxl0342 = 6
-        cxl3311 = 5
+        cxl0321 = 3
+        cxl0331 = 4
+        cxl0341 = 3
+        cxl0342 = 4
+        cxl3311 = 4
         lbl0001 = "Foyer"
         lbl0002 = "Living"
         lbl0003 = "Dining"
@@ -326,7 +328,7 @@ let view model dispatch =
                     model.cls4
                     model.cls5
                     model.cls6 |])
-
+        
         // Nested Coxel Colors
         let cxClr = [|   
             "#D3D3D1"
@@ -345,6 +347,12 @@ let view model dispatch =
             "#D0ECE7"
             "#D6EAF8"
                    |]
+
+        // Nested Coxels
+        let spaceStr = $"(1/{model.cxl0001}/{model.lbl0001}),(2/{model.cxl0002}/{model.lbl0002}),(3/{model.cxl0003}/{model.lbl0003}),(1.1/{model.cxl0011}/{model.lbl0011}),(2.1/{model.cxl0021}/{model.lbl0021}),(3.1/{model.cxl0031}/{model.lbl0031},(3.2/{model.cxl0032}/{model.lbl0032},(3.3/{model.cxl0033}/{model.lbl0033},(3.4/{model.cxl0034}/{model.lbl0034}),(3.1.1/{model.cxl0311}/{model.lbl0311}),(3.2.1/{model.cxl0321}/{model.lbl0321}),(3.3.1/{model.cxl0331}/{model.lbl0331}),(3.4.1/{model.cxl0341}/{model.lbl0341}),(3.4.2/{model.cxl0342}/{model.lbl0342}),(3.3.1.1/{model.cxl3311}/{model.lbl3311})"
+
+        let cxCxl = spaceCxl sqn (AV(1,2,0)) ((hxlOrt sqn (AV(-50,0,0)) 100 false)|> allAV true) spaceStr
+       
   
         // Prototype
         div{
@@ -353,16 +361,15 @@ let view model dispatch =
             
             // The Clusters SVG
             span{
-                attr.``style`` "width: 400px; height: 300px;"
-                cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 300
+                attr.``style`` "width: 400px; height: 400px;"
+                cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 400
                 } 
 
             // Cluster Controls
             span{
-                attr.``style`` "width: 525px; 
+                attr.``style`` "width: 525px;
                                 margin-left: 10px;
-                                margin-left:10px;
-                                padding-left:10px;"
+                                padding-left: 10px;"
                 // Cluster 0
                 div{
                     attr.``class`` "flex-container"
@@ -643,11 +650,12 @@ let view model dispatch =
             attr.``style`` "flex-wrap: wrap; justify-content: center;"
             
             // Placeholder for Coxel SVG
-            div{
-                attr.``style`` "width: 400px; height: 10px;"
+            span{
+                attr.``style`` "flex-wrap: wrap; justify-content: center;"
+                nstdCxls cxCxl (Array.take (Array.length cxCxl) cxClr) scl shp 400 
             }
-            // Nested Coxels
-            div{
+            // Nested Coxel Parameters
+            span{
                 attr.``class`` "label1"
                 attr.``style`` $"background:{cxClr[0]}; 
                                 border:none; 
@@ -656,7 +664,8 @@ let view model dispatch =
                                 margin-right:10px;
                                 margin-top: 20px; 
                                 padding-left:10px;"
-            
+                let minSld = "5"
+                let maxSld = "15"
                 // Label 1
                 input{
                         attr.``type`` "text"
@@ -675,8 +684,8 @@ let view model dispatch =
                 input{
                     attr.``class`` "slider1"
                     attr.``type`` "range"
-                    attr.min "0"
-                    attr.max "25"
+                    attr.min $"{minSld}"
+                    attr.max $"{maxSld}"
                     bind.input.int model.cxl0001 (fun a -> dispatch (SetCxl0001 a))
                 }
                 // Count 1
@@ -707,8 +716,8 @@ let view model dispatch =
                     input{
                         attr.``class`` "slider1"
                         attr.``type`` "range"
-                        attr.min "0"
-                        attr.max "25"
+                        attr.min $"{minSld}"
+                        attr.max $"{maxSld}"
                         bind.input.int model.cxl0002 (fun a -> dispatch (SetCxl0002 a))
                     }
                     // Count 2
@@ -738,8 +747,8 @@ let view model dispatch =
                         input{
                             attr.``class`` "slider1"
                             attr.``type`` "range"
-                            attr.min "0"
-                            attr.max "25"
+                            attr.min $"{minSld}"
+                            attr.max $"{maxSld}"
                             bind.input.int model.cxl0003 (fun a -> dispatch (SetCxl0003 a))
                         }
                         // Count 3
@@ -769,8 +778,8 @@ let view model dispatch =
                             input{
                                 attr.``class`` "slider1"
                                 attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
+                                attr.min $"{minSld}"
+                                attr.max $"{maxSld}"
                                 bind.input.int model.cxl0031 (fun a -> dispatch (SetCxl0031 a))
                             }
                             // Count 3.1
@@ -800,8 +809,8 @@ let view model dispatch =
                                 input{
                                     attr.``class`` "slider1"
                                     attr.``type`` "range"
-                                    attr.min "0"
-                                    attr.max "25"
+                                    attr.min $"{minSld}"
+                                    attr.max $"{maxSld}"
                                     bind.input.int model.cxl0311 (fun a -> dispatch (SetCxl0311 a))
                                 }
                                 // Count 3.1.1
@@ -833,8 +842,8 @@ let view model dispatch =
                             input{
                                 attr.``class`` "slider1"
                                 attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
+                                attr.min $"{minSld}"
+                                attr.max $"{maxSld}"
                                 bind.input.int model.cxl0032 (fun a -> dispatch (SetCxl0032 a))
                             }
                             // Count 3.2
@@ -864,8 +873,8 @@ let view model dispatch =
                                 input{
                                     attr.``class`` "slider1"
                                     attr.``type`` "range"
-                                    attr.min "0"
-                                    attr.max "25"
+                                    attr.min $"{minSld}"
+                                    attr.max $"{maxSld}"
                                     bind.input.int model.cxl0321 (fun a -> dispatch (SetCxl0321 a))
                                 }
                                 // Count 3.2.1
@@ -897,8 +906,8 @@ let view model dispatch =
                             input{
                                 attr.``class`` "slider1"
                                 attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
+                                attr.min $"{minSld}"
+                                attr.max $"{maxSld}"
                                 bind.input.int model.cxl0033 (fun a -> dispatch (SetCxl0033 a))
                             }
                             // Count 3.3
@@ -928,8 +937,8 @@ let view model dispatch =
                                 input{
                                     attr.``class`` "slider1"
                                     attr.``type`` "range"
-                                    attr.min "0"
-                                    attr.max "25"
+                                    attr.min $"{minSld}"
+                                    attr.max $"{maxSld}"
                                     bind.input.int model.cxl0331 (fun a -> dispatch (SetCxl0331 a))
                                 }
                                 // Count 3.3.1
@@ -959,8 +968,8 @@ let view model dispatch =
                                     input{
                                         attr.``class`` "slider1"
                                         attr.``type`` "range"
-                                        attr.min "0"
-                                        attr.max "25"
+                                        attr.min $"{minSld}"
+                                        attr.max $"{maxSld}"
                                         bind.input.int model.cxl3311 (fun a -> dispatch (SetCxl3311 a))
                                     }
                                     // Count 3.3.1.1
@@ -989,12 +998,12 @@ let view model dispatch =
                                     attr.``style`` "test-align: right;"
                                     " [ 3.4 ] "
                                     }
-                            // Slider 3.3
+                            // Slider 3.4
                             input{
                                 attr.``class`` "slider1"
                                 attr.``type`` "range"
-                                attr.min "0"
-                                attr.max "25"
+                                attr.min $"{minSld}"
+                                attr.max $"{maxSld}"
                                 bind.input.int model.cxl0034 (fun a -> dispatch (SetCxl0034 a))
                             }
                             // Count 3.4
@@ -1024,8 +1033,8 @@ let view model dispatch =
                                 input{
                                     attr.``class`` "slider1"
                                     attr.``type`` "range"
-                                    attr.min "0"
-                                    attr.max "25"
+                                    attr.min $"{minSld}"
+                                    attr.max $"{maxSld}"
                                     bind.input.int model.cxl0341 (fun a -> dispatch (SetCxl0341 a))
                                 }
                                 // Count 3.4.1
@@ -1056,8 +1065,8 @@ let view model dispatch =
                                 input{
                                     attr.``class`` "slider1"
                                     attr.``type`` "range"
-                                    attr.min "0"
-                                    attr.max "25"
+                                    attr.min $"{minSld}"
+                                    attr.max $"{maxSld}"
                                     bind.input.int model.cxl0342 (fun a -> dispatch (SetCxl0342 a))
                                 }
                                 // Count 3.4.2
@@ -1090,8 +1099,8 @@ let view model dispatch =
                         input{
                             attr.``class`` "slider1"
                             attr.``type`` "range"
-                            attr.min "0"
-                            attr.max "25"
+                            attr.min $"{minSld}"
+                            attr.max $"{maxSld}"
                             bind.input.int model.cxl0021 (fun a -> dispatch (SetCxl0021 a))
                         }
                         // Count 2.1
@@ -1123,8 +1132,8 @@ let view model dispatch =
                     input{
                         attr.``class`` "slider1"
                         attr.``type`` "range"
-                        attr.min "0"
-                        attr.max "25"
+                        attr.min $"{minSld}"
+                        attr.max $"{maxSld}"
                         bind.input.int model.cxl0011 (fun a -> dispatch (SetCxl0011 a))
                     }
                     // Count 1.1
