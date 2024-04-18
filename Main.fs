@@ -334,7 +334,7 @@ let view model dispatch =
             "#D3D3D1"
             "#85C1E9"
             "#C6BDB4"
-            "#FCF3CF"
+            "#BCCFD3"
             "#FADBD8"
             "#FEF5E7"
             "#D4EFDF"
@@ -360,7 +360,7 @@ let view model dispatch =
             
             // The Clusters SVG
             span{
-                attr.``style`` "width: 400px; height: 400px;"
+                attr.``style`` "width: 400px; height: 300px;"
                 cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 400
                 } 
 

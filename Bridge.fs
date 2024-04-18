@@ -13,7 +13,7 @@ type hxgn = Template<
       fill="${cl}"
       stroke="${cl}"
       transform="translate${tr}"
-      opacity = "0.75"
+      opacity = "0.5"
       stroke-opacity="0.175"
       >""">
 
@@ -181,7 +181,7 @@ let cluster
          for cmp in prp do
              let (xyz,label,color) = cmp
              let xy = Array.map(fun (a,b,_) -> a,b) xyz 
-             let xx = xy |> Array.tryHead
+             let xx = xy |> Array.rev |> Array.tryHead
              let x,y = match xx with 
                          | None -> -10,-10
                          | Some a -> a
