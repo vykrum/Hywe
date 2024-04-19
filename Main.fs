@@ -83,11 +83,11 @@ let initModel =
         cxl0001 = 7
         cxl0002 = 12
         cxl0003 = 12
-        cxl0011 = 8
+        cxl0011 = 10
         cxl0021 = 10
         cxl0031 = 12
-        cxl0032 = 12
-        cxl0033 = 12
+        cxl0032 = 14
+        cxl0033 = 18
         cxl0034 = 12
         cxl0311 = 6
         cxl0321 = 8
@@ -350,8 +350,18 @@ let view model dispatch =
 
         // Nested Coxels
         let spaceStr = $"(1/{model.cxl0001}/{model.lbl0001}),(2/{model.cxl0002}/{model.lbl0002}),(3/{model.cxl0003}/{model.lbl0003}),(1.1/{model.cxl0011}/{model.lbl0011}),(2.1/{model.cxl0021}/{model.lbl0021}),(3.1/{model.cxl0031}/{model.lbl0031},(3.2/{model.cxl0032}/{model.lbl0032},(3.3/{model.cxl0033}/{model.lbl0033},(3.4/{model.cxl0034}/{model.lbl0034}),(3.1.1/{model.cxl0311}/{model.lbl0311}),(3.2.1/{model.cxl0321}/{model.lbl0321}),(3.3.1/{model.cxl0331}/{model.lbl0331}),(3.4.1/{model.cxl0341}/{model.lbl0341}),(3.4.2/{model.cxl0342}/{model.lbl0342}),(3.3.1.1/{model.cxl3311}/{model.lbl3311})"
-
-        let cxCxl = spaceCxl sqn (AV(1,2,0)) ((hxlOrt sqn (AV(-50,0,0)) 100 false)|> allAV true) spaceStr
+        let bsNs = hxlVld sqn (AV(1,4,0))
+        let bsOc = 
+            match sqn with 
+            | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
+                -> let a,b,c = hxlCrd bsNs
+                   hxlOrt sqn (hxlVld sqn (AV(a-50,b-2,c))) 100 false
+                   |> allAV true
+            | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
+                -> let a,b,c = hxlCrd bsNs
+                   hxlOrt sqn (hxlVld sqn (AV(a-52,b-2,c))) 100 false
+                   |> allAV true
+        let cxCxl = spaceCxl sqn bsNs bsOc spaceStr
        
         // Prototype
         div{

@@ -20,6 +20,7 @@ let spaceSeq
         
     let spaceMap = 
         ((spaceStr.Replace ("\n",""))
+            .Replace("\t","")
             .Replace(" ",""))
             .Split ","
             |> Array.map(fun x -> x.Remove(0,1)) 
@@ -114,6 +115,7 @@ let spaceCxl
                                                 | None -> 0)x)
         chdCnt
     *)
+    let bas = hxlVld seq bas
     let tree01 = 
         spaceSeq str 
             |> Array.map (fun x -> 

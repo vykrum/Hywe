@@ -93,32 +93,44 @@ let nstdCxls
     let shfX = (-1 * minX1) + padd
     let shfY = (-1 * minY1) + padd
     let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
-    svg {
-         attr.width wdt
-         attr.height wdt
-         //attr.``style`` $"viewBox: {minX1} {minY1} {wdt} {wdt};"
-         let prp = Array.zip3 crd2 lbl clr
+    svg{
+        attr.width wdt
+        attr.height wdt
+        svg {
+             attr.width wdt
+             attr.height wdt
+             let prp = Array.zip crd2 clr
                     
-         for cmp in prp do
-             let (xxyy,label,color) = cmp
-             let xy = Array.map(fun (a,b) -> a,b) xxyy
-             let xx = xy |> Array.tryHead
-             let x,y = match xx with 
-                         | None -> -10,-10
-                         | Some a -> a
+             for cmp in prp do
+                 let (xxyy,color) = cmp
+                 let xy = Array.map(fun (a,b) -> a,b) xxyy
 
-             for locn in xy do
-                    hxgn()
-                        .pt($"{vrtx}")
-                        .tr($"{locn}")
-                        .cl($"{color}")
-                        .Elt()
-                    svtx()
-                       .xx($"{x+10}")
-                       .yy($"{y}")
-                       .nm($"{label}")
-                       .Elt()
-        }
+                 for locn in xy do
+                        hxgn()
+                            .pt($"{vrtx}")
+                            .tr($"{locn}")
+                            .cl($"{color}")
+                            .Elt() 
+            }
+        svg {
+             attr.width wdt
+             attr.height wdt
+             let prp = Array.zip3 crd2 lbl clr
+                    
+             for cmp in prp do
+                 let (xxyy,label,color) = cmp
+                 let xy = Array.map(fun (a,b) -> a,b) xxyy
+                 let xx = xy |> Array.tryHead
+                 let x,y = match xx with 
+                             | None -> -10,-10
+                             | Some a -> a
+                 svtx()
+                    .xx($"{x+10}")
+                    .yy($"{y}")
+                    .nm($"{label}")
+                    .Elt()
+            }
+    }
 ///
 
 /// <summary> Hexel Coordinates, Color and Name </summary>
