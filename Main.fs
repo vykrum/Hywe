@@ -355,11 +355,11 @@ let view model dispatch =
             match sqn with 
             | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
                 -> let a,b,c = hxlCrd bsNs
-                   hxlOrt sqn (hxlVld sqn (AV(a-50,b-2,c))) 100 false
+                   Array.append (hxlOrt sqn (hxlVld sqn (AV(a-100,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
                    |> allAV true
             | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
                 -> let a,b,c = hxlCrd bsNs
-                   hxlOrt sqn (hxlVld sqn (AV(a-52,b-2,c))) 100 false
+                   Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
                    |> allAV true
         let cxCxl = spaceCxl sqn bsNs bsOc spaceStr
        

@@ -95,7 +95,7 @@ let coxel
                     |> Array.Parallel.map (fun x 
                                             -> match x with
                                                 | Some a -> a 
-                                                | None -> (identity,0xFFFFFFFF))                
+                                                | None ->  (hxlVld sqn identity,0xFFFFFFFF))                
                     |> Array.map2 (fun x y 
                                     -> fst y, x) rpt
                     

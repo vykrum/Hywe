@@ -13,7 +13,7 @@ type hxgn = Template<
       fill="${cl}"
       stroke="${cl}"
       transform="translate${tr}"
-      opacity = "0.5"
+      opacity = "0.75"
       stroke-opacity="0.175"
       >""">
 
@@ -29,6 +29,7 @@ type svtx = Template<
     x="${xx}" 
     y="${yy}"
     font-size = "10px"
+    font-family="Verdana"
     text-align = "center"
     text-anchor = "middle"
     fill = "#808080"
@@ -97,8 +98,6 @@ let nstdCxls
         attr.width wdt
         attr.height wdt
         svg {
-             attr.width wdt
-             attr.height wdt
              let prp = Array.zip crd2 clr
                     
              for cmp in prp do
@@ -113,8 +112,6 @@ let nstdCxls
                             .Elt() 
             }
         svg {
-             attr.width wdt
-             attr.height wdt
              let prp = Array.zip3 crd2 lbl clr
                     
              for cmp in prp do
