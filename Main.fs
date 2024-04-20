@@ -336,14 +336,14 @@ let view model dispatch =
             "#C6BDB4"
             "#BCCFD3"
             "#FADBD8"
-            "#FEF5E7"
+            "#8B4513"
             "#D4EFDF"
             "#F5CBA7"
             "#EBDEF0"
             "#AED6F1"
-            "#FCF3CF"
+            "#778899"
             "#F0B27A"
-            "#F5CBA7"
+            "#8FBC8F"
             "#D0ECE7"
             "#D6EAF8"
                    |]
@@ -590,8 +590,8 @@ let view model dispatch =
                         attr.``style`` "background:#d3d3d1;"
                         attr.``class`` "slider"
                         attr.``type`` "range"
-                        attr.min "2"
-                        attr.max "10"
+                        attr.min "1"
+                        attr.max "15"
                         bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
                     }
                 }
@@ -661,7 +661,7 @@ let view model dispatch =
             // Placeholder for Coxel SVG
             span{
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                nstdCxls cxCxl (Array.take (Array.length cxCxl) cxClr) scl shp 400 
+                nstdCxls cxCxl cxClr scl shp 400 
             }
             // Nested Coxel Parameters
             span{
@@ -958,12 +958,12 @@ let view model dispatch =
                                 }
                                 div{
                                     attr.``class`` "label1"
-                                    attr.``style`` $"background:{cxClr[14]};"
+                                    attr.style $"background:{cxClr[12]};"
                                     // Label 3.3.1.1
                                     input{
                                             attr.``type`` "text"
                                             attr.``class`` "label, input1"
-                                            attr.``style`` $"background:{cxClr[14]};"
+                                            attr.style $"background:{cxClr[12]};"
                                             bind.input.string model.lbl3311 (fun a -> dispatch (SetLbl3311 a))
                                         }
                                     // Refid 3.3.1.1
@@ -1023,12 +1023,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[12]};"
+                                attr.``style`` $"background:{cxClr[13]};"
                                 // Label 3.4.1
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[12]};"
+                                        attr.``style`` $"background:{cxClr[13]};"
                                         bind.input.string model.lbl0341 (fun a -> dispatch (SetLbl0341 a))
                                     }
                                 // Refid 3.4.1
@@ -1055,12 +1055,12 @@ let view model dispatch =
                             }
                             div{
                                 attr.``class`` "label1"
-                                attr.``style`` $"background:{cxClr[13]};"
+                                attr.``style`` $"background:{cxClr[14]};"
                                 // Label 3.4.2
                                 input{
                                         attr.``type`` "text"
                                         attr.``class`` "label, input1"
-                                        attr.``style`` $"background:{cxClr[13]};"
+                                        attr.``style`` $"background:{cxClr[14]};"
                                         bind.input.string model.lbl0342 (fun a -> dispatch (SetLbl0342 a))
                                     }
                                 // Refid 3.4.2

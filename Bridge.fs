@@ -5,6 +5,7 @@ open Bolero.Html
 open Hexel
 open Coxel
 open Shape
+open System
 ///
 
 type hxgn = Template<
@@ -77,26 +78,31 @@ let nstdCxls
     (scl : int)
     (shp : Shp)
     (wdt : int) = 
+    let lbl = Array.map (fun x -> prpVlu x.Name) cxl
+    let crd = (Array.map (fun x -> x.Hxls) cxl) 
+              |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
+    
+    // Shift and Scale Vertices
     let vrtx = vertex (Array.head cxl).Seqn shp (AV(0,0,0))
                     |> Array.map (fun (_,x,y) -> [|x;y|])
                     |> Array.concat
                     |> Array.map (fun x -> string (x * scl)) 
                     |> String.concat ","
 
-    let lbl = Array.map (fun x -> prpVlu x.Name) cxl
-    let crd = (Array.map (fun x -> x.Hxls) cxl) 
-              |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
     // Shift and Scale Vertices
     let padd = 5*scl
     let crd1 = Array.map (fun x -> Array.map(fun (a,b,_) -> a*scl,b*scl)x) crd
     let minX1 = fst (Array.minBy (fun (x,_) -> x) (Array.concat crd1))
+    let maxX1 = fst (Array.maxBy (fun (x,_) -> x) (Array.concat crd1))
     let minY1 = snd (Array.minBy (fun (_,x) -> x) (Array.concat crd1))
+    let maxY1 = snd (Array.maxBy (fun (_,x) -> x) (Array.concat crd1))
     let shfX = (-1 * minX1) + padd
     let shfY = (-1 * minY1) + padd
     let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
     svg{
         attr.width wdt
         attr.height wdt
+        attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
         svg {
              let prp = Array.zip crd2 clr
                     
