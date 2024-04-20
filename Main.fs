@@ -336,7 +336,7 @@ let view model dispatch =
             "#C6BDB4"
             "#BCCFD3"
             "#FADBD8"
-            "#8B4513"
+            "#C7A27C"
             "#D4EFDF"
             "#F5CBA7"
             "#EBDEF0"
