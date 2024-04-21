@@ -371,7 +371,7 @@ let view model dispatch =
             // The Clusters SVG
             span{
                 attr.``style`` "width: 400px; height: 300px;"
-                cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 400
+                cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 300
                 } 
 
             // Cluster Controls
@@ -662,6 +662,7 @@ let view model dispatch =
             span{
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
                 nstdCxls cxCxl cxClr scl shp 400 
+                //nstdCxls1 cxCxl cxClr scl 400 
             }
             // Nested Coxel Parameters
             span{
