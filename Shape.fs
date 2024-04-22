@@ -13,7 +13,7 @@ open Coxel
 /// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
 /// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
 type Shp = 
-        | HxFl | HxPt | SqFl | SqPt
+        | Hxg | Sqr
 ///
 
 /// <summary> Ortogonal Hexel Sequence </summary>
@@ -53,17 +53,21 @@ let vertex
     (sqn : Sqn)
     (shp : Shp)
     (hxl : Hxl) = 
-    let hxCr = match sqn with 
-                | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-                    -> match shp with
-                        | SqPt -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
-                        | HxPt | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
-                        
+    let hxCr = 
+        match shp with 
+        | Hxg 
+            -> match sqn with 
+                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
+                    -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
                 | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> match shp with
-                        | SqFl -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFF; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
-                        | HxFl | _ -> [|0x0,0x0; 0x1,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFF|]
-                   
+                    -> [|0x0,0x0; 0x1,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFF|]
+        | Sqr 
+            -> match sqn with 
+                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                    -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
+                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                    -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFF; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
+                
     let x, y, _ = hxl |> hxlCrd 
     hxCr 
     |> Array.map(fun (a,b)-> a + x, b + y) 
@@ -78,7 +82,7 @@ let cxlPrm
     let hxBd = (cxlHxl cxl).Prph
             |> allAV false                    
     // All hexel vertices
-    let vrHx = Array.map(fun x -> vertex sqn HxPt x) hx1
+    let vrHx = Array.map(fun x -> vertex sqn Hxg x) hx1
     // Vertices shared Hexel Count 
     let vrHxCt = vrHx   
                 |> Array.concat 
@@ -87,7 +91,7 @@ let cxlPrm
                 |> Map.ofArray
     // Boundary Hexel Vertices
     let vrBd = hxBd 
-            |> Array.map(fun x -> vertex sqn HxPt x) 
+            |> Array.map(fun x -> vertex sqn Hxg x) 
     // Vertex Cell Count 
     let vrBdCt = 
                 let vrBd1 = Array.map(fun x -> Array.map(fun (a,b,c)->b,c)x)vrBd

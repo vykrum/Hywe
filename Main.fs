@@ -275,26 +275,36 @@ let view model dispatch =
         
         // Shape
         let shp = match model.shp1 with 
-                    | 1 -> HxFl
-                    | 2 -> HxPt
-                    | 3 -> SqFl
-                    | 4 -> SqPt
-                    | _ -> SqFl
+                    | 1 -> Hxg
+                    | 2 -> Sqr
+                    | _ -> Hxg
 
         // Sequence
         let sqn = match model.sqn1 with 
-                    | 1 -> match shp with
-                           |HxPt|SqPt -> VRCWEE
-                           |HxFl|SqFl -> HRCWNN
-                    | 2 -> match shp with
-                           |HxPt|SqPt -> VRCCEE
-                           |HxFl|SqFl -> HRCCNN
-                    | 3 -> match shp with
-                           |HxPt|SqPt -> VRCWSE
-                           |HxFl|SqFl -> HRCWNE
-                    | 4 -> match shp with
-                           |HxPt|SqPt -> VRCCSE
-                           |HxFl|SqFl -> HRCCNE
+                    | 1 -> VRCWEE 
+                    | 2 -> VRCCEE    
+                    | 3 -> VRCWSE
+                    | 4 -> VRCCSE
+                    | 5 -> VRCWSW
+                    | 6 -> VRCCSW
+                    | 7 -> VRCWWW
+                    | 8 -> VRCCWW
+                    | 9 -> VRCWNW
+                    |10 -> VRCCNW
+                    |11 -> VRCWNE
+                    |12 -> VRCCNE
+                    |13 -> HRCWNN
+                    |14 -> HRCCNN
+                    |15 -> HRCWNE
+                    |16 -> HRCCNE
+                    |17 -> HRCWSE
+                    |18 -> HRCCSE
+                    |19 -> HRCWSS
+                    |20 -> HRCCSS
+                    |21 -> HRCWSW
+                    |22 -> HRCCSW
+                    |23 -> HRCWNW
+                    |24 -> HRCCNW
                     | _ -> VRCWEE
 
         // Cluster Names
@@ -618,7 +628,7 @@ let view model dispatch =
                         attr.``class`` "slider"
                         attr.``type`` "range"
                         attr.min "1"
-                        attr.max "4"
+                        attr.max "2"
                         bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
                     }
                 }
@@ -645,7 +655,7 @@ let view model dispatch =
                         attr.``class`` "slider"
                         attr.``type`` "range"
                         attr.min "1"
-                        attr.max "12"
+                        attr.max "24"
                         bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
                     }
                 }
