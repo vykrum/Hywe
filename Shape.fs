@@ -5,13 +5,10 @@ open Coxel
 ///
 
 /// <summary> Module shape in tessalated hexagonal grid. </summary>
-/// <typeparam name="HxFl"> Hexagon Flat-Top. </typeparam>
-/// <typeparam name="HxPt"> Hexagon Pointy-Top. </typeparam>
-/// <typeparam name="QdSq"> Square. </typeparam>
-/// <typeparam name="PrFl"> Parallelogram Flat. </typeparam>
-/// <typeparam name="PrAn"> Parallelogram Angled. </typeparam>
-/// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
-/// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
+/// <typeparam name="Hxg"> Hexagon. </typeparam>
+/// <typeparam name="Sqr"> Square. </typeparam>
+/// <typeparam name="Arw"> Arrow. </typeparam>
+/// <typeparam name="Prl"> Parallelogram. </typeparam>
 type Shp = 
         | Hxg | Sqr | Arw | Prl
 ///
