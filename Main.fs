@@ -277,6 +277,8 @@ let view model dispatch =
         let shp = match model.shp1 with 
                     | 1 -> Hxg
                     | 2 -> Sqr
+                    | 3 -> Arw
+                    | 4 -> Prl
                     | _ -> Hxg
 
         // Sequence
@@ -628,7 +630,7 @@ let view model dispatch =
                         attr.``class`` "slider"
                         attr.``type`` "range"
                         attr.min "1"
-                        attr.max "2"
+                        attr.max "4"
                         bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
                     }
                 }

@@ -13,7 +13,45 @@ open Coxel
 /// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
 /// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
 type Shp = 
-        | Hxg | Sqr
+        | Hxg | Sqr | Arw | Prl
+///
+
+// Hexel Vertices
+let vertex
+    (sqn : Sqn)
+    (shp : Shp)
+    (hxl : Hxl) = 
+    let hxCr = 
+        match shp with 
+        | Hxg 
+            -> match sqn with 
+                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
+                    -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
+                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                    -> [|0x0,0x0; 0x1,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFF|]
+        | Sqr 
+            -> match sqn with 
+                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                    -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
+                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                    -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFF; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
+        | Arw 
+            -> match sqn with 
+                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                    -> [|0x0,0x0; 0x1,0xFFFFFFFF; 0x2,0x0; 0x2,0xFFFFFFFD; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFD|]
+                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                    -> [|0x0,0x0; 0xFFFFFFFF,0x1; 0x3,0x1; 0x2,0x0; 0x3,0xFFFFFFFF; 0xFFFFFFFF,0xFFFFFFFF|]
+        | Prl 
+            -> match sqn with 
+                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                    -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE|]
+                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                    -> [|0x0,0x0; 0x1,0x1; 0x3,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0xFFFFFFFF,0xFFFFFFFF|] 
+         
+    let x, y, _ = hxl |> hxlCrd 
+    hxCr 
+    |> Array.map(fun (a,b)-> a + x, b + y) 
+    |> Array.map2 ( fun inx (vrx,vry) -> string(inx),vrx,vry) [|0..(Array.length hxCr)-1|]
 ///
 
 /// <summary> Ortogonal Hexel Sequence </summary>
@@ -47,31 +85,6 @@ let hxlOrt
                     |> Array.concat
                     |> Array.take ((lgt/2)+1)
 ///
-
-// Hexel Vertices
-let vertex
-    (sqn : Sqn)
-    (shp : Shp)
-    (hxl : Hxl) = 
-    let hxCr = 
-        match shp with 
-        | Hxg 
-            -> match sqn with 
-                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-                    -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> [|0x0,0x0; 0x1,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFF|]
-        | Sqr 
-            -> match sqn with 
-                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
-                    -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFF; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
-                
-    let x, y, _ = hxl |> hxlCrd 
-    hxCr 
-    |> Array.map(fun (a,b)-> a + x, b + y) 
-    |> Array.map2 ( fun inx (vrx,vry) -> string(inx),vrx,vry) [|0..(Array.length hxCr)-1|]
 
 // Coxel Perimeter Vertices
 let cxlPrm
