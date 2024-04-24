@@ -42,6 +42,7 @@ type svtx = Template<
     width = "50px"
     font-size = "10px"
     font-family="Verdana"
+    text-anchor="middle"
     fill = "#808080"
     opacity = "1"
     >${nm}</text> """>
