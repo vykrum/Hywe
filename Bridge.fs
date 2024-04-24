@@ -25,14 +25,23 @@ type plgn = Template<
     opacity = "0.75"
     >""">
 
+type svln = Template<
+    """<line
+    x1 = "${x1}"
+    y1 = "${y1}"
+    x2 = "${x2}"
+    y2 = "${y2}"
+    stroke = "${cl}"
+    stroke-with = "2"
+    >""">
+
 type svtx = Template<
     """<text 
     x="${xx}" 
     y="${yy}"
+    width = "50px"
     font-size = "10px"
     font-family="Verdana"
-    text-align = "center"
-    text-anchor = "middle"
     fill = "#808080"
     opacity = "1"
     >${nm}</text> """>
