@@ -275,10 +275,9 @@ let view model dispatch =
         
         // Shape
         let shp = match model.shp1 with 
-                    | 1 -> Hxg
-                    | 2 -> Sqr
-                    | 3 -> Arw
-                    | 4 -> Prl
+                    | 1 -> Sqr
+                    | 2 -> Arw
+                    | 3 -> Prl
                     | _ -> Hxg
 
         // Sequence
@@ -343,7 +342,7 @@ let view model dispatch =
         
         // Nested Coxel Colors
         let cxClr = [|   
-            "#D3D3D1"
+            "#FDF0C1"
             "#85C1E9"
             "#C6BDB4"
             "#BCCFD3"
