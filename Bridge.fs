@@ -40,7 +40,7 @@ type svpt = Template<
         id = "path1"
         fill = "${cl}"
         stroke = "${cl}"
-        d = "m ${xp} ${yp} q 20 -20 40 0 Z"
+        d = "m ${xp} ${yp} q -10 -10 20 0 20 10 Z"
         >""">
 
 type svtx = Template<
