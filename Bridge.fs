@@ -19,33 +19,49 @@ type hxgn = Template<
       >""">
 
 type plgn = Template<
-    """ <polygon 
-    points="${pt}" 
-    fill="${cl}"
-    opacity = "0.75"
-    >""">
+        """ <polygon 
+        points="${pt}" 
+        fill="${cl}"
+        opacity = "0.75"
+        >""">
 
 type svln = Template<
-    """<line
-    x1 = "${x1}"
-    y1 = "${y1}"
-    x2 = "${x2}"
-    y2 = "${y2}"
-    stroke = "${cl}"
-    stroke-with = "2"
-    >""">
+        """<line
+        x1 = "${x1}"
+        y1 = "${y1}"
+        x2 = "${x2}"
+        y2 = "${y2}"
+        stroke = "${cl}"
+        stroke-with = "2"
+        >""">
+
+type svpt = Template<
+        """<path
+        id = "path1"
+        fill = "${cl}"
+        stroke = "${cl}"
+        d = "m ${xp} ${yp} q 20 -20 40 0 Z"
+        >""">
 
 type svtx = Template<
-    """<text 
-    x="${xx}" 
-    y="${yy}"
-    width = "50px"
-    font-size = "10px"
-    font-family="Verdana"
-    text-anchor="middle"
-    fill = "#808080"
-    opacity = "1"
-    >${nm}</text> """>
+        """<text 
+        x="${xx}" 
+        y="${yy}"
+        width = "50px"
+        font-size = "10px"
+        font-family="Verdana"
+        text-anchor="start"
+        fill = "#808080"
+        opacity = "1"
+        >${nm}</text> """>
+
+type stPt = Template<
+        """<text
+        <textPath
+        href = "#path1">
+        ${nm}
+        </textPath>
+        ></text> """>
 ///
 
 /// <summary> Scale and Shift origin</summary>
@@ -114,20 +130,6 @@ let nstdCxls
         attr.height wdt
         attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
         svg {
-             let prp = Array.zip crd2 clr
-                    
-             for cmp in prp do
-                 let (xxyy,color) = cmp
-                 let xy = Array.map(fun (a,b) -> a,b) xxyy
-
-                 for locn in xy do
-                        hxgn()
-                            .pt($"{vrtx}")
-                            .tr($"{locn}")
-                            .cl($"{color}")
-                            .Elt() 
-            }
-        svg {
              let prp = Array.zip3 crd2 lbl clr
                     
              for cmp in prp do
@@ -137,12 +139,27 @@ let nstdCxls
                  let x,y = match xx with 
                              | None -> -10,-10
                              | Some a -> a
-                 svtx()
-                    .xx($"{x+10}")
-                    .yy($"{y}")
-                    .nm($"{label}")
-                    .Elt()
-            }
+
+                 for locn in xy do
+                        hxgn()
+                            .pt($"{vrtx}")
+                            .tr($"{locn}")
+                            .cl($"{color}")
+                            .Elt()
+                 
+                        svpt()
+                            .cl($"{color}")
+                            .xp($"{x}")
+                            .yp($"{y}")
+                            .Elt()
+
+                        svtx()
+                            .xx($"{x}")
+                            .yy($"{y}")
+                            .nm($"{label}")
+                            .Elt()
+
+            } 
     }
 
 let nstdCxls1
