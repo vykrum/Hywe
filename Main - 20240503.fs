@@ -11,6 +11,20 @@ open Parse
 
 type Model =
     {
+        cls0 : int
+        cls1 : int
+        cls2 : int
+        cls3 : int
+        cls4 : int
+        cls5 : int
+        cls6 : int
+        lbl0 : string
+        lbl1 : string
+        lbl2 : string
+        lbl3 : string
+        lbl4 : string
+        lbl5 : string
+        lbl6 : string
         shp1 : int
         sqn1 : int
         scl1 : int
@@ -44,14 +58,26 @@ type Model =
         lbl0341 : string
         lbl0342 : string
         lbl3311 : string
-        spcStr1 : string
-        spcStr2 : string
     }
 
 // Default Input
 let initModel =
     {
-        shp1 = 4
+        cls0 = 13
+        cls1 = 15
+        cls2 = 14
+        cls3 = 18
+        cls4 = 21
+        cls5 = 16
+        cls6 = 22
+        lbl0 = ""
+        lbl1 = ""
+        lbl2 = ""
+        lbl3 = ""
+        lbl4 = ""
+        lbl5 = ""
+        lbl6 = ""
+        shp1 = 2
         sqn1 = 13
         scl1 = 10
         cxl0001 = 7
@@ -84,11 +110,23 @@ let initModel =
         lbl0341 = "Closet"
         lbl0342 = "Bath"
         lbl3311 = "Bath"
-        spcStr1 = "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-        spcStr2 = "(1/20/Hywe),(2/20/Coxel)"
     }
 
 type Message =
+    | SetCls0 of int
+    | SetCls1 of int
+    | SetCls2 of int
+    | SetCls3 of int
+    | SetCls4 of int
+    | SetCls5 of int
+    | SetCls6 of int
+    | LblCls0 of string
+    | LblCls1 of string
+    | LblCls2 of string
+    | LblCls3 of string
+    | LblCls4 of string
+    | LblCls5 of string
+    | LblCls6 of string
     | SetShp1 of int
     | SetSqn1 of int
     | SetScl1 of int
@@ -122,11 +160,23 @@ type Message =
     | SetLbl0341 of string
     | SetLbl0342 of string
     | SetLbl3311 of string
-    | SetSpcStr1 of string
-    | SetSpcStr2 
 
 let update message model =
     match message with
+    | SetCls0 value -> { model with cls0 = value }
+    | SetCls1 value -> { model with cls1 = value }
+    | SetCls2 value -> { model with cls2 = value }
+    | SetCls3 value -> { model with cls3 = value }
+    | SetCls4 value -> { model with cls4 = value }
+    | SetCls5 value -> { model with cls5 = value }
+    | SetCls6 value -> { model with cls6 = value }
+    | LblCls0 value -> { model with lbl0 = value }
+    | LblCls1 value -> { model with lbl1 = value }
+    | LblCls2 value -> { model with lbl2 = value }
+    | LblCls3 value -> { model with lbl3 = value }
+    | LblCls4 value -> { model with lbl4 = value }
+    | LblCls5 value -> { model with lbl5 = value }
+    | LblCls6 value -> { model with lbl6 = value }
     | SetSqn1 value -> { model with sqn1 = value }
     | SetShp1 value -> { model with shp1 = value }
     | SetScl1 value -> { model with scl1 = value }
@@ -160,8 +210,6 @@ let update message model =
     | SetLbl0341 value -> { model with lbl0341 = value }
     | SetLbl0342 value -> { model with lbl0342 = value }
     | SetLbl3311 value -> { model with lbl3311 = value }
-    | SetSpcStr1 value -> { model with spcStr1 = value }
-    | SetSpcStr2 -> { model with spcStr2 = model.spcStr1}
 
 // Interface
 let view model dispatch =      
@@ -260,6 +308,38 @@ let view model dispatch =
                     |24 -> HRCCNW
                     | _ -> VRCWEE
 
+        // Cluster Names
+        let lbls = [|   
+            model.lbl0
+            model.lbl1
+            model.lbl2
+            model.lbl3
+            model.lbl4
+            model.lbl5
+            model.lbl6|]
+
+        // Cluster Colors
+        let clrs = [|
+            "#ececce"
+            "#bccfd3"
+            "#867869"
+            "#687b7f"
+            "#c6bdb4"
+            "#3496a3"
+            "#eabdb5"|]
+
+        let (loc,wdt,hgt) = 
+            cls 
+                scl 
+                sqn
+                ([| model.cls0
+                    model.cls1
+                    model.cls2
+                    model.cls3
+                    model.cls4
+                    model.cls5
+                    model.cls6 |])
+        
         // Nested Coxel Colors
         let cxClr = [|   
             "#FDF0C1"
@@ -279,8 +359,6 @@ let view model dispatch =
             "#D6EAF8"
                    |]
 
-        
-
         // Nested Coxels
         let spaceStr = $"(1/{model.cxl0001}/{model.lbl0001}),(2/{model.cxl0002}/{model.lbl0002}),(3/{model.cxl0003}/{model.lbl0003}),(1.1/{model.cxl0011}/{model.lbl0011}),(2.1/{model.cxl0021}/{model.lbl0021}),(3.1/{model.cxl0031}/{model.lbl0031},(3.2/{model.cxl0032}/{model.lbl0032},(3.3/{model.cxl0033}/{model.lbl0033},(3.4/{model.cxl0034}/{model.lbl0034}),(3.1.1/{model.cxl0311}/{model.lbl0311}),(3.2.1/{model.cxl0321}/{model.lbl0321}),(3.3.1/{model.cxl0331}/{model.lbl0331}),(3.4.1/{model.cxl0341}/{model.lbl0341}),(3.4.2/{model.cxl0342}/{model.lbl0342}),(3.3.1.1/{model.cxl3311}/{model.lbl3311})"
         let bsNs = hxlVld sqn (AV(1,4,0))
@@ -296,15 +374,306 @@ let view model dispatch =
                    |> allAV true
         let cxCxl = spaceCxl sqn bsNs bsOc spaceStr
        
+        // Prototype
+        div{
+            attr.``class`` "flex-container"
+            attr.``style`` "flex-wrap: wrap; justify-content: center;"
+            
+            // The Clusters SVG
+            span{
+                attr.``style`` "width: 400px; height: 300px;"
+                cluster (Array.zip3 loc lbls clrs) shp sqn scl 400 300
+                } 
+
+            // Cluster Controls
+            span{
+                attr.``style`` "width: 525px;
+                                margin-left: 10px;
+                                padding-left: 10px;"
+                // Cluster 0
+                div{
+                    attr.``class`` "flex-container"
+                    // Label 0
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[0]};"
+                        bind.input.string model.lbl0 (fun a -> dispatch (LblCls0 a))
+                    }
+                    // Size 0
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[0]};"
+                        $"{model.cls0 * 4}"
+                    }
+                    // Slider 0
+                    input{
+                        attr.``style`` $"background: {clrs[0]};"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "6"
+                        attr.max "25"
+                        bind.input.int model.cls0 (fun a -> dispatch (SetCls0 a))
+                    } 
+                }
+                // Cluster 1
+                div{ 
+                    attr.``class`` "flex-container"
+                    // Label 1
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[1]};"
+                        bind.input.string model.lbl1 (fun a -> dispatch (LblCls1 a))
+                    }
+                    // Size 1
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[1]};"
+                        $"{model.cls1 * 4}"
+                    }
+                    // Slider 1
+                    input{
+                        attr.``style`` $"background: {clrs[1]};"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "0"
+                        attr.max "25"
+                        bind.input.int model.cls1 (fun b -> dispatch (SetCls1 b))
+                    }
+                }
+                // Cluster 2
+                div{
+                    attr.``class`` "flex-container"
+                    // Label 2
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[2]};"
+                        bind.input.string model.lbl2 (fun a -> dispatch (LblCls2 a))
+                    }
+                    // Size 2
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[2]};"
+                        $"{model.cls2 * 4}"
+                    }
+                    // Slider 2
+                    input{
+                        attr.``style`` $"background: {clrs[2]};"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "0"
+                        attr.max "25"
+                        bind.input.int model.cls2 (fun c -> dispatch (SetCls2 c))
+                    }
+                }
+                // Cluster 3
+                div{
+                    attr.``class`` "flex-container"
+                    // Label 3
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[3]};"
+                        bind.input.string model.lbl3 (fun a -> dispatch (LblCls3 a))
+                    }
+                    // Size 3
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[3]};"
+                        $"{model.cls3 * 4}"
+                    }
+                    // Slider 3
+                    input{
+                        attr.``style`` $"background: {clrs[3]};"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "0"
+                        attr.max "25"
+                        bind.input.int model.cls3 (fun d -> dispatch (SetCls3 d))
+                    }
+                }
+                // Cluster 4
+                div{
+                    attr.``class`` "flex-container"
+                    // Label 4
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[4]}; border: none;"
+                        bind.input.string model.lbl4 (fun a -> dispatch (LblCls4 a))
+                    }
+                    // Size 4
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[4]};"
+                        $"{model.cls4 * 4}"
+                    }
+                    // Slider 4
+                    input{
+                        attr.``style`` $"background: {clrs[4]}; border: none;"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "0"
+                        attr.max "25"
+                        bind.input.int model.cls4 (fun e -> dispatch (SetCls4 e))
+                    }
+                }
+                // Cluster 5
+                div{
+                    attr.``class`` "flex-container"
+                    // Label 5
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[5]};"
+                        bind.input.string model.lbl5 (fun a -> dispatch (LblCls5 a))
+                    }
+                    // Size 5
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[5]};"
+                        $"{model.cls5 * 4}"
+                    }
+                    // Slider 5
+                    input{
+                        attr.``style`` $"background: {clrs[5]};"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "0"
+                        attr.max "25"
+                        bind.input.int model.cls5 (fun e -> dispatch (SetCls5 e))
+                    }
+                }
+                // Cluster 6
+                div{
+                    attr.``class`` "flex-container"
+                    // Label 6
+                    input{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[6]};"
+                        bind.input.string model.lbl6 (fun a -> dispatch (LblCls6 a))
+                    }
+                    // Size 6
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` $"background: {clrs[6]};"
+                        $"{model.cls6 * 4}"
+                    }
+                    // Slider 6
+                    input{
+                        attr.``style`` $"background: {clrs[6]};"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "0"
+                        attr.max "25"
+                        bind.input.int model.cls6 (fun g -> dispatch (SetCls6 g))
+                    }
+                }
+                // Scale
+                div{
+                    attr.``class`` "flex-container"
+                    // Scale Label
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` "background:#d3d3d1;"
+                        " Scale "
+                    }
+                    // Scale Value
+                    div{
+                        attr.``class`` "label"
+                        attr.``style`` "background:#d3d3d1;"
+                        attr.``type`` "text"
+                        $"{model.scl1}" 
+                    }
+                    // Slider Scale
+                    input{
+                        attr.``style`` "background:#d3d3d1;"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "1"
+                        attr.max "15"
+                        bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
+                    }
+                }
+                // Shape
+                div{
+                    attr.``class`` "flex-container"
+                    // Shape Label
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` "background:#d3d3d1;"
+                        "Shape"
+                    }
+                    // Shape Value
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` "background:#d3d3d1;"
+                        $"{shp}" 
+                    }
+                    // Slider Shape
+                    input{
+                        attr.``style`` $"background:#d3d3d1;"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "1"
+                        attr.max "4"
+                        bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
+                    }
+                }
+                // Sequence
+                div{
+                    attr.``class`` "flex-container"
+                    // Sequence Label
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` "background:#d3d3d1;"
+                        " Sequence "
+                    }
+                    // Sequence Value
+                    div{
+                        attr.``class`` "label"
+                        attr.``type`` "text"
+                        attr.``style`` "background: #d3d3d1;"
+                        $"{sqn}"
+                    }
+                    // Slider Sequence
+                    input{
+                        attr.``style`` "background: #d3d3d1;"
+                        attr.``class`` "slider"
+                        attr.``type`` "range"
+                        attr.min "1"
+                        attr.max "24"
+                        bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
+                    }
+                }
+            }
+
+        }
+        
         // Nested Coxels
         div{
             attr.``class`` "flex-container"
             attr.``style`` "flex-wrap: wrap; justify-content: center;"
             
-            // Coxel SVG
+            // Placeholder for Coxel SVG
             span{
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
                 nstdCxls cxCxl cxClr scl shp 400 
+                //nstdCxls1 cxCxl cxClr scl 400 
             }
             // Nested Coxel Parameters
             span{
@@ -796,121 +1165,7 @@ let view model dispatch =
                     }     
                 } 
             }
-        }
 
-        // Universal Controls
-        div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; justify-content: center;"
-            span{
-                attr.``style`` "width: 95%;
-                                margin-left: 10px;
-                                padding-left: 10px;"
-                // Scale
-                div{
-                    attr.``class`` "flex-container"
-                    // Scale Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        " Scale "
-                    }
-                    // Scale Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``style`` "background:#d3d3d1;"
-                        attr.``type`` "text"
-                        $"{model.scl1}" 
-                    }
-                    // Slider Scale
-                    input{
-                        attr.``style`` "background:#d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "25"
-                        bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
-                    }
-                }
-                // Shape
-                div{
-                    attr.``class`` "flex-container"
-                    // Shape Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        "Shape"
-                    }
-                    // Shape Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        $"{shp}" 
-                    }
-                    // Slider Shape
-                    input{
-                        attr.``style`` $"background:#d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "4"
-                        bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
-                    }
-                }
-                // Sequence
-                div{
-                    attr.``class`` "flex-container"
-                    // Sequence Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        " Sequence "
-                    }
-                    // Sequence Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background: #d3d3d1;"
-                        $"{sqn}"
-                    }
-                    // Slider Sequence
-                    input{
-                        attr.``style`` "background: #d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "24"
-                        bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
-                    }
-                }
-            }
-        }
-
-        // Input String
-        div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; justify-content: center;"
-            textarea {
-                attr.``type`` "textarea"
-                attr.``style`` "width: 85%; height:50px;"
-                bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
-            }
-            button {
-                attr.``class`` "button1"
-                on.click (fun _ -> dispatch (SetSpcStr2))
-                "HYWEAVE"
-            }
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
-                let cxClr1 = createPastelColorArray (Array.length cxCxl1)
-                nstdCxls cxCxl1 cxClr1 scl shp 1200 
-            }  
         }
         
     }

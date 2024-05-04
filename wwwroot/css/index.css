@@ -56,13 +56,19 @@ html, body {
     margin-left: 10px;
     margin-right: 10px;
     font-family: Segoe UI;
-    font-size: 12px;
+    font-size: 14px;
     opacity: 0.85;
     text-align: left;
     padding-top: 5px;
     padding-bottom: 5px;
     padding-left: 5px;
     padding-right: 5px;
+}
+
+.button1 {
+    font-family: Segoe UI;
+    font-size: 14px;
+    width: 100px;
 }
 
 .slider1 {
@@ -84,4 +90,25 @@ html, body {
     font-size: 12px;
     width: 80px;
     text-align: left;
+}
+
+.input2 {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    display: inline-block;
+    border-radius: 4px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+    margin-right: 10px;
+    font-family: Segoe UI;
+    font-size: 14px;
+    opacity: 0.85;
+    text-align: left;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    background: #d3d3d1
 }

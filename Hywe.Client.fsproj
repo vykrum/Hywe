@@ -8,6 +8,7 @@
 	  <Content Remove="wwwroot\twitter.svg" />
 	</ItemGroup>
 	<ItemGroup>
+		<None Include="Main - 20240503.fs" />
 		<Compile Include="Hexel.fs" />
 		<Compile Include="Coxel.fs" />
 		<Compile Include="Shape.fs" />
