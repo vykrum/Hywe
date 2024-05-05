@@ -123,7 +123,7 @@ type Message =
     | SetLbl0342 of string
     | SetLbl3311 of string
     | SetSpcStr1 of string
-    | SetSpcStr2 
+    | SetSpcStr2
 
 let update message model =
     match message with
@@ -162,6 +162,8 @@ let update message model =
     | SetLbl3311 value -> { model with lbl3311 = value }
     | SetSpcStr1 value -> { model with spcStr1 = value }
     | SetSpcStr2 -> { model with spcStr2 = model.spcStr1}
+
+
 
 // Interface
 let view model dispatch =      
@@ -279,8 +281,6 @@ let view model dispatch =
             "#D6EAF8"
                    |]
 
-        
-
         // Nested Coxels
         let spaceStr = $"(1/{model.cxl0001}/{model.lbl0001}),(2/{model.cxl0002}/{model.lbl0002}),(3/{model.cxl0003}/{model.lbl0003}),(1.1/{model.cxl0011}/{model.lbl0011}),(2.1/{model.cxl0021}/{model.lbl0021}),(3.1/{model.cxl0031}/{model.lbl0031},(3.2/{model.cxl0032}/{model.lbl0032},(3.3/{model.cxl0033}/{model.lbl0033},(3.4/{model.cxl0034}/{model.lbl0034}),(3.1.1/{model.cxl0311}/{model.lbl0311}),(3.2.1/{model.cxl0321}/{model.lbl0321}),(3.3.1/{model.cxl0331}/{model.lbl0331}),(3.4.1/{model.cxl0341}/{model.lbl0341}),(3.4.2/{model.cxl0342}/{model.lbl0342}),(3.3.1.1/{model.cxl3311}/{model.lbl3311})"
         let bsNs = hxlVld sqn (AV(1,4,0))
@@ -304,7 +304,7 @@ let view model dispatch =
             // Coxel SVG
             span{
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                nstdCxls cxCxl cxClr scl shp 400 
+                nstdCxls cxCxl cxClr scl shp 400
             }
             // Nested Coxel Parameters
             span{
@@ -801,118 +801,133 @@ let view model dispatch =
         // Universal Controls
         div{
             attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; justify-content: center;"
-            span{
-                attr.``style`` "width: 95%;
-                                margin-left: 10px;
-                                padding-left: 10px;"
-                // Scale
+            attr.``style`` "flex-wrap: wrap; 
+                            justify-content: center;
+                            display: flex;
+                            flex-direction: column;
+                            margin-left: 10px;"
+            
+            // Scale
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap;
+                                display: flex;
+                                justify-content: center;"
+                // Scale Label
                 div{
-                    attr.``class`` "flex-container"
-                    // Scale Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        " Scale "
-                    }
-                    // Scale Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``style`` "background:#d3d3d1;"
-                        attr.``type`` "text"
-                        $"{model.scl1}" 
-                    }
-                    // Slider Scale
-                    input{
-                        attr.``style`` "background:#d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "25"
-                        bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
-                    }
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    " Scale "
                 }
-                // Shape
+                // Scale Value
                 div{
-                    attr.``class`` "flex-container"
-                    // Shape Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        "Shape"
-                    }
-                    // Shape Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        $"{shp}" 
-                    }
-                    // Slider Shape
-                    input{
-                        attr.``style`` $"background:#d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "4"
-                        bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
-                    }
+                    attr.``class`` "label"
+                    attr.``style`` "background:#d3d3d1;"
+                    attr.``type`` "text"
+                    $"{model.scl1}" 
                 }
-                // Sequence
+                // Slider Scale
+                input{
+                    attr.``style`` "background:#d3d3d1;"
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.min "1"
+                    attr.max "25"
+                    bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
+                }
+            }
+            // Shape
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap;
+                                display: flex;
+                                justify-content: center;"
+                // Shape Label
                 div{
-                    attr.``class`` "flex-container"
-                    // Sequence Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        " Sequence "
-                    }
-                    // Sequence Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background: #d3d3d1;"
-                        $"{sqn}"
-                    }
-                    // Slider Sequence
-                    input{
-                        attr.``style`` "background: #d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "24"
-                        bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
-                    }
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    "Shape"
                 }
+                // Shape Value
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    $"{shp}" 
+                }
+                // Slider Shape
+                input{
+                    attr.``style`` $"background:#d3d3d1;"
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.min "1"
+                    attr.max "4"
+                    bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
+                }
+            }
+            // Sequence
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap;
+                                display: flex;
+                                justify-content: center;"
+                // Sequence Label
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    " Sequence "
+                }
+                // Sequence Value
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background: #d3d3d1;"
+                    $"{sqn}"
+                }
+                // Slider Sequence
+                input{
+                    attr.``style`` "background: #d3d3d1;"
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.min "1"
+                    attr.max "24"
+                    bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
+                }  
             }
         }
 
         // Input String
         div{
             attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; justify-content: center;"
+            attr.``style`` "flex-wrap: wrap; 
+                            justify-content: center;
+                            display: flex;
+                            flex-direction: row;"
             textarea {
                 attr.``type`` "textarea"
-                attr.``style`` "width: 85%; height:50px;"
+                attr.``style`` "width: 95%;
+                                height:100px;"
                 bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
             }
             button {
                 attr.``class`` "button1"
+                attr.``style`` "
+                                width: 95%;
+                                margin-top: 5px;"
                 on.click (fun _ -> dispatch (SetSpcStr2))
-                "HYWEAVE"
+                "H Y W E A V E"
             }
             div{
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
                 let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
-                let cxClr1 = createPastelColorArray (Array.length cxCxl1)
+                let cxClr1 = pastels (Array.length cxCxl1)
                 nstdCxls cxCxl1 cxClr1 scl shp 1200 
             }  
-        }
-        
+        } 
     }
 
 // Bolero component handling state updates and rendering the user interface

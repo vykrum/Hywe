@@ -93,8 +93,8 @@ let crd
     (hxXY02,hxMxmX,hxMxmY)
 ///
 
-// Function to generate a random pastel color
-let generateRandomPastelColor () =
+// Random pastel color
+let pastel () =
     let rand = Random()
     let mixWithWhite (color: int) = (color + 255) >>> 1
     let red = mixWithWhite (rand.Next(256))
@@ -103,8 +103,8 @@ let generateRandomPastelColor () =
     $"rgb({red} {green} {blue})"
 
 // Function to create an array of random pastel colors
-let createPastelColorArray (size: int) =
-    Array.init size (fun _ -> generateRandomPastelColor())
+let pastels (size: int) =
+    Array.init size (fun _ -> pastel())
 
 /// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>

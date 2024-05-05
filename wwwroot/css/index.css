@@ -17,7 +17,7 @@ html, body {
 
 .slider {
     -webkit-appearance: none;
-    width: 70%;
+    width: 60%;
     height: 4px;
     margin-left: 10px;
     margin-top: auto;
@@ -31,7 +31,7 @@ html, body {
 }
 
 .label {
-    width: 80px;
+    width: 60px;
     border: none;
     border-radius: 4px;
     margin-left: 3px;
@@ -55,7 +55,7 @@ html, body {
     margin-bottom: 5px;
     margin-left: 10px;
     margin-right: 10px;
-    font-family: Segoe UI;
+    font-family: 'Optima', Candara, Calibri;
     font-size: 14px;
     opacity: 0.85;
     text-align: left;
@@ -66,9 +66,8 @@ html, body {
 }
 
 .button1 {
-    font-family: Segoe UI;
+    font-family: 'Optima', Candara, Calibri;
     font-size: 14px;
-    width: 100px;
 }
 
 .slider1 {
@@ -88,6 +87,7 @@ html, body {
 .input1 {
     border: none;
     font-size: 12px;
+    font-family: 'Optima', Candara, Calibri;
     width: 80px;
     text-align: left;
 }
@@ -102,7 +102,7 @@ html, body {
     margin-bottom: 5px;
     margin-left: 10px;
     margin-right: 10px;
-    font-family: Segoe UI;
+    font-family: 'Optima', Candara, Calibri;
     font-size: 14px;
     opacity: 0.85;
     text-align: left;
