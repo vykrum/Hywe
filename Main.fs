@@ -907,9 +907,9 @@ let view model dispatch =
                             flex-direction: row;"
             textarea {
                 attr.``type`` "textarea"
+                attr.``class`` "textarea"
                 attr.``style`` "width: 95%;
                                 height:100px;
-                                font-family: 'Optima', Candara, Calibri;
                                 font-size: 14px;"
                 bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
             }
@@ -919,7 +919,7 @@ let view model dispatch =
                                 width: 95%;
                                 margin-top: 5px;"
                 on.click (fun _ -> dispatch (SetSpcStr2))
-                "H Y W E A V E"
+                "h y W E A V E"
             }
             div{
                 attr.``class`` "flex-container"

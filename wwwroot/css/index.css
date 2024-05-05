@@ -67,7 +67,20 @@ html, body {
 
 .button1 {
     font-family: 'Optima', Candara, Calibri;
-    font-size: 14px;
+    background-color: #d3d3d1;
+    opacity: 1;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 8px 8px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+}
+.button1:hover {
+    opacity: 0.8;
 }
 
 .slider1 {
@@ -83,7 +96,14 @@ html, body {
     transition: opacity .2s;
     padding-bottom: 2px;
 }
-
+.textarea {
+    font-family: 'Optima', Candara, Calibri;
+    border: none;
+    outline: 1px solid #d3d3d3;
+    background-color: none;
+    border-radius: 8px;
+    padding: 10px 10px 10px 10px;
+}
 .input1 {
     border: none;
     font-size: 12px;
