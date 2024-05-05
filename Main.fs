@@ -804,8 +804,7 @@ let view model dispatch =
             attr.``style`` "flex-wrap: wrap; 
                             justify-content: center;
                             display: flex;
-                            flex-direction: column;
-                            margin-left: 10px;"
+                            flex-direction: column;"
             
             // Scale
             div{
@@ -909,7 +908,9 @@ let view model dispatch =
             textarea {
                 attr.``type`` "textarea"
                 attr.``style`` "width: 95%;
-                                height:100px;"
+                                height:100px;
+                                font-family: 'Optima', Candara, Calibri;
+                                font-size: 14px;"
                 bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
             }
             button {
