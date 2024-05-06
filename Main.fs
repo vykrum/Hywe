@@ -918,7 +918,7 @@ let view model dispatch =
                                 padding-top: 10px;
                                 padding-bottom: 10px;"
 
-                "Weave custom hywes with a tree of format (id/size/name),... where ids with no decimal constitute the main branch, ids with one decimal are secondary, ids with three are tertiary and so on. An understanding and accurate formatting of the id component is critical."
+                "Weave custom hywes with a tree of the format (id/size/name),... where ids with no decimal constitute the main branch, ids with one decimal are secondary, ids with three are tertiary and so on. An understanding and accurate formatting of the id component is critical."
             }
         }
         // Input String
