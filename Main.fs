@@ -85,7 +85,7 @@ let initModel =
         lbl0342 = "Bath"
         lbl3311 = "Bath"
         spcStr1 = "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-        spcStr2 = "(1/20/Hywe),(2/20/Coxel)"
+        spcStr2 = "(1/7/Foyer),(2/12/Living),(3/12/Dining),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.1.1/6/Utility),(3.2.1/10/Closet-1),(3.3.1/10/Closet-2),(3.3.2/10/Bath-2),(3.2.1.1/10/Bath-1)"
     }
 
 type Message =
@@ -163,8 +163,6 @@ let update message model =
     | SetSpcStr1 value -> { model with spcStr1 = value }
     | SetSpcStr2 -> { model with spcStr2 = model.spcStr1}
 
-
-
 // Interface
 let view model dispatch =      
     concat {
@@ -215,7 +213,12 @@ let view model dispatch =
                 }
             // Introduction
             div{
-                attr.``style`` "font-family: 'Optima', Candara, Calibri; font-size: 18px; color: #363636; padding-left: 12px;padding-right: 10px;padding-bottom: 5px;"
+                attr.``style`` "font-family: 'Optima', Candara, Calibri; 
+                                font-size: 18px; 
+                                color: #363636; 
+                                padding-left: 12px;
+                                padding-right: 10px;
+                                padding-bottom: 5px;"
                 p{
                     "Hywe is a space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
                     br
@@ -898,6 +901,26 @@ let view model dispatch =
             }
         }
 
+        div{
+            attr.``style`` "margin-top: 5px;
+                            margin-left: 20px;
+                            margin-right: 20px;
+                            background: #d3d3d1; 
+                            color: #363636; 
+                            flex-direction: column;
+                            border-radius: 5px;"
+            p{
+                attr.``style`` "font-family: 'Optima', Candara, Calibri; 
+                                font-size: 14px; 
+                                color: #363636; 
+                                padding-left: 20px;
+                                padding-right: 20px;
+                                padding-top: 10px;
+                                padding-bottom: 10px;"
+
+                "Weave custom hywes with a tree of format (id/size/name),... where ids with no decimal constitute the main branch, ids with one decimal are secondary, ids with three are tertiary and so on. An understanding and accurate formatting of the id component is critical."
+            }
+        }
         // Input String
         div{
             attr.``class`` "flex-container"
@@ -905,10 +928,13 @@ let view model dispatch =
                             justify-content: center;
                             display: flex;
                             flex-direction: row;"
+            
             textarea {
                 attr.``type`` "textarea"
                 attr.``class`` "textarea"
                 attr.``style`` "width: 95%;
+                                margin-left: 20px;
+                                margin-right: 20px;
                                 height:100px;
                                 font-size: 14px;"
                 bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
@@ -917,6 +943,8 @@ let view model dispatch =
                 attr.``class`` "button1"
                 attr.``style`` "
                                 width: 95%;
+                                margin-left: 20px;
+                                margin-right: 20px;
                                 margin-top: 5px;"
                 on.click (fun _ -> dispatch (SetSpcStr2))
                 "h y W E A V E"
