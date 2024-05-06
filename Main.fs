@@ -933,6 +933,7 @@ let view model dispatch =
                 attr.``type`` "textarea"
                 attr.``class`` "textarea"
                 attr.``style`` "width: 95%;
+                                margin-left: 5px;
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 height:100px;
