@@ -120,10 +120,11 @@ let coxel
             |> Array.Parallel.map(fun x 
                                     -> Array.filter(fun (_,z) -> z >= 0) x)
         
-    // Avoid single unclustered cell towards the end
-    let cl00 = 
+    let cl1 = 
         cls
         |> Array.Parallel.map(fun x -> getHxls x)
+
+(*    // Avoid single unclustered cell towards the end
     let cl01 = 
         cl00
         |> Array.Parallel.map(fun x 
@@ -131,7 +132,7 @@ let coxel
                                                     -> (available sqn y x) < 5)x)
          
     let cl1 = Array.map2 (fun x y 
-                                -> Array.append [|Array.head x|] y) cl00 cl01
+                                -> Array.append [|Array.head x|] y) cl00 cl01*)
 
     let cxl = Array.map3 (fun x y z -> 
                                             let hx1 = z 
