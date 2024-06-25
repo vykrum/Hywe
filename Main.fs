@@ -220,9 +220,9 @@ let view model dispatch =
                                 padding-right: 10px;
                                 padding-bottom: 5px;"
                 p{
-                    "Hywe is a space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
+                    "Hywe is a endogenous space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
                     br
-                    "Manipulating the color coded sliders controls the scale of corresponding clusters."
+                    "Weave custom spatial configurations using properly formatted instructions"
                 }
             }
         }
@@ -284,7 +284,7 @@ let view model dispatch =
             "#D6EAF8"
                    |]
 
-        // Nested Coxels
+        // Nested Coxels Framework
         let spaceStr = $"(1/{model.cxl0001}/{model.lbl0001}),(2/{model.cxl0002}/{model.lbl0002}),(3/{model.cxl0003}/{model.lbl0003}),(1.1/{model.cxl0011}/{model.lbl0011}),(2.1/{model.cxl0021}/{model.lbl0021}),(3.1/{model.cxl0031}/{model.lbl0031},(3.2/{model.cxl0032}/{model.lbl0032},(3.3/{model.cxl0033}/{model.lbl0033},(3.4/{model.cxl0034}/{model.lbl0034}),(3.1.1/{model.cxl0311}/{model.lbl0311}),(3.2.1/{model.cxl0321}/{model.lbl0321}),(3.3.1/{model.cxl0331}/{model.lbl0331}),(3.4.1/{model.cxl0341}/{model.lbl0341}),(3.4.2/{model.cxl0342}/{model.lbl0342}),(3.3.1.1/{model.cxl3311}/{model.lbl3311})"
         let bsNs = hxlVld sqn (AV(1,4,0))
         let bsOc = 
@@ -298,8 +298,168 @@ let view model dispatch =
                    Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
                    |> allAV true
         let cxCxl = spaceCxl sqn bsNs bsOc spaceStr
-       
-        // Nested Coxels
+  
+        // Universal Controls
+        div{
+            attr.``class`` "flex-container"
+            attr.``style`` "flex-wrap: wrap; 
+                            justify-content: center;
+                            display: flex;
+                            flex-direction: column;"
+            
+            // Scale
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap;
+                                display: flex;
+                                justify-content: center;"
+                // Scale Label
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    " Scale "
+                }
+                // Scale Value
+                div{
+                    attr.``class`` "label"
+                    attr.``style`` "background:#d3d3d1;"
+                    attr.``type`` "text"
+                    $"{model.scl1}" 
+                }
+                // Slider Scale
+                input{
+                    attr.``style`` "background:#d3d3d1;"
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.min "1"
+                    attr.max "25"
+                    bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
+                }
+            }
+            // Shape
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap;
+                                display: flex;
+                                justify-content: center;"
+                // Shape Label
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    "Shape"
+                }
+                // Shape Value
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    $"{shp}" 
+                }
+                // Slider Shape
+                input{
+                    attr.``style`` $"background:#d3d3d1;"
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.min "1"
+                    attr.max "4"
+                    bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
+                }
+            }
+            // Sequence
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap;
+                                display: flex;
+                                justify-content: center;"
+                // Sequence Label
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background:#d3d3d1;"
+                    " Sequence "
+                }
+                // Sequence Value
+                div{
+                    attr.``class`` "label"
+                    attr.``type`` "text"
+                    attr.``style`` "background: #d3d3d1;"
+                    $"{sqn}"
+                }
+                // Slider Sequence
+                input{
+                    attr.``style`` "background: #d3d3d1;"
+                    attr.``class`` "slider"
+                    attr.``type`` "range"
+                    attr.min "1"
+                    attr.max "24"
+                    bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
+                }  
+            }
+        }
+ 
+        // Input String
+        div{
+            attr.``class`` "flex-container"
+            attr.``style`` "flex-wrap: wrap; 
+                            justify-content: center;
+                            display: flex;
+                            flex-direction: row;"
+            
+            textarea {
+                attr.``type`` "textarea"
+                attr.``class`` "textarea"
+                attr.``style`` "width: 95%;
+                                margin-left: 5px;
+                                margin-left: 20px;
+                                margin-right: 20px;
+                                height:100px;
+                                font-size: 14px;"
+                bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
+            }
+            button {
+                attr.``class`` "button1"
+                attr.``style`` "
+                                width: 95%;
+                                margin-left: 20px;
+                                margin-right: 20px;
+                                margin-top: 5px;"
+                on.click (fun _ -> dispatch (SetSpcStr2))
+                "h y W E A V E"
+            }
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap; justify-content: center;"
+                let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
+                let cxClr1 = pastels (Array.length cxCxl1)
+                nstdCxls cxCxl1 cxClr1 scl shp 1200 
+            }  
+        } 
+        
+        // Text Block Description 
+        div{
+            attr.``style`` "margin-top: 5px;
+                            margin-left: 20px;
+                            margin-right: 20px;
+                            background: #d3d3d1; 
+                            color: #363636; 
+                            flex-direction: column;
+                            border-radius: 5px;"
+            p{
+                attr.``style`` "font-family: 'Optima', Candara, Calibri; 
+                                font-size: 14px; 
+                                color: #363636; 
+                                padding-left: 20px;
+                                padding-right: 20px;
+                                padding-top: 10px;
+                                padding-bottom: 10px;"
+
+                "Manipulating the color coded sliders controls the scale of corresponding clusters."
+            }
+        }
+
+         // Sample Nested Coxels
         div{
             attr.``class`` "flex-container"
             attr.``style`` "flex-wrap: wrap; justify-content: center;"
@@ -801,163 +961,6 @@ let view model dispatch =
             }
         }
 
-        // Universal Controls
-        div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; 
-                            justify-content: center;
-                            display: flex;
-                            flex-direction: column;"
-            
-            // Scale
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap;
-                                display: flex;
-                                justify-content: center;"
-                // Scale Label
-                div{
-                    attr.``class`` "label"
-                    attr.``type`` "text"
-                    attr.``style`` "background:#d3d3d1;"
-                    " Scale "
-                }
-                // Scale Value
-                div{
-                    attr.``class`` "label"
-                    attr.``style`` "background:#d3d3d1;"
-                    attr.``type`` "text"
-                    $"{model.scl1}" 
-                }
-                // Slider Scale
-                input{
-                    attr.``style`` "background:#d3d3d1;"
-                    attr.``class`` "slider"
-                    attr.``type`` "range"
-                    attr.min "1"
-                    attr.max "25"
-                    bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
-                }
-            }
-            // Shape
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap;
-                                display: flex;
-                                justify-content: center;"
-                // Shape Label
-                div{
-                    attr.``class`` "label"
-                    attr.``type`` "text"
-                    attr.``style`` "background:#d3d3d1;"
-                    "Shape"
-                }
-                // Shape Value
-                div{
-                    attr.``class`` "label"
-                    attr.``type`` "text"
-                    attr.``style`` "background:#d3d3d1;"
-                    $"{shp}" 
-                }
-                // Slider Shape
-                input{
-                    attr.``style`` $"background:#d3d3d1;"
-                    attr.``class`` "slider"
-                    attr.``type`` "range"
-                    attr.min "1"
-                    attr.max "4"
-                    bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
-                }
-            }
-            // Sequence
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap;
-                                display: flex;
-                                justify-content: center;"
-                // Sequence Label
-                div{
-                    attr.``class`` "label"
-                    attr.``type`` "text"
-                    attr.``style`` "background:#d3d3d1;"
-                    " Sequence "
-                }
-                // Sequence Value
-                div{
-                    attr.``class`` "label"
-                    attr.``type`` "text"
-                    attr.``style`` "background: #d3d3d1;"
-                    $"{sqn}"
-                }
-                // Slider Sequence
-                input{
-                    attr.``style`` "background: #d3d3d1;"
-                    attr.``class`` "slider"
-                    attr.``type`` "range"
-                    attr.min "1"
-                    attr.max "24"
-                    bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
-                }  
-            }
-        }
-
-        div{
-            attr.``style`` "margin-top: 5px;
-                            margin-left: 20px;
-                            margin-right: 20px;
-                            background: #d3d3d1; 
-                            color: #363636; 
-                            flex-direction: column;
-                            border-radius: 5px;"
-            p{
-                attr.``style`` "font-family: 'Optima', Candara, Calibri; 
-                                font-size: 14px; 
-                                color: #363636; 
-                                padding-left: 20px;
-                                padding-right: 20px;
-                                padding-top: 10px;
-                                padding-bottom: 10px;"
-
-                "Weave custom hywes with a tree of the format (id/size/name),... where ids with no decimal constitute the main branch, ids with one decimal are secondary, ids with three are tertiary and so on. An understanding and accurate formatting of the id component is critical."
-            }
-        }
-        // Input String
-        div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; 
-                            justify-content: center;
-                            display: flex;
-                            flex-direction: row;"
-            
-            textarea {
-                attr.``type`` "textarea"
-                attr.``class`` "textarea"
-                attr.``style`` "width: 95%;
-                                margin-left: 5px;
-                                margin-left: 20px;
-                                margin-right: 20px;
-                                height:100px;
-                                font-size: 14px;"
-                bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
-            }
-            button {
-                attr.``class`` "button1"
-                attr.``style`` "
-                                width: 95%;
-                                margin-left: 20px;
-                                margin-right: 20px;
-                                margin-top: 5px;"
-                on.click (fun _ -> dispatch (SetSpcStr2))
-                "h y W E A V E"
-            }
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
-                let cxClr1 = pastels (Array.length cxCxl1)
-                nstdCxls cxCxl1 cxClr1 scl shp 1200 
-            }  
-        } 
     }
 
 // Bolero component handling state updates and rendering the user interface

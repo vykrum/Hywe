@@ -105,6 +105,7 @@ let pastel () =
 // Function to create an array of random pastel colors
 let pastels (size: int) =
     Array.init size (fun _ -> pastel())
+///
 
 /// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>
