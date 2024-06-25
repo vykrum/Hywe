@@ -220,9 +220,9 @@ let view model dispatch =
                                 padding-right: 10px;
                                 padding-bottom: 5px;"
                 p{
-                    "Hywe is a endogenous space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
+                    "Hywe is an endogenous space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
                     br
-                    "Weave custom spatial configurations using properly formatted instructions"
+                    "Weave custom spatial configurations at a high level of abstraction using properly formatted spatial flow and magnitude instructions conveying design intent."
                 }
             }
         }
