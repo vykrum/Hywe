@@ -220,9 +220,9 @@ let view model dispatch =
                                 padding-right: 10px;
                                 padding-bottom: 5px;"
                 p{
-                    "Hywe is an endogenous space layout planning concept currently undergoing its formative stages of development as an early stage design interface."
+                    "Hywe is an endogenous space planning concept currently undergoing its formative stages of development as an early stage design interface."
                     br
-                    "Weave custom spatial configurations at a high level of abstraction using properly formatted spatial flow and magnitude instructions conveying design intent."
+                    "Weave spatial layouts at a high level of abstraction using properly formatted (heirarchy/size/label) instructions."
                 }
             }
         }
@@ -455,7 +455,7 @@ let view model dispatch =
                                 padding-top: 10px;
                                 padding-bottom: 10px;"
 
-                "Manipulating the color coded sliders controls the scale of corresponding clusters."
+                "Manipulating the color coded sliders controls the scale of corresponding clusters. The period count in hierarchy labels increases corresponding to depth of branch  "
             }
         }
 
