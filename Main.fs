@@ -298,6 +298,44 @@ let view model dispatch =
                    Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
                    |> allAV true
         let cxCxl = spaceCxl sqn bsNs bsOc spaceStr
+
+        // Input String
+        div{
+            attr.``class`` "flex-container"
+            attr.``style`` "flex-wrap: wrap; 
+                            justify-content: center;
+                            display: flex;
+                            flex-direction: row;"
+            
+            textarea {
+                attr.``type`` "textarea"
+                attr.``class`` "textarea"
+                attr.``style`` "width: 95%;
+                                margin-left: 5px;
+                                margin-left: 20px;
+                                margin-right: 20px;
+                                height:100px;
+                                font-size: 14px;"
+                bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
+            }
+            button {
+                attr.``class`` "button1"
+                attr.``style`` "
+                                width: 95%;
+                                margin-left: 20px;
+                                margin-right: 20px;
+                                margin-top: 5px;"
+                on.click (fun _ -> dispatch (SetSpcStr2))
+                "h y W E A V E"
+            }
+            div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap; justify-content: center;"
+                let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
+                let cxClr1 = pastels (Array.length cxCxl1)
+                nstdCxls cxCxl1 cxClr1 scl shp 1200 
+            }  
+        } 
   
         // Universal Controls
         div{
@@ -397,46 +435,7 @@ let view model dispatch =
                     bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
                 }  
             }
-        }
- 
-        // Input String
-        div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; 
-                            justify-content: center;
-                            display: flex;
-                            flex-direction: row;"
-            
-            textarea {
-                attr.``type`` "textarea"
-                attr.``class`` "textarea"
-                attr.``style`` "width: 95%;
-                                margin-left: 5px;
-                                margin-left: 20px;
-                                margin-right: 20px;
-                                height:100px;
-                                font-size: 14px;"
-                bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
-            }
-            button {
-                attr.``class`` "button1"
-                attr.``style`` "
-                                width: 95%;
-                                margin-left: 20px;
-                                margin-right: 20px;
-                                margin-top: 5px;"
-                on.click (fun _ -> dispatch (SetSpcStr2))
-                "h y W E A V E"
-            }
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
-                let cxClr1 = pastels (Array.length cxCxl1)
-                nstdCxls cxCxl1 cxClr1 scl shp 1200 
-            }  
-        } 
-        
+        }        
         // Text Block Description 
         div{
             attr.``style`` "margin-top: 5px;
