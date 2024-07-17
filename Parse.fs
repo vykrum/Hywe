@@ -147,7 +147,11 @@ let spaceCxl
         let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
         let cnt = (Array.length tre) - 1
         let chBs = match (Array.length chHx) >= cnt with 
-                    | true -> Array.take cnt chHx
+                    | true ->
+                            let divs =  ((Array.length chHx) / cnt)
+                            let chnk = Array.chunkBySize divs chHx
+                            let fsHx = chnk |> Array.map (fun x -> Array.head x)
+                            Array.take cnt fsHx
                     | false -> Array.append 
                                 chHx 
                                 (Array.replicate (cnt - (Array.length chHx)) identity)
