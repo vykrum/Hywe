@@ -399,6 +399,29 @@ let view model dispatch =
             }
         }  
 
+        // Formatting Instructions
+        div{
+            attr.``class`` "flex-container"
+            attr.``style`` "width: 90%
+                            flex-wrap: wrap;
+                            display: flex;
+                            color: #363636;
+                            justify-content: right;
+                            font-family: 'Optima', Candara, Calibri;
+                            font-size: 14px;
+                            padding-right: 20px;
+                            margin-right: 20px;"
+            a{
+                attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
+                attr.target "blank"
+                img{
+                    attr.width "20"
+                    attr.height "20"
+                    attr.src "https://vykrum.github.io/Hywe/help.png"
+                }
+            }
+        }
+
         // Input String
         div{
             attr.``class`` "flex-container"
