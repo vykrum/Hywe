@@ -402,14 +402,12 @@ let view model dispatch =
         // Formatting Instructions
         div{
             attr.``class`` "flex-container"
-            attr.``style`` "width: 90%
-                            flex-wrap: wrap;
-                            display: flex;
-                            color: #363636;
+            attr.``style`` "flex-wrap: wrap; 
                             justify-content: right;
-                            font-family: 'Optima', Candara, Calibri;
-                            font-size: 14px;
-                            padding-right: 20px;
+                            display: flex;
+                            flex-direction: row;
+                            width: 90%;
+                            margin-left: 20px;
                             margin-right: 20px;"
             a{
                 attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
@@ -434,7 +432,6 @@ let view model dispatch =
                 attr.``type`` "textarea"
                 attr.``class`` "textarea"
                 attr.``style`` "width: 95%;
-                                margin-left: 5px;
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 height:100px;
