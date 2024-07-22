@@ -85,7 +85,7 @@ let initModel =
         lbl0342 = "Bath"
         lbl3311 = "Bath"
         spcStr1 = "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-        spcStr2 = "(1/7/Foyer),(2/12/Living),(3/12/Dining),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.1.1/6/Utility),(3.2.1/10/Closet-1),(3.3.1/10/Closet-2),(3.3.2/10/Bath-2),(3.2.1.1/10/Bath-1)"
+        spcStr2 = "(1/7/Foyer),(2/12/Living),(3/16/Dining),(3.1/12/Kitchen),(3.2/16/Bed-1),(3.3/18/Bed-2),(3.1.1/7/Utility),(3.2.1/10/Closet-1),(3.3.1/10/Closet-2),(3.3.2/10/Bath-2),(3.2.1.1/10/Bath-1)"
     }
 
 type Message =
