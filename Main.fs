@@ -419,6 +419,7 @@ let view model dispatch =
                 }
             }
         }
+        
 
         // Input String
         div{
