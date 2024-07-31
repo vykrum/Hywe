@@ -300,7 +300,7 @@ let view model dispatch =
             }
             select{
                 attr.name "options"
-                attr.``style`` "width: 80%;
+                attr.``style`` "width: 75%;
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 margin-top: 10px;
