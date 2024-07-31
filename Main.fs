@@ -59,9 +59,14 @@ let update message model =
     | SetOpt1 value -> 
                             let content = 
                                 match value with 
-                                | Beeline -> "(1/10/Start),(2/10/End)"
-                                | Beeyond -> "(1/10/Docking),(1.1/10/Logistics),(1.2/10/Laboratory),(1.3/10/Habitation),(1.4/10/Power)"
-                                | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
+                                | Beeline -> "(1/20/Start),(2/20/End)"
+                                | Beeyond -> "(1/25/Docking),(1.1/25/Logistics),(1.2/25/Laboratory),"+
+                                             "(1.3/25/Habitation),(1.4/25/Power)"
+                                | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),"+
+                                              "(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),"+
+                                              "(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),"+
+                                              "(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),"+
+                                              "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
                                 | Beespoke -> ""
                             {model with opt1 = Some value; stx1 = content}
 
