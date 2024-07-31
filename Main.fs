@@ -18,9 +18,9 @@ type Beeset =
 let stxInstr = 
     "Depending on your selection, the Hywe Syntax will be displayed here. Choose from the following options:\n\n" +
     "• Bee-line: Basic syntax (index/size/label) for demonstation of the syntax in its simplest form.\n" +
-    "• Bee-yond: Syntax for a branching, where the index format becomes x.x , allowing for slightly more complex layouts.\n" +
+    "• Bee-yond: Syntax for branching, where the index format becomes x.x , allowing for slightly more complex layouts.\n" +
     "• Bee-droom: Syntax for a typical residential layout with multiple levels of branching, for more detailed layouts.\n" +
-    "• Bee-spoke: Begin with a clean slate here if you prefer notto use the above options as a base.\n\n" +
+    "• Bee-spoke: Begin with a clean slate here if you prefer to not use the above options as a base.\n\n" +
     "Click the hyWEAVE button below to update any selection or alteration."
 
 type Model =
