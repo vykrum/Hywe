@@ -14,7 +14,7 @@ type Beeset =
     | Beedroom
     | Beespoke
 
-let hyweInstructions = 
+let stxInstr = 
     "Depending on your selection, the Hywe Syntax will be displayed here. Choose from the following options:\n\n" +
     "• Bee-line: Basic syntax for the simplest layout. Includes index/size/label for straightforward organization.\n" +
     "• Bee-yond: Syntax for a branched layout, where the index format becomes x.x, allowing for slightly more complex structures.\n" +
@@ -39,7 +39,7 @@ let initModel =
         sqn1 = 13
         scl1 = 10
         opt1 = None
-        stx1 = hyweInstructions
+        stx1 = stxInstr 
         stx2 = "(1/3/.),(2/3/.)"
     }
 
