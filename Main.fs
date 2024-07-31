@@ -59,7 +59,7 @@ let update message model =
     | SetOpt1 value -> 
                             let content = 
                                 match value with 
-                                | Beeline -> "(1/20/Start),(2/20/End)"
+                                | Beeline -> "(1/48/Start),(2/52/End)"
                                 | Beeyond -> "(1/25/Docking),(1.1/25/Logistics),(1.2/25/Laboratory),"+
                                              "(1.3/25/Habitation),(1.4/25/Power)"
                                 | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),"+
