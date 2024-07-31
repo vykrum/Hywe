@@ -4,18 +4,33 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Hexel
-open Coxel
 open Shape
 open Bridge
 open Parse
+
+type Beeset = 
+    | Beeline
+    | Beeyond
+    | Beedroom
+    | Beespoke
+
+let hyweInstructions = 
+    "Depending on your selection, Hywe Syntax will be displayed here. Choose from the following options:\n" +
+    "- Bee-line: Basic syntax for the simplest layout. Includes index/size/label for straightforward organization.\n" +
+    "- Bee-yond: Syntax for a branched layout, where the index format becomes x.x, allowing for more complex structures.\n" +
+    "- Bee-droom: Syntax for a typical residential layout with multiple levels of branching, ideal for more detailed layouts.\n" +
+    "- Bee-spoke: Custom layout option providing a clean slate for exploring any layout configuration in any space.\n" +
+    "Click the hyWEAVE button below to update your selection."
+
 
 type Model =
     {
         shp1 : int
         sqn1 : int
         scl1 : int
-        spcStr1 : string
-        spcStr2 : string
+        opt1 : Beeset option
+        stx1 : string
+        stx2 : string
     }
 
 // Default Input
@@ -24,24 +39,35 @@ let initModel =
         shp1 = 4
         sqn1 = 13
         scl1 = 10
-        spcStr1 = "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-        spcStr2 = "(1/7/Foyer),(2/12/Living),(3/16/Dining),(3.1/12/Kitchen),(3.2/16/Bed-1),(3.3/18/Bed-2),(3.1.1/7/Utility),(3.2.1/10/Closet-1),(3.3.1/10/Closet-2),(3.3.2/10/Bath-2),(3.2.1.1/10/Bath-1)"
+        opt1 = None
+        stx1 = hyweInstructions
+        stx2 = "(1/3/.),(2/3/.)"
     }
 
 type Message =
     | SetShp1 of int
     | SetSqn1 of int
     | SetScl1 of int
-    | SetSpcStr1 of string
-    | SetSpcStr2
+    | SetOpt1 of Beeset
+    | SetStx1 of string
+    | SetStx2
 
 let update message model =
     match message with
     | SetSqn1 value -> { model with sqn1 = value }
     | SetShp1 value -> { model with shp1 = value }
     | SetScl1 value -> { model with scl1 = value }
-    | SetSpcStr1 value -> { model with spcStr1 = value }
-    | SetSpcStr2 -> { model with spcStr2 = model.spcStr1}
+    | SetOpt1 value -> 
+                            let content = 
+                                match value with 
+                                | Beeline -> "(1/10/Start),(2/10/End)"
+                                | Beeyond -> "(1/10/Docking),(1.1/10/Logistics),(1.2/10/Laboratory),(1.3/10/Habitation),(1.4/10/Power)"
+                                | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/10/Study),(2.1/10/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
+                                | Beespoke -> ""
+                            {model with opt1 = Some value; stx1 = content}
+
+    | SetStx1 value -> { model with stx1 = value }
+    | SetStx2 -> { model with stx2 = model.stx1}
 
 // Interface
 let view model dispatch =      
@@ -258,51 +284,74 @@ let view model dispatch =
             }
         }  
 
-        // Formatting Instructions
+        // Hywe Syntax
         div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; 
-                            justify-content: right;
-                            display: flex;
-                            flex-direction: row;
-                            width: 90%;
-                            margin-left: 20px;
-                            margin-right: 20px;"
+            attr.``style`` "flex-wrap: wrap;
+                                justify-content: center;
+                                display: flex;
+                                flex-direction: row;"
+            label{
+                attr.``for`` "options"
+                
+            }
+            select{
+                attr.name "options"
+                attr.``style`` "width: 80%;
+                                margin-left: 20px;
+                                margin-right: 20px;
+                                margin-top: 10px;
+                                margin-bottom: 10px;
+                                height:25px;
+                                font-size: 14px;
+                                font-family: 'Optima', Candara, Calibri;"
+                attr.id "options"
+                on.change (fun e -> 
+                                    let value = (e.Value :?> string)
+                                    let beeset = 
+                                        match value with
+                                        | "Bee-line" -> Beeline
+                                        | "Bee-yond" -> Beeyond
+                                        | "Bee-droom" -> Beedroom
+                                        | _ -> Beespoke
+
+                                    dispatch (SetOpt1 beeset))
+                option {
+                        attr.selected "true"
+                        attr.value ""
+                        "Bee-which ?"
+                }
+                option {
+                        attr.value "Bee-line"
+                        "Bee-line"
+                        }
+                option {
+                        attr.value "Bee-yond"
+                        "Bee-yond"
+                        }
+                option {
+                        attr.value "Bee-droom"
+                        "Bee-droom"
+                        }
+                option {
+                        attr.value "Bee-spoke"
+                        "Bee-spoke"
+                        }
+            }
+            // Formatting Instructions
             a{
                 attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
                 attr.target "blank"
                 img{
                     attr.width "20"
                     attr.height "20"
+                    attr.``style`` "margin-right: 20px;
+                                    margin-top: 10px"
                     attr.src "https://vykrum.github.io/Hywe/help.png"
                 }
             }
-        }
-        
-        // Dropdown
-        //div{
-        //    label{
-        //        attr.``for`` "presets"
-        //        "Select a preset"
-        //    }
-        //    select{
-        //        attr.name "presets"
-        //        attr.id "presets"
-        //        option {"Option A"}
-        //        option {"Option B"}
-        //        option {"Option C"}
-        //    }
-        //}
-
-        // Input String
-        div{
-            attr.``class`` "flex-container"
-            attr.``style`` "flex-wrap: wrap; 
-                            justify-content: center;
-                            display: flex;
-                            flex-direction: row;"
-            
             textarea {
+                attr.name "options"
+                attr.id "options"
                 attr.``type`` "textarea"
                 attr.``class`` "textarea"
                 attr.``style`` "width: 95%;
@@ -310,9 +359,10 @@ let view model dispatch =
                                 margin-right: 20px;
                                 height:100px;
                                 font-size: 14px;"
-                bind.change.string model.spcStr1 (fun a -> dispatch (SetSpcStr1 a))
-                "Default"
+                bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
+                
             }
+            // Hyweave
             button {
                 attr.``class`` "button1"
                 attr.``style`` "
@@ -320,13 +370,14 @@ let view model dispatch =
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 margin-top: 5px;"
-                on.click (fun _ -> dispatch (SetSpcStr2))
+                on.click (fun _ -> dispatch (SetStx2))
                 "h y W E A V E"
             }
+            // Hywe SVG
             div{
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                let cxCxl1 = spaceCxl sqn bsNs bsOc model.spcStr2
+                let cxCxl1 = spaceCxl sqn bsNs bsOc model.stx2
                 let cxClr1 = pastels (Array.length cxCxl1)
                 nstdCxls cxCxl1 cxClr1 scl shp 1200 
             }  
