@@ -9,6 +9,7 @@ open Bridge
 open Parse
 
 type Beeset = 
+    | Beewhich
     | Beeline
     | Beeyond
     | Beedroom
@@ -19,8 +20,8 @@ let stxInstr =
     "• Bee-line: Basic syntax (index/size/label) for demonstation of the syntax in its simplest form.\n" +
     "• Bee-yond: Syntax for a branching, where the index format becomes x.x , allowing for slightly more complex layouts.\n" +
     "• Bee-droom: Syntax for a typical residential layout with multiple levels of branching, for more detailed layouts.\n" +
-    "• Bee-spoke: Alter the above options or explore hypothetical layout configurations starting with a clean slate here.\n\n" +
-    "Click the hyWEAVE button below to update your selection."
+    "• Bee-spoke: Begin with a clean slate here if you prefer notto use the above options as a base.\n\n" +
+    "Click the hyWEAVE button below to update any selection or alteration."
 
 type Model =
     {
@@ -59,6 +60,7 @@ let update message model =
     | SetOpt1 value -> 
                             let content = 
                                 match value with 
+                                | Beewhich -> stxInstr
                                 | Beeline -> "(1/48/Start),(2/52/End)"
                                 | Beeyond -> "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),"+
                                              "(1.3/25/Habitation),(1.4/25/Power)"
@@ -316,12 +318,13 @@ let view model dispatch =
                                         | "Bee-line" -> Beeline
                                         | "Bee-yond" -> Beeyond
                                         | "Bee-droom" -> Beedroom
-                                        | _ -> Beespoke
+                                        | "Bee-spoke" -> Beespoke
+                                        | _ -> Beewhich
 
                                     dispatch (SetOpt1 beeset))
                 option {
                         attr.selected "true"
-                        attr.value ""
+                        attr.value "Bee-which"
                         "Bee-which •"
                 }
                 option {
