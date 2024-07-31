@@ -15,13 +15,12 @@ type Beeset =
     | Beespoke
 
 let hyweInstructions = 
-    "Depending on your selection, Hywe Syntax will be displayed here. Choose from the following options:\n" +
-    "- Bee-line: Basic syntax for the simplest layout. Includes index/size/label for straightforward organization.\n" +
-    "- Bee-yond: Syntax for a branched layout, where the index format becomes x.x, allowing for more complex structures.\n" +
-    "- Bee-droom: Syntax for a typical residential layout with multiple levels of branching, ideal for more detailed layouts.\n" +
-    "- Bee-spoke: Custom layout option providing a clean slate for exploring any layout configuration in any space.\n" +
+    "Depending on your selection, the Hywe Syntax will be displayed here. Choose from the following options:\n\n" +
+    "• Bee-line: Basic syntax for the simplest layout. Includes index/size/label for straightforward organization.\n" +
+    "• Bee-yond: Syntax for a branched layout, where the index format becomes x.x, allowing for slightly more complex structures.\n" +
+    "• Bee-droom: Syntax for a typical residential layout with multiple levels of branching, ideal for more detailed layouts.\n" +
+    "• Bee-spoke: Custom layout option providing a clean slate for exploring hypothetical layout configurations.\n\n" +
     "Click the hyWEAVE button below to update your selection."
-
 
 type Model =
     {
@@ -284,7 +283,7 @@ let view model dispatch =
             }
         }  
 
-        // Hywe Syntax
+        // Hywe
         div{
             attr.``style`` "flex-wrap: wrap;
                                 justify-content: center;
