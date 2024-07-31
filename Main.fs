@@ -289,6 +289,7 @@ let view model dispatch =
                                 justify-content: center;
                                 display: flex;
                                 flex-direction: row;"
+            // Dropdown
             label{
                 attr.``for`` "options"   
             }
@@ -316,7 +317,7 @@ let view model dispatch =
                 option {
                         attr.selected "true"
                         attr.value ""
-                        "Bee-which ?"
+                        "Bee-which •"
                 }
                 option {
                         attr.value "Bee-line"
