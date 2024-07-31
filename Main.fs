@@ -128,7 +128,7 @@ let view model dispatch =
                 p{
                     "Hywe is an endogenous space planning concept currently undergoing its formative stages of development as an early stage design interface."
                     br
-                    "Weave spatial layouts at a high level of abstraction using properly formatted (heirarchy/size/label) instructions."
+                    "Weave spatial layouts at a high level of abstraction using properly formatted hywe syntax."
                 }
             }
         }
@@ -291,8 +291,7 @@ let view model dispatch =
                                 display: flex;
                                 flex-direction: row;"
             label{
-                attr.``for`` "options"
-                
+                attr.``for`` "options"   
             }
             select{
                 attr.name "options"
@@ -345,10 +344,11 @@ let view model dispatch =
                     attr.width "20"
                     attr.height "20"
                     attr.``style`` "margin-right: 20px;
-                                    margin-top: 10px"
+                                    margin-top: 15px"
                     attr.src "https://vykrum.github.io/Hywe/help.png"
                 }
             }
+            // Hywe Syntax Input
             textarea {
                 attr.name "options"
                 attr.id "options"
