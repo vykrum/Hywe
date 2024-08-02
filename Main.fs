@@ -18,10 +18,10 @@ type Beeset =
 let stxInstr = 
     "Depending on your selection, Hywe Syntax will be displayed here.\n" +
     "Click the hyWEAVE button to update any selection or alteration.\n\n"+
-    "• BEE-line : Basic syntax (index/size/label) for demonstation of the syntax in its simplest form.\n" +
-    "• BEE-yond : Syntax for branching, where the index format becomes x.x , allowing for slightly more complex layouts.\n" +
-    "• BEE-droom: Syntax for a typical residential layout with multiple levels of branching, for more detailed layouts.\n" +
-    "• BEE-spoke: Begin with a clean slate here if you prefer to not use the above options as a base.\n\n"
+    "• BEE-line  : Basic syntax (index/size/label) for demonstation of the syntax in its simplest form.\n" +
+    "• BEE-yond  : Syntax for branching, where the index format becomes x.x , allowing for slightly more complex layouts.\n" +
+    "• BEE-droom : Syntax for a typical residential layout with multiple levels of branching, for more detailed layouts.\n" +
+    "• BEE-spoke : Alter the above options to explore variations. Otherwise use this option for a clean slate.\n\n"
    
 type Model =
     {
@@ -203,12 +203,12 @@ let view model dispatch =
             select{
                 attr.name "options"
                 attr.``style`` "width: 75%;
-                display: block;
+                                display: block;
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 margin-top: 10px;
                                 margin-bottom: 10px;
-                                height:36px;
+                                height: 36px;
                                 font-size: 14px;
                                 border: none;
                                 padding: 10px 10px;
@@ -217,7 +217,7 @@ let view model dispatch =
                                 text-align: center;
                                 background-color: #f9f9f9;
                                 box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-                                font-family: 'Optima', Candara, Calibri;"
+                                font-family: 'Optima', Candara, Calibri"
                 attr.id "options"
                 on.change (fun e -> 
                                     let value = (e.Value :?> string)
@@ -233,7 +233,7 @@ let view model dispatch =
                 option {
                         attr.selected "true"
                         attr.value "Bee-which"
-                        "TO BEE-GIN HYWING PLEASE SELECT AN OPTION"
+                        "SELECT AN OPTION TO BEE-GIN HYWING"
                 }
                 option {
                         attr.value "Bee-line"
