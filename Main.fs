@@ -64,8 +64,8 @@ let update message model =
                                 | Beeline -> "(1/48/Start),(2/52/End)"
                                 | Beeyond -> "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),"+
                                              "(1.3/25/Habitation),(1.4/25/Power)"
-                                | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/12/Dining),(1.1/12/Study),"+
-                                              "(2.1/12/Staircase),(3.1/12/Kitchen),(3.2/14/Bed-1),"+
+                                | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),"+
+                                              "(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),"+
                                               "(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),"+
                                               "(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),"+
                                               "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
