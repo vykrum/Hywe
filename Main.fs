@@ -16,12 +16,12 @@ type Beeset =
     | Beespoke
 
 let stxInstr = 
-    "Depending on your selection, Hywe Syntax will be displayed here.\n" +
-    "Click the hyWEAVE button to update any selection or alteration.\n\n"+
-    "• BEE-line  : Basic syntax (index/size/label) for demonstation of the syntax in its simplest form.\n" +
-    "• BEE-yond  : Syntax for branching, where the index format becomes x.x , allowing for slightly more complex layouts.\n" +
-    "• BEE-droom : Syntax for a typical residential layout with multiple levels of branching, for more detailed layouts.\n" +
-    "• BEE-spoke : Alter the above options to explore variations. Otherwise use this option for a clean slate.\n\n"
+    "Depending on your selection above, Hywe Syntax will populate here.\n" +
+    "Click on hyWEAVE to update any selection or alteration.\n\n"+
+    "• BEE-line  : Hywe syntax (index/size/label) in its simplest form.\n" +
+    "• BEE-yond  : Syntax with branching for slightly more complex layouts.\n" +
+    "• BEE-droom : Syntax with nested branching, for more detailed layouts.\n" +
+    "• BEE-spoke : A clean slate. Script custom layouts from scratch.\n\n"
    
 type Model =
     {
@@ -41,7 +41,7 @@ let initModel =
         scl1 = 10
         opt1 = None
         stx1 = stxInstr 
-        stx2 = "(1/3/.),(2/3/.)"
+        stx2 = "(1/3/.)"
     }
 
 type Message =
@@ -233,7 +233,7 @@ let view model dispatch =
                 option {
                         attr.selected "true"
                         attr.value "Bee-which"
-                        "SELECT AN OPTION TO BEE-GIN HYWING"
+                        "SELECT AN OPTION TO BEGIN HYWING"
                 }
                 option {
                         attr.value "Bee-line"

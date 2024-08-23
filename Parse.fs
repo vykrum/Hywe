@@ -69,12 +69,20 @@ let spaceSeq
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
         
-    let spcKy06 = 
+(*    let spcKy06 = 
         spcKy05 
         |> Array.map(fun x 
                         -> (Array.map (fun y 
                                         -> y, spaceMap 
-                                        |> Map.find y))x)
+                                        |> Map.find y))x)*)
+    let spcKy06 = 
+        let a = match (Array.isEmpty spcKy05) with 
+                |  true -> [|[|"1"|]|]
+                | false -> spcKy05
+        a|> Array.map(fun x 
+                            -> (Array.map (fun y 
+                                            -> y, spaceMap 
+                                            |> Map.find y))x)
         
     let spcKey =
         spcKy06
@@ -186,4 +194,6 @@ let spaceCxl
                     | None -> acc
         a
 
-    cxCxCx seq tree01 oc1 ac1
+    match (Array.length (Array.concat tree01) < 2) with 
+    | true -> ac1
+    | false -> cxCxCx seq tree01 oc1 ac1
