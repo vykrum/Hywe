@@ -402,14 +402,44 @@ let view model dispatch =
             
             // Hywe Table
             div{
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap; justify-content: center;"
                 table{
+                    attr.width "75%"
+                    attr.``style`` "
+                                font-size: 14px;
+                                opacity:75%;
+                                border: none;
+                                padding: 10px 10px;
+                                color: #646464;
+                                text-align: center;
+                                font-family: 'Optima', Candara, Calibri"
                     tbody{
                         for cxl in (Array.zip cxCxl1 cxClr1) do
                             tr{
                                 attr.``style`` $"background-color:{(snd cxl)}"
-                                td{Coxel.prpVlu (fst cxl).Rfid}
-                                td{Coxel.prpVlu (fst cxl).Name}
-                                td{Coxel.prpVlu (fst cxl).Size}
+
+                                td{
+                                    attr.width "25%"
+                                    attr.``style`` "
+                                        padding: 5px 10px;
+                                        text-align: left;"
+                                    Coxel.prpVlu (fst cxl).Rfid
+                                    }
+                                td{
+                                    attr.width "25%"
+                                    attr.``style`` "
+                                        padding: 5px 10px;
+                                        text-align: center;"
+                                    Coxel.prpVlu (fst cxl).Name
+                                    }
+                                td{
+                                    attr.width "25%"
+                                    attr.``style`` "
+                                        padding: 5px 10px;
+                                        text-align: right;"
+                                    Coxel.prpVlu (fst cxl).Size
+                                    }
                             }
                     }
                 }

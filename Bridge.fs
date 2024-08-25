@@ -100,7 +100,12 @@ let pastel () =
     let red = mixWithWhite (rand.Next(256))
     let green = mixWithWhite (rand.Next(256))
     let blue = mixWithWhite (rand.Next(256))
-    $"rgb({red} {green} {blue})"
+    // Ensure the values are within the 0-255 range
+    let clamp value = min 255 (max 0 value)
+    let red = clamp red
+    let green = clamp green
+    let blue = clamp blue
+    $"rgba({red}, {green}, {blue}, 0.75)"
 
 // Function to create an array of random pastel colors
 let pastels (size: int) =
