@@ -450,7 +450,9 @@ let view model dispatch =
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
-                                    Coxel.prpVlu (fst cxl).Size
+                                    match (Coxel.prpVlu (fst cxl).Rfid) with
+                                    | "1" -> ((Coxel.prpVlu (fst cxl).Size |> int) + 1).ToString()
+                                    | _ -> Coxel.prpVlu (fst cxl).Size
                                     }
                                 td{
                                 attr.width "20%"
