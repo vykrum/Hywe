@@ -116,10 +116,9 @@ let nstdCxls
     (cxl : Cxl[])
     (clr : string[])
     (scl : int)
-    (shp : Shp)
-    (wdt : int) = 
+    (shp : Shp)= 
     let lbl = Array.map (fun x -> prpVlu x.Name) cxl
-    let crd = (Array.map (fun x -> x.Hxls) cxl) 
+    let crd = ( Array.map (fun x -> x.Hxls) cxl) 
               |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
     
     // Shift and Scale Vertices
@@ -130,19 +129,21 @@ let nstdCxls
                     |> String.concat ","
 
     // Shift and Scale Vertices
-    let padd = 5*scl
-    let crd1 = Array.map (fun x -> Array.map(fun (a,b,_) -> a*scl,b*scl)x) crd
-    let minX1 = fst (Array.minBy (fun (x,_) -> x) (Array.concat crd1))
-    let maxX1 = fst (Array.maxBy (fun (x,_) -> x) (Array.concat crd1))
-    let minY1 = snd (Array.minBy (fun (_,x) -> x) (Array.concat crd1))
-    let maxY1 = snd (Array.maxBy (fun (_,x) -> x) (Array.concat crd1))
-    let shfX = (-1 * minX1) + padd
-    let shfY = (-1 * minY1) + padd
-    let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
+    let padd = 5
+    let crdX = crd |> Array.map (fun a -> Array.map(fun (x,_,_) -> x)a) |> Array.concat
+    let crdY = crd |> Array.map (fun a -> Array.map(fun (_,y,_) -> y)a) |> Array.concat
+    let minX = Array.min crdX
+    let maxX = Array.max crdX
+    let minY = Array.min crdY
+    let maxY = Array.max crdY
+    let shfX = (-1 * minX) + padd
+    let shfY = (-1 * minY) + padd
+    let crd1 = crd |> Array.map (fun a -> Array.map(fun (x,y,_) -> x+shfX,y+shfY)a)
+    let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a*scl,b*scl)x) crd1
     svg{
-        attr.width wdt
-        attr.height wdt
-        attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
+        attr.width ((maxX-minX+(padd*2))*scl)
+        attr.height ((maxY-minY+(padd*2))*scl)
+        attr.``style`` $"viewBox: 0 0 {(maxX-minX)*scl} {(maxY-minY)*scl}"
         svg {
              let prp = Array.zip3 crd2 lbl clr
                     

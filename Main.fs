@@ -177,7 +177,7 @@ let view model dispatch =
                     |24 -> HRCCNW
                     | _ -> VRCWEE
 
-        // Nested Coxels Basic Framework
+        // Nested Coxels Data
         let bsNs = hxlVld sqn (AV(1,4,0))
         let bsOc = 
             match sqn with 
@@ -189,6 +189,8 @@ let view model dispatch =
                 -> let a,b,c = hxlCrd bsNs
                    Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
                    |> allAV true
+        let cxCxl1 = spaceCxl sqn bsNs bsOc model.stx2
+        let cxClr1 = pastels (Array.length cxCxl1)
 
         // Hywe
         div{
@@ -389,15 +391,31 @@ let view model dispatch =
                     }  
                 }
             }  
+            
             // Hywe SVG
             div{
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
-                let cxCxl1 = spaceCxl sqn bsNs bsOc model.stx2
-                let cxClr1 = pastels (Array.length cxCxl1)
-                nstdCxls cxCxl1 cxClr1 scl shp 1200 
-            }  
+
+                nstdCxls cxCxl1 cxClr1 scl shp
+            }
+            
+            // Hywe Table
+            div{
+                table{
+                    tbody{
+                        for cxl in (Array.zip cxCxl1 cxClr1) do
+                            tr{
+                                attr.``style`` $"background-color:{(snd cxl)}"
+                                td{Coxel.prpVlu (fst cxl).Rfid}
+                                td{Coxel.prpVlu (fst cxl).Name}
+                                td{Coxel.prpVlu (fst cxl).Size}
+                            }
+                    }
+                }
+            }
         } 
+
     }
 
 // Bolero component handling state updates and rendering the user interface
