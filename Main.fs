@@ -254,6 +254,7 @@ let view model dispatch =
                         "BEE-spoke"
                         }
             }
+
             // Formatting Instructions
             a{
                 attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
@@ -266,6 +267,7 @@ let view model dispatch =
                     attr.src "https://vykrum.github.io/Hywe/help.png"
                 }
             }
+
             // Hywe Syntax Input
             textarea {
                 attr.name "options"
@@ -281,6 +283,7 @@ let view model dispatch =
                 bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
                 
             }
+
             // Hyweave
             button {
                 attr.``class`` "button1"
@@ -292,6 +295,7 @@ let view model dispatch =
                 on.click (fun _ -> dispatch (SetStx2))
                 "h y W E A V E"
             }
+
             // Universal Controls
             div{
                 attr.``class`` "flex-container"
@@ -414,6 +418,14 @@ let view model dispatch =
                                 color: #646464;
                                 text-align: center;
                                 font-family: 'Optima', Candara, Calibri"
+                    thead{
+                            tr{
+                                th{"Index"}
+                                th{"Label"}
+                                th{"Required"}
+                                th{"Achieved"}
+                            }
+                    }
                     tbody{
                         for cxl in (Array.zip cxCxl1 cxClr1) do
                             tr{
@@ -423,23 +435,30 @@ let view model dispatch =
                                     attr.width "25%"
                                     attr.``style`` "
                                         padding: 5px 10px;
-                                        text-align: left;"
+                                        text-align: center;"
                                     Coxel.prpVlu (fst cxl).Rfid
                                     }
                                 td{
-                                    attr.width "25%"
+                                    attr.width "20%"
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
                                     Coxel.prpVlu (fst cxl).Name
                                     }
                                 td{
-                                    attr.width "25%"
+                                    attr.width "20%"
                                     attr.``style`` "
                                         padding: 5px 10px;
-                                        text-align: right;"
+                                        text-align: center;"
                                     Coxel.prpVlu (fst cxl).Size
                                     }
+                                td{
+                                attr.width "20%"
+                                attr.``style`` "
+                                    padding: 5px 10px;
+                                    text-align: center;"
+                                $"{Array.length (fst cxl).Hxls}"
+                                }
                             }
                     }
                 }
