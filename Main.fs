@@ -179,7 +179,7 @@ let view model dispatch =
                                 color: #646464;
                                 border-radius: 10px;
                                 text-align: center;
-                                background-color: #f9f9f9;
+                                background-color: #ececec;
                                 box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
                                 font-family: 'Optima', Candara, Calibri"
                 attr.id "options"
@@ -290,6 +290,7 @@ let view model dispatch =
                                     margin-right: 10px;
                                     padding: 5px 10px;
                                     border-radius: 5px;
+                                    border: none;
                                     text-align: center;
                                     color: #808080;
                                     font-family: 'Optima', Candara, Calibri;"
@@ -328,6 +329,7 @@ let view model dispatch =
                                     color: #808080;
                                     padding: 5px 10px;
                                     border-radius: 5px;
+                                    border: none;
                                     text-align: center;
                                     font-family: 'Optima', Candara, Calibri;"
                     attr.id "shapeOptions"
@@ -365,6 +367,7 @@ let view model dispatch =
                                     color: #808080;
                                     padding: 5px 10px;
                                     border-radius: 5px;
+                                    border: none;
                                     text-align: center;
                                     font-family: 'Optima', Candara, Calibri;"
                     attr.id "sequenceOptions"
