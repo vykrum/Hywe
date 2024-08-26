@@ -69,7 +69,7 @@ let update message model =
                                               "(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),"+
                                               "(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),"+
                                               "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-                                | Beespoke -> ""
+                                | Beespoke -> " "
                             {model with opt1 = Some value; stx1 = content}
 
     | SetStx1 value -> { model with stx1 = value }
