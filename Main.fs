@@ -25,8 +25,8 @@ let stxInstr =
    
 type Model =
     {
-        shp1 : int
-        sqn1 : int
+        shp1 : Shp
+        sqn1 : Sqn
         scl1 : int
         opt1 : Beeset option
         stx1 : string
@@ -36,8 +36,8 @@ type Model =
 // Default Input
 let initModel =
     {
-        shp1 = 4
-        sqn1 = 13
+        shp1 = Hxg
+        sqn1 = VRCWEE
         scl1 = 10
         opt1 = None
         stx1 = stxInstr 
@@ -45,8 +45,8 @@ let initModel =
     }
 
 type Message =
-    | SetShp1 of int
-    | SetSqn1 of int
+    | SetShp1 of Shp
+    | SetSqn1 of Sqn
     | SetScl1 of int
     | SetOpt1 of Beeset
     | SetStx1 of string
@@ -139,57 +139,19 @@ let view model dispatch =
             }
         }
 
-        // Scale
-        let scl = model.scl1
-        
-        // Shape
-        let shp = match model.shp1 with 
-                    | 1 -> Sqr
-                    | 2 -> Arw
-                    | 3 -> Prl
-                    | _ -> Hxg
-
-        // Sequence
-        let sqn = match model.sqn1 with 
-                    | 1 -> VRCWEE 
-                    | 2 -> VRCCEE    
-                    | 3 -> VRCWSE
-                    | 4 -> VRCCSE
-                    | 5 -> VRCWSW
-                    | 6 -> VRCCSW
-                    | 7 -> VRCWWW
-                    | 8 -> VRCCWW
-                    | 9 -> VRCWNW
-                    |10 -> VRCCNW
-                    |11 -> VRCWNE
-                    |12 -> VRCCNE
-                    |13 -> HRCWNN
-                    |14 -> HRCCNN
-                    |15 -> HRCWNE
-                    |16 -> HRCCNE
-                    |17 -> HRCWSE
-                    |18 -> HRCCSE
-                    |19 -> HRCWSS
-                    |20 -> HRCCSS
-                    |21 -> HRCWSW
-                    |22 -> HRCCSW
-                    |23 -> HRCWNW
-                    |24 -> HRCCNW
-                    | _ -> VRCWEE
-
         // Nested Coxels Data
-        let bsNs = hxlVld sqn (AV(1,4,0))
+        let bsNs = hxlVld model.sqn1 (AV(1,4,0))
         let bsOc = 
-            match sqn with 
+            match model.sqn1 with 
             | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
                 -> let a,b,c = hxlCrd bsNs
-                   Array.append (hxlOrt sqn (hxlVld sqn (AV(a-100,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
+                   Array.append (hxlOrt model.sqn1 (hxlVld model.sqn1 (AV(a-100,b-2,c))) 200 false) (adjacent model.sqn1 (hxlVld model.sqn1 (AV(0,0,0))))
                    |> allAV true
             | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
                 -> let a,b,c = hxlCrd bsNs
-                   Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
+                   Array.append (hxlOrt model.sqn1 (hxlVld model.sqn1 (AV(a-104,b-2,c))) 200 false) (adjacent model.sqn1 (hxlVld model.sqn1 (AV(0,0,0))))
                    |> allAV true
-        let cxCxl1 = spaceCxl sqn bsNs bsOc model.stx2
+        let cxCxl1 = spaceCxl model.sqn1 bsNs bsOc model.stx2
         let cxClr1 = pastels (Array.length cxCxl1)
 
         // Hywe
@@ -296,113 +258,174 @@ let view model dispatch =
                 "h y W E A V E"
             }
 
-            // Universal Controls
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; 
-                                justify-content: center;
-                                display: flex;
-                                flex-direction: column;"
-            
-                // Scale
-                div{
-                    attr.``class`` "flex-container"
-                    attr.``style`` "flex-wrap: wrap;
-                                    display: flex;
-                                    justify-content: center;"
-                    // Scale Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        " Scale "
-                    }
-                    // Scale Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``style`` "background:#d3d3d1;"
-                        attr.``type`` "text"
-                        $"{model.scl1}" 
-                    }
-                    // Slider Scale
-                    input{
-                        attr.``style`` "background:#d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "25"
-                        bind.input.int model.scl1 (fun a -> dispatch (SetScl1 a))
-                    }
-                }
-                // Shape
-                div{
-                    attr.``class`` "flex-container"
-                    attr.``style`` "flex-wrap: wrap;
-                                    display: flex;
-                                    justify-content: center;"
-                    // Shape Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        "Shape"
-                    }
-                    // Shape Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        $"{shp}" 
-                    }
-                    // Slider Shape
-                    input{
-                        attr.``style`` $"background:#d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "4"
-                        bind.input.int model.shp1 (fun a -> dispatch (SetShp1 a))
-                    }
-                }
-                // Sequence
-                div{
-                    attr.``class`` "flex-container"
-                    attr.``style`` "flex-wrap: wrap;
-                                    display: flex;
-                                    justify-content: center;"
-                    // Sequence Label
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background:#d3d3d1;"
-                        " Sequence "
-                    }
-                    // Sequence Value
-                    div{
-                        attr.``class`` "label"
-                        attr.``type`` "text"
-                        attr.``style`` "background: #d3d3d1;"
-                        $"{sqn}"
-                    }
-                    // Slider Sequence
-                    input{
-                        attr.``style`` "background: #d3d3d1;"
-                        attr.``class`` "slider"
-                        attr.``type`` "range"
-                        attr.min "1"
-                        attr.max "24"
-                        bind.input.int model.sqn1 (fun a -> dispatch (SetSqn1 a))
-                    }  
-                }
-            }  
-            
+
             // Hywe SVG
             div{
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
 
-                nstdCxls cxCxl1 cxClr1 scl shp
+                nstdCxls cxCxl1 cxClr1 model.scl1 model.shp1
             }
+            
+            // Universal Controls
+            div{
+                attr.width "95%"
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap; 
+                                justify-content: center;
+                                display: flex;
+                                flex-direction: row;"
+                // Scale
+                label{
+                    attr.``for`` "selectScale"  
+                }
+                select{
+                    attr.name "selectScale"
+                    attr.``style`` "width: 27%;
+                                    display: flex;
+                                    height: 26px;
+                                    font-size: 12px;
+                                    background:#f9f9f9;
+                                    margin-left: 10px;
+                                    margin-right: 10px;
+                                    padding: 5px 10px;
+                                    border-radius: 5px;
+                                    text-align: center;
+                                    color: #808080;
+                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.id "scaleOptions"
+                    on.change (fun e -> 
+                                        let value = (e.Value :?> string)
+                                        let scl01 = 
+                                            match value with
+                                            | "1x" -> 1
+                                            | "5x" -> 5
+                                            | "10x" -> 10
+                                            | "15x" -> 15
+                                            | _ -> 10
+
+                                        dispatch (SetScl1 scl01))
+                    option {"Scale"}
+                    option {"1x"}
+                    option {"5x"}
+                    option {"10x"}
+                    option {"15x"}
+                }
+                
+                // Shape
+                label{
+                    attr.``for`` "selectShape"  
+                }
+                select{
+                    attr.name "selectShape"
+                    attr.``style`` "width: 27%;
+                                    display: block;
+                                    height: 26px;
+                                    font-size: 12px;
+                                    background:#f9f9f9;
+                                    margin-left: 10px;
+                                    margin-right: 10px;
+                                    color: #808080;
+                                    padding: 5px 10px;
+                                    border-radius: 5px;
+                                    text-align: center;
+                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.id "shapeOptions"
+                    on.change (fun e -> 
+                                        let value = (e.Value :?> string)
+                                        let shp01 = 
+                                            match value with
+                                            | "Hexagon" -> Hxg
+                                            | "Square" -> Sqr
+                                            | "Arrow" -> Arw
+                                            | "Rhombus" -> Prl
+                                            | _ -> Hxg
+
+                                        dispatch (SetShp1 shp01))
+                    option {"Shape"}
+                    option {"Hexagon"}
+                    option {"Square"}
+                    option {"Arrow"}
+                    option {"Rhombus"}
+                }
+                
+                // Sequence
+                label{
+                    attr.``for`` "selectSequence"  
+                }
+                select{
+                    attr.name "selectSequence"
+                    attr.``style`` "width: 27%;
+                                    display: block;
+                                    height: 26px;
+                                    font-size: 12px;
+                                    background:#f9f9f9;
+                                    margin-left: 10px;
+                                    margin-right: 10px;
+                                    color: #808080;
+                                    padding: 5px 10px;
+                                    border-radius: 5px;
+                                    text-align: center;
+                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.id "sequenceOptions"
+                    on.change (fun e -> 
+                                        let value = (e.Value :?> string)
+                                        let sqn01 = 
+                                            match value with
+                                            |"VRCWEE" -> VRCWEE 
+                                            |"VRCCEE" -> VRCCEE    
+                                            |"VRCWSE" -> VRCWSE
+                                            |"VRCCSE" -> VRCCSE
+                                            |"VRCWSW" -> VRCWSW
+                                            |"VRCCSW" -> VRCCSW
+                                            |"VRCWWW" -> VRCWWW
+                                            |"VRCCWW" -> VRCCWW
+                                            |"VRCWNW" -> VRCWNW
+                                            |"VRCCNW" -> VRCCNW
+                                            |"VRCWNE" -> VRCWNE
+                                            |"VRCCNE" -> VRCCNE
+                                            |"HRCWNN" -> HRCWNN
+                                            |"HRCCNN" -> HRCCNN
+                                            |"HRCWNE" -> HRCWNE
+                                            |"HRCCNE" -> HRCCNE
+                                            |"HRCWSE" -> HRCWSE
+                                            |"HRCCSE" -> HRCCSE
+                                            |"HRCWSS" -> HRCWSS
+                                            |"HRCCSS" -> HRCCSS
+                                            |"HRCWSW" -> HRCWSW
+                                            |"HRCCSW" -> HRCCSW
+                                            |"HRCWNW" -> HRCWNW
+                                            |"HRCCNW" -> HRCCNW
+                                            | _ -> VRCWEE
+
+                                        dispatch (SetSqn1 sqn01))
+                    option {"Sequence"}
+                    option {"VRCWEE"}
+                    option {"VRCCEE"}
+                    option {"VRCWSE"}
+                    option {"VRCCSE"}
+                    option {"VRCWSW"}
+                    option {"VRCCSW"}
+                    option {"VRCWWW"}
+                    option {"VRCCWW"}
+                    option {"VRCWNW"}
+                    option {"VRCCNW"}
+                    option {"VRCWNE"}
+                    option {"VRCCNE"}
+                    option {"HRCWNN"}
+                    option {"HRCCNN"}
+                    option {"HRCWNE"}
+                    option {"HRCCNE"}
+                    option {"HRCWSE"}
+                    option {"HRCCSE"}
+                    option {"HRCWSS"}
+                    option {"HRCCSS"}
+                    option {"HRCWSW"}
+                    option {"HRCCSW"}
+                    option {"HRCWNW"}
+                    option {"HRCCNW"}
+                }  
+            }  
             
             // Hywe Table
             div{

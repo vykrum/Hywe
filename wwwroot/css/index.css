@@ -140,3 +140,22 @@ html, body {
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     font-family: 'Optima', Candara, Calibri;
 }
+
+.drop2 {
+    width: 25%;
+    display: block;
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 26px;
+    font-size: 12px;
+    border: none;
+    padding: 5px 10px;
+    color: #646464;
+    border-radius: 10px;
+    text-align: center;
+    background-color: #f9f9f9;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    font-family: 'Optima', Candara, Calibri;
+}
