@@ -1,10 +1,12 @@
 name: DeployToGitHubPages
+
 env:
   PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master  # Change to the branch you want to deploy from, e.g., main
 
 jobs:
   build-and-deploy:
@@ -19,8 +21,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --configuration Release
+
       - name: Publish Bolero app
-        run: dotnet publish -c Release
+        run: dotnet publish --configuration Release --output ${{ env.PUBLISH_DIR }}
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
