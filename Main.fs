@@ -13,15 +13,14 @@ type Beeset =
     | Beeline
     | Beeyond
     | Beedroom
-    | Beespoke
 
 let stxInstr = 
-    "Depending on your selection above, Hywe Syntax will populate here.\n" +
+    "Depending on your selection above, Hywe Syntax (index/size/label) will populate here.\n" +
+    "Use the populated examples as reference to script your custom layouts.\n" +
     "Click on hyWEAVE to update any selection or alteration.\n\n"+
-    "• BEE-line  : Hywe syntax (index/size/label) in its simplest form.\n" +
-    "• BEE-yond  : Syntax with branching for slightly more complex layouts.\n" +
-    "• BEE-droom : Syntax with nested branching, for more detailed layouts.\n" +
-    "• BEE-spoke : A clean slate. Script custom layouts from scratch.\n\n"
+    "• BEE-line  : Hywe syntax in its simplest form.\n" +
+    "• BEE-yond  : Syntax for slightly complex layouts.\n" +
+    "• BEE-droom : Syntax with nested branching, for more detailed layouts.\n"
    
 type Model =
     {
@@ -69,7 +68,6 @@ let update message model =
                                               "(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),"+
                                               "(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),"+
                                               "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-                                | Beespoke -> ""
                             {model with opt1 = Some value; stx1 = content}
 
     | SetStx1 value -> { model with stx1 = value }
@@ -171,7 +169,7 @@ let view model dispatch =
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 margin-top: 10px;
-                                margin-bottom: 10px;
+                                margin-bottom: 20px;
                                 height: 36px;
                                 font-size: 14px;
                                 border: none;
@@ -190,7 +188,6 @@ let view model dispatch =
                                         | "Bee-line" -> Beeline
                                         | "Bee-yond" -> Beeyond
                                         | "Bee-droom" -> Beedroom
-                                        | "Bee-spoke" -> Beespoke
                                         | _ -> Beewhich
 
                                     dispatch (SetOpt1 beeset))
@@ -210,10 +207,6 @@ let view model dispatch =
                 option {
                         attr.value "Bee-droom"
                         "BEE-droom"
-                        }
-                option {
-                        attr.value "Bee-spoke"
-                        "BEE-spoke"
                         }
             }
 
