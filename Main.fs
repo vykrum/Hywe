@@ -36,7 +36,7 @@ type Model =
 let initModel =
     {
         shp1 = Hxg
-        sqn1 = VRCWEE
+        sqn1 = HRCCNN
         scl1 = 10
         opt1 = None
         stx1 = stxInstr 
@@ -235,8 +235,7 @@ let view model dispatch =
                                 height:100px;
                                 font-size: 14px;
                                 color: #808080;"
-                bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
-                
+                bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a)) 
             }
 
             // Hyweave
@@ -450,6 +449,18 @@ let view model dispatch =
                             tr{
                                 attr.``style`` $"background-color:{(snd cxl)}"
 
+                                let reqSz = 
+                                    match (Coxel.prpVlu (fst cxl).Rfid) with
+                                    | "1" -> ((Coxel.prpVlu (fst cxl).Size |> int) + 1).ToString()
+                                    | _ -> Coxel.prpVlu (fst cxl).Size
+
+                                let achSz = Array.length (fst cxl).Hxls
+
+                                let achCl =
+                                    match achSz < (reqSz|>int) with
+                                    | true -> "red"
+                                    | false -> "#646464"
+
                                 td{
                                     attr.width "25%"
                                     attr.``style`` "
@@ -469,16 +480,15 @@ let view model dispatch =
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
-                                    match (Coxel.prpVlu (fst cxl).Rfid) with
-                                    | "1" -> ((Coxel.prpVlu (fst cxl).Size |> int) + 1).ToString()
-                                    | _ -> Coxel.prpVlu (fst cxl).Size
+                                    reqSz
                                     }
                                 td{
                                 attr.width "20%"
-                                attr.``style`` "
+                                attr.``style`` $"
                                     padding: 5px 10px;
-                                    text-align: center;"
-                                $"{Array.length (fst cxl).Hxls}"
+                                    text-align: center;
+                                    color:{achCl};"
+                                $"{achSz}"
                                 }
                             }
                     }
