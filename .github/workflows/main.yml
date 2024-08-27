@@ -2,7 +2,6 @@ name: DeployToGitHubPages
 env:
   PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
-# Controls when the action will run
 on:
   push:
     branches: [master]
@@ -14,11 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20' # Update to use Node.js 20
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
@@ -33,10 +27,11 @@ jobs:
         with:
           html_path: ${{ env.PUBLISH_DIR }}/index.html
           base_href: /
-          # base_href: /Hywe/
 
-      - name: GitHub Pages
-        if: success()
+      - name: Create CNAME file
+        run: echo 'hywe.co.in' > ${{ env.PUBLISH_DIR }}/CNAME
+
+      - name: Deploy to GitHub Pages
         uses: crazy-max/ghaction-github-pages@v1.5.1
         with:
           target_branch: gh-pages
