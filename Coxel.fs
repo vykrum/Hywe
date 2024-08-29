@@ -151,6 +151,24 @@ let coxel
     cxl
 ///
 
+/// <summary> Count open/exposed Hexels. </summary>
+/// <param name="cxl"> A coxel. </param>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
+let cxlExp 
+    (cxl : Cxl[])
+    (sqn: Sqn) = 
+    let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> allAV false 
+    let cxlAvl 
+        (cx:Cxl)
+        (sq:Sqn)
+        (oc:Hxl[]) =
+        let hx = cx.Hxls |> allAV false 
+        hx |> Array.filter(fun x -> (available sq x oc)>0) |> Array.length
+    cxl |> Array.map (fun a -> cxlAvl a sqn occ)
+
+///
+
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>
 /// <param name="cxl"> A coxel. </param>
 /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>

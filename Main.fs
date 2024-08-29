@@ -4,9 +4,11 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Hexel
+open Coxel
 open Shape
 open Bridge
 open Parse
+open System
 
 type Beeset = 
     | Beewhich
@@ -150,6 +152,7 @@ let view model dispatch =
                    Array.append (hxlOrt model.sqn1 (hxlVld model.sqn1 (AV(a-104,b-2,c))) 200 false) (adjacent model.sqn1 (hxlVld model.sqn1 (AV(0,0,0))))
                    |> allAV true
         let cxCxl1 = spaceCxl model.sqn1 bsNs bsOc model.stx2
+        let cxlAvl = cxlExp cxCxl1 model.sqn1
         let cxClr1 = pastels (Array.length cxCxl1)
 
         // Hywe
@@ -427,7 +430,7 @@ let view model dispatch =
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
                 table{
-                    attr.width "75%"
+                    attr.width "95%"
                     attr.``style`` "
                                 font-size: 14px;
                                 opacity:75%;
@@ -442,53 +445,68 @@ let view model dispatch =
                                 th{"Label"}
                                 th{"Required"}
                                 th{"Achieved"}
+                                th{"Open"}
                             }
                     }
                     tbody{
-                        for cxl in (Array.zip cxCxl1 cxClr1) do
+                        for cxl in (Array.zip3 cxCxl1 cxClr1 cxlAvl) do
                             tr{
-                                attr.``style`` $"background-color:{(snd cxl)}"
-
+                                let (fs,sn,th) = cxl
+                                attr.``style`` $"background-color:{sn}"
+                                
                                 let reqSz = 
-                                    match (Coxel.prpVlu (fst cxl).Rfid) with
-                                    | "1" -> ((Coxel.prpVlu (fst cxl).Size |> int) + 1).ToString()
-                                    | _ -> Coxel.prpVlu (fst cxl).Size
+                                    match (Coxel.prpVlu fs.Rfid) with
+                                    | "1" -> ((Coxel.prpVlu fs.Size |> int) + 1).ToString()
+                                    | _ -> Coxel.prpVlu fs.Size
 
-                                let achSz = Array.length (fst cxl).Hxls
+                                let achSz = Array.length fs.Hxls
 
                                 let achCl =
                                     match achSz < (reqSz|>int) with
                                     | true -> "red"
                                     | false -> "#646464"
 
+                                let achVtCl =                                     
+                                        match th < 1 with
+                                        | true -> "red"
+                                        | false -> "#646464"
+
                                 td{
-                                    attr.width "25%"
+                                    attr.width "15%"
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
-                                    Coxel.prpVlu (fst cxl).Rfid
+                                    Coxel.prpVlu fs.Rfid
                                     }
                                 td{
-                                    attr.width "20%"
+                                    attr.width "35%"
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
-                                    Coxel.prpVlu (fst cxl).Name
+                                    Coxel.prpVlu fs.Name
                                     }
                                 td{
-                                    attr.width "20%"
+                                    attr.width "15%"
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
                                     reqSz
                                     }
                                 td{
-                                attr.width "20%"
+                                attr.width "15%"
                                 attr.``style`` $"
                                     padding: 5px 10px;
                                     text-align: center;
                                     color:{achCl};"
                                 $"{achSz}"
+                                }
+                                td{
+                                attr.width "15%"
+                                attr.``style`` $"
+                                    padding: 5px 10px;
+                                    text-align: center;
+                                    color:{achVtCl};"
+                                $"{th}"
                                 }
                             }
                     }
