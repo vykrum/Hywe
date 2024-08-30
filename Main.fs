@@ -135,10 +135,11 @@ let view model dispatch =
                                 padding-right: 10px;
                                 padding-bottom: 5px;"
                 p{
-                    "Hywe is an endogenous space planning concept currently undergoing its formative stages of development as an early stage design interface."
-                    br
-                    "Weave spatial layouts at a high level of abstraction using properly formatted hywe syntax."
-                }
+                    "Weave spatial layouts at a high level of abstraction using properly " +
+                    "formatted syntax in Hywe, an endogenous space planning concept " +
+                    "currently undergoing its formative stages of development " + 
+                    "as an early stage design interface."
+                }    
             }
         }
 
@@ -255,7 +256,6 @@ let view model dispatch =
                 on.click (fun _ -> dispatch (SetStx2))
                 "h y W E A V E"
             }
-
 
             // Hywe SVG
             div{
@@ -465,7 +465,6 @@ let view model dispatch =
                     option {"10x"}
                     option {"15x"}
                 }
-
 
             }  
             
