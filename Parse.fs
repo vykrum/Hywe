@@ -93,11 +93,13 @@ let spaceSeq
 ///
 
 /// <summary> Generate coxels based on string data. </summary>
+/// <param name="rsl"> Resolution. Count multiplier </param>
 /// <param name="seq"> Sequence. </param>
 /// <param name="bas"> Base hexel. </param>
 /// <param name="occ"> Unavailable hexels. </param>
 /// <returns> Coxel array </returns>
-let spaceCxl 
+let spaceCxl
+    (rsl : int)
     (seq : Sqn)
     (bas : Hxl)
     (occ : Hxl[])
@@ -128,7 +130,7 @@ let spaceCxl
         spaceSeq str 
             |> Array.map (fun x -> 
                 Array.map(fun (a,b,c) 
-                            -> Refid a, Count b, Label c)x)
+                            -> Refid a, Count (b*rsl), Label c)x)
 
     // Generate base coxel
     let id,ct,lb = tree01 |> Array.concat |> Array.head

@@ -8,7 +8,6 @@ open Coxel
 open Shape
 open Bridge
 open Parse
-open System
 
 type Beeset = 
     | Beewhich
@@ -28,6 +27,7 @@ type Model =
     {
         shp1 : Shp
         sqn1 : Sqn
+        scp1 : int
         scl1 : int
         opt1 : Beeset option
         stx1 : string
@@ -39,7 +39,8 @@ let initModel =
     {
         shp1 = Hxg
         sqn1 = HRCCNN
-        scl1 = 10
+        scp1 = 10
+        scl1 = 1
         opt1 = None
         stx1 = stxInstr 
         stx2 = "(1/3/.)"
@@ -48,6 +49,7 @@ let initModel =
 type Message =
     | SetShp1 of Shp
     | SetSqn1 of Sqn
+    | SetScp1 of int
     | SetScl1 of int
     | SetOpt1 of Beeset
     | SetStx1 of string
@@ -57,6 +59,7 @@ let update message model =
     match message with
     | SetSqn1 value -> { model with sqn1 = value }
     | SetShp1 value -> { model with shp1 = value }
+    | SetScp1 value -> { model with scp1 = value }
     | SetScl1 value -> { model with scl1 = value }
     | SetOpt1 value -> 
                             let content = 
@@ -151,7 +154,7 @@ let view model dispatch =
                 -> let a,b,c = hxlCrd bsNs
                    Array.append (hxlOrt model.sqn1 (hxlVld model.sqn1 (AV(a-104,b-2,c))) 200 false) (adjacent model.sqn1 (hxlVld model.sqn1 (AV(0,0,0))))
                    |> allAV true
-        let cxCxl1 = spaceCxl model.sqn1 bsNs bsOc model.stx2
+        let cxCxl1 = spaceCxl model.scl1 model.sqn1 bsNs bsOc model.stx2
         let cxlAvl = cxlExp cxCxl1 model.sqn1
         let cxClr1 = pastels (Array.length cxCxl1)
 
@@ -259,7 +262,7 @@ let view model dispatch =
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
 
-                nstdCxls cxCxl1 cxClr1 model.scl1 model.shp1
+                nstdCxls cxCxl1 cxClr1 model.scp1 model.shp1
             }
             
             // Universal Controls
@@ -270,43 +273,6 @@ let view model dispatch =
                                 justify-content: center;
                                 display: flex;
                                 flex-direction: row;"
-                // Scale
-                label{
-                    attr.``for`` "selectScale"  
-                }
-                select{
-                    attr.name "selectScale"
-                    attr.``style`` "width: 27%;
-                                    display: flex;
-                                    height: 26px;
-                                    font-size: 12px;
-                                    background:#f9f9f9;
-                                    margin-left: 10px;
-                                    margin-right: 10px;
-                                    padding: 5px 10px;
-                                    border-radius: 5px;
-                                    border: none;
-                                    text-align: center;
-                                    color: #808080;
-                                    font-family: 'Optima', Candara, Calibri;"
-                    attr.id "scaleOptions"
-                    on.change (fun e -> 
-                                        let value = (e.Value :?> string)
-                                        let scl01 = 
-                                            match value with
-                                            | "1x" -> 1
-                                            | "5x" -> 5
-                                            | "10x" -> 10
-                                            | "15x" -> 15
-                                            | _ -> 10
-
-                                        dispatch (SetScl1 scl01))
-                    option {"Scale"}
-                    option {"1x"}
-                    option {"5x"}
-                    option {"10x"}
-                    option {"15x"}
-                }
                 
                 // Shape
                 label{
@@ -314,7 +280,7 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectShape"
-                    attr.``style`` "width: 27%;
+                    attr.``style`` "width: 20%;
                                     display: block;
                                     height: 26px;
                                     font-size: 12px;
@@ -352,7 +318,7 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectSequence"
-                    attr.``style`` "width: 27%;
+                    attr.``style`` "width: 20%;
                                     display: block;
                                     height: 26px;
                                     font-size: 12px;
@@ -423,6 +389,84 @@ let view model dispatch =
                     option {"HRCWNW"}
                     option {"HRCCNW"}
                 }  
+                                
+                // Scale
+                label{
+                    attr.``for`` "selectResolution"  
+                }
+                select{
+                    attr.name "selectResolution"
+                    attr.``style`` "width: 20%;
+                                    display: flex;
+                                    height: 26px;
+                                    font-size: 12px;
+                                    background:#f9f9f9;
+                                    margin-left: 10px;
+                                    margin-right: 10px;
+                                    padding: 5px 10px;
+                                    border-radius: 5px;
+                                    border: none;
+                                    text-align: center;
+                                    color: #808080;
+                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.id "scaleOptions"
+                    on.change (fun e -> 
+                                        let value = (e.Value :?> string)
+                                        let scl01 = 
+                                            match value with
+                                            | "1x" -> 1
+                                            | "2x" -> 2
+                                            | "3x" -> 3
+                                            | "4x" -> 4
+                                            | _ -> 1
+
+                                        dispatch (SetScl1 scl01))
+                    option {"Scale"}
+                    option {"1x"}
+                    option {"2x"}
+                    option {"3x"}
+                    option {"4x"}
+                }
+
+                // Scope
+                label{
+                    attr.``for`` "selectScope"  
+                }
+                select{
+                    attr.name "selectScope"
+                    attr.``style`` "width: 20%;
+                                    display: flex;
+                                    height: 26px;
+                                    font-size: 12px;
+                                    background:#f9f9f9;
+                                    margin-left: 10px;
+                                    margin-right: 10px;
+                                    padding: 5px 10px;
+                                    border-radius: 5px;
+                                    border: none;
+                                    text-align: center;
+                                    color: #808080;
+                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.id "scopeOptions"
+                    on.change (fun e -> 
+                                        let value = (e.Value :?> string)
+                                        let scp01 = 
+                                            match value with
+                                            | "1x" -> 1
+                                            | "5x" -> 5
+                                            | "10x" -> 10
+                                            | "15x" -> 15
+                                            | _ -> 10
+
+                                        dispatch (SetScp1 scp01))
+                    option {"Scope"}
+                    option {"1x"}
+                    option {"5x"}
+                    option {"10x"}
+                    option {"15x"}
+                }
+
+
             }  
             
             // Hywe Table
