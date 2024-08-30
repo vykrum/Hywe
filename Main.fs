@@ -175,7 +175,7 @@ let view model dispatch =
                                 display: block;
                                 margin-left: 20px;
                                 margin-right: 20px;
-                                margin-top: 10px;
+                                margin-top: 20px;
                                 margin-bottom: 20px;
                                 height: 36px;
                                 font-size: 14px;
@@ -285,8 +285,8 @@ let view model dispatch =
                                     height: 26px;
                                     font-size: 12px;
                                     background:#f9f9f9;
-                                    margin-left: 10px;
-                                    margin-right: 10px;
+                                    margin-left: 5px;
+                                    margin-right: 5px;
                                     color: #808080;
                                     padding: 5px 10px;
                                     border-radius: 5px;
@@ -323,8 +323,8 @@ let view model dispatch =
                                     height: 26px;
                                     font-size: 12px;
                                     background:#f9f9f9;
-                                    margin-left: 10px;
-                                    margin-right: 10px;
+                                    margin-left: 5px;
+                                    margin-right: 5px;
                                     color: #808080;
                                     padding: 5px 10px;
                                     border-radius: 5px;
@@ -401,8 +401,8 @@ let view model dispatch =
                                     height: 26px;
                                     font-size: 12px;
                                     background:#f9f9f9;
-                                    margin-left: 10px;
-                                    margin-right: 10px;
+                                    margin-left: 5px;
+                                    margin-right: 5px;
                                     padding: 5px 10px;
                                     border-radius: 5px;
                                     border: none;
@@ -439,8 +439,8 @@ let view model dispatch =
                                     height: 26px;
                                     font-size: 12px;
                                     background:#f9f9f9;
-                                    margin-left: 10px;
-                                    margin-right: 10px;
+                                    margin-left: 5px;
+                                    margin-right: 5px;
                                     padding: 5px 10px;
                                     border-radius: 5px;
                                     border: none;
