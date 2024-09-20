@@ -63,7 +63,7 @@ let coxel
             |> Array.Parallel.map (fun x -> snd x)
             |> Array.max
     let acc = Array.chunkBySize 1 bas
-    let oc1 = (Array.append occ (getHxls bas)) |> allAV false 
+    let oc1 = (Array.append occ (getHxls bas)) |> hxlUni 1 
         
     let rec clsts 
         (hxo: (Hxl*int)[])
@@ -82,7 +82,7 @@ let coxel
                     |> Array.append (getHxls hxo)
                     |> Array.append [|identity|]
                     |> Array.distinct
-                    |> allAV false
+                    |> hxlUni 1
 
                 let rpt = Array.Parallel.map (fun x 
                                                 -> (snd x) - 0x1) hxo
@@ -111,7 +111,7 @@ let coxel
                     Array.concat acc
                     inc
                     Hxl|]);occ|] 
-                        |> allAV false
+                        |> hxlUni 1
 
                 (clsts Hxl occ acc (cnt - 0x1))
          
@@ -136,7 +136,7 @@ let coxel
 
     let cxl = Array.map3 (fun x y z -> 
                                             let hx1 = z 
-                                                    |> hxlTyp sqn (Array.append occ z)
+                                                    |> hxlChk sqn (Array.append occ z)
                                                 
                                             {
                                                 Name = snd x
@@ -158,15 +158,14 @@ let coxel
 let cxlExp 
     (cxl : Cxl[])
     (sqn: Sqn) = 
-    let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> allAV false 
+    let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> hxlUni 1 
     let cxlAvl 
         (cx:Cxl)
         (sq:Sqn)
         (oc:Hxl[]) =
-        let hx = cx.Hxls |> allAV false 
+        let hx = cx.Hxls |> hxlUni 1 
         hx |> Array.filter(fun x -> (available sq x oc)>0) |> Array.length
     cxl |> Array.map (fun a -> cxlAvl a sqn occ)
-
 ///
 
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>
@@ -224,13 +223,13 @@ let cxlHxl
         | [||] -> [||]
         | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
                 | true -> Array.rev ar1
-                | false -> Array.rev (allAV true ar1)
+                | false -> Array.rev (hxlUni 1 ar1)
 
     /// <summary> Hexel Ring Segment Sequence. </summary>
     let cntSqn
         (sqn : Sqn)
         (hxo : Hxl[]) =      
-        let hxl = allAV false hxo
+        let hxl = hxlUni 1 hxo
         let rec ctSq 
             (sqn : Sqn)
             (hxl : Hxl[])
@@ -265,7 +264,7 @@ let cxlHxl
         | [||] -> [||]
         | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
                 | true -> ar1
-                | false -> allAV true ar1
+                | false -> hxlUni 2 ar1
 
     let avrv = cxl.Hxls 
             |> Array.Parallel.partition
@@ -275,7 +274,7 @@ let cxlHxl
                 (fun x-> (available 
                     cxl.Seqn 
                     (AV(hxlCrd x)) 
-                    (allAV false (cxl.Hxls))) < 1)
+                    (hxlUni 1 (cxl.Hxls))) < 1)
     let av01 = match (snd rv01) with 
                 | [||] -> avrv |> fst |> bndSqn cxl.Seqn
                 | _ -> avrv |> fst |> cntSqn cxl.Seqn
@@ -290,7 +289,7 @@ let cxlHxl
                             | _ -> match adjacent 
                                     cxl.Seqn 
                                     (Array.last av01) 
-                                    |> allAV true
+                                    |> hxlUni 2
                                     |> Array.contains (Array.head br01) with 
                                     | true -> Array.append av01 br01
                                     | false -> Array.append av01 (Array.rev br01)

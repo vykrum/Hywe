@@ -1,8 +1,7 @@
-﻿module Parse
+﻿module Parse1
 
 open Hexel
 open Coxel
-open Shape
 
 // Sample Space Program Input Format
 let spaceStr =
@@ -15,35 +14,24 @@ let spaceStr =
 
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>
 /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
-/// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
+/// <returns> Array of string arrays (RefId as string * Count as int * Label as string)
 let spaceSeq 
     (spaceStr:string) = 
+        
     let spaceMap = 
-        let spcMp1 = ((spaceStr.Replace ("\n",""))
-                        .Replace("\t","")
-                        .Replace(" ",""))
-                        .Split ","
-                        |> Array.map(fun x -> x.Remove(0,1)) 
-                        |> Array.map(fun x -> x.Remove(x.Length-1,1))
-                        |> Array.map (fun x -> x.Split "/")
-        let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
-                        | true -> spcMp1
-                        | false -> Array.append [|[|"#";"W=0";"H=0";"S=0"|]|] spcMp1
-        let spcAt1 = spcMp2 
-                    |> Array.head 
-                    |> Array.tail
-                    |> Array.map (fun x -> x.Split("="))
-                    |> Array.map (fun x -> x[0],x[1])
-                    |> Map.ofArray
-        let spcMp3 = spcMp2 
-                    |> Array.tail
-                    |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
-                    |> Array.sortBy (fun (x,y) -> x)
-                    |> Map.ofArray
-        spcAt1,spcMp3
+        ((spaceStr.Replace ("\n",""))
+            .Replace("\t","")
+            .Replace(" ",""))
+            .Split ","
+            |> Array.map(fun x -> x.Remove(0,1)) 
+            |> Array.map(fun x -> x.Remove(x.Length-1,1))
+            |> Array.map (fun x -> x.Split "/") 
+            |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
+            |> Array.sortBy (fun (x,y) -> x)
+            |> Map.ofArray
 
     let spcKy01 = 
-        snd spaceMap 
+        spaceMap 
         |> Map.keys 
         |> Array.ofSeq 
         |> Array.groupBy(fun x 
@@ -81,32 +69,39 @@ let spaceSeq
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
         
+(*    let spcKy06 = 
+        spcKy05 
+        |> Array.map(fun x 
+                        -> (Array.map (fun y 
+                                        -> y, spaceMap 
+                                        |> Map.find y))x)*)
     let spcKy06 = 
         let a = match (Array.isEmpty spcKy05) with 
                 |  true -> [|[|"1"|]|]
                 | false -> spcKy05
-        a
-        |> Array.map(fun x 
-                        -> (Array.map (fun y 
-                                        -> y, snd spaceMap 
-                                        |> Map.find y))x)
+        a|> Array.map(fun x 
+                            -> (Array.map (fun y 
+                                            -> y, spaceMap 
+                                            |> Map.find y))x)
         
     let spcKey =
         spcKy06
         |> Array.map (fun z 
                         -> (Array.map (fun (x,y) 
                                         -> x, fst y, snd y))z)
-    (fst spaceMap),spcKey
-        
+    spcKey    
+///
+
 /// <summary> Generate coxels based on string data. </summary>
+/// <param name="rsl"> Resolution. Count multiplier </param>
 /// <param name="seq"> Sequence. </param>
 /// <param name="bas"> Base hexel. </param>
 /// <param name="occ"> Unavailable hexels. </param>
-/// <returns> Coxel array </returns>    
-[<TailCall>]
- let spaceCxl 
-    (rsl: int)
+/// <returns> Coxel array </returns>
+let spaceCxl
+    (rsl : int)
     (seq : Sqn)
+    (bas : Hxl)
     (occ : Hxl[])
     (str : string) = 
     (*         
@@ -130,43 +125,23 @@ let spaceSeq
                                                 | None -> 0)x)
         chdCnt
     *)
+    let bas = hxlVld seq bas
     let tree01 = 
         spaceSeq str 
-            |> snd
             |> Array.map (fun x -> 
                 Array.map(fun (a,b,c) 
                             -> Refid a, Count (b*rsl), Label c)x)
-        
-    // Rectangular Boundary
-    let bdWd = fst (spaceSeq str) |> Map.find "W" |> int
-    let bdHt = fst (spaceSeq str) |> Map.find "H" |> int
-    let bsI1 = fst (spaceSeq str) |> Map.find "S" |> int
-
-    let bdR1 = hxlRct seq (bdWd*rsl) (bdHt*rsl) bsI1
-    let bdRt = match (bdWd=0 || bdHt=0) with 
-                | true -> [||]
-                | false -> snd(bdR1)
-    let rtCt = (Array.length bdRt) - 1
-    let bsIn = fst bdR1
-    let bsHx = match (bdWd=0 || bdHt=0) with 
-                | true -> AV(1,4,0)
-                | false -> AV(hxlCrd bsIn)
-                            |> adjacent seq 
-                            |> Array.except (Array.concat[|occ;bdRt;[|AV(hxlCrd bsIn)|]|])
-                            |> Array.head
-
-    let occ = Array.concat [|occ;bdRt|]
 
     // Generate base coxel
     let id,ct,lb = tree01 |> Array.concat |> Array.head
     let cti  = match ct with 
                 | Count x when x>0 -> Count (x-1) 
-                | _ -> Count 0       
+                | _ -> Count 0 
     let ac0 = match cti with 
                 | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
-                | _ -> coxel seq ([|bsHx, id, cti, lb|]) occ
+                | _ -> coxel seq ([|bas, id, cti, lb|]) occ
     let ac1 = [|{ac0[0] with Hxls = Array.except occ (Array.append [|ac0[0].Base|] ac0[0].Hxls)}|]
-    let oc1 = (Array.concat [|occ; [|bsHx|]; (Array.head ac1).Hxls|])
+    let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
     let cxlCxl 
         (seq : Sqn)
@@ -179,17 +154,14 @@ let spaceSeq
                     |> Map.ofArray
                     |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
                         
-        // Available Hexels
         let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
-        // Required host Hexel count
         let cnt = (Array.length tre) - 1
-        // Seperated host hexels
         let chBs = match (Array.length chHx) >= cnt with 
-                    | true -> 
-                                let divs =  ((Array.length chHx) / cnt)
-                                let chnk = Array.chunkBySize divs chHx
-                                let fsHx = chnk |> Array.map (fun x -> Array.head x)
-                                Array.take cnt fsHx
+                    | true ->
+                            let divs =  ((Array.length chHx) / cnt)
+                            let chnk = Array.chunkBySize divs chHx
+                            let fsHx = chnk |> Array.map (fun x -> Array.head x)
+                            Array.take cnt fsHx
                     | false -> Array.append 
                                 chHx 
                                 (Array.replicate (cnt - (Array.length chHx)) identity)
@@ -205,7 +177,7 @@ let spaceSeq
         let chHx3 = hxlChk seq chOc1 (Array.map (fun x -> x.Base) cxc1)
         let cxc2 = Array.map3 (fun x y z -> {x with Cxl.Hxls = y; Cxl.Base = z}) cxc1 chHx2 chHx3
         cxc2
-        
+
     let rec cxCxCx
         (seq : Sqn)
         (tre : (Prp*Prp*Prp)[][])
@@ -227,4 +199,3 @@ let spaceSeq
     match (Array.length (Array.concat tree01) < 2) with 
     | true -> ac1
     | false -> cxCxCx seq tree01 oc1 ac1
-

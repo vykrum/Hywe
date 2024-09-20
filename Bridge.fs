@@ -5,7 +5,6 @@ open Bolero.Html
 open Hexel
 open Coxel
 open Shape
-open System
 ///
 
 type hxgn = Template<
@@ -78,7 +77,8 @@ let crd
         (scl:int) =
         Array.map (fun a -> match a with 
                             |AV(x,y,z) -> ((x*scl),(y*scl),z)
-                            |RV(x,y,z) -> ((x*scl),(y*scl),z)) hxo
+                            |RV(x,y,z) -> ((x*scl),(y*scl),z)
+                            |EX(x,y,z) -> ((x*scl),(y*scl),z)) hxo
 
     let hxXY01 = Array.map (fun x -> cdn x scl) hxo
     let (a,_,_) = (Array.concat hxXY01) |> Array.minBy(fun (x,_,_) -> x)
@@ -93,24 +93,7 @@ let crd
     (hxXY02,hxMxmX,hxMxmY)
 ///
 
-// Random pastel color
-let pastel () =
-    let rand = Random()
-    let mixWithWhite (color: int) = (color + 255) >>> 1
-    let red = mixWithWhite (rand.Next(256))
-    let green = mixWithWhite (rand.Next(256))
-    let blue = mixWithWhite (rand.Next(256))
-    // Ensure the values are within the 0-255 range
-    let clamp value = min 255 (max 0 value)
-    let red = clamp red
-    let green = clamp green
-    let blue = clamp blue
-    $"rgba({red}, {green}, {blue}, 0.75)"
 
-// Function to create an array of random pastel colors
-let pastels (size: int) =
-    Array.init size (fun _ -> pastel())
-///
 
 /// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>

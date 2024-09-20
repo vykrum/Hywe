@@ -8,21 +8,8 @@ open Coxel
 open Shape
 open Bridge
 open Parse
+open Page
 
-type Beeset = 
-    | Beewhich
-    | Beeline
-    | Beeyond
-    | Beedroom
-
-let stxInstr = 
-    "Depending on your selection above, Hywe Syntax (index/size/label) will populate here.\n" +
-    "Use the populated examples as reference to script your custom layouts.\n" +
-    "Click on hyWEAVE to update any selection or alteration.\n\n"+
-    "• BEE-line  : Hywe syntax in its simplest form.\n" +
-    "• BEE-yond  : Syntax for slightly complex layouts.\n" +
-    "• BEE-droom : Syntax with nested branching, for more detailed layouts.\n"
-   
 type Model =
     {
         shp1 : Shp
@@ -65,14 +52,9 @@ let update message model =
                             let content = 
                                 match value with 
                                 | Beewhich -> stxInstr
-                                | Beeline -> "(1/48/Start),(2/52/End)"
-                                | Beeyond -> "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),"+
-                                             "(1.3/25/Habitation),(1.4/25/Power)"
-                                | Beedroom -> "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),"+
-                                              "(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),"+
-                                              "(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),"+
-                                              "(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),"+
-                                              "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
+                                | Beeline -> beeline
+                                | Beeyond -> beeyond
+                                | Beedroom -> beedroom
                             {model with opt1 = Some value; stx1 = content}
 
     | SetStx1 value -> { model with stx1 = value }
@@ -83,19 +65,11 @@ let view model dispatch =
     concat {
         // Header
         div{
-            attr.``style`` "margin-top: 0px;
-                            background: #d3d3d1; 
-                            color: #363636; 
-                            flex-direction: column;"
+            attr.``style`` styleHeader
             // Name and Logo
             div{
                 attr.``class`` "flex-container"
-                attr.``style`` "width: 100%;
-                                height: 37px;
-                                opacity: 1;
-                                background: #363636;
-                                padding-left: 5px;
-                                padding-top: 5px;"
+                attr.``style`` styleLogo
                 // Logo
                 a{
                     attr.href "https://github.com/vykrum/Hywe"
@@ -108,13 +82,7 @@ let view model dispatch =
                 }
                 // Title
                 div{
-                    attr.``style`` "color: white;
-                                    font-family: 'Optima', Candara, Calibri;
-                                    font-size: 20px;
-                                    font-weight: normal;
-                                    padding-left: 10px;
-                                    padding-right: 10px;
-                                    padding-bottom: 7px;"
+                    attr.``style`` styleTitle
                     " H Y W E"
                     }
                 // Acronym
@@ -128,34 +96,17 @@ let view model dispatch =
                 }
             // Introduction
             div{
-                attr.``style`` "font-family: 'Optima', Candara, Calibri; 
-                                font-size: 18px; 
-                                color: #363636; 
-                                padding-left: 12px;
-                                padding-right: 10px;
-                                padding-bottom: 5px;"
+                attr.``style`` styleIntro
                 p{
-                    "Weave spatial layouts at a high level of abstraction using properly " +
-                    "formatted syntax in Hywe, an endogenous space planning concept " +
-                    "currently undergoing its formative stages of development " + 
-                    "as an early stage design interface."
+                    introduction
                 }    
             }
         }
 
         // Nested Coxels Data
         let bsNs = hxlVld model.sqn1 (AV(1,4,0))
-        let bsOc = 
-            match model.sqn1 with 
-            | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-                -> let a,b,c = hxlCrd bsNs
-                   Array.append (hxlOrt model.sqn1 (hxlVld model.sqn1 (AV(a-100,b-2,c))) 200 false) (adjacent model.sqn1 (hxlVld model.sqn1 (AV(0,0,0))))
-                   |> allAV true
-            | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
-                -> let a,b,c = hxlCrd bsNs
-                   Array.append (hxlOrt model.sqn1 (hxlVld model.sqn1 (AV(a-104,b-2,c))) 200 false) (adjacent model.sqn1 (hxlVld model.sqn1 (AV(0,0,0))))
-                   |> allAV true
-        let cxCxl1 = spaceCxl model.scl1 model.sqn1 bsNs bsOc model.stx2
+        let bsOc = hxlBnd model.sqn1 bsNs
+        let cxCxl1 = spaceCxl model.scl1 model.sqn1 bsOc model.stx2
         let cxlAvl = cxlExp cxCxl1 model.sqn1
         let cxClr1 = pastels (Array.length cxCxl1)
 
@@ -171,22 +122,7 @@ let view model dispatch =
             }
             select{
                 attr.name "options"
-                attr.``style`` "width: 75%;
-                                display: block;
-                                margin-left: 20px;
-                                margin-right: 20px;
-                                margin-top: 20px;
-                                margin-bottom: 20px;
-                                height: 36px;
-                                font-size: 14px;
-                                border: none;
-                                padding: 10px 10px;
-                                color: #646464;
-                                border-radius: 10px;
-                                text-align: center;
-                                background-color: #ececec;
-                                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-                                font-family: 'Optima', Candara, Calibri"
+                attr.``style`` styleDrop1
                 attr.id "options"
                 on.change (fun e -> 
                                     let value = (e.Value :?> string)
@@ -231,16 +167,21 @@ let view model dispatch =
             }
 
             // Hywe Syntax Input
+            let fntSz = match model.opt1 with 
+                        | Some Beeline -> 28
+                        | Some Beeyond -> 24
+                        | Some Beedroom -> 18
+                        | _ -> 14
             textarea {
                 attr.name "options"
                 attr.id "options"
                 attr.``type`` "textarea"
                 attr.``class`` "textarea"
-                attr.``style`` "width: 95%;
+                attr.``style`` $"width : 95%%;
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 height:100px;
-                                font-size: 14px;
+                                font-size: {fntSz}px;
                                 color: #808080;"
                 bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a)) 
             }
@@ -280,19 +221,7 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectShape"
-                    attr.``style`` "width: 20%;
-                                    display: block;
-                                    height: 26px;
-                                    font-size: 12px;
-                                    background:#f9f9f9;
-                                    margin-left: 5px;
-                                    margin-right: 5px;
-                                    color: #808080;
-                                    padding: 5px 10px;
-                                    border-radius: 5px;
-                                    border: none;
-                                    text-align: center;
-                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.``style`` styleDrop2
                     attr.id "shapeOptions"
                     on.change (fun e -> 
                                         let value = (e.Value :?> string)
@@ -318,19 +247,7 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectSequence"
-                    attr.``style`` "width: 20%;
-                                    display: block;
-                                    height: 26px;
-                                    font-size: 12px;
-                                    background:#f9f9f9;
-                                    margin-left: 5px;
-                                    margin-right: 5px;
-                                    color: #808080;
-                                    padding: 5px 10px;
-                                    border-radius: 5px;
-                                    border: none;
-                                    text-align: center;
-                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.``style`` styleDrop2
                     attr.id "sequenceOptions"
                     on.change (fun e -> 
                                         let value = (e.Value :?> string)
@@ -396,19 +313,7 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectResolution"
-                    attr.``style`` "width: 20%;
-                                    display: flex;
-                                    height: 26px;
-                                    font-size: 12px;
-                                    background:#f9f9f9;
-                                    margin-left: 5px;
-                                    margin-right: 5px;
-                                    padding: 5px 10px;
-                                    border-radius: 5px;
-                                    border: none;
-                                    text-align: center;
-                                    color: #808080;
-                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.``style`` styleDrop2
                     attr.id "scaleOptions"
                     on.change (fun e -> 
                                         let value = (e.Value :?> string)
@@ -434,19 +339,7 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectScope"
-                    attr.``style`` "width: 20%;
-                                    display: flex;
-                                    height: 26px;
-                                    font-size: 12px;
-                                    background:#f9f9f9;
-                                    margin-left: 5px;
-                                    margin-right: 5px;
-                                    padding: 5px 10px;
-                                    border-radius: 5px;
-                                    border: none;
-                                    text-align: center;
-                                    color: #808080;
-                                    font-family: 'Optima', Candara, Calibri;"
+                    attr.``style`` styleDrop2
                     attr.id "scopeOptions"
                     on.change (fun e -> 
                                         let value = (e.Value :?> string)
@@ -474,14 +367,7 @@ let view model dispatch =
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
                 table{
                     attr.width "95%"
-                    attr.``style`` "
-                                font-size: 14px;
-                                opacity:75%;
-                                border: none;
-                                padding: 10px 10px;
-                                color: #646464;
-                                text-align: center;
-                                font-family: 'Optima', Candara, Calibri"
+                    attr.``style`` styleTable
                     thead{
                             tr{
                                 th{"Index"}
@@ -498,9 +384,9 @@ let view model dispatch =
                                 attr.``style`` $"background-color:{sn}"
                                 
                                 let reqSz = 
-                                    match (Coxel.prpVlu fs.Rfid) with
-                                    | "1" -> ((Coxel.prpVlu fs.Size |> int) + 1).ToString()
-                                    | _ -> Coxel.prpVlu fs.Size
+                                    match (prpVlu fs.Rfid) with
+                                    | "1" -> ((prpVlu fs.Size |> int) + 1).ToString()
+                                    | _ -> prpVlu fs.Size
 
                                 let achSz = Array.length fs.Hxls
 
@@ -519,14 +405,14 @@ let view model dispatch =
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
-                                    Coxel.prpVlu fs.Rfid
+                                    prpVlu fs.Rfid
                                     }
                                 td{
                                     attr.width "35%"
                                     attr.``style`` "
                                         padding: 5px 10px;
                                         text-align: center;"
-                                    Coxel.prpVlu fs.Name
+                                    prpVlu fs.Name
                                     }
                                 td{
                                     attr.width "15%"

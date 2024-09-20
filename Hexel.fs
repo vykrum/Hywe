@@ -11,6 +11,7 @@ module Hexel
 type Hxl = 
     | AV of x:int * y:int * z:int
     | RV of x:int * y:int * z:int
+    | EX of x:int * y:int * z:int
 ///
 
 /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
@@ -116,6 +117,7 @@ let hxlCrd
     match hxl with 
     | AV (a,b,c) -> (a,b,c)
     | RV (a,b,c) -> (a,b,c)
+    | EX (a,b,c) -> (a,b,c)
 ///
 
 /// <summary> Valid Hexels. </summary>
@@ -151,24 +153,27 @@ let hxlVld
         match hxl with
         | AV(_) -> AV(vld)
         | RV(_) -> RV(vld)
+        | EX(_) -> EX(vld)
 ///
 
-/// <summary> Standardize hexels to type AV </summary>
-/// <param name="rev"> If true, Standardize to type RV. </param>
+/// <summary> Change all hexel types to a uniform type.</summary>
+/// <param name="opt"> 1:AV, 2:RV, 3:EX. </param>
 /// <param name="hxl"> An array of hexels. </param>
-/// <returns> Converts all hexels to type AV </returns>
-let allAV 
-    (rev:bool)
-    (hxl:Hxl[]) = 
+/// <returns> Converts all opted type </returns>
+let hxlUni
+    (opt : int)
+    (hxl : Hxl[]) = 
     hxl
     |> Array.Parallel.map(fun x -> hxlCrd x)
-    |> Array.Parallel.map(fun x -> match rev with 
-                                                    | true -> RV x
-                                                    | false -> AV x)
+    |> Array.Parallel.map(fun x -> match opt with 
+                                                    | 1 -> AV x
+                                                    | 2 -> RV x
+                                                    | 3 -> EX x
+                                                    | _ -> AV x)
 ///
 
 /// <summary> Get Hexel from Tuple. </summary>
-/// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
+/// <param name="hxo"> Tuple containing Base hexel of collection and size. </param>
 let getHxls 
     (hxo : (Hxl*int)[]) = 
     hxo
@@ -181,13 +186,14 @@ let getHxls
 /// <param name="hxo"> Base hexel. </param> 
 /// <returns> An array of six adjacent hexels. </returns>
 let adjacent 
-    (sqn: Sqn)
-    (hxo: Hxl) =
+    (sqn : Sqn)
+    (hxo : Hxl) =
     match hxo with 
     | AV (x,y,z) -> Array.map 
                         (fun (a,b) -> 
                         AV(x+a, y+b,z))(sequence sqn)
     | RV (x,y,z) -> [|RV(x,y,z)|]
+    | EX (x,y,z) -> [|EX(x,y,z)|]
 ///
 
 /// <summary> Increment Hexel. </summary>
@@ -204,7 +210,7 @@ let increment
                     occ
                     [|(fst hxo)|]
                     [|identity|]
-                |] |> allAV false
+                |] |> hxlUni 1
     match hxo with 
     | x,y when y >= 0x0 -> 
         let inc1 = x 
@@ -236,7 +242,7 @@ let available
     (sqn : Sqn)
     (hxo : obj)
     (occ : Hxl[]) =  
-    let occ = occ |> allAV false
+    let occ = occ |> hxlUni 1
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
@@ -253,13 +259,16 @@ let available
 /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
 /// <param name="hxl"> All constituent hexels. </param>
 /// <returns> Reassigned Hexel Types </returns>
-let hxlTyp
+let hxlChk
     (sqn : Sqn)
     (occ : Hxl[])
     (hxl : Hxl[]) = 
-    hxl |> Array.map (fun x -> match (available sqn x (Array.append occ hxl)) < 1 with 
-                                | true -> RV(hxlCrd x)
-                                | false -> AV(hxlCrd x))
+    hxl |> Array.map (fun x -> 
+                                match (x = EX(hxlCrd x)) with 
+                                | true -> x
+                                | false -> match (available sqn x (Array.append occ hxl)) < 1 with 
+                                            | true -> RV(hxlCrd x)
+                                            | false -> AV(hxlCrd x))
 ///
 
 /// <summary> Increment Hexels. </summary>
@@ -271,10 +280,10 @@ let increments
     (sqn : Sqn)
     (hxo : (Hxl*int)[]) 
     (occ : Hxl[]) = 
-    let occ = (Array.append occ (getHxls hxo)) |> allAV false
+    let occ = (Array.append occ (getHxls hxo)) |> hxlUni 1
     let inc = 
         Array.scan (fun ac st -> 
-        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allAV false
+        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> hxlUni 1
         increment sqn st (Array.append[|fst ac|] occ )) 
             hxo[0] hxo
             |> Array.tail
@@ -294,7 +303,7 @@ let increments
         let in1 = Array.map (fun x -> snd x)inc
         let lc1 = getHxls hxo 
         let ic1 = getHxls inc 
-        let oc1 = Array.concat[|occ;lc1;ic1|] |> allAV false
+        let oc1 = Array.concat[|occ;lc1;ic1|] |> hxlUni 1
         let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
         let bl1 = Array.map2 (fun x y -> x=y) [|(0x0)..(Array.length ic1)-(0x1)|] id1   
         let tp1 = Array.zip3 bl1 ic1 hxo  
@@ -361,7 +370,7 @@ let bndSqn
         | [||] -> [||]
         | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
                 | true -> ar1
-                | false -> allAV true ar1
+                | false -> hxlUni 2 ar1
         
     // Arrange clockwise
     let ar3 = Array.windowed 2 ar2
@@ -380,7 +389,7 @@ let bndSqn
 let cntSqn
     (sqn : Sqn)
     (hxo : Hxl[]) =      
-    let hxl = allAV false hxo
+    let hxl = hxlUni 1 hxo
     let rec ctSq 
         (sqn : Sqn)
         (hxl : Hxl[])
@@ -415,4 +424,5 @@ let cntSqn
     | [||] -> [||]
     | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
             | true -> ar1
-            | false -> allAV true ar1
+            | false -> hxlUni 2 ar1
+///
