@@ -29,14 +29,14 @@ let spaceSeq
                     |> Array.map (fun x -> x.Split "/")
     let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
                     | true -> spcMp1
-                    | false -> Array.append [|[|"#";"W=0";"H=0";"S=0"|]|] spcMp1
-        
+                    | false -> Array.append [|[|"#";"W=0";"H=0";"S=0"|]|] spcMp1   
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
                 |> Array.map (fun x -> x.Split("="))
                 |> Array.map (fun x -> x[0],x[1])
                 |> Map.ofArray
+
     // Reproportion count based on Boundary Extent
     let bdWd = match (spcAt1 |> Map.tryFind "W") with 
                 | Some a -> (a |> int) * rsl
@@ -49,35 +49,33 @@ let spaceSeq
                     | true -> 1.0
                     | false -> ((bdWd * bdHt)|> double)/((Array.sum spcCt1)|> double)
     let spcCt2 = Array.map (fun a -> (Math.Ceiling((a|>double)*spcPr1)|>string)) spcCt1
-    let spcMp3 = Array.map2 (fun [|a;_;c|] b -> [|a;b;c|]) (spcMp2 |> Array.tail) spcCt2
-    let spcMp4 = Array.append [|spcMp2 |> Array.head|] spcMp3
-    let spcMp5 = spcMp4 
+    let spcMp3 = spcMp2 |> Array.tail
+    let spcMp4 = Array.map2 (fun x y -> Array.set x 1 y) spcMp3 spcCt2
+    let spcMp5 = Array.append [|spcMp2 |> Array.head|] spcMp3
+    let spcMp6 = spcMp5 
                 |> Array.tail
                 |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
                 |> Array.sortBy (fun (x,y) -> x)
                 |> Map.ofArray
 
     let spcKy01 = 
-        spcMp5 
+        spcMp6 
         |> Map.keys 
         |> Array.ofSeq 
         |> Array.groupBy(fun x 
                             -> match (x.Length <= 1) with 
                                 |true -> "0"
                                 |false -> x.Substring (0, x.LastIndexOf(".")))
-
     let spcKy02 = 
         spcKy01 
         |> Array.head 
         |> snd 
         |> Array.windowed 2 
         |> Array.map(fun x -> x[0],[|x[1]|])
-        
     let spcKy03 = 
         spcKy01 
         |> Array.tail 
         |> Array.partition (fun (x,y) -> x.Length = 1)
-
     let spcKy04 = 
         (Array.append spcKy02 (fst spcKy03)) 
         |> Array.groupBy (fun (x,y) -> x)
@@ -88,14 +86,12 @@ let spaceSeq
         |> Array.map (fun x -> Array.concat x)
         |> Array.map (fun x -> Array.distinct x)
         |> Array.map (fun x -> Array.sort x)
-
     let spcKy05 = 
         (snd spcKy03)
         |> Array.map (fun (x,y) 
                         -> Array.append [|x|] y)
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
-        
     let spcKy06 = 
         let a = match (Array.isEmpty spcKy05) with 
                 |  true -> [|[|"1"|]|]
@@ -103,9 +99,8 @@ let spaceSeq
         a
         |> Array.map(fun x 
                         -> (Array.map (fun y 
-                                        -> y, spcMp5 
+                                        -> y, spcMp6 
                                         |> Map.find y))x)
-        
     let spcKey =
         spcKy06
         |> Array.map (fun z 
@@ -150,8 +145,9 @@ let spaceCxl
         spaceSeq str rsl
             |> snd
             |> Array.map (fun x -> 
+
                 Array.map(fun (a,b,c) 
-                            -> Refid a, Count (b*rsl), Label c)x)
+                            -> Refid a, Count (b), Label c)x)
         
     // Rectangular Boundary
     let bdWd = fst (spaceSeq str rsl) |> Map.find "W" |> int
@@ -163,20 +159,8 @@ let spaceCxl
                 | false -> snd(bdR1)
     let bsIn = fst bdR1
     let bsHx = match (bdWd=0 || bdHt=0) with 
-                | true -> AV(1,4,0)
-                | false -> AV(hxlCrd bsIn)
-                            |> adjacent seq 
-                            |> Array.except (Array.concat[|occ;bdRt;[|AV(hxlCrd bsIn)|]|])
-                            |> Array.head
-
-    // Reproportion count based on Boundary Extent
-    let ct1 = tree01 |> Array.concat |> Array.map (fun (_,x,_) -> (prpVlu x |> int) )
-    let pr1 = match (bdWd=0 || bdHt=0) with 
-                | true -> 1.0
-                | false -> ((bdWd * bdHt)|> double)/((Array.sum ct1)|> double)
-    let tree00 = [|Array.map2 (fun (a,_,c) b -> a,Count(Math.Ceiling((b|>double)*pr1)|>int),c) 
-                (tree01 |> Array.concat) 
-                ct1|]
+                | true -> AV(0,0,0)
+                | false -> fst bdR1
 
     let occ = Array.concat [|occ;bdRt|]
 

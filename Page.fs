@@ -121,16 +121,3 @@ let styleTable = "font-size: 14px;
                 color: #646464;
                 text-align: center;
                 font-family: 'Optima', Candara, Calibri"
-
-// Border Hexels for Hywe generation
-let hxlBnd 
-    (sqn : Sqn)
-    (bas : Hxl) = 
-        let a,b,c = hxlCrd bas
-        match sqn with 
-        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-            -> Array.append (hxlOrt sqn (hxlVld sqn (AV(a-100,b-2,c))) 200 false false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
-                |> hxlUni 3
-        | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
-            -> Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
-                |> hxlUni 3
