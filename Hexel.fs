@@ -106,7 +106,7 @@ let sequence
 /// <summary> Identity Hexel. </summary>
 /// <returns> Available (AV) Hexel at global origin. </returns>
 let identity = 
-    AV(0x0,0x0, 0x0)
+    EX(0x0,0x0, 0x0)
 ///
 
 /// <summary> Extract coordinates from hexel. </summary>
@@ -229,8 +229,8 @@ let increment
                         | None -> Array.tryHead inc1
         match inc2 with 
         | Some a -> a, y
-        | None -> (identity,0xFFFFFFFF)
-    | _ -> (identity,0xFFFFFFFF)
+        | None -> (hxlVld sqn identity,0xFFFFFFFF)
+    | _ -> (hxlVld sqn identity,0xFFFFFFFF)
 ///
 
 /// <summary> Available Adjacent Hexels. </summary>
@@ -246,7 +246,7 @@ let available
     let hx1 = match hxo with 
                 | :? (Hxl*int) as (a,_) -> a
                 | :? Hxl as b ->  b
-                | _ -> RV(0,0,0)
+                | _ -> identity
     hx1 
     |> adjacent sqn
     |> Array.except 

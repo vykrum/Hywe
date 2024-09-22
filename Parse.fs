@@ -3,6 +3,7 @@
 open Hexel
 open Coxel
 open Shape
+open System
 
 // Sample Space Program Input Format
 let spaceStr =
@@ -17,33 +18,47 @@ let spaceStr =
 /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
 /// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
 let spaceSeq 
-    (spaceStr:string) = 
-    let spaceMap = 
-        let spcMp1 = ((spaceStr.Replace ("\n",""))
-                        .Replace("\t","")
-                        .Replace(" ",""))
-                        .Split ","
-                        |> Array.map(fun x -> x.Remove(0,1)) 
-                        |> Array.map(fun x -> x.Remove(x.Length-1,1))
-                        |> Array.map (fun x -> x.Split "/")
-        let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
-                        | true -> spcMp1
-                        | false -> Array.append [|[|"#";"W=0";"H=0";"S=0"|]|] spcMp1
-        let spcAt1 = spcMp2 
-                    |> Array.head 
-                    |> Array.tail
-                    |> Array.map (fun x -> x.Split("="))
-                    |> Array.map (fun x -> x[0],x[1])
-                    |> Map.ofArray
-        let spcMp3 = spcMp2 
-                    |> Array.tail
-                    |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
-                    |> Array.sortBy (fun (x,y) -> x)
-                    |> Map.ofArray
-        spcAt1,spcMp3
+    (spaceStr:string)
+    (rsl: int) = 
+    let spcMp1 = ((spaceStr.Replace ("\n",""))
+                    .Replace("\t","")
+                    .Replace(" ",""))
+                    .Split ","
+                    |> Array.map(fun x -> x.Remove(0,1)) 
+                    |> Array.map(fun x -> x.Remove(x.Length-1,1))
+                    |> Array.map (fun x -> x.Split "/")
+    let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
+                    | true -> spcMp1
+                    | false -> Array.append [|[|"#";"W=0";"H=0";"S=0"|]|] spcMp1
+        
+    let spcAt1 = spcMp2 
+                |> Array.head 
+                |> Array.tail
+                |> Array.map (fun x -> x.Split("="))
+                |> Array.map (fun x -> x[0],x[1])
+                |> Map.ofArray
+    // Reproportion count based on Boundary Extent
+    let bdWd = match (spcAt1 |> Map.tryFind "W") with 
+                | Some a -> (a |> int) * rsl
+                | None -> 0
+    let bdHt = match (spcAt1 |> Map.tryFind "H") with 
+                | Some a -> (a |> int) * rsl
+                | None -> 0   
+    let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1] |> int)
+    let spcPr1 = match (bdWd=0 || bdHt=0) with 
+                    | true -> 1.0
+                    | false -> ((bdWd * bdHt)|> double)/((Array.sum spcCt1)|> double)
+    let spcCt2 = Array.map (fun a -> (Math.Ceiling((a|>double)*spcPr1)|>string)) spcCt1
+    let spcMp3 = Array.map2 (fun [|a;_;c|] b -> [|a;b;c|]) (spcMp2 |> Array.tail) spcCt2
+    let spcMp4 = Array.append [|spcMp2 |> Array.head|] spcMp3
+    let spcMp5 = spcMp4 
+                |> Array.tail
+                |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
+                |> Array.sortBy (fun (x,y) -> x)
+                |> Map.ofArray
 
     let spcKy01 = 
-        snd spaceMap 
+        spcMp5 
         |> Map.keys 
         |> Array.ofSeq 
         |> Array.groupBy(fun x 
@@ -88,7 +103,7 @@ let spaceSeq
         a
         |> Array.map(fun x 
                         -> (Array.map (fun y 
-                                        -> y, snd spaceMap 
+                                        -> y, spcMp5 
                                         |> Map.find y))x)
         
     let spcKey =
@@ -96,15 +111,16 @@ let spaceSeq
         |> Array.map (fun z 
                         -> (Array.map (fun (x,y) 
                                         -> x, fst y, snd y))z)
-    (fst spaceMap),spcKey
-        
+    spcAt1,spcKey
+///    
+
 /// <summary> Generate coxels based on string data. </summary>
 /// <param name="seq"> Sequence. </param>
 /// <param name="bas"> Base hexel. </param>
 /// <param name="occ"> Unavailable hexels. </param>
 /// <returns> Coxel array </returns>    
 [<TailCall>]
- let spaceCxl 
+let spaceCxl 
     (rsl: int)
     (seq : Sqn)
     (occ : Hxl[])
@@ -131,22 +147,20 @@ let spaceSeq
         chdCnt
     *)
     let tree01 = 
-        spaceSeq str 
+        spaceSeq str rsl
             |> snd
             |> Array.map (fun x -> 
                 Array.map(fun (a,b,c) 
                             -> Refid a, Count (b*rsl), Label c)x)
         
     // Rectangular Boundary
-    let bdWd = fst (spaceSeq str) |> Map.find "W" |> int
-    let bdHt = fst (spaceSeq str) |> Map.find "H" |> int
-    let bsI1 = fst (spaceSeq str) |> Map.find "S" |> int
-
+    let bdWd = fst (spaceSeq str rsl) |> Map.find "W" |> int
+    let bdHt = fst (spaceSeq str rsl) |> Map.find "H" |> int
+    let bsI1 = fst (spaceSeq str rsl) |> Map.find "S" |> int
     let bdR1 = hxlRct seq (bdWd*rsl) (bdHt*rsl) bsI1
     let bdRt = match (bdWd=0 || bdHt=0) with 
                 | true -> [||]
                 | false -> snd(bdR1)
-    let rtCt = (Array.length bdRt) - 1
     let bsIn = fst bdR1
     let bsHx = match (bdWd=0 || bdHt=0) with 
                 | true -> AV(1,4,0)
@@ -154,6 +168,15 @@ let spaceSeq
                             |> adjacent seq 
                             |> Array.except (Array.concat[|occ;bdRt;[|AV(hxlCrd bsIn)|]|])
                             |> Array.head
+
+    // Reproportion count based on Boundary Extent
+    let ct1 = tree01 |> Array.concat |> Array.map (fun (_,x,_) -> (prpVlu x |> int) )
+    let pr1 = match (bdWd=0 || bdHt=0) with 
+                | true -> 1.0
+                | false -> ((bdWd * bdHt)|> double)/((Array.sum ct1)|> double)
+    let tree00 = [|Array.map2 (fun (a,_,c) b -> a,Count(Math.Ceiling((b|>double)*pr1)|>int),c) 
+                (tree01 |> Array.concat) 
+                ct1|]
 
     let occ = Array.concat [|occ;bdRt|]
 

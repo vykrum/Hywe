@@ -43,7 +43,7 @@ let beeline = "(1/35/Start),(2/35/End)"
 let beeyond = "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),"+
               "(1.3/25/Habitation),(1.4/25/Power)"
 
-let beedroom = "(#/W=25/H=15/S=5),"+
+let beedroom = "(#/W=15/H=15/S=1),"+
                "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),"+
                "(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),"+
                "(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),"+

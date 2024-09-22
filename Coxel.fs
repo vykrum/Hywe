@@ -145,7 +145,7 @@ let coxel
                                                 Seqn = sqn
                                                 Base = Array.head hx1
                                                 Hxls = match Array.length hx1 > 0 with 
-                                                        | true -> Array.except  ([|Array.head hx1|]) hx1
+                                                        | true -> Array.except  ([|Array.head hx1;identity|]) hx1
                                                         | false -> [||]
                                             })szn idn cl1
     cxl

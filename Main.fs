@@ -25,7 +25,7 @@ type Model =
 let initModel =
     {
         shp1 = Hxg
-        sqn1 = HRCCNN
+        sqn1 = HRCWNE
         scp1 = 10
         scl1 = 1
         opt1 = None
@@ -104,9 +104,10 @@ let view model dispatch =
         }
 
         // Nested Coxels Data
-        let bsNs = hxlVld model.sqn1 (AV(1,4,0))
-        let bsOc = hxlBnd model.sqn1 bsNs
-        let cxCxl1 = spaceCxl model.scl1 model.sqn1 bsOc model.stx2
+        //let bsNs = hxlVld model.sqn1 (AV(1,4,0))
+        //let bsOc = hxlBnd model.sqn1 bsNs
+        let bsOc = [||]
+        let cxCxl1 = spaceCxl model.scl1 model.sqn1 bsOc  model.stx2
         let cxlAvl = cxlExp cxCxl1 model.sqn1
         let cxClr1 = pastels (Array.length cxCxl1)
 

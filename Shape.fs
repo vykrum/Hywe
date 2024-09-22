@@ -4,7 +4,7 @@ open Hexel
 open Coxel
 open System
 ///
-    
+
 /// <summary> Module shape in tessalated hexagonal grid. </summary>
 /// <typeparam name="Hxg"> Hexagon. </typeparam>
 /// <typeparam name="Sqr"> Square. </typeparam>
@@ -116,13 +116,13 @@ let hxlRct
     let sqn = match sqn with
                 | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW-> HRCWNN
                 | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> VRCWEE
-    let org = hxlVld sqn (AV(1,4,0))
+    let org = hxlVld sqn (AV(0,0,0))
     let hrz1 = hxlOrt sqn org ((wdt+1)*2) false false
     let vrt1 = hxlOrt sqn (Array.last hrz1) ((hgt+1)*2) true false
     let hrz2 = hxlOrt sqn (Array.last vrt1) ((wdt+1)*2) false true
     let vrt2 = hxlOrt sqn (Array.last hrz2) ((hgt+1)*2) true true
 
-    let bas = match str with 
+    let bs1 = match str with 
                 | 1 -> Array.get hrz1 ((Array.length hrz1)/2)
                 | 2 -> vrt1 |> Array.tail |> Array.head
                 | 3 -> Array.get vrt1 ((Array.length vrt1)/2)
@@ -132,11 +132,14 @@ let hxlRct
                 | 7 -> Array.get vrt2 ((Array.length vrt2)/2)
                 | _ -> hrz1 |> Array.tail |> Array.head
 
-
-
-    bas,Array.concat[|hrz1; vrt1; hrz2; vrt2; hxlOff hrz1 true; hxlOff vrt1 false; hxlOff hrz2 false; hxlOff vrt2 true|] |> Array.distinct
-
-
+    let rct = Array.concat[|hrz1; vrt1; hrz2; vrt2; 
+                    hxlOff hrz1 true; 
+                    hxlOff vrt1 false; 
+                    hxlOff hrz2 false; 
+                    hxlOff vrt2 true|] 
+                    |> Array.distinct
+    let bas = AV(hxlCrd bs1) |> adjacent sqn |> hxlUni 3 |> Array.except rct |> Array.head
+    AV(hxlCrd bas),rct
 
 let cxlPrm
     (cxl : Cxl) = 
