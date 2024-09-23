@@ -24,20 +24,23 @@ let spaceSeq
                     .Replace("\t","")
                     .Replace(" ",""))
                     .Split ","
-                    |> Array.map(fun x -> x.Remove(0,1)) 
-                    |> Array.map(fun x -> x.Remove(x.Length-1,1))
-                    |> Array.map (fun x -> x.Split "/")
+                    |> Array.Parallel.map(fun x -> x.Remove(0,1)) 
+                    |> Array.Parallel.map(fun x -> x.Remove(x.Length-1,1))
+                    |> Array.Parallel.map (fun x -> x.Split "/")
     let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
                     | true -> spcMp1
-                    | false -> Array.append [|[|"#";"W=0";"H=0";"S=0"|]|] spcMp1   
+                    | false -> Array.append [|[|"#";"W=0";"H=0";"S=0";"F=0"|]|] spcMp1   
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
-                |> Array.map (fun x -> x.Split("="))
-                |> Array.map (fun x -> x[0],x[1])
+                |> Array.Parallel.map (fun x -> x.Split("="))
+                |> Array.Parallel.map (fun x -> x[0],x[1])
                 |> Map.ofArray
 
     // Reproportion count based on Boundary Extent
+    let bdPr = match (spcAt1 |> Map.tryFind "F") with 
+                | Some a -> (a |> double)
+                | None -> 0.0
     let bdWd = match (spcAt1 |> Map.tryFind "W") with 
                 | Some a -> (a |> int) * rsl
                 | None -> 0
@@ -45,16 +48,16 @@ let spaceSeq
                 | Some a -> (a |> int) * rsl
                 | None -> 0   
     let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1] |> int)
-    let spcPr1 = match (bdWd=0 || bdHt=0) with 
+    let spcPr1 = match (bdWd=0 || bdHt=0 || bdPr=0.0) with 
                     | true -> 1.0
-                    | false -> ((bdWd * bdHt)|> double)/((Array.sum spcCt1)|> double)
-    let spcCt2 = Array.map (fun a -> (Math.Ceiling((a|>double)*spcPr1)|>string)) spcCt1
+                    | false -> ((bdWd * bdHt)|> double)/((Array.sum spcCt1)|> double)*bdPr
+    let spcCt2 = Array.Parallel.map (fun a -> (Math.Ceiling((a|>double)*spcPr1)|>string)) spcCt1
     let spcMp3 = spcMp2 |> Array.tail
     let spcMp4 = Array.map2 (fun x y -> Array.set x 1 y) spcMp3 spcCt2
     let spcMp5 = Array.append [|spcMp2 |> Array.head|] spcMp3
     let spcMp6 = spcMp5 
                 |> Array.tail
-                |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
+                |> Array.Parallel.map (fun x -> (x[0],(int x[1],x[2]))) 
                 |> Array.sortBy (fun (x,y) -> x)
                 |> Map.ofArray
 
@@ -71,7 +74,7 @@ let spaceSeq
         |> Array.head 
         |> snd 
         |> Array.windowed 2 
-        |> Array.map(fun x -> x[0],[|x[1]|])
+        |> Array.Parallel.map(fun x -> x[0],[|x[1]|])
     let spcKy03 = 
         spcKy01 
         |> Array.tail 
@@ -79,17 +82,17 @@ let spaceSeq
     let spcKy04 = 
         (Array.append spcKy02 (fst spcKy03)) 
         |> Array.groupBy (fun (x,y) -> x)
-        |> Array.map (fun x -> snd x)
-        |> Array.map (fun x 
-                        -> (Array.map(fun (y,z)
-                                        -> Array.append[|y|] z))x)
-        |> Array.map (fun x -> Array.concat x)
-        |> Array.map (fun x -> Array.distinct x)
-        |> Array.map (fun x -> Array.sort x)
+        |> Array.Parallel.map (fun x -> snd x)
+        |> Array.Parallel.map (fun x 
+                                -> (Array.Parallel.map(fun (y,z)
+                                                        -> Array.append[|y|] z))x)
+        |> Array.Parallel.map (fun x -> Array.concat x)
+        |> Array.Parallel.map (fun x -> Array.distinct x)
+        |> Array.Parallel.map (fun x -> Array.sort x)
     let spcKy05 = 
         (snd spcKy03)
-        |> Array.map (fun (x,y) 
-                        -> Array.append [|x|] y)
+        |> Array.Parallel.map (fun (x,y) 
+                                -> Array.append [|x|] y)
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
     let spcKy06 = 
@@ -97,15 +100,15 @@ let spaceSeq
                 |  true -> [|[|"1"|]|]
                 | false -> spcKy05
         a
-        |> Array.map(fun x 
-                        -> (Array.map (fun y 
-                                        -> y, spcMp6 
-                                        |> Map.find y))x)
+        |> Array.Parallel.map(fun x 
+                                    -> (Array.Parallel.map (fun y 
+                                                                -> y, spcMp6 
+                                                                |> Map.find y))x)
     let spcKey =
         spcKy06
-        |> Array.map (fun z 
-                        -> (Array.map (fun (x,y) 
-                                        -> x, fst y, snd y))z)
+        |> Array.Parallel.map (fun z 
+                                -> (Array.Parallel.map (fun (x,y) 
+                                                         -> x, fst y, snd y))z)
     spcAt1,spcKey
 ///    
 
@@ -144,15 +147,22 @@ let spaceCxl
     let tree01 = 
         spaceSeq str rsl
             |> snd
-            |> Array.map (fun x -> 
+            |> Array.Parallel.map (fun x -> 
 
-                Array.map(fun (a,b,c) 
-                            -> Refid a, Count (b), Label c)x)
+                Array.Parallel.map(fun (a,b,c) 
+                                    -> Refid a, Count (b), Label c)x)
         
     // Rectangular Boundary
-    let bdWd = fst (spaceSeq str rsl) |> Map.find "W" |> int
-    let bdHt = fst (spaceSeq str rsl) |> Map.find "H" |> int
-    let bsI1 = fst (spaceSeq str rsl) |> Map.find "S" |> int
+    let spcAt1 = fst (spaceSeq str rsl)
+    let bdWd = match (spcAt1 |> Map.tryFind "W") with 
+                | Some a -> (a |> int) * rsl
+                | None -> 0
+    let bdHt = match (spcAt1 |> Map.tryFind "H") with 
+                | Some a -> (a |> int) * rsl
+                | None -> 0
+    let bsI1 = match (spcAt1 |> Map.tryFind "S") with 
+                | Some a -> (a |> int) * rsl
+                | None -> 0
     let bdR1 = hxlRct seq (bdWd*rsl) (bdHt*rsl) bsI1
     let bdRt = match (bdWd=0 || bdHt=0) with 
                 | true -> [||]
@@ -182,9 +192,9 @@ let spaceCxl
         (acc : Cxl[]) = 
         let bsCx = 
                     acc 
-                    |> Array.map(fun x -> x.Rfid,x) 
+                    |> Array.Parallel.map(fun x -> x.Rfid,x) 
                     |> Map.ofArray
-                    |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
+                    |> Map.find (tre |> Array.Parallel.map (fun (a,_,_) -> a) |> Array.head)
                         
         // Available Hexels
         let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
@@ -195,7 +205,7 @@ let spaceCxl
                     | true -> 
                                 let divs =  ((Array.length chHx) / cnt)
                                 let chnk = Array.chunkBySize divs chHx
-                                let fsHx = chnk |> Array.map (fun x -> Array.head x)
+                                let fsHx = chnk |> Array.Parallel.map (fun x -> Array.head x)
                                 Array.take cnt fsHx
                     | false -> Array.append 
                                 chHx 
@@ -206,9 +216,9 @@ let spaceCxl
                     (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
                     occ
         // Reassigning Hexel types
-        let chHx1 = Array.map (fun x -> x.Hxls) cxc1
+        let chHx1 = Array.Parallel.map (fun x -> x.Hxls) cxc1
         let chOc1 = hxlUni 2 (Array.append occ (Array.concat chHx1))
-        let chHx2 = Array.map (fun x -> hxlChk seq chOc1 x) chHx1
+        let chHx2 = Array.Parallel.map (fun x -> hxlChk seq chOc1 x) chHx1
         let chHx3 = hxlChk seq chOc1 (Array.map (fun x -> x.Base) cxc1)
         let cxc2 = Array.map3 (fun x y z -> {x with Cxl.Hxls = y; Cxl.Base = z}) cxc1 chHx2 chHx3
         cxc2
@@ -222,7 +232,7 @@ let spaceCxl
         let a = match Array.tryHead tre with 
                     | Some a 
                         -> 
-                            let occ = Array.append occ (Array.concat (Array.map(fun x -> x.Hxls)acc))
+                            let occ = Array.append occ (Array.concat (Array.Parallel.map(fun x -> x.Hxls)acc))
                             let tre = Array.tail tre
                             let acc = Array.append 
                                         acc 
