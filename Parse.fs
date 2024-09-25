@@ -18,8 +18,7 @@ let spaceStr =
 /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
 /// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
 let spaceSeq 
-    (spaceStr:string)
-    (rsl: int) = 
+    (spaceStr:string) = 
     let spcMp1 = ((spaceStr.Replace ("\n",""))
                     .Replace("\t","")
                     .Replace(" ",""))
@@ -42,11 +41,13 @@ let spaceSeq
                 | Some a -> (a |> double)
                 | None -> 0.0
     let bdWd = match (spcAt1 |> Map.tryFind "W") with 
-                | Some a -> (a |> int) * rsl
+                | Some a -> (a |> int)
                 | None -> 0
     let bdHt = match (spcAt1 |> Map.tryFind "H") with 
-                | Some a -> (a |> int) * rsl
-                | None -> 0   
+                | Some a -> (a |> int)
+                | None -> 0
+
+
     let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1] |> int)
     let spcPr1 = match (bdWd=0 || bdHt=0 || bdPr=0.0) with 
                     | true -> 1.0
@@ -118,9 +119,7 @@ let spaceSeq
 /// <param name="occ"> Unavailable hexels. </param>
 /// <returns> Coxel array </returns>    
 [<TailCall>]
-let spaceCxl 
-    (rsl: int)
-    (seq : Sqn)
+let spaceCxl
     (occ : Hxl[])
     (str : string) = 
     (*         
@@ -145,25 +144,58 @@ let spaceCxl
         chdCnt
     *)
     let tree01 = 
-        spaceSeq str rsl
+        spaceSeq str
             |> snd
             |> Array.Parallel.map (fun x -> 
 
                 Array.Parallel.map(fun (a,b,c) 
                                     -> Refid a, Count (b), Label c)x)
-        
+    
+
+    
+    // Attributes
+    let spcAt1 = fst (spaceSeq str)
+    let seq = match (spcAt1 |> Map.tryFind "Q") with 
+                | Some a -> match a with 
+                            | "1" -> VRCWEE
+                            | "11" -> HRCWNN
+                            | "111" -> VRCCEE
+                            | "1111" -> HRCCNN
+                            | "2" -> VRCWSE
+                            | "22" -> HRCWNE
+                            | "222" -> VRCCSE
+                            | "2222" -> HRCCNE
+                            | "3" -> VRCWSW
+                            | "33" -> HRCWSE
+                            | "333" -> VRCCSW
+                            | "3333" -> HRCCSE
+                            | "4" -> VRCWWW
+                            | "44" -> HRCWSS
+                            | "444" -> VRCCWW
+                            | "4444" -> HRCCSS
+                            | "5" -> VRCWNW
+                            | "55" -> HRCWSW
+                            | "555" -> VRCCNW
+                            | "5555" -> HRCCSW
+                            | "6" -> VRCWNE
+                            | "66" -> HRCWNW
+                            | "666" -> VRCCNE
+                            | "6666" -> HRCCNW
+                            | _ -> VRCWEE
+                | None -> HRCWNE
+
     // Rectangular Boundary
-    let spcAt1 = fst (spaceSeq str rsl)
     let bdWd = match (spcAt1 |> Map.tryFind "W") with 
-                | Some a -> (a |> int) * rsl
+                | Some a -> (a |> int)
                 | None -> 0
     let bdHt = match (spcAt1 |> Map.tryFind "H") with 
-                | Some a -> (a |> int) * rsl
+                | Some a -> (a |> int)
                 | None -> 0
     let bsI1 = match (spcAt1 |> Map.tryFind "S") with 
-                | Some a -> (a |> int) * rsl
+                | Some a -> (a |> int)
                 | None -> 0
-    let bdR1 = hxlRct seq (bdWd*rsl) (bdHt*rsl) bsI1
+    
+    let bdR1 = hxlRct seq (bdWd) (bdHt) bsI1
     let bdRt = match (bdWd=0 || bdHt=0) with 
                 | true -> [||]
                 | false -> snd(bdR1)
@@ -171,6 +203,8 @@ let spaceCxl
     let bsHx = match (bdWd=0 || bdHt=0) with 
                 | true -> AV(0,0,0)
                 | false -> fst bdR1
+    
+
 
     let occ = Array.concat [|occ;bdRt|]
 

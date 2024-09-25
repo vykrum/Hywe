@@ -13,9 +13,7 @@ open Page
 type Model =
     {
         shp1 : Shp
-        sqn1 : Sqn
         scp1 : int
-        scl1 : int
         opt1 : Beeset option
         stx1 : string
         stx2 : string
@@ -25,9 +23,7 @@ type Model =
 let initModel =
     {
         shp1 = Hxg
-        sqn1 = HRCWNE
         scp1 = 10
-        scl1 = 1
         opt1 = None
         stx1 = stxInstr 
         stx2 = "(1/3/.)"
@@ -35,19 +31,15 @@ let initModel =
 
 type Message =
     | SetShp1 of Shp
-    | SetSqn1 of Sqn
     | SetScp1 of int
-    | SetScl1 of int
     | SetOpt1 of Beeset
     | SetStx1 of string
     | SetStx2
 
 let update message model =
     match message with
-    | SetSqn1 value -> { model with sqn1 = value }
     | SetShp1 value -> { model with shp1 = value }
     | SetScp1 value -> { model with scp1 = value }
-    | SetScl1 value -> { model with scl1 = value }
     | SetOpt1 value -> 
                             let content = 
                                 match value with 
@@ -104,11 +96,9 @@ let view model dispatch =
         }
 
         // Nested Coxels Data
-        //let bsNs = hxlVld model.sqn1 (AV(1,4,0))
-        //let bsOc = hxlBnd model.sqn1 bsNs
         let bsOc = [||]
-        let cxCxl1 = spaceCxl model.scl1 model.sqn1 bsOc  model.stx2
-        let cxlAvl = cxlExp cxCxl1 model.sqn1
+        let cxCxl1 = spaceCxl bsOc model.stx2
+        let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
         let cxClr1 = pastels (Array.length cxCxl1)
 
         // Hywe
@@ -241,99 +231,7 @@ let view model dispatch =
                     option {"Arrow"}
                     option {"Rhombus"}
                 }
-                
-                // Sequence
-                label{
-                    attr.``for`` "selectSequence"  
-                }
-                select{
-                    attr.name "selectSequence"
-                    attr.``style`` styleDrop2
-                    attr.id "sequenceOptions"
-                    on.change (fun e -> 
-                                        let value = (e.Value :?> string)
-                                        let sqn01 = 
-                                            match value with
-                                            |"VRCWEE" -> VRCWEE 
-                                            |"VRCCEE" -> VRCCEE    
-                                            |"VRCWSE" -> VRCWSE
-                                            |"VRCCSE" -> VRCCSE
-                                            |"VRCWSW" -> VRCWSW
-                                            |"VRCCSW" -> VRCCSW
-                                            |"VRCWWW" -> VRCWWW
-                                            |"VRCCWW" -> VRCCWW
-                                            |"VRCWNW" -> VRCWNW
-                                            |"VRCCNW" -> VRCCNW
-                                            |"VRCWNE" -> VRCWNE
-                                            |"VRCCNE" -> VRCCNE
-                                            |"HRCWNN" -> HRCWNN
-                                            |"HRCCNN" -> HRCCNN
-                                            |"HRCWNE" -> HRCWNE
-                                            |"HRCCNE" -> HRCCNE
-                                            |"HRCWSE" -> HRCWSE
-                                            |"HRCCSE" -> HRCCSE
-                                            |"HRCWSS" -> HRCWSS
-                                            |"HRCCSS" -> HRCCSS
-                                            |"HRCWSW" -> HRCWSW
-                                            |"HRCCSW" -> HRCCSW
-                                            |"HRCWNW" -> HRCWNW
-                                            |"HRCCNW" -> HRCCNW
-                                            | _ -> VRCWEE
-
-                                        dispatch (SetSqn1 sqn01))
-                    option {"Sequence"}
-                    option {"VRCWEE"}
-                    option {"VRCCEE"}
-                    option {"VRCWSE"}
-                    option {"VRCCSE"}
-                    option {"VRCWSW"}
-                    option {"VRCCSW"}
-                    option {"VRCWWW"}
-                    option {"VRCCWW"}
-                    option {"VRCWNW"}
-                    option {"VRCCNW"}
-                    option {"VRCWNE"}
-                    option {"VRCCNE"}
-                    option {"HRCWNN"}
-                    option {"HRCCNN"}
-                    option {"HRCWNE"}
-                    option {"HRCCNE"}
-                    option {"HRCWSE"}
-                    option {"HRCCSE"}
-                    option {"HRCWSS"}
-                    option {"HRCCSS"}
-                    option {"HRCWSW"}
-                    option {"HRCCSW"}
-                    option {"HRCWNW"}
-                    option {"HRCCNW"}
-                }  
-                                
-                // Scale
-                label{
-                    attr.``for`` "selectResolution"  
-                }
-                select{
-                    attr.name "selectResolution"
-                    attr.``style`` styleDrop2
-                    attr.id "scaleOptions"
-                    on.change (fun e -> 
-                                        let value = (e.Value :?> string)
-                                        let scl01 = 
-                                            match value with
-                                            | "1x" -> 1
-                                            | "2x" -> 2
-                                            | "3x" -> 3
-                                            | "4x" -> 4
-                                            | _ -> 1
-
-                                        dispatch (SetScl1 scl01))
-                    option {"Scale"}
-                    option {"1x"}
-                    option {"2x"}
-                    option {"3x"}
-                    option {"4x"}
-                }
-
+                      
                 // Scope
                 label{
                     attr.``for`` "selectScope"  
