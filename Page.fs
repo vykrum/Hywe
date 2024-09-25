@@ -38,9 +38,9 @@ let stxInstr =
     "• BEE-yond  : Syntax for slightly complex layouts.\n" +
     "• BEE-droom : Syntax with nested branching, for more detailed layouts.\n"
 
-let beeline = "(1/35/Start),(2/35/End)"
+let beeline = "(1/19/Start),(2/15/End)"
 
-let beeyond = "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),"+
+let beeyond = "(1/24/Dock),(1.1/25/Logistics),(1.2/24/Lab),"+
               "(1.3/25/Habitation),(1.4/25/Power)"
 
 let beedroom = "(#/W=15/H=15/S=0/F=1),"+
