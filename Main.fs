@@ -3,7 +3,6 @@ module Hywe.Client.Main
 open Elmish
 open Bolero
 open Bolero.Html
-open Hexel
 open Coxel
 open Shape
 open Bridge
@@ -158,6 +157,7 @@ let view model dispatch =
             }
 
             // Hywe Syntax Input
+            // Font size setting
             let fntSz = match model.opt1 with 
                         | Some Beeline -> 28
                         | Some Beeyond -> 24
@@ -341,7 +341,6 @@ let view model dispatch =
                 }
             }
         } 
-
     }
 
 // Bolero component handling state updates and rendering the user interface

@@ -14,7 +14,8 @@ let spaceStr =
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
 ///
 
-/// <summary> Categorize constituent Hexels within a Coxel. </summary>
+/// <summary> Categorize constituent Hexels within a Coxel. 
+///</summary>
 /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
 /// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
 let spaceSeq 
@@ -28,7 +29,7 @@ let spaceSeq
                     |> Array.Parallel.map (fun x -> x.Split "/")
     let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
                     | true -> spcMp1
-                    | false -> Array.append [|[|"#";"W=0";"H=0";"S=0";"F=0"|]|] spcMp1   
+                    | false -> Array.append [|[|"#";"W=0";"H=0";"I=0";"S=0"|]|] spcMp1   
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
@@ -37,9 +38,9 @@ let spaceSeq
                 |> Map.ofArray
 
     // Reproportion count based on Boundary Extent
-    let bdPr = match (spcAt1 |> Map.tryFind "F") with 
+    let bdPr = match (spcAt1 |> Map.tryFind "S") with 
                 | Some a -> (a |> double)
-                | None -> 0.0
+                | None -> 1.0
     let bdWd = match (spcAt1 |> Map.tryFind "W") with 
                 | Some a -> (a |> int)
                 | None -> 0
@@ -49,9 +50,13 @@ let spaceSeq
 
 
     let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1] |> int)
-    let spcPr1 = match (bdWd=0 || bdHt=0 || bdPr=0.0) with 
-                    | true -> 1.0
-                    | false -> ((bdWd * bdHt)|> double)/((Array.sum spcCt1)|> double)*bdPr
+    let spcPr1 = match (bdWd=0 || bdHt=0) with 
+                    | true -> match (bdPr=0.0) with 
+                                | true -> 1.0
+                                | false -> bdPr
+                    | false -> match (bdPr=0.0) with
+                                | true -> 1.0
+                                | false -> ((bdWd * bdHt)|> double)/((Array.sum spcCt1)|> double)*bdPr
     let spcCt2 = Array.Parallel.map (fun a -> (Math.Ceiling((a|>double)*spcPr1)|>string)) spcCt1
     let spcMp3 = spcMp2 |> Array.tail
     let spcMp4 = Array.map2 (fun x y -> Array.set x 1 y) spcMp3 spcCt2
@@ -191,21 +196,18 @@ let spaceCxl
     let bdHt = match (spcAt1 |> Map.tryFind "H") with 
                 | Some a -> (a |> int)
                 | None -> 0
-    let bsI1 = match (spcAt1 |> Map.tryFind "S") with 
+    let boI1 = match (spcAt1 |> Map.tryFind "I") with 
                 | Some a -> (a |> int)
                 | None -> 0
     
-    let bdR1 = hxlRct seq (bdWd) (bdHt) bsI1
+    let bdR1 = hxlRct seq (bdWd) (bdHt) boI1
     let bdRt = match (bdWd=0 || bdHt=0) with 
                 | true -> [||]
                 | false -> snd(bdR1)
-    let bsIn = fst bdR1
     let bsHx = match (bdWd=0 || bdHt=0) with 
                 | true -> AV(0,0,0)
                 | false -> fst bdR1
     
-
-
     let occ = Array.concat [|occ;bdRt|]
 
     // Generate base coxel
