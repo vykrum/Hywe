@@ -178,12 +178,14 @@ let view model dispatch =
                 bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a)) 
             }
 
-            // Hyweave
+            // Zoom Out
             button {
                 attr.``class`` "button3"
                 on.click (fun _ -> dispatch (ScpDec))
                 "--"
             }
+
+            // Hyweave
             button {
                 attr.``class`` "button1"
                 attr.``style`` "
@@ -194,6 +196,8 @@ let view model dispatch =
                 on.click (fun _ -> dispatch (SetStx2))
                 "h y W E A V E"
             }
+
+            // Zoom In
             button {
                 attr.``class`` "button3"
                 on.click (fun _ -> dispatch (ScpInc))
@@ -326,7 +330,7 @@ let view model dispatch =
             }
         } 
 
-        // Social Media
+        // Social Media Links
         div{
             attr.``style`` "flex-wrap: wrap;
                                 justify-content: center;
@@ -336,8 +340,8 @@ let view model dispatch =
                     attr.href "https://x.com/_hywe_"
                     attr.target "blank"
                     img{
-                        attr.width "30"
-                        attr.height "30"
+                        attr.width "20"
+                        attr.height "20"
                         attr.src "https://vykrum.github.io/Hywe/X.png"
                     }
             }
@@ -345,8 +349,8 @@ let view model dispatch =
                     attr.href "https://www.linkedin.com/company/hywein/?viewAsMember=true"
                     attr.target "blank"
                     img{
-                        attr.width "30"
-                        attr.height "30"
+                        attr.width "20"
+                        attr.height "20"
                         attr.``style`` "padding-left:50px;
                                         padding-right:50px;"
                         attr.src "https://vykrum.github.io/Hywe/LI.png"
@@ -356,8 +360,8 @@ let view model dispatch =
                     attr.href "https://github.com/vykrum/Hywe"
                     attr.target "blank"
                     img{
-                        attr.width "30"
-                        attr.height "30"
+                        attr.width "20"
+                        attr.height "20"
                         attr.src "https://vykrum.github.io/Hywe/GH.png"
                     }
             }
