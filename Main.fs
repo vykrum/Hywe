@@ -185,7 +185,7 @@ let view model dispatch =
             button {
                 attr.``class`` "button3"
                 on.click (fun _ -> dispatch (ScpDec))
-                "-"
+                "--"
             }
             button {
                 attr.``class`` "button1"
