@@ -78,6 +78,7 @@ let view model dispatch =
                 // Title
                 div{
                     attr.``style`` styleTitle
+                    attr.width "200"
                     " H Y W E"
                     }
                 // Acronym
@@ -148,16 +149,12 @@ let view model dispatch =
             }
 
             // Formatting Instructions
-            a{
+            a {
+                attr.``style`` "padding: 17px 5px;"
+                attr.``class`` "button3"
                 attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
                 attr.target "blank"
-                img{
-                    attr.width "20"
-                    attr.height "20"
-                    attr.``style`` "margin-right: 20px;
-                                    margin-top: 15px"
-                    attr.src "https://vykrum.github.io/Hywe/help.png"
-                }
+                "?"
             }
             
             // Font size setting
@@ -328,6 +325,43 @@ let view model dispatch =
                 }
             }
         } 
+
+        // Social Media
+        div{
+            attr.``style`` "flex-wrap: wrap;
+                                justify-content: center;
+                                display: flex;
+                                flex-direction: row;"
+            a{
+                    attr.href "https://x.com/_hywe_cial"
+                    attr.target "blank"
+                    img{
+                        attr.width "20"
+                        attr.height "20"
+                        attr.src "https://vykrum.github.io/Hywe/X.png"
+                    }
+            }
+            a{
+                    attr.href "https://www.linkedin.com/company/hywein/?viewAsMember=true"
+                    attr.target "blank"
+                    img{
+                        attr.width "20"
+                        attr.height "20"
+                        attr.``style`` "padding-left:50px;
+                                        padding-right:50px;"
+                        attr.src "https://vykrum.github.io/Hywe/LI.png"
+                    }
+            }
+            a{
+                    attr.href "https://github.com/vykrum/Hywe"
+                    attr.target "blank"
+                    img{
+                        attr.width "20"
+                        attr.height "20"
+                        attr.src "https://vykrum.github.io/Hywe/GH.png"
+                    }
+            }
+        }
     }
 
 // Bolero component handling state updates and rendering the user interface
