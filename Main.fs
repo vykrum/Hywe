@@ -31,6 +31,8 @@ let initModel =
 type Message =
     | SetShp1 of Shp
     | SetScp1 of int
+    | ScpInc
+    | ScpDec
     | SetOpt1 of Beeset
     | SetStx1 of string
     | SetStx2
@@ -39,6 +41,8 @@ let update message model =
     match message with
     | SetShp1 value -> { model with shp1 = value }
     | SetScp1 value -> { model with scp1 = value }
+    | ScpInc -> { model with scp1 = model.scp1 + 1 }
+    | ScpDec -> { model with scp1 = model.scp1 - 1 }
     | SetOpt1 value -> 
                             let content = 
                                 match value with 
@@ -155,14 +159,14 @@ let view model dispatch =
                     attr.src "https://vykrum.github.io/Hywe/help.png"
                 }
             }
-
-            // Hywe Syntax Input
+            
             // Font size setting
             let fntSz = match model.opt1 with 
                         | Some Beeline -> 28
                         | Some Beeyond -> 24
                         | Some Beedroom -> 18
                         | _ -> 14
+            // Hywe Syntax Input
             textarea {
                 attr.name "options"
                 attr.id "options"
@@ -179,16 +183,25 @@ let view model dispatch =
 
             // Hyweave
             button {
+                attr.``class`` "button3"
+                on.click (fun _ -> dispatch (ScpDec))
+                "-"
+            }
+            button {
                 attr.``class`` "button1"
                 attr.``style`` "
-                                width: 95%;
-                                margin-left: 20px;
-                                margin-right: 20px;
+                                width: 90%;
+                                margin-left: 1%;
+                                margin-right: 1%;
                                 margin-top: 5px;"
                 on.click (fun _ -> dispatch (SetStx2))
                 "h y W E A V E"
             }
-
+            button {
+                attr.``class`` "button3"
+                on.click (fun _ -> dispatch (ScpInc))
+                "+"
+            }
             // Hywe SVG
             div{
                 attr.``class`` "flex-container"
@@ -197,7 +210,7 @@ let view model dispatch =
                 nstdCxls cxCxl1 cxClr1 model.scp1 model.shp1
             }
             
-            // Universal Controls
+            // Shape Selection
             div{
                 attr.width "95%"
                 attr.``class`` "flex-container"
@@ -230,32 +243,6 @@ let view model dispatch =
                     option {"Square"}
                     option {"Arrow"}
                     option {"Rhombus"}
-                }
-                      
-                // Scope
-                label{
-                    attr.``for`` "selectScope"  
-                }
-                select{
-                    attr.name "selectScope"
-                    attr.``style`` styleDrop2
-                    attr.id "scopeOptions"
-                    on.change (fun e -> 
-                                        let value = (e.Value :?> string)
-                                        let scp01 = 
-                                            match value with
-                                            | "1x" -> 1
-                                            | "5x" -> 5
-                                            | "10x" -> 10
-                                            | "15x" -> 15
-                                            | _ -> 10
-
-                                        dispatch (SetScp1 scp01))
-                    option {"Scope"}
-                    option {"1x"}
-                    option {"5x"}
-                    option {"10x"}
-                    option {"15x"}
                 }
 
             }  

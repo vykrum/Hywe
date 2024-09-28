@@ -29,7 +29,7 @@ let spaceSeq
                     |> Array.Parallel.map (fun x -> x.Split "/")
     let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
                     | true -> spcMp1
-                    | false -> Array.append [|[|"#";"W=0";"H=0";"I=0";"S=0"|]|] spcMp1   
+                    | false -> Array.append [|[|"#";"W=0";"H=0";"I=0";"S=0";"Q=22"|]|] spcMp1   
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
@@ -160,6 +160,7 @@ let spaceCxl
     
     // Attributes
     let spcAt1 = fst (spaceSeq str)
+    // Attribute Q for Sequence
     let seq = match (spcAt1 |> Map.tryFind "Q") with 
                 | Some a -> match a with 
                             | "1" -> VRCWEE
@@ -190,12 +191,15 @@ let spaceCxl
                 | None -> HRCWNE
 
     // Rectangular Boundary
+    // Attribute W for Width
     let bdWd = match (spcAt1 |> Map.tryFind "W") with 
                 | Some a -> (a |> int)
                 | None -> 0
+    // Attribute H for Height
     let bdHt = match (spcAt1 |> Map.tryFind "H") with 
                 | Some a -> (a |> int)
                 | None -> 0
+    // Attribute I for Initial Base
     let boI1 = match (spcAt1 |> Map.tryFind "I") with 
                 | Some a -> (a |> int)
                 | None -> 0

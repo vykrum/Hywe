@@ -99,6 +99,22 @@ html, body {
     cursor: pointer;
 }
 
+.button3 {
+    font-family: 'Optima', Candara, Calibri;
+    background-color: white;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    opacity: 1;
+    border: none;
+    padding: 2px 2px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+
 .slider1 {
     -webkit-appearance: none;
     width: 150px;
