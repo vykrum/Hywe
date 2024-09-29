@@ -339,7 +339,7 @@ let view model dispatch =
                                 display: flex;
                                 flex-direction: row;"
             a{
-                    attr.href "https://docs.google.com/forms/d/e/1FAIpQLSf1TphzMtA7chIUwlmKZTMp5JIHA-ZjVx8475RnHa52GSY5Sg/viewform?usp=sf_link"
+                    attr.href "https://forms.gle/TnH8ghGYz3ugEfWg9"
                     attr.target "blank"
                     attr.``style`` "padding-right:50px;"
                     img{
