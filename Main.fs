@@ -349,7 +349,7 @@ let view model dispatch =
                     }
             }
             a{
-                    attr.href "https://www.linkedin.com/company/hywein/?viewAsMember=true"
+                    attr.href "https://www.linkedin.com/company/hywein/"
                     attr.target "blank"
                     img{
                         attr.width "20"
