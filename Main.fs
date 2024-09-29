@@ -339,6 +339,16 @@ let view model dispatch =
                                 display: flex;
                                 flex-direction: row;"
             a{
+                    attr.href "https://docs.google.com/forms/d/e/1FAIpQLSf1TphzMtA7chIUwlmKZTMp5JIHA-ZjVx8475RnHa52GSY5Sg/viewform?usp=sf_link"
+                    attr.target "blank"
+                    attr.``style`` "padding-right:50px;"
+                    img{
+                        attr.width "20"
+                        attr.height "20"
+                        attr.src "https://vykrum.github.io/Hywe/EM.png"
+                    }
+            }
+            a{
                     attr.href "https://www.linkedin.com/company/hywein/?viewAsMember=true"
                     attr.target "blank"
                     img{
