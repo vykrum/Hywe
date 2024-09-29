@@ -163,6 +163,7 @@ let view model dispatch =
                         | Some Beeyond -> 24
                         | Some Beedroom -> 18
                         | _ -> 14
+            
             // Hywe Syntax Input
             textarea {
                 attr.name "options"
@@ -203,6 +204,7 @@ let view model dispatch =
                 on.click (fun _ -> dispatch (ScpInc))
                 "+"
             }
+
             // Hywe SVG
             div{
                 attr.``class`` "flex-container"
@@ -337,25 +339,25 @@ let view model dispatch =
                                 display: flex;
                                 flex-direction: row;"
             a{
-                    attr.href "https://x.com/_hywe_"
+                    attr.href "https://www.linkedin.com/company/hywein/?viewAsMember=true"
                     attr.target "blank"
                     img{
                         attr.width "20"
                         attr.height "20"
-                        attr.src "https://vykrum.github.io/Hywe/X.png"
+                        attr.src "https://vykrum.github.io/Hywe/LI.png"
                     }
             }
             a{
-                    attr.href "https://www.linkedin.com/company/hywein/?viewAsMember=true"
+                    attr.href "https://x.com/_hywe_"
                     attr.target "blank"
                     img{
                         attr.width "20"
                         attr.height "20"
                         attr.``style`` "padding-left:50px;
                                         padding-right:50px;"
-                        attr.src "https://vykrum.github.io/Hywe/LI.png"
+                        attr.src "https://vykrum.github.io/Hywe/X.png"
                     }
-            }
+            } 
             a{
                     attr.href "https://github.com/vykrum/Hywe"
                     attr.target "blank"

@@ -130,7 +130,7 @@ html, body {
 }
 
 .textarea {
-    font-family: 'Optima', Candara, Calibri;
+    font-family: Consolas, PT Mono, Optima, Candara, Calibri;
     border: none;
     outline: 1px solid #d3d3d3;
     background-color: none;

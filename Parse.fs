@@ -27,9 +27,9 @@ let spaceSeq
                     |> Array.Parallel.map(fun x -> x.Remove(0,1)) 
                     |> Array.Parallel.map(fun x -> x.Remove(x.Length-1,1))
                     |> Array.Parallel.map (fun x -> x.Split "/")
-    let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "#") with
+    let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "0") with
                     | true -> spcMp1
-                    | false -> Array.append [|[|"#";"W=0";"H=0";"I=0";"S=0";"Q=22"|]|] spcMp1   
+                    | false -> Array.append [|[|"0";"W=0";"H=0";"I=0";"S=0";"Q=22"|]|] spcMp1   
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
