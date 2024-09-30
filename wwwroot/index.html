@@ -11,17 +11,40 @@
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
 </head>
 <body>
-    <div id="main">
-        <div class="flex-container" style="width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
+    <div style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
+        <div>
             <img src="https://hywe.co.in/favicon-32x32.png" width="30" height="30" />
-            <div style="color: white; font-family: 'Optima', Candara, Calibri;font-size: 20px;font-weight: normal;padding-left: 10px;padding-right: 10px;padding-bottom: 7px;"> H Y W E </div>
         </div>
-        <img src="hyweLoading.gif" alt="H Y W E is an experimental space layout planning concept being developed as a plain WebAssembly application that runs dynamic content on the client side directly in the user's browser" style="width: 100%; width: 100%; opacity: 0.15;">
-        <div style="color: #363636; font-family: 'Optima', Candara, Calibri; font-size: 15px; font-weight: normal; padding-left: 10px; padding-right: 10px; padding-top: 5px;">Hywe is a space layout planning concept being developed as a browser-based interface that allows users to create and explore spatial configurations.Responsive across devices, it aims to streamline and universalize early-stage space planning.</div>
-        <a href="https://www.pinterest.com/pin/888686938964010767/">Image Source</a>
+        <div style="color: white; font-family: 'Optima', Candara, Calibri; font-size: 20px;font-weight: normal;padding-left: 10px;padding-right: 10px;padding-bottom: 7px;"> H Y W E </div>
+        <div style="opacity: 1;">
+            <img src="https://vykrum.github.io/Hywe/hyweLogoAcronym.png" width="200" height="45" />
+        </div>
+    </div>
+    <div style="margin: 0px;background: #d3d3d1; color: #363636;flex-direction: column; font-family: 'Optima', Candara, Calibri; font-size: 18px;padding-left: 12px;padding-right: 10px;padding-bottom: 15px;padding-top: 15px;">
+        Weave spatial layouts at a high level of abstraction using properly formatted syntax in Hywe, an endogenous space planning concept currently undergoing its formative stages of development as an early stage design interface.
+    </div>
+
+    <div id="main">
+    <img src="https://hywe.co.in/hyweLoading.gif" alt="H Y W E is an experimental space layout planning concept being developed as a plain WebAssembly application that runs dynamic content on the client side directly in the user's browser" style="width: 100%; width: 100%; opacity: 0.15;">
+    <div style="color: #363636; font-family: 'Optima', Candara, Calibri; font-size: 15px; font-weight: normal; padding-left: 10px; padding-right: 10px; padding-top: 5px;">Hywe is a space layout planning concept being developed as a browser-based interface that allows users to create and explore spatial configurations.Responsive across devices, it aims to streamline and universalize early-stage space planning.</div>
+    <a href="https://www.pinterest.com/pin/888686938964010767/">Image Source</a>
     </div>
 
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <div style="flex-wrap: wrap; justify-content: center; display: flex; flex-direction: row;">
+        <a href="https://forms.gle/TnH8ghGYz3ugEfWg9" target="_blank" style="padding: 25px;">
+            <img width="20" height="20" src="https://vykrum.github.io/Hywe/EM.png" />
+        </a>
+        <a href="https://www.linkedin.com/company/hywein/" target="_blank" style="padding: 25px;">
+            <img width="20" height="20" src="https://vykrum.github.io/Hywe/LI.png" />
+        </a>
+        <a href="https://x.com/_hywe_" target="_blank" style="padding: 25px;">
+            <img width="20" height="20" src="https://vykrum.github.io/Hywe/X.png" />
+        </a>
+        <a href="https://github.com/vykrum/Hywe" target="_blank" style="padding: 25px;">
+            <img width="20" height="20" src="https://vykrum.github.io/Hywe/GH.png" />
+        </a>
+    </div>
 </body>
 </html>

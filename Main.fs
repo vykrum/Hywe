@@ -58,47 +58,6 @@ let update message model =
 // Interface
 let view model dispatch =      
     concat {
-        // Header
-        div{
-            attr.``style`` styleHeader
-            // Name and Logo
-            div{
-                attr.``class`` "flex-container"
-                attr.``style`` styleLogo
-                // Logo
-                a{
-                    attr.href "https://github.com/vykrum/Hywe"
-                    attr.target "blank"
-                    img{
-                        attr.width "30"
-                        attr.height "30"
-                        attr.src "https://vykrum.github.io/Hywe/favicon-32x32.png"
-                    }
-                }
-                // Title
-                div{
-                    attr.``style`` styleTitle
-                    attr.width "200"
-                    " H Y W E"
-                    }
-                // Acronym
-                div{
-                    img{
-                    attr.width "200"
-                    attr.height "45"
-                    attr.src "https://vykrum.github.io/Hywe/hyweLogoAcronym.png"
-                    }
-                }
-                }
-            // Introduction
-            div{
-                attr.``style`` styleIntro
-                p{
-                    introduction
-                }    
-            }
-        }
-
         // Nested Coxels Data
         let bsOc = [||]
         let cxCxl1 = spaceCxl bsOc model.stx2
@@ -331,53 +290,6 @@ let view model dispatch =
                 }
             }
         } 
-
-        // Social Media Links
-        div{
-            attr.``style`` "flex-wrap: wrap;
-                                justify-content: center;
-                                display: flex;
-                                flex-direction: row;"
-            a{
-                    attr.href "https://forms.gle/TnH8ghGYz3ugEfWg9"
-                    attr.target "blank"
-                    attr.``style`` "padding-right:50px;"
-                    img{
-                        attr.width "20"
-                        attr.height "20"
-                        attr.src "https://vykrum.github.io/Hywe/EM.png"
-                    }
-            }
-            a{
-                    attr.href "https://www.linkedin.com/company/hywein/"
-                    attr.target "blank"
-                    img{
-                        attr.width "20"
-                        attr.height "20"
-                        attr.src "https://vykrum.github.io/Hywe/LI.png"
-                    }
-            }
-            a{
-                    attr.href "https://x.com/_hywe_"
-                    attr.target "blank"
-                    img{
-                        attr.width "20"
-                        attr.height "20"
-                        attr.``style`` "padding-left:50px;
-                                        padding-right:50px;"
-                        attr.src "https://vykrum.github.io/Hywe/X.png"
-                    }
-            } 
-            a{
-                    attr.href "https://github.com/vykrum/Hywe"
-                    attr.target "blank"
-                    img{
-                        attr.width "20"
-                        attr.height "20"
-                        attr.src "https://vykrum.github.io/Hywe/GH.png"
-                    }
-            }
-        }
     }
 
 // Bolero component handling state updates and rendering the user interface
