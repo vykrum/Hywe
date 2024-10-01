@@ -4,11 +4,11 @@
 		<TargetFramework>net8.0</TargetFramework>
 	</PropertyGroup>
 
-	<PropertyGroup Condition=" '$(Configuration)' == 'ReleaseCompat' ">
+	<!--<PropertyGroup Condition=" '$(Configuration)' == 'ReleaseCompat' ">
 		<WasmEnableSIMD>false</WasmEnableSIMD>
 		<WasmEnableExceptionHandling>false</WasmEnableExceptionHandling>
 		<BlazorWebAssemblyJiterpreter>false</BlazorWebAssemblyJiterpreter>
-	</PropertyGroup>
+	</PropertyGroup>-->
 	
 	<ItemGroup>
 		<Compile Include="Hexel.fs" />
@@ -22,7 +22,7 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="PolySharp" Version="1.0.0" />
+		<!--<PackageReference Include="PolySharp" Version="1.0.0" />-->
 		<PackageReference Include="Bolero" Version="0.23.52" />
 		<PackageReference Include="Bolero.Build" Version="0.23.52" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.8" />
