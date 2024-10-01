@@ -14,7 +14,6 @@
 </head>
 
 <body>
-   
     <!--Logo and Title-->
     <div style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
         <div>
@@ -34,13 +33,14 @@
     <!--Loading Animation-->
     <div id="main">
         <!-- Warning Message -->
-        <div id="warning-message" style="display: none; color: red; font-weight: bold; text-align: center; margin-top: 20px;">
-            This application may not work properly on your current browser. Please update your browser or try a different one.
+        <div id="warning-message" style="display: none; width: 85%; color: red; font-weight: bold; text-align: center; margin: 20px; font-family: 'Optima', Candara, Calibri; font-size: 16px;">
+            This application may not work properly on your current browser.<br>
+            Please update your browser or try a different one.
         </div>
         <img src="https://hywe.in/hyweLoading.gif" alt="H Y W E is an experimental space layout planning concept being developed as a plain WebAssembly application that runs dynamic content on the client side directly in the user's browser" style="width: 100%; width: 100%; opacity: 0.15;">
         <a href="https://www.pinterest.com/pin/888686938964010767/" style="color: #d3d3d1; font-family: 'Optima', Candara, Calibri; font-size: 10px;">Image Source</a>
     </div>
-
+    ; 
     <!--H Y W E-->
     <div>
         <script src="_framework/blazor.webassembly.js"></script>
@@ -72,6 +72,5 @@
             }
         }, 10000); // 10 seconds timeout
     </script>
-
 </body>
 </html>
