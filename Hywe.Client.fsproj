@@ -2,9 +2,14 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'ReleaseCompat' ">
 		<WasmEnableSIMD>false</WasmEnableSIMD>
 		<WasmEnableExceptionHandling>false</WasmEnableExceptionHandling>
+		<BlazorWebAssemblyJiterpreter>false</BlazorWebAssemblyJiterpreter>
 	</PropertyGroup>
+	
 	<ItemGroup>
 		<Compile Include="Hexel.fs" />
 		<Compile Include="Coxel.fs" />
