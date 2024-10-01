@@ -1,8 +1,6 @@
 ﻿module Page
 
 open System
-open Hexel
-open Shape
 
 type Beeset = 
     | Beewhich
@@ -55,50 +53,6 @@ let introduction = "Weave spatial layouts at a high level of abstraction using p
                     "as an early stage design interface."
 
 // CSS Styles
-let styleHeader = "margin-top: 0px;
-                    background: #d3d3d1; 
-                    color: #363636; 
-                    flex-direction: column;"
-
-let styleLogo = "width: 100%;
-                    height: 37px;
-                    opacity: 1;
-                    background: #363636;
-                    padding-left: 5px;
-                    padding-top: 5px;"
-
-let styleTitle = "color: white;
-                    font-family: 'Optima', Candara, Calibri;
-                    font-size: 20px;
-                    font-weight: normal;
-                    padding-left: 10px;
-                    padding-right: 10px;
-                    padding-bottom: 7px;"
-
-let styleIntro = "font-family: 'Optima', Candara, Calibri; 
-                    font-size: 18px; 
-                    color: #363636; 
-                    padding-left: 12px;
-                    padding-right: 10px;
-                    padding-bottom: 5px;"
-
-let styleDrop1 = "width: 75%;
-                    display: block;
-                    margin-left: 20px;
-                    margin-right: 20px;
-                    margin-top: 20px;
-                    margin-bottom: 20px;
-                    height: 36px;
-                    font-size: 14px;
-                    border: none;
-                    padding: 10px 10px;
-                    color: #646464;
-                    border-radius: 10px;
-                    text-align: center;
-                    background-color: #ececec;
-                    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-                    font-family: 'Optima', Candara, Calibri"
-
 let styleDrop2 = "width: 20%;
                     display: block;
                     height: 26px;
@@ -112,11 +66,3 @@ let styleDrop2 = "width: 20%;
                     border: none;
                     text-align: center;
                     font-family: 'Optima', Candara, Calibri;"
-
-let styleTable = "font-size: 14px;
-                opacity:75%;
-                border: none;
-                padding: 10px 10px;
-                color: #646464;
-                text-align: center;
-                font-family: 'Optima', Candara, Calibri"

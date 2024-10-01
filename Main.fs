@@ -76,7 +76,7 @@ let view model dispatch =
             }
             select{
                 attr.name "options"
-                attr.``style`` styleDrop1
+                attr.``class`` "dropdown1"
                 attr.id "options"
                 on.change (fun e -> 
                                     let value = (e.Value :?> string)
@@ -187,8 +187,8 @@ let view model dispatch =
                 }
                 select{
                     attr.name "selectShape"
-                    attr.``style`` styleDrop2
                     attr.id "shapeOptions"
+                    attr.``style`` styleDrop2
                     on.change (fun e -> 
                                         let value = (e.Value :?> string)
                                         let shp01 = 
@@ -211,11 +211,9 @@ let view model dispatch =
             
             // Hywe Table
             div{
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; justify-content: center;"
+                attr.``class`` "styleTable"
                 table{
                     attr.width "95%"
-                    attr.``style`` styleTable
                     thead{
                             tr{
                                 th{"Index"}
