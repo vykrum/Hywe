@@ -33,11 +33,24 @@
     <div id="main">
         <img src="https://hywe.in/hyweLoading.gif" alt="H Y W E is an experimental space layout planning concept being developed as a plain WebAssembly application that runs dynamic content on the client side directly in the user's browser" style="width: 100%; width: 100%; opacity: 0.15;">
         <a href="https://www.pinterest.com/pin/888686938964010767/" style="color: #d3d3d1; font-family: 'Optima', Candara, Calibri; font-size: 10px;">Image Source</a>
+        <div id="warning-message">This application may not work properly on your current browser. Please update your browser or try a different one.</div>
     </div>
 
     <!--H Y W E-->
-    <script src="_framework/blazor.webassembly.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <div>
+        <script src="_framework/blazor.webassembly.js"></script>
+        <script>navigator.serviceWorker.register('service-worker.js');</script>
+
+        <script>
+            // Set a timeout to check if the div with id 'app' has loaded
+            setTimeout(function () {
+                var appDiv = document.getElementById('main');
+                if (!appDiv || !appDiv.hasChildNodes()) {
+                    document.getElementById('warning-message').style.display = 'block';
+                }
+            }, 10000); // 10 seconds timeout
+        </script>
+    </div>
 
     <!--Social Media Links-->
     <div style="flex-wrap: wrap; justify-content: center; display: flex; flex-direction: row;">
@@ -54,5 +67,7 @@
             <img width="20" height="20" src="https://vykrum.github.io/Hywe/GH.png" />
         </a>
     </div>
+
+
 </body>
 </html>
