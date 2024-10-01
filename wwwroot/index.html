@@ -14,6 +14,7 @@
 </head>
 
 <body>
+   
     <!--Logo and Title-->
     <div style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
         <div>
@@ -40,8 +41,6 @@
         <a href="https://www.pinterest.com/pin/888686938964010767/" style="color: #d3d3d1; font-family: 'Optima', Candara, Calibri; font-size: 10px;">Image Source</a>
     </div>
 
-
-
     <!--H Y W E-->
     <div>
         <script src="_framework/blazor.webassembly.js"></script>
@@ -62,19 +61,17 @@
         <a href="https://github.com/vykrum/Hywe" target="_blank" style="padding: 25px;">
             <img width="20" height="20" src="https://vykrum.github.io/Hywe/GH.png" />
         </a>
-
-        <script>
-            // Set a timeout to check if the div with id 'main' is still present after 10 seconds
-            setTimeout(function () {
-                var mainDiv = document.getElementById('main');
-                if (mainDiv && mainDiv.style.display !== 'none') {
-                    document.getElementById('warning-message').style.display = 'block';
-                }
-            }, 10000); // 10 seconds timeout
-        </script>
-
     </div>
 
+    <script>
+        // Set a timeout to check if the div with id 'main' is still present after 10 seconds
+        setTimeout(function () {
+            var mainDiv = document.getElementById('main');
+            if (mainDiv && mainDiv.style.display !== 'none') {
+                document.getElementById('warning-message').style.display = 'block';
+            }
+        }, 10000); // 10 seconds timeout
+    </script>
 
 </body>
 </html>
