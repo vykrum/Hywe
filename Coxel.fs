@@ -120,19 +120,32 @@ let coxel
             |> Array.Parallel.map(fun x 
                                     -> Array.filter(fun (_,z) -> z >= 0) x)
         
-    let cl1 = 
+    let cl00 = 
         cls
         |> Array.Parallel.map(fun x -> getHxls x)
 
-(*    // Avoid single unclustered cell towards the end
+    // Avoid single unclustered cell towards the end
+    let hxlElm (sqn:Sqn) (hxl:Hxl[]) (occ:Hxl[])=
+        let hxl = hxlUni 1 hxl
+        let acc = hxl |> Array.filter (fun x -> (available sqn x hxl)<5)
+        let rec elm (sqn:Sqn) (hxl:Hxl[]) (acc: Hxl[]) = 
+            let hx1 = hxl
+            match (Array.length hx1 = Array.length acc) with
+            | true -> acc
+            | false -> 
+                        let hx1 = acc
+                        let acc = hx1|> Array.filter (fun x -> (available sqn x hx1)<5)
+                        elm sqn hx1 acc
+        let hx1 = elm sqn hxl acc
+        hxlChk sqn occ hx1
+
     let cl01 = 
-        cl00
-        |> Array.Parallel.map(fun x 
-                                -> Array.filter(fun y 
-                                                    -> (available sqn y x) < 5)x)
-         
+        cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x occ)
+
+    //let cl01 = cl00 |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
+ 
     let cl1 = Array.map2 (fun x y 
-                                -> Array.append [|Array.head x|] y) cl00 cl01*)
+                                -> Array.append [|Array.head x|] y) cl00 cl01
 
     let cxl = Array.map3 (fun x y z -> 
                                             let hx1 = z 
