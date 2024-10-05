@@ -64,7 +64,7 @@ let spaceSeq
     let spcMp6 = spcMp5 
                 |> Array.tail
                 |> Array.Parallel.map (fun x -> (x[0],(int x[1],x[2]))) 
-                |> Array.sortBy (fun (x,y) -> x)
+                |> Array.sortBy (fun (x,_) -> x)
                 |> Map.ofArray
 
     let spcKy01 = 
@@ -84,10 +84,10 @@ let spaceSeq
     let spcKy03 = 
         spcKy01 
         |> Array.tail 
-        |> Array.partition (fun (x,y) -> x.Length = 1)
+        |> Array.partition (fun (x,_) -> x.Length = 1)
     let spcKy04 = 
         (Array.append spcKy02 (fst spcKy03)) 
-        |> Array.groupBy (fun (x,y) -> x)
+        |> Array.groupBy (fun (x,_) -> x)
         |> Array.Parallel.map (fun x -> snd x)
         |> Array.Parallel.map (fun x 
                                 -> (Array.Parallel.map(fun (y,z)
@@ -156,8 +156,6 @@ let spaceCxl
                 Array.Parallel.map(fun (a,b,c) 
                                     -> Refid a, Count (b), Label c)x)
     
-
-    
     // Attributes
     let spcAt1 = fst (spaceSeq str)
     // Attribute Q for Sequence
@@ -204,13 +202,15 @@ let spaceCxl
                 | Some a -> (a |> int)
                 | None -> 0
     
-    let bdR1 = hxlRct seq (bdWd) (bdHt) boI1
+    let bdR1 = match (bdWd=0 || bdHt=0) with 
+                | true -> [||]
+                | false -> [|hxlRct seq (bdWd) (bdHt) boI1|]      
     let bdRt = match (bdWd=0 || bdHt=0) with 
                 | true -> [||]
-                | false -> snd(bdR1)
+                | false -> snd(Array.head bdR1)
     let bsHx = match (bdWd=0 || bdHt=0) with 
                 | true -> AV(0,0,0)
-                | false -> fst bdR1
+                | false -> fst (Array.head bdR1)
     
     let occ = Array.concat [|occ;bdRt|]
 

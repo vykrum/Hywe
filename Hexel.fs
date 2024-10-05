@@ -426,3 +426,13 @@ let cntSqn
             | true -> ar1
             | false -> hxlUni 2 ar1
 ///
+
+
+/// <param name="org"> All constituent hexels. </param>
+/// <param name="hxl"> Subset of hexels. </param>
+/// <returns> Restored Hexel Types </returns>
+let hxlRst
+    (org : Hxl[])
+    (hxl : Hxl[]) =
+    let crd = Array.map (fun x -> hxlCrd x) hxl
+    org |> Array.filter (fun x -> (crd|> Array.contains (hxlCrd x)))

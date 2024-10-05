@@ -126,18 +126,20 @@ let coxel
 
     // Avoid single unclustered cell towards the end
     let hxlElm (sqn:Sqn) (hxl:Hxl[]) (occ:Hxl[])=
+        let hxo = hxl
+        let avl = 5
         let hxl = hxlUni 1 hxl
-        let acc = hxl |> Array.filter (fun x -> (available sqn x hxl)<5)
+        let acc = hxl |> Array.filter (fun x -> (available sqn x hxl) < avl)
         let rec elm (sqn:Sqn) (hxl:Hxl[]) (acc: Hxl[]) = 
             let hx1 = hxl
             match (Array.length hx1 = Array.length acc) with
             | true -> acc
             | false -> 
                         let hx1 = acc
-                        let acc = hx1|> Array.filter (fun x -> (available sqn x hx1)<5)
+                        let acc = hx1|> Array.filter (fun x -> (available sqn x hx1) < avl)
                         elm sqn hx1 acc
         let hx1 = elm sqn hxl acc
-        hxlChk sqn occ hx1
+        hxlRst hxo hx1
 
     let cl01 = 
         cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x occ)
