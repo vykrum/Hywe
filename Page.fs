@@ -53,7 +53,7 @@ let introduction = "Weave spatial layouts at a high level of abstraction using p
                     "as an early stage design interface."
 
 // CSS Styles
-let styleDrop2 = "width: 20%;
+let styleDrop2 = "width: 35%;
                     display: block;
                     height: 26px;
                     font-size: 12px;

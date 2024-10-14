@@ -86,7 +86,7 @@ let coxel
 
                 let rpt = Array.Parallel.map (fun x 
                                                 -> (snd x) - 0x1) hxo
-                let Hxl =  
+                let hx1 =  
                     acc
                     |> Array.Parallel.map (fun x
                                             -> Array.filter (fun a -> (available sqn a occ) > 0x0) x)
@@ -99,21 +99,33 @@ let coxel
                     |> Array.map2 (fun x y 
                                     -> fst y, x) rpt
                     
-                let inc = increments sqn Hxl occ
+                let inc = increments sqn hx1 occ
                             
-                let acc = Array.map2  (fun x y
+                let ac1 = Array.map2  (fun x y
                                         -> Array.append x y) 
                             acc
                             (Array.chunkBySize 1 inc)
+                // Avoid bridge in Coxel
+                let acc = ac1 
+                            |> Array.Parallel.map (fun x -> match Array.length x > 3 with
+                                                            | false -> x
+                                                            | true -> 
+                                                                    let h1 = hxlUni 1 (getHxls x) 
+                                                                    let h2 = h1.[Array.length h1 - 2]
+                                                                    let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
+                                                                    let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
+                                                                    match b1 && b2 with 
+                                                                    | false -> x
+                                                                    | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
 
                 let occ = Array.concat[|getHxls 
                     (Array.concat [|
                     Array.concat acc
                     inc
-                    Hxl|]);occ|] 
+                    hx1|]);occ|] 
                         |> hxlUni 1
 
-                (clsts Hxl occ acc (cnt - 0x1))
+                (clsts hx1 occ acc (cnt - 0x1))
          
     let cls = 
         clsts bas oc1 acc cnt

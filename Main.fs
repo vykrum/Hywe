@@ -141,6 +141,7 @@ let view model dispatch =
             // Zoom Out
             button {
                 attr.``class`` "button3"
+                attr.``style`` "width: 5%;"
                 on.click (fun _ -> dispatch (ScpDec))
                 "--"
             }
@@ -149,7 +150,7 @@ let view model dispatch =
             button {
                 attr.``class`` "button1"
                 attr.``style`` "
-                                width: 90%;
+                                width: 88%;
                                 margin-left: 1%;
                                 margin-right: 1%;
                                 margin-top: 5px;"
@@ -160,9 +161,12 @@ let view model dispatch =
             // Zoom In
             button {
                 attr.``class`` "button3"
+                attr.``style`` "width: 5%;"
                 on.click (fun _ -> dispatch (ScpInc))
                 "+"
             }
+
+
 
             // Hywe SVG
             div{
