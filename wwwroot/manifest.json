@@ -3,8 +3,8 @@
   "short_name": "Hywe",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "background_color": "#363636",
+  "theme_color": "#363636",
   "icons": [
     {
       "src": "android-chrome-192x192.png",
