@@ -166,8 +166,6 @@ let view model dispatch =
                 "+"
             }
 
-
-
             // Hywe SVG
             div{
                 attr.``class`` "flex-container"
