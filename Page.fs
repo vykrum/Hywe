@@ -29,12 +29,11 @@ let pastels (size: int) =
 
 // Defaults
 let stxInstr = 
-    "Depending on your selection above, Hywe Syntax will populate here.\n" +
-    "• BEE-line  : Elementary syntax for simple configurations.\n" +
-    "• BEE-yond  : Enhanced syntax for branched configurations.\n" +
-    "• BEE-droom : Evolved syntax for complex configurations.\n"+
-    "Use the populated examples as reference to create custom scripts.\n" +
-    "Click on hyWEAVE to update any selection or alteration.\n\n"
+    "Hywe syntax based on above selection populates here.\n" +
+    "• BEE-line  : Elementary syntax for simple layouts.\n" +
+    "• BEE-yond  : Enhanced syntax for branched layouts.\n" +
+    "• BEE-droom : Evolved syntax for complex layouts.\n\n" +
+    "Alter the populated script to explore variations.\n"
 
 let beeline = "(1/19/Start),(2/15/End)"
 
