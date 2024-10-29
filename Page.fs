@@ -33,7 +33,7 @@ let stxInstr =
     "• BEE-line  : Elementary syntax for simple layouts.\n" +
     "• BEE-yond  : Enhanced syntax for branched layouts.\n" +
     "• BEE-droom : Evolved syntax for complex layouts.\n\n" +
-    "Alter the populated script to explore variations.\n"
+    "Alter the populated script to explore variations."
 
 let beeline = "(1/19/Start),(2/15/End)"
 
