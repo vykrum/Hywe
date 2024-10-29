@@ -29,7 +29,7 @@ let pastels (size: int) =
 
 // Defaults
 let stxInstr = 
-    "Hywe syntax based on selection will populate here.\n" +
+    "Hywe syntax, for reference, will populate here.\n" +
     "• BEE-line  : Elementary syntax for simple layouts.\n" +
     "• BEE-yond  : Enhanced syntax for branched layouts.\n" +
     "• BEE-droom : Evolved syntax for complex layouts.\n\n" +
