@@ -22,7 +22,7 @@ type Model =
 let initModel =
     {
         shp1 = Hxg
-        scp1 = 10
+        scp1 = 8
         opt1 = None
         stx1 = stxInstr 
         stx2 = "(1/3/.)"
