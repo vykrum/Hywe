@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
@@ -32,7 +32,7 @@ jobs:
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
       - name: Deploy to GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v1.5.1
+        uses: crazy-max/ghaction-github-pages@v2
         with:
           target_branch: gh-pages
           build_dir: ${{ env.PUBLISH_DIR }}
