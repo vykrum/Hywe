@@ -15,28 +15,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
-      - name: Publish Bolero app
-        run: dotnet publish -c Release
+      - run: dotnet publish -c Release
 
-      - name: Rewrite base href
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
-        with:
-          html_path: ${{ env.PUBLISH_DIR }}/index.html
-          base_href: /
+      - run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
-      - name: Create CNAME file
-        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
-
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v2
+      - uses: actions/upload-pages-artifact@v2
         with:
           path: ${{ env.PUBLISH_DIR }}
 
@@ -46,11 +35,4 @@ jobs:
     environment:
       name: github-pages
     steps:
-      - name: Download GitHub Pages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: github-pages
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+      - uses: actions/deploy-pages@v2
