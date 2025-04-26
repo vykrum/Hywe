@@ -271,6 +271,37 @@ let hxlChk
                                             | false -> AV(hxlCrd x))
 ///
 
+///<summary> Add Hexel at Narrow Bridge. </summary>
+/// <param name="hxl"> All constituent hexels. </param>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <returns> Thickened List if Bridged </returns>
+let hxlFil
+    (sqn : Sqn)
+    (hxl : Hxl[]) = 
+    let hxx = hxl |> hxlUni 1     
+    let hx1 = hxx |> Array.map (fun x -> (adjacent sqn x) )
+    let in1 = Array.map (fun z 
+                            -> Array.map(fun y
+                                            -> Array.tryFindIndex (fun x 
+                                                                    -> x = y)z)hxx)hx1
+    let in2 = in1 |> Array.map (fun x 
+                                    -> x |> Array.choose id) 
+                                    |> Array.map (fun x -> x |> Array.sort)
+                                    |> Array.map (fun x -> Array.except [|0|] x)
+    let in3 = in2 |> Array.map (fun x -> [|Array.head x .. Array.last x|])
+    let in4 = Array.map2 (fun x y -> Array.except x y) in2 in3
+    let in5 = in4 |> Array.map(fun x 
+                                -> match Array.length x > 1 with
+                                    | true -> Array.except x [|Array.head x .. Array.last x|]
+                                    | false -> x)
+    let hx2 = Array.map2 (fun x y 
+                            -> match Array.tryHead y with 
+                                | None -> [||]
+                                | Some y -> [|Array.get x y|]) 
+                                hx1 in5 |>Array.concat
+    Array.append hxx hx2 |> hxlChk sqn [||]
+///
+
 /// <summary> Increment Hexels. </summary>
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 

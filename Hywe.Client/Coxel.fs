@@ -101,22 +101,22 @@ let coxel
                     
                 let inc = increments sqn hx1 occ
                             
-                let ac1 = Array.map2  (fun x y
+                let acc = Array.map2  (fun x y
                                         -> Array.append x y) 
                             acc
                             (Array.chunkBySize 1 inc)
                 // Avoid bridge in Coxel
-                let acc = ac1 
-                            |> Array.Parallel.map (fun x -> match Array.length x > 3 with
-                                                            | false -> x
-                                                            | true -> 
-                                                                    let h1 = hxlUni 1 (getHxls x) 
-                                                                    let h2 = h1.[Array.length h1 - 2]
-                                                                    let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
-                                                                    let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
-                                                                    match b1 && b2 with 
-                                                                    | false -> x
-                                                                    | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
+                //let acc = ac1 
+                //            |> Array.Parallel.map (fun x -> match Array.length x > 3 with
+                //                                            | false -> x
+                //                                            | true -> 
+                //                                                    let h1 = hxlUni 1 (getHxls x) 
+                //                                                    let h2 = h1.[Array.length h1 - 2]
+                //                                                    let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
+                //                                                    let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
+                //                                                    match b1 && b2 with 
+                //                                                    | false -> x
+                //                                                    | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
 
                 let occ = Array.concat[|getHxls 
                     (Array.concat [|
@@ -132,12 +132,23 @@ let coxel
             |> Array.Parallel.map(fun x 
                                     -> Array.filter(fun (_,z) -> z >= 0) x)
         
-    let cl00 = 
+    let cl1 = 
         cls
         |> Array.Parallel.map(fun x -> getHxls x)
+        //|> Array.map (fun x -> hxlFil sqn x)
+
+(*    let cl02 = [|1..Array.length cl01-1|]
+            |> Array.map(fun x -> Array.take x cl01) 
+            |> Array.map (fun x -> Array.concat x)
+            |> Array.map (fun x -> hxlUni 1 x)
+            |> Array.append [|[||]|]
+
+    let cl1 = Array.map2 (fun x y -> Array.except x y) cl02 cl01
+            |> Array.map (fun x -> hxlChk sqn oc1 x)*)
+        
 
     // Avoid single unclustered cell towards the end
-    let hxlElm (sqn:Sqn) (hxl:Hxl[]) (occ:Hxl[])=
+    let hxlElm (sqn:Sqn) (hxl:Hxl[])=
         let hxo = hxl
         let avl = 5
         let hxl = hxlUni 1 hxl
@@ -153,13 +164,14 @@ let coxel
         let hx1 = elm sqn hxl acc
         hxlRst hxo hx1
 
-    let cl01 = 
-        cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x occ)
+(*    let cl01 = 
+        cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x)
+        //|> Array.Parallel.map(fun x -> x |> hxlFil sqn)
 
     //let cl01 = cl00 |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
  
     let cl1 = Array.map2 (fun x y 
-                                -> Array.append [|Array.head x|] y) cl00 cl01
+                                -> Array.append [|Array.head x|] y) cl00 cl01*)
 
     let cxl = Array.map3 (fun x y z -> 
                                             let hx1 = z 
@@ -172,7 +184,7 @@ let coxel
                                                 Seqn = sqn
                                                 Base = Array.head hx1
                                                 Hxls = match Array.length hx1 > 0 with 
-                                                        | true -> Array.except  ([|Array.head hx1;identity|]) hx1
+                                                        | true -> (Array.except  ([|Array.head hx1;identity|]) hx1)
                                                         | false -> [||]
                                             })szn idn cl1
     cxl
