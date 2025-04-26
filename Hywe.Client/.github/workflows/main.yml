@@ -1,10 +1,10 @@
-name: DeployToGitHubPages
+name: Deploy to GitHub Pages
 env:
   PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
 on:
   push:
-    branches: [master]
+    branches: [ main ] # Changed from master to main
 
 permissions:
   contents: write
@@ -15,9 +15,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/checkout@v4 # Updated to v4
+
+      - uses: actions/setup-dotnet@v4 # Updated to v4
         with:
           dotnet-version: '8.0.x'
 
