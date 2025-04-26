@@ -1,10 +1,10 @@
 name: Deploy to GitHub Pages
 env:
-  PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
+  PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot # Explicitly define the desired output path
 
 on:
   push:
-    branches: [ main ] # Changed from master to main
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -15,19 +15,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Updated to v4
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4 # Updated to v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - run: dotnet publish -c Release
+      - name: Publish the application
+        run: dotnet publish -c Release
+        # The output will be in a directory like bin/Release/net8.0/publish/
+        # We then copy the contents of that directory to the PUBLISH_DIR
 
-      - run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+      - name: Create CNAME file
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME # Ensure CNAME is in the correct location
 
       - uses: actions/upload-pages-artifact@v2
         with:
-          path: ${{ env.PUBLISH_DIR }}
+          path: ${{ env.PUBLISH_DIR }} # Upload the contents of the PUBLISH_DIR
 
   deploy:
     needs: build
