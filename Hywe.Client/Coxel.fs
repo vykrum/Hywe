@@ -137,16 +137,6 @@ let coxel
         |> Array.Parallel.map(fun x -> getHxls x)
         //|> Array.map (fun x -> hxlFil sqn x)
 
-(*    let cl02 = [|1..Array.length cl01-1|]
-            |> Array.map(fun x -> Array.take x cl01) 
-            |> Array.map (fun x -> Array.concat x)
-            |> Array.map (fun x -> hxlUni 1 x)
-            |> Array.append [|[||]|]
-
-    let cl1 = Array.map2 (fun x y -> Array.except x y) cl02 cl01
-            |> Array.map (fun x -> hxlChk sqn oc1 x)*)
-        
-
     // Avoid single unclustered cell towards the end
     let hxlElm (sqn:Sqn) (hxl:Hxl[])=
         let hxo = hxl

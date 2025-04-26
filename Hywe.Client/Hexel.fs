@@ -458,7 +458,6 @@ let cntSqn
             | false -> hxlUni 2 ar1
 ///
 
-
 /// <param name="org"> All constituent hexels. </param>
 /// <param name="hxl"> Subset of hexels. </param>
 /// <returns> Restored Hexel Types </returns>
