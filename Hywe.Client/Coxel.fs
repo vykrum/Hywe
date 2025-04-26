@@ -137,7 +137,7 @@ let coxel
         |> Array.Parallel.map(fun x -> getHxls x)
         //|> Array.map (fun x -> hxlFil sqn x)
 
-    // Avoid single unclustered cell towards the end
+ (*    // Avoid single unclustered cell towards the end
     let hxlElm (sqn:Sqn) (hxl:Hxl[])=
         let hxo = hxl
         let avl = 5
@@ -154,7 +154,7 @@ let coxel
         let hx1 = elm sqn hxl acc
         hxlRst hxo hx1
 
-(*    let cl01 = 
+   let cl01 = 
         cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x)
         //|> Array.Parallel.map(fun x -> x |> hxlFil sqn)
 
