@@ -1,50 +1,51 @@
-name: Build and Deploy Bolero App
+name: DeployToGitHubPages
+env:
+  PUBLISH_DIR: bin/Release/net8.0/publish
 
 on:
   push:
-    branches:
-      - main
+    branches: [master]
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: '8.0.x'
 
-      - name: Restore
-        run: dotnet restore
+      - name: List files in the repository # Debugging step to verify file paths
+        run: ls -R
 
       - name: Publish Bolero app
-        run: dotnet publish -c Release -o publish
+        run: dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
 
-      - name: Upload GitHub Pages artifact
+      - name: List files in publish directory # Debugging step to verify output folder contents
+        run: ls -R ${{ env.PUBLISH_DIR }}
+
+      - name: Rewrite base href
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
+          base_href: /Hywe/
+
+      - name: Create CNAME
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+     
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./publish/wwwroot
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-    steps:
+          path: ${{ env.PUBLISH_DIR }}/wwwroot
+  
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v3
-
