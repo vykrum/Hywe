@@ -33,11 +33,11 @@ jobs:
       - name: List files in publish directory # Debugging step to verify output folder contents
         run: ls -R ${{ env.PUBLISH_DIR }}
 
-      #- name: Rewrite base href
-        #uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
-        #with:
-        #  html_path: ${{ env.PUBLISH_DIR }}/wwwwroot/index.html
-        #  base_href: /Hywe.Client/wwwroot
+      - name: Rewrite base href
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          base_href: /
 
       # Add this step to upload the artifact
       - name: Upload artifact
