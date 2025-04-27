@@ -35,9 +35,8 @@ jobs:
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
       - name: Deploy to GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v3
+        uses: actions/deploy-pages@v2
         with:
-          target_branch: gh-pages
-          build_dir: ${{ env.PUBLISH_DIR }}
+          branch: gh-pages  # Target the `gh-pages` branch for deployment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
