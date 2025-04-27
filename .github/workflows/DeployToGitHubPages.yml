@@ -37,7 +37,7 @@ jobs:
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
           html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
-          base_href: /Hywe.Client/
+          base_href: Hywe\Hywe.Client\wwwroot\
 
       # Add this step to upload the artifact
       - name: Upload artifact
