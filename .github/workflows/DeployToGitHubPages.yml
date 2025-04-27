@@ -23,8 +23,8 @@
             with:
               dotnet-version: '8.0.x'
 
-          - name: Change to Client Directory
-            run: cd ./Hywe.Client # Add this step
+          - name: List Files
+            run: ls -laR # Add this step
 
           - name: Publish Bolero app
             run: dotnet publish Hywe.Client.fsproj -c Release -o $PUBLISH_DIR
