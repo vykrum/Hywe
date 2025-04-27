@@ -1,10 +1,10 @@
-name: Deploy to GitHub Pages
+name: DeployToGitHubPages
 env:
-  PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot # Explicitly define the desired output path
+  PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
 on:
   push:
-    branches: [ main ]
+    branches: [master]
 
 permissions:
   contents: read
@@ -15,23 +15,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-dotnet@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
-      - name: Publish the application
+      - name: Publish Bolero app
         run: dotnet publish -c Release
-        # The output will be in a directory like bin/Release/net8.0/publish/
-        # We then copy the contents of that directory to the PUBLISH_DIR
+
+      - name: Rewrite base href
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          base_href: /
 
       - name: Create CNAME file
-        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME # Ensure CNAME is in the correct location
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
-      - uses: actions/upload-pages-artifact@v2
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          path: ${{ env.PUBLISH_DIR }} # Upload the contents of the PUBLISH_DIR
+          path: ${{ env.PUBLISH_DIR }}
 
   deploy:
     needs: build
@@ -39,4 +46,5 @@ jobs:
     environment:
       name: github-pages
     steps:
-      - uses: actions/deploy-pages@v2
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
