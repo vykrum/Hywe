@@ -5,7 +5,7 @@ env:
 
 on:
   push:
-    branches: [master]  # Trigger deployment on push to the master branch
+    branches: [master]
 
 permissions:
   contents: write  # Permissions to write contents to the repository
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest  # Use Ubuntu for the CI environment
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the repository
@@ -29,27 +29,29 @@ jobs:
 
       # Step 3: Build the .NET app
       - name: Publish Bolero app
-        run: dotnet publish -c Release -o ${{ env.PUBLISH_DIR }}  # Output to the defined directory
+        run: dotnet publish -c Release -o ${{ env.PUBLISH_DIR }}
 
       # Step 4: Optionally rewrite base href (needed for SPAs or subdirectories)
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
           html_path: ${{ env.PUBLISH_DIR }}/index.html
-          base_href: /  # Change this if you're deploying to a subfolder (e.g., /myapp/)
+          base_href: /  # Change this if you're deploying to a subfolder
 
       # Step 5: Create CNAME file for custom domain (optional)
       - name: Create CNAME file
-        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME  # Add custom domain, remove if not needed
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME  # Remove if not needed
 
       # Step 6: Upload the files to be deployed to GitHub Pages
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v2  # Correct version for GitHub Pages deployment
+        uses: actions/upload-pages-artifact@v2
         with:
           path: ${{ env.PUBLISH_DIR }}  # Path to the files to be deployed
 
       # Step 7: Deploy the files to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v2
+        with:
+          # No need to specify a branch as it will default to 'gh-pages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the GitHub token for authentication
