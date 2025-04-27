@@ -23,11 +23,11 @@
             with:
               dotnet-version: '8.0.x'
 
-          - name: List Files
-            run: ls -laR # Add this step
-
+          - name: List files in the repository  # Debugging step to verify file paths
+            run: ls -R
+    
           - name: Publish Bolero app
-            run: dotnet publish HyweClient/Hywe.Client.fsproj -c Release -o $PUBLISH_DIR
+            run: dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
 
           - name: Rewrite base href
             uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
