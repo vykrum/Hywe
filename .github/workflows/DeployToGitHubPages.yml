@@ -44,10 +44,11 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.PUBLISH_DIR }}
-          
-
-
+       
       - name: Create CNAME
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+        
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
