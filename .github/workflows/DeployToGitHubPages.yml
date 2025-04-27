@@ -1,7 +1,7 @@
 name: DeployToGitHubPages
 env:
   PUBLISH_DIR: bin/Release/net8.0/publish
-
+  
 on:
   push:
     branches: [master]
