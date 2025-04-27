@@ -1,6 +1,6 @@
 name: DeployToGitHubPages
 env:
-  PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
+  PUBLISH_DIR: ./Hywe.Client/bin/Release/net8.0/publish/wwwroot
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
 
 jobs:
   build-and-deploy:
@@ -24,21 +23,16 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Publish Bolero app
-        run: dotnet publish ./Hywe.Client/Hywe.Client.fsproj -c Release
-
-      - name: Copy to docs
-        run: |
-          mkdir -p docs
-          cp -r bin/Release/net8.0/publish/wwwroot/* docs/
+        run: dotnet publish ./Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
-          html_path: docs/index.html
+          html_path: ./${{ env.PUBLISH_DIR }}/wwwroot/index.html
           base_href: /
 
       - name: Create CNAME
-        run: echo 'hywe.in' > docs/CNAME
+        run: echo 'hywe.in' > ./${{ env.PUBLISH_DIR }}/CNAME
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
