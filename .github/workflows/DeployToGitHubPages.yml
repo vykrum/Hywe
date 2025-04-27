@@ -44,7 +44,7 @@ jobs:
 
       # Step 6: Upload the files to be deployed to GitHub Pages
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v2  # Correct version for GitHub Pages deployment
         with:
           path: ${{ env.PUBLISH_DIR }}  # Path to the files to be deployed
 
