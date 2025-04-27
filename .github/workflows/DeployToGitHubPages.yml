@@ -23,7 +23,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Publish Bolero app
-        run: dotnet publish -c Release
+        run: dotnet publish ./Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
