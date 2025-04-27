@@ -37,6 +37,14 @@ jobs:
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
+      - name: Compress WASM and DLL files
+        run: |
+          # Compress .wasm files if they aren't already compressed
+          find ${{ env.PUBLISH_DIR }} -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 {} \;
+          
+          # Compress .dll files if they aren't already compressed
+          find ${{ env.PUBLISH_DIR }} -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 {} \;
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
