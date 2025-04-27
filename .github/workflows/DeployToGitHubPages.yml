@@ -7,15 +7,14 @@ on:
     branches: [master]
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Setup .NET
@@ -32,19 +31,13 @@ jobs:
           html_path: ${{ env.PUBLISH_DIR }}/index.html
           base_href: /
 
-      - name: Create CNAME file
+      - name: Create CNAME
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: ${{ env.PUBLISH_DIR }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-    steps:
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v2
+        uses: crazy-max/ghaction-github-pages@v3
+        with:
+          target_branch: gh-pages
+          build_dir: ${{ env.PUBLISH_DIR }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
