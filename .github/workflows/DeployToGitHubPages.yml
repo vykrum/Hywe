@@ -1,6 +1,6 @@
     name: DeployToGitHubPages
     env:
-      PUBLISH_DIR: bin/Release/net8.0/publish # Removed /wwwroot
+      PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
     on:
       push:
@@ -27,21 +27,16 @@
             run: ls -laR # Add this step
 
           - name: Publish Bolero app
-            run: dotnet publish Hywe.Client.fsproj -c Release -o $PUBLISH_DIR
-
-          - name: Copy to docs
-            run: |
-              mkdir -p docs
-              cp -r $PUBLISH_DIR/wwwroot/* docs/
+            run: dotnet publish HyweClient/Hywe.Client.fsproj -c Release -o $PUBLISH_DIR
 
           - name: Rewrite base href
             uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
             with:
-              html_path: docs/index.html
+              html_path: ${{ env.PUBLISH_DIR }}/index.html
               base_href: /
 
           - name: Create CNAME
-            run: echo 'hywe.in' > docs/CNAME
+            run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
           - name: Deploy to GitHub Pages
             uses: actions/deploy-pages@v3
