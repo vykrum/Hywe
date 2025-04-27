@@ -1,38 +1,48 @@
-name: DeployToGitHubPages
-env:
-  PUBLISH_DIR: ./Hywe.Client/bin/Release/net8.0/publish/wwwroot
+    name: DeployToGitHubPages
+    env:
+      PUBLISH_DIR: bin/Release/net8.0/publish # Removed /wwwroot
 
-on:
-  push:
-    branches: [master]
+    on:
+      push:
+        branches: [master]
 
-permissions:
-  contents: write
+    permissions:
+      contents: write
+      id-token: write
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+    jobs:
+      build-and-deploy:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
+          - name: Setup .NET
+            uses: actions/setup-dotnet@v3
+            with:
+              dotnet-version: '8.0.x'
 
-      - name: Publish Bolero app
-        run: dotnet publish Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
+          - name: Change to Client Directory
+            run: cd ./Hywe.Client # Add this step
 
-      - name: Rewrite base href
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
-        with:
-          html_path: ./${{ env.PUBLISH_DIR }}/wwwroot/index.html
-          base_href: /
+          - name: Publish Bolero app
+            run: dotnet publish Hywe.Client.fsproj -c Release -o $PUBLISH_DIR
 
-      - name: Create CNAME
-        run: echo 'hywe.in' > ./${{ env.PUBLISH_DIR }}/CNAME
+          - name: Copy to docs
+            run: |
+              mkdir -p docs
+              cp -r $PUBLISH_DIR/wwwroot/* docs/
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v3
+          - name: Rewrite base href
+            uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+            with:
+              html_path: docs/index.html
+              base_href: /
+
+          - name: Create CNAME
+            run: echo 'hywe.in' > docs/CNAME
+
+          - name: Deploy to GitHub Pages
+            uses: actions/deploy-pages@v3
+    
