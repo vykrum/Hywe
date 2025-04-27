@@ -1,45 +1,52 @@
-    name: DeployToGitHubPages
-    env:
-      PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
+name: DeployToGitHubPages
+env:
+  PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
-    on:
-      push:
-        branches: [master]
+on:
+  push:
+    branches: [master]
 
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-      
-    jobs:
-      build-and-deploy:
-        runs-on: ubuntu-latest
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
-        steps:
-          - name: Checkout
-            uses: actions/checkout@v3
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-          - name: Setup .NET
-            uses: actions/setup-dotnet@v3
-            with:
-              dotnet-version: '8.0.x'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-          - name: List files in the repository  # Debugging step to verify file paths
-            run: ls -R
-    
-          - name: Publish Bolero app
-            run: dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
-          - name: List files in publish directory  # Debugging step to verify output folder contents
-            run: ls -R ${{ env.PUBLISH_DIR }}
-          - name: Rewrite base href
-            uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
-            with:
-              html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
-              base_href: /
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
 
-          - name: Create CNAME
-            run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+      - name: List files in the repository # Debugging step to verify file paths
+        run: ls -R
 
-          - name: Deploy to GitHub Pages
-            uses: actions/deploy-pages@v3
-    
+      - name: Publish Bolero app
+        run: dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
+
+      - name: List files in publish directory # Debugging step to verify output folder contents
+        run: ls -R ${{ env.PUBLISH_DIR }}
+
+      - name: Rewrite base href
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          base_href: /
+
+      - name: Create CNAME
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+
+      # Add this step to upload the artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.PUBLISH_DIR }}
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v3
