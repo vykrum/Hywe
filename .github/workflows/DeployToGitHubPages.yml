@@ -41,7 +41,10 @@ jobs:
 
       - name: Create CNAME
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
-     
+
+      - name: List files in wwwroot directory # Verify wwwroot contents
+        run: ls -R ${{ env.PUBLISH_DIR }}/wwwroot
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
