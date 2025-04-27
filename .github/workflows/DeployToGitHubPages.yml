@@ -1,43 +1,57 @@
 name: DeployToGitHubPages
+
 env:
   PUBLISH_DIR: bin/Release/net8.0/publish/wwwroot
 
 on:
   push:
-    branches: [master]
+    branches: [master]  # Trigger deployment on push to the master branch
 
 permissions:
-  contents: write
+  contents: write  # Required permissions for writing contents to the repository
+  pages: write     # Required permissions to deploy to GitHub Pages
+  id-token: write  # Permissions to generate an id token for GitHub Pages deployment
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use Ubuntu as the CI environment
 
     steps:
-      - name: Checkout
+      # Step 1: Checkout the repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Setup .NET for building the app
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
+      # Step 3: Build the .NET app
       - name: Publish Bolero app
-        run: dotnet publish ./Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
+        run: dotnet publish -c Release -o ${{ env.PUBLISH_DIR }}  # Output to the defined directory
 
+      # Step 4: Optionally rewrite base href (needed for SPAs or subdirectories)
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
-          html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
-          base_href: /
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          base_href: /  # Change this if you're deploying to a subfolder (e.g., /myapp/)
 
-      - name: Create CNAME
-        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+      # Step 5: Create CNAME file for custom domain (optional)
+      - name: Create CNAME file
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME  # Add custom domain, remove if not needed
 
-      - name: Deploy to GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v3
+      # Step 6: Upload the files to be deployed to GitHub Pages
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          target_branch: gh-pages
-          build_dir: ${{ env.PUBLISH_DIR }}
+          path: ${{ env.PUBLISH_DIR }}  # Path to the files to be deployed
+
+      # Step 7: Deploy the files to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
+        with:
+          branch: gh-pages  # Target the `gh-pages` branch for deployment
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the GitHub token for authentication
