@@ -28,11 +28,12 @@
     
           - name: Publish Bolero app
             run: dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
-
+          - name: List files in publish directory  # Debugging step to verify output folder contents
+            run: ls -R ${{ env.PUBLISH_DIR }}
           - name: Rewrite base href
             uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
             with:
-              html_path: ${{ env.PUBLISH_DIR }}/index.html
+              html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
               base_href: /
 
           - name: Create CNAME
