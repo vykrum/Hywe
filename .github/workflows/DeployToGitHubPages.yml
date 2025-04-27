@@ -65,4 +65,4 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
         with:
-          artifact_name: github-pages
+          artifact_id: 3017277621
