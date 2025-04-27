@@ -33,11 +33,11 @@ jobs:
       - name: List files in publish directory # Debugging step to verify output folder contents
         run: ls -R ${{ env.PUBLISH_DIR }}
 
-      - name: Rewrite base href
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
-        with:
-          html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
-          base_href: /Hywe/
+      #- name: Rewrite base href
+      #  uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+      #  with:
+      #    html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
+      #    base_href: /Hywe/
 
       - name: Create CNAME
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
