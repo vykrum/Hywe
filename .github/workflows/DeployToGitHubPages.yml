@@ -31,7 +31,7 @@ jobs:
 
       - name: Publish Bolero app
         run: |
-          dotnet publish -c Release --self-contained --runtime wasm --output ${{ env.PUBLISH_DIR }} /p:PublishTrimmed=true /p:EnableAOT=true
+          dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release --self-contained --runtime wasm --output ${{ env.PUBLISH_DIR }} /p:PublishTrimmed=true /p:EnableAOT=true
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
