@@ -24,9 +24,14 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+          
+      - name: Install wasm-tools workload
+        run: |
+          dotnet workload install wasm-tools
 
       - name: Publish Bolero app
-        run: dotnet publish Hywe.Client/Hywe.Client.fsproj -c Release
+        run: |
+          dotnet publish -c Release --self-contained --runtime wasm --output ${{ env.PUBLISH_DIR }} /p:PublishTrimmed=true /p:EnableAOT=true
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
