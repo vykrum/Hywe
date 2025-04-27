@@ -7,14 +7,16 @@ on:
     branches: [master]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup .NET
@@ -23,21 +25,29 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Publish Bolero app
-        run: dotnet publish ./Hywe.Client/Hywe.Client.fsproj -c Release -o ${{ env.PUBLISH_DIR }}
+        run: dotnet publish -c Release
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
-          html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
           base_href: /
 
-      - name: Create CNAME
+      - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
-      - name: Deploy to GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v3
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          target_branch: gh-pages
-          build_dir: ${{ env.PUBLISH_DIR }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ env.PUBLISH_DIR }}
+
+  deploy:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
