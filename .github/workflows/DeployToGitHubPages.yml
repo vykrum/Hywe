@@ -33,6 +33,12 @@ jobs:
       - name: List files in publish directory # Debugging step to verify output folder contents
         run: ls -R ${{ env.PUBLISH_DIR }}
 
+      # Add this step to upload the artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.PUBLISH_DIR }}
+          
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
@@ -41,12 +47,5 @@ jobs:
 
       - name: Create CNAME
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
-
-      # Add this step to upload the artifact
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ env.PUBLISH_DIR }}
-
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
