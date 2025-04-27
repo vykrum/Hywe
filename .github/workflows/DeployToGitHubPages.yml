@@ -42,16 +42,17 @@ jobs:
       - name: Create CNAME
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
-      - name: List files in wwwroot directory # Verify wwwroot contents
+      - name: List files in wwwroot directory
         run: ls -R ${{ env.PUBLISH_DIR }}/wwwroot
 
-      - name: Deploy to GitHub Pages
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v2
   
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.PUBLISH_DIR }}/wwwroot
+          artifact_name: github-pages
   
   deploy:
     needs: build-and-deploy
@@ -59,3 +60,5 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v3
+        with:
+          artifact_name: github-pages
