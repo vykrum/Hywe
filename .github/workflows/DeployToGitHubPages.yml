@@ -8,20 +8,20 @@ on:
     branches: [master]  # Trigger deployment on push to the master branch
 
 permissions:
-  contents: write  # Required permissions for writing contents to the repository
-  pages: write     # Required permissions to deploy to GitHub Pages
+  contents: write  # Permissions to write contents to the repository
+  pages: write     # Permissions to deploy to GitHub Pages
   id-token: write  # Permissions to generate an id token for GitHub Pages deployment
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest  # Use Ubuntu as the CI environment
+    runs-on: ubuntu-latest  # Use Ubuntu for the CI environment
 
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Setup .NET for building the app
+      # Step 2: Set up .NET for building the app
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
