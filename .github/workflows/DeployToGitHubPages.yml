@@ -51,7 +51,5 @@ jobs:
       # Step 7: Deploy the files to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v2
-        with:
-          # No need to specify a branch as it will default to 'gh-pages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the GitHub token for authentication
