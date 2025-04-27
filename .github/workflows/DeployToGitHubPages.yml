@@ -53,6 +53,10 @@ jobs:
         with:
           path: ${{ env.PUBLISH_DIR }}/wwwroot
           artifact_name: github-pages
+
+      - name: List artifacts
+        run: |
+          curl -s https://api.github.com/repos/${{ github.repository }}/actions/artifacts
   
   deploy:
     needs: build-and-deploy
