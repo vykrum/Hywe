@@ -44,7 +44,10 @@ jobs:
 
       - name: List files in wwwroot directory # Verify wwwroot contents
         run: ls -R ${{ env.PUBLISH_DIR }}/wwwroot
-        
+
+      - name: Deploy to GitHub Pages
+        uses: actions/configure-pages@v2
+  
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
