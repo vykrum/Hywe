@@ -31,7 +31,7 @@ jobs:
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
           html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
-          base_href: /Hywe/
+          base_href: /
 
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
