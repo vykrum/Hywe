@@ -35,7 +35,7 @@ jobs:
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
 
-      - name: Upload GitHub Pages artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
           path: ${{ env.PUBLISH_DIR }}
@@ -46,11 +46,5 @@ jobs:
     environment:
       name: github-pages
     steps:
-      - name: Download GitHub Pages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: github-pages
-
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v2
