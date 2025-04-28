@@ -458,6 +458,22 @@ let cntSqn
             | false -> hxlUni 2 ar1
 ///
 
+/// <summary> Hexel Ring Offset. </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="hxl"> All constituent hexels. </param>
+/// <returns> Offset Boundary/Peripheral hexels. </returns>
+let hxlOfs
+    (sqn : Sqn)
+    (hxl : Hxl[]) = 
+    hxl 
+    |> hxlUni 1 
+    |> Array.map(fun x -> adjacent sqn x) 
+    |> Array.concat 
+    |> Array.distinct 
+    |> Array.except (hxlUni 1 hxl)
+    |> cntSqn sqn
+///
+
 /// <param name="org"> All constituent hexels. </param>
 /// <param name="hxl"> Subset of hexels. </param>
 /// <returns> Restored Hexel Types </returns>

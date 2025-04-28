@@ -93,9 +93,7 @@ let crd
     (hxXY02,hxMxmX,hxMxmY)
 ///
 
-
-
-/// <summary> Nested Coxels SVG </summary>
+/// <summary> (Unused)Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>
 /// <param name="clr"> Array of colors </param>
 /// <param name="wdt"> Width of SVG (and Height) </param>
@@ -164,15 +162,29 @@ let nstdCxls
 
             } 
     }
+///
 
-let nstdCxls1
+/// <summary> Nested Coxels SVG </summary>
+/// <param name="cxl"> Array of coxels </param>
+/// <param name="clr"> Array of colors </param>
+/// <returns> Polygon Vertices </returns>
+
+let nstdCxlsWrp
     (cxl : Cxl[])
     (clr : string[])
-    (scl : int)
-    (wdt : int) = 
-    let lbl = Array.map (fun x -> prpVlu x.Name) cxl
-    let crd = Array.map (fun x -> cxlPrm x) cxl
+    (scl : int)= 
+    /// <summary> Coxel Offseted Boundary Wrap </summary>
+    /// <param name="cxl"> Coxel. </param>
+    /// <returns> Boundary Wrap vertices. </returns>
+    let cxlPrm
+        (cxl : Cxl) =
+        hxlOfs cxl.Seqn cxl.Hxls 
+        |> Array.map (fun x -> hxlCrd x) 
+        |> Array.map (fun (x,y,_) -> (x,y))
     
+    // Vertices
+    let crd = Array.map (fun x -> cxlPrm x) cxl
+     
     // Shift and Scale Vertices
     let padd = 5*scl
     let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a*scl,b*scl)x) crd
@@ -183,25 +195,49 @@ let nstdCxls1
     let shfX = (-1 * minX1) + padd
     let shfY = (-1 * minY1) + padd
     let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
+    let wdt = (maxX1 - minX1)+(padd*2)
+    let hgt = (maxY1 - minY1)+(padd*2)
+    
+    // Labels
+    let lbl = Array.map (fun x -> prpVlu x.Name) cxl
+
     svg{
         attr.width wdt
-        attr.height wdt
+        attr.height hgt
         attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
         svg {
-             let prp = Array.zip crd2 clr
+             let prp = Array.zip3 crd2 lbl clr
                     
              for cmp in prp do
-                 let (xxyy,color) = cmp
+                 let (xxyy,label,color) = cmp
                  let xy = Array.map(fun (a,b) -> a,b) xxyy
                             |> Array.map (fun (x,y) -> [|x;y|])
                             |> Array.concat
                             |> Array.map (fun x -> string (x)) 
                             |> String.concat ","
+                 let x,y = match xxyy with
+                           | [||] -> -10,-10
+                           | _ -> 
+                                 let a = xxyy |> Array.map(fun (x,_) -> double x) |> Array.average |> int
+                                 let b = xxyy |> Array.map(fun (_,x) -> double x) |> Array.average |> int
+                                 a,b
 
                  plgn()
                     .pt($"{xy}")
                     .cl($"{color}")
-                    .Elt() 
+                    .Elt()
+                 
+                 svpt()
+                    .cl($"{color}")
+                    .xp($"{x}")
+                    .yp($"{y}")
+                    .Elt()
+
+                 svtx()
+                    .xx($"{x}")
+                    .yy($"{y}")
+                    .nm($"{label}")
+                    .Elt()
             }
         
     }

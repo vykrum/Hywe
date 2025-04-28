@@ -141,60 +141,6 @@ let hxlRct
     let bas = AV(hxlCrd bs1) |> adjacent sqn |> hxlUni 3 |> Array.except rct |> Array.head
     AV(hxlCrd bas),rct
 
-let cxlPrm
-    (cxl : Cxl) = 
-    let sqn = cxl.Seqn
-    let hx1 = cxl.Hxls |> hxlUni 1 
-    // Boundary Hexels
-    let hxBd = (cxlHxl cxl).Prph
-            |> hxlUni 1 
-    // All hexel vertices
-    let vrHx = Array.map(fun x -> vertex sqn Hxg x) hx1
-    // Vertices shared Hexel Count 
-    let vrHxCt = vrHx   
-                |> Array.concat 
-                |> Array.groupBy (fun (_,x,y) -> x,y)
-                |> Array.map (fun (x,y) -> x,Array.length y)
-                |> Map.ofArray
-    // Boundary Hexel Vertices
-    let vrBd = hxBd 
-            |> Array.map(fun x -> vertex sqn Hxg x) 
-    // Vertex Cell Count 
-    let vrBdCt = 
-                let vrBd1 = Array.map(fun x -> Array.map(fun (a,b,c)->b,c)x)vrBd
-                vrBd1
-                |> Array.map(fun x 
-                                -> Array.map(fun y 
-                                                -> Map.find 
-                                                    y 
-                                                    vrHxCt)x)
-    let vrBdCdCt = Array.map2 (fun x y ->Array.map2(fun a b -> a,b)x y) vrBd vrBdCt
-    // Break Index in vertex sequence
-    let vrBrIn = 
-        let a = vrBdCdCt
-                |> Array.map(fun x 
-                                -> Array.tryFindIndexBack (fun y -> (snd y)<3)x)
-                |> Array.map (fun x 
-                                -> Option.defaultWith (fun () -> 0)x)
-                |> Array.map2 (fun x y 
-                                -> match y<5 with
-                                    | false -> x
-                                    | true ->   let a,b = Array.splitAt (y+1) x
-                                                Array.append b a  )vrBdCdCt 
-        let b = a
-                |> Array.map(fun x 
-                                -> Array.tryFindIndexBack (fun y -> (snd y)>2)x)
-                |> Array.map (fun x 
-                                -> Option.defaultWith (fun () -> 0)x)
-                |> Array.map2 (fun x y 
-                                -> match y<5 with
-                                    | false -> x
-                                    | true ->   let a,b = Array.splitAt (y+1) x
-                                                Array.append b a  )a      
-        b     
-    let vrBrIn1 = vrBrIn
-                |> Array.map (fun x -> Array.filter(fun (_,y) -> y < 3)x)
-                |> Array.concat
-                |> Array.map (fun ((_,x,y),_) -> x,y)
-                |> Array.distinct
-    vrBrIn1
+
+    
+

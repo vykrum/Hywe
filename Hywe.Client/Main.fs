@@ -171,45 +171,9 @@ let view model dispatch =
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
 
-                nstdCxls cxCxl1 cxClr1 model.scp1 model.shp1
+                //nstdCxls cxCxl1 cxClr1 model.scp1 model.shp1
+                nstdCxlsWrp cxCxl1 cxClr1 model.scp1
             }
-            
-            // Shape Selection
-            div{
-                attr.width "95%"
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; 
-                                justify-content: center;
-                                display: flex;
-                                flex-direction: row;"
-                
-                // Shape
-                label{
-                    attr.``for`` "selectShape"  
-                }
-                select{
-                    attr.name "selectShape"
-                    attr.id "shapeOptions"
-                    attr.``style`` styleDrop2
-                    on.change (fun e -> 
-                                        let value = (e.Value :?> string)
-                                        let shp01 = 
-                                            match value with
-                                            | "Hexagon" -> Hxg
-                                            | "Square" -> Sqr
-                                            | "Arrow" -> Arw
-                                            | "Rhombus" -> Prl
-                                            | _ -> Hxg
-
-                                        dispatch (SetShp1 shp01))
-                    option {"Shape"}
-                    option {"Hexagon"}
-                    option {"Square"}
-                    option {"Arrow"}
-                    option {"Rhombus"}
-                }
-
-            }  
             
             // Hywe Table
             div{
