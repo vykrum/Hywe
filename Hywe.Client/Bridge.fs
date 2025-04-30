@@ -57,7 +57,7 @@ type crTx = Template<
         text-anchor="middle"
         style="text-transform: lowercase">
         <textPath
-            href="#${nm}"
+            href="#${pth}"
             letter-spacing="0.5px"
             startOffset="50%">
             ${nm}
@@ -222,7 +222,8 @@ let nstdCxlsWrp
              attr.``style`` $"position: absolute; top: 0; left: 0;"
              attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
 
-             let prp = Array.zip crd2 clr     
+             let prp = Array.zip crd2 clr
+             
              for cmp in prp do
                  let (xxyy,color) = cmp
                  let xy = Array.map(fun (a,b) -> a,b) xxyy
@@ -230,7 +231,7 @@ let nstdCxlsWrp
                             |> Array.concat
                             |> Array.map (fun x -> string (x)) 
                             |> String.concat ","
-
+                 
                  plgn()
                     .pt($"{xy}")
                     .cl($"{color}")
@@ -242,9 +243,12 @@ let nstdCxlsWrp
              attr.height hgt
              attr.``style`` $"position: absolute; top: 0; left: 0;"
              attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
-             
-             let prp = Array.zip3 crd2 lbl clr
-             for (xxyy, label, color) in prp do
+
+             let pth = Array.map(fun x -> ($"path{x}")) [|1..Array.length lbl|]
+             let prp1 = Array.zip crd2 clr
+             let prp2 = Array.zip lbl pth
+             let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+             for (xxyy, label, color, path) in prp do
                 let x, y =
                     match xxyy with
                     | [||] -> -10, -10
@@ -252,9 +256,10 @@ let nstdCxlsWrp
                         let a = xxyy |> Array.map(fun (x,_) -> double x) |> Array.average |> int
                         let b = xxyy |> Array.map(fun (_,x) -> double x) |> Array.average |> int
                         a,b
+
                 let r = 10
                 crPh()
-                    .pathid(label)
+                    .pathid(path)
                     .sx($"{x}")
                     .sy($"{y+r}")
                     .r($"{r}")
@@ -264,6 +269,7 @@ let nstdCxlsWrp
                 
                 crTx()
                     .nm($"{label}")
+                    .pth(path)
                     .Elt()
                 
                 crCl()

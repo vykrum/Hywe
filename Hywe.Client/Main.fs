@@ -25,7 +25,7 @@ let initModel =
         scp1 = 8
         opt1 = None
         stx1 = stxInstr 
-        stx2 = "(1/3/.)"
+        stx2 = "(0/Q=1),(1/3/.)"
     }
 
 type Message =

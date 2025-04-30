@@ -185,7 +185,7 @@ let spaceCxl
                             | "666" -> VRCCNE
                             | "6666" -> HRCCNW
                             | _ -> VRCWEE
-                | None -> HRCWNE
+                | None -> VRCWEE
 
     // Rectangular Boundary
     // Attribute W for Width
