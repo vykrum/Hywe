@@ -34,13 +34,35 @@ type svln = Template<
         stroke-with = "2"
         >""">
 
-type svpt = Template<
-        """<path
-        id = "path1"
-        fill = "${cl}"
-        stroke = "${cl}"
-        d = "m ${xp} ${yp} q -10 -10 20 0 20 10 Z"
-        >""">
+type crPh = Template<
+            """<path
+            id = "${pathid}"
+            fill = "none"
+            d="M ${sx},${sy}
+           A ${r},${r} 0 1,1 ${ex},${ey}
+           A ${r},${r} 0 1,1 ${sx},${sy}"
+            >""">
+
+type crCl = Template<
+    """<circle
+        cx="${cx}" 
+        cy="${cy}" 
+        r="5" 
+        fill="${cl}" />""">
+
+type crTx = Template<
+    """<text
+        font-size="10px"
+        font-family="Verdana"
+        text-anchor="middle"
+        style="text-transform: lowercase">
+        <textPath
+            href="#${nm}"
+            letter-spacing="0.5px"
+            startOffset="50%">
+            ${nm}
+        </textPath>
+    </text>""">
 
 type svtx = Template<
         """<text 
@@ -49,18 +71,12 @@ type svtx = Template<
         width = "50px"
         font-size = "10px"
         font-family="Verdana"
-        text-anchor="start"
+        text-anchor="middle"
+        dominant-baseline="middle"
         fill = "#808080"
         opacity = "1"
         >${nm}</text> """>
 
-type stPt = Template<
-        """<text
-        <textPath
-        href = "#path1">
-        ${nm}
-        </textPath>
-        ></text> """>
 ///
 
 /// <summary> Scale and Shift origin</summary>
@@ -147,12 +163,6 @@ let nstdCxls
                             .tr($"{locn}")
                             .cl($"{color}")
                             .Elt()
-                 
-                        svpt()
-                            .cl($"{color}")
-                            .xp($"{x}")
-                            .yp($"{y}")
-                            .Elt()
 
                         svtx()
                             .xx($"{x}")
@@ -204,42 +214,76 @@ let nstdCxlsWrp
     svg{
         attr.width wdt
         attr.height hgt
+        attr.``style`` $"position: relative;"
         attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
         svg {
-             let prp = Array.zip3 crd2 lbl clr
-                    
+             attr.width wdt
+             attr.height hgt
+             attr.``style`` $"position: absolute; top: 0; left: 0;"
+             attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
+
+             let prp = Array.zip crd2 clr     
              for cmp in prp do
-                 let (xxyy,label,color) = cmp
+                 let (xxyy,color) = cmp
                  let xy = Array.map(fun (a,b) -> a,b) xxyy
                             |> Array.map (fun (x,y) -> [|x;y|])
                             |> Array.concat
                             |> Array.map (fun x -> string (x)) 
                             |> String.concat ","
-                 let x,y = match xxyy with
-                           | [||] -> -10,-10
-                           | _ -> 
-                                 let a = xxyy |> Array.map(fun (x,_) -> double x) |> Array.average |> int
-                                 let b = xxyy |> Array.map(fun (_,x) -> double x) |> Array.average |> int
-                                 a,b
 
                  plgn()
                     .pt($"{xy}")
                     .cl($"{color}")
                     .Elt()
-                 
-                 svpt()
+            }
+        // Overlay SVG: text labels
+        svg {
+             attr.width wdt
+             attr.height hgt
+             attr.``style`` $"position: absolute; top: 0; left: 0;"
+             attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
+             
+             let prp = Array.zip3 crd2 lbl clr
+             for (xxyy, label, color) in prp do
+                let x, y =
+                    match xxyy with
+                    | [||] -> -10, -10
+                    | _ ->
+                        let a = xxyy |> Array.map(fun (x,_) -> double x) |> Array.average |> int
+                        let b = xxyy |> Array.map(fun (_,x) -> double x) |> Array.average |> int
+                        a,b
+                let r = 10
+                crPh()
+                    .pathid(label)
+                    .sx($"{x}")
+                    .sy($"{y+r}")
+                    .r($"{r}")
+                    .ex($"{x}")
+                    .ey($"{y-r}")
+                    .Elt()
+                
+                crTx()
+                    .nm($"{label}")
+                    .Elt()
+                
+                crCl()
+                    .cx($"{x}")
+                    .cy($"{y}")
+                    .cl($"{color}")
+                    .Elt()
+
+(*                svpt()
                     .cl($"{color}")
                     .xp($"{x}")
                     .yp($"{y}")
                     .Elt()
 
-                 svtx()
+                svtx()
                     .xx($"{x}")
                     .yy($"{y}")
                     .nm($"{label}")
-                    .Elt()
-            }
-        
+                    .Elt()*)
+        }
     }
 ///
 
@@ -319,3 +363,4 @@ let cluster
                    .nm($"{label}")
                    .Elt()
         }
+///

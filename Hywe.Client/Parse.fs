@@ -123,7 +123,6 @@ let spaceSeq
 /// <param name="bas"> Base hexel. </param>
 /// <param name="occ"> Unavailable hexels. </param>
 /// <returns> Coxel array </returns>    
-[<TailCall>]
 let spaceCxl
     (occ : Hxl[])
     (str : string) = 
