@@ -189,3 +189,20 @@ html, body {
     text-align: center;
     font-family: 'Optima', Candara, Calibri
 }
+
+.tree-node-action {
+    color: gray;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+    .tree-node-action.add:hover {
+        color: green;
+    }
+
+    .tree-node-action.remove:hover {
+        color: red;
+    }
+
+

@@ -1,5 +1,6 @@
-module Hywe.Client.Main
+﻿module Hywe.Client.Main
 
+open System
 open Elmish
 open Bolero
 open Bolero.Html
@@ -8,6 +9,7 @@ open Shape
 open Bridge
 open Parse
 open Page
+open Tree
 
 type Model =
     {
@@ -16,16 +18,7 @@ type Model =
         opt1 : Beeset option
         stx1 : string
         stx2 : string
-    }
-
-// Default Input
-let initModel =
-    {
-        shp1 = Hxg
-        scp1 = 8
-        opt1 = None
-        stx1 = stxInstr 
-        stx2 = "(0/Q=1),(1/3/.)"
+        Tree : SubModel
     }
 
 type Message =
@@ -36,6 +29,30 @@ type Message =
     | SetOpt1 of Beeset
     | SetStx1 of string
     | SetStx2
+    | TreeMsg of SubMsg
+
+let initTreeModel : SubModel =
+    let root =
+        { Id = Guid.NewGuid()
+          Name = "Entry"
+          Weight = "20"
+          X = 0.0
+          Y = 0.0
+          Children = [] }
+
+    let laidOut = layoutTree root 0 (ref 100.0)
+    { Root = laidOut }
+
+// Default Input
+let initModel =
+    {
+        shp1 = Hxg
+        scp1 = 8
+        opt1 = None
+        stx1 = stxInstr 
+        stx2 = "(0/Q=1),(1/3/.)"
+        Tree = initTreeModel
+    }
 
 let update message model =
     match message with
@@ -50,10 +67,21 @@ let update message model =
                                 | Beeline -> beeline
                                 | Beeyond -> beeyond
                                 | Beedroom -> beedroom
+                                | Beegraph -> Tree.getOutput model.Tree 
                             {model with opt1 = Some value; stx1 = content}
 
     | SetStx1 value -> { model with stx1 = value }
-    | SetStx2 -> { model with stx2 = model.stx1}
+    | SetStx2 ->
+                let updatedStx1 =
+                    match model.opt1 with
+                    | Some Beegraph -> Tree.getOutput model.Tree
+                    | _ -> model.stx1
+                { model with stx1 = updatedStx1; stx2 = updatedStx1 }
+
+    | TreeMsg subMsg ->
+                let updatedTree = updateSub subMsg model.Tree
+                { model with Tree = updatedTree }
+
 
 // Interface
 let view model dispatch =      
@@ -63,6 +91,11 @@ let view model dispatch =
         let cxCxl1 = spaceCxl bsOc model.stx2
         let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
         let cxClr1 = pastels (Array.length cxCxl1)
+
+        //div {
+          //      viewTreeEditor model.Tree (TreeMsg >> dispatch)
+           //     text (Tree.getOutput model.Tree)
+            //}
 
         // Hywe
         div{
@@ -85,6 +118,7 @@ let view model dispatch =
                                         | "Bee-line" -> Beeline
                                         | "Bee-yond" -> Beeyond
                                         | "Bee-droom" -> Beedroom
+                                        | "Bee-graph" -> Beegraph
                                         | _ -> Beewhich
 
                                     dispatch (SetOpt1 beeset))
@@ -93,6 +127,10 @@ let view model dispatch =
                         attr.value "Bee-which"
                         "SELECT AN OPTION TO BEGIN HYWING"
                 }
+                option {
+                        attr.value "Bee-graph"
+                        "BEE-graph"
+                        }
                 option {
                         attr.value "Bee-line"
                         "BEE-line"
@@ -115,7 +153,20 @@ let view model dispatch =
                 attr.target "blank"
                 "?"
             }
-            
+
+            // Graph Interface
+            div {
+                attr.``style`` "width: 100%; flex-basis: 100%; margin-top: 10px;"
+
+                match model.opt1 with
+                | Some Beegraph ->
+                    div {
+                        attr.``style`` "width: 95%; margin: auto; padding: 10px;"
+                        viewTreeEditor model.Tree (TreeMsg >> dispatch)
+                    }
+                | _ -> empty()
+            }
+
             // Font size setting
             let fntSz = match model.opt1 with 
                         | Some Beeline -> 28
@@ -125,9 +176,7 @@ let view model dispatch =
             
             // Hywe Syntax Input
             textarea {
-                attr.name "options"
                 attr.id "options"
-                attr.``type`` "textarea"
                 attr.``class`` "textarea"
                 attr.``style`` $"width : 95%%;
                                 margin-left: 20px;
@@ -135,8 +184,16 @@ let view model dispatch =
                                 height:100px;
                                 font-size: {fntSz}px;
                                 color: #808080;"
-                bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a)) 
+
+                match model.opt1 with
+                | Some Beegraph ->
+                    attr.readonly true
+                    text (Tree.getOutput model.Tree)
+                | _ ->
+                    bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
+                    text model.stx1
             }
+
 
             // Zoom Out
             button {
@@ -255,6 +312,8 @@ let view model dispatch =
             }
         } 
     }
+
+
 
 // Bolero component handling state updates and rendering the user interface
 type MyApp() =

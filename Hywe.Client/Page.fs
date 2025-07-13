@@ -7,6 +7,7 @@ type Beeset =
     | Beeline
     | Beeyond
     | Beedroom
+    | Beegraph
 
 // Random pastel color
 let pastel () =
