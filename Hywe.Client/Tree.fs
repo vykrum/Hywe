@@ -32,6 +32,7 @@ type svLn = Template<"""
     y2="${y2}"
     stroke="#888" />
 """>
+
 // Labels for nodes
 let randomNames = [
     "<Hive>"; "<Cell>"; "<Comb>"; "<Hex>"; "<Core>"; "<Dock>"; "<Ring>";
@@ -135,7 +136,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let renderNode (node: TreeNode) : Node =
         let containerStyle =
             $"position:absolute; left:{node.X - 35.0}px; top:{node.Y - 25.0}px; " +
-            "width:60px; height:40px; border-radius:6px; background-color:white; " +
+            "width:60px; height:30px; border-radius:6px; background-color:white; " +
             "border:1px solid #d3d3d1; font-size:12px; cursor:default; z-index:1; " +
             "display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px;"
 
@@ -152,11 +153,18 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             div {
                 attr.style "display:flex; justify-content:space-between; width:50px; font-size:12px; align-items:center;"
 
-                span {
-                    attr.style "color:red; font-weight:bold; opacity:0.5;; cursor:pointer"
-                    on.click (fun _ -> dispatch (DeleteNode node.Id))
-                    text "-"
-                }
+                match node.Id = model.Root.Id with
+                | false ->
+                    span {
+                        attr.style "color:red; font-weight:bold; opacity:0.5; cursor:pointer;"
+                        on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
+                        text "-"
+                    }
+                | true ->
+                    span {
+                        attr.style "width:10px;" // layout spacer to keep alignment
+                        text " "
+                    }
 
                 input {
                     attr.``type`` "text"
@@ -171,14 +179,15 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     text "+"
                 }
             }
+
         }
 
     let renderConnection (parent: TreeNode) (child: TreeNode) : Node =
         svLn()
             .x1($"{parent.X}")
-            .y1($"{parent.Y + 20.0}")
+            .y1($"{parent.Y + 15.0}")
             .x2($"{child.X}")
-            .y2($"{child.Y - 20.0}")
+            .y2($"{child.Y - 15.0}")
             .Elt()
 
     let rec collectConnections (node: TreeNode) : Node list =
@@ -194,7 +203,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     div {
         // Outer Scrollable Container
         div {
-            attr.style "width:100%; overflow-x:auto; padding:1rem; display:flex; justify-content:center;"
+            attr.style "width:100%; overflow-x:auto; padding:0.25rem 0; display:flex; justify-content:center;"
 
             // Inner absolute layout container with size based on nodes
             div {
@@ -210,6 +219,19 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 // Nodes
                 for node in nodes do
                     renderNode node
+            }
+        }
+        div {
+            attr.style "text-align: center; font-size: 10px; color: #888; padding-top: 8px;"
+            span {
+                text "Double click on "
+            }
+            span {
+                attr.style "color: red; font-size: 14px; font-weight: bold;"
+                text "-"
+            }
+            span {
+                text " to delete a node and all of its descendants"
             }
         }
     }

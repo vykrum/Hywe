@@ -2,7 +2,7 @@
 
 open System
 open Coxel
-open Parse
+open Bolero.Html
 
 type Beeset = 
     | Beewhich
@@ -52,22 +52,47 @@ let introduction = "Weave spatial layouts at a high level of abstraction using p
                     "currently undergoing its formative stages of development " + 
                     "as an early stage design interface."
 
-type DerivedData = {
-    cxCxl1: Cxl[]
-    cxlAvl: int[]
-    cxClr1: string[]
-}
+// Hywe Table
+let renderRow (cxl: Cxl) (clr: string) (avl: int) =
+    let reqSz = 
+        match prpVlu cxl.Rfid with
+        | "1" -> ((prpVlu cxl.Size |> int) + 1).ToString()
+        | _ -> prpVlu cxl.Size
 
-let deriveData (stx: string) : DerivedData =
-    let bsOc = [||]
-    let cxCxl1 = spaceCxl bsOc stx
-    let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
-    let cxClr1 = pastels (Array.length cxCxl1)
-    {
-        cxCxl1 = cxCxl1
-        cxlAvl = cxlAvl
-        cxClr1 = cxClr1
+    let achSz = Array.length cxl.Hxls
+    let achCl = if achSz < int reqSz then "red" else "#646464"
+    let avlCl = if avl < 1 then "red" else "#646464"
+
+    tr {
+        attr.``style`` $"background-color:{clr}"
+        td { attr.width "15%"; attr.``style`` "padding: 5px 10px; text-align: center;"; prpVlu cxl.Rfid }
+        td { attr.width "35%"; attr.``style`` "padding: 5px 10px; text-align: center;"; prpVlu cxl.Name }
+        td { attr.width "15%"; attr.``style`` "padding: 5px 10px; text-align: center;"; reqSz }
+        td { attr.width "15%"; attr.``style`` $"padding: 5px 10px; text-align: center; color:{achCl};"; $"{achSz}" }
+        td { attr.width "15%"; attr.``style`` $"padding: 5px 10px; text-align: center; color:{avlCl};"; $"{avl}" }
     }
+
+let viewHyweTable (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
+    div {
+        attr.``class`` "styleTable"
+        table {
+            attr.width "95%"
+            thead {
+                tr {
+                    th { "Index" }
+                    th { "Label" }
+                    th { "Required" }
+                    th { "Achieved" }
+                    th { "Open" }
+                }
+            }
+            tbody {
+                for (cxl, clr, avl) in Array.zip3 cxCxl1 cxClr1 cxlAvl do
+                    yield renderRow cxl clr avl
+            }
+        }
+    }
+
 
 // CSS Styles
 let styleDrop2 = "width: 35%;

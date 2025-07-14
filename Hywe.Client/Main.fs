@@ -11,6 +11,22 @@ open Parse
 open Page
 open Tree
 
+type DerivedData = {
+    cxCxl1: Cxl[]
+    cxlAvl: int[]
+    cxClr1: string[]
+}
+
+let deriveData (stx: string) : DerivedData =
+    let bsOc = [||]
+    let cxCxl1 = spaceCxl bsOc stx
+    let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
+    let cxClr1 = pastels (Array.length cxCxl1)
+    {
+        cxCxl1 = cxCxl1
+        cxlAvl = cxlAvl
+        cxClr1 = cxClr1
+    }
 
 type Model =
     {
@@ -92,8 +108,6 @@ let update message model =
         | _ ->
             { model with Tree = updatedTree }
 
-
-
 // Interface
 let view model dispatch =      
     concat {
@@ -102,18 +116,9 @@ let view model dispatch =
         let cxlAvl = model.Derived.cxlAvl
         let cxClr1 = model.Derived.cxClr1
 
-
-        //div {
-          //      viewTreeEditor model.Tree (TreeMsg >> dispatch)
-           //     text (Tree.getOutput model.Tree)
-            //}
-
         // Hywe
         div{
-            attr.``style`` "flex-wrap: wrap;
-                                justify-content: center;
-                                display: flex;
-                                flex-direction: row;"
+            attr.``style`` "flex-wrap: wrap;justify-content: center;display: flex;flex-direction: row;"
             // Dropdown
             label{
                 attr.``for`` "options"   
@@ -134,15 +139,15 @@ let view model dispatch =
                 option {
                         attr.selected "true"
                         attr.value "Bee-which"
-                        "CHOOSE YOUR WEAVE"
+                        "Select Your Beeline"
                 }
                 option {
                         attr.value "Bee-gin"
-                        "BEE-gin : Flow chart for design intent."
+                        "Bee-gin : Space Flow Chart"
                         }
                 option {
                         attr.value "Bee-spoke"
-                        "BEE-spoke : Textual syntax for design intent"
+                        "Bee-spoke : Space Flow Script"
                         }
             }
 
@@ -155,7 +160,7 @@ let view model dispatch =
                 "?"
             }
 
-            // Graph Interface
+            // Space Flow Chart
             div {
                 attr.``style`` "width: 100%; flex-basis: 100%; margin-top: 10px;"
 
@@ -170,13 +175,13 @@ let view model dispatch =
 
             // Font size setting
             let fntSz = match model.opt1 with 
-                        | Some Beegin -> 14
-                        | Some Beespoke -> 14
-                        | _ -> 14
+                        | Some Beegin -> 12
+                        | Some Beespoke -> 12
+                        | _ -> 12
             
             // Hywe Syntax Input
             textarea {
-                attr.id "options"
+                attr.id "syntax"
                 attr.``class`` "textarea"
                 attr.``style`` $"width : 95%%;
                                 margin-left: 20px;
@@ -193,7 +198,6 @@ let view model dispatch =
                     bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
                     text model.stx1
             }
-
 
             // Zoom Out
             button {
@@ -233,87 +237,9 @@ let view model dispatch =
             }
             
             // Hywe Table
-            div{
-                attr.``class`` "styleTable"
-                table{
-                    attr.width "95%"
-                    thead{
-                            tr{
-                                th{"Index"}
-                                th{"Label"}
-                                th{"Required"}
-                                th{"Achieved"}
-                                th{"Open"}
-                            }
-                    }
-                    tbody{
-                        for cxl in (Array.zip3 cxCxl1 cxClr1 cxlAvl) do
-                            tr{
-                                let (fs,sn,th) = cxl
-                                attr.``style`` $"background-color:{sn}"
-                                
-                                let reqSz = 
-                                    match (prpVlu fs.Rfid) with
-                                    | "1" -> ((prpVlu fs.Size |> int) + 1).ToString()
-                                    | _ -> prpVlu fs.Size
-
-                                let achSz = Array.length fs.Hxls
-
-                                let achCl =
-                                    match achSz < (reqSz|>int) with
-                                    | true -> "red"
-                                    | false -> "#646464"
-
-                                let achVtCl =                                     
-                                        match th < 1 with
-                                        | true -> "red"
-                                        | false -> "#646464"
-
-                                td{
-                                    attr.width "15%"
-                                    attr.``style`` "
-                                        padding: 5px 10px;
-                                        text-align: center;"
-                                    prpVlu fs.Rfid
-                                    }
-                                td{
-                                    attr.width "35%"
-                                    attr.``style`` "
-                                        padding: 5px 10px;
-                                        text-align: center;"
-                                    prpVlu fs.Name
-                                    }
-                                td{
-                                    attr.width "15%"
-                                    attr.``style`` "
-                                        padding: 5px 10px;
-                                        text-align: center;"
-                                    reqSz
-                                    }
-                                td{
-                                attr.width "15%"
-                                attr.``style`` $"
-                                    padding: 5px 10px;
-                                    text-align: center;
-                                    color:{achCl};"
-                                $"{achSz}"
-                                }
-                                td{
-                                attr.width "15%"
-                                attr.``style`` $"
-                                    padding: 5px 10px;
-                                    text-align: center;
-                                    color:{achVtCl};"
-                                $"{th}"
-                                }
-                            }
-                    }
-                }
-            }
+            viewHyweTable cxCxl1 cxClr1 cxlAvl
         } 
     }
-
-
 
 // Bolero component handling state updates and rendering the user interface
 type MyApp() =
