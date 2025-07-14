@@ -11,6 +11,7 @@ open Parse
 open Page
 open Tree
 
+
 type Model =
     {
         shp1 : Shp
@@ -19,6 +20,7 @@ type Model =
         stx1 : string
         stx2 : string
         Tree : SubModel
+        Derived : DerivedData
     }
 
 type Message =
@@ -38,8 +40,9 @@ let initModel =
         scp1 = 8
         opt1 = None
         stx1 = stxInstr 
-        stx2 = "(0/Q=1),(1/3/.)"
+        stx2 = stx2Ini
         Tree = Tree.initModel ()
+        Derived = deriveData stx2Ini
     }
 
 let update message model =
@@ -49,35 +52,56 @@ let update message model =
     | ScpInc -> { model with scp1 = model.scp1 + 1 }
     | ScpDec -> { model with scp1 = model.scp1 - 1 }
     | SetOpt1 value -> 
-                            let content = 
-                                match value with 
-                                | Beewhich -> stxInstr
-                                | Beegin -> Tree.getOutput model.Tree 
-                                | Beespoke -> beedroom
-                                
-                            {model with opt1 = Some value; stx1 = content}
+        let newStx =
+            match value with
+            | Beewhich -> stxInstr
+            | Beegin -> Tree.getOutput model.Tree
+            | Beespoke -> beedroom
+
+        {
+            model with
+                opt1 = Some value
+                stx1 = newStx
+                stx2 = newStx
+        }
 
     | SetStx1 value -> { model with stx1 = value }
     | SetStx2 ->
-                let updatedStx1 =
-                    match model.opt1 with
-                    | Some Beegin -> Tree.getOutput model.Tree
-                    | _ -> model.stx1
-                { model with stx1 = updatedStx1; stx2 = updatedStx1 }
+        let updatedStx1 =
+            match model.opt1 with
+            | Some Beegin -> Tree.getOutput model.Tree
+            | _ -> model.stx1
+        {
+            model with
+                stx1 = updatedStx1
+                stx2 = updatedStx1
+                Derived = deriveData updatedStx1
+        }
 
     | TreeMsg subMsg ->
-                let updatedTree = updateSub subMsg model.Tree
-                { model with Tree = updatedTree }
+        let updatedTree = updateSub subMsg model.Tree
+        match model.opt1 with
+        | Some Beegin ->
+            let newOutput = Tree.getOutput updatedTree
+            {
+                model with 
+                    Tree = updatedTree
+                    stx1 = newOutput
+                    stx2 = newOutput 
+            }
+        | _ ->
+            { model with Tree = updatedTree }
+
 
 
 // Interface
 let view model dispatch =      
     concat {
         // Nested Coxels Data
-        let bsOc = [||]
-        let cxCxl1 = spaceCxl bsOc model.stx2
-        let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
-        let cxClr1 = pastels (Array.length cxCxl1)
+        let cxCxl1 = model.Derived.cxCxl1
+        let cxlAvl = model.Derived.cxlAvl
+        let cxClr1 = model.Derived.cxClr1
+
 
         //div {
           //      viewTreeEditor model.Tree (TreeMsg >> dispatch)

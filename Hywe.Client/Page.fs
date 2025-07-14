@@ -1,6 +1,8 @@
 ﻿module Page
 
 open System
+open Coxel
+open Parse
 
 type Beeset = 
     | Beewhich
@@ -28,9 +30,11 @@ let pastels (size: int) =
 
 // Defaults
 let stxInstr = 
-    "View HYWE syntax here.\n" +
-    "Click HYWEAVE to apply."
+    " 1. Make a choice above.\n" +
+    " 2. View HYWE syntax here.\n" +
+    " 3. Click HYWEAVE below."
 
+let stx2Ini = "(0/Q=1),(1/3/.)"
 
 let beeline = "(1/19/Start),(2/15/End)"
 
@@ -47,6 +51,23 @@ let introduction = "Weave spatial layouts at a high level of abstraction using p
                     "formatted syntax in Hywe, an endogenous space planning concept " +
                     "currently undergoing its formative stages of development " + 
                     "as an early stage design interface."
+
+type DerivedData = {
+    cxCxl1: Cxl[]
+    cxlAvl: int[]
+    cxClr1: string[]
+}
+
+let deriveData (stx: string) : DerivedData =
+    let bsOc = [||]
+    let cxCxl1 = spaceCxl bsOc stx
+    let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
+    let cxClr1 = pastels (Array.length cxCxl1)
+    {
+        cxCxl1 = cxCxl1
+        cxlAvl = cxlAvl
+        cxClr1 = cxClr1
+    }
 
 // CSS Styles
 let styleDrop2 = "width: 35%;
