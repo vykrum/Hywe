@@ -47,10 +47,10 @@ let beedroom = "(0/W=15/H=15/I=0/S=1/Q=22),"+
                 "(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/11/Closet-3),"+
                 "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
 
-let introduction = "Weave spatial layouts at a high level of abstraction using properly " +
-                    "formatted syntax in Hywe, an endogenous space planning concept " +
-                    "currently undergoing its formative stages of development " + 
-                    "as an early stage design interface."
+let introduction = "Weave spatial layouts at a high level of abstraction " +
+                    "with Hywe, an endogenous space planning concept. " +
+                    "Hywe is an early stage design interface undergoing contined development" + 
+                    "while incrementally climbing down the abstraction ladder"
 
 // Hywe Table
 let renderRow (cxl: Cxl) (clr: string) (avl: int) =
@@ -108,3 +108,4 @@ let styleDrop2 = "width: 35%;
                     border: none;
                     text-align: center;
                     font-family: 'Optima', Candara, Calibri;"
+

@@ -36,6 +36,7 @@ type Model =
         stx2 : string
         Tree : SubModel
         Derived : DerivedData
+        IsHyweaving: bool
     }
 
 type Message =
@@ -45,8 +46,10 @@ type Message =
     | ScpDec
     | SetOpt1 of Beeset
     | SetStx1 of string
-    | SetStx2
     | TreeMsg of SubMsg
+    | StartHyweave
+    | RunHyweave
+    | FinishHyweave
 
 // Default Input
 let initModel =
@@ -58,40 +61,69 @@ let initModel =
         stx2 = stx2Ini
         Tree = Tree.initModel ()
         Derived = deriveData stx2Ini
+        IsHyweaving = false
     }
 
 let update message model =
     match message with
-    | SetShp1 value -> { model with shp1 = value }
-    | SetScp1 value -> { model with scp1 = value }
-    | ScpInc -> { model with scp1 = model.scp1 + 1 }
-    | ScpDec -> { model with scp1 = model.scp1 - 1 }
+    | SetShp1 value -> 
+        { model with shp1 = value }, Cmd.none
+
+    | SetScp1 value -> 
+        { model with scp1 = value }, Cmd.none
+
+    | ScpInc -> 
+        { model with scp1 = model.scp1 + 1 }, Cmd.none
+
+    | ScpDec -> 
+        { model with scp1 = model.scp1 - 1 }, Cmd.none
+
     | SetOpt1 value -> 
         let newStx =
             match value with
             | Beewhich -> stxInstr
             | Beegin -> Tree.getOutput model.Tree
             | Beespoke -> beedroom
-
         {
             model with
                 opt1 = Some value
                 stx1 = newStx
                 stx2 = newStx
-        }
+        }, Cmd.none
 
-    | SetStx1 value -> { model with stx1 = value }
-    | SetStx2 ->
+    | SetStx1 value -> 
+        { model with stx1 = value }, Cmd.none
+
+    | StartHyweave ->
+        { model with IsHyweaving = true },
+        Cmd.OfAsync.perform
+            (fun () -> async {
+                do! Async.Sleep 50
+                return ()
+            }) () (fun _ -> RunHyweave)
+
+    | RunHyweave ->
         let updatedStx1 =
             match model.opt1 with
             | Some Beegin -> Tree.getOutput model.Tree
             | _ -> model.stx1
-        {
+
+        let newModel = {
             model with
                 stx1 = updatedStx1
                 stx2 = updatedStx1
                 Derived = deriveData updatedStx1
         }
+
+        newModel,
+        Cmd.OfAsync.perform
+            (fun () -> async {
+                do! Async.Sleep 100
+                return ()
+            }) () (fun _ -> FinishHyweave)
+
+    | FinishHyweave ->
+        { model with IsHyweaving = false }, Cmd.none
 
     | TreeMsg subMsg ->
         let updatedTree = updateSub subMsg model.Tree
@@ -103,9 +135,9 @@ let update message model =
                     Tree = updatedTree
                     stx1 = newOutput
                     stx2 = newOutput 
-            }
+            }, Cmd.none
         | _ ->
-            { model with Tree = updatedTree }
+            { model with Tree = updatedTree }, Cmd.none
 
 // Interface
 let view model dispatch =      
@@ -209,13 +241,20 @@ let view model dispatch =
             // Hyweave
             button {
                 attr.``class`` "button1"
+                attr.disabled model.IsHyweaving
                 attr.``style`` "
-                                width: 88%;
-                                margin-left: 1%;
-                                margin-right: 1%;
-                                margin-top: 5px;"
-                on.click (fun _ -> dispatch (SetStx2))
-                "h y W E A V E"
+                    width: 88%;
+                    margin-left: 1%;
+                    margin-right: 1%;
+                    margin-top: 5px;"
+                on.click (fun _ -> dispatch StartHyweave)
+
+                match model.IsHyweaving with
+                | true ->
+                    span { attr.``class`` "spinner" }
+                    text " h y W E A V E i n g . . ."
+                | false ->
+                    text "h y W E A V E"
             }
 
             // Zoom In
@@ -245,4 +284,7 @@ type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
     override this.Program =
-        Program.mkSimple (fun _ -> initModel) update view
+        Program.mkProgram
+            (fun _ -> initModel, Cmd.none)
+            update
+            view
