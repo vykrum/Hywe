@@ -1,6 +1,5 @@
 ﻿module Hywe.Client.Main
 
-open System
 open Elmish
 open Bolero
 open Bolero.Html
