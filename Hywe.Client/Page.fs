@@ -4,10 +4,8 @@ open System
 
 type Beeset = 
     | Beewhich
-    | Beeline
-    | Beeyond
-    | Beedroom
-    | Beegraph
+    | Beegin
+    | Beespoke
 
 // Random pastel color
 let pastel () =
@@ -30,11 +28,9 @@ let pastels (size: int) =
 
 // Defaults
 let stxInstr = 
-    "Hywe syntax, for reference, will populate here.\n" +
-    "• BEE-line  : Elementary syntax for simple layouts.\n" +
-    "• BEE-yond  : Enhanced syntax for branched layouts.\n" +
-    "• BEE-droom : Evolved syntax for complex layouts.\n\n" +
-    "Alter the populated script to explore variations."
+    "View HYWE syntax here.\n" +
+    "Click HYWEAVE to apply."
+
 
 let beeline = "(1/19/Start),(2/15/End)"
 

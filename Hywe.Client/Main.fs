@@ -31,18 +31,6 @@ type Message =
     | SetStx2
     | TreeMsg of SubMsg
 
-let initTreeModel : SubModel =
-    let root =
-        { Id = Guid.NewGuid()
-          Name = "Entry"
-          Weight = "20"
-          X = 0.0
-          Y = 0.0
-          Children = [] }
-
-    let laidOut = layoutTree root 0 (ref 100.0)
-    { Root = laidOut }
-
 // Default Input
 let initModel =
     {
@@ -51,7 +39,7 @@ let initModel =
         opt1 = None
         stx1 = stxInstr 
         stx2 = "(0/Q=1),(1/3/.)"
-        Tree = initTreeModel
+        Tree = Tree.initModel ()
     }
 
 let update message model =
@@ -64,17 +52,16 @@ let update message model =
                             let content = 
                                 match value with 
                                 | Beewhich -> stxInstr
-                                | Beeline -> beeline
-                                | Beeyond -> beeyond
-                                | Beedroom -> beedroom
-                                | Beegraph -> Tree.getOutput model.Tree 
+                                | Beegin -> Tree.getOutput model.Tree 
+                                | Beespoke -> beedroom
+                                
                             {model with opt1 = Some value; stx1 = content}
 
     | SetStx1 value -> { model with stx1 = value }
     | SetStx2 ->
                 let updatedStx1 =
                     match model.opt1 with
-                    | Some Beegraph -> Tree.getOutput model.Tree
+                    | Some Beegin -> Tree.getOutput model.Tree
                     | _ -> model.stx1
                 { model with stx1 = updatedStx1; stx2 = updatedStx1 }
 
@@ -115,33 +102,23 @@ let view model dispatch =
                                     let value = (e.Value :?> string)
                                     let beeset = 
                                         match value with
-                                        | "Bee-line" -> Beeline
-                                        | "Bee-yond" -> Beeyond
-                                        | "Bee-droom" -> Beedroom
-                                        | "Bee-graph" -> Beegraph
+                                        | "Bee-gin" -> Beegin
+                                        | "Bee-spoke" -> Beespoke
                                         | _ -> Beewhich
 
                                     dispatch (SetOpt1 beeset))
                 option {
                         attr.selected "true"
                         attr.value "Bee-which"
-                        "SELECT AN OPTION TO BEGIN HYWING"
+                        "CHOOSE YOUR WEAVE"
                 }
                 option {
-                        attr.value "Bee-graph"
-                        "BEE-graph"
+                        attr.value "Bee-gin"
+                        "BEE-gin : Flow chart for design intent."
                         }
                 option {
-                        attr.value "Bee-line"
-                        "BEE-line"
-                        }
-                option {
-                        attr.value "Bee-yond"
-                        "BEE-yond"
-                        }
-                option {
-                        attr.value "Bee-droom"
-                        "BEE-droom"
+                        attr.value "Bee-spoke"
+                        "BEE-spoke : Textual syntax for design intent"
                         }
             }
 
@@ -159,7 +136,7 @@ let view model dispatch =
                 attr.``style`` "width: 100%; flex-basis: 100%; margin-top: 10px;"
 
                 match model.opt1 with
-                | Some Beegraph ->
+                | Some Beegin ->
                     div {
                         attr.``style`` "width: 95%; margin: auto; padding: 10px;"
                         viewTreeEditor model.Tree (TreeMsg >> dispatch)
@@ -169,9 +146,8 @@ let view model dispatch =
 
             // Font size setting
             let fntSz = match model.opt1 with 
-                        | Some Beeline -> 28
-                        | Some Beeyond -> 24
-                        | Some Beedroom -> 18
+                        | Some Beegin -> 14
+                        | Some Beespoke -> 14
                         | _ -> 14
             
             // Hywe Syntax Input
@@ -181,12 +157,12 @@ let view model dispatch =
                 attr.``style`` $"width : 95%%;
                                 margin-left: 20px;
                                 margin-right: 20px;
-                                height:100px;
+                                height:50px;
                                 font-size: {fntSz}px;
                                 color: #808080;"
 
                 match model.opt1 with
-                | Some Beegraph ->
+                | Some Beegin ->
                     attr.readonly true
                     text (Tree.getOutput model.Tree)
                 | _ ->

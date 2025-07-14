@@ -32,6 +32,20 @@ type svLn = Template<"""
     y2="${y2}"
     stroke="#888" />
 """>
+// Labels for nodes
+let randomNames = [
+    "<Hive>"; "<Cell>"; "<Comb>"; "<Hex>"; "<Core>"; "<Dock>"; "<Ring>";
+    "<Link>"; "<Arc>"; "<Mod>"; "<Buzz>"; "<Wax>"; "<Sting>"; "<Veil>";
+    "<Arch>"; "<Glow>"; "<Path>"; "<Air>"; "<Clad>"; "<Echo>"; "<Dawn>";
+    "<Brood>"; "<Guard>"; "<Swarm>"; "<Nect>"; "<Pupa>"; "<Drone>"; "<Queen>";
+    "<Field>"; "<Trail>"
+]
+
+let rng = System.Random()
+
+let getRandomName () =
+    let index = rng.Next(0, randomNames.Length)
+    randomNames.[index]
 
 // Layout the tree
 let rec layoutTree (node: TreeNode) (depth: int) (xOffset: float ref) : TreeNode =
@@ -73,8 +87,8 @@ let updateSub msg model =
         let addChild n =
             let newChild =
                 { Id = Guid.NewGuid()
-                  Name = "X"
-                  Weight = "10"
+                  Name = getRandomName ()
+                  Weight = "25"
                   X = 0.0
                   Y = 0.0
                   Children = [] }
@@ -202,3 +216,29 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
 let getOutput (model: SubModel) : string =
     generateOutput model.Root
+
+// Initial Tree structure
+let initModel () : SubModel =
+    let child name weight =
+        { Id = Guid.NewGuid()
+          Name = name
+          Weight = weight
+          X = 0.0
+          Y = 0.0
+          Children = [] }
+
+    let root =
+        { Id = Guid.NewGuid()
+          Name = "Dock"
+          Weight = "19"
+          X = 0.0
+          Y = 0.0
+          Children = [
+              child "Logistics" "23"
+              child "Lab" "24"
+              child "Habitation" "25"
+              child "Power" "23"
+          ] }
+
+    let laidOut = layoutTree root 0 (ref 100.0)
+    { Root = laidOut }
