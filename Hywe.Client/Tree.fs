@@ -276,4 +276,3 @@ let initModel () : SubModel =
 
     let laidOut = layoutTree initTree 0 (ref 100.0)
     { Root = laidOut }
-
