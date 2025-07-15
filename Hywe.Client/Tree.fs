@@ -127,8 +127,8 @@ let rec flattenTree (node: TreeNode) : TreeNode list =
 let computeCanvasBounds (nodes: TreeNode list) =
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
     let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
-    let width = maxX + 100.0
-    let height = maxY + 100.0
+    let width = maxX + 20.0
+    let height = maxY + 20.0
     width, height
 
 // Tree editor view
