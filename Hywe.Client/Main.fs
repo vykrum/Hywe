@@ -55,7 +55,7 @@ type Message =
 let initModel =
     {
         shp1 = Hxg
-        scp1 = 6
+        scp1 = 8
         opt1 = None
         stx1 = stxInstr 
         stx2 = stx2Ini

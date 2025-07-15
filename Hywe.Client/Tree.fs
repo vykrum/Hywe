@@ -250,23 +250,23 @@ let initModel () : SubModel =
           Children = children }
 
     // Create the structure manually
-    let root =
-        node "Foyer" "30" [
-            node "Living" "60" [
-                node "Dining" "55" [
-                    node "Kitchen" "35" [
-                        node "Utility" "25" []
+    let initTree =
+        node "Foyer" "20" [
+            node "Living" "50" [
+                node "Dining" "45" [
+                    node "Kitchen" "25" [
+                        node "Utility" "15" []
                     ]
-                    node "Bed" "45" [
-                        node "Bath" "25" []
+                    node "Bed" "35" [
+                        node "Bath" "15" []
                     ]
                 ]
-                node "Study" "35" [
-                    node "Powder" "20" []
+                node "Study" "25" [
+                    node "Powder" "10" []
                 ]
             ]
         ]
 
-    let laidOut = layoutTree root 0 (ref 100.0)
+    let laidOut = layoutTree initTree 0 (ref 100.0)
     { Root = laidOut }
 
