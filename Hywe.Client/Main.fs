@@ -84,12 +84,21 @@ let update message model =
             | Beewhich -> stxInstr
             | Beegin -> Tree.getOutput model.Tree
             | Beespoke -> beedroom
-        {
+
+        let newModel = {
             model with
                 opt1 = Some value
                 stx1 = newStx
                 stx2 = newStx
-        }, Cmd.none
+        }
+
+        // Reset Hyweave if Bee-which is selected
+        let finalModel =
+            match value with
+            | Beewhich -> { newModel with IsHyweaving = false }
+            | _ -> newModel
+
+        finalModel, Cmd.none
 
     | SetStx1 value -> 
         { model with stx1 = value }, Cmd.none
@@ -170,7 +179,7 @@ let view model dispatch =
                 option {
                         attr.selected "true"
                         attr.value "Bee-which"
-                        "Select Your Beeline"
+                        "To  Bee or To Bee . . ."
                 }
                 option {
                         attr.value "Bee-gin"
@@ -240,8 +249,10 @@ let view model dispatch =
 
             // Hyweave
             button {
+                let hyweaveDisabled =
+                    model.IsHyweaving || model.opt1 = None || model.opt1 = Some Beewhich
                 attr.``class`` "button1"
-                attr.disabled model.IsHyweaving
+                attr.disabled hyweaveDisabled
                 attr.``style`` "
                     width: 88%;
                     margin-left: 1%;
