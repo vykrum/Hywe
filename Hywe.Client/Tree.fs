@@ -241,26 +241,32 @@ let getOutput (model: SubModel) : string =
 
 // Initial Tree structure
 let initModel () : SubModel =
-    let child name weight =
+    let node name weight children =
         { Id = Guid.NewGuid()
           Name = name
           Weight = weight
           X = 0.0
           Y = 0.0
-          Children = [] }
+          Children = children }
 
+    // Create the structure manually
     let root =
-        { Id = Guid.NewGuid()
-          Name = "Dock"
-          Weight = "19"
-          X = 0.0
-          Y = 0.0
-          Children = [
-              child "Logistics" "23"
-              child "Lab" "24"
-              child "Habitation" "25"
-              child "Power" "23"
-          ] }
+        node "Foyer" "30" [
+            node "Living" "60" [
+                node "Dining" "55" [
+                    node "Kitchen" "35" [
+                        node "Utility" "25" []
+                    ]
+                    node "Bed" "45" [
+                        node "Bath" "25" []
+                    ]
+                ]
+                node "Study" "35" [
+                    node "Powder" "20" []
+                ]
+            ]
+        ]
 
     let laidOut = layoutTree root 0 (ref 100.0)
     { Root = laidOut }
+
