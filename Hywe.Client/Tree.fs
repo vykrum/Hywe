@@ -147,7 +147,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 attr.``type`` "text"
                 attr.value node.Name
                 on.input (fun (e: ChangeEventArgs) -> dispatch (UpdateName (node.Id, string e.Value)))
-                attr.style "width:50px; font-size:10px; text-align:center; border:none; outline:none; background:white;"
+                attr.style "width:50px; font-size:10px; text-align:center; border:none; outline:none; background:white;color:#6e6e6e;"
             }
 
             div {
@@ -170,7 +170,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     attr.``type`` "text"
                     attr.value node.Weight
                     on.input (fun (e: ChangeEventArgs) -> dispatch (UpdateWeight (node.Id, string e.Value)))
-                    attr.style "width:20px; font-size:12px; text-align:center; border:none; outline:none; background:white;"
+                    attr.style "width:20px; font-size:12px; text-align:center; border:none; outline:none; background:white;color:#595959"
                 }
 
                 span {
@@ -224,11 +224,18 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         div {
             attr.style "text-align: center; font-size: 10px; color: #888; padding-top: 8px;"
             span {
-                text "Double click on "
+                text "Click on node labels and values to edit in place, Click on "
+            }
+            span {
+                attr.style "color: green; font-size: 12px; font-weight: bold;"
+                text " + "
+            }
+            span {
+                text " to add a child node, Double click on "
             }
             span {
                 attr.style "color: red; font-size: 14px; font-weight: bold;"
-                text "-"
+                text " - "
             }
             span {
                 text " to delete a node and all of its descendants"
@@ -251,14 +258,14 @@ let initModel () : SubModel =
 
     // Create the structure manually
     let initTree =
-        node "Foyer" "20" [
-            node "Living" "50" [
-                node "Dining" "45" [
-                    node "Kitchen" "25" [
-                        node "Utility" "15" []
+        node "Foyer" "16" [
+            node "Living" "40" [
+                node "Dining" "40" [
+                    node "Kitchen" "20" [
+                        node "Utility" "10" []
                     ]
-                    node "Bed" "35" [
-                        node "Bath" "15" []
+                    node "Bed" "26" [
+                        node "Bath" "12" []
                     ]
                 ]
                 node "Study" "25" [
