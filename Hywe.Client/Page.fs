@@ -28,6 +28,31 @@ let pastels (size: int) =
     Array.init size (fun _ -> pastel())
 ///
 
+(*let pageTitle = 
+    div{ 
+                    attr.style="display: flex;
+                                flex-direction: row;
+                                font-family: 'Optima', Candara, Calibri;
+                                width: 100%;
+                                height: 37px;
+                                opacity: 1;
+                                background: #363636;
+                                padding-left: 5px;
+                                padding-top: 5px;"
+                    img{src="https://hywe.in/icon-32x32.png" width="30" height="30"}
+        
+                    span{
+                        attr.style="color: white; 
+                        font-family: 'Optima', Candara, Calibri; 
+                        font-size: 20px;
+                        font-weight: normal;
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        padding-bottom: 7px;" 
+                        "H Y W E" 
+                        }
+                    span{img {src="https://vykrum.github.io/Hywe/hyweLogoAcronym.png" width="200" height="45"}}
+            }*)
 // Defaults
 let stxInstr = 
     " 1. Make a choice above.\n" +
@@ -51,6 +76,7 @@ let introduction = "Weave spatial layouts at a high level of abstraction " +
                     "with Hywe, an endogenous space planning concept. " +
                     "Hywe is an early stage design interface undergoing contined development" + 
                     "while incrementally climbing down the abstraction ladder"
+
 
 // Hywe Table
 let renderRow (cxl: Cxl) (clr: string) (avl: int) =
@@ -94,7 +120,7 @@ let viewHyweTable (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
     }
 
 
-// CSS Styles
+(*// CSS Styles
 let styleDrop2 = "width: 35%;
                     display: block;
                     height: 26px;
@@ -107,5 +133,5 @@ let styleDrop2 = "width: 35%;
                     border-radius: 5px;
                     border: none;
                     text-align: center;
-                    font-family: 'Optima', Candara, Calibri;"
+                    font-family: 'Optima', Candara, Calibri;"*)
 

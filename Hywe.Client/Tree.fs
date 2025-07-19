@@ -25,13 +25,39 @@ type SubMsg =
 
 // Templates
 type svLn = Template<"""
-<line
-    x1="${x1}"
-    y1="${y1}"
-    x2="${x2}"
-    y2="${y2}"
-    stroke="#888" />
-""">
+            <line
+                x1="${x1}"
+                y1="${y1}"
+                x2="${x2}"
+                y2="${y2}"
+                stroke="#888"
+                strokeWidth="2"
+                />
+            """>
+
+type svCl = Template<
+        """<circle
+            cx="${cx}" 
+            cy="${cy}" 
+            r="20" 
+            fill="#fff8dc"
+            stroke "#333"
+            strokeWidth "1.5"
+            />
+        """>
+
+type svTx = Template<
+        """<text 
+        x="${x}" 
+        y="${y}"
+        width = "50px"
+        font-size = "10px"
+        font-family="Verdana"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill = "#808080"
+        opacity = "1"
+        >${nm}</text> """>
 
 // Labels for nodes
 let randomNames = [
@@ -276,3 +302,4 @@ let initModel () : SubModel =
 
     let laidOut = layoutTree initTree 0 (ref 100.0)
     { Root = laidOut }
+

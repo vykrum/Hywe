@@ -16,6 +16,15 @@ html, body {
     padding-top: 10px;
 }
 
+.fade-container {
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+
+.fade-container.visible {
+    opacity: 1;
+}
+
 .slider {
     -webkit-appearance: none;
     width: 55%;
@@ -182,18 +191,4 @@ html, body {
     }
 }
 
-/* Tree node actions */
-.tree-node-action {
-    color: gray;
-    cursor: pointer;
-    user-select: none;
-    transition: color 0.2s ease;
-}
 
-    .tree-node-action.add:hover {
-        color: green;
-    }
-
-    .tree-node-action.remove:hover {
-        color: red;
-    }

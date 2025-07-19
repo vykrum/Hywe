@@ -1,5 +1,7 @@
 ﻿module Hywe.Client.Main
 
+open Microsoft.AspNetCore.Components
+open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
@@ -9,6 +11,7 @@ open Bridge
 open Parse
 open Page
 open Tree
+open TreeSvg
 
 type DerivedData = {
     cxCxl1: Cxl[]
@@ -149,13 +152,14 @@ let update message model =
             { model with Tree = updatedTree }, Cmd.none
 
 // Interface
-let view model dispatch =      
+let view model dispatch (js: IJSRuntime) =      
     concat {
         // Nested Coxels Data
         let cxCxl1 = model.Derived.cxCxl1
         let cxlAvl = model.Derived.cxlAvl
         let cxClr1 = model.Derived.cxClr1
-
+        //div{pageTitle}
+        //div{pageIntro}
         // Hywe
         div{
             attr.``style`` "flex-wrap: wrap;justify-content: center;display: flex;flex-direction: row;"
@@ -277,25 +281,77 @@ let view model dispatch =
             }
 
             // Hywe SVG
-            div{
+            div {
+                attr.id "hywe-svg-container"
                 attr.``class`` "flex-container"
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
 
-                //nstdCxls cxCxl1 cxClr1 model.scp1 model.shp1
+                // SVG content
                 nstdCxlsWrp cxCxl1 cxClr1 model.scp1
             }
-            
-            // Hywe Table
-            viewHyweTable cxCxl1 cxClr1 cxlAvl
-        } 
-    }
 
+            // Hywe Table — full width
+            div {
+                attr.id "hywe-table"
+                attr.``style`` "width: 100%; margin-top: 20px;"
+
+                viewHyweTable cxCxl1 cxClr1 cxlAvl
+            }
+
+            (*// Download Button — placed *after* table and centered
+            div {
+                attr.``style`` "width: 800px;"
+                div {
+                    attr.``style`` "width: 800px; flex-basis: 100%; margin-top: 10px;"
+
+                    match model.opt1 with
+                    | Some Beegin ->
+                        div {
+                            attr.``style`` "width: 95%; margin: auto; padding: 10px;"
+                            viewTreeEditor model.Tree (TreeMsg >> dispatch)
+                        }
+                    | _ -> empty()
+                }
+                div {
+                    attr.id "hywe-svg-container"
+                    attr.``class`` "flex-container"
+                    attr.``style`` "flex-wrap: wrap; justify-content: center;"
+
+                    // SVG content
+                    nstdCxlsWrp cxCxl1 cxClr1 model.scp1
+                }
+                div {
+                    viewHyweTable cxCxl1 cxClr1 cxlAvl
+                }
+                button {
+                    attr.``class`` "button3"
+                    attr.``style`` "margin-top: 10px;"
+                    on.click (fun _ -> js.InvokeVoidAsync("downloadCombinedSvg") |> ignore)
+                    "Download Tree SVG"
+                }
+
+            }*)
+
+(*            div {
+                 attr.style "width: 100%; max-height:100%; overflow:auto; border:1px dashed #999;"
+                 viewTreeSvgFromString model.stx2
+                 }
+*)
+
+        }
+    } 
+    
 // Bolero component handling state updates and rendering the user interface
+
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
+
+    [<Inject>]
+    member val JSRuntime: IJSRuntime = Unchecked.defaultof<_> with get, set
 
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.none)
             update
-            view
+            (fun model dispatch -> view model dispatch this.JSRuntime)
+
