@@ -10,7 +10,7 @@
 
 Live demo: [www.hywe.in](https://vykrum.github.io/Hywe/)
 
-![Hywe Demo](images/hywe-demo.gif)
+![Hywe Demo](https://vykrum.github.io/Hywe/images/hywe-demo.gif)
 
 ## Features
 
