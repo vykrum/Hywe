@@ -1,4 +1,4 @@
-![Hywe Banner](https://vykrum.github.io/Hywe/hyweLogoBanner.png)
+![Hywe Banner](https://vykrum.github.io/Hywe/images/hyweLogoBanner.png)
 
 # H Y W E
 
