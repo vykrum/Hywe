@@ -8,7 +8,7 @@
 
 **Hywe** is an experimental space layout planning tool, built entirely in [F#](https://fsharp.org/) using [Bolero](https://fsbolero.io/). It runs directly in the browser via [WebAssembly](https://developer.mozilla.org/en-US/docs/WebAssembly), with interactive diagrams rendered using [SVG](https://developer.mozilla.org/en-US/docs/Web/SVG).
 
-Live demo: [vykrum.github.io/Hywe](https:hywe.in)
+Live demo: [hywe.in]([https://vykrum.github.io/Hywe/](https://hywe.in/))
 
 ![Hywe Demo](images/hywe-demo.gif)
 
