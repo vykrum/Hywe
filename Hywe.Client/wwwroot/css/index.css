@@ -8,7 +8,17 @@ html, body {
     color: #333;
 }
 
-/* Layout containers */
+.offscreen-hidden {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    width: 600px;
+    max-width: 90vw;
+    font-family: sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
 .flex-container {
     display: flex;
     flex-direction: row;

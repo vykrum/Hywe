@@ -6,12 +6,13 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Coxel
-open Shape
 open Bridge
 open Parse
 open Page
 open Tree
 open TreeSvg
+//open Boundary
+open PolygonEditor
 
 type DerivedData = {
     cxCxl1: Cxl[]
@@ -32,7 +33,6 @@ let deriveData (stx: string) : DerivedData =
 
 type Model =
     {
-        shp1 : Shp
         scp1 : int
         opt1 : Beeset option
         stx1 : string
@@ -40,10 +40,11 @@ type Model =
         Tree : SubModel
         Derived : DerivedData
         IsHyweaving: bool
+        PolygonEditor: PolygonEditorModel
+        //boundary: BoundaryModel
     }
 
 type Message =
-    | SetShp1 of Shp
     | SetScp1 of int
     | ScpInc
     | ScpDec
@@ -53,11 +54,13 @@ type Message =
     | StartHyweave
     | RunHyweave
     | FinishHyweave
+    | PolygonEditorMsg of PolygonEditorMessage
+    | PolygonEditorUpdated of PolygonEditorModel
+    //| BoundaryMsg of BoundaryMsg
 
 // Default Input
 let initModel =
     {
-        shp1 = Hxg
         scp1 = 8
         opt1 = None
         stx1 = stxInstr 
@@ -65,12 +68,12 @@ let initModel =
         Tree = Tree.initModel ()
         Derived = deriveData stx2Ini
         IsHyweaving = false
+        PolygonEditor = PolygonEditor.initModel
+        //boundary = Boundary.initModel
     }
 
-let update message model =
+let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
-    | SetShp1 value -> 
-        { model with shp1 = value }, Cmd.none
 
     | SetScp1 value -> 
         { model with scp1 = value }, Cmd.none
@@ -151,6 +154,16 @@ let update message model =
         | _ ->
             { model with Tree = updatedTree }, Cmd.none
 
+    | PolygonEditorMsg subMsg ->
+        model, Cmd.OfAsync.perform (fun () -> PolygonEditor.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
+
+    | PolygonEditorUpdated newPEModel ->
+        { model with PolygonEditor = newPEModel }, Cmd.none
+
+
+(*    | BoundaryMsg subMsg ->
+        let updatedBoundary = Boundary.update subMsg model.boundary
+        { model with boundary = updatedBoundary }, Cmd.none*)
 // Interface
 let view model dispatch (js: IJSRuntime) =      
     concat {
@@ -197,7 +210,7 @@ let view model dispatch (js: IJSRuntime) =
 
             // Formatting Instructions
             a {
-                attr.``style`` "padding: 17px 5px;"
+                attr.style "padding: 17px 5px;"
                 attr.``class`` "button3"
                 attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
                 attr.target "blank"
@@ -206,7 +219,7 @@ let view model dispatch (js: IJSRuntime) =
 
             // Space Flow Chart
             div {
-                attr.``style`` "width: 100%; flex-basis: 100%; margin-top: 10px;"
+                attr.style "width: 100%; flex-basis: 100%; margin-top: 10px;"
 
                 match model.opt1 with
                 | Some Beegin ->
@@ -298,7 +311,13 @@ let view model dispatch (js: IJSRuntime) =
                 viewHyweTable cxCxl1 cxClr1 cxlAvl
             }
 
-            (*// Download Button — placed *after* table and centered
+           (* div{
+                attr.``style`` "width: 100%;"
+                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
+
+                //Boundary.view model.boundary (BoundaryMsg >> dispatch)
+            }
+            // Download Button — placed *after* table and centered
             div {
                 attr.``style`` "width: 800px;"
                 div {
@@ -337,7 +356,7 @@ let view model dispatch (js: IJSRuntime) =
                  viewTreeSvgFromString model.stx2
                  }
 *)
-
+               
         }
     } 
     
@@ -352,6 +371,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.none)
-            update
+            (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> view model dispatch this.JSRuntime)
+
 

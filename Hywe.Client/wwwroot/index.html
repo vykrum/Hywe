@@ -23,7 +23,7 @@
 
     <div id="page-content" class="fade-container">
         <!--Logo and Title-->
-        <div style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
+        <header style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
             <div>
                 <img src="https://hywe.in/images/icon-32x32.png" width="30" height="30" />
             </div>
@@ -31,12 +31,48 @@
             <div style="opacity: 1;">
                 <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45" />
             </div>
-        </div>
+        </header>
 
         <!--Introduction-->
-        <div style="margin: 0px;background: #d3d3d1; color: #363636;flex-direction: column; font-family: 'Optima', Candara, Calibri; font-size: 18px;padding-left: 12px;padding-right: 10px;padding-bottom: 15px;padding-top: 15px;">
-            Weave spatial layouts at a high level of abstraction using properly formatted syntax in Hywe, an endogenous space planning concept currently undergoing its formative stages of development as an early stage design interface.
-        </div>
+        <section id="introduction" style="background: #d3d3d1; color: #363636; font-family: 'Optima', Candara, Calibri; font-size: 18px; padding: 15px 12px;">
+            <p style="margin: 0;">
+                Weave spatial configurations with <strong>Hywe</strong>, an endogenous space planning concept with an intuitive interface and no learning curve. By combining graphical interaction with embedded spatial logic, it introduces a novel and distinctive approach to early-stage layout design.
+            </p>
+        </section>
+
+        <section id="about-hywe" class="offscreen-hidden">
+            <h2>About Hywe</h2>
+
+            <p><strong>Hywe</strong> is an evolving space-layout planning web app developed by <a href="https://github.com/vykrum">Vikram Subbaiah</a>. It runs entirely in the browser using <strong>F#</strong>, compiled to WebAssembly via <strong>Blazor</strong>. The tool allows users to construct and manipulate spatial layouts using a custom high-level abstract syntax designed for early-stage design thinking and diagramming.</p>
+
+            <h3>🔧 Technical Overview</h3>
+            <ul>
+                <li>Built in <strong>F#</strong> and runs via <strong>.NET WebAssembly (WASM)</strong>.</li>
+                <li>Interactive SVG-based editor for polygon and vertex manipulation.</li>
+                <li>Custom coordinate handling using JavaScript interop (`getSvgCoords`).</li>
+                <li>Supports complex structures like islands within polygons.</li>
+                <li>Syntax-driven layout—an experimental approach to spatial definition.</li>
+            </ul>
+
+            <h3>Project Status</h3>
+            <p>Hywe is in an early research and development phase, focused on providing an intuitive, logic-driven interface for spatial planning. It serves as a prototype for investigating endogenous design tools where spatial logic can emerge from structured user inputs.</p>
+
+            <h3>Source Code & Repository</h3>
+            <ul>
+                <li>GitHub Repo: <a href="https://github.com/vykrum/Hywe" target="_blank">https://github.com/vykrum/Hywe</a></li>
+                <li>Author GitHub: <a href="https://github.com/vykrum" target="_blank">Vikram Subbaiah</a></li>
+            </ul>
+
+            <h3>Social Links</h3>
+            <ul>
+                <li>LinkedIn: <a href="https://www.linkedin.com/company/hywein/" target="_blank">https://www.linkedin.com/company/hywein/</a></li>
+                <li>X (formerly Twitter): <a href="https://x.com/_hywe_" target="_blank">https://x.com/_hywe_</a></li>
+            </ul>
+
+            <h3>Contribution</h3>
+            <p>The project is open source. Developers and researchers interested in spatial computation, visual logic, or web-based tooling are welcome to explore or contribute to the repository via pull requests or issue reports.</p>
+        </section>
+
 
         <div id="main">
             <div style="text-align: center; padding: 20px;">
@@ -45,7 +81,7 @@
         </div>
 
         <!--Social Media Links-->
-        <div style="flex-wrap: wrap; justify-content: center; display: flex; flex-direction: row;">
+        <footer style="flex-wrap: wrap; justify-content: center; display: flex; flex-direction: row;">
             <a href="https://forms.gle/TnH8ghGYz3ugEfWg9" target="_blank" style="padding: 25px;">
                 <img width="20" height="20" src="https://vykrum.github.io/Hywe/images/EM.png" />
             </a>
@@ -58,7 +94,7 @@
             <a href="https://github.com/vykrum/Hywe" target="_blank" style="padding: 25px;">
                 <img width="20" height="20" src="https://vykrum.github.io/Hywe/images/GH.png" />
             </a>
-        </div>
+        </footer>
     </div>
 
     <script src="_framework/blazor.webassembly.js"></script>
@@ -78,6 +114,36 @@
                 }
             }, 1000);
         });
+
+        window.getSvgCoords = function(svgId, clientX, clientY) {
+          const svg = document.getElementById(svgId);
+          if (!svg) return { x: 0, y: 0 };
+          const pt = svg.createSVGPoint();
+          pt.x = clientX;
+          pt.y = clientY;
+          const screenCTM = svg.getScreenCTM();
+          if (!screenCTM) return { x: 0, y: 0 };
+          const svgPoint = pt.matrixTransform(screenCTM.inverse());
+          return { x: svgPoint.x, y: svgPoint.y };
+        };
+
+        window.addEventListener('load', () => {
+            document.addEventListener('contextmenu', function (e) {
+                const svg = document.getElementById("polygon-editor-svg");
+                if (svg && svg.contains(e.target)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        window.getScaledFontSize = function (id, logicalWidth, desiredSize) {
+            const el = document.getElementById(id);
+            if (!el) return desiredSize;
+            const width = el.getBoundingClientRect().width;
+            const scale = width / logicalWidth;
+            return Math.max(6, desiredSize / scale);
+        };
+
     </script>
 
 
