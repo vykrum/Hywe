@@ -311,13 +311,14 @@ let view model dispatch (js: IJSRuntime) =
                 viewHyweTable cxCxl1 cxClr1 cxlAvl
             }
 
-           (* div{
+            (* div{
                 attr.``style`` "width: 100%;"
                 PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
 
                 //Boundary.view model.boundary (BoundaryMsg >> dispatch)
             }
-            // Download Button — placed *after* table and centered
+
+           // Download Button — placed *after* table and centered
             div {
                 attr.``style`` "width: 800px;"
                 div {
