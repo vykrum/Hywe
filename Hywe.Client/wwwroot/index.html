@@ -66,6 +66,7 @@
 </head>
 
 <body>
+    <!--Loading Screen-->
     <iframe id="loading-frame"
             src="images/loading.html"
             style="position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; border: none;"
@@ -90,6 +91,7 @@
             </p>
         </section>
 
+        <!--Offscreen About-->
         <section id="about-hywe" class="offscreen-hidden">
             <h2>About Hywe</h2>
             <p style="font-style: italic; margin-top: -10px;">Hywe — <strong>Hygrid Woven Ensemble</strong></p>
@@ -107,7 +109,6 @@
             <ul>
                 <li>Written in <strong>F#</strong> and compiled to <strong>.NET WebAssembly (WASM)</strong> via <strong>Blazor</strong>.</li>
                 <li>Interactive SVG canvas with dynamic polygon editing and logic-driven layout operations.</li>
-                <li>Unique coordinate transformation engine using JavaScript interop (<code>getSvgCoords</code>).</li>
                 <li>Supports non-linear, nested spatial constructs including islands within polygons.</li>
                 <li>No dependency on visual precedents—entire computational stack developed independently.</li>
             </ul>
@@ -129,15 +130,17 @@
 
             <h3>Direction</h3>
             <p><strong>Hywe</strong> is a deeply personal project—one shaped by a singular vision and the ambition to explore spatial reasoning beyond the boundaries of precedent or tradition. It does not seek to adapt to established workflows or validate itself against known practices. Instead, it charts its own course, grounded in a conviction that spatial design can emerge from new computational logics yet to be fully imagined.</p>
-
             <p>There is no defined roadmap. Hywe evolves in response to the ideas it generates, not to predetermined milestones or deliverables. Its development resists conformity, and embraces uncertainty—as a space for discovering possibilities that structured agendas might never permit.</p>
         </section>
+
+        <!--Hywe-->
         <div id="main">
             <div style="text-align: center; padding: 20px;">
                 <img src="images/hyweFading.svg" alt="H Y W E" style="max-width: 100%; height: auto; opacity: 0.25" />
             </div>
         </div>
 
+        <!--Social Media Links-->
         <footer style="flex-wrap: wrap; justify-content: center; display: flex; flex-direction: row; flex-direction: column; align-items: center;">
             <div>
                 <a href="https://forms.gle/TnH8ghGYz3ugEfWg9" target="_blank" style="padding: 25px;">
@@ -154,11 +157,12 @@
                 </a>
             </div>
             <small style="color: lightgray; font-size: 8px; margin-top: 10px;">
-                H Y W E last updated: <time datetime="__MODIFIED_DATE__">__MODIFIED_DATE_READABLE__</time>
+                H Y W E was last updated on  <time datetime="__MODIFIED_DATE__">__MODIFIED_DATE_READABLE__</time>
             </small>
         </footer>
     </div>
 
+    <!--Scripts-->
     <script src="_framework/blazor.webassembly.js"></script>
     <script>
         navigator.serviceWorker.register('service-worker.js');
@@ -177,16 +181,16 @@
             }, 1000);
         });
 
-        window.getSvgCoords = function(svgId, clientX, clientY) {
-          const svg = document.getElementById(svgId);
-          if (!svg) return { x: 0, y: 0 };
-          const pt = svg.createSVGPoint();
-          pt.x = clientX;
-          pt.y = clientY;
-          const screenCTM = svg.getScreenCTM();
-          if (!screenCTM) return { x: 0, y: 0 };
-          const svgPoint = pt.matrixTransform(screenCTM.inverse());
-          return { x: svgPoint.x, y: svgPoint.y };
+        window.getSvgCoords = function (svgId, clientX, clientY) {
+            const svg = document.getElementById(svgId);
+            if (!svg) return { x: 0, y: 0 };
+            const pt = svg.createSVGPoint();
+            pt.x = clientX;
+            pt.y = clientY;
+            const screenCTM = svg.getScreenCTM();
+            if (!screenCTM) return { x: 0, y: 0 };
+            const svgPoint = pt.matrixTransform(screenCTM.inverse());
+            return { x: svgPoint.x, y: svgPoint.y };
         };
 
         window.addEventListener('load', () => {
@@ -224,7 +228,5 @@
         window.registerJsInteropHandlers = registerJsInteropHandlers;
 
     </script>
-
-
 </body>
 </html>
