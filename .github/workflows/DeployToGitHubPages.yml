@@ -42,14 +42,19 @@ jobs:
         run: |
           # Get current UTC timestamp
           MODIFIED_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          
+          MODIFIED_DATE_READABLE=$(date -u +"%B %d, %Y")
+      
           # Fetch the repo creation date from GitHub API
+          REPO_API_URL="https://api.github.com/repos/${{ github.repository }}"
           PUBLISHED_DATE=$(curl -s $REPO_API_URL | jq -r .created_at)
-
+          PUBLISHED_DATE_READABLE=$(date -u -d "$PUBLISHED_DATE" +"%B %d, %Y")
+      
           # Replace tokens in all HTML files
           find ${{ env.PUBLISH_DIR }} -type f -name '*.html' -exec sed -i \
             -e "s|__PUBLISHED_DATE__|$PUBLISHED_DATE|g" \
-            -e "s|__DEPLOY_DATE__|$MODIFIED_DATE|g" {} +
+            -e "s|__MODIFIED_DATE__|$MODIFIED_DATE|g" \
+            -e "s|__PUBLISHED_DATE_READABLE__|$PUBLISHED_DATE_READABLE|g" \
+            -e "s|__MODIFIED_DATE_READABLE__|$MODIFIED_DATE_READABLE|g" {} +
 
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
