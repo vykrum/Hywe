@@ -2,6 +2,7 @@ name: DeployToGitHubPages
 
 env:
   PUBLISH_DIR: Hywe.Client/bin/Release/net8.0/publish/wwwroot
+  REPO_API_URL: https://api.github.com/repos/vykrum/Hywe
 
 on:
   push:
@@ -37,10 +38,18 @@ jobs:
           html_path: ${{ env.PUBLISH_DIR }}/index.html
           base_href: /
           
-      - name: Inject deployment timestamp
+      - name: Inject article published and modified dates
         run: |
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          sed -i "s|__DEPLOY_DATE__|$TIMESTAMP|" ${{ env.PUBLISH_DIR }}/index.html
+          # Get current UTC timestamp
+          MODIFIED_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Fetch the repo creation date from GitHub API
+          PUBLISHED_DATE=$(curl -s $REPO_API_URL | jq -r .created_at)
+
+          # Replace tokens in all HTML files
+          find ${{ env.PUBLISH_DIR }} -type f -name '*.html' -exec sed -i \
+            -e "s|__PUBLISHED_DATE__|$PUBLISHED_DATE|g" \
+            -e "s|__DEPLOY_DATE__|$MODIFIED_DATE|g" {} +
 
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
