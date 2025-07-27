@@ -36,6 +36,11 @@ jobs:
         with:
           html_path: ${{ env.PUBLISH_DIR }}/index.html
           base_href: /
+          
+      - name: Inject deployment timestamp
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          sed -i "s|__DEPLOY_DATE__|$TIMESTAMP|" ${{ env.PUBLISH_DIR }}/index.html
 
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
