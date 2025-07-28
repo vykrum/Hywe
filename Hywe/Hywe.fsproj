@@ -11,16 +11,15 @@
 	</PropertyGroup>-->
 	
 	<ItemGroup>
-		<Compile Include="Hexel.fs" />
-		<Compile Include="Coxel.fs" />
-		<Compile Include="Shape.fs" />
-		<Compile Include="Parse.fs" />
-		<Compile Include="Bridge.fs" />
-		<Compile Include="Tree.fs" />
-		<Compile Include="TreeSvg.fs" />
-		<Compile Include="PolygonEditor.fs" />
-		<Compile Include="Boundary.fs" />
-		<Compile Include="Page.fs" />
+		<Compile Include="CR-Hexel.fs" />
+		<Compile Include="CR-Coxel.fs" />
+		<Compile Include="VZ-Shape.fs" />
+		<Compile Include="CR-Parse.fs" />
+		<Compile Include="VZ-Bridge.fs" />
+		<Compile Include="IN-Tree.fs" />
+		<Compile Include="VZ-Tree.fs" />
+		<Compile Include="IN-Boundary.fs" />
+		<Compile Include="VZ-Page.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>

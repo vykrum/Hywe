@@ -1,4 +1,4 @@
-﻿module Hywe.Client.Main
+﻿module Hywe.Main
 
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
@@ -355,8 +355,8 @@ let view model dispatch (js: IJSRuntime) =
 (*            div {
                  attr.style "width: 100%; max-height:100%; overflow:auto; border:1px dashed #999;"
                  viewTreeSvgFromString model.stx2
-                 }
-*)
+                 }*)
+
                
         }
     } 

@@ -1,4 +1,4 @@
-namespace Hywe.Client
+namespace Hywe
 
 open Microsoft.AspNetCore.Components.WebAssembly.Hosting
 open Microsoft.Extensions.DependencyInjection
