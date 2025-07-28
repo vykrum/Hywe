@@ -16,8 +16,8 @@
 		<Compile Include="VZ-Shape.fs" />
 		<Compile Include="CR-Parse.fs" />
 		<Compile Include="VZ-Bridge.fs" />
-		<Compile Include="IN-Tree.fs" />
-		<Compile Include="VZ-Tree.fs" />
+		<Compile Include="IN-GraphToCode.fs" />
+		<Compile Include="VZ-CodeToGraph.fs" />
 		<Compile Include="IN-Boundary.fs" />
 		<Compile Include="VZ-Page.fs" />
 		<Compile Include="Main.fs" />

@@ -1,4 +1,4 @@
-﻿module PolygonEditor
+﻿module Boundary
 
 open System.Text.Json
 open Microsoft.AspNetCore.Components

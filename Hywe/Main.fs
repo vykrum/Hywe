@@ -9,10 +9,9 @@ open Coxel
 open Bridge
 open Parse
 open Page
-open Tree
-open TreeSvg
-//open Boundary
-open PolygonEditor
+open GraphToCode
+open CodeToGraph
+open Boundary
 
 type DerivedData = {
     cxCxl1: Cxl[]
@@ -65,10 +64,10 @@ let initModel =
         opt1 = None
         stx1 = stxInstr 
         stx2 = stx2Ini
-        Tree = Tree.initModel ()
+        Tree = GraphToCode.initModel ()
         Derived = deriveData stx2Ini
         IsHyweaving = false
-        PolygonEditor = PolygonEditor.initModel
+        PolygonEditor = Boundary.initModel
         //boundary = Boundary.initModel
     }
 
@@ -88,7 +87,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newStx =
             match value with
             | Beewhich -> stxInstr
-            | Beegin -> Tree.getOutput model.Tree
+            | Beegin -> GraphToCode.getOutput model.Tree
             | Beespoke -> beedroom
 
         let newModel = {
@@ -120,7 +119,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | RunHyweave ->
         let updatedStx1 =
             match model.opt1 with
-            | Some Beegin -> Tree.getOutput model.Tree
+            | Some Beegin -> GraphToCode.getOutput model.Tree
             | _ -> model.stx1
 
         let newModel = {
@@ -144,7 +143,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let updatedTree = updateSub subMsg model.Tree
         match model.opt1 with
         | Some Beegin ->
-            let newOutput = Tree.getOutput updatedTree
+            let newOutput = GraphToCode.getOutput updatedTree
             {
                 model with 
                     Tree = updatedTree
@@ -155,7 +154,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             { model with Tree = updatedTree }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
-        model, Cmd.OfAsync.perform (fun () -> PolygonEditor.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
+        model, Cmd.OfAsync.perform (fun () -> Boundary.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
 
     | PolygonEditorUpdated newPEModel ->
         { model with PolygonEditor = newPEModel }, Cmd.none
@@ -250,7 +249,7 @@ let view model dispatch (js: IJSRuntime) =
                 match model.opt1 with
                 | Some Beegin ->
                     attr.readonly true
-                    text (Tree.getOutput model.Tree)
+                    text (GraphToCode.getOutput model.Tree)
                 | _ ->
                     bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
                     text model.stx1

@@ -1,4 +1,4 @@
-﻿module Tree
+﻿module GraphToCode
 
 open System
 open Bolero
