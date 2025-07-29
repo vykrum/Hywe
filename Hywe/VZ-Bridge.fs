@@ -145,7 +145,7 @@ let nstdCxls
     svg{
         attr.width ((maxX-minX+(padd*2))*scl)
         attr.height ((maxY-minY+(padd*2))*scl)
-        attr.``style`` $"viewBox: 0 0 {(maxX-minX)*scl} {(maxY-minY)*scl}"
+        attr.style $"viewBox: 0 0 {(maxX-minX)*scl} {(maxY-minY)*scl}"
         svg {
              let prp = Array.zip3 crd2 lbl clr
                     

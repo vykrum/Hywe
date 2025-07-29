@@ -9,8 +9,8 @@ open Coxel
 open Bridge
 open Parse
 open Page
-open GraphToCode
-open CodeToGraph
+open NodeCode
+open CodeNode
 open Boundary
 
 type DerivedData = {
@@ -64,7 +64,7 @@ let initModel =
         opt1 = None
         stx1 = stxInstr 
         stx2 = stx2Ini
-        Tree = GraphToCode.initModel ()
+        Tree = NodeCode.initModel ()
         Derived = deriveData stx2Ini
         IsHyweaving = false
         PolygonEditor = Boundary.initModel
@@ -87,7 +87,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newStx =
             match value with
             | Beewhich -> stxInstr
-            | Beegin -> GraphToCode.getOutput model.Tree
+            | Beegin -> NodeCode.getOutput model.Tree
             | Beespoke -> beedroom
 
         let newModel = {
@@ -119,7 +119,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | RunHyweave ->
         let updatedStx1 =
             match model.opt1 with
-            | Some Beegin -> GraphToCode.getOutput model.Tree
+            | Some Beegin -> NodeCode.getOutput model.Tree
             | _ -> model.stx1
 
         let newModel = {
@@ -143,7 +143,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let updatedTree = updateSub subMsg model.Tree
         match model.opt1 with
         | Some Beegin ->
-            let newOutput = GraphToCode.getOutput updatedTree
+            let newOutput = NodeCode.getOutput updatedTree
             {
                 model with 
                     Tree = updatedTree
@@ -249,7 +249,7 @@ let view model dispatch (js: IJSRuntime) =
                 match model.opt1 with
                 | Some Beegin ->
                     attr.readonly true
-                    text (GraphToCode.getOutput model.Tree)
+                    text (NodeCode.getOutput model.Tree)
                 | _ ->
                     bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
                     text model.stx1
@@ -351,12 +351,9 @@ let view model dispatch (js: IJSRuntime) =
 
             }*)
 
-(*            div {
-                 attr.style "width: 100%; max-height:100%; overflow:auto; border:1px dashed #999;"
-                 viewTreeSvgFromString model.stx2
-                 }*)
-
-               
+(*            div{
+                viewCodeGraphFromString model.stx2
+            }*)  
         }
     } 
     
