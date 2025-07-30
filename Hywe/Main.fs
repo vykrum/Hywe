@@ -5,34 +5,14 @@ open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
-open Coxel
 open Bridge
-open Parse
 open Page
 open NodeCode
 open CodeNode
 open Boundary
 
-type DerivedData = {
-    cxCxl1: Cxl[]
-    cxlAvl: int[]
-    cxClr1: string[]
-}
-
-let deriveData (stx: string) : DerivedData =
-    let bsOc = [||]
-    let cxCxl1 = spaceCxl bsOc stx
-    let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
-    let cxClr1 = pastels (Array.length cxCxl1)
-    {
-        cxCxl1 = cxCxl1
-        cxlAvl = cxlAvl
-        cxClr1 = cxClr1
-    }
-
 type Model =
     {
-        scp1 : int
         opt1 : Beeset option
         stx1 : string
         stx2 : string
@@ -44,9 +24,6 @@ type Model =
     }
 
 type Message =
-    | SetScp1 of int
-    | ScpInc
-    | ScpDec
     | SetOpt1 of Beeset
     | SetStx1 of string
     | TreeMsg of SubMsg
@@ -60,7 +37,6 @@ type Message =
 // Default Input
 let initModel =
     {
-        scp1 = 8
         opt1 = None
         stx1 = stxInstr 
         stx2 = stx2Ini
@@ -73,16 +49,6 @@ let initModel =
 
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
-
-    | SetScp1 value -> 
-        { model with scp1 = value }, Cmd.none
-
-    | ScpInc -> 
-        { model with scp1 = model.scp1 + 1 }, Cmd.none
-
-    | ScpDec -> 
-        { model with scp1 = model.scp1 - 1 }, Cmd.none
-
     | SetOpt1 value -> 
         let newStx =
             match value with
@@ -176,36 +142,10 @@ let view model dispatch (js: IJSRuntime) =
         div{
             attr.``style`` "flex-wrap: wrap;justify-content: center;display: flex;flex-direction: row;"
             // Dropdown
-            label{
-                attr.``for`` "options"   
+            label {
+                attr.``for`` "options"
             }
-            select{
-                attr.name "options"
-                attr.``class`` "dropdown1"
-                attr.id "options"
-                on.change (fun e -> 
-                                    let value = (e.Value :?> string)
-                                    let beeset = 
-                                        match value with
-                                        | "Bee-gin" -> Beegin
-                                        | "Bee-spoke" -> Beespoke
-                                        | _ -> Beewhich
-
-                                    dispatch (SetOpt1 beeset))
-                option {
-                        attr.selected "true"
-                        attr.value "Bee-which"
-                        "To  Bee or To Bee . . ."
-                }
-                option {
-                        attr.value "Bee-gin"
-                        "Bee-gin : Space Flow Chart"
-                        }
-                option {
-                        attr.value "Bee-spoke"
-                        "Bee-spoke : Space Flow Script"
-                        }
-            }
+            beeSelect model.opt1 (fun beeset -> dispatch (SetOpt1 beeset))
 
             // Formatting Instructions
             a {
@@ -229,12 +169,6 @@ let view model dispatch (js: IJSRuntime) =
                 | _ -> empty()
             }
 
-            // Font size setting
-            let fntSz = match model.opt1 with 
-                        | Some Beegin -> 12
-                        | Some Beespoke -> 12
-                        | _ -> 12
-            
             // Hywe Syntax Input
             textarea {
                 attr.id "syntax"
@@ -243,7 +177,7 @@ let view model dispatch (js: IJSRuntime) =
                                 margin-left: 20px;
                                 margin-right: 20px;
                                 height:50px;
-                                font-size: {fntSz}px;
+                                font-size: 12px;
                                 color: #808080;"
 
                 match model.opt1 with
@@ -253,14 +187,6 @@ let view model dispatch (js: IJSRuntime) =
                 | _ ->
                     bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
                     text model.stx1
-            }
-
-            // Zoom Out
-            button {
-                attr.``class`` "button3"
-                attr.``style`` "width: 5%;"
-                on.click (fun _ -> dispatch (ScpDec))
-                "--"
             }
 
             // Hyweave
@@ -284,14 +210,6 @@ let view model dispatch (js: IJSRuntime) =
                     text "h y W E A V E"
             }
 
-            // Zoom In
-            button {
-                attr.``class`` "button3"
-                attr.``style`` "width: 5%;"
-                on.click (fun _ -> dispatch (ScpInc))
-                "+"
-            }
-
             // Hywe SVG
             div {
                 attr.id "hywe-svg-container"
@@ -299,7 +217,7 @@ let view model dispatch (js: IJSRuntime) =
                 attr.``style`` "flex-wrap: wrap; justify-content: center;"
 
                 // SVG content
-                nstdCxlsWrp cxCxl1 cxClr1 model.scp1
+                nstdCxlsWrp cxCxl1 cxClr1 10
             }
 
             // Hywe Table — full width

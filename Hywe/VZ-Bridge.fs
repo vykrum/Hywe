@@ -211,86 +211,60 @@ let nstdCxlsWrp
     // Labels
     let lbl = Array.map (fun x -> prpVlu x.Name) cxl
 
-    svg{
-        attr.width wdt
-        attr.height hgt
-        attr.``style`` $"position: relative;"
-        attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
-        svg {
-             attr.width wdt
-             attr.height hgt
-             attr.``style`` $"position: absolute; top: 0; left: 0;"
-             attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
+    svg {
+        "viewBox" => $"0 0 {wdt} {hgt}"
+        attr.``style`` (sprintf "display: block; width: 100%%; height: auto; max-width: %dpx;" wdt)
 
-             let prp = Array.zip crd2 clr
-             
-             for cmp in prp do
-                 let (xxyy,color) = cmp
-                 let xy = Array.map(fun (a,b) -> a,b) xxyy
-                            |> Array.map (fun (x,y) -> [|x;y|])
-                            |> Array.concat
-                            |> Array.map (fun x -> string (x)) 
-                            |> String.concat ","
-                 
-                 plgn()
-                    .pt($"{xy}")
-                    .cl($"{color}")
-                    .Elt()
-            }
-        // Overlay SVG: text labels
-        svg {
-             attr.width wdt
-             attr.height hgt
-             attr.``style`` $"position: absolute; top: 0; left: 0;"
-             attr.``style`` $"viewBox: 0 0 {maxX1-minX1} {maxY1-minY1}"
+        let prp = Array.zip crd2 clr
+        for (xxyy, color) in prp do
+            let xy =
+                xxyy
+                |> Array.map (fun (x, y) -> [|x; y|])
+                |> Array.concat
+                |> Array.map string
+                |> String.concat ","
 
-             let pth = Array.map(fun x -> ($"path{x}")) [|1..Array.length lbl|]
-             let prp1 = Array.zip crd2 clr
-             let prp2 = Array.zip lbl pth
-             let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
-             for (xxyy, label, color, path) in prp do
-                let x, y =
-                    match xxyy with
-                    | [||] -> -10, -10
-                    | _ ->
-                        let a = xxyy |> Array.map(fun (x,_) -> double x) |> Array.average |> int
-                        let b = xxyy |> Array.map(fun (_,x) -> double x) |> Array.average |> int
-                        a,b
+            plgn()
+                .pt(xy)
+                .cl(color)
+                .Elt()
 
-                let r = 10
-                crPh()
-                    .pathid(path)
-                    .sx($"{x}")
-                    .sy($"{y+r}")
-                    .r($"{r}")
-                    .ex($"{x}")
-                    .ey($"{y-r}")
-                    .Elt()
-                
-                crTx()
-                    .nm($"{label}")
-                    .pth(path)
-                    .Elt()
-                
-                crCl()
-                    .cx($"{x}")
-                    .cy($"{y}")
-                    .cl($"{color}")
-                    .Elt()
+        let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
+        let prp1 = Array.zip crd2 clr
+        let prp2 = Array.zip lbl pth
+        let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
 
-(*                svpt()
-                    .cl($"{color}")
-                    .xp($"{x}")
-                    .yp($"{y}")
-                    .Elt()
+        for (xxyy, label, color, path) in prp do
+            let x, y =
+                match xxyy with
+                | [||] -> -10, -10
+                | _ ->
+                    let a = xxyy |> Array.map (fun (x, _) -> double x) |> Array.average |> int
+                    let b = xxyy |> Array.map (fun (_, y) -> double y) |> Array.average |> int
+                    a, b
 
-                svtx()
-                    .xx($"{x}")
-                    .yy($"{y}")
-                    .nm($"{label}")
-                    .Elt()*)
-        }
+            let r = 10
+            crPh()
+                .pathid(path)
+                .sx($"{x}")
+                .sy($"{y + r}")
+                .r($"{r}")
+                .ex($"{x}")
+                .ey($"{y - r}")
+                .Elt()
+
+            crTx()
+                .nm(label)
+                .pth(path)
+                .Elt()
+
+            crCl()
+                .cx($"{x}")
+                .cy($"{y}")
+                .cl(color)
+                .Elt()
     }
+
 ///
 
 /// <summary> Hexel Coordinates, Color and Name </summary>

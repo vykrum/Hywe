@@ -19,7 +19,7 @@
 		<Compile Include="IN-NodeCode.fs" />
 		<Compile Include="VZ-CodeNode.fs" />
 		<Compile Include="IN-Boundary.fs" />
-		<Compile Include="VZ-Page.fs" />
+		<Compile Include="IN-Hyweave.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>

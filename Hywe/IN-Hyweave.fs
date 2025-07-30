@@ -1,13 +1,26 @@
 ﻿module Page
 
+open Bolero.Html
 open System
 open Coxel
+open Parse
 open Bolero.Html
 
 type Beeset = 
     | Beewhich
     | Beegin
     | Beespoke
+
+type Props = {
+Selected: Beeset option
+OnChange: Beeset -> unit
+}
+
+type DerivedData = {
+    cxCxl1: Cxl[]
+    cxlAvl: int[]
+    cxClr1: string[]
+}
 
 // Random pastel color
 let pastel () =
@@ -26,6 +39,18 @@ let pastel () =
 // Function to create an array of random pastel colors
 let pastels (size: int) =
     Array.init size (fun _ -> pastel())
+
+let deriveData (stx: string) : DerivedData =
+    let bsOc = [||]
+    let cxCxl1 = spaceCxl bsOc stx
+    let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
+    let cxClr1 = pastels (Array.length cxCxl1)
+    {
+        cxCxl1 = cxCxl1
+        cxlAvl = cxlAvl
+        cxClr1 = cxClr1
+    }
+
 ///
 
 (*let pageTitle = 
@@ -72,10 +97,36 @@ let beedroom = "(0/W=15/H=15/I=0/S=1/Q=22),"+
                 "(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/11/Closet-3),"+
                 "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
 
-let introduction = "Weave spatial layouts at a high level of abstraction " +
-                    "with Hywe, an endogenous space planning concept. " +
-                    "Hywe is an early stage design interface undergoing contined development" + 
-                    "while incrementally climbing down the abstraction ladder"
+// Dropdown Beeselect
+
+let beeSelect (selected: Beeset option) (onSelect: Beeset -> unit) =
+    select{
+        attr.name "options"
+        attr.``class`` "dropdown1"
+        attr.id "options"
+        on.change (fun e -> 
+            let value = (e.Value :?> string)
+            let beeset = 
+                match value with
+                | "Bee-gin" -> Beegin
+                | "Bee-spoke" -> Beespoke
+                | _ -> Beewhich
+
+            onSelect beeset)
+        option {
+            attr.selected "true"
+            attr.value "Bee-which"
+            "To  Bee or To Bee . . ."
+        }
+        option {
+            attr.value "Bee-gin"
+            "Bee-gin : Space Flow Chart"
+        }
+        option {
+            attr.value "Bee-spoke"
+            "Bee-spoke : Space Flow Script"
+        }
+    }
 
 
 // Hywe Table
@@ -120,18 +171,4 @@ let viewHyweTable (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
     }
 
 
-(*// CSS Styles
-let styleDrop2 = "width: 35%;
-                    display: block;
-                    height: 26px;
-                    font-size: 12px;
-                    background:#f9f9f9;
-                    margin-left: 5px;
-                    margin-right: 5px;
-                    color: #808080;
-                    padding: 5px 10px;
-                    border-radius: 5px;
-                    border: none;
-                    text-align: center;
-                    font-family: 'Optima', Candara, Calibri;"*)
 
