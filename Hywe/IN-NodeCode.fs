@@ -269,8 +269,8 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         }
     }
 
-let getOutput (model: SubModel) : string =
-    generateOutput model.Root
+let getOutput (model: SubModel) (Q: string) =
+    ($"(0/Q={Q}),")+(generateOutput model.Root)
 
 // Initial Tree structure
 let initModel () : SubModel =

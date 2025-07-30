@@ -2,6 +2,7 @@
 
 open Bolero.Html
 open System
+open Hexel
 open Coxel
 open Parse
 open Bolero.Html
@@ -91,7 +92,7 @@ let beeline = "(1/19/Start),(2/15/End)"
 let beeyond = "(1/24/Dock),(1.1/25/Logistics),(1.2/24/Lab),"+
               "(1.3/25/Habitation),(1.4/25/Power)"
 
-let beedroom = "(0/W=15/H=15/I=0/S=1/Q=22),"+
+let beedroom = "(0/W=15/H=15/I=0/S=1/Q=VRCWEE),"+
                 "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),(2.1/12/Staircase),"+
                 "(3.1/15/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),"+
                 "(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/11/Closet-3),"+
@@ -125,6 +126,53 @@ let beeSelect (selected: Beeset option) (onSelect: Beeset -> unit) =
         option {
             attr.value "Bee-spoke"
             "Bee-spoke : Space Flow Script"
+        }
+    }
+
+/// A UI component that lets user select an Sqn via slider
+let sequenceSlider (selected: string) (dispatch: int -> unit) =
+    let currentIndex = sqnToIndex selected
+    let maxIndex = List.length allSqns - 1
+    let labelText = 
+        if currentIndex >= 0 && currentIndex < 26 then
+            string (char (int 'A' + currentIndex))
+        else $"#{currentIndex}"
+
+    div {
+        attr.``class`` "slider-wrapper"
+
+        // Labels
+        div {
+            yield attr.``class`` "slider-labels"
+            for i in 0 .. maxIndex ->
+                span {
+                    attr.``class`` (
+                        if i = currentIndex then "slider-label active"
+                        else "slider-label"
+                    )
+                    text (string (char (int 'A' + i)))
+                }
+        }
+
+        // Positionable track
+        div {
+            attr.``class`` "slider-track-container"
+            input {
+                attr.``type`` "range"
+                attr.``class`` "custom-slider"
+                attr.min "0"
+                attr.max (string maxIndex)
+                attr.step "1"
+                attr.value (string currentIndex)
+                on.change (fun ev ->
+                    match ev.Value with
+                    | :? string as s ->
+                        match System.Int32.TryParse(s) with
+                        | true, i -> dispatch i
+                        | _ -> ()
+                    | _ -> ()
+                )
+            }
         }
     }
 

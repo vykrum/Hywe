@@ -160,31 +160,31 @@ let spaceCxl
     // Attribute Q for Sequence
     let seq = match (spcAt1 |> Map.tryFind "Q") with 
                 | Some a -> match a with 
-                            | "1" -> VRCWEE
-                            | "11" -> HRCWNN
-                            | "111" -> VRCCEE
-                            | "1111" -> HRCCNN
-                            | "2" -> VRCWSE
-                            | "22" -> HRCWNE
-                            | "222" -> VRCCSE
-                            | "2222" -> HRCCNE
-                            | "3" -> VRCWSW
-                            | "33" -> HRCWSE
-                            | "333" -> VRCCSW
-                            | "3333" -> HRCCSE
-                            | "4" -> VRCWWW
-                            | "44" -> HRCWSS
-                            | "444" -> VRCCWW
-                            | "4444" -> HRCCSS
-                            | "5" -> VRCWNW
-                            | "55" -> HRCWSW
-                            | "555" -> VRCCNW
-                            | "5555" -> HRCCSW
-                            | "6" -> VRCWNE
-                            | "66" -> HRCWNW
-                            | "666" -> VRCCNE
-                            | "6666" -> HRCCNW
-                            | _ -> VRCWEE
+                            | "VRCWEE" -> VRCWEE
+                            | "VRCCEE" -> VRCCEE
+                            | "VRCWSE" -> VRCWSE
+                            | "VRCCSE" -> VRCCSE
+                            | "VRCWSW" -> VRCWSW
+                            | "VRCCSW" -> VRCCSW
+                            | "VRCWWW" -> VRCWWW
+                            | "VRCCWW" -> VRCCWW
+                            | "VRCWNW" -> VRCWNW
+                            | "VRCCNW" -> VRCCNW
+                            | "VRCWNE" -> VRCWNE
+                            | "VRCCNE" -> VRCCNE
+                            | "HRCWNN" -> HRCWNN
+                            | "HRCCNN" -> HRCCNN
+                            | "HRCWNE" -> HRCWNE
+                            | "HRCCNE" -> HRCCNE
+                            | "HRCWSE" -> HRCWSE
+                            | "HRCCSE" -> HRCCSE
+                            | "HRCWSS" -> HRCWSS
+                            | "HRCCSS" -> HRCCSS
+                            | "HRCWSW" -> HRCWSW
+                            | "HRCCSW" -> HRCCSW
+                            | "HRCWNW" -> HRCWNW
+                            | "HRCCNW" -> HRCCNW
+                            | _        -> VRCWEE
                 | None -> VRCWEE
 
     // Rectangular Boundary

@@ -5,6 +5,7 @@ open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
+open Hexel
 open Bridge
 open Page
 open NodeCode
@@ -13,7 +14,7 @@ open Boundary
 
 type Model =
     {
-        opt1 : Beeset option
+        Sequence: string
         stx1 : string
         stx2 : string
         Tree : SubModel
@@ -24,7 +25,7 @@ type Model =
     }
 
 type Message =
-    | SetOpt1 of Beeset
+    | SetSqnIndex of int
     | SetStx1 of string
     | TreeMsg of SubMsg
     | StartHyweave
@@ -35,41 +36,25 @@ type Message =
     //| BoundaryMsg of BoundaryMsg
 
 // Default Input
+let initialTree = NodeCode.initModel ()
+let initialSequence = allSqns.Head
+let initialOutput = NodeCode.getOutput initialTree initialSequence
+
 let initModel =
     {
-        opt1 = None
-        stx1 = stxInstr 
-        stx2 = stx2Ini
-        Tree = NodeCode.initModel ()
-        Derived = deriveData stx2Ini
+        Sequence = initialSequence
+        stx1 = initialOutput
+        stx2 = initialOutput
+        Tree = initialTree
+        Derived = deriveData initialOutput
         IsHyweaving = false
         PolygonEditor = Boundary.initModel
-        //boundary = Boundary.initModel
     }
 
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
-    | SetOpt1 value -> 
-        let newStx =
-            match value with
-            | Beewhich -> stxInstr
-            | Beegin -> NodeCode.getOutput model.Tree
-            | Beespoke -> beedroom
-
-        let newModel = {
-            model with
-                opt1 = Some value
-                stx1 = newStx
-                stx2 = newStx
-        }
-
-        // Reset Hyweave if Bee-which is selected
-        let finalModel =
-            match value with
-            | Beewhich -> { newModel with IsHyweaving = false }
-            | _ -> newModel
-
-        finalModel, Cmd.none
+    | SetSqnIndex i ->
+        { model with Sequence = indexToSqn i }, Cmd.none
 
     | SetStx1 value -> 
         { model with stx1 = value }, Cmd.none
@@ -83,18 +68,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () (fun _ -> RunHyweave)
 
     | RunHyweave ->
-        let updatedStx1 =
-            match model.opt1 with
-            | Some Beegin -> NodeCode.getOutput model.Tree
-            | _ -> model.stx1
-
+        let updatedStx1 = NodeCode.getOutput model.Tree model.Sequence
         let newModel = {
             model with
                 stx1 = updatedStx1
                 stx2 = updatedStx1
                 Derived = deriveData updatedStx1
         }
-
         newModel,
         Cmd.OfAsync.perform
             (fun () -> async {
@@ -102,22 +82,19 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 return ()
             }) () (fun _ -> FinishHyweave)
 
+
     | FinishHyweave ->
         { model with IsHyweaving = false }, Cmd.none
 
     | TreeMsg subMsg ->
         let updatedTree = updateSub subMsg model.Tree
-        match model.opt1 with
-        | Some Beegin ->
-            let newOutput = NodeCode.getOutput updatedTree
-            {
-                model with 
-                    Tree = updatedTree
-                    stx1 = newOutput
-                    stx2 = newOutput 
-            }, Cmd.none
-        | _ ->
-            { model with Tree = updatedTree }, Cmd.none
+        let newOutput = NodeCode.getOutput updatedTree model.Sequence
+        {
+            model with 
+                Tree = updatedTree
+                stx1 = newOutput
+                stx2 = newOutput 
+        }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
         model, Cmd.OfAsync.perform (fun () -> Boundary.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
@@ -140,8 +117,8 @@ let view model dispatch (js: IJSRuntime) =
         //div{pageIntro}
         // Hywe
         div{
-            attr.``style`` "flex-wrap: wrap;justify-content: center;display: flex;flex-direction: row;"
-            // Dropdown
+            attr.``style`` "display: flex;flex-direction: column;align-items: center;width: 100%;"
+(*            // Dropdown
             label {
                 attr.``for`` "options"
             }
@@ -155,18 +132,17 @@ let view model dispatch (js: IJSRuntime) =
                 attr.target "blank"
                 "?"
             }
-
+*)
             // Space Flow Chart
             div {
                 attr.style "width: 100%; flex-basis: 100%; margin-top: 10px;"
+                viewTreeEditor model.Tree (TreeMsg >> dispatch)
+            }
 
-                match model.opt1 with
-                | Some Beegin ->
-                    div {
-                        attr.``style`` "width: 95%; margin: auto; padding: 10px;"
-                        viewTreeEditor model.Tree (TreeMsg >> dispatch)
-                    }
-                | _ -> empty()
+            // Sequence Selector
+            div{
+                attr.style "width: 100%;"
+                sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
             }
 
             // Hywe Syntax Input
@@ -179,20 +155,14 @@ let view model dispatch (js: IJSRuntime) =
                                 height:50px;
                                 font-size: 12px;
                                 color: #808080;"
-
-                match model.opt1 with
-                | Some Beegin ->
-                    attr.readonly true
-                    text (NodeCode.getOutput model.Tree)
-                | _ ->
-                    bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
-                    text model.stx1
+                attr.readonly true
+                text (NodeCode.getOutput model.Tree model.Sequence)
             }
+
 
             // Hyweave
             button {
-                let hyweaveDisabled =
-                    model.IsHyweaving || model.opt1 = None || model.opt1 = Some Beewhich
+                let hyweaveDisabled = model.IsHyweaving
                 attr.``class`` "button1"
                 attr.disabled hyweaveDisabled
                 attr.``style`` "
@@ -209,6 +179,7 @@ let view model dispatch (js: IJSRuntime) =
                 | false ->
                     text "h y W E A V E"
             }
+
 
             // Hywe SVG
             div {
