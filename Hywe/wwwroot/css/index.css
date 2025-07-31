@@ -89,12 +89,13 @@ html, body {
     }
 
     .custom-slider::-moz-range-thumb {
-        height: 14px;
-        width: 14px;
+        height: 16px;
+        width: 16px;
         border-radius: 50%;
         border: 1px solid #666;
         background: transparent;
         cursor: pointer;
+        margin-top: -5px;
     }
 
 .label {
