@@ -125,12 +125,6 @@ let view model dispatch (js: IJSRuntime) =
             viewTreeEditor model.Tree (TreeMsg >> dispatch)
         }
 
-        // Sequence Selector
-        div {
-            attr.style "width:auto; max-width:100%; margin-top:5px;"
-            sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-        }
-
         // Hywe Syntax Input
         textarea {
             attr.id "syntax"
@@ -140,12 +134,17 @@ let view model dispatch (js: IJSRuntime) =
             text (NodeCode.getOutput model.Tree model.Sequence)
         }
 
+        // Sequence Selector
+        div {
+            attr.style "width:auto; max-width:100%; margin-top:8px;"
+            sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+        }
         // Hyweave button
         button {
             let hyweaveDisabled = model.IsHyweaving
             attr.``class`` "button1"
             attr.disabled hyweaveDisabled
-            attr.style "width: 100%; margin-top: 8px;"
+            attr.style "width: 100%; margin-top: 0px;"
             on.click (fun _ -> dispatch StartHyweave)
 
             match model.IsHyweaving with

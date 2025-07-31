@@ -196,12 +196,19 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     attr.``type`` "number"
                     attr.min "3"
                     attr.max "999"
-                    attr.step "5"
+                    attr.step "1"
                     attr.value node.Weight
                     attr.style "width:24px; font-size:12px; text-align:center; border:none; outline:none; background:white; color:#595959;"
                     on.input (fun (e: ChangeEventArgs) ->
-                        // Dispatch the value as string, clamped by HTML input automatically
-                        dispatch (UpdateWeight(node.Id, string e.Value))
+                        let v = string e.Value
+                        let rounded =
+                            match System.Int32.TryParse(v) with
+                            | true, i -> string i
+                            | _ ->
+                                match System.Double.TryParse(v) with
+                                | true, d -> string (int (System.Math.Ceiling(d)))
+                                | _ -> "0"
+                        dispatch (UpdateWeight(node.Id, rounded))
                     )
                 }
 

@@ -57,9 +57,8 @@ input[type=number] {
 .slider-labels {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 1rem;
     font-size: 0.85rem;
-    transform: translateY(1.0rem);
+    transform: translateY(0rem);
     padding: 0 0px;
 }
 
@@ -72,7 +71,7 @@ input[type=number] {
 
 .slider-track-container {
     position: relative;
-    height: 20px;
+    height: 10px;
 }
 
 .custom-slider {
@@ -107,7 +106,7 @@ input[type=number] {
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
-        margin-bottom: 4px;
+        margin-bottom: -5px;
     }
 
 .label {
