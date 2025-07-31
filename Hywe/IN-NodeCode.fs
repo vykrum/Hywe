@@ -177,7 +177,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
 
             div {
-                attr.style "display:flex; justify-content:space-between; width:50px; font-size:12px; align-items:center;"
+                attr.style "display:flex; justify-content:space-between; width:50px; font-size:12px; justify-content:center; align-items:center;"
 
                 match node.Id = model.Root.Id with
                 | false ->
@@ -196,15 +196,13 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     attr.``type`` "number"
                     attr.min "3"
                     attr.max "999"
-                    attr.step "1"
+                    attr.step "5"
                     attr.value node.Weight
+                    attr.style "width:24px; font-size:12px; text-align:center; border:none; outline:none; background:white; color:#595959;"
                     on.input (fun (e: ChangeEventArgs) ->
-                        match Int32.TryParse(string e.Value) with
-                        | true, v -> dispatch (UpdateWeight (node.Id, v.ToString()))
-                        | _ -> ()
+                        // Dispatch the value as string, clamped by HTML input automatically
+                        dispatch (UpdateWeight(node.Id, string e.Value))
                     )
-                    attr.style
-                        "width:40px; font-size:12px; text-align:right; ; border:none; border-radius:3px; background:white; color:#595959;"
                 }
 
                 span {
@@ -307,8 +305,12 @@ let initModel () : SubModel =
 
     // Create the structure manually
     let initTree =
-        node "Foyer" "16" [
+        node "Entry" "16" [
             node "Living" "40" [
+
+                node "Study" "25" [
+                    node "Powder" "10" []
+                ]
                 node "Dining" "40" [
                     node "Kitchen" "20" [
                         node "Utility" "10" []
@@ -316,9 +318,6 @@ let initModel () : SubModel =
                     node "Bed" "26" [
                         node "Bath" "12" []
                     ]
-                ]
-                node "Study" "25" [
-                    node "Powder" "10" []
                 ]
             ]
         ]

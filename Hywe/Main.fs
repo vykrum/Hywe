@@ -5,7 +5,6 @@ open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
-open Hexel
 open Bridge
 open Page
 open NodeCode
@@ -116,88 +115,63 @@ let view model dispatch (js: IJSRuntime) =
         //div{pageTitle}
         //div{pageIntro}
         // Hywe
-        div{
-            attr.``style`` "display: flex;flex-direction: column;align-items: center;width: 100%;"
-(*            // Dropdown
-            label {
-                attr.``for`` "options"
-            }
-            beeSelect model.opt1 (fun beeset -> dispatch (SetOpt1 beeset))
+    div{
+        // Parent container
+        attr.style "display: flex;flex-direction: column;align-items: center;width: 100%;padding: 0 20px;box-sizing: border-box;"
 
-            // Formatting Instructions
-            a {
-                attr.style "padding: 17px 5px;"
-                attr.``class`` "button3"
-                attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
-                attr.target "blank"
-                "?"
-            }
-*)
-            // Space Flow Chart
-            div {
-                attr.style "width: 100%; flex-basis: 100%; margin-top: 10px;"
-                viewTreeEditor model.Tree (TreeMsg >> dispatch)
-            }
+        // Space Flow Chart
+        div {
+            attr.style "width:auto; max-width:100%; margin-top:5px; overflow-x:auto; text-align:center;"
+            viewTreeEditor model.Tree (TreeMsg >> dispatch)
+        }
 
-            // Sequence Selector
-            div{
-                attr.style "width: 100%;"
-                sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-            }
+        // Sequence Selector
+        div {
+            attr.style "width:auto; max-width:100%; margin-top:5px;"
+            sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+        }
 
-            // Hywe Syntax Input
-            textarea {
-                attr.id "syntax"
-                attr.``class`` "textarea"
-                attr.``style`` $"width : 95%%;
-                                margin-left: 20px;
-                                margin-right: 20px;
-                                height:50px;
-                                font-size: 12px;
-                                color: #808080;"
-                attr.readonly true
-                text (NodeCode.getOutput model.Tree model.Sequence)
-            }
+        // Hywe Syntax Input
+        textarea {
+            attr.id "syntax"
+            attr.``class`` "textarea"
+            attr.style "width: 100%;height: 50px;font-size: 12px; color: #808080;box-sizing: border-box; margin-top: 5px;"
+            attr.readonly true
+            text (NodeCode.getOutput model.Tree model.Sequence)
+        }
 
+        // Hyweave button
+        button {
+            let hyweaveDisabled = model.IsHyweaving
+            attr.``class`` "button1"
+            attr.disabled hyweaveDisabled
+            attr.style "width: 100%; margin-top: 8px;"
+            on.click (fun _ -> dispatch StartHyweave)
 
-            // Hyweave
-            button {
-                let hyweaveDisabled = model.IsHyweaving
-                attr.``class`` "button1"
-                attr.disabled hyweaveDisabled
-                attr.``style`` "
-                    width: 88%;
-                    margin-left: 1%;
-                    margin-right: 1%;
-                    margin-top: 5px;"
-                on.click (fun _ -> dispatch StartHyweave)
+            match model.IsHyweaving with
+            | true ->
+                span { attr.``class`` "spinner" }
+                text " h y W E A V E i n g . . ."
+            | false ->
+                text "h y W E A V E"
+        }
 
-                match model.IsHyweaving with
-                | true ->
-                    span { attr.``class`` "spinner" }
-                    text " h y W E A V E i n g . . ."
-                | false ->
-                    text "h y W E A V E"
-            }
+        // Hywe SVG
+        div {
+            attr.id "hywe-svg-container"
+            attr.``class`` "flex-container"
+            attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
+            nstdCxlsWrp cxCxl1 cxClr1 10
+        }
 
-
-            // Hywe SVG
-            div {
-                attr.id "hywe-svg-container"
-                attr.``class`` "flex-container"
-                attr.``style`` "flex-wrap: wrap; justify-content: center;"
-
-                // SVG content
-                nstdCxlsWrp cxCxl1 cxClr1 10
-            }
-
-            // Hywe Table — full width
-            div {
-                attr.id "hywe-table"
-                attr.``style`` "width: 100%; margin-top: 20px;"
-
-                viewHyweTable cxCxl1 cxClr1 cxlAvl
-            }
+        // Hywe Table — full width
+        div {
+            attr.id "hywe-table-wrapper"
+            attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
+            viewHyweTable cxCxl1 cxClr1 cxlAvl
+        }
+    }
+}
 
             (* div{
                 attr.``style`` "width: 100%;"
@@ -238,13 +212,12 @@ let view model dispatch (js: IJSRuntime) =
                     "Download Tree SVG"
                 }
 
-            }*)
+            }
 
-(*            div{
+           div{
                 viewCodeGraphFromString model.stx2
             }*)  
-        }
-    } 
+        
     
 // Bolero component handling state updates and rendering the user interface
 

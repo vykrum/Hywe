@@ -4,7 +4,6 @@ open Bolero.Html
 open System
 open Coxel
 open Parse
-open Bolero.Html
 
 type Beeset = 
     | Beewhich
@@ -141,7 +140,7 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
     let maxIndex = 23
 
-    // Your custom label string (must be 24 characters)
+    // Label string (24 characters)
     let labelPhrase = "ALTERNATE◦CONFIGURATIONS"
 
     div {
@@ -204,9 +203,19 @@ let renderRow (cxl: Cxl) (clr: string) (avl: int) =
 
 let viewHyweTable (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
     div {
-        attr.``class`` "styleTable"
+        attr.style "
+                width: 100%;
+                overflow-x: auto;
+                padding: 10px;
+                box-sizing: border-box;
+            "
         table {
-            attr.width "95%"
+            attr.style "width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+                color: #646464;
+                opacity: 0.85;"
+
             thead {
                 tr {
                     th { "Index" }
