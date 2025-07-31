@@ -52,6 +52,10 @@ type crCl = Template<
 
 type crTx = Template<
     """<text
+        id="${pth}"
+        font-weight="${fw}"
+        fill="${fl}"
+        text-decoration="${td}"
         font-size="10px"
         font-family="Verdana"
         text-anchor="middle"
@@ -234,7 +238,7 @@ let nstdCxlsWrp
         let prp2 = Array.zip lbl pth
         let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
 
-        for (xxyy, label, color, path) in prp do
+        for i, (xxyy, label, color, path) in prp |> Array.indexed do
             let x, y =
                 match xxyy with
                 | [||] -> -10, -10
@@ -256,6 +260,9 @@ let nstdCxlsWrp
             crTx()
                 .nm(label)
                 .pth(path)
+                .fw(if i = 0 then "600" else "400")
+                .fl(if i = 0 then "#333333" else "#666666")
+                .td("none")
                 .Elt()
 
             crCl()

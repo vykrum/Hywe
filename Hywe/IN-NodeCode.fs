@@ -188,15 +188,23 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     }
                 | true ->
                     span {
-                        attr.style "width:10px;" // layout spacer to keep alignment
+                        attr.style "width:10px;" 
                         text " "
                     }
 
                 input {
-                    attr.``type`` "text"
+                    attr.``type`` "number"
+                    attr.min "3"
+                    attr.max "999"
+                    attr.step "1"
                     attr.value node.Weight
-                    on.input (fun (e: ChangeEventArgs) -> dispatch (UpdateWeight (node.Id, string e.Value)))
-                    attr.style "width:20px; font-size:12px; text-align:center; border:none; outline:none; background:white;color:#595959"
+                    on.input (fun (e: ChangeEventArgs) ->
+                        match Int32.TryParse(string e.Value) with
+                        | true, v -> dispatch (UpdateWeight (node.Id, v.ToString()))
+                        | _ -> ()
+                    )
+                    attr.style
+                        "width:40px; font-size:12px; text-align:right; ; border:none; border-radius:3px; background:white; color:#595959;"
                 }
 
                 span {
