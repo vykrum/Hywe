@@ -260,7 +260,7 @@ let nstdCxlsWrp
             crTx()
                 .nm(label)
                 .pth(path)
-                .fw(if i = 0 then "600" else "400")
+                .fw(if i = 0 then "700" else "400")
                 .fl(if i = 0 then "#333333" else "#666666")
                 .td("none")
                 .Elt()

@@ -207,7 +207,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                             | _ ->
                                 match System.Double.TryParse(v) with
                                 | true, d -> string (int (System.Math.Ceiling(d)))
-                                | _ -> "0"
+                                | _ -> "3"
                         dispatch (UpdateWeight(node.Id, rounded))
                     )
                 }

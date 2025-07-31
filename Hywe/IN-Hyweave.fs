@@ -21,6 +21,45 @@ type DerivedData = {
     cxClr1: string[]
 }
 
+/// Hywe logo and title
+let hyweHeader =
+    header {
+        attr.style "display: flex; flex-direction: row; font-family: 'Optima', Candara, Calibri; width: 100%; height: 37px; opacity: 1; background: #363636; padding-left: 5px; padding-top: 5px;"
+
+        div {
+            img {
+                attr.src "https://hywe.in/images/icon-32x32.png"
+                attr.width 30
+                attr.height 30
+            }
+        }
+        div {
+            attr.style "color: white; font-family: 'Optima', Candara, Calibri; font-size: 20px; font-weight: normal; padding-left: 10px; padding-right: 10px; padding-bottom: 7px;"
+            text "H Y W E"
+        }
+        div {
+            attr.style "opacity: 1;"
+            img {
+                attr.src "https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png"
+                attr.width 200
+                attr.height 45
+            }
+        }
+    }
+
+/// Hywe Introduction
+let hyweIntro =
+    section {
+        attr.id "introduction"
+        attr.style "background: #d3d3d1; color: #363636; font-family: 'Optima', Candara, Calibri; font-size: 18px; padding: 15px 12px;"
+        p {
+            attr.style "margin: 0;"
+            text "Weave spatial configurations with "
+            strong { text "HYWE" }
+            text ", an endogenous space planning concept with an intuitive interface and no learning curve. Combining graphical interaction with embedded spatial logic, it introduces a novel and distinctive approach to early-stage layout design."
+        }
+    }
+
 // Random pastel color
 let pastel () =
     let rand = Random()

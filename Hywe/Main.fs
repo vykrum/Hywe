@@ -15,7 +15,6 @@ type Model =
     {
         Sequence: string
         stx1 : string
-        stx2 : string
         Tree : SubModel
         Derived : DerivedData
         IsHyweaving: bool
@@ -38,12 +37,10 @@ type Message =
 let initialTree = NodeCode.initModel ()
 let initialSequence = allSqns.[11]
 let initialOutput = NodeCode.getOutput initialTree initialSequence
-
 let initModel =
     {
         Sequence = initialSequence
         stx1 = initialOutput
-        stx2 = initialOutput
         Tree = initialTree
         Derived = deriveData initialOutput
         IsHyweaving = false
@@ -71,7 +68,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newModel = {
             model with
                 stx1 = updatedStx1
-                stx2 = updatedStx1
                 Derived = deriveData updatedStx1
         }
         newModel,
@@ -92,7 +88,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             model with 
                 Tree = updatedTree
                 stx1 = newOutput
-                stx2 = newOutput 
         }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
@@ -101,76 +96,81 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | PolygonEditorUpdated newPEModel ->
         { model with PolygonEditor = newPEModel }, Cmd.none
 
-
 (*    | BoundaryMsg subMsg ->
         let updatedBoundary = Boundary.update subMsg model.boundary
         { model with boundary = updatedBoundary }, Cmd.none*)
+
 // Interface
 let view model dispatch (js: IJSRuntime) =      
+    // Nested Coxels Data
+    let cxCxl1 = model.Derived.cxCxl1
+    let cxlAvl = model.Derived.cxlAvl
+    let cxClr1 = model.Derived.cxClr1
     concat {
-        // Nested Coxels Data
-        let cxCxl1 = model.Derived.cxCxl1
-        let cxlAvl = model.Derived.cxlAvl
-        let cxClr1 = model.Derived.cxClr1
-        //div{pageTitle}
-        //div{pageIntro}
+        // Header
+        //hyweHeader
+
+        // Introduction
+        //hyweIntro
+
         // Hywe
-    div{
-        // Parent container
-        attr.style "display: flex;flex-direction: column;align-items: center;width: 100%;padding: 0 20px;box-sizing: border-box;"
+        div{
+            // Parent container
+            attr.style "display: flex;flex-direction: column;align-items: center;width: 100%;padding: 0 20px;box-sizing: border-box;"
 
-        // Space Flow Chart
-        div {
-            attr.style "width:auto; max-width:100%; margin-top:5px; overflow-x:auto; text-align:center;"
-            viewTreeEditor model.Tree (TreeMsg >> dispatch)
-        }
+            // Space Flow Chart
+            div {
+                attr.style "width:auto; max-width:100%; margin-top:5px; overflow-x:auto; text-align:center;"
+                viewTreeEditor model.Tree (TreeMsg >> dispatch)
+            }
 
-        // Hywe Syntax Input
-        textarea {
-            attr.id "syntax"
-            attr.``class`` "textarea"
-            attr.style "width: 100%;height: 50px;font-size: 12px; color: #808080;box-sizing: border-box; margin-top: 5px;"
-            attr.readonly true
-            text (NodeCode.getOutput model.Tree model.Sequence)
-        }
+            // Hywe Syntax Input
+            textarea {
+                attr.id "syntax"
+                attr.``class`` "textarea"
+                attr.style "width: 100%;height: 50px;font-size: 12px; color: #808080;box-sizing: border-box; margin-top: 5px;"
+                attr.readonly true
+                text (NodeCode.getOutput model.Tree model.Sequence)
+            }
 
-        // Sequence Selector
-        div {
-            attr.style "width:auto; max-width:100%; margin-top:8px;"
-            sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-        }
-        // Hyweave button
-        button {
-            let hyweaveDisabled = model.IsHyweaving
-            attr.``class`` "button1"
-            attr.disabled hyweaveDisabled
-            attr.style "width: 100%; margin-top: 0px;"
-            on.click (fun _ -> dispatch StartHyweave)
+            // Sequence Selector
+            div {
+                attr.style "width:auto; max-width:100%; margin-top:8px;"
+                sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+            }
 
-            match model.IsHyweaving with
-            | true ->
-                span { attr.``class`` "spinner" }
-                text " h y W E A V E i n g . . ."
-            | false ->
-                text "h y W E A V E"
-        }
+            // Hyweave button
+            button {
+                let hyweaveDisabled = model.IsHyweaving
+                attr.``class`` "button1"
+                attr.disabled hyweaveDisabled
+                attr.style "width: 100%; margin-top: 0px;"
+                on.click (fun _ -> dispatch StartHyweave)
 
-        // Hywe SVG
-        div {
-            attr.id "hywe-svg-container"
-            attr.``class`` "flex-container"
-            attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
-            nstdCxlsWrp cxCxl1 cxClr1 10
-        }
+                match model.IsHyweaving with
+                | true ->
+                    span { attr.``class`` "spinner" }
+                    text " h y W E A V E i n g . . ."
+                | false ->
+                    text "h y W E A V E"
+            }
 
-        // Hywe Table — full width
-        div {
-            attr.id "hywe-table-wrapper"
-            attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
-            viewHyweTable cxCxl1 cxClr1 cxlAvl
+            // Hywe SVG
+            div {
+                attr.id "hywe-svg-container"
+                attr.``class`` "flex-container"
+                attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
+                nstdCxlsWrp cxCxl1 cxClr1 10
+            }
+
+            // Hywe Table — full width
+            div {
+                attr.id "hywe-table-wrapper"
+                attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
+                viewHyweTable cxCxl1 cxClr1 cxlAvl
+            }
         }
     }
-}
 
             (* div{
                 attr.``style`` "width: 100%;"
@@ -214,12 +214,11 @@ let view model dispatch (js: IJSRuntime) =
             }
 
            div{
-                viewCodeGraphFromString model.stx2
+                viewCodeGraphFromString model.stx1
             }*)  
         
     
 // Bolero component handling state updates and rendering the user interface
-
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
