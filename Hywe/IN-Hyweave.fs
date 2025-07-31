@@ -2,7 +2,6 @@
 
 open Bolero.Html
 open System
-open Hexel
 open Coxel
 open Parse
 open Bolero.Html
@@ -130,13 +129,20 @@ let beeSelect (selected: Beeset option) (onSelect: Beeset -> unit) =
     }
 
 /// A UI component that lets user select an Sqn via slider
+let allSqns : string list = [
+    "VRCWEE"; "VRCCEE"; "VRCWSE"; "VRCCSE"; "VRCWSW"; "VRCCSW"; "VRCWWW"; "VRCCWW"; "VRCWNW"; "VRCCNW"; "VRCWNE"; "VRCCNE";
+    "HRCWNN"; "HRCCNN"; "HRCWNE"; "HRCCNE"; "HRCWSE"; "HRCCSE"; "HRCWSS"; "HRCCSS"; "HRCWSW"; "HRCCSW"; "HRCWNW"; "HRCCNW"
+]
+
+let indexToSqn i = allSqns.[i]
+let sqnToIndex sqn = allSqns |> List.findIndex ((=) sqn)
+
 let sequenceSlider (selected: string) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
-    let maxIndex = List.length allSqns - 1
-    let labelText = 
-        if currentIndex >= 0 && currentIndex < 26 then
-            string (char (int 'A' + currentIndex))
-        else $"#{currentIndex}"
+    let maxIndex = 23
+
+    // Your custom label string (must be 24 characters)
+    let labelPhrase = "ALTERNATE◦CONFIGURATIONS"
 
     div {
         attr.``class`` "slider-wrapper"
@@ -144,17 +150,17 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
         // Labels
         div {
             yield attr.``class`` "slider-labels"
-            for i in 0 .. maxIndex ->
+            for i in 0 .. maxIndex -> 
                 span {
                     attr.``class`` (
                         if i = currentIndex then "slider-label active"
                         else "slider-label"
                     )
-                    text (string (char (int 'A' + i)))
+                    text (labelPhrase.[i].ToString())
                 }
         }
 
-        // Positionable track
+        // Slider track
         div {
             attr.``class`` "slider-track-container"
             input {
@@ -175,7 +181,6 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
             }
         }
     }
-
 
 // Hywe Table
 let renderRow (cxl: Cxl) (clr: string) (avl: int) =

@@ -225,8 +225,42 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let lines = collectConnections model.Root
 
     let canvasWidth, canvasHeight = computeCanvasBounds nodes
-
+    
+    // Main container with graph editor
     div {
+        // Instructions
+        div {
+            attr.style "text-align: center; font-size: 12px; color: #888; padding-top: 2px;"
+            span {
+                attr.style "font-weight: bold;"
+                text "Edit in place "
+            }
+            span {
+                text "node labels and values. "
+            }
+            span {
+                attr.style "font-weight: bold;"
+                text "Click  "
+            }
+            span {
+                attr.style "color: green; font-size: 12px; font-weight: bold;"
+                text " + "
+            }
+            span {
+                text " to add a child node, "
+            }
+            span {
+                attr.style "font-weight: bold;"
+                text "Double Click  "
+            }
+            span {
+                attr.style "color: red; font-size: 14px; font-weight: bold;"
+                text " - "
+            }
+            span {
+                text " to delete a node and all of its descendants"
+            }
+        }
         // Outer Scrollable Container
         div {
             attr.style "width:100%; overflow-x:auto; padding:0.25rem 0; display:flex; justify-content:center;"
@@ -247,26 +281,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     renderNode node
             }
         }
-        div {
-            attr.style "text-align: center; font-size: 10px; color: #888; padding-top: 8px;"
-            span {
-                text "Click on node labels and values to edit in place, Click on "
-            }
-            span {
-                attr.style "color: green; font-size: 12px; font-weight: bold;"
-                text " + "
-            }
-            span {
-                text " to add a child node, Double click on "
-            }
-            span {
-                attr.style "color: red; font-size: 14px; font-weight: bold;"
-                text " - "
-            }
-            span {
-                text " to delete a node and all of its descendants"
-            }
-        }
+
     }
 
 let getOutput (model: SubModel) (Q: string) =

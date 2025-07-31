@@ -37,7 +37,7 @@ type Message =
 
 // Default Input
 let initialTree = NodeCode.initModel ()
-let initialSequence = allSqns.Head
+let initialSequence = allSqns.[11]
 let initialOutput = NodeCode.getOutput initialTree initialSequence
 
 let initModel =

@@ -54,7 +54,9 @@ html, body {
 
 .slider-label {
     width: 16px;
+    color: #2a2a2a;
     text-align: center;
+    opacity: 0.6;
 }
 
 .slider-track-container {
@@ -82,7 +84,7 @@ html, body {
         height: 16px;
         width: 16px;
         border-radius: 50%;
-        border: 1px solid #666;
+        border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
         margin-top: -5px;
@@ -92,11 +94,14 @@ html, body {
         height: 16px;
         width: 16px;
         border-radius: 50%;
-        border: 1px solid #666;
+        border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
         margin-top: -5px;
     }
+
+
+
 
 .label {
     width: 60px;
