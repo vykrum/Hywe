@@ -40,7 +40,7 @@
           "name": "HYWE",
           "alternateName": "HYWE – Hygrid Woven Ensemble",
           "url": "https://hywe.in",
-          "logo": "https://hywe.in/images/web-app-manifest-192x192.png"
+          "logo": "https://hywe.in/images/web-app-manifest-192x192.png",
           "author": {
             "@type": "Person",
             "name": "Vikram Subbaiah",
@@ -73,13 +73,27 @@
 </head>
 
 <body>
-    <!--Loading Screen-->
-    <iframe id="loading-frame"
-            src="images/loading.html"
-            style="position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; border: none;"
-            title="HYWE Loading Animation">
-    </iframe>
+    <!--Logo and Title-->
+    <header style="display: flex; flex-direction: row; font-family: 'Optima', Candara, Calibri; z-index: 100; width: 100%; height: 37px; opacity: 1; background: #363636; padding-left: 5px; padding-top: 5px;">
+        <div>
+            <img src="https://hywe.in/images/icon-32x32.png" width="30" height="30" />
+        </div>
+        <div style="color: white; font-family: 'Optima', Candara, Calibri; font-size: 20px;font-weight: normal;padding-left: 10px;padding-right: 10px;padding-bottom: 7px;"> H Y W E </div>
+        <div style="opacity: 1; z-index: 200">
+            <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45" />
+        </div>
+    </header>
 
+    <!--Loading Screen-->
+    <div id="loading-frame">
+        <video class="fullscreen-bg" autoplay muted loop playsinline>
+            <source src="images/loader.webm" type="video/webm" />
+            <source src="images/loader.mp4" type="video/mp4" />
+        </video>
+        <section id="intro-section">
+            Weave spatial configurations with <strong>HYWE</strong>, an endogenous space planning concept with an intuitive interface and no learning curve. Combining graphical interaction with embedded spatial logic, it introduces a novel and distinctive approach to early-stage layout design.
+        </section>
+    </div>
     <!--Offscreen About-->
     <section id="about-hywe" class="offscreen-hidden">
         <h2>About Hywe</h2>
@@ -124,46 +138,25 @@
 
     <!--Loaded Hywe-->
     <div id="page-content" class="fade-container">
-        <!--Logo and Title-->
-        <header style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
-            <div>
-                <img src="https://hywe.in/images/icon-32x32.png" width="30" height="30" />
-            </div>
-            <div style="color: white; font-family: 'Optima', Candara, Calibri; font-size: 20px;font-weight: normal;padding-left: 10px;padding-right: 10px;padding-bottom: 7px;"> H Y W E </div>
-            <div style="opacity: 1;">
-                <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45" />
-            </div>
-        </header>
+
 
         <!--Introduction (Clickable Splash)-->
-        <section id="introduction"
-                 style="
-                        position: absolute;
-                        background: #d3d3d1;
-                        top: 35px;
-                        color: #363636;
-                        font-family: 'Optima', Candara, Calibri;
-                        font-size: 16px;
-                        line-height: 2;
-                        padding: 10px;
-                        margin-top: 25px;
-                        margin-left: 110px;
-                        width: 220px;
-                        border-radius: 6px;
-                        text-align: justify;
-                        cursor: pointer;
-                        transition: opacity 0.5s ease;
-                    ">
-            Weave spatial configurations with <strong>HYWE</strong>, an endogenous space planning concept with an intuitive interface and no learning curve. Combining graphical interaction with embedded spatial logic, it introduces a novel and distinctive approach to early-stage layout design.
-            <div style="
-                        font-size: 11px;
-                        text-align: center;
-                        margin-top: 6px;
-                        opacity: 0.6;
-                    ">
-                  Tap to Continue
-            </div>
-        </section>
+        <div id="introduction">
+            <video id="intro-video" class="fullscreen-bg" autoplay muted loop playsinline>
+                <source src="images/loader.webm" type="video/webm" />
+                <source src="images/loader.mp4" type="video/mp4" />
+            </video>
+
+            <section id="intro-section">
+                Weave spatial configurations with <strong>HYWE</strong>, an endogenous space planning concept with an intuitive interface and no learning curve. Combining graphical interaction with embedded spatial logic, it introduces a novel and distinctive approach to early-stage layout design.
+                
+                <div id="tap-to-continue" style="font-size: 11px; text-align: center; margin-top: 6px; opacity: 0; transition: opacity 0.5s ease;">
+                    Tap to Continue
+                </div>
+            </section>
+
+
+        </div>
 
         <!--Hywe Container (Initially Hidden)-->
         <div id="main" style="display:none;">
@@ -194,24 +187,25 @@
         navigator.serviceWorker.register('service-worker.js');
 
         window.addEventListener('load', function () {
+            // 1. Loader fade-out
             const loader = document.getElementById('loading-frame');
             const content = document.getElementById('page-content');
-
             setTimeout(() => {
                 if (loader) loader.remove();
                 if (content) content.classList.add('visible');
             }, 1000);
 
-            // Intro splash behavior
+            // 2. Intro splash behavior
             const intro = document.getElementById('introduction');
+            setTimeout(() => {
+                intro.classList.add('ready');
+            }, 300);
             const mainDiv = document.getElementById('main');
             const footer = document.getElementById('footer');
-
             function showMain() {
                 intro.style.opacity = '0';
                 setTimeout(() => {
                     intro.style.display = 'none';
-                    // Fade in main and footer
                     mainDiv.style.display = 'block';
                     footer.style.display = 'flex';
                     requestAnimationFrame(() => {
@@ -220,15 +214,31 @@
                     });
                 }, 500);
             }
-
-            // Click to continue
             intro.addEventListener('click', showMain);
-
-            // Auto-show after 5s if untouched
             setTimeout(() => {
                 if (intro.style.display !== 'none') showMain();
             }, 15000);
+
+            // 3. Logo width → intro box width
+            const logo = document.querySelector('img[src*="hyweLogoAcronym"]');
+            if (logo && intro) {
+                intro.style.width = logo.offsetWidth + 'px';
+            }
+
+            // 4. Prevent context menu on SVG
+            document.addEventListener('contextmenu', function (e) {
+                const svg = document.getElementById("polygon-editor-svg");
+                if (svg && svg.contains(e.target)) e.preventDefault();
+            });
+
+            const tapMsg = document.getElementById('tap-to-continue');
+            setTimeout(() => {
+                if (loader) loader.remove();
+                if (content) content.classList.add('visible');
+                if (tapMsg) tapMsg.style.opacity = '0.6';
+            }, 1000);
         });
+
 
         window.getSvgCoords = function (svgId, clientX, clientY) {
             const svg = document.getElementById(svgId);
@@ -241,21 +251,6 @@
             const svgPoint = pt.matrixTransform(screenCTM.inverse());
             return { x: svgPoint.x, y: svgPoint.y };
         };
-
-        window.addEventListener('load', function () {
-            const logo = document.querySelector('img[src*="hyweLogoAcronym"]');
-            const intro = document.getElementById('introduction');
-            if (logo && intro) {
-                intro.style.width = logo.offsetWidth + 'px';
-            }
-        });
-
-        window.addEventListener('load', () => {
-            document.addEventListener('contextmenu', function (e) {
-                const svg = document.getElementById("polygon-editor-svg");
-                if (svg && svg.contains(e.target)) e.preventDefault();
-            });
-        });
 
         window.getScaledFontSize = function (id, logicalWidth, desiredSize) {
             const el = document.getElementById(id);

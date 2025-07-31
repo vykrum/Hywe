@@ -241,6 +241,27 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     
     // Main container with graph editor
     div {
+        // Outer Scrollable Container
+        div {
+            attr.style "width:100%; overflow-x:auto; padding:0.25rem 0; display:flex; justify-content:center;"
+
+            // Inner absolute layout container with size based on nodes
+            div {
+                attr.style $"position:relative; width:{canvasWidth}px; height:{canvasHeight}px;"
+
+                // Connection Lines
+                svg {
+                    attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
+                    for line in lines do
+                        line
+                }
+
+                // Nodes
+                for node in nodes do
+                    renderNode node
+            }
+        }
+
         // Instructions
         div {
             attr.style "text-align: center; font-size: 12px; color: #2a2a2a; opacity: 0.6; padding-top: 2px;"
@@ -274,27 +295,6 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text " to delete a node and all of its descendants"
             }
         }
-        // Outer Scrollable Container
-        div {
-            attr.style "width:100%; overflow-x:auto; padding:0.25rem 0; display:flex; justify-content:center;"
-
-            // Inner absolute layout container with size based on nodes
-            div {
-                attr.style $"position:relative; width:{canvasWidth}px; height:{canvasHeight}px;"
-
-                // Connection Lines
-                svg {
-                    attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
-                    for line in lines do
-                        line
-                }
-
-                // Nodes
-                for node in nodes do
-                    renderNode node
-            }
-        }
-
     }
 
 let getOutput (model: SubModel) (Q: string) =
