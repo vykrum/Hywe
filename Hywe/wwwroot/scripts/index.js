@@ -13,7 +13,7 @@ window.addEventListener('load', function () {
         // Delay fade-out just enough to let intro/video start rendering
         requestAnimationFrame(() => {
             loader.style.transition = 'opacity 0.8s ease';
-            loader.style.opacity = '0.5';
+            loader.style.opacity = '0.75';
         });
 
         loader.addEventListener('transitionend', () => {
@@ -28,7 +28,7 @@ window.addEventListener('load', function () {
     function showMain() {
         if (!intro) return;
         intro.style.transition = 'opacity 0.8s ease';
-        intro.style.opacity = '0.5';
+        intro.style.opacity = '0.75';
         intro.addEventListener('transitionend', () => {
             intro.style.display = 'none';
             mainDiv.style.display = 'block';

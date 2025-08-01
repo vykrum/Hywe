@@ -184,7 +184,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     span {
                         attr.style "color:red; font-weight:bold; opacity:0.5; cursor:pointer;"
                         on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
-                        text "-"
+                        text "o"
                     }
                 | true ->
                     span {
@@ -215,7 +215,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 span {
                     attr.style "color:green; font-weight:bold; opacity:0.5; cursor:pointer;"
                     on.click (fun _ -> dispatch (AddChild node.Id))
-                    text "+"
+                    text "o"
                 }
             }
 
@@ -278,7 +278,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
             span {
                 attr.style "color: green; font-size: 12px; font-weight: bold;"
-                text " + "
+                text " o "
             }
             span {
                 text " to add a child node, "
@@ -288,8 +288,8 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Double Click  "
             }
             span {
-                attr.style "color: red; font-size: 14px; font-weight: bold;"
-                text " - "
+                attr.style "color: red; font-size: 12px; font-weight: bold;"
+                text " o "
             }
             span {
                 text " to delete a node and all of its descendants"
