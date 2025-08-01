@@ -1,5 +1,7 @@
 navigator.serviceWorker.register('service-worker.js');
 
+navigator.serviceWorker.register('service-worker.js');
+
 window.addEventListener('load', function () {
     const loader = document.getElementById('loading-frame');
     const content = document.getElementById('page-content');
@@ -8,19 +10,28 @@ window.addEventListener('load', function () {
     const mainDiv = document.getElementById('main');
     const footer = document.getElementById('footer');
 
-    // 1. Loader fade-out (visual transition)
+    // --------------------------
+    // 1. Loader stays at least 2s
+    // --------------------------
     setTimeout(() => {
-        if (loader) loader.remove();
-        if (content) content.classList.add('visible');
-        if (intro) intro.classList.add('ready');
-    }, 500);
+        if (loader) loader.style.opacity = '0'; // fade out
+        setTimeout(() => {
+            if (loader) loader.style.display = 'none';
+            if (content) content.classList.add('visible');
+            if (intro) intro.classList.add('ready'); // fade-in intro
+        }, 800); // fade duration
+    }, 2000); // 2s min loader
 
-    // 2. Show "Tap to Continue" after 2 seconds
+    // --------------------------
+    // 2. Tap text after intro 2s
+    // --------------------------
     setTimeout(() => {
         if (tapMsg) tapMsg.classList.add('visible');
-    }, 2000);
+    }, 4000); // 2s loader + 2s intro
 
-    // 3. Show main content on tap or auto-hide
+    // --------------------------
+    // 3. Show main content
+    // --------------------------
     function showMain() {
         intro.style.opacity = '0';
         setTimeout(() => {
@@ -31,18 +42,17 @@ window.addEventListener('load', function () {
                 mainDiv.style.opacity = '1';
                 footer.style.opacity = '1';
             });
-        }, 500);
+        }, 800); // match CSS transition
     }
 
-    // Tap anywhere in intro area
+    // Tap anywhere to continue
     if (intro) intro.addEventListener('click', showMain);
 
-    // Auto-hide if user never taps
+    // Auto-hide after 10s total if user never taps
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
     }, 10000);
 });
-
 
 
 // JS interop helpers for Blazor
