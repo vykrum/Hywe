@@ -1,7 +1,5 @@
 navigator.serviceWorker.register('service-worker.js');
 
-navigator.serviceWorker.register('service-worker.js');
-
 window.addEventListener('load', function () {
     const loader = document.getElementById('loading-frame');
     const content = document.getElementById('page-content');
@@ -10,31 +8,24 @@ window.addEventListener('load', function () {
     const mainDiv = document.getElementById('main');
     const footer = document.getElementById('footer');
 
-    // --------------------------
-    // 1. Loader stays at least 2s
-    // --------------------------
-    setTimeout(() => {
-        if (loader) loader.style.opacity = '0'; // fade out
-        setTimeout(() => {
-            if (loader) loader.style.display = 'none';
+    // Smooth fade-out loader - fade-in intro
+    if (loader) {
+        loader.style.transition = 'opacity 0.8s ease';
+        loader.style.opacity = '0';
+        loader.addEventListener('transitionend', () => {
+            loader.style.display = 'none';
             if (content) content.classList.add('visible');
-            if (intro) intro.classList.add('ready'); // fade-in intro
-        }, 800); // fade duration
-    }, 2000); // 2s min loader
+            if (intro) intro.classList.add('ready'); // triggers intro fade-in
+            if (tapMsg) tapMsg.classList.add('visible'); // show tap once intro is visible
+        }, { once: true });
+    }
 
-    // --------------------------
-    // 2. Tap text after intro 2s
-    // --------------------------
-    setTimeout(() => {
-        if (tapMsg) tapMsg.classList.add('visible');
-    }, 4000); // 2s loader + 2s intro
-
-    // --------------------------
-    // 3. Show main content
-    // --------------------------
+    // Show main content
     function showMain() {
+        if (!intro) return;
+        intro.style.transition = 'opacity 0.8s ease';
         intro.style.opacity = '0';
-        setTimeout(() => {
+        intro.addEventListener('transitionend', () => {
             intro.style.display = 'none';
             mainDiv.style.display = 'block';
             footer.style.display = 'flex';
@@ -42,18 +33,17 @@ window.addEventListener('load', function () {
                 mainDiv.style.opacity = '1';
                 footer.style.opacity = '1';
             });
-        }, 800); // match CSS transition
+        }, { once: true });
     }
 
     // Tap anywhere to continue
     if (intro) intro.addEventListener('click', showMain);
 
-    // Auto-hide after 10s total if user never taps
+    // Auto-hide intro if user never taps
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
-    }, 10000);
+    }, 5000);
 });
-
 
 // JS interop helpers for Blazor
 window.getSvgCoords = function (svgId, clientX, clientY) {

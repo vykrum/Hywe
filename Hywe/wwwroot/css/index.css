@@ -341,7 +341,7 @@ video.fullscreen-bg {
     top: 120px; /* space below header */
     left: 140px; /* roughly aligns with acronym image */
     width: 100%;
-    max-width: 200px; /* limit width */
+    max-width: 220px; /* limit width */
     box-sizing: border-box;
 }
 
@@ -364,7 +364,7 @@ video.fullscreen-bg {
     }
 
 /* Mobile: shrink & center */
-@media (max-width: 500px) {
+@media (max-width: 220px) {
     .intro-section {
         top: 100px;
         left: 0;
