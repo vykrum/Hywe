@@ -329,7 +329,7 @@ video.fullscreen-bg {
     }
 
 /* Mobile: shrink & center */
-@media (max-width: 500px) {
+@media (max-width: 200px) {
     .intro-section {
         top: 100px;
         left: 0;
