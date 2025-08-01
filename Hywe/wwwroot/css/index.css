@@ -8,6 +8,36 @@ html, body {
     color: #333;
 }
 
+.site-header {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start; /* mimic padding-top:5px on children */
+    font-family: 'Optima', Candara, Calibri;
+    z-index: 100;
+    width: 100%;
+    height: 37px;
+    opacity: 1;
+    background: #363636;
+    padding: 5px 0 0 5px; /* exactly as inline */
+    gap: 10px; /* replaces manual spacing */
+}
+
+    .site-header img:first-child {
+        flex-shrink: 0;
+    }
+
+    .site-header .title {
+        color: white;
+        font-size: 20px;
+        font-weight: normal;
+        padding: 0 10px 7px 10px; /* exact original */
+    }
+
+    .site-header .logo-acronym {
+        opacity: 1;
+        z-index: 200;
+    }
+
 .offscreen-hidden {
     position: absolute;
     top: -9999px;
@@ -31,9 +61,9 @@ html, body {
     transition: opacity 0.8s ease-in-out;
 }
 
-.fade-container.visible {
-    opacity: 1;
-}
+    .fade-container.visible {
+        opacity: 1;
+    }
 
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
@@ -253,38 +283,108 @@ video.fullscreen-bg {
     cursor: pointer;
 }
 
-#intro-section {
+.intro-section {
     position: absolute;
     background: #d3d3d1;
-    top: 35px;
     color: #363636;
     font-family: 'Optima', Candara, Calibri;
     font-size: 16px;
-    line-height: 2;
-    padding: 10px 16px; /* more side padding */
-    margin-top: 25px;
-    margin-left: 110px;
-    width: 220px;
+    line-height: 1.5;
+    padding: 20px 30px;
     border-radius: 6px;
-    text-align: justify;
+    text-align: center;
     cursor: pointer;
     transition: opacity 0.5s ease;
+    /* Desktop positioning */
+    top: 120px; /* space below header */
+    left: 140px; /* roughly aligns with acronym image */
+    width: 100%;
+    max-width: 200px; /* limit width */
+    box-sizing: border-box;
 }
 
-#tap-to-continue {
+#introduction {
+    -webkit-tap-highlight-color: transparent; /* iOS/Safari/Chrome */
+    cursor: pointer; /* shows it's tappable */
+}
+
+    #introduction * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+.tapText {
     font-size: 11px;
     text-align: center;
     margin-top: 6px;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.8s ease;
+    line-height: 1.5;
+}
+.tapText.visible {
+    opacity: 0.6; /* Faded until user hovers/taps */
+}
+.tapText:hover {
+    opacity: 1; /* Optional for visual feedback */
 }
 
+/* Mobile: shrink & center */
 @media (max-width: 600px) {
-    #intro-section {
-        width: auto;
-        max-width: 80%;
-        margin: 25px auto 0 auto;
+    .intro-section {
+        top: 20px;
         left: 0;
-        right: 0; /* let auto margin center it */
+        right: 0;
+        margin: 0 auto;
+        max-width: calc(100% - 50px); /* 20px margin each side */
+    }
+}
+
+.loadingText {
+    font-size: 12px;
+    text-align: center;
+    margin-top: 6px;
+    color: #363636;
+    opacity: 0;
+    animation: fadeIn 0.8s ease forwards;
+}
+
+    .loadingText span::after {
+        content: '';
+        display: inline-block;
+        width: 1ch;
+        text-align: left;
+        animation: dots 1.2s steps(4, end) infinite;
+    }
+
+/* Fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 0.6;
+    }
+}
+
+/* Dots animation */
+@keyframes dots {
+    0% {
+        content: '';
+    }
+
+    25% {
+        content: '.';
+    }
+
+    50% {
+        content: '..';
+    }
+
+    75% {
+        content: '...';
+    }
+
+    100% {
+        content: '';
     }
 }

@@ -180,7 +180,7 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
     let maxIndex = 23
 
     // Label string (24 characters)
-    let labelPhrase = "ALTERNATE◦CONFIGURATIONS"
+    let labelPhrase = "alternATE◦CONFIGURATions"
 
     div {
         attr.``class`` "slider-wrapper"

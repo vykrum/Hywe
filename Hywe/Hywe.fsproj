@@ -24,8 +24,6 @@
 		<Compile Include="Startup.fs" />
 	</ItemGroup>
 	
-	<ItemGroup />
-	
 	<ItemGroup>
 		<!--<PackageReference Include="PolySharp" Version="1.0.0" />-->
 		<PackageReference Include="Bolero" Version="0.23.52" />
