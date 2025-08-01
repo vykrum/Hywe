@@ -13,15 +13,16 @@
 .site-header {
     display: flex;
     flex-direction: row;
-    align-items: flex-start; /* mimic padding-top:5px on children */
+    align-items: flex-start;
     font-family: 'Optima', Candara, Calibri;
-    z-index: 100;
+    position: relative;
+    z-index: 300;
     width: 100%;
     height: 37px;
     opacity: 1;
     background: #363636;
-    padding: 5px 0 0 5px; /* exactly as inline */
-    gap: 10px; /* replaces manual spacing */
+    padding: 5px 0 0 5px;
+    gap: 10px;
 }
 
     .site-header img:first-child {
@@ -287,21 +288,35 @@ video.fullscreen-bg {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 0;
+    z-index: 100;
 }
 
 /* =====================
    INTRO / LOADING / TRANSITIONS
    ===================== */
 #loading-frame {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 200;
     opacity: 1;
     transition: opacity 0.8s ease;
 }
 
 #introduction {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 200;
     opacity: 0;
     transition: opacity 0.8s ease;
-    -webkit-tap-highlight-color: transparent; /* iOS/Safari/Chrome */
+    -webkit-tap-highlight-color: transparent;
     cursor: pointer;
 }
 
@@ -327,6 +342,7 @@ video.fullscreen-bg {
 
 .intro-section {
     position: absolute;
+    z-index: 250;
     background: #d3d3d1;
     color: #363636;
     font-family: 'Optima', Candara, Calibri;

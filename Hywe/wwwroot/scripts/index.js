@@ -10,13 +10,17 @@ window.addEventListener('load', function () {
 
     // Smooth fade-out loader - fade-in intro
     if (loader) {
-        loader.style.transition = 'opacity 0.8s ease';
-        loader.style.opacity = '0';
+        // Delay fade-out just enough to let intro/video start rendering
+        requestAnimationFrame(() => {
+            loader.style.transition = 'opacity 0.8s ease';
+            loader.style.opacity = '0.5';
+        });
+
         loader.addEventListener('transitionend', () => {
-            loader.style.display = 'none';
+            loader.style.display = 'none';           // remove white overlay
+            if (intro) intro.classList.add('ready'); // fade in intro
+            if (tapMsg) tapMsg.classList.add('visible');
             if (content) content.classList.add('visible');
-            if (intro) intro.classList.add('ready'); // triggers intro fade-in
-            if (tapMsg) tapMsg.classList.add('visible'); // show tap once intro is visible
         }, { once: true });
     }
 
@@ -24,7 +28,7 @@ window.addEventListener('load', function () {
     function showMain() {
         if (!intro) return;
         intro.style.transition = 'opacity 0.8s ease';
-        intro.style.opacity = '0';
+        intro.style.opacity = '0.5';
         intro.addEventListener('transitionend', () => {
             intro.style.display = 'none';
             mainDiv.style.display = 'block';
@@ -42,8 +46,17 @@ window.addEventListener('load', function () {
     // Auto-hide intro if user never taps
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
-    }, 5000);
+    }, 10000);
 });
+
+
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    colorizeHierarchyAuto('hierarchy-text');
+});
+
+
 
 // JS interop helpers for Blazor
 window.getSvgCoords = function (svgId, clientX, clientY) {
