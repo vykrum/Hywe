@@ -15,15 +15,10 @@ window.addEventListener('load', function () {
         if (intro) intro.classList.add('ready');
     }, 500);
 
-    // 2. Wait for Blazor to be ready before showing tap text
-    if (window.Blazor && window.Blazor.start) {
-        window.Blazor.start().then(() => {
-            if (tapMsg) tapMsg.classList.add('visible');
-        });
-    } else {
-        // fallback if Blazor is already loaded or missing
+    // 2. Show "Tap to Continue" after 2 seconds
+    setTimeout(() => {
         if (tapMsg) tapMsg.classList.add('visible');
-    }
+    }, 2000);
 
     // 3. Show main content on tap or auto-hide
     function showMain() {
@@ -47,6 +42,7 @@ window.addEventListener('load', function () {
         if (intro && intro.style.display !== 'none') showMain();
     }, 10000);
 });
+
 
 
 // JS interop helpers for Blazor

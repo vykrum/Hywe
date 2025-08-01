@@ -216,8 +216,7 @@ let view model dispatch (js: IJSRuntime) =
            div{
                 viewCodeGraphFromString model.stx1
             }*)  
-        
-    
+ 
 // Bolero component handling state updates and rendering the user interface
 type MyApp() =
     inherit ProgramComponent<Model, Message>()

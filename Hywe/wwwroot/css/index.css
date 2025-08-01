@@ -1,4 +1,4 @@
-﻿/* Global font and layout */
+﻿
 html, body {
     width: 100%;
     height: 99%;
@@ -74,7 +74,6 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] {
     -moz-appearance: textfield;
 }
-
 
 .slider-wrapper {
     width: 100%;
@@ -387,4 +386,27 @@ video.fullscreen-bg {
     100% {
         content: '';
     }
+}
+
+.license-footer {
+    font-size: 11px;
+    color: #808080;
+    text-align: center;
+    margin-top: 10px;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+    .license-footer a {
+        color: #808080;
+        text-decoration: none;
+    }
+
+        .license-footer a:hover {
+            color: #aaa;
+            text-decoration: underline;
+        }
+
+#footer.visible .license-footer {
+    opacity: 1;
 }
