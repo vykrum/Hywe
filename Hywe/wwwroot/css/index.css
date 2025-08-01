@@ -319,12 +319,14 @@ video.fullscreen-bg {
     transition: opacity 0.8s ease;
     line-height: 1.5;
 }
-.tapText.visible {
-    opacity: 0.6; /* Faded until user hovers/taps */
-}
-.tapText:hover {
-    opacity: 1; /* Optional for visual feedback */
-}
+
+    .tapText.visible {
+        opacity: 0.6; /* Faded until user hovers/taps */
+    }
+
+    .tapText:hover {
+        opacity: 1; /* Optional for visual feedback */
+    }
 
 /* Mobile: shrink & center */
 @media (max-width: 500px) {
