@@ -264,7 +264,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
         // Instructions
         div {
-            attr.style "text-align: center; font-size: 12px; color: #2a2a2a; opacity: 0.6; padding-top: 2px;"
+            attr.style "text-align: center; font-size: 12px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
             span {
                 attr.style "font-weight: bold;"
                 text "Edit in place "

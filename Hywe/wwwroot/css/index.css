@@ -469,6 +469,7 @@ video.fullscreen-bg {
     width: 50px;
     font-size: 10px;
     text-align: center;
+    margin-top: 3px;
     border: none;
     outline: none;
     background: white;
@@ -479,6 +480,7 @@ video.fullscreen-bg {
     width: 24px;
     font-size: 12px;
     text-align: center;
+    margin-top: 1px;
     padding-left: 10px;
     padding-right: 10px;
     border: none;
@@ -507,7 +509,7 @@ video.fullscreen-bg {
     user-select: none;
 }
     .nodebutton1:hover {
-        opacity: 1; /* Optional: highlight on hover */
+        opacity: 1; 
     }
 .nodebutton2 {
     font-size: 10px;
@@ -518,11 +520,11 @@ video.fullscreen-bg {
     opacity: 0.75;
     text-align: right;
     -webkit-tap-highlight-color: transparent;
-    cursor: pointer; /* Shows pointer cursor on hover */
+    cursor: pointer;
     user-select: none;
 }
-.nodebutton2:hover {
-    opacity: 1; /* Optional: highlight on hover */
+    .nodebutton2:hover {
+    opacity: 1;
 }
 
 /* =====================
