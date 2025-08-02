@@ -477,6 +477,7 @@ video.fullscreen-bg {
 .nodebutton1 {
     font-size: 10px;
     font-weight: bold;
+    vertical-align: sub;
     color: red;
     text-align: left;
     margin-right: 10px;
@@ -486,6 +487,7 @@ video.fullscreen-bg {
 .nodebutton2 {
     font-size: 10px;
     font-weight: bold;
+    vertical-align: sub;
     color: green;
     text-align: right;
     margin-left: 10px;
