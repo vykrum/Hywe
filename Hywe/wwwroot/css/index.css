@@ -479,6 +479,7 @@ video.fullscreen-bg {
     color: red;
     text-align: left;
     margin-right: 5px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .nodebutton2 {
@@ -486,4 +487,5 @@ video.fullscreen-bg {
     color: green;
     text-align: right;
     margin-left: 5px;
+    -webkit-tap-highlight-color: transparent;
 }
