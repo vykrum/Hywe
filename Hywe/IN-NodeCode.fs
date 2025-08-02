@@ -277,7 +277,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Click  "
             }
             span {
-                attr.style "color: green; font-size: 12px; font-weight: bold;"
+                attr.``class`` "nodebutton1"
                 text " o "
             }
             span {
@@ -288,7 +288,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Double Click  "
             }
             span {
-                attr.style "color: red; font-size: 12px; font-weight: bold;"
+                attr.``class`` "nodebutton2"
                 text " o "
             }
             span {
