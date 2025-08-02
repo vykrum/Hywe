@@ -182,7 +182,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 match node.Id = model.Root.Id with
                 | false ->
                     span {
-                        attr.style "color:red; font-weight:bold; opacity:0.5; cursor:pointer;"
+                        attr.style "color:red;font-size:10px font-weight:bold; opacity:0.5; cursor:pointer;margin-right:2px"
                         on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
                         text "o"
                     }
@@ -213,7 +213,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 }
 
                 span {
-                    attr.style "color:green; font-weight:bold; opacity:0.5; cursor:pointer;"
+                    attr.style "color:green;font-size:10px font-weight:bold; opacity:0.5; cursor:pointer;margin-left:2px"
                     on.click (fun _ -> dispatch (AddChild node.Id))
                     text "o"
                 }
