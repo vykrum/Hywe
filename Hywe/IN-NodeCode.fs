@@ -171,25 +171,25 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
             input {
                 attr.``type`` "text"
+                attr.``class`` "nodename"
                 attr.value node.Name
                 on.input (fun (e: ChangeEventArgs) -> dispatch (UpdateName (node.Id, string e.Value)))
-                attr.style "width:50px; font-size:10px; text-align:center; border:none; outline:none; background:white;color:#6e6e6e;"
             }
 
             div {
-                attr.style "display:flex; justify-content:space-between; width:50px; font-size:12px; justify-content:center; align-items:center;"
+                attr.style "display:flex; justify-content:space-between; width:50px; justify-content:center; align-items:center;"
 
                 match node.Id = model.Root.Id with
                 | false ->
                     span {
                         attr.``class`` "nodebutton1"
                         on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
-                        text "o "
+                        text "o"
                     }
                 | true ->
                     span {
                         attr.``class`` "nodebutton1" 
-                        text "  "
+                        text " "
                     }
 
                 input {
@@ -198,7 +198,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     attr.max "999"
                     attr.step "1"
                     attr.value node.Weight
-                    attr.style "width:24px; font-size:12px; text-align:center; border:none; outline:none; background:white; color:#595959;"
+                    attr.``class`` "nodeweight"
                     on.input (fun (e: ChangeEventArgs) ->
                         let v = string e.Value
                         let rounded =
@@ -215,7 +215,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 span {
                     attr.``class`` "nodebutton2"
                     on.click (fun _ -> dispatch (AddChild node.Id))
-                    text " o"
+                    text "o"
                 }
             }
 
@@ -277,7 +277,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Click "
             }
             span {
-                attr.``class`` "nodebutton1"
+                attr.``class`` "nodebutton2"
                 text " o "
             }
             span {
@@ -288,7 +288,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Double Click "
             }
             span {
-                attr.``class`` "nodebutton2"
+                attr.``class`` "nodebutton1"
                 text " o "
             }
             span {

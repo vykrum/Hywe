@@ -449,6 +449,51 @@ video.fullscreen-bg {
 }
 
 /* =====================
+   NODE INPUTS
+   ===================== */
+.nodename {
+    width: 50px;
+    font-size: 10px;
+    text-align: center;
+    border: none;
+    outline: none;
+    background: white;
+    color: #6e6e6e;
+    -webkit-tap-highlight-color: transparent;
+}
+.nodeweight {
+    width: 24px;
+    font-size: 12px;
+    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    border: none;
+    outline: none;
+    background: white;
+    color: #595959;
+    -webkit-tap-highlight-color: transparent;
+}
+.nodebutton1 {
+    font-size: 10px;
+    font-weight: bold;
+    padding-top: 8px;
+    color: #E67E22;
+    opacity: 0.75;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nodebutton2 {
+    font-size: 10px;
+    font-weight: bold;
+    padding-top: 8px;
+    color: #2E86C1;
+    opacity: 0.75;
+    text-align: right;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* =====================
    FOOTER LICENSE
    ===================== */
 .license-footer {
@@ -474,22 +519,4 @@ video.fullscreen-bg {
     opacity: 1;
 }
 
-.nodebutton1 {
-    font-size: 10px;
-    font-weight: bold;
-    padding-top: 10px;
-    color: red;
-    text-align: left;
-    margin-right: 10px;
-    -webkit-tap-highlight-color: transparent;
-}
 
-.nodebutton2 {
-    font-size: 10px;
-    font-weight: bold;
-    padding-top: 10px;
-    color: green;
-    text-align: right;
-    margin-left: 10px;
-    -webkit-tap-highlight-color: transparent;
-}

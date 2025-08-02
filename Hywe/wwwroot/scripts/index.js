@@ -12,8 +12,8 @@ window.addEventListener('load', function () {
     if (loader) {
         // Delay fade-out just enough to let intro/video start rendering
         requestAnimationFrame(() => {
-            loader.style.transition = 'opacity 0.8s ease';
-            loader.style.opacity = '0.75';
+            loader.style.transition = 'opacity 0.25s ease';
+            loader.style.opacity = '0.95';
         });
 
         loader.addEventListener('transitionend', () => {
@@ -28,7 +28,7 @@ window.addEventListener('load', function () {
     function showMain() {
         if (!intro) return;
         intro.style.transition = 'opacity 0.8s ease';
-        intro.style.opacity = '0.75';
+        intro.style.opacity = '0.25';
         intro.addEventListener('transitionend', () => {
             intro.style.display = 'none';
             mainDiv.style.display = 'block';
@@ -46,7 +46,7 @@ window.addEventListener('load', function () {
     // Auto-hide intro if user never taps
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
-    }, 10000);
+    }, 5000);
 });
 
 
