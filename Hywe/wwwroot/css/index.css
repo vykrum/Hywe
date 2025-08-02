@@ -473,3 +473,17 @@ video.fullscreen-bg {
 #footer.visible .license-footer {
     opacity: 1;
 }
+
+.nodebutton1 {
+   font-size: 10px;
+    color: red;
+    text-align: left;
+    margin-right: 5px;
+}
+
+.nodebutton2 {
+   font-size: 10px;
+    color: green;
+    text-align: right;
+    margin-left: 5px;
+}
