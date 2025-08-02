@@ -189,7 +189,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 | true ->
                     span {
                         attr.style "width:10px;" 
-                        text " "
+                        text "  "
                     }
 
                 input {
