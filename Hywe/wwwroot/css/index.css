@@ -16,7 +16,7 @@
     align-items: flex-start;
     font-family: 'Optima', Candara, Calibri;
     position: relative;
-    z-index: 300;
+    z-index: 1000;
     width: 100%;
     height: 37px;
     opacity: 1;
@@ -296,15 +296,22 @@ video.fullscreen-bg {
    ===================== */
 #loading-frame {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: white;
-    z-index: 200;
+    inset: 0;
+    z-index: 900;
     opacity: 1;
     transition: opacity 0.8s ease;
+    will-change: opacity;
 }
+
+.fade-container {
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    will-change: opacity;
+}
+
+    .fade-container.visible {
+        opacity: 1;
+    }
 
 #introduction {
     position: fixed;
@@ -313,7 +320,7 @@ video.fullscreen-bg {
     width: 100%;
     height: 100%;
     background: transparent;
-    z-index: 200;
+    z-index: 800;
     opacity: 0;
     transition: opacity 0.8s ease;
     -webkit-tap-highlight-color: transparent;
@@ -332,6 +339,13 @@ video.fullscreen-bg {
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.5s ease;
+        z-index: 550;
+    }
+
+    #introduction.fade-out {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.8s ease;
     }
 
     #introduction.ready section {
@@ -473,24 +487,42 @@ video.fullscreen-bg {
     color: #595959;
     -webkit-tap-highlight-color: transparent;
 }
+.nodebutton0 {
+    display: inline-block;
+    width: 15px;
+    height: 10px;
+    visibility: hidden;
+    pointer-events: none;
+}
 .nodebutton1 {
     font-size: 10px;
     font-weight: bold;
+    width: 15px;
     padding-top: 8px;
     color: #E67E22;
     opacity: 0.75;
     text-align: left;
     -webkit-tap-highlight-color: transparent;
+    cursor: pointer; /* Shows pointer cursor on hover */
+    user-select: none;
 }
-
+    .nodebutton1:hover {
+        opacity: 1; /* Optional: highlight on hover */
+    }
 .nodebutton2 {
     font-size: 10px;
     font-weight: bold;
+    width: 15px;
     padding-top: 8px;
     color: #2E86C1;
     opacity: 0.75;
     text-align: right;
     -webkit-tap-highlight-color: transparent;
+    cursor: pointer; /* Shows pointer cursor on hover */
+    user-select: none;
+}
+.nodebutton2:hover {
+    opacity: 1; /* Optional: highlight on hover */
 }
 
 /* =====================
@@ -519,4 +551,27 @@ video.fullscreen-bg {
     opacity: 1;
 }
 
+/* =====================
+   SEAMLESS CROSSFADE FIX
+   ===================== */
 
+/* Force GPU acceleration for smooth opacity transitions */
+#loading-frame,
+#introduction,
+#page-content,
+#main,
+#footer {
+    will-change: opacity;
+}
+
+/* Optional helper to force fade-in after loader fades */
+.fade-in {
+    opacity: 1 !important;
+    transition: opacity 0.8s ease;
+}
+
+/* When fading out intro to show main */
+#introduction.fade-out {
+    opacity: 0.25;
+    transition: opacity 0.8s ease;
+}

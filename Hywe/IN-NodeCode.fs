@@ -188,7 +188,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     }
                 | true ->
                     span {
-                        attr.``class`` "nodebutton1" 
+                        attr.``class`` "nodebutton0" 
                         text " "
                     }
 

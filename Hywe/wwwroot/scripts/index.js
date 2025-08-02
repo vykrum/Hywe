@@ -1,6 +1,6 @@
 navigator.serviceWorker.register('service-worker.js');
 
-window.addEventListener('load', function () {
+window.addEventListener('load', () => {
     const loader = document.getElementById('loading-frame');
     const content = document.getElementById('page-content');
     const intro = document.getElementById('introduction');
@@ -8,49 +8,49 @@ window.addEventListener('load', function () {
     const mainDiv = document.getElementById('main');
     const footer = document.getElementById('footer');
 
-    // Smooth fade-out loader - fade-in intro
+    // Ensure starting opacity for fade-in targets
+    if (content) content.style.opacity = '0';
+    if (mainDiv) mainDiv.style.opacity = '0';
+    if (footer) footer.style.opacity = '0';
+
+    // === Seamless Loader Fade Out + Content Fade In ===
     if (loader) {
-        // Delay fade-out just enough to let intro/video start rendering
         requestAnimationFrame(() => {
-            loader.style.transition = 'opacity 0.25s ease';
-            loader.style.opacity = '0.95';
+            loader.style.transition = 'opacity 0.8s ease';
+            loader.style.opacity = '0';                // fade out loader
+            if (content) content.classList.add('fade-in'); // fade in page content
+            if (intro) intro.classList.add('ready');       // fade in intro
+            if (tapMsg) tapMsg.classList.add('visible');
         });
 
         loader.addEventListener('transitionend', () => {
-            loader.style.display = 'none';           // remove white overlay
-            if (intro) intro.classList.add('ready'); // fade in intro
-            if (tapMsg) tapMsg.classList.add('visible');
-            if (content) content.classList.add('visible');
+            loader.style.display = 'none'; // remove after fade to prevent click blocking
         }, { once: true });
     }
 
-    // Show main content
+    // === Show Main App After Intro Tap or Timeout ===
     function showMain() {
         if (!intro) return;
-        intro.style.transition = 'opacity 0.8s ease';
-        intro.style.opacity = '0.25';
+        intro.classList.add('fade-out');        // fades intro to 0.25 opacity
         intro.addEventListener('transitionend', () => {
-            intro.style.display = 'none';
-            mainDiv.style.display = 'block';
-            footer.style.display = 'flex';
+            intro.style.display = 'none';       // hide intro
+            mainDiv.style.display = 'block';    // show main
+            footer.style.display = 'flex';      // show footer
             requestAnimationFrame(() => {
-                mainDiv.style.opacity = '1';
-                footer.style.opacity = '1';
+                mainDiv.style.opacity = '1';    // fade in main
+                footer.style.opacity = '1';     // fade in footer
             });
         }, { once: true });
     }
 
-    // Tap anywhere to continue
+    // Tap to continue
     if (intro) intro.addEventListener('click', showMain);
 
-    // Auto-hide intro if user never taps
+    // Auto-show main after 5s if no tap
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
     }, 5000);
 });
-
-
-
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     colorizeHierarchyAuto('hierarchy-text');
