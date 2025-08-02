@@ -184,7 +184,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     span {
                         attr.``class`` "nodebutton1"
                         on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
-                        text "o"
+                        text "o "
                     }
                 | true ->
                     span {
@@ -215,7 +215,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 span {
                     attr.``class`` "nodebutton2"
                     on.click (fun _ -> dispatch (AddChild node.Id))
-                    text "o"
+                    text " o"
                 }
             }
 
@@ -274,7 +274,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
             span {
                 attr.style "font-weight: bold;"
-                text "Click  "
+                text "Click "
             }
             span {
                 attr.``class`` "nodebutton1"
@@ -285,7 +285,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
             span {
                 attr.style "font-weight: bold;"
-                text "Double Click  "
+                text "Double Click "
             }
             span {
                 attr.``class`` "nodebutton2"
