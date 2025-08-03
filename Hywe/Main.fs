@@ -165,10 +165,11 @@ let view model dispatch (js: IJSRuntime) =
                 attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
                 viewHyweTable cxCxl1 cxClr1 cxlAvl
             }
-(*            div{
-                attr.``style`` "width: 100%;"
-                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
-            }*)
+            // Polygon Editor
+            div{
+                attr.``style`` "width: 100%; margin-top: 10px;"
+                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch)
+            }
 
         }
     }
