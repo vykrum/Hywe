@@ -18,8 +18,8 @@
 		<Compile Include="VZ-Bridge.fs" />
 		<Compile Include="IN-NodeCode.fs" />
 		<Compile Include="VZ-CodeNode.fs" />
-		<Compile Include="IN-Boundary.fs" />
-		<Compile Include="IN-Hyweave.fs" />
+		<Compile Include="IN-PolygonEditor.fs" />
+		<Compile Include="IN-Page.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>

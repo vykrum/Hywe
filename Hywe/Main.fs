@@ -9,7 +9,7 @@ open Bridge
 open Page
 open NodeCode
 open CodeNode
-open Boundary
+open PolygonEditor
 
 type Model =
     {
@@ -44,7 +44,7 @@ let initModel =
         Tree = initialTree
         Derived = deriveData initialOutput
         IsHyweaving = false
-        PolygonEditor = Boundary.initModel
+        PolygonEditor = PolygonEditor.initModel
     }
 
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
@@ -91,14 +91,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
-        model, Cmd.OfAsync.perform (fun () -> Boundary.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
+        model, Cmd.OfAsync.perform (fun () -> PolygonEditor.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
 
     | PolygonEditorUpdated newPEModel ->
         { model with PolygonEditor = newPEModel }, Cmd.none
-
-(*    | BoundaryMsg subMsg ->
-        let updatedBoundary = Boundary.update subMsg model.boundary
-        { model with boundary = updatedBoundary }, Cmd.none*)
 
 // Interface
 let view model dispatch (js: IJSRuntime) =      
@@ -169,6 +165,11 @@ let view model dispatch (js: IJSRuntime) =
                 attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
                 viewHyweTable cxCxl1 cxClr1 cxlAvl
             }
+(*            div{
+                attr.``style`` "width: 100%;"
+                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
+            }*)
+
         }
     }
 

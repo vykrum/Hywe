@@ -1,5 +1,5 @@
 navigator.serviceWorker.register('service-worker.js');
-
+// --- Loading Animation ---
 window.addEventListener('load', () => {
     const loader = document.getElementById('loading-frame');
     const content = document.getElementById('page-content');
@@ -51,27 +51,35 @@ window.addEventListener('load', () => {
         if (intro && intro.style.display !== 'none') showMain();
     }, 5000);
 });
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     colorizeHierarchyAuto('hierarchy-text');
 });
 
+// --- Polygon Editor ---
+let polygonEditorSvgCache = null;
+let polygonEditorCtmCache = null;
 
-
-// JS interop helpers for Blazor
 window.getSvgCoords = function (svgId, clientX, clientY) {
-    const svg = document.getElementById(svgId);
-    if (!svg) return { x: 0, y: 0 };
-    const pt = svg.createSVGPoint();
+    // Cache the SVG element and its CTM
+    if (!polygonEditorSvgCache || polygonEditorSvgCache.id !== svgId) {
+        polygonEditorSvgCache = document.getElementById(svgId);
+        polygonEditorCtmCache = polygonEditorSvgCache?.getScreenCTM();
+    }
+
+    if (!polygonEditorSvgCache || !polygonEditorCtmCache) return { x: 0, y: 0 };
+
+    // Convert screen coordinates to SVG coordinates
+    const pt = polygonEditorSvgCache.createSVGPoint();
     pt.x = clientX;
     pt.y = clientY;
-    const screenCTM = svg.getScreenCTM();
-    if (!screenCTM) return { x: 0, y: 0 };
-    const svgPoint = pt.matrixTransform(screenCTM.inverse());
+
+    const svgPoint = pt.matrixTransform(polygonEditorCtmCache.inverse());
     return { x: svgPoint.x, y: svgPoint.y };
 };
 
-window.getScaledFontSize = function (id, logicalWidth, desiredSize) {
+/*window.getScaledFontSize = function (id, logicalWidth, desiredSize) {
     const el = document.getElementById(id);
     if (!el) return desiredSize;
     const width = el.getBoundingClientRect().width;
@@ -90,4 +98,4 @@ window.registerJsInteropHandlers = function (dotnetRef) {
     }
     window.addEventListener("resize", reportResize);
     reportResize();
-};
+};*/
