@@ -50,7 +50,7 @@ let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
 // --------------------
 
 let rec layoutTree (node: TreeNode) (depth: int) (xOffset: float ref) : TreeNode =
-    let y = float depth * 80.0 + 40.0
+    let y = float depth * 65.0 + 30.0
     match node.Children with
     | [] ->
         let x = !xOffset
@@ -129,22 +129,22 @@ let computeCanvasBounds (nodes: TreeNode list) =
     let minY = nodes |> List.map (fun n -> n.Y - 35.0) |> List.min   // top of hex
     let maxY = nodes |> List.map (fun n -> n.Y + 35.0) |> List.max   // bottom of hex
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
-    maxX + 80.0, maxY - minY + 70.0
+    maxX + 0.0, maxY - minY + 0.0
 
-// --------------------
+// ----------------------------------------
 // View: Hexagon nodes, vertical buttons
-// --------------------
+// ----------------------------------------
 
 let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let renderNode (node: TreeNode) : Node =
         let outerStyle =
             $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; " +
-            "width:60px; height:70px; background-color:#d3d3d1; " +
-            "clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); " +
+            "width:60px; height:60px; background-color:#d3d3d1; " +
+            "clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%); " +
             "display:flex; align-items:center; justify-content:center;"
 
         let innerStyle =
-            "position:relative; width:54px; height:64px; background-color:white; clip-path: inherit; " +
+            "position:relative; width:54px; height:54px; background-color:white; clip-path: inherit; " +
             "display:flex; flex-direction:column; align-items:center; justify-content:center; " +
             "font-size:12px; cursor:default; z-index:1; gap:3px; padding:2px;"
 
@@ -171,6 +171,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 input {
                     attr.``type`` "text"
                     attr.``class`` "nodename"
+                    "maxlength" => "9"
                     attr.value node.Name
                     on.input (fun (e: ChangeEventArgs) ->
                         dispatch (UpdateName (node.Id, string e.Value))
@@ -210,9 +211,9 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let renderConnection (parent: TreeNode) (child: TreeNode) : Node =
         svLn()
             .x1($"{parent.X}")
-            .y1($"{parent.Y + 15.0}")
+            .y1($"{parent.Y + 5.0}")
             .x2($"{child.X}")
-            .y2($"{child.Y - 30.0}")
+            .y2($"{child.Y - 35.0}")
             .Elt()
 
     let rec collectConnections (node: TreeNode) : Node list =
@@ -225,10 +226,10 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
     div {
         div {
-            attr.style "width:100%; overflow-x:auto; padding:0.25rem 0; display:flex; justify-content:center;"
+            attr.style "width:100%; overflow-x:auto; padding-top:16px; display:flex; justify-content:center;"
 
             div {
-                attr.style $"position:relative; width:{canvasWidth}px; height:{canvasHeight}px;"
+                attr.style $"position:relative; width:{canvasWidth}px; height:{max 400.0 canvasHeight}px;"
 
                 svg {
                     attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
@@ -254,7 +255,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Click "
             }
             span {
-                attr.``class`` "nodebutton2"
+                attr.style "font-weight: bold; color: #2E86C1;"
                 text " + "
             }
             span {
@@ -265,7 +266,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Double Click "
             }
             span {
-                attr.``class`` "nodebutton1"
+                attr.style "font-weight: bold; color: #E67E22;"
                 text " x "
             }
             span {
