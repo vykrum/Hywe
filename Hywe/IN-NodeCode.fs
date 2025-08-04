@@ -129,7 +129,7 @@ let computeCanvasBounds (nodes: TreeNode list) =
     let minY = nodes |> List.map (fun n -> n.Y - 35.0) |> List.min   // top of hex
     let maxY = nodes |> List.map (fun n -> n.Y + 35.0) |> List.max   // bottom of hex
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
-    maxX + 0.0, maxY - minY + 0.0
+    maxX, maxY - minY
 
 // ----------------------------------------
 // View: Hexagon nodes, vertical buttons
@@ -229,7 +229,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             attr.style "width:100%; overflow-x:auto; padding-top:16px; display:flex; justify-content:center;"
 
             div {
-                attr.style $"position:relative; width:{canvasWidth}px; height:{max 400.0 canvasHeight}px;"
+                attr.style $"position:relative; width:{canvasWidth}px; height:{max 300.0 canvasHeight}px;"
 
                 svg {
                     attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
