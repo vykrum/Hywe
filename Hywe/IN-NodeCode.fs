@@ -5,7 +5,10 @@ open Bolero
 open Bolero.Html
 open Microsoft.AspNetCore.Components
 
-// Tree data structure
+// --------------------
+// Data Structures
+// --------------------
+
 type TreeNode =
     { Id: Guid
       Name: string
@@ -14,8 +17,7 @@ type TreeNode =
       Y: float
       Children: TreeNode list }
 
-type SubModel =
-    { Root: TreeNode }
+type SubModel = { Root: TreeNode }
 
 type SubMsg =
     | AddChild of Guid
@@ -23,43 +25,15 @@ type SubMsg =
     | UpdateWeight of Guid * string
     | DeleteNode of Guid
 
-// Templates
 type svLn = Template<"""
-            <line
-                x1="${x1}"
-                y1="${y1}"
-                x2="${x2}"
-                y2="${y2}"
-                stroke="#888"
-                strokeWidth="2"
-                />
-            """>
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+          stroke="#888" stroke-width="1"/>
+""">
 
-type svCl = Template<
-        """<circle
-            cx="${cx}" 
-            cy="${cy}" 
-            r="20" 
-            fill="#fff8dc"
-            stroke "#333"
-            strokeWidth "1.5"
-            />
-        """>
+// --------------------
+// Helpers
+// --------------------
 
-type svTx = Template<
-        """<text 
-        x="${x}" 
-        y="${y}"
-        width = "50px"
-        font-size = "10px"
-        font-family="Verdana"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        fill = "#808080"
-        opacity = "1"
-        >${nm}</text> """>
-
-// Labels for nodes
 let randomNames = [
     "<Hive>"; "<Cell>"; "<Comb>"; "<Hex>"; "<Core>"; "<Dock>"; "<Ring>";
     "<Link>"; "<Arc>"; "<Mod>"; "<Buzz>"; "<Wax>"; "<Sting>"; "<Veil>";
@@ -69,18 +43,18 @@ let randomNames = [
 ]
 
 let rng = System.Random()
+let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
 
-let getRandomName () =
-    let index = rng.Next(0, randomNames.Length)
-    randomNames.[index]
+// --------------------
+// Layout
+// --------------------
 
-// Layout the tree
 let rec layoutTree (node: TreeNode) (depth: int) (xOffset: float ref) : TreeNode =
-    let y = float depth * 60.0 + 30.0
+    let y = float depth * 80.0 + 40.0
     match node.Children with
     | [] ->
         let x = !xOffset
-        xOffset := x + 80.0
+        xOffset := x + 60.0
         { node with X = x; Y = y }
     | children ->
         let laidOutChildren = children |> List.map (fun c -> layoutTree c (depth + 1) xOffset)
@@ -89,7 +63,10 @@ let rec layoutTree (node: TreeNode) (depth: int) (xOffset: float ref) : TreeNode
         let x = (firstX + lastX) / 2.0
         { node with X = x; Y = y; Children = laidOutChildren }
 
-// Recursive function to update a node
+// --------------------
+// Tree Manipulation
+// --------------------
+
 let rec mapTree (f: TreeNode -> TreeNode) (node: TreeNode) : TreeNode =
     let updated = f node
     { updated with Children = updated.Children |> List.map (mapTree f) }
@@ -97,17 +74,12 @@ let rec mapTree (f: TreeNode -> TreeNode) (node: TreeNode) : TreeNode =
 let updateNodeById id updateFn node =
     mapTree (fun n -> if n.Id = id then updateFn n else n) node
 
-// Remove a node by ID
 let rec removeNodeById id (node: TreeNode) : TreeNode option =
-    if node.Id = id then
-        None
+    if node.Id = id then None
     else
-        let newChildren =
-            node.Children
-            |> List.choose (removeNodeById id)
+        let newChildren = node.Children |> List.choose (removeNodeById id)
         Some { node with Children = newChildren }
 
-// Update logic
 let updateSub msg model =
     match msg with
     | AddChild id ->
@@ -120,25 +92,29 @@ let updateSub msg model =
                   Y = 0.0
                   Children = [] }
             { n with Children = n.Children @ [newChild] }
+
         let newRoot = updateNodeById id addChild model.Root
-        let laidOut = layoutTree newRoot 0 (ref 100.0)
-        { model with Root = laidOut }
+        { model with Root = layoutTree newRoot 0 (ref 100.0) }
+
     | UpdateName (id, newName) ->
         let newRoot = updateNodeById id (fun n -> { n with Name = newName }) model.Root
         { model with Root = newRoot }
+
     | UpdateWeight (id, newWeight) ->
         let newRoot = updateNodeById id (fun n -> { n with Weight = newWeight }) model.Root
         { model with Root = newRoot }
+
     | DeleteNode id ->
         match removeNodeById id model.Root with
-        | Some newRoot ->
-            let laidOut = layoutTree newRoot 0 (ref 100.0)
-            { model with Root = laidOut }
-        | None -> model  // If root is deleted, keep model unchanged for now
+        | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 100.0) }
+        | None -> model
 
-// Output string generation
+// --------------------
+// Output / Flatten Helpers
+// --------------------
+
 let generateOutput (root: TreeNode) =
-    let rec traverse (prefix: string) (node: TreeNode) =
+    let rec traverse prefix (node: TreeNode) =
         seq {
             yield $"({prefix}/{node.Weight}/{node.Name})"
             for i, child in node.Children |> List.indexed do
@@ -146,52 +122,62 @@ let generateOutput (root: TreeNode) =
         }
     traverse "1" root |> String.concat ", "
 
-// Flatten tree to list
-let rec flattenTree (node: TreeNode) : TreeNode list =
+let rec flattenTree node =
     node :: (node.Children |> List.collect flattenTree)
 
 let computeCanvasBounds (nodes: TreeNode list) =
+    let minY = nodes |> List.map (fun n -> n.Y - 35.0) |> List.min   // top of hex
+    let maxY = nodes |> List.map (fun n -> n.Y + 35.0) |> List.max   // bottom of hex
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
-    let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
-    let width = maxX + 20.0
-    let height = maxY + 20.0
-    width, height
+    maxX + 80.0, maxY - minY + 70.0
 
-// Tree editor view
+// --------------------
+// View: Hexagon nodes, vertical buttons
+// --------------------
+
 let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let renderNode (node: TreeNode) : Node =
-        let containerStyle =
-            $"position:absolute; left:{node.X - 35.0}px; top:{node.Y - 25.0}px; " +
-            "width:60px; height:30px; border-radius:6px; background-color:white; " +
-            "border:1px solid #d3d3d1; font-size:12px; cursor:default; z-index:1; " +
-            "display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px;"
+        let outerStyle =
+            $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; " +
+            "width:60px; height:70px; background-color:#d3d3d1; " +
+            "clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); " +
+            "display:flex; align-items:center; justify-content:center;"
+
+        let innerStyle =
+            "position:relative; width:54px; height:64px; background-color:white; clip-path: inherit; " +
+            "display:flex; flex-direction:column; align-items:center; justify-content:center; " +
+            "font-size:12px; cursor:default; z-index:1; gap:3px; padding:2px;"
 
         div {
-            attr.style containerStyle
-
-            input {
-                attr.``type`` "text"
-                attr.``class`` "nodename"
-                attr.value node.Name
-                on.input (fun (e: ChangeEventArgs) -> dispatch (UpdateName (node.Id, string e.Value)))
-            }
-
+            attr.style outerStyle
             div {
-                attr.style "display:flex; justify-content:space-between; width:50px; justify-content:center; align-items:center;"
+                attr.style innerStyle
 
+                // Remove button or placeholder
                 match node.Id = model.Root.Id with
                 | false ->
-                    span {
+                    button {
                         attr.``class`` "nodebutton1"
                         on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
-                        text "o"
+                        text "×"
                     }
                 | true ->
-                    span {
-                        attr.``class`` "nodebutton0" 
+                    button {
+                        attr.``class`` "nodebutton0"
                         text "_"
                     }
 
+                // Name input
+                input {
+                    attr.``type`` "text"
+                    attr.``class`` "nodename"
+                    attr.value node.Name
+                    on.input (fun (e: ChangeEventArgs) ->
+                        dispatch (UpdateName (node.Id, string e.Value))
+                    )
+                }
+
+                // Weight input
                 input {
                     attr.``type`` "number"
                     attr.min "3"
@@ -212,13 +198,13 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     )
                 }
 
-                span {
+                // Add child button
+                button {
                     attr.``class`` "nodebutton2"
                     on.click (fun _ -> dispatch (AddChild node.Id))
-                    text "o"
+                    text "+"
                 }
             }
-
         }
 
     let renderConnection (parent: TreeNode) (child: TreeNode) : Node =
@@ -226,42 +212,33 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             .x1($"{parent.X}")
             .y1($"{parent.Y + 15.0}")
             .x2($"{child.X}")
-            .y2($"{child.Y - 15.0}")
+            .y2($"{child.Y - 30.0}")
             .Elt()
 
     let rec collectConnections (node: TreeNode) : Node list =
-        let direct = node.Children |> List.map (fun child -> renderConnection node child)
-        let nested = node.Children |> List.collect collectConnections
-        direct @ nested
+        node.Children
+        |> List.collect (fun child -> renderConnection node child :: collectConnections child)
 
     let nodes = flattenTree model.Root
     let lines = collectConnections model.Root
-
     let canvasWidth, canvasHeight = computeCanvasBounds nodes
-    
-    // Main container with graph editor
+
     div {
-        // Outer Scrollable Container
         div {
             attr.style "width:100%; overflow-x:auto; padding:0.25rem 0; display:flex; justify-content:center;"
 
-            // Inner absolute layout container with size based on nodes
             div {
                 attr.style $"position:relative; width:{canvasWidth}px; height:{canvasHeight}px;"
 
-                // Connection Lines
                 svg {
                     attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
-                    for line in lines do
-                        line
+                    for line in lines do line
                 }
 
-                // Nodes
                 for node in nodes do
                     renderNode node
             }
         }
-
         // Instructions
         div {
             attr.style "text-align: center; font-size: 12px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
@@ -278,7 +255,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
             span {
                 attr.``class`` "nodebutton2"
-                text " o "
+                text " + "
             }
             span {
                 text " to add a child node, "
@@ -289,18 +266,22 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
             span {
                 attr.``class`` "nodebutton1"
-                text " o "
+                text " x "
             }
             span {
                 text " to delete a node and all of its descendants"
             }
         }
     }
+    
+
+// --------------------
+// Initialization
+// --------------------
 
 let getOutput (model: SubModel) (Q: string) =
-    ($"(0/Q={Q}),")+(generateOutput model.Root)
+    $"(0/Q={Q})," + generateOutput model.Root
 
-// Initial Tree structure
 let initModel () : SubModel =
     let node name weight children =
         { Id = Guid.NewGuid()
@@ -310,11 +291,9 @@ let initModel () : SubModel =
           Y = 0.0
           Children = children }
 
-    // Create the structure manually
     let initTree =
         node "Entry" "16" [
             node "Living" "40" [
-
                 node "Study" "25" [
                     node "Powder" "10" []
                 ]
@@ -329,6 +308,4 @@ let initModel () : SubModel =
             ]
         ]
 
-    let laidOut = layoutTree initTree 0 (ref 100.0)
-    { Root = laidOut }
-
+    { Root = layoutTree initTree 0 (ref 100.0) }

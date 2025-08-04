@@ -465,7 +465,6 @@ video.fullscreen-bg {
     width: 50px;
     font-size: 10px;
     text-align: center;
-    margin-top: 2px;
     border: none;
     outline: none;
     background: white;
@@ -473,12 +472,9 @@ video.fullscreen-bg {
     -webkit-tap-highlight-color: transparent;
 }
 .nodeweight {
-    width: 24px;
+    width: 50px;
     font-size: 12px;
     text-align: center;
-    margin-bottom: 1px;
-    padding-left: 10px;
-    padding-right: 10px;
     border: none;
     outline: none;
     background: white;
@@ -491,18 +487,24 @@ video.fullscreen-bg {
     height: 10px;
     visibility: hidden;
     pointer-events: none;
+    background: none !important;
+    border: none !important;
+    outline: none !important;
 }
 .nodebutton1 {
     font-size: 10px;
     font-weight: bold;
-    width: 15px;
-    padding-top: 8px;
+    width: 5px;
+    margin-top: 5px;
     color: #E67E22;
     opacity: 0.75;
-    text-align: left;
+    text-align: center;
     -webkit-tap-highlight-color: transparent;
     cursor: pointer; /* Shows pointer cursor on hover */
     user-select: none;
+    background: none !important;
+    border: none !important;
+    outline: none !important;
 }
     .nodebutton1:hover {
         opacity: 1; 
@@ -510,14 +512,17 @@ video.fullscreen-bg {
 .nodebutton2 {
     font-size: 10px;
     font-weight: bold;
-    width: 15px;
-    padding-top: 8px;
+    width: 5px;
+    margin-bottom: 5px;
     color: #2E86C1;
     opacity: 0.75;
-    text-align: right;
+    text-align: center;
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
     user-select: none;
+    background: none !important;
+    border: none !important;
+    outline: none !important;
 }
     .nodebutton2:hover {
     opacity: 1;
