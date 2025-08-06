@@ -274,39 +274,59 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             }
         }
     }
-    
+
+// -------------------- 
+// String to Node Tree
+// --------------------
+let buildTree (input: string) : TreeNode list =
+    let lines =
+        input.Trim([| ' '; ','; ')' |])
+             .Split("),", StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map (fun s -> s.Trim([| '('; ')' |]))
+        |> Array.toList
+
+    let rec build (items: (int list * string * string) list) (prefix: int list) : TreeNode list =
+        items
+        |> List.choose (fun (path, weight, name) ->
+            let isChild =
+                (prefix = [] && path.Length = 1) ||
+                (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)
+            if isChild then Some(path, weight, name) else None
+        )
+        |> List.map (fun (path, weight, name) ->
+            { Id = Guid.NewGuid()
+              Name = name
+              Weight = weight
+              X = 0.0
+              Y = 0.0
+              Children = build items path }
+        )
+
+    lines
+    // Parse and skip root placeholders like 0/Q=VRCCNE
+    |> List.choose (fun line ->
+        let parts = line.Split('/')
+        let path = parts.[0]
+        if path = "0" || path.StartsWith "0." then None
+        else
+            let pathList = path.Split('.') |> Array.map int |> Array.toList
+            Some(pathList, parts.[1], parts.[2])
+    )
+    |> fun items -> build items []
 
 // --------------------
 // Initialization
 // --------------------
+let getOutput (model: SubModel) (q: string) =
+    $"(0/Q={q})," + generateOutput model.Root
 
-let getOutput (model: SubModel) (Q: string) =
-    $"(0/Q={Q})," + generateOutput model.Root
+// --------------------
+// Initialization
+// --------------------
+let initModel (inputString: string) : SubModel =
+    match buildTree inputString with
+    | [] -> failwith "No valid nodes found in input string."
+    | rootNode::_ -> 
+        { Root = layoutTree rootNode 0 (ref 100.0) }
 
-let initModel () : SubModel =
-    let node name weight children =
-        { Id = Guid.NewGuid()
-          Name = name
-          Weight = weight
-          X = 0.0
-          Y = 0.0
-          Children = children }
-
-    let initTree =
-        node "Entry" "16" [
-            node "Living" "40" [
-                node "Study" "25" [
-                    node "Powder" "10" []
-                ]
-                node "Dining" "40" [
-                    node "Kitchen" "20" [
-                        node "Utility" "10" []
-                    ]
-                    node "Bed" "26" [
-                        node "Bath" "12" []
-                    ]
-                ]
-            ]
-        ]
-
-    { Root = layoutTree initTree 0 (ref 100.0) }
+    

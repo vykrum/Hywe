@@ -10,6 +10,10 @@ type Beeset =
     | Beegin
     | Beespoke
 
+type EditorTab =
+    | Boundary
+    | Editor of isAdvanced: bool
+
 type Props = {
 Selected: Beeset option
 OnChange: Beeset -> unit
@@ -134,6 +138,8 @@ let beedroom = "(0/W=15/H=15/I=0/S=1/Q=VRCWEE),"+
                 "(3.1/15/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),"+
                 "(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/11/Closet-3),"+
                 "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
+
+let bedroom1 = "(1/16/Entry),(1.1/40/Living),(1.1.1/25/Study),(1.1.1.1/10/Powder),(1.1.2/40/Dining),(1.1.2.1/20/Kitchen),(1.1.2.1.1/10/Utility),(1.1.2.2/26/Bed),(1.1.2.2.1/12/Bath)"
 
 // Dropdown Beeselect
 

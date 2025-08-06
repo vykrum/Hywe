@@ -19,7 +19,8 @@ type Model =
         Derived : DerivedData
         IsHyweaving: bool
         PolygonEditor: PolygonEditorModel
-        //boundary: BoundaryModel
+        ActiveTab: EditorTab
+        LastEditorTab: EditorTab
     }
 
 type Message =
@@ -30,11 +31,12 @@ type Message =
     | RunHyweave
     | FinishHyweave
     | PolygonEditorMsg of PolygonEditorMessage
-    | PolygonEditorUpdated of PolygonEditorModel
-    //| BoundaryMsg of BoundaryMsg
+    | SetActiveTab of EditorTab
+    | ToggleEditorMode
+    | ToggleBoundary
 
 // Default Input
-let initialTree = NodeCode.initModel ()
+let initialTree = NodeCode.initModel beeyond
 let initialSequence = allSqns.[11]
 let initialOutput = NodeCode.getOutput initialTree initialSequence
 let initModel =
@@ -45,6 +47,8 @@ let initModel =
         Derived = deriveData initialOutput
         IsHyweaving = false
         PolygonEditor = PolygonEditor.initModel
+        ActiveTab = Editor false
+        LastEditorTab = Editor false
     }
 
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
@@ -91,88 +95,147 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
-        model, Cmd.OfAsync.perform (fun () -> PolygonEditor.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
+        { model with PolygonEditor = PolygonEditor.update subMsg model.PolygonEditor }, Cmd.none
+    
+    | SetActiveTab tab ->
+    { model with ActiveTab = tab }, Cmd.none
 
-    | PolygonEditorUpdated newPEModel ->
-        { model with PolygonEditor = newPEModel }, Cmd.none
+    | ToggleEditorMode ->
+        match model.ActiveTab with
+        | Editor adv ->
+            // Toggle Interactive <-> Advanced
+            let newEditor = Editor (not adv)
+            { model with ActiveTab = newEditor; LastEditorTab = newEditor }, Cmd.none
+
+        | Boundary ->
+            // Exit Boundary and toggle last editor mode
+            let toggled =
+                match model.LastEditorTab with
+                | Editor adv -> Editor (not adv)
+                | _ -> Editor false
+            { model with ActiveTab = toggled; LastEditorTab = toggled }, Cmd.none
+
+
+    | ToggleBoundary ->
+        match model.ActiveTab with
+        | Boundary ->
+            // Return to last editor
+            { model with ActiveTab = model.LastEditorTab }, Cmd.none
+        | Editor _ ->
+            // Enter boundary, remember current editor
+            { model with LastEditorTab = model.ActiveTab; ActiveTab = Boundary }, Cmd.none
 
 // Interface
 let view model dispatch (js: IJSRuntime) =      
     // Nested Coxels Data
-    let cxCxl1 = model.Derived.cxCxl1
-    let cxlAvl = model.Derived.cxlAvl
-    let cxClr1 = model.Derived.cxClr1
     concat {
-        // Header
-        //hyweHeader
+        // --- Top buttons ---
+        div {
+            attr.style "display:flex; gap:5px; margin-left:5px; align-self:flex-start;"
 
-        // Introduction
-        //hyweIntro
+            let isCode =
+                match model.LastEditorTab with
+                | Editor adv -> adv
+                | _ -> false
 
-        // Hywe
-        div{
-            // Parent container
-            attr.style "display: flex;flex-direction: column;align-items: center;width: 100%;padding: 0 20px;box-sizing: border-box;"
-
-            // Space Flow Chart
-            div {
-                attr.style "width:auto; max-width:100%; margin-top:5px; overflow-x:auto; text-align:center;"
-                viewTreeEditor model.Tree (TreeMsg >> dispatch)
-            }
-
-            // Hywe Syntax Input
-            textarea {
-                attr.id "syntax"
-                attr.``class`` "textarea"
-                attr.style "width: 100%;height: 50px;font-size: 12px; color: #808080;box-sizing: border-box; margin-top: 5px;"
-                attr.readonly true
-                text (NodeCode.getOutput model.Tree model.Sequence)
-            }
-
-            // Sequence Selector
-            div {
-                attr.style "width:auto; max-width:100%; margin-top:8px;"
-                sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-            }
-
-            // Hyweave button
+            // --- Boundary toggle ---
             button {
-                let hyweaveDisabled = model.IsHyweaving
-                attr.``class`` "button1"
-                attr.disabled hyweaveDisabled
-                attr.style "width: 100%; margin-top: 0px;"
-                on.click (fun _ -> dispatch StartHyweave)
-
-                match model.IsHyweaving with
-                | true ->
-                    span { attr.``class`` "spinner" }
-                    text " h y W E A V E i n g . . ."
-                | false ->
-                    text "h y W E A V E"
+                attr.``class`` ("hywe-toggle-btn" + if model.ActiveTab = Boundary then " active" else "")
+                on.click (fun _ -> dispatch ToggleBoundary)
+                text "Boundary"
             }
 
-            // Hywe SVG
-            div {
-                attr.id "hywe-svg-container"
-                attr.``class`` "flex-container"
-                attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
-                nstdCxlsWrp cxCxl1 cxClr1 10
+            // --- Node/Code toggle ---
+            button {
+                attr.``class`` ("hywe-toggle-btn" + if model.ActiveTab <> Boundary then " active" else "")
+                on.click (fun _ ->
+                    if model.ActiveTab = Boundary then
+                        // Exit boundary, keep last Node/Code
+                        dispatch ToggleBoundary
+                    else
+                        // Toggle Node <-> Code
+                        dispatch ToggleEditorMode
+                )
+                text (if isCode then "Code" else "Node")
             }
-
-            // Hywe Table — full width
-            div {
-                attr.id "hywe-table-wrapper"
-                attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
-                viewHyweTable cxCxl1 cxClr1 cxlAvl
-            }
-            // Polygon Editor
-(*            div{
-                attr.``style`` "width: 100%; margin-top: 10px;"
-                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch)
-            }*)
-
         }
+
+        // --- Active Panel (200px) ---
+        match model.ActiveTab with
+        | Boundary ->
+            div {
+                attr.id "hywe-polygon-editor"
+                attr.style "width:100%; height:auto; margin-top:5px;"
+                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch)
+            }
+
+        | Editor adv ->
+            if adv then
+                div {
+                    attr.id "hywe-input-syntax"
+                    attr.style "width:100%; height:auto; margin-top:5px;"
+                    textarea {
+                        attr.style "width: 100%; height: 100%; font-size: 14px; color: #808080; box-sizing: border-box;"
+                        on.input (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
+                        text model.stx1
+                    }
+                }
+            else
+                div {
+                    attr.id "hywe-input-interactive"
+                    attr.style "width:100%; height:auto; overflow:auto; margin-top:5px; display:flex; flex-direction:column; gap:5px;"
+
+                    // Tree editor
+                    div {
+                        attr.style "flex:1; overflow:auto;"
+                        viewTreeEditor model.Tree (TreeMsg >> dispatch)
+                    }
+
+                    // Sequence selector
+                    div {
+                        attr.id "hywe-sequence-selector"
+                        attr.style "width:auto; max-width:100%;"
+                        sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                    }
+                }
+
+        // --- Hyweave, SVG, Table ---
+        if model.ActiveTab <> Boundary then
+            concat {
+                // Hyweave button
+                button {
+                    let hyweaveDisabled = model.IsHyweaving
+                    attr.id "hywe-hyweave"
+                    attr.``class`` "button1"
+                    attr.disabled hyweaveDisabled
+                    attr.style "width: 100%; margin-top: 0px;"
+                    on.click (fun _ -> dispatch StartHyweave)
+
+                    match model.IsHyweaving with
+                    | true ->
+                        span { attr.``class`` "spinner" }
+                        text " h y W E A V E i n g . . ."
+                    | false ->
+                        text "h y W E A V E"
+                }
+
+                // Hywe SVG
+                div {
+                    attr.id "hywe-svg-container"
+                    attr.``class`` "flex-container"
+                    attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
+                    nstdCxlsWrp model.Derived.cxCxl1 model.Derived.cxClr1 10
+                }
+
+                // Hywe Table
+                div {
+                    attr.id "hywe-table-wrapper"
+                    attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
+                    viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+                }
+            }
     }
+
 
             (* div{
                 attr.``style`` "width: 100%;"

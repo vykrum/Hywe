@@ -197,7 +197,7 @@ input[type=number] {
         opacity: 0.8;
     }
 
-.button2 {
+/*.button2 {
     background-color: #d3d3d1;
     opacity: 1;
     border: none;
@@ -223,7 +223,7 @@ input[type=number] {
     display: inline-block;
     font-size: 24px;
     cursor: pointer;
-}
+}*/
 
 .textarea {
     font-family: Consolas, "PT Mono", "Courier New", Courier, monospace;
@@ -234,7 +234,7 @@ input[type=number] {
     padding: 10px;
 }
 
-.dropdown1 {
+/*.dropdown1 {
     width: 75%;
     display: block;
     margin: 20px;
@@ -261,7 +261,31 @@ input[type=number] {
     border-radius: 5px;
     border: none;
     text-align: center;
+}*/
+
+.hywe-toggle-btn {
+    background: none;
+    border: none;
+    appearance: none; /* remove browser default styles */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 0;
+    margin-right: 5px;
+    font-size: 12px;
+    color: #888; /* light gray text */
+    cursor: pointer;
+    line-height: 1.2;
 }
+
+    .hywe-toggle-btn:hover {
+        color: #333; /* dark gray on hover */
+    }
+
+    .hywe-toggle-btn.active {
+        color: #000; /* darkest for active */
+        font-weight: 500;
+    }
+
 
 /* =====================
    SPINNER & VIDEO
