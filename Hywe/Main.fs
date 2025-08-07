@@ -211,7 +211,7 @@ let view model dispatch (js: IJSRuntime) =
             if adv then
                 div {
                     attr.id "hywe-input-syntax"
-                    attr.style "width:100%; height:auto; overflow:auto; display:flex; flex-direction:column; gap:5px;"
+                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
                     // Syntax Editor
                     textarea {
                         attr.``class`` "hyweSyntax"
