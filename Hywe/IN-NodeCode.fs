@@ -229,7 +229,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             attr.style "width:100%; overflow-x:auto; padding-top:16px; display:flex; justify-content:center;"
 
             div {
-                attr.style $"position:relative; width:{canvasWidth}px; height:{max 300.0 canvasHeight}px;"
+                attr.style $"position:relative; width:{canvasWidth}px; height:{max 200.0 canvasHeight}px;"
 
                 svg {
                     attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"

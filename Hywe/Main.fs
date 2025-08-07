@@ -16,6 +16,8 @@ type Model =
         Sequence: string
         stx1 : string
         Tree : SubModel
+        LastValidTree: SubModel
+        ParseError: bool
         Derived : DerivedData
         IsHyweaving: bool
         PolygonEditor: PolygonEditorModel
@@ -44,6 +46,8 @@ let initModel =
         Sequence = initialSequence
         stx1 = initialOutput
         Tree = initialTree
+        ParseError = false
+        LastValidTree = initialTree
         Derived = deriveData initialOutput
         IsHyweaving = false
         PolygonEditor = PolygonEditor.initModel
@@ -68,7 +72,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () (fun _ -> RunHyweave)
 
     | RunHyweave ->
-        let updatedStx1 = NodeCode.getOutput model.Tree model.Sequence
+        let updatedStx1 =
+            match model.ActiveTab with
+            | Editor true -> model.stx1 
+            | _ -> NodeCode.getOutput model.Tree model.Sequence
         let newModel = {
             model with
                 stx1 = updatedStx1
@@ -102,17 +109,49 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | ToggleEditorMode ->
         match model.ActiveTab with
         | Editor adv ->
-            // Toggle Interactive <-> Advanced
-            let newEditor = Editor (not adv)
-            { model with ActiveTab = newEditor; LastEditorTab = newEditor }, Cmd.none
+            if adv then
+                // Going from Code -> Node
+                try
+                    let processed = CodeNode.preprocessCode model.stx1
+                    let tree = CodeNode.parseOutput processed
+                    let laidOut = NodeCode.layoutTree tree 0 (ref 100.0)
+                    let subModel = { Root = laidOut }
+                    let newOutput = NodeCode.getOutput subModel model.Sequence
+                    {
+                        model with
+                            Tree = subModel
+                            stx1 = newOutput
+                            LastValidTree = subModel
+                            ActiveTab = Editor false
+                            LastEditorTab = Editor false
+                            ParseError = false
+                    }, Cmd.none
+                                with _ ->
+                                    // Parsing failed
+                                    {
+                                        model with
+                                            Tree = model.LastValidTree
+                                            ParseError = true
+                                    }, Cmd.none
+            else
+                // Node -> Code
+                {
+                    model with
+                        stx1 = NodeCode.getOutput model.Tree model.Sequence
+                        LastValidTree = model.Tree
+                        ActiveTab = Editor true
+                        LastEditorTab = Editor true
+                        ParseError = false
+                }, Cmd.none
 
         | Boundary ->
-            // Exit Boundary and toggle last editor mode
+            // Exit Boundary, toggle last editor mode
             let toggled =
                 match model.LastEditorTab with
                 | Editor adv -> Editor (not adv)
                 | _ -> Editor false
             { model with ActiveTab = toggled; LastEditorTab = toggled }, Cmd.none
+
 
     | ToggleBoundary ->
         match model.ActiveTab with
@@ -129,7 +168,7 @@ let view model dispatch (js: IJSRuntime) =
     concat {
         // --- Top buttons ---
         div {
-            attr.style "display:flex; gap:5px; margin-left:5px; align-self:flex-start;"
+            attr.style "display:flex; gap:5px; align-self:flex-start; padding-left:10px; padding-right:10px;"
 
             let isCode =
                 match model.LastEditorTab with
@@ -158,10 +197,11 @@ let view model dispatch (js: IJSRuntime) =
             }
         }
 
-        // --- Active Panel (200px) ---
+        // --- Active Panel ---
         match model.ActiveTab with
         | Boundary ->
             div {
+                // Polygon Editor
                 attr.id "hywe-polygon-editor"
                 attr.style "width:100%; height:auto; margin-top:5px;"
                 PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch)
@@ -172,8 +212,9 @@ let view model dispatch (js: IJSRuntime) =
                 div {
                     attr.id "hywe-input-syntax"
                     attr.style "width:100%; height:auto; margin-top:5px;"
+                    // Syntax Editor
                     textarea {
-                        attr.style "width: 100%; height: 100%; font-size: 14px; color: #808080; box-sizing: border-box;"
+                        attr.``class`` "hyweSyntax"
                         on.input (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
                         text model.stx1
                     }
@@ -181,7 +222,7 @@ let view model dispatch (js: IJSRuntime) =
             else
                 div {
                     attr.id "hywe-input-interactive"
-                    attr.style "width:100%; height:auto; overflow:auto; margin-top:5px; display:flex; flex-direction:column; gap:5px;"
+                    attr.style "width:100%; height:auto; overflow:auto; display:flex; flex-direction:column; gap:5px;"
 
                     // Tree editor
                     div {
@@ -204,9 +245,8 @@ let view model dispatch (js: IJSRuntime) =
                 button {
                     let hyweaveDisabled = model.IsHyweaving
                     attr.id "hywe-hyweave"
-                    attr.``class`` "button1"
+                    attr.``class`` "hyWeaveButton"
                     attr.disabled hyweaveDisabled
-                    attr.style "width: 100%; margin-top: 0px;"
                     on.click (fun _ -> dispatch StartHyweave)
 
                     match model.IsHyweaving with
