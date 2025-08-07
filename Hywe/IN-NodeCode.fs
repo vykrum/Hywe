@@ -242,7 +242,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         }
         // Instructions
         div {
-            attr.style "text-align: center; font-size: 10px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
+            attr.style "text-align: center; font-size: 11px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
             span {
                 attr.style "font-weight: bold;"
                 text "Edit in place "
@@ -277,7 +277,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text "Slide"
             }
             span {
-                attr.style "font-size: 16px; color: #4CAF50;"
+                attr.style "color: #4CAF50;"
                 text " ○ "
             }
             span {
