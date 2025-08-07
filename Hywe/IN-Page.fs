@@ -172,7 +172,7 @@ let beeSelect (selected: Beeset option) (onSelect: Beeset -> unit) =
         }
     }
 
-/// A UI component that lets user select an Sqn via slider
+/// Sqn selection via slider
 let allSqns : string list = [
     "VRCWEE"; "VRCCEE"; "VRCWSE"; "VRCCSE"; "VRCWSW"; "VRCCSW"; "VRCWWW"; "VRCCWW"; "VRCWNW"; "VRCCNW"; "VRCWNE"; "VRCCNE";
     "HRCWNN"; "HRCCNN"; "HRCWNE"; "HRCCNE"; "HRCWSE"; "HRCCSE"; "HRCWSS"; "HRCCSS"; "HRCWSW"; "HRCCSW"; "HRCWNW"; "HRCCNW"

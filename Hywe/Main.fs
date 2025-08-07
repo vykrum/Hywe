@@ -222,7 +222,7 @@ let view model dispatch (js: IJSRuntime) =
             else
                 div {
                     attr.id "hywe-input-interactive"
-                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px;"
+                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px;"
 
                     // Tree editor
                     div {
@@ -233,7 +233,7 @@ let view model dispatch (js: IJSRuntime) =
                     // Sequence selector
                     div {
                         attr.id "hywe-sequence-selector"
-                        attr.style "width:auto; max-width:100%;"
+                        attr.style "width:auto; max-width:100%; margin-top:5px;"
                         sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
                     }
                 }
