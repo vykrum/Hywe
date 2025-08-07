@@ -81,7 +81,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 return ()
             }) () (fun _ -> FinishHyweave)
 
-
     | FinishHyweave ->
         { model with IsHyweaving = false }, Cmd.none
 
@@ -114,7 +113,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 | Editor adv -> Editor (not adv)
                 | _ -> Editor false
             { model with ActiveTab = toggled; LastEditorTab = toggled }, Cmd.none
-
 
     | ToggleBoundary ->
         match model.ActiveTab with
@@ -235,7 +233,6 @@ let view model dispatch (js: IJSRuntime) =
                 }
             }
     }
-
 
             (* div{
                 attr.``style`` "width: 100%;"
