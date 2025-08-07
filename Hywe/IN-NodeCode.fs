@@ -242,7 +242,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         }
         // Instructions
         div {
-            attr.style "text-align: center; font-size: 12px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
+            attr.style "text-align: center; font-size: 10px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
             span {
                 attr.style "font-weight: bold;"
                 text "Edit in place "
@@ -270,7 +270,25 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 text " x "
             }
             span {
-                text " to delete a node and all of its descendants"
+                text " to delete a node and all of its descendants, "
+            }
+            span {
+                attr.style "font-weight: bold;"
+                text "Slide"
+            }
+            span {
+                attr.style "font-size: 16px; color: #4CAF50;"
+                text " ○ "
+            }
+            span {
+                text " to select one of 24 available procedural variations and finally "
+            }
+            span{
+                attr.style "font-weight: bold;"
+                text "Click"
+            }
+            span{
+                text " hyWEAVE to execute."
             }
         }
     }
