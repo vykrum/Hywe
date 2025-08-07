@@ -211,7 +211,7 @@ let view model dispatch (js: IJSRuntime) =
             if adv then
                 div {
                     attr.id "hywe-input-syntax"
-                    attr.style "width:100%; height:auto; margin-top:5px;"
+                    attr.style "width:100%; height:auto; overflow:auto; display:flex; flex-direction:column; gap:5px;"
                     // Syntax Editor
                     textarea {
                         attr.``class`` "hyweSyntax"
@@ -240,7 +240,9 @@ let view model dispatch (js: IJSRuntime) =
 
         // --- Hyweave, SVG, Table ---
         if model.ActiveTab <> Boundary then
-            concat {
+            div{
+                attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px;"
+                concat {
                 // Hyweave button
                 button {
                     let hyweaveDisabled = model.IsHyweaving
@@ -271,6 +273,7 @@ let view model dispatch (js: IJSRuntime) =
                     attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
                     viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
                 }
+            }
             }
     }
 
