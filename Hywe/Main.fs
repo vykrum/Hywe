@@ -222,7 +222,7 @@ let view model dispatch (js: IJSRuntime) =
             else
                 div {
                     attr.id "hywe-input-interactive"
-                    attr.style "width:100%; height:auto; overflow:auto; display:flex; flex-direction:column; gap:5px;"
+                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px;"
 
                     // Tree editor
                     div {
