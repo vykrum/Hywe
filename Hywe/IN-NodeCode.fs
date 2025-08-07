@@ -171,7 +171,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 input {
                     attr.``type`` "text"
                     attr.``class`` "nodename"
-                    "maxlength" => "9"
+                    "maxlength" => "10"
                     attr.value node.Name
                     on.input (fun (e: ChangeEventArgs) ->
                         dispatch (UpdateName (node.Id, string e.Value))
