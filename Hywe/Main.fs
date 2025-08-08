@@ -179,7 +179,7 @@ let view model dispatch (js: IJSRuntime) =
             button {
                 attr.``class`` ("hywe-toggle-btn" + if model.ActiveTab = Boundary then " active" else "")
                 on.click (fun _ -> dispatch ToggleBoundary)
-                text "Boundary"
+                text "Bind"
             }
 
             // --- Node/Code toggle ---
@@ -222,11 +222,11 @@ let view model dispatch (js: IJSRuntime) =
             else
                 div {
                     attr.id "hywe-input-interactive"
-                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px;"
+                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: stretch; box-sizing: border-box; padding: 0 10px; gap: 5px;"
 
                     // Tree editor
                     div {
-                        attr.style "flex:1; overflow:auto;"
+                        attr.style "flex:1; overflow-y:hidden;"
                         viewTreeEditor model.Tree (TreeMsg >> dispatch)
                     }
 
