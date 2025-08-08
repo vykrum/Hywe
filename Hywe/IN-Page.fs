@@ -64,29 +64,47 @@ let hyweIntro =
         }
     }
 
-// Random pastel color
-let pastel () =
-    let rand = Random()
-    let mixWithWhite (color: int) = (color + 255) >>> 1
-    let red = mixWithWhite (rand.Next(256))
-    let green = mixWithWhite (rand.Next(256))
-    let blue = mixWithWhite (rand.Next(256))
-    // Ensure the values are within the 0-255 range
-    let clamp value = min 255 (max 0 value)
-    let red = clamp red
-    let green = clamp green
-    let blue = clamp blue
-    $"rgba({red}, {green}, {blue}, 0.75)"
+// Consistent Pastel Color
+// Convert a hex string like "#aabbcc" to RGB values
+let hexToRgb (hex: string) =
+    let hex = hex.TrimStart('#')
+    let r = Convert.ToInt32(hex.Substring(0, 2), 16)
+    let g = Convert.ToInt32(hex.Substring(2, 2), 16)
+    let b = Convert.ToInt32(hex.Substring(4, 2), 16)
+    (r, g, b)
 
-// Function to create an array of random pastel colors
-let pastels (size: int) =
-    Array.init size (fun _ -> pastel())
+let clamp value = min 255 (max 0 value)
+
+/// Deterministic pastel generator — first color is base color
+let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
+    let (baseR, baseG, baseB) = hexToRgb rootHex
+
+    [| 0 .. count - 1 |]
+    |> Array.map (fun i ->
+        if i = 0 then
+            // First color: base color
+            $"rgba({baseR}, {baseG}, {baseB}, {opacity})"
+        else
+            // Remaining: pastel variations
+            let hueShift = (i * 137) % 360
+            let angleRad = float hueShift * Math.PI / 180.0
+
+            let vary cmpnent phase =
+                let offset = int (40.0 * Math.Sin(angleRad + phase))
+                clamp ((cmpnent + offset + 255) >>> 1)
+
+            let r = vary baseR 0.0
+            let g = vary baseG 2.0
+            let b = vary baseB 4.0
+
+            $"rgba({r}, {g}, {b}, {opacity})"
+    )
 
 let deriveData (stx: string) : DerivedData =
     let bsOc = [||]
     let cxCxl1 = spaceCxl bsOc stx
     let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
-    let cxClr1 = pastels (Array.length cxCxl1)
+    let cxClr1 = generatePastels "#888888" (Array.length cxCxl1) 0.85
     {
         cxCxl1 = cxCxl1
         cxlAvl = cxlAvl
@@ -130,8 +148,8 @@ let stx2Ini = "(0/Q=1),(1/3/.)"
 
 let beeline = "(1/19/Start),(2/15/End)"
 
-let beeyond = "(1/24/Dock),(1.1/25/Logistics),(1.2/24/Lab),"+
-              "(1.3/25/Habitation),(1.4/25/Power)"
+let beeyond = "(1/24/Dock),(1.1/24/Logistics),(1.2/24/Lab),"+
+              "(1.3/24/Habitation),(1.4/24/Power)"
 
 let beedroom = "(0/W=15/H=15/I=0/S=1/Q=VRCWEE),"+
                 "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),(2.1/12/Staircase),"+
@@ -177,10 +195,8 @@ let allSqns : string list = [
     "VRCWEE"; "VRCCEE"; "VRCWSE"; "VRCCSE"; "VRCWSW"; "VRCCSW"; "VRCWWW"; "VRCCWW"; "VRCWNW"; "VRCCNW"; "VRCWNE"; "VRCCNE";
     "HRCWNN"; "HRCCNN"; "HRCWNE"; "HRCCNE"; "HRCWSE"; "HRCCSE"; "HRCWSS"; "HRCCSS"; "HRCWSW"; "HRCCSW"; "HRCWNW"; "HRCCNW"
 ]
-
 let indexToSqn i = allSqns.[i]
 let sqnToIndex sqn = allSqns |> List.findIndex ((=) sqn)
-
 let sequenceSlider (selected: string) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
     let maxIndex = 23
