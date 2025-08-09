@@ -162,6 +162,7 @@ input[type=number] {
 
     .custom-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
+        -webkit-tap-highlight-color: transparent;
         height: 16px;
         width: 16px;
         border-radius: 50%;
