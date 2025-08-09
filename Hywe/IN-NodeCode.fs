@@ -230,8 +230,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     // Instructions
     let instructions = 
         div {
-            attr.style "font-size: 11px; color: #7a7a7a; text-align:left; line-height: 1;"
-        
+            attr.``class`` "instructions"
             p {
                 span { attr.style "font-weight: bold;"; text "Edit in place " }
                 span { text "node labels and values." }

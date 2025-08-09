@@ -61,12 +61,12 @@
    ===================== */
 .instructions {
     position: absolute;
-    top: 60px;
-    left: 8px;
-    width: 125px;
+    top: 30px;
+    left: 5px;
+    width: 120px;
     background: none;
     border: none;
-    font-size: 10px;
+    font-size: 11px;
     color: #999;
     justify-content: left;
     line-height: 1;
