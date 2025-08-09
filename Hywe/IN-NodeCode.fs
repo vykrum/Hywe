@@ -238,12 +238,12 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             p {
                 span { attr.style "font-weight: bold;"; text "Click " }
                 span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-                span { text " to add child node." }
+                span { text " to add a child node." }
             }
             p {
                 span { attr.style "font-weight: bold;"; text "Double Click " }
                 span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
-                span { text " to delete a node and descendants." }
+                span { text " to delete a node and its descendants." }
             }
             p {
                 span { attr.style "font-weight: bold;"; text "Slide " }
