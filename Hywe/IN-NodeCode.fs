@@ -254,7 +254,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             p {
                 span { attr.style "font-weight: bold;"; text "Slide " }
                 span { attr.style "font-weight: bold; color: #4CAF50;"; text " ○ " }
-                span { text " to select one of 24 procedural variations" }
+                span { text " to select a procedural variation" }
             }
             p {
                 attr.style "white-space: nowrap; overflow-x: visible;"
