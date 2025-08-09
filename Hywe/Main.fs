@@ -33,6 +33,7 @@ type Message =
     | RunHyweave
     | FinishHyweave
     | PolygonEditorMsg of PolygonEditorMessage
+    | PolygonEditorUpdated of PolygonEditorModel
     | SetActiveTab of EditorTab
     | ToggleEditorMode
     | ToggleBoundary
@@ -101,8 +102,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
-        { model with PolygonEditor = PolygonEditor.update subMsg model.PolygonEditor }, Cmd.none
-    
+        model,
+        Cmd.OfAsync.perform
+            (PolygonEditor.update js subMsg)
+            model.PolygonEditor
+            PolygonEditorUpdated
+
+    | PolygonEditorUpdated newPolygonModel ->
+        { model with PolygonEditor = newPolygonModel }, Cmd.none
+
     | SetActiveTab tab ->
     { model with ActiveTab = tab }, Cmd.none
 
