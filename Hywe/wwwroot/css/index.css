@@ -68,10 +68,11 @@
     position: absolute;
     top: 30px;
     left: 5px;
-    width: 100px;
+    width: 95px;
     background: none;
     border: none;
     font-size: 11px;
+    text-align: justify;
     color: #999;
     justify-content: left;
     z-index: 1000;

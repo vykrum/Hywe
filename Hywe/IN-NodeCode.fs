@@ -240,7 +240,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 attr.style "white-space: nowrap; overflow-x: visible;"
                 span { attr.style "font-weight: bold;"; text "Click " }
                 span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-                span { text " to add a child node" }
+                span { text " to add child nodes" }
             }
             p {
                 span { attr.style "font-weight: bold;"; text "Double Click " }
@@ -257,9 +257,8 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 span { text " to select a procedural variation" }
             }
             p {
-                attr.style "white-space: nowrap; overflow-x: visible;"
                 span { attr.style "font-weight: bold;"; text "Click" }
-                span { text " hyWEAVE to execute" }
+                span { text " hyWEAVE to execute or update" }
             }
         }
 
