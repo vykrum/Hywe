@@ -241,7 +241,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 attr.style "white-space: nowrap; overflow-x: visible;"
                 span { attr.style "font-weight: bold;"; text "Click " }
                 span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-                span { text " to add child nodes" }
+                span { text " to add child node" }
             }
             p {
                 span { attr.style "font-weight: bold;"; text "Double Click " }
