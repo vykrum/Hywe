@@ -145,6 +145,7 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
         return { X = result.GetProperty("x").GetDouble(); Y = result.GetProperty("y").GetDouble() }
     }
 
+
 // ---------- Update ----------
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
@@ -322,11 +323,29 @@ let view model dispatch (js: IJSRuntime) =
             attr.``class`` "polygon-editor-svg"
             "viewBox" => (sprintf "%f %f %f %f" -50.0 -50.0 (model.LogicalWidth + 100.0) (model.LogicalHeight + 100.0))
 
+            // Mouse events
             on.mousedown (fun ev -> dispatch (PointerDown ev))
             on.mouseup (fun _ -> dispatch PointerUp)
             on.mousemove (fun ev -> dispatch (PointerMove ev))
             on.dblclick (fun ev -> dispatch (DoubleClick ev))
             on.contextmenu (fun ev -> dispatch (ContextMenu ev))
+
+            // Touch events
+            on.touchstart (fun tev -> 
+                let firstTouch = tev.Touches |> Seq.tryHead
+                match firstTouch with
+                | Some t -> 
+                    let mev = MouseEventArgs(ClientX = t.ClientX, ClientY = t.ClientY)
+                    dispatch (PointerDown mev)
+                | None -> ())
+            on.touchmove (fun tev -> 
+                let firstTouch = tev.Touches |> Seq.tryHead
+                match firstTouch with
+                | Some t -> 
+                    let mev = MouseEventArgs(ClientX = t.ClientX, ClientY = t.ClientY)
+                    dispatch (PointerMove mev)
+                | None -> ())
+            on.touchend (fun _ -> dispatch PointerUp)
 
             // Outer polygon
             bdrPgn()
