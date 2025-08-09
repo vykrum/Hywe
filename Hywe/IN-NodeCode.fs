@@ -17,13 +17,16 @@ type TreeNode =
       Y: float
       Children: TreeNode list }
 
-type SubModel = { Root: TreeNode }
+type SubModel = 
+    { Root: TreeNode 
+      HideInstructions: bool}
 
 type SubMsg =
     | AddChild of Guid
     | UpdateName of Guid * string
     | UpdateWeight of Guid * string
     | DeleteNode of Guid
+    | SetHideInstructions of bool
 
 type svLn = Template<"""
     <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
@@ -108,7 +111,8 @@ let updateSub msg model =
         match removeNodeById id model.Root with
         | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 100.0) }
         | None -> model
-
+    | SetHideInstructions hide ->
+        { model with HideInstructions = hide }
 // --------------------
 // Output / Flatten Helpers
 // --------------------
@@ -135,7 +139,7 @@ let computeCanvasBounds (nodes: TreeNode list) =
 // View: Hexagon nodes, vertical buttons
 // ----------------------------------------
 
-let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
+let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =      
     let renderNode (node: TreeNode) : Node =
         let outerStyle =
             $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; " +
@@ -223,40 +227,55 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let nodes = flattenTree model.Root
     let lines = collectConnections model.Root
     let canvasWidth, canvasHeight = computeCanvasBounds nodes
-
-    div {
+    let instructions = 
         div {
-            attr.style "width:100%; overflow-x:auto; padding-top:16px; display:flex; justify-content:center;"
-
-            div {
-                attr.style $"position:relative; width:{canvasWidth}px; height:{max 150.0 canvasHeight}px;"
-
-                svg {
-                    attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
-                    for line in lines do line
+            attr.style "font-size: 11px; color: #7a7a7a; text-align:left;"
+            ul {
+                attr.style "padding-left: 20px; margin: 0;"
+                li {
+                    span { attr.style "font-weight: bold;"; text "Edit in place " }
+                    span { text "node labels and values." }
                 }
-
-                for node in nodes do
-                    renderNode node
+                li {
+                    span { attr.style "font-weight: bold;"; text "Click " }
+                    span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
+                    span { text " to add a child node." }
+                }
+                li {
+                    span { attr.style "font-weight: bold;"; text "Double Click " }
+                    span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
+                    span { text " to delete a node and its descendants." }
+                }
+                li {
+                    span { attr.style "font-weight: bold;"; text "Slide " }
+                    span { attr.style "font-weight: bold; color: #4CAF50;"; text " ○ " }
+                    span { text " to select one of 24 procedural variations." }
+                }
+                li {
+                    span { attr.style "font-weight: bold;"; text "Click" }
+                    span { text " hyWEAVE to execute." }
+                }
             }
         }
-        // Instructions
+
+    div {
+        attr.style "width:100%; overflow-x:auto; padding-top:16px; display:flex; justify-content:center;"
         div {
-            attr.style "text-align: center; font-size: 11px; color: #7a7a7a; opacity: 1; padding-top: 2px;"
-            span { attr.style "font-weight: bold;"; text "Edit in place " }
-            span { text "node labels and values. " }
-            span { attr.style "font-weight: bold;"; text "Click " }
-            span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-            span { text " to add a child node, " }
-            span { attr.style "font-weight: bold;"; text "Double Click " }
-            span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
-            span { text " to delete a node and all of its descendants, " }
-            span { attr.style "font-weight: bold;"; text "Slide" }
-            span { attr.style "font-weight: bold; color: #4CAF50;"; text " ○ " }
-            span { text " to select one of 24 available procedural variations and finally " }
-            span{ attr.style "font-weight: bold;"; text "Click" }
-            span{ text " hyWEAVE to execute." }
+            attr.``class`` (if model.HideInstructions then "instructions hide" else "instructions")
+            instructions
         }
+        div {
+            attr.style $"position:relative; width:{canvasWidth}px; height:{max 150.0 canvasHeight}px;"
+            on.mousedown (fun _ -> dispatch (SetHideInstructions true))
+            svg {
+                attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
+                for line in lines do line
+            }
+
+            for node in nodes do
+                renderNode node
+        }
+        
     }
 
 // -------------------- 
@@ -311,6 +330,6 @@ let initModel (inputString: string) : SubModel =
     match buildTree inputString with
     | [] -> failwith "No valid nodes found in input string."
     | rootNode::_ -> 
-        { Root = layoutTree rootNode 0 (ref 100.0) }
+        { Root = layoutTree rootNode 0 (ref 100.0); HideInstructions=false }
 
     

@@ -57,6 +57,35 @@
 }
 
 /* =====================
+   INTSTRUCTIONS
+   ===================== */
+.instructions {
+    position: absolute;
+    top: 70px;
+    left: 0px;
+    width: 145px;
+    padding-top: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    font-size: 10px;
+    justify-content: left;
+    line-height: 1.25;
+    z-index: 1000;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 1.6s ease-in-out, visibility 1.6s ease-in-out;
+}
+
+    .instructions.hide {
+        opacity: 0;
+        visibility: hidden;
+    }
+    .instructions ul li {
+        margin-bottom: 4px;
+    }
+
+
+/* =====================
    FLEX & FADE CONTAINERS
    ===================== */
 .flex-container {
