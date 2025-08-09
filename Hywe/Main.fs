@@ -115,7 +115,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     let processed = CodeNode.preprocessCode model.stx1
                     let tree = CodeNode.parseOutput processed
                     let laidOut = NodeCode.layoutTree tree 0 (ref 100.0)
-                    let subModel = { Root = laidOut; HideInstructions=false }
+                    let subModel = { Root = laidOut; HideInstructions=model.Tree.HideInstructions }
                     let newOutput = NodeCode.getOutput subModel model.Sequence
                     {
                         model with
@@ -151,7 +151,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 | Editor adv -> Editor (not adv)
                 | _ -> Editor false
             { model with ActiveTab = toggled; LastEditorTab = toggled }, Cmd.none
-
 
     | ToggleBoundary ->
         match model.ActiveTab with

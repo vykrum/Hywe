@@ -111,6 +111,7 @@ let updateSub msg model =
         match removeNodeById id model.Root with
         | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 100.0) }
         | None -> model
+
     | SetHideInstructions hide ->
         { model with HideInstructions = hide }
 // --------------------
