@@ -58,10 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Polygon Editor ---
-let polygonEditorSvgCache = null;
-let polygonEditorCtmCache = null;
+window.clientToSvgPoint = function (svg, clientX, clientY) {
+    var pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    var svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return { x: svgP.x, y: svgP.y };
 
-window.getSvgCoords = function (svgId, clientX, clientY) {
+
+/*window.getSvgCoords = function (svgId, clientX, clientY) {
     // Cache the SVG element and its CTM
     if (!polygonEditorSvgCache || polygonEditorSvgCache.id !== svgId) {
         polygonEditorSvgCache = document.getElementById(svgId);
@@ -77,7 +82,7 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
 
     const svgPoint = pt.matrixTransform(polygonEditorCtmCache.inverse());
     return { x: svgPoint.x, y: svgPoint.y };
-};
+};*/
 
 /*window.getScaledFontSize = function (id, logicalWidth, desiredSize) {
     const el = document.getElementById(id);

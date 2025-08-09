@@ -50,7 +50,7 @@ let initModel =
         LastValidTree = initialTree
         Derived = deriveData initialOutput
         IsHyweaving = false
-        PolygonEditor = PolygonEditor.initModel
+        PolygonEditor = PolygonEditor.initModel 
         ActiveTab = Editor false
         LastEditorTab = Editor false
     }
@@ -200,10 +200,9 @@ let view model dispatch (js: IJSRuntime) =
         match model.ActiveTab with
         | Boundary ->
             div {
-                // Polygon Editor
                 attr.id "hywe-polygon-editor"
-                attr.style "width:100%; height:auto; margin-top:5px;"
-                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch)
+                attr.style "width:100%; height:auto; margin:5px;"
+                PolygonEditor.view  model.PolygonEditor (PolygonEditorMsg >> dispatch) js
             }
 
         | Editor adv ->
@@ -333,5 +332,3 @@ type MyApp() =
             (fun _ -> initModel, Cmd.none)
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> view model dispatch this.JSRuntime)
-
-
