@@ -66,15 +66,14 @@
    ===================== */
 .instructions {
     position: absolute;
-    top: 25px;
+    top: 30px;
     left: 5px;
     width: 100px;
     background: none;
     border: none;
-    font-size: 10px;
+    font-size: 11px;
     color: #999;
     justify-content: left;
-    line-height: 1;
     z-index: 1000;
     opacity: 1;
     visibility: visible;
@@ -86,6 +85,11 @@
         visibility: hidden;
     }
 
+    .instructions p {
+        margin-top: 0.6em;
+        margin-bottom: 0.1em;
+        line-height: 1;
+    }
 
 /* =====================
    FLEX & FADE CONTAINERS

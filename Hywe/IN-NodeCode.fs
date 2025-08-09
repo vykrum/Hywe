@@ -232,18 +232,24 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         div {
             attr.``class`` "instructions"
             p {
-                span { attr.style "font-weight: bold;"; text "Edit in place " }
-                span { text "node labels and values." }
+                attr.style "white-space: nowrap; overflow-x: visible;"
+                span { text "Outline boundary in " }
+                span { attr.style "font-weight: bold;"; text "Bind" }
             }
             p {
+                attr.style "white-space: nowrap; overflow-x: visible;"
                 span { attr.style "font-weight: bold;"; text "Click " }
                 span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-                span { text " to add a child node." }
+                span { text " to add a child node" }
             }
             p {
                 span { attr.style "font-weight: bold;"; text "Double Click " }
                 span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
-                span { text " to delete a node and its descendants." }
+                span { text " to delete a node and its descendants" }
+            }
+            p {
+                span { attr.style "font-weight: bold;"; text "Edit in place " }
+                span { text "node labels and values" }
             }
             p {
                 span { attr.style "font-weight: bold;"; text "Slide " }
@@ -251,6 +257,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 span { text " to select one of 24 procedural variations" }
             }
             p {
+                attr.style "white-space: nowrap; overflow-x: visible;"
                 span { attr.style "font-weight: bold;"; text "Click" }
                 span { text " hyWEAVE to execute" }
             }
