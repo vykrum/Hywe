@@ -152,6 +152,7 @@ input[type=number] {
     left: 0;
     width: 100%;
     -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent; 
     background: transparent;
     height: 4px;
     border-radius: 2px;
