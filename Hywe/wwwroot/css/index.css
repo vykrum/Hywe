@@ -61,15 +61,14 @@
    ===================== */
 .instructions {
     position: absolute;
-    top: 70px;
-    left: 0px;
-    width: 145px;
-    padding-top: 5px;
+    top: 65px;
+    left: 10px;
+    width: 130px;
     background: rgba(255, 255, 255, 0.9);
     border: none;
-    font-size: 10px;
+    font-size: 11px;
     justify-content: left;
-    line-height: 1.25;
+    line-height: 1;
     z-index: 1000;
     opacity: 1;
     visibility: visible;
@@ -79,9 +78,6 @@
     .instructions.hide {
         opacity: 0;
         visibility: hidden;
-    }
-    .instructions ul li {
-        margin-bottom: 4px;
     }
 
 
@@ -108,6 +104,7 @@
    FORM ELEMENTS
    ===================== */
 input[type=number]::-webkit-inner-spin-button,
+
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
@@ -227,34 +224,6 @@ input[type=number] {
         opacity: 0.8;
     }
 
-/*.button2 {
-    background-color: #d3d3d1;
-    opacity: 1;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    padding: 8px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.button3 {
-    background-color: white;
-    margin: 5px 0;
-    color: #d3d3d1;
-    opacity: 1;
-    border: none;
-    padding: 2px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 24px;
-    cursor: pointer;
-}*/
-
 .hyweSyntax {
     font-family: Consolas, "PT Mono", "Courier New", Courier, monospace;
     resize: none;
@@ -271,34 +240,6 @@ input[type=number] {
     box-sizing: border-box;
 }
 
-/*.dropdown1 {
-    width: 75%;
-    display: block;
-    margin: 20px;
-    height: 36px;
-    font-size: 14px;
-    border: none;
-    padding: 10px;
-    color: #646464;
-    border-radius: 10px;
-    text-align: center;
-    background-color: #ececec;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-}
-
-.dropdown2 {
-    width: 20%;
-    display: block;
-    height: 26px;
-    font-size: 12px;
-    background: #f9f9f9;
-    margin: 0 5px;
-    color: #808080;
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: none;
-    text-align: center;
-}*/
 
 .hywe-toggle-btn {
     background: none;

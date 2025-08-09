@@ -156,7 +156,6 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             attr.style outerStyle
             div {
                 attr.style innerStyle
-
                 // Remove button or placeholder
                 match node.Id = model.Root.Id with
                 | false ->
@@ -227,34 +226,34 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let nodes = flattenTree model.Root
     let lines = collectConnections model.Root
     let canvasWidth, canvasHeight = computeCanvasBounds nodes
+
+    // Instructions
     let instructions = 
         div {
-            attr.style "font-size: 11px; color: #7a7a7a; text-align:left;"
-            ul {
-                attr.style "padding-left: 20px; margin: 0;"
-                li {
-                    span { attr.style "font-weight: bold;"; text "Edit in place " }
-                    span { text "node labels and values." }
-                }
-                li {
-                    span { attr.style "font-weight: bold;"; text "Click " }
-                    span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-                    span { text " to add a child node." }
-                }
-                li {
-                    span { attr.style "font-weight: bold;"; text "Double Click " }
-                    span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
-                    span { text " to delete a node and its descendants." }
-                }
-                li {
-                    span { attr.style "font-weight: bold;"; text "Slide " }
-                    span { attr.style "font-weight: bold; color: #4CAF50;"; text " ○ " }
-                    span { text " to select one of 24 procedural variations." }
-                }
-                li {
-                    span { attr.style "font-weight: bold;"; text "Click" }
-                    span { text " hyWEAVE to execute." }
-                }
+            attr.style "font-size: 11px; color: #7a7a7a; text-align:left; line-height: 1;"
+        
+            p {
+                span { attr.style "font-weight: bold;"; text "Edit in place " }
+                span { text "node labels and values." }
+            }
+            p {
+                span { attr.style "font-weight: bold;"; text "Click " }
+                span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
+                span { text " to add a child node." }
+            }
+            p {
+                span { attr.style "font-weight: bold;"; text "Double Click " }
+                span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
+                span { text " to delete a node and its descendants." }
+            }
+            p {
+                span { attr.style "font-weight: bold;"; text "Slide " }
+                span { attr.style "font-weight: bold; color: #4CAF50;"; text " ○ " }
+                span { text " to select one of 24 procedural variations." }
+            }
+            p {
+                span { attr.style "font-weight: bold;"; text "Click" }
+                span { text " hyWEAVE to execute." }
             }
         }
 
