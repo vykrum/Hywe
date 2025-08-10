@@ -41,7 +41,6 @@ type PolygonEditorMessage =
     | PointerUp
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
-    | ContextMenu of MouseEventArgs
     | RemoveVertex of int * int
     | Undo
     | Redo
@@ -333,53 +332,118 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
     | DoubleClick ev ->
         async {
             let! p = toSvgCoords js ev
-            let rThreshold = 20.0
+            let rThreshold = float model.VertexRadius + 6.0
+            let mutable updatedModel = model
+            let mutable didDelete = false
+            let tryDeleteVertex (poly: Point[]) =
+                poly
+                |> Array.mapi (fun i pt -> (i, pt))
+                |> Array.tryFind (fun (_, pt) -> withinRadiusSq pt p rThreshold)
+                |> Option.bind (fun (vi, _) ->
+                    // Create new polygon with vertex at vi removed
+                    let newPoly = Array.init (poly.Length - 1) (fun idx -> if idx < vi then poly.[idx] else poly.[idx + 1])
+                    // Only accept if polygon has at least 3 vertices and no self intersections
+                    if newPoly.Length >= 3 && not (polygonSelfIntersects newPoly) then Some newPoly else None
+                )
+            // 1. Try deleting vertex in outer polygon
+            match tryDeleteVertex model.Outer with
+            | Some newOuter ->
+                updatedModel <- snapshot model
+                updatedModel <- { updatedModel with Outer = newOuter }
+                didDelete <- true
+            | None ->
+                // 2. Try deleting vertex in islands
+                let mutable islandDeleted = false
+                for i in 0 .. model.Islands.Length - 1 do
+                    if not islandDeleted then
+                        match tryDeleteVertex model.Islands.[i] with
+                        | Some newIsland ->
+                            updatedModel <- snapshot updatedModel
+                            let newIslands = Array.copy updatedModel.Islands
+                            newIslands.[i] <- newIsland
+                            updatedModel <- { updatedModel with Islands = newIslands }
+                            islandDeleted <- true
+                            didDelete <- true
+                        | None -> ()
 
-            let mutable insertPolyIndex : int option = None
-            let mutable insertVertexIndex : int option = None
-            let mutable minDistSq : float = Double.MaxValue
+                if not islandDeleted then
+                    // Check insert vertex on edges
+                    let rThresholdInsert = 20.0
 
-            let checkEdges (poly: Point[]) (polyIndex: int) =
-                for i in 0 .. poly.Length - 1 do
-                    let j = (i + 1) % poly.Length
-                    let a = poly.[i]
-                    let b = poly.[j]
-                    let distSq = distancePointToSegmentSq p a b
-                    if distSq < minDistSq && distSq < rThreshold * rThreshold then
-                        minDistSq <- distSq
-                        insertPolyIndex <- Some polyIndex
-                        insertVertexIndex <- Some j
+                    let mutable insertPolyIndex : int option = None
+                    let mutable insertVertexIndex : int option = None
+                    let mutable minDistSq : float = Double.MaxValue
 
-            checkEdges model.Outer 0
-            for idx = 0 to model.Islands.Length - 1 do
-                checkEdges model.Islands.[idx] (idx + 1)
+                    let checkEdges (poly: Point[]) (polyIndex: int) =
+                        for i in 0 .. poly.Length - 1 do
+                            let j = (i + 1) % poly.Length
+                            let a = poly.[i]
+                            let b = poly.[j]
+                            let distSq = distancePointToSegmentSq p a b
+                            if distSq < minDistSq && distSq < rThresholdInsert * rThresholdInsert then
+                                minDistSq <- distSq
+                                insertPolyIndex <- Some polyIndex
+                                insertVertexIndex <- Some j
 
-            match insertPolyIndex, insertVertexIndex with
-            | Some polyIdx, Some vIdx ->
-                let newModel = snapshot model
-                if polyIdx = 0 then
-                    let newOuter = Array.append (Array.append (model.Outer.[0..vIdx-1]) [| p |]) (model.Outer.[vIdx..])
-                    if not (polygonSelfIntersects newOuter) &&
-                       not (model.Islands |> Array.exists (fun island -> polygonsIntersect newOuter island)) &&
-                       (model.Islands |> Array.forall (fun island -> isPolygonInside newOuter island)) then
-                        return { newModel with Outer = newOuter }
-                    else return model
-                else
-                    let islandIdx = polyIdx - 1
-                    let island = model.Islands.[islandIdx]
-                    let newIsland = Array.append (Array.append (island.[0..vIdx-1]) [| p |]) (island.[vIdx..])
+                    checkEdges model.Outer 0
+                    for idx in 0 .. model.Islands.Length - 1 do
+                        checkEdges model.Islands.[idx] (idx + 1)
 
-                    if isPolygonInside model.Outer newIsland &&
-                       not (polygonSelfIntersects newIsland) &&
-                       not (model.Islands
-                            |> Array.mapi (fun i isl -> i, isl)
-                            |> Array.exists (fun (i, isl) -> i <> islandIdx && polygonsIntersect newIsland isl)) then
-                        let newIslands = Array.copy model.Islands
-                        newIslands.[islandIdx] <- newIsland
-                        return { newModel with Islands = newIslands }
-                    else
-                        return model
-            | _ ->
+                    match insertPolyIndex, insertVertexIndex with
+                    | Some polyIdx, Some vIdx ->
+                        let newModel = snapshot model
+                        if polyIdx = 0 then
+                            let newOuter = Array.append (Array.append (model.Outer.[0..vIdx-1]) [| p |]) (model.Outer.[vIdx..])
+                            if not (polygonSelfIntersects newOuter) &&
+                               not (model.Islands |> Array.exists (fun island -> polygonsIntersect newOuter island)) &&
+                               (model.Islands |> Array.forall (fun island -> isPolygonInside newOuter island)) then
+                                updatedModel <- { newModel with Outer = newOuter }
+                                didDelete <- true
+                            // else do nothing
+                        else
+                            let islandIdx = polyIdx - 1
+                            let island = model.Islands.[islandIdx]
+                            let newIsland = Array.append (Array.append (island.[0..vIdx-1]) [| p |]) (island.[vIdx..])
+
+                            if isPolygonInside model.Outer newIsland &&
+                               not (polygonSelfIntersects newIsland) &&
+                               not (model.Islands
+                                    |> Array.mapi (fun i isl -> i, isl)
+                                    |> Array.exists (fun (i, isl) -> i <> islandIdx && polygonsIntersect newIsland isl)) then
+                                let newIslands = Array.copy model.Islands
+                                newIslands.[islandIdx] <- newIsland
+                                updatedModel <- { newModel with Islands = newIslands }
+                                didDelete <- true
+                            // else do nothing
+                    | _ -> ()
+
+                    // 3. Delete entire island if inside polygon but NOT near vertex or edge
+                    let insideIslandIdx =
+                        model.Islands
+                        |> Array.tryFindIndex (fun island ->
+                            isInsidePolygon island p &&
+                            // NOT near any vertex
+                            (island |> Array.forall (fun v -> not (withinRadiusSq v p rThreshold))) &&
+                            // NOT near any edge (distance > threshold)
+                            (let distToEdgesOk =
+                                [| 0 .. island.Length - 1 |]
+                                |> Array.forall (fun i ->
+                                    let a = island.[i]
+                                    let b = island.[(i + 1) % island.Length]
+                                    distancePointToSegmentSq p a b > rThreshold * rThreshold)
+                            distToEdgesOk)
+                        )
+
+                    match insideIslandIdx with
+                    | Some idx ->
+                        updatedModel <- snapshot updatedModel
+                        let newIslands = updatedModel.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.filter (fun (i,_) -> i <> idx) |> Array.map snd
+                        updatedModel <- { updatedModel with Islands = newIslands }
+                        didDelete <- true
+                    | None -> ()
+
+            // 4. fallback: add new island rectangle if not deleted anything
+            if not didDelete then
                 if isInsidePolygon model.Outer p then
                     let size = 40.0
                     let half = size / 2.0
@@ -395,41 +459,10 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
 
                     if insideOuter && not insideAnyIsland && noIntersectsExisting && noSelfIntersect then
                         let newModel = snapshot model
-                        return { newModel with Islands = Array.append [| island |] model.Islands }
-                    else
-                        return model
-                else
-                    return model
-        }
+                        updatedModel <- { newModel with Islands = Array.append [| island |] model.Islands }
+                    // else do nothing
 
-
-    | ContextMenu ev ->
-        async {
-            let! p = toSvgCoords js ev
-            let allPolys = Array.append [| model.Outer |] model.Islands
-            let mutable updated = model
-            let mutable found = false
-            for pi = 0 to allPolys.Length - 1 do
-                let poly = allPolys.[pi]
-                for vi = 0 to poly.Length - 1 do
-                    if not found && withinRadiusSq poly.[vi] p (float model.VertexRadius + 2.0) then
-                        let newPoly = Array.init (poly.Length - 1) (fun idx ->
-                            // copy all but vi
-                            if idx < vi then poly.[idx] else poly.[idx+1])
-                        updated <- snapshot updated
-                        if pi = 0 then
-                            if newPoly.Length >= 3 then updated <- { updated with Outer = newPoly }
-                        else
-                            if newPoly.Length >= 3 then
-                                let arr = Array.copy updated.Islands
-                                arr.[pi-1] <- newPoly
-                                updated <- { updated with Islands = arr }
-                            else
-                                // remove entire island
-                                let arr = updated.Islands |> Array.mapi (fun i v -> i,v) |> Array.filter (fun (i,_) -> i<>pi-1) |> Array.map snd
-                                updated <- { updated with Islands = arr }
-                        found <- true
-            return updated
+            return updatedModel
         }
 
     | RemoveVertex _ -> async { return model }
@@ -499,7 +532,6 @@ let view model dispatch (js: IJSRuntime) =
             on.pointerup (fun _ -> dispatch PointerUp)
             on.pointermove (fun ev -> dispatch (PointerMove ev))
             on.dblclick (fun ev -> dispatch (DoubleClick ev))
-            on.contextmenu (fun ev -> dispatch (ContextMenu ev))
 
             // Outer polygon
             bdrPgn()
