@@ -132,6 +132,21 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
     const svgP = pt.matrixTransform(inv);
     return { x: svgP.x, y: svgP.y };
 };
+
+/*window.getSvgBBox = function (elementId) {
+    const el = document.getElementById(elementId);
+    if (!el || typeof el.getBBox !== 'function') {
+        return null;
+    }
+    try {
+        const b = el.getBBox();
+        return { x: b.x, y: b.y, width: b.width, height: b.height };
+    } catch (e) {
+        // If SVG element not rendered yet or no bbox, return null
+        return null;
+    }
+};*/
+
 /*window.getSvgCoords = function (svgId, clientX, clientY) {
     // Cache the SVG element and its CTM
     if (!polygonEditorSvgCache || polygonEditorSvgCache.id !== svgId) {

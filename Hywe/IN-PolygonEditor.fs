@@ -113,6 +113,8 @@ let initModel =
         Future = []
     }
 
+
+
 // ---------- JS interop helpers ----------
 // JS function expected to return the SVG client rect and viewBox as a JSON object:
 // { left, top, width, height, viewBoxX, viewBoxY, viewBoxW, viewBoxH }
@@ -317,11 +319,30 @@ let view model dispatch (js: IJSRuntime) =
             }
             button { on.click (fun _ -> dispatch ToggleLabels); text (if model.ShowLabels then "Hide labels" else "Show labels") }
         }
+        // Bounding Box
+        let boundingBox (outer: Point[]) (islands: Point[][]) =
+            let allPoints = Array.append outer (islands |> Array.collect id)
+            if allPoints.Length = 0 then
+                None
+            else
+                let minX = allPoints |> Array.minBy (fun p -> p.X)
+                let maxX = allPoints |> Array.maxBy (fun p -> p.X)
+                let minY = allPoints |> Array.minBy (fun p -> p.Y)
+                let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
+                Some (minX.X, minY.Y, maxX.X - minX.X, maxY.Y - minY.Y)
+
+        let viewBoxString =
+            match boundingBox model.Outer model.Islands with
+            | Some (x, y, w, h) ->
+                let padding = 100.0
+                sprintf "%f %f %f %f" (x - padding) (y - padding) (w + 2.0*padding) (h + 2.0*padding)
+            | None ->
+                sprintf "0 0 %f %f" model.LogicalWidth model.LogicalHeight
 
         svg {
             attr.id "polygon-editor-svg"
             attr.``class`` "polygon-editor-svg"
-            "viewBox" => (sprintf "%f %f %f %f" -50.0 -50.0 (model.LogicalWidth + 100.0) (model.LogicalHeight + 100.0))
+            "viewBox" => viewBoxString
 
             // Mouse events
             on.pointerdown (fun ev -> dispatch (PointerDown ev))
