@@ -577,6 +577,11 @@ video.fullscreen-bg {
    ========================================= */
 .polygon-editor-svg {
     touch-action: pinch-zoom;
-    -webkit-user-select: none; /* Prevent text selection on iOS */
+    -webkit-user-select: none; /* Safari/iOS */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
     user-select: none;
+    padding: 30px;
+    box-sizing: border-box;
 }
+

@@ -28,9 +28,6 @@ type PolygonEditorModel =
         DragOffset: Point option      // offset between pointer svg point and vertex so dragging doesn't jump
         SvgInfo: SvgInfo option       // cached transform info so we don't call JS on every mousemove
         LastMoveMs: float option      // for simple throttling
-        ShowLabels: bool              // avoid rendering labels during drag
-        History: PolygonEditorModel list
-        Future: PolygonEditorModel list
     }
 
 // Only minimal messages needed for editing; kept structure similar to original
@@ -42,9 +39,6 @@ type PolygonEditorMessage =
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
     | RemoveVertex of int * int
-    | Undo
-    | Redo
-    | ToggleLabels
 
 // ---------- Geometry helpers (efficient) ----------
 let inline sqr x = x * x
@@ -137,12 +131,11 @@ let clampPt (model: PolygonEditorModel) (pt: Point) =
     }
 
 let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
-    let cleanModel = { model with History = []; Future = [] }
-    { model with History = cleanModel :: model.History; Future = []; Dragging = None; DragOffset = None }
+    { model with Dragging = None; DragOffset = None }
 
 // ---------- Initial Model ----------
 let initModel =
-    let logicalWidth, logicalHeight = 800.0, 600.0
+    let logicalWidth, logicalHeight = 400.0, 400.0
     {
         LogicalWidth = logicalWidth
         LogicalHeight = logicalHeight
@@ -155,14 +148,8 @@ let initModel =
         DragOffset = None
         SvgInfo = None
         LastMoveMs = None
-        ShowLabels = false
         VertexRadius = 6
-        History = []
-        Future = []
     }
-
-
-
 // ---------- JS interop helpers ----------
 // JS function expected to return the SVG client rect and viewBox as a JSON object:
 // { left, top, width, height, viewBoxX, viewBoxY, viewBoxW, viewBoxH }
@@ -199,28 +186,35 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
 // ---------- Update ----------
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
-    | UpdateLogicalWidth w -> async { return { model with LogicalWidth = w }}
-    | UpdateLogicalHeight h -> async { return { model with LogicalHeight = h }}
+    | UpdateLogicalWidth newW -> async {
+        let oldW = model.LogicalWidth
+        let scaleX = newW / oldW
 
-    | Undo ->
-        async {
-            match model.History with
-            | prev::rest ->
-                let currentClean = { model with History = []; Future = [] }
-                return { prev with History = rest; Future = currentClean :: model.Future }
-            | [] -> return model
+        // Scale outer polygon points in X direction
+        let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX })
+
+        // Scale islands points in X direction
+        let newIslands = 
+            model.Islands
+            |> Array.map (fun island -> island |> Array.map (fun pt -> { pt with X = pt.X * scaleX }))
+
+        return { model with LogicalWidth = newW; Outer = newOuter; Islands = newIslands }
         }
 
-    | Redo ->
-        async {
-            match model.Future with
-            | next::rest ->
-                let currentClean = { model with History = []; Future = [] }
-                return { next with History = currentClean :: model.History; Future = rest }
-            | [] -> return model
-        }
+    | UpdateLogicalHeight newH -> async {
+        let oldH = model.LogicalHeight
+        let scaleY = newH / oldH
 
-    | ToggleLabels -> async { return { model with ShowLabels = not model.ShowLabels } }
+        // Scale outer polygon points in Y direction
+        let newOuter = model.Outer |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY })
+
+        // Scale islands points in Y direction
+        let newIslands =
+            model.Islands
+            |> Array.map (fun island -> island |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
+
+        return { model with LogicalHeight = newH; Outer = newOuter; Islands = newIslands }
+        }
 
     | PointerDown ev ->
         async {
@@ -248,13 +242,13 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                 let v = if d.PolyIndex = 0 then model.Outer.[d.VertexIndex] else model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
                 let offset = { X = svgPt.X - v.X; Y = svgPt.Y - v.Y }
                 let newModel = snapshot model
-                return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info; ShowLabels = false }
+                return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info;}
             | None ->
                 // no drag — keep svg info cache for quick mapping later
                 return { model with SvgInfo = Some info }
         }
 
-    | PointerUp -> async { return { model with Dragging = None; DragOffset = None; LastMoveMs = None; ShowLabels = true } }
+    | PointerUp -> async { return { model with Dragging = None; DragOffset = None; LastMoveMs = None;} }
 
     | PointerMove ev ->
         async {
@@ -329,6 +323,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                         return model
                 | _ -> return model
         }
+
     | DoubleClick ev ->
         async {
             let! p = toSvgCoords js ev
@@ -499,7 +494,6 @@ let view model dispatch (js: IJSRuntime) =
                     | true, v -> dispatch (UpdateLogicalHeight v)
                     | false, _ -> () )
             }
-            button { on.click (fun _ -> dispatch ToggleLabels); text (if model.ShowLabels then "Hide labels" else "Show labels") }
         }
         // Bounding Box
         let boundingBoxWithLogical model =
@@ -557,13 +551,13 @@ let view model dispatch (js: IJSRuntime) =
                     .cr(string model.VertexRadius)
                     .cl("#333")
                     .Elt()
-                if model.ShowLabels then
-                    bdrTxt()
-                        .tx(sprintf "%.1f" (pt.X + 10.0))
-                        .ty(sprintf "%.1f" (pt.Y - 10.0))
-                        .tf("11")
-                        .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
-                        .Elt()
+
+                bdrTxt()
+                    .tx(sprintf "%.1f" (pt.X + 10.0))
+                    .ty(sprintf "%.1f" (pt.Y - 10.0))
+                    .tf("11")
+                    .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
+                    .Elt()
 
             // Island vertices
             for island in model.Islands do
@@ -574,12 +568,12 @@ let view model dispatch (js: IJSRuntime) =
                         .cr(string model.VertexRadius)
                         .cl("#444")
                         .Elt()
-                    if model.ShowLabels then
-                        bdrTxt()
-                            .tx(sprintf "%.1f" (pt.X + 10.0))
-                            .ty(sprintf "%.1f" (pt.Y - 10.0))
-                            .tf("10")
-                            .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
-                            .Elt()
+                    
+                    bdrTxt()
+                        .tx(sprintf "%.1f" (pt.X + 10.0))
+                        .ty(sprintf "%.1f" (pt.Y - 10.0))
+                        .tf("10")
+                        .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
+                        .Elt()
         }
     }
