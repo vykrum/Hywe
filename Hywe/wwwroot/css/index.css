@@ -193,31 +193,6 @@ input[type=number] {
         margin-bottom: -5px;
     }
 
-/* =====================
-   LABELS & BUTTONS
-   ===================== */
-/*.label {
-    width: 60px;
-    border: none;
-    border-radius: 4px;
-    margin: 3px;
-    font-size: 12px;
-    opacity: 0.85;
-    text-align: center;
-    padding: 0 3px;
-}
-
-.label1 {
-    display: inline-block;
-    width: 95%;
-    border-radius: 4px;
-    margin: 5px 10px;
-    font-size: 14px;
-    opacity: 0.85;
-    text-align: left;
-    padding: 5px;
-}*/
-
 .hyWeaveButton {
     background-color: #363636;
     width: 100%;
@@ -253,7 +228,6 @@ input[type=number] {
     box-sizing: border-box;
 }
 
-
 .hywe-toggle-btn {
     background: none;
     border: none;
@@ -276,7 +250,6 @@ input[type=number] {
         color: #000; /* darkest for active */
         font-weight: 500;
     }
-
 
 /* =====================
    SPINNER & VIDEO
@@ -473,6 +446,28 @@ video.fullscreen-bg {
     }
 }
 
+/* =========================================
+   INDRODUCTION SEAMLESS CROSSFADE
+   ========================================= */
+
+#loading-frame,
+#introduction,
+#page-content,
+#main,
+#footer {
+    will-change: opacity;
+}
+
+.fade-in {
+    opacity: 1 !important;
+    transition: opacity 0.8s ease;
+}
+
+#introduction.fade-out {
+    opacity: 0.25;
+    transition: opacity 0.8s ease;
+}
+
 /* =====================
    NODE INPUTS
    ===================== */
@@ -578,23 +573,10 @@ video.fullscreen-bg {
 }
 
 /* =========================================
-   INDRODUCTION SEAMLESS CROSSFADE
+   POLYGON EDITOR
    ========================================= */
-
-#loading-frame,
-#introduction,
-#page-content,
-#main,
-#footer {
-    will-change: opacity;
-}
-
-.fade-in {
-    opacity: 1 !important;
-    transition: opacity 0.8s ease;
-}
-
-#introduction.fade-out {
-    opacity: 0.25;
-    transition: opacity 0.8s ease;
+.polygon-editor-svg {
+    touch-action: none; /* Disable pinch, pan, and double-tap gestures */
+    -webkit-user-select: none; /* Prevent text selection on iOS */
+    user-select: none;
 }
