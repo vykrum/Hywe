@@ -320,24 +320,25 @@ let view model dispatch (js: IJSRuntime) =
             button { on.click (fun _ -> dispatch ToggleLabels); text (if model.ShowLabels then "Hide labels" else "Show labels") }
         }
         // Bounding Box
-        let boundingBox (outer: Point[]) (islands: Point[][]) =
-            let allPoints = Array.append outer (islands |> Array.collect id)
+        let boundingBoxWithLogical model =
+            let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
             if allPoints.Length = 0 then
-                None
+                (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
             else
                 let minX = allPoints |> Array.minBy (fun p -> p.X)
                 let maxX = allPoints |> Array.maxBy (fun p -> p.X)
                 let minY = allPoints |> Array.minBy (fun p -> p.Y)
                 let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
-                Some (minX.X, minY.Y, maxX.X - minX.X, maxY.Y - minY.Y)
+                let minX' = min 0.0 minX.X
+                let minY' = min 0.0 minY.Y
+                let maxX' = max model.LogicalWidth maxX.X
+                let maxY' = max model.LogicalHeight maxY.Y
+                (minX', minY', maxX' - minX', maxY' - minY')
 
         let viewBoxString =
-            match boundingBox model.Outer model.Islands with
-            | Some (x, y, w, h) ->
-                let padding = 100.0
-                sprintf "%f %f %f %f" (x - padding) (y - padding) (w + 2.0*padding) (h + 2.0*padding)
-            | None ->
-                sprintf "0 0 %f %f" model.LogicalWidth model.LogicalHeight
+            let (x, y, w, h) = boundingBoxWithLogical model
+            let padding = 50.0
+            sprintf "%f %f %f %f" (x - padding) (y - padding) (w + 2.0*padding) (h + 2.0*padding)
 
         svg {
             attr.id "polygon-editor-svg"
