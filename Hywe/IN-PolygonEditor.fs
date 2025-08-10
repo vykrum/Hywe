@@ -1,7 +1,6 @@
 ﻿module PolygonEditor
 
 open System.Text.Json
-open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Bolero
 open Bolero.Html
@@ -134,8 +133,10 @@ let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
     { model with Dragging = None; DragOffset = None }
 
 // ---------- Initial Model ----------
+let initBound = 400.0, 400.0
+let initRadius = 6
 let initModel =
-    let logicalWidth, logicalHeight = 400.0, 400.0
+    let logicalWidth, logicalHeight = initBound
     {
         LogicalWidth = logicalWidth
         LogicalHeight = logicalHeight
@@ -148,7 +149,7 @@ let initModel =
         DragOffset = None
         SvgInfo = None
         LastMoveMs = None
-        VertexRadius = 6
+        VertexRadius = initRadius
     }
 // ---------- JS interop helpers ----------
 // JS function expected to return the SVG client rect and viewBox as a JSON object:
@@ -463,21 +464,38 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
     | RemoveVertex _ -> async { return model }
 
 // ---------- View (lighter-weight) ----------
-type bdrPgn = Template<"""<polygon points="${pt}" fill="${cl}" stroke="${st}" />""">
-type bdrCrl = Template<"""<circle cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
-type bdrTxt = Template<"""<text x="${tx}" y="${ty}" font-size="${tf}" font-family="Verdana" text-anchor="middle" dominant-baseline="middle" fill="#808080">${nm}</text>""">
+type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}"/>""">
+type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
+type bdcrPh = Template<"""<path id = "${pathid}" fill = "none" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}">""">
+type bdcrTx = Template<"""
+    <text id="${pth}" class="${tc}" font-size="${tf}" fill="#808080" text-anchor="middle">
+      <textPath href="#${pth}" letter-spacing="0.2px" startOffset="50%">${nm}</textPath>
+    </text>
+    """>
 
 let view model dispatch (js: IJSRuntime) =
+    let minBound = 48.0
+    let maxBound = 4800.0
+    let boundScale = match model.LogicalWidth with
+                     | w when w <> fst initBound -> w / fst initBound
+                     | _ -> 1.0
+    let boundRadius = int (float initRadius * boundScale)
+    let boundLabel = int (float (initRadius + 4) * boundScale)  
+    let bndTxtRr = float (initRadius + 4) * boundScale
+
     div {
         attr.``class`` "polygon-editor-container"
 
         // Controls
         div {
-            attr.style "margin-bottom: 6px; display: flex; gap: 10px; align-items: center;"
+            attr.``class`` "boundaryInput"
             label { text "Width:" }
             input {
+                attr.``type`` "number"
+                attr.step "1"
+                attr.min (string minBound)
+                attr.max (string maxBound)
                 attr.value (string model.LogicalWidth)
-                attr.style "width: 70px;"
                 on.input (fun ev ->
                     let s = string ev.Value
                     match System.Double.TryParse(s) with
@@ -486,8 +504,11 @@ let view model dispatch (js: IJSRuntime) =
             }
             label { text "Height:" }
             input {
+                attr.``type`` "number"
+                attr.step "1"
+                attr.min (string minBound)
+                attr.max (string maxBound)
                 attr.value (string model.LogicalHeight)
-                attr.style "width: 70px;"
                 on.input (fun ev ->
                     let s = string ev.Value
                     match System.Double.TryParse(s) with
@@ -521,7 +542,7 @@ let view model dispatch (js: IJSRuntime) =
             attr.``class`` "polygon-editor-svg"
             "viewBox" => viewBoxString
 
-            // Mouse events
+            // Pointer events
             on.pointerdown (fun ev -> dispatch (PointerDown ev))
             on.pointerup (fun _ -> dispatch PointerUp)
             on.pointermove (fun ev -> dispatch (PointerMove ev))
@@ -529,50 +550,73 @@ let view model dispatch (js: IJSRuntime) =
 
             // Outer polygon
             bdrPgn()
+                .cs("outerPolygon")
                 .pt(model.Outer |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " ")
-                .cl("#cccccc")
-                .st("#333")
                 .Elt()
 
             // Islands
             for island in model.Islands do
                 bdrPgn()
+                    .cs("islandPolygon")
                     .pt(island |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " ")
-                    .cl("#ffffff")
-                    .st("#333")
                     .Elt()
 
             // Outer vertices (circles). Draw texts only if ShowLabels = true
             for i = 0 to model.Outer.Length - 1 do
                 let pt = model.Outer.[i]
+                let id = sprintf "outerVertex-%d" i
                 bdrCrl()
+                    .cs("outerVertex")
                     .cx(sprintf "%.1f" pt.X)
                     .cy(sprintf "%.1f" pt.Y)
-                    .cr(string model.VertexRadius)
+                    .cr(string boundRadius)
                     .cl("#333")
                     .Elt()
 
-                bdrTxt()
-                    .tx(sprintf "%.1f" (pt.X + 10.0))
-                    .ty(sprintf "%.1f" (pt.Y - 10.0))
-                    .tf("11")
+                bdcrPh()
+                    .pathid(id)
+                    .sx($"{pt.X}")
+                    .sy($"{pt.Y + bndTxtRr}")
+                    .r($"{bndTxtRr}")
+                    .ex($"{pt.X}")
+                    .ey($"{pt.Y - bndTxtRr}")
+                    .Elt()
+
+                bdcrTx()
+                    .pth(id)
+                    .tc("outerVertexLabel")
+                    .tf(boundLabel)
                     .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
                     .Elt()
 
             // Island vertices
-            for island in model.Islands do
-                for pt in island do
+            for islandIdx in 0 .. model.Islands.Length - 1 do
+                let island = model.Islands.[islandIdx]
+                for vertexIdx in 0 .. island.Length - 1 do
+                    let pt = island.[vertexIdx]
+                    let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
+
                     bdrCrl()
+                        .cs("islandVertex")
                         .cx(sprintf "%.1f" pt.X)
                         .cy(sprintf "%.1f" pt.Y)
-                        .cr(string model.VertexRadius)
-                        .cl("#444")
+                        .cr(string boundRadius)
+                        .cl("#333")
                         .Elt()
-                    
-                    bdrTxt()
-                        .tx(sprintf "%.1f" (pt.X + 10.0))
-                        .ty(sprintf "%.1f" (pt.Y - 10.0))
-                        .tf("10")
+
+                    bdcrPh()
+                        .pathid(id)
+                        .sx($"{pt.X}")
+                        .sy($"{pt.Y + bndTxtRr}")
+                        .r($"{bndTxtRr}")
+                        .ex($"{pt.X}")
+                        .ey($"{pt.Y - bndTxtRr}")
+                        .Elt()
+
+                    bdcrTx()
+                        .pth(id) 
+                        .tc("islandVertexLabel")
+                        .tf(boundLabel)
                         .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
                         .Elt()
         }

@@ -583,3 +583,84 @@ video.fullscreen-bg {
     user-select: none;
 }
 
+.boundaryInput {
+    margin-bottom: 6px;
+    padding-left: 8px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+    .boundaryInput label {
+        white-space: nowrap;
+    }
+
+    .boundaryInput input {
+        width: 70px;
+        min-width: 48px;
+        border: none;
+        outline: none;
+        padding: 4px 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+.outerVertex {
+    fill: #6B4226;
+    cursor:move;
+    transition: fill 0.2s ease;
+}
+
+    .outerVertex:hover {
+        fill: #A9746E;
+    }
+
+.islandVertex {
+    fill: #8E3B46;
+    cursor: pointer;
+    transition: fill 0.2s ease;
+}
+
+    .islandVertex:hover {
+        fill: #C97C5D;
+    }
+
+.outerVertexLabel {
+    fill: #5A3E2B;
+    font-size: 10px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    pointer-events: none; 
+    user-select: none;
+}
+
+.islandVertexLabel {
+    fill: #5C1A1B;
+    font-size: 10px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    pointer-events: none;
+    user-select: none;
+}
+
+.outerPolygon {
+    stroke: #A67B5B;
+    stroke-width: 6;
+    fill: #EED9C4;
+    pointer-events: stroke;
+    cursor: cell;
+}
+
+    .outerPolygon:hover {
+        stroke: #8B5E3C;
+    }
+
+.islandPolygon {
+    stroke: #9C89B8; 
+    stroke-width: 4;
+    fill: #FFFFFF; 
+    pointer-events: stroke; 
+    cursor: cell;
+}
+
+    .islandPolygon:hover {
+        stroke: #7B5C9E;
+    }
