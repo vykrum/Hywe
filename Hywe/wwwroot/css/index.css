@@ -576,8 +576,10 @@ video.fullscreen-bg {
    POLYGON EDITOR
    ========================================= */
 .polygon-editor-svg {
-    touch-action: none; /* allow pointer events, block default gestures */
-    -webkit-touch-callout: none; /* iOS callout disable */
-    user-select: none; /* disable text selection */
+    touch-action: pinch-zoom;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
