@@ -82,6 +82,55 @@ let isInsidePolygon (poly: Point[]) (pt: Point) =
 let isPolygonInside outer inner =
     inner |> Array.forall (isInsidePolygon outer)
 
+let edgesIntersect (p1: Point) (p2: Point) (p3: Point) (p4: Point) : bool =
+    let cross (a: Point) (b: Point) = a.X * b.Y - a.Y * b.X
+
+    let vec a b = { X = b.X - a.X; Y = b.Y - a.Y }
+
+    let d1 = vec p3 p4
+    let d2 = vec p1 p2
+
+    let denominator = cross d2 d1
+
+    if denominator = 0.0 then
+        // Parallel or collinear lines
+        false
+    else
+        let s = cross (vec p3 p1) d1 / denominator
+        let t = cross (vec p3 p1) d2 / denominator
+        // Check if s and t lie between 0 and 1 -> segments intersect
+        s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0
+
+let polygonSelfIntersects (poly: Point[]) : bool =
+    let n = poly.Length
+    // Check every edge against every other edge
+    // Skip adjacent edges and edges sharing vertices
+    let edges = [| for i in 0 .. n-1 -> (poly.[i], poly.[(i + 1) % n]) |]
+
+    let intersects i j =
+        // Ignore if edges are the same or adjacent
+        if abs(i - j) <= 1 || abs(i - j) = n - 1 then false
+        else
+            let (p1i, p2i) = edges.[i]
+            let (p1j, p2j) = edges.[j]
+            edgesIntersect p1i p2i p1j p2j
+
+
+    // Check all pairs
+    seq {
+        for i in 0 .. n-1 do
+            for j in i+1 .. n-1 do
+                if intersects i j then yield true
+    } |> Seq.contains true
+
+let polygonsIntersect (polyA: Point[]) (polyB: Point[]) : bool =
+    let edgesA = [| for i in 0 .. polyA.Length - 1 -> (polyA.[i], polyA.[(i + 1) % polyA.Length]) |]
+    let edgesB = [| for i in 0 .. polyB.Length - 1 -> (polyB.[i], polyB.[(i + 1) % polyB.Length]) |]
+
+    edgesA |> Array.exists (fun (a1,a2) ->
+        edgesB |> Array.exists (fun (b1,b2) ->
+            edgesIntersect a1 a2 b1 b2))
+
 let clampPt (model: PolygonEditorModel) (pt: Point) =
     {
         X = max 0.0 (min model.LogicalWidth pt.X)
@@ -210,49 +259,149 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
 
     | PointerMove ev ->
         async {
-            // Throttle: simple time-based gate (~60fps)
+            // Throttle etc. unchanged
             let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
             match model.LastMoveMs with
             | Some last when nowMs - last < 16.0 -> return model
             | _ ->
                 match model.Dragging, model.DragOffset, model.SvgInfo with
                 | Some drag, Some offset, Some info ->
-                    // compute svg point from client coords without calling JS
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
                     let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
 
-                    let updatedModel =
+                    // Check if allowed to update vertex
+                    let allowed =
                         if drag.PolyIndex = 0 then
-                            let arr = Array.copy model.Outer
-                            arr.[drag.VertexIndex] <- newPt
-                            { model with Outer = arr; LastMoveMs = Some nowMs }
-                        else
-                            let updatedIslands = Array.copy model.Islands
-                            let poly = Array.copy updatedIslands.[drag.PolyIndex - 1]
-                            poly.[drag.VertexIndex] <- newPt
-                            updatedIslands.[drag.PolyIndex - 1] <- poly
-                            { model with Islands = updatedIslands; LastMoveMs = Some nowMs }
+                            // Outer polygon update: 
+                            // Build new outer with moved vertex
+                            let newOuter = 
+                                let arr = Array.copy model.Outer
+                                arr.[drag.VertexIndex] <- newPt
+                                arr
+        
+                            // Check no self intersection in outer polygon
+                            let noSelfIntersect = not (polygonSelfIntersects newOuter)
 
-                    return updatedModel
+                            // Check no intersections with any island
+                            let noIntersectsIslands = not (model.Islands |> Array.exists (fun island -> polygonsIntersect newOuter island))
+
+                            // Also, all islands must remain inside outer polygon after move (optional, for safety)
+                            let islandsInside = model.Islands |> Array.forall (fun island -> isPolygonInside newOuter island)
+
+                            noSelfIntersect && noIntersectsIslands && islandsInside
+
+                        else
+                            // Island update:
+                            let islandIdx = drag.PolyIndex - 1
+                            let newIslands = Array.copy model.Islands
+                            let poly = Array.copy newIslands.[islandIdx]
+                            poly.[drag.VertexIndex] <- newPt
+
+                            // Check island stays inside outer polygon
+                            let insideOuter = isPolygonInside model.Outer poly
+
+                            // Check island has no self intersections
+                            let noSelfIntersect = not (polygonSelfIntersects poly)
+
+                            // Check island does not intersect other islands (excluding self)
+                            let noIntersectsOthers =
+                                model.Islands
+                                |> Array.mapi (fun i isl -> i, isl)
+                                |> Array.forall (fun (i, isl) -> i = islandIdx || not (polygonsIntersect poly isl))
+
+                            insideOuter && noSelfIntersect && noIntersectsOthers
+
+                    if allowed then
+                        let updatedModel =
+                            if drag.PolyIndex = 0 then
+                                let arr = Array.copy model.Outer
+                                arr.[drag.VertexIndex] <- newPt
+                                { model with Outer = arr; LastMoveMs = Some nowMs }
+                            else
+                                let updatedIslands = Array.copy model.Islands
+                                let poly = Array.copy updatedIslands.[drag.PolyIndex - 1]
+                                poly.[drag.VertexIndex] <- newPt
+                                updatedIslands.[drag.PolyIndex - 1] <- poly
+                                { model with Islands = updatedIslands; LastMoveMs = Some nowMs }
+
+                        return updatedModel
+                    else
+                        // reject move if outside outer polygon boundary
+                        return model
                 | _ -> return model
         }
-
     | DoubleClick ev ->
         async {
             let! p = toSvgCoords js ev
-            if isInsidePolygon model.Outer p then
-                let size = 40.0
-                let half = size / 2.0
-                let island = [| { X = p.X-half; Y = p.Y-half }
-                                { X = p.X+half; Y = p.Y-half }
-                                { X = p.X+half; Y = p.Y+half }
-                                { X = p.X-half; Y = p.Y+half } |]
-                if isPolygonInside model.Outer island then
-                    let model = snapshot model
-                    return { model with Islands = Array.append [| island |] model.Islands }
-                else return model
-            else return model
+            let rThreshold = 20.0
+
+            let mutable insertPolyIndex : int option = None
+            let mutable insertVertexIndex : int option = None
+            let mutable minDistSq : float = Double.MaxValue
+
+            let checkEdges (poly: Point[]) (polyIndex: int) =
+                for i in 0 .. poly.Length - 1 do
+                    let j = (i + 1) % poly.Length
+                    let a = poly.[i]
+                    let b = poly.[j]
+                    let distSq = distancePointToSegmentSq p a b
+                    if distSq < minDistSq && distSq < rThreshold * rThreshold then
+                        minDistSq <- distSq
+                        insertPolyIndex <- Some polyIndex
+                        insertVertexIndex <- Some j
+
+            checkEdges model.Outer 0
+            for idx = 0 to model.Islands.Length - 1 do
+                checkEdges model.Islands.[idx] (idx + 1)
+
+            match insertPolyIndex, insertVertexIndex with
+            | Some polyIdx, Some vIdx ->
+                let newModel = snapshot model
+                if polyIdx = 0 then
+                    let newOuter = Array.append (Array.append (model.Outer.[0..vIdx-1]) [| p |]) (model.Outer.[vIdx..])
+                    if not (polygonSelfIntersects newOuter) &&
+                       not (model.Islands |> Array.exists (fun island -> polygonsIntersect newOuter island)) &&
+                       (model.Islands |> Array.forall (fun island -> isPolygonInside newOuter island)) then
+                        return { newModel with Outer = newOuter }
+                    else return model
+                else
+                    let islandIdx = polyIdx - 1
+                    let island = model.Islands.[islandIdx]
+                    let newIsland = Array.append (Array.append (island.[0..vIdx-1]) [| p |]) (island.[vIdx..])
+
+                    if isPolygonInside model.Outer newIsland &&
+                       not (polygonSelfIntersects newIsland) &&
+                       not (model.Islands
+                            |> Array.mapi (fun i isl -> i, isl)
+                            |> Array.exists (fun (i, isl) -> i <> islandIdx && polygonsIntersect newIsland isl)) then
+                        let newIslands = Array.copy model.Islands
+                        newIslands.[islandIdx] <- newIsland
+                        return { newModel with Islands = newIslands }
+                    else
+                        return model
+            | _ ->
+                if isInsidePolygon model.Outer p then
+                    let size = 40.0
+                    let half = size / 2.0
+                    let island = [| { X = p.X - half; Y = p.Y - half }
+                                    { X = p.X + half; Y = p.Y - half }
+                                    { X = p.X + half; Y = p.Y + half }
+                                    { X = p.X - half; Y = p.Y + half } |]
+
+                    let insideOuter = isPolygonInside model.Outer island
+                    let insideAnyIsland = model.Islands |> Array.exists (fun existingIsland -> isPolygonInside existingIsland island)
+                    let noIntersectsExisting = not (model.Islands |> Array.exists (fun existingIsland -> polygonsIntersect island existingIsland))
+                    let noSelfIntersect = not (polygonSelfIntersects island)
+
+                    if insideOuter && not insideAnyIsland && noIntersectsExisting && noSelfIntersect then
+                        let newModel = snapshot model
+                        return { newModel with Islands = Array.append [| island |] model.Islands }
+                    else
+                        return model
+                else
+                    return model
         }
+
 
     | ContextMenu ev ->
         async {
