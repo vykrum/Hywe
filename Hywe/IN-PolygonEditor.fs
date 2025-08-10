@@ -540,7 +540,7 @@ let view model dispatch (js: IJSRuntime) =
 
         let viewBoxString =
             let (x, y, w, h) = boundingBoxWithLogical model
-            let padding = 25.0
+            let padding = 50.0
             sprintf "%f %f %f %f" (x - padding) (y - padding) (w + 2.0*padding) (h + 2.0*padding)
 
         svg {
