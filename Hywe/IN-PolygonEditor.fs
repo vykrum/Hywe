@@ -28,8 +28,6 @@ type PolygonEditorModel =
         DragOffset: Point option      // offset between pointer svg point and vertex so dragging doesn't jump
         SvgInfo: SvgInfo option       // cached transform info so we don't call JS on every mousemove
         LastMoveMs: float option      // for simple throttling
-        History: PolygonEditorModel list
-        Future: PolygonEditorModel list
     }
 
 // Only minimal messages needed for editing; kept structure similar to original
@@ -41,8 +39,6 @@ type PolygonEditorMessage =
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
     | RemoveVertex of int * int
-    | Undo
-    | Redo
 
 // ---------- Geometry helpers (efficient) ----------
 let inline sqr x = x * x
@@ -135,8 +131,7 @@ let clampPt (model: PolygonEditorModel) (pt: Point) =
     }
 
 let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
-    let cleanModel = { model with History = []; Future = [] }
-    { model with History = cleanModel :: model.History; Future = []; Dragging = None; DragOffset = None }
+    { model with Dragging = None; DragOffset = None }
 
 // ---------- Initial Model ----------
 let initModel =
@@ -154,12 +149,7 @@ let initModel =
         SvgInfo = None
         LastMoveMs = None
         VertexRadius = 6
-        History = []
-        Future = []
     }
-
-
-
 // ---------- JS interop helpers ----------
 // JS function expected to return the SVG client rect and viewBox as a JSON object:
 // { left, top, width, height, viewBoxX, viewBoxY, viewBoxW, viewBoxH }
@@ -224,24 +214,6 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             |> Array.map (fun island -> island |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
 
         return { model with LogicalHeight = newH; Outer = newOuter; Islands = newIslands }
-        }
-
-    | Undo ->
-        async {
-            match model.History with
-            | prev::rest ->
-                let currentClean = { model with History = []; Future = [] }
-                return { prev with History = rest; Future = currentClean :: model.Future }
-            | [] -> return model
-        }
-
-    | Redo ->
-        async {
-            match model.Future with
-            | next::rest ->
-                let currentClean = { model with History = []; Future = [] }
-                return { next with History = currentClean :: model.History; Future = rest }
-            | [] -> return model
         }
 
     | PointerDown ev ->
@@ -351,6 +323,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                         return model
                 | _ -> return model
         }
+
     | DoubleClick ev ->
         async {
             let! p = toSvgCoords js ev
