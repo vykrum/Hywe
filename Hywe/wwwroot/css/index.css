@@ -575,7 +575,9 @@ video.fullscreen-bg {
 /* =========================================
    POLYGON EDITOR
    ========================================= */
-.polygon-editor-svg {
+.polygon-editor-svg, 
+.outerVertex, 
+.islandVertex {
     touch-action: pinch-zoom;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -617,7 +619,7 @@ video.fullscreen-bg {
 
 .islandVertex {
     fill: #8E3B46;
-    cursor: pointer;
+    cursor: move;
     transition: fill 0.2s ease;
 }
 
