@@ -441,7 +441,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             // 4. fallback: add new island rectangle if not deleted anything
             if not didDelete then
                 if isInsidePolygon model.Outer p then
-                    let size = 40.0
+                    let size = 40.0 * (model.LogicalWidth/fst initBound)
                     let half = size / 2.0
                     let island = [| { X = p.X - half; Y = p.Y - half }
                                     { X = p.X + half; Y = p.Y - half }
@@ -464,9 +464,9 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
     | RemoveVertex _ -> async { return model }
 
 // ---------- View (lighter-weight) ----------
-type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}"/>""">
+type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
 type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
-type bdcrPh = Template<"""<path id = "${pathid}" fill = "none" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}">""">
+type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="0.1" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">
 type bdcrTx = Template<"""
     <text id="${pth}" class="${tc}" font-size="${tf}" fill="#808080" text-anchor="middle">
       <textPath href="#${pth}" letter-spacing="0.2px" startOffset="50%">${nm}</textPath>
@@ -481,7 +481,9 @@ let view model dispatch (js: IJSRuntime) =
                      | _ -> 1.0
     let boundRadius = int (float initRadius * boundScale)
     let boundLabel = int (float (initRadius + 4) * boundScale)  
-    let bndTxtRr = float (initRadius + 4) * boundScale
+    let bndTxtRr = float (initRadius + 6) * boundScale
+    let bndStWdO = int (6.0 * boundScale)
+    let bndStWdI = int (4.0 * boundScale)
 
     div {
         attr.``class`` "polygon-editor-container"
@@ -565,6 +567,7 @@ let view model dispatch (js: IJSRuntime) =
             bdrPgn()
                 .cs("outerPolygon")
                 .pt(model.Outer |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " ")
+                .sw(string bndStWdO)
                 .Elt()
 
             // Islands
@@ -572,6 +575,7 @@ let view model dispatch (js: IJSRuntime) =
                 bdrPgn()
                     .cs("islandPolygon")
                     .pt(island |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " ")
+                    .sw(string bndStWdI)
                     .Elt()
 
             // Outer vertices (circles). Draw texts only if ShowLabels = true

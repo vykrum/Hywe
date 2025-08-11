@@ -648,7 +648,6 @@ video.fullscreen-bg {
 
 .outerPolygon {
     stroke: #E3DCCC;
-    stroke-width: 6;
     fill: #CDDFE1;
     pointer-events: stroke;
     cursor: cell;
@@ -660,7 +659,6 @@ video.fullscreen-bg {
 
 .islandPolygon {
     stroke: #E3DCCC;
-    stroke-width: 4;
     fill: #f0f0f0;
     pointer-events: stroke;
     cursor: cell;
