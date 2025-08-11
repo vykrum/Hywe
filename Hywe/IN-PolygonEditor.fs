@@ -485,35 +485,39 @@ let view model dispatch (js: IJSRuntime) =
 
     div {
         attr.``class`` "polygon-editor-container"
-
         // Controls
         div {
-            attr.``class`` "boundaryInput"
-            label { text "Width:" }
-            input {
-                attr.``type`` "number"
-                attr.step "1"
-                attr.min (string minBound)
-                attr.max (string maxBound)
-                attr.value (string model.LogicalWidth)
-                on.input (fun ev ->
-                    let s = string ev.Value
-                    match System.Double.TryParse(s) with
-                    | true, v -> dispatch (UpdateLogicalWidth v)
-                    | false, _ -> () )
+            p{
+                attr.``class`` "boundaryInput"
+                label { text "Width:" }
+                input {
+                    attr.``type`` "number"
+                    attr.step "1"
+                    attr.min (string minBound)
+                    attr.max (string maxBound)
+                    attr.value (string model.LogicalWidth)
+                    on.input (fun ev ->
+                        let s = string ev.Value
+                        match System.Double.TryParse(s) with
+                        | true, v -> dispatch (UpdateLogicalWidth v)
+                        | false, _ -> () )
+                }
             }
-            label { text "Height:" }
-            input {
-                attr.``type`` "number"
-                attr.step "1"
-                attr.min (string minBound)
-                attr.max (string maxBound)
-                attr.value (string model.LogicalHeight)
-                on.input (fun ev ->
-                    let s = string ev.Value
-                    match System.Double.TryParse(s) with
-                    | true, v -> dispatch (UpdateLogicalHeight v)
-                    | false, _ -> () )
+            p{
+                attr.``class`` "boundaryInput"
+                label { text "Height:" }
+                input {
+                    attr.``type`` "number"
+                    attr.step "1"
+                    attr.min (string minBound)
+                    attr.max (string maxBound)
+                    attr.value (string model.LogicalHeight)
+                    on.input (fun ev ->
+                        let s = string ev.Value
+                        match System.Double.TryParse(s) with
+                        | true, v -> dispatch (UpdateLogicalHeight v)
+                        | false, _ -> () )
+                }
             }
         }
         // Bounding Box
@@ -534,8 +538,17 @@ let view model dispatch (js: IJSRuntime) =
 
         let viewBoxString =
             let (x, y, w, h) = boundingBoxWithLogical model
-            let padding = 50.0
-            sprintf "%f %f %f %f" (x - padding) (y - padding) (w + 2.0*padding) (h + 2.0*padding)
+            let padding = 20.0 * boundScale
+
+            // Allow min-x / min-y to go negative
+            let minX = x - padding
+            let minY = y - padding
+
+            // Ensure width / height never negative or zero
+            let safeW = max 1.0 (w + 2.0 * padding)
+            let safeH = max 1.0 (h + 2.0 * padding)
+
+            sprintf "%f %f %f %f" minX minY safeW safeH
 
         svg {
             attr.id "polygon-editor-svg"

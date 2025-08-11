@@ -575,9 +575,14 @@ video.fullscreen-bg {
 /* =========================================
    POLYGON EDITOR
    ========================================= */
-.polygon-editor-svg, 
-.outerVertex, 
+.polygon-editor-container {
+    margin: 20px
+}
+
+.polygon-editor-svg,
+.outerVertex,
 .islandVertex {
+    background-color: #f0f0f0;
     touch-action: pinch-zoom;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -602,34 +607,33 @@ video.fullscreen-bg {
         min-width: 48px;
         border: none;
         outline: none;
-        padding: 4px 6px;
+        padding: 4px 2px;
         font-size: 14px;
         box-sizing: border-box;
     }
 
 .outerVertex {
-    fill: #6B4226;
-    cursor:move;
+    fill: #BBB2C7;
+    cursor: move;
     transition: fill 0.2s ease;
 }
 
     .outerVertex:hover {
-        fill: #A9746E;
+        fill: #C4B7D5;
     }
 
 .islandVertex {
-    fill: #8E3B46;
+    fill: #C6B2BE;
     cursor: move;
     transition: fill 0.2s ease;
 }
 
     .islandVertex:hover {
-        fill: #C97C5D;
+        fill: #D3B6C8;
     }
 
 .outerVertexLabel {
     fill: #5A3E2B;
-    font-size: 10px;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     pointer-events: none; 
     user-select: none;
@@ -637,32 +641,31 @@ video.fullscreen-bg {
 
 .islandVertexLabel {
     fill: #5C1A1B;
-    font-size: 10px;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     pointer-events: none;
     user-select: none;
 }
 
 .outerPolygon {
-    stroke: #A67B5B;
+    stroke: #E3DCCC;
     stroke-width: 6;
-    fill: #EED9C4;
+    fill: #CDDFE1;
     pointer-events: stroke;
     cursor: cell;
 }
 
     .outerPolygon:hover {
-        stroke: #8B5E3C;
+        stroke: #D6CFAF;
     }
 
 .islandPolygon {
-    stroke: #9C89B8; 
+    stroke: #E3DCCC;
     stroke-width: 4;
-    fill: #FFFFFF; 
-    pointer-events: stroke; 
+    fill: #f0f0f0;
+    pointer-events: stroke;
     cursor: cell;
 }
 
     .islandPolygon:hover {
-        stroke: #7B5C9E;
+        stroke: #D6CFAF;
     }
