@@ -615,7 +615,6 @@ video.fullscreen-bg {
 .outerVertex {
     fill: #BBB2C7;
     cursor: move;
-    transition: fill 0.2s ease;
 }
 
     .outerVertex:hover {
@@ -625,7 +624,6 @@ video.fullscreen-bg {
 .islandVertex {
     fill: #C6B2BE;
     cursor: move;
-    transition: fill 0.2s ease;
 }
 
     .islandVertex:hover {
