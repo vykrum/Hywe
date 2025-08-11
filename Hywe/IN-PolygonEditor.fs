@@ -74,46 +74,38 @@ let isInsidePolygon (poly: Point[]) (pt: Point) =
 let isPolygonInside outer inner =
     inner |> Array.forall (isInsidePolygon outer)
 
-let edgesIntersect (p1: Point) (p2: Point) (p3: Point) (p4: Point) : bool =
-    let cross (a: Point) (b: Point) = a.X * b.Y - a.Y * b.X
+let private eps = 1e-9
 
-    let vec a b = { X = b.X - a.X; Y = b.Y - a.Y }
+let private orient (p: Point) (q: Point) (r: Point) =
+    let v = (q.Y - p.Y) * (r.X - q.X) - (q.X - p.X) * (r.Y - q.Y)
+    if abs v < eps then 0 elif v > 0.0 then 1 else 2
 
-    let d1 = vec p3 p4
-    let d2 = vec p1 p2
+let private onSegment (p: Point) (q: Point) (r: Point) =
+    q.X <= max p.X r.X + eps && q.X >= min p.X r.X - eps &&
+    q.Y <= max p.Y r.Y + eps && q.Y >= min p.Y r.Y - eps
 
-    let denominator = cross d2 d1
+let edgesIntersect (p1: Point) (q1: Point) (p2: Point) (q2: Point) =
+    let o1 = orient p1 q1 p2
+    let o2 = orient p1 q1 q2
+    let o3 = orient p2 q2 p1
+    let o4 = orient p2 q2 q1
 
-    if denominator = 0.0 then
-        // Parallel or collinear lines
-        false
-    else
-        let s = cross (vec p3 p1) d1 / denominator
-        let t = cross (vec p3 p1) d2 / denominator
-        // Check if s and t lie between 0 and 1 -> segments intersect
-        s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0
+    if o1 <> o2 && o3 <> o4 then true
+    elif o1 = 0 && onSegment p1 p2 q1 then true
+    elif o2 = 0 && onSegment p1 q2 q1 then true
+    elif o3 = 0 && onSegment p2 p1 q2 then true
+    elif o4 = 0 && onSegment p2 q1 q2 then true
+    else false
 
-let polygonSelfIntersects (poly: Point[]) : bool =
-    let n = poly.Length
-    // Check every edge against every other edge
-    // Skip adjacent edges and edges sharing vertices
-    let edges = [| for i in 0 .. n-1 -> (poly.[i], poly.[(i + 1) % n]) |]
-
-    let intersects i j =
-        // Ignore if edges are the same or adjacent
-        if abs(i - j) <= 1 || abs(i - j) = n - 1 then false
-        else
-            let (p1i, p2i) = edges.[i]
-            let (p1j, p2j) = edges.[j]
-            edgesIntersect p1i p2i p1j p2j
-
-
-    // Check all pairs
-    seq {
-        for i in 0 .. n-1 do
-            for j in i+1 .. n-1 do
-                if intersects i j then yield true
-    } |> Seq.contains true
+let polygonSelfIntersects (points: Point[]) =
+    let n = points.Length
+    let rec loop i j =
+        if i >= n then false
+        elif j >= n then loop (i + 1) (i + 2)
+        elif abs (i - j) = 1 || abs (i - j) = n - 1 then loop i (j + 1)
+        elif edgesIntersect points.[i] points.[(i+1)%n] points.[j] points.[(j+1)%n] then true
+        else loop i (j + 1)
+    loop 0 2
 
 let polygonsIntersect (polyA: Point[]) (polyB: Point[]) : bool =
     let edgesA = [| for i in 0 .. polyA.Length - 1 -> (polyA.[i], polyA.[(i + 1) % polyA.Length]) |]
@@ -466,10 +458,10 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
 // ---------- View (lighter-weight) ----------
 type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
 type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
-type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="0.1" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">
+type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="-0.5" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">
 type bdcrTx = Template<"""
     <text id="${pth}" class="${tc}" font-size="${tf}" fill="#808080" text-anchor="middle">
-      <textPath href="#${pth}" letter-spacing="0.2px" startOffset="50%">${nm}</textPath>
+      <textPath href="#${pth}" letter-spacing="-0.5px" startOffset="50%">${nm}</textPath>
     </text>
     """>
 
@@ -540,7 +532,7 @@ let view model dispatch (js: IJSRuntime) =
 
         let viewBoxString =
             let (x, y, w, h) = boundingBoxWithLogical model
-            let padding = 20.0 * boundScale
+            let padding = 50.0 * boundScale
 
             // Allow min-x / min-y to go negative
             let minX = x - padding
@@ -582,6 +574,7 @@ let view model dispatch (js: IJSRuntime) =
             for i = 0 to model.Outer.Length - 1 do
                 let pt = model.Outer.[i]
                 let id = sprintf "outerVertex-%d" i
+                let cartY = model.LogicalHeight - pt.Y
                 bdrCrl()
                     .cs("outerVertex")
                     .cx(sprintf "%.1f" pt.X)
@@ -603,7 +596,7 @@ let view model dispatch (js: IJSRuntime) =
                     .pth(id)
                     .tc("outerVertexLabel")
                     .tf(boundLabel)
-                    .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
+                    .nm(sprintf "(%0.0f, %0.0f)" pt.X cartY)
                     .Elt()
 
             // Island vertices
@@ -612,6 +605,7 @@ let view model dispatch (js: IJSRuntime) =
                 for vertexIdx in 0 .. island.Length - 1 do
                     let pt = island.[vertexIdx]
                     let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
+                    let cartY = model.LogicalHeight - pt.Y
 
                     bdrCrl()
                         .cs("islandVertex")
@@ -634,7 +628,7 @@ let view model dispatch (js: IJSRuntime) =
                         .pth(id) 
                         .tc("islandVertexLabel")
                         .tf(boundLabel)
-                        .nm(sprintf "(%0.0f, %0.0f)" pt.X pt.Y)
+                        .nm(sprintf "(%0.0f, %0.0f)" pt.X cartY)
                         .Elt()
         }
     }
