@@ -571,8 +571,18 @@ let view model dispatch (js: IJSRuntime) =
                     }
                 }
             }
-
-
+            // Third Column
+            span {
+                p{
+                    "Drag a vertex to move. Click along any edge to add a vertex. Double-click a vertex to remove it."
+                }
+            }
+            // Fourth Column
+            span {
+                p{
+                    "Double-click within the outer polygon to add an Island. Double-click within the island to remove it."
+                }
+            }
         }
 
 
