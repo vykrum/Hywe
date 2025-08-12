@@ -573,7 +573,7 @@ let view model dispatch (js: IJSRuntime) =
             // Third Column
             span {
                 p{
-                    attr.style "font-size:12px"
+                    attr.style "font-size:11px"
                     "Drag a vertex to move. Click along edge to add vertex. Double-click a vertex to remove. " +
                     "Double-click within outer polygon to add Island. Double-click within to remove island."
                 }
