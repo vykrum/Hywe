@@ -496,7 +496,6 @@ let view model dispatch (js: IJSRuntime) =
             attr.``class`` "polygon-editor-controls"
             // First column
             span {
-                
                 p {
                     label { text "Width:" }
                     input {
@@ -540,7 +539,6 @@ let view model dispatch (js: IJSRuntime) =
                     }
                 }
             }
-
             // Second column
             span {
                 p {
