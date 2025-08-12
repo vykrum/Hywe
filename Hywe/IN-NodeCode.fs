@@ -114,6 +114,7 @@ let updateSub msg model =
 
     | SetHideInstructions hide ->
         { model with HideInstructions = hide }
+
 // --------------------
 // Output / Flatten Helpers
 // --------------------

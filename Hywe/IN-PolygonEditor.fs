@@ -146,9 +146,8 @@ let initModel =
         LastMoveMs = None
         VertexRadius = initRadius
     }
+
 // ---------- JS interop helpers ----------
-// JS function expected to return the SVG client rect and viewBox as a JSON object:
-// { left, top, width, height, viewBoxX, viewBoxY, viewBoxW, viewBoxH }
 let getSvgInfo (js: IJSRuntime) =
     async {
         let! el = js.InvokeAsync<JsonElement>("getSvgInfo", [| box "polygon-editor-svg" |]).AsTask() |> Async.AwaitTask
@@ -164,7 +163,6 @@ let getSvgInfo (js: IJSRuntime) =
     }
 
 let toSvgCoordsFromInfo (info: SvgInfo) (clientX: float) (clientY: float) =
-    // Map client coords inside svg element to svg viewBox coords
     let x = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
     let y = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH
     { X = x; Y = y }
@@ -457,10 +455,10 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
 // ---------- View (lighter-weight) ----------
 type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
 type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
-type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="-0.5" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">
+type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="0.1" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">
 type bdcrTx = Template<"""
     <text id="${pth}" class="${tc}" font-size="${tf}" fill="#808080" text-anchor="middle">
-      <textPath href="#${pth}" letter-spacing="-0.5px" startOffset="50%">${nm}</textPath>
+      <textPath href="#${pth}" letter-spacing="0.1px" startOffset="50%">${nm}</textPath>
     </text>
     """>
 
@@ -468,11 +466,11 @@ let view model dispatch (js: IJSRuntime) =
     let boundScale = match model.LogicalWidth with
                      | w when w <> fst initBound -> w / fst initBound
                      | _ -> 1.0
-    let boundRadius = int (float initRadius * boundScale)
-    let boundLabel = int (float (initRadius + 4) * boundScale)  
-    let bndTxtRr = float (initRadius + 6) * boundScale
-    let bndStWdO = int (6.0 * boundScale)
-    let bndStWdI = int (4.0 * boundScale)
+    let boundRadius = max 1 (int (float initRadius * boundScale))
+    let boundLabel = max 1(int (float (initRadius + 4) * boundScale))  
+    let bndTxtRr = max 1(int(float (initRadius + 6) * boundScale))
+    let bndStWdO = max 1 (int (6.0 * boundScale))
+    let bndStWdI = max 1 (int (4.0 * boundScale))
 
     div {
         attr.``class`` "polygon-editor-container"
@@ -583,10 +581,10 @@ let view model dispatch (js: IJSRuntime) =
                 bdcrPh()
                     .pathid(id)
                     .sx($"{pt.X}")
-                    .sy($"{pt.Y + bndTxtRr}")
+                    .sy($"{pt.Y + float bndTxtRr}")
                     .r($"{bndTxtRr}")
                     .ex($"{pt.X}")
-                    .ey($"{pt.Y - bndTxtRr}")
+                    .ey($"{pt.Y - float bndTxtRr}")
                     .Elt()
 
                 bdcrTx()
@@ -615,10 +613,10 @@ let view model dispatch (js: IJSRuntime) =
                     bdcrPh()
                         .pathid(id)
                         .sx($"{pt.X}")
-                        .sy($"{pt.Y + bndTxtRr}")
+                        .sy($"{pt.Y + float bndTxtRr}")
                         .r($"{bndTxtRr}")
                         .ex($"{pt.X}")
-                        .ey($"{pt.Y - bndTxtRr}")
+                        .ey($"{pt.Y - float bndTxtRr}")
                         .Elt()
 
                     bdcrTx()

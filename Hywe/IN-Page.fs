@@ -5,19 +5,9 @@ open System
 open Coxel
 open Parse
 
-type Beeset = 
-    | Beewhich
-    | Beegin
-    | Beespoke
-
 type EditorTab =
     | Boundary
     | Editor of isAdvanced: bool
-
-type Props = {
-Selected: Beeset option
-OnChange: Beeset -> unit
-}
 
 type DerivedData = {
     cxCxl1: Cxl[]
@@ -25,47 +15,7 @@ type DerivedData = {
     cxClr1: string[]
 }
 
-/// Hywe logo and title
-let hyweHeader =
-    header {
-        attr.style "display: flex; flex-direction: row; font-family: 'Optima', Candara, Calibri; width: 100%; height: 37px; opacity: 1; background: #363636; padding-left: 5px; padding-top: 5px;"
-
-        div {
-            img {
-                attr.src "https://hywe.in/images/icon-32x32.png"
-                attr.width 30
-                attr.height 30
-            }
-        }
-        div {
-            attr.style "color: white; font-family: 'Optima', Candara, Calibri; font-size: 20px; font-weight: normal; padding-left: 10px; padding-right: 10px; padding-bottom: 7px;"
-            text "H Y W E"
-        }
-        div {
-            attr.style "opacity: 1;"
-            img {
-                attr.src "https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png"
-                attr.width 200
-                attr.height 45
-            }
-        }
-    }
-
-/// Hywe Introduction
-let hyweIntro =
-    section {
-        attr.id "introduction"
-        attr.style "background: #d3d3d1; color: #363636; font-family: 'Optima', Candara, Calibri; font-size: 18px; padding: 15px 12px;"
-        p {
-            attr.style "margin: 0;"
-            text "Weave spatial configurations with "
-            strong { text "HYWE" }
-            text ", an endogenous space planning concept with an intuitive interface and no learning curve. Combining graphical interaction with embedded spatial logic, it introduces a novel and distinctive approach to early-stage layout design."
-        }
-    }
-
 // Consistent Pastel Color
-// Convert a hex string like "#aabbcc" to RGB values
 let hexToRgb (hex: string) =
     let hex = hex.TrimStart('#')
     let r = Convert.ToInt32(hex.Substring(0, 2), 16)
@@ -113,41 +63,7 @@ let deriveData (stx: string) : DerivedData =
 
 ///
 
-(*let pageTitle = 
-    div{ 
-                    attr.style="display: flex;
-                                flex-direction: row;
-                                font-family: 'Optima', Candara, Calibri;
-                                width: 100%;
-                                height: 37px;
-                                opacity: 1;
-                                background: #363636;
-                                padding-left: 5px;
-                                padding-top: 5px;"
-                    img{src="https://hywe.in/icon-32x32.png" width="30" height="30"}
-        
-                    span{
-                        attr.style="color: white; 
-                        font-family: 'Optima', Candara, Calibri; 
-                        font-size: 20px;
-                        font-weight: normal;
-                        padding-left: 10px;
-                        padding-right: 10px;
-                        padding-bottom: 7px;" 
-                        "H Y W E" 
-                        }
-                    span{img {src="https://vykrum.github.io/Hywe/hyweLogoAcronym.png" width="200" height="45"}}
-            }*)
 // Defaults
-let stxInstr = 
-    " 1. Make a choice above.\n" +
-    " 2. View HYWE syntax here.\n" +
-    " 3. Click HYWEAVE below."
-
-let stx2Ini = "(0/Q=1),(1/3/.)"
-
-let beeline = "(1/19/Start),(2/15/End)"
-
 let beeyond = "(1/24/Dock),(1.1/24/Logistics),(1.2/24/Lab),"+
               "(1.3/24/Habitation),(1.4/24/Power)"
 
@@ -159,36 +75,6 @@ let beedroom = "(0/W=15/H=15/I=0/S=1/Q=VRCWEE),"+
 
 let bedroom1 = "(1/16/Entry),(1.1/40/Living),(1.1.1/25/Study),(1.1.1.1/10/Powder),(1.1.2/40/Dining),(1.1.2.1/20/Kitchen),(1.1.2.1.1/10/Utility),(1.1.2.2/26/Bed),(1.1.2.2.1/12/Bath)"
 
-// Dropdown Beeselect
-
-let beeSelect (selected: Beeset option) (onSelect: Beeset -> unit) =
-    select{
-        attr.name "options"
-        attr.``class`` "dropdown1"
-        attr.id "options"
-        on.change (fun e -> 
-            let value = (e.Value :?> string)
-            let beeset = 
-                match value with
-                | "Bee-gin" -> Beegin
-                | "Bee-spoke" -> Beespoke
-                | _ -> Beewhich
-
-            onSelect beeset)
-        option {
-            attr.selected "true"
-            attr.value "Bee-which"
-            "To  Bee or To Bee . . ."
-        }
-        option {
-            attr.value "Bee-gin"
-            "Bee-gin : Space Flow Chart"
-        }
-        option {
-            attr.value "Bee-spoke"
-            "Bee-spoke : Space Flow Script"
-        }
-    }
 
 /// Sqn selection via slider
 let allSqns : string list = [

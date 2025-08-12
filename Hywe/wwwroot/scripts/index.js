@@ -46,10 +46,10 @@ window.addEventListener('load', () => {
     // Tap to continue
     if (intro) intro.addEventListener('click', showMain);
 
-    // Auto-show main after 5s if no tap
+    // Auto-show main after 10s if no tap
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
-    }, 5000);
+    }, 10000);
 });
 
 // Initialize
@@ -133,55 +133,6 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
     return { x: svgP.x, y: svgP.y };
 };
 
-/*window.getSvgBBox = function (elementId) {
-    const el = document.getElementById(elementId);
-    if (!el || typeof el.getBBox !== 'function') {
-        return null;
-    }
-    try {
-        const b = el.getBBox();
-        return { x: b.x, y: b.y, width: b.width, height: b.height };
-    } catch (e) {
-        // If SVG element not rendered yet or no bbox, return null
-        return null;
-    }
-};*/
 
-/*window.getSvgCoords = function (svgId, clientX, clientY) {
-    // Cache the SVG element and its CTM
-    if (!polygonEditorSvgCache || polygonEditorSvgCache.id !== svgId) {
-        polygonEditorSvgCache = document.getElementById(svgId);
-        polygonEditorCtmCache = polygonEditorSvgCache?.getScreenCTM();
-    }
 
-    if (!polygonEditorSvgCache || !polygonEditorCtmCache) return { x: 0, y: 0 };
 
-    // Convert screen coordinates to SVG coordinates
-    const pt = polygonEditorSvgCache.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-
-    const svgPoint = pt.matrixTransform(polygonEditorCtmCache.inverse());
-    return { x: svgPoint.x, y: svgPoint.y };
-};*/
-
-/*window.getScaledFontSize = function (id, logicalWidth, desiredSize) {
-    const el = document.getElementById(id);
-    if (!el) return desiredSize;
-    const width = el.getBoundingClientRect().width;
-    const scale = width / logicalWidth;
-    return Math.max(6, desiredSize / scale);
-};
-
-window.registerJsInteropHandlers = function (dotnetRef) {
-    document.addEventListener("pointerup", () => {
-        dotnetRef.invokeMethodAsync("OnGlobalPointerUp");
-    });
-    function reportResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        dotnetRef.invokeMethodAsync("OnWindowResize", width, height);
-    }
-    window.addEventListener("resize", reportResize);
-    reportResize();
-};*/
