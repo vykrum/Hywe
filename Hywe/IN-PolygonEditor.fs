@@ -39,7 +39,7 @@ type PolygonEditorMessage =
     | DoubleClick of MouseEventArgs
     | RemoveVertex of int * int
 
-// ---------- Geometry helpers (efficient) ----------
+// ---------- Geometry helpers ----------
 let inline sqr x = x * x
 let distanceSq (a: Point) (b: Point) = sqr (a.X - b.X) + sqr (a.Y - b.Y)
 let withinRadiusSq (a: Point) (b: Point) (r: float) = distanceSq a b <= r*r
@@ -127,6 +127,9 @@ let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
 // ---------- Initial Model ----------
 let initBound = 400.0, 400.0
 let initRadius = 6
+let minBound = 48.0
+let maxBound = 4800.0
+
 let initModel =
     let logicalWidth, logicalHeight = initBound
     {
@@ -180,33 +183,29 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
     | UpdateLogicalWidth newW -> async {
+        let safeW = max minBound newW
         let oldW = model.LogicalWidth
-        let scaleX = newW / oldW
+        let scaleX = safeW / oldW
 
-        // Scale outer polygon points in X direction
         let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX })
-
-        // Scale islands points in X direction
-        let newIslands = 
+        let newIslands =
             model.Islands
-            |> Array.map (fun island -> island |> Array.map (fun pt -> { pt with X = pt.X * scaleX }))
+            |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX }))
 
-        return { model with LogicalWidth = newW; Outer = newOuter; Islands = newIslands }
+        return { model with LogicalWidth = safeW; Outer = newOuter; Islands = newIslands }
         }
 
     | UpdateLogicalHeight newH -> async {
+        let safeH = max minBound newH
         let oldH = model.LogicalHeight
-        let scaleY = newH / oldH
+        let scaleY = safeH / oldH
 
-        // Scale outer polygon points in Y direction
         let newOuter = model.Outer |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY })
-
-        // Scale islands points in Y direction
         let newIslands =
             model.Islands
-            |> Array.map (fun island -> island |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
+            |> Array.map (Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
 
-        return { model with LogicalHeight = newH; Outer = newOuter; Islands = newIslands }
+        return { model with LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
         }
 
     | PointerDown ev ->
@@ -466,8 +465,6 @@ type bdcrTx = Template<"""
     """>
 
 let view model dispatch (js: IJSRuntime) =
-    let minBound = 48.0
-    let maxBound = 4800.0
     let boundScale = match model.LogicalWidth with
                      | w when w <> fst initBound -> w / fst initBound
                      | _ -> 1.0
