@@ -581,7 +581,7 @@ video.fullscreen-bg {
 .polygon-editor-controls {
     margin-left: 10px;
     display: grid;
-    grid-template-columns: 75px 85px 130px 140px;
+    grid-template-columns: 75px 100px 225px;
     gap: 1rem;
     align-items: start;
 }
