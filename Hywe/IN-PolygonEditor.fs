@@ -574,8 +574,8 @@ let view model dispatch (js: IJSRuntime) =
             span {
                 p{
                     attr.style "font-size:12px"
-                    "Drag a vertex to move. Click along any edge to add a vertex. Double-click a vertex to remove. " +
-                    "Double-click within the outer polygon to add an Island. Double-click within the island to remove."
+                    "Drag a vertex to move. Click along edge to add vertex. Double-click a vertex to remove. " +
+                    "Double-click within outer polygon to add Island. Double-click within to remove island."
                 }
             }
         }
