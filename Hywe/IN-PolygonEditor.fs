@@ -184,7 +184,6 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
         return { X = result.GetProperty("x").GetDouble(); Y = result.GetProperty("y").GetDouble() }
     }
 
-
 // ---------- Update ----------
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
@@ -574,13 +573,12 @@ let view model dispatch (js: IJSRuntime) =
             // Third Column
             span {
                 p{
-                    attr.style "font-size:11px"
+                    attr.style "font-size:12px"
                     "Drag a vertex to move. Click along any edge to add a vertex. Double-click a vertex to remove. " +
                     "Double-click within the outer polygon to add an Island. Double-click within the island to remove."
                 }
             }
         }
-
 
         // Bounding Box
         let boundingBoxWithLogical model =
