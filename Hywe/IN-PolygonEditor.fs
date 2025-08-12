@@ -18,6 +18,9 @@ type SvgInfo =
 // Use arrays for fast random access and cheap shallow copies
 type PolygonEditorModel =
     {
+        UseBoundary: bool
+        UseAbsolute: bool
+        PolygonEnabled: bool        
         LogicalWidth: float
         LogicalHeight: float
         Outer: Point[]
@@ -31,6 +34,8 @@ type PolygonEditorModel =
 
 // Only minimal messages needed for editing; kept structure similar to original
 type PolygonEditorMessage =
+    | ToggleBoundary of bool
+    | ToggleAbsolute of bool
     | UpdateLogicalWidth of float
     | UpdateLogicalHeight of float
     | PointerDown of MouseEventArgs
@@ -133,6 +138,9 @@ let maxBound = 4800.0
 let initModel =
     let logicalWidth, logicalHeight = initBound
     {
+        UseBoundary = true
+        UseAbsolute = false
+        PolygonEnabled= true        
         LogicalWidth = logicalWidth
         LogicalHeight = logicalHeight
         Outer = [| { X = 0.0; Y = 0.0 }
@@ -180,6 +188,16 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
 // ---------- Update ----------
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
+    | ToggleBoundary isChecked ->
+        async{ return
+                    { model with
+                        UseBoundary = isChecked
+                        PolygonEnabled = isChecked
+                        UseAbsolute = if isChecked then model.UseAbsolute else true
+                    }
+            }
+    | ToggleAbsolute isChecked -> async{ return { model with UseAbsolute = isChecked } }
+
     | UpdateLogicalWidth newW -> async {
         let safeW = max minBound newW
         let oldW = model.LogicalWidth
@@ -476,39 +494,88 @@ let view model dispatch (js: IJSRuntime) =
         attr.``class`` "polygon-editor-container"
         // Controls
         div {
-            p{
-                attr.``class`` "boundaryInput"
-                label { text "Width:" }
-                input {
-                    attr.``type`` "number"
-                    attr.step "1"
-                    attr.min (string minBound)
-                    attr.max (string maxBound)
-                    attr.value (string model.LogicalWidth)
-                    on.input (fun ev ->
-                        let s = string ev.Value
-                        match System.Double.TryParse(s) with
-                        | true, v -> dispatch (UpdateLogicalWidth v)
-                        | false, _ -> () )
+            attr.``class`` "polygon-editor-controls"
+            // First column
+            span {
+                
+                p {
+                    label { text "Width:" }
+                    input {
+                        attr.``class`` "boundaryInput"
+                        attr.``type`` "number"
+                        attr.step "1"
+                        attr.min (string minBound)
+                        attr.max (string maxBound)
+                        attr.value (string model.LogicalWidth)
+                        "readOnly" => (not model.UseBoundary)
+                        attr.style (match model.UseBoundary with
+                                    | true -> " color: black;" 
+                                    | false -> " color: gray;")
+                        on.input (fun ev ->
+                            if model.UseBoundary then
+                                match System.Double.TryParse(string ev.Value) with
+                                | true, v -> dispatch (UpdateLogicalWidth v)
+                                | false, _ -> ()
+                        )
+                    }
+                }
+                p {
+                    label { text "Height:" }
+                    input {
+                        attr.``class`` "boundaryInput"
+                        attr.``type`` "number"
+                        attr.step "1"
+                        attr.min (string minBound)
+                        attr.max (string maxBound)
+                        attr.value (string model.LogicalHeight)
+                        "readOnly" => (not model.UseBoundary)
+                        attr.style (match model.UseBoundary with
+                                    | true -> " color: black;" 
+                                    | false -> " color: gray;")
+                        on.input (fun ev ->
+                            if model.UseBoundary then
+                                match System.Double.TryParse(string ev.Value) with
+                                | true, v -> dispatch (UpdateLogicalHeight v)
+                                | false, _ -> ()
+                        )
+                    }
                 }
             }
-            p{
-                attr.``class`` "boundaryInput"
-                label { text "Height:" }
-                input {
-                    attr.``type`` "number"
-                    attr.step "1"
-                    attr.min (string minBound)
-                    attr.max (string maxBound)
-                    attr.value (string model.LogicalHeight)
-                    on.input (fun ev ->
-                        let s = string ev.Value
-                        match System.Double.TryParse(s) with
-                        | true, v -> dispatch (UpdateLogicalHeight v)
-                        | false, _ -> () )
+
+            // Second column
+            span {
+                p {
+                    attr.id "bndOrnot"
+                    label { text "Boundary:" }
+                    input {
+                        attr.``type`` "checkbox"
+                        attr.``checked`` model.UseBoundary
+                        on.change (fun ev ->
+                            let isChecked = ev.Value :?> bool
+                            dispatch (ToggleBoundary isChecked)
+                        )
+                    }
+                }
+                p {
+                    attr.id "absOrRel"
+                    label { text "Absolute:" }
+                    input {
+                        attr.``type`` "checkbox"
+                        attr.``checked`` (if model.UseBoundary then model.UseAbsolute else true)
+                        attr.disabled (not model.UseBoundary)
+                        on.change (fun ev ->
+                            if model.UseBoundary then
+                                let isChecked = ev.Value :?> bool
+                                dispatch (ToggleAbsolute isChecked)
+                        )
+                    }
                 }
             }
+
+
         }
+
+
         // Bounding Box
         let boundingBoxWithLogical model =
             let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
@@ -538,8 +605,9 @@ let view model dispatch (js: IJSRuntime) =
             let safeH = max 1.0 (h + 2.0 * padding)
 
             sprintf "%f %f %f %f" minX minY safeW safeH
-
-        svg {
+        
+        let polygonEditorSvg =
+            svg {
             attr.id "polygon-editor-svg"
             attr.``class`` "polygon-editor-svg"
             "viewBox" => viewBoxString
@@ -626,4 +694,10 @@ let view model dispatch (js: IJSRuntime) =
                         .nm(sprintf "(%0.0f, %0.0f)" pt.X cartY)
                         .Elt()
         }
+        
+        match model.PolygonEnabled with
+        | true -> polygonEditorSvg
+        | false ->     div {
+                            attr.style "pointer-events:none; opacity:0.5;"
+                            polygonEditorSvg }
     }

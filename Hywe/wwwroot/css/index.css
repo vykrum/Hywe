@@ -576,9 +576,15 @@ video.fullscreen-bg {
    POLYGON EDITOR
    ========================================= */
 .polygon-editor-container {
-    margin: 40px
+    margin-top: 5px
 }
-
+.polygon-editor-controls {
+    margin-left: 10px; 
+    display: grid;
+    grid-template-columns: 150px 150px;
+    gap: 1rem;
+    align-items: start;
+}
 .polygon-editor-svg,
 .outerVertex,
 .islandVertex {
@@ -588,29 +594,18 @@ video.fullscreen-bg {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    margin: 40px
 }
 
 .boundaryInput {
-    margin-bottom: 6px;
-    padding-left: 8px;
-    display: flex;
-    gap: 5px;
-    align-items: center;
+    width: 30px;
+    min-width: 25px;
+    border: none;
+    outline: none;
+    padding: 4px 2px;
+    font-size: 14px;
+    box-sizing: border-box;
 }
-
-    .boundaryInput label {
-        white-space: nowrap;
-    }
-
-    .boundaryInput input {
-        width: 70px;
-        min-width: 48px;
-        border: none;
-        outline: none;
-        padding: 4px 2px;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
 
 .outerVertex {
     fill: #BBB2C7;
