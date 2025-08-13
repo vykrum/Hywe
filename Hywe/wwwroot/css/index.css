@@ -665,7 +665,8 @@ input[type="checkbox"] {
 .outerVertex,
 .islandVertex {
     background-color: #f0f0f0;
-    touch-action: pinch-zoom;
+    touch-action: none;
+/*    touch-action: pinch-zoom;*/
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
