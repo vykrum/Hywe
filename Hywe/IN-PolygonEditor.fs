@@ -565,17 +565,10 @@ let view model dispatch (js: IJSRuntime) =
             // --- Instructions ---
             div {
                 attr.``class`` "polygon-editor-instructions"
-                strong { text "Click" }
-                text " on edge to add vertex."
-                br {}
-                strong { text "Double-click" }
-                text " on vertex to remove."
-                br {}
-                strong { text "Double-click" }
-                text " within to add Island."
-                br {}
-                strong { text "Double-click" }
-                text " within island to remove."
+                p { text "Click on edge to add vertex."}
+                p { text "Double-click on vertex to remove." }
+                p { text "Double-click  within to add Island." }
+                p { text "Double-click within island to remove."}
             }
         }
 
