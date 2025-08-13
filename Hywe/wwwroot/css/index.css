@@ -665,13 +665,18 @@ input[type="checkbox"] {
 .outerVertex,
 .islandVertex {
     background-color: #f0f0f0;
-    touch-action: none;
-/*    touch-action: pinch-zoom;*/
+    touch-action: pinch-zoom;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
     margin: 40px
+}
+
+@supports (-moz-appearance: none) {
+    .polygon-editor-svg {
+        touch-action: none;
+    }
 }
 
 .outerVertex {
