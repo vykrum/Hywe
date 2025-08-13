@@ -568,7 +568,7 @@ let view model dispatch (js: IJSRuntime) =
                 p { text "Click on edge to add vertex."}
                 p { text "Double-click on vertex to remove." }
                 p { text "Double-click  within to add Island." }
-                p { text "Double-click within island to remove."}
+                p { text "Double-click island to remove." }
             }
         }
 
