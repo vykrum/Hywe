@@ -576,15 +576,83 @@ video.fullscreen-bg {
    POLYGON EDITOR
    ========================================= */
 .polygon-editor-container {
-    margin-top: 5px
+    margin-top: 5px;
 }
-.polygon-editor-controls {
-    margin-left: 10px;
-    display: grid;
-    grid-template-columns: 75px 100px 200px;
+
+.control-and-instructions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 1rem;
+}
+
+.control-fields {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 0.25rem 0.5rem;
     align-items: start;
 }
+
+    .control-fields p {
+        display: grid;
+        align-items: center;
+        grid-template-columns: 50px 1fr;
+        margin: 0;
+    }
+
+    .control-fields label {
+        min-width: 25px;
+        text-align: right;
+    }
+
+    .control-fields input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+.boundaryInput {
+    width: 25px;
+    padding: 0.2rem;
+    font-size: 0.9rem;
+}
+
+.polygon-editor-instructions {
+    font-size: 0.85rem;
+    line-height: 1.1;
+    max-width: 240px;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid black;
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    background-color: white;
+}
+
+    input[type="checkbox"]:checked {
+        background-color: black; /* black fill when checked */
+    }
+
+        input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            width: 3px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+
 .polygon-editor-svg,
 .outerVertex,
 .islandVertex {

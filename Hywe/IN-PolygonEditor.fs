@@ -490,12 +490,12 @@ let view model dispatch (js: IJSRuntime) =
     let bndStWdI = max 1 (int (4.0 * boundScale))
 
     div {
-        attr.``class`` "polygon-editor-container"
-        // Controls
         div {
-            attr.``class`` "polygon-editor-controls"
-            // First column
-            span {
+            attr.``class`` "control-and-instructions"
+
+            // --- Controls ---
+            div {
+                attr.``class`` "control-fields"
                 p {
                     label { text "Width:" }
                     input {
@@ -506,14 +506,24 @@ let view model dispatch (js: IJSRuntime) =
                         attr.max (string maxBound)
                         attr.value (string model.LogicalWidth)
                         "readOnly" => (not model.UseBoundary)
-                        attr.style (match model.UseBoundary with
-                                    | true -> " color: black;" 
-                                    | false -> " color: gray;")
+                        attr.style (if model.UseBoundary then "color: black;" else "color: gray;")
                         on.input (fun ev ->
                             if model.UseBoundary then
                                 match System.Double.TryParse(string ev.Value) with
                                 | true, v -> dispatch (UpdateLogicalWidth v)
                                 | false, _ -> ()
+                        )
+                    }
+                }
+                p {
+                    attr.id "bndOrnot"
+                    label { text "Boundary:" }
+                    input {
+                        attr.``type`` "checkbox"
+                        attr.``checked`` model.UseBoundary
+                        on.change (fun ev ->
+                            let isChecked = ev.Value :?> bool
+                            dispatch (ToggleBoundary isChecked)
                         )
                     }
                 }
@@ -527,29 +537,12 @@ let view model dispatch (js: IJSRuntime) =
                         attr.max (string maxBound)
                         attr.value (string model.LogicalHeight)
                         "readOnly" => (not model.UseBoundary)
-                        attr.style (match model.UseBoundary with
-                                    | true -> " color: black;" 
-                                    | false -> " color: gray;")
+                        attr.style (if model.UseBoundary then "color: black;" else "color: gray;")
                         on.input (fun ev ->
                             if model.UseBoundary then
                                 match System.Double.TryParse(string ev.Value) with
                                 | true, v -> dispatch (UpdateLogicalHeight v)
                                 | false, _ -> ()
-                        )
-                    }
-                }
-            }
-            // Second column
-            span {
-                p {
-                    attr.id "bndOrnot"
-                    label { text "Boundary:" }
-                    input {
-                        attr.``type`` "checkbox"
-                        attr.``checked`` model.UseBoundary
-                        on.change (fun ev ->
-                            let isChecked = ev.Value :?> bool
-                            dispatch (ToggleBoundary isChecked)
                         )
                     }
                 }
@@ -568,13 +561,21 @@ let view model dispatch (js: IJSRuntime) =
                     }
                 }
             }
-            // Third Column
-            span {
-                p{
-                    attr.style "font-size:11px"
-                    "Drag a vertex to move. Click along edge to add vertex. Double-click a vertex to remove. " +
-                    "Double-click within outer polygon to add Island. Double-click within to remove island."
-                }
+
+            // --- Instructions ---
+            div {
+                attr.``class`` "polygon-editor-instructions"
+                strong { text "Click" }
+                text " on edge to add vertex."
+                br {}
+                strong { text "Double-click" }
+                text " on vertex to remove."
+                br {}
+                strong { text "Double-click" }
+                text " within to add Island."
+                br {}
+                strong { text "Double-click" }
+                text " within island to remove."
             }
         }
 
