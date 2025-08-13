@@ -183,7 +183,7 @@ input[type=number] {
         margin-top: -5px;
     }
 
-    .custom-slider::-moz-range-thumb {
+/*    .custom-slider::-moz-range-thumb {
         height: 16px;
         width: 16px;
         border-radius: 50%;
@@ -191,7 +191,7 @@ input[type=number] {
         background: transparent;
         cursor: pointer;
         margin-bottom: -5px;
-    }
+    }*/
 
 .hyWeaveButton {
     background-color: #363636;
@@ -661,7 +661,6 @@ input[type="checkbox"] {
             transform: rotate(45deg);
         }
 
-
 .polygon-editor-svg,
 .outerVertex,
 .islandVertex {
@@ -673,8 +672,6 @@ input[type="checkbox"] {
     user-select: none;
     margin: 40px
 }
-
-
 
 .outerVertex {
     fill: #BBB2C7;
