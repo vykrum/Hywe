@@ -588,8 +588,6 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             return { model with DraggingEntry = false; DragOffset = None }
         }
 
-
-
 // ---------- View (lighter-weight) ----------
 type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
 type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
@@ -812,8 +810,8 @@ let view model dispatch (js: IJSRuntime) =
                         .Elt()
 
             // --- Entry point ---
-            let entryIcon = [|0.0,0.0;0.0,100.0;20.0,100.0;20.0,65.0;60.0,65.0;60.0,50.0;20.0,50.0;20.0,35.0;60.0,35.0;60.0,20.0;20.0,20.0;20.0,0.0|]
-                            |> Array.map (fun (x, y) -> model.EntryPoint.X + (x * boundScale * 0.15),model.EntryPoint.Y + (y * boundScale * 0.15))
+            let entryIcon = [|-15.0,25.0;15.0,25.0;15.0,15.0;-5.0,15.0;-5.0,5.0;15.0,5.0;15.0,-5.0;-5.0,-5.0;-5.0,-15.0;15.0,-15.0;15.0,-25.0;-15.0,-25.0|]
+                            |> Array.map (fun (x, y) -> model.EntryPoint.X + (x * boundScale * 0.3),model.EntryPoint.Y + (y * boundScale * 0.3))
                             |> Array.map (fun (x, y) -> sprintf "%f,%f" x y)
                             |> String.concat " "
             bdrPgn()

@@ -716,6 +716,7 @@ input[type="checkbox"] {
     fill-opacity: 0.5;
     cursor: move;
 }
+
 .outerPolygon {
     stroke: #E3DCCC;
     fill: #CDDFE1;
