@@ -711,6 +711,11 @@ input[type="checkbox"] {
     user-select: none;
 }
 
+.entryPoint {
+    fill: green;
+    fill-opacity: 0.5;
+    cursor: move;
+}
 .outerPolygon {
     stroke: #E3DCCC;
     fill: #CDDFE1;

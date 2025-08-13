@@ -30,6 +30,8 @@ type PolygonEditorModel =
         DragOffset: Point option      // offset between pointer svg point and vertex so dragging doesn't jump
         SvgInfo: SvgInfo option       // cached transform info so we don't call JS on every mousemove
         LastMoveMs: float option      // for simple throttling
+        EntryPoint: Point
+        DraggingEntry: bool
     }
 
 // Only minimal messages needed for editing; kept structure similar to original
@@ -43,6 +45,9 @@ type PolygonEditorMessage =
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
     | RemoveVertex of int * int
+    | StartDragEntry of MouseEventArgs
+    | MoveDragEntry of MouseEventArgs
+    | EndDragEntry
 
 // ---------- Geometry helpers ----------
 let inline sqr x = x * x
@@ -120,6 +125,53 @@ let polygonsIntersect (polyA: Point[]) (polyB: Point[]) : bool =
         edgesB |> Array.exists (fun (b1,b2) ->
             edgesIntersect a1 a2 b1 b2))
 
+let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
+    let vertexClearance = 8.0   // min distance from any vertex
+    let edgeClearance   = 5.0   // min distance from any edge
+
+    let tooCloseToVertices (pt: Point) (poly: Point[]) =
+        poly |> Array.exists (fun v -> withinRadiusSq pt v vertexClearance)
+
+    let tooCloseToEdges (pt: Point) (poly: Point[]) =
+        let mutable close = false
+        let n = poly.Length
+        let mutable i = 0
+        while i < n && not close do
+            let a = poly.[i]
+            let b = poly.[(i+1) % n]
+            if distancePointToSegmentSq pt a b <= edgeClearance * edgeClearance then
+                close <- true
+            i <- i + 1
+        close
+
+    let mutable candidate = { X = 0.0; Y = 0.0 }
+    let step = 1.0
+    let maxSearch = 200.0
+    let mutable found = false
+    let mutable distSq = Double.MaxValue
+
+    for x in 0.0 .. step .. maxSearch do
+        for y in 0.0 .. step .. maxSearch do
+            let pt = { X = x; Y = y }
+            if isInsidePolygon outer pt &&
+               not (islands |> Array.exists (fun isl -> isInsidePolygon isl pt)) &&
+               not (tooCloseToVertices pt outer) &&
+               not (tooCloseToEdges pt outer) &&
+               not (islands |> Array.exists (tooCloseToVertices pt)) &&
+               not (islands |> Array.exists (tooCloseToEdges pt)) then
+                let d = x*x + y*y
+                if d < distSq then
+                    candidate <- pt
+                    distSq <- d
+                    found <- true
+
+    if found then candidate
+    else
+        { X = outer |> Array.averageBy (fun p -> p.X)
+          Y = outer |> Array.averageBy (fun p -> p.Y) }
+
+// ---------- Utility functions ----------
+
 let clampPt (model: PolygonEditorModel) (pt: Point) =
     {
         X = max 0.0 (min model.LogicalWidth pt.X)
@@ -128,32 +180,6 @@ let clampPt (model: PolygonEditorModel) (pt: Point) =
 
 let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
     { model with Dragging = None; DragOffset = None }
-
-// ---------- Initial Model ----------
-let initBound = 400.0, 400.0
-let initRadius = 6
-let minBound = 48.0
-let maxBound = 4800.0
-
-let initModel =
-    let logicalWidth, logicalHeight = initBound
-    {
-        UseBoundary = true
-        UseAbsolute = false
-        PolygonEnabled= true        
-        LogicalWidth = logicalWidth
-        LogicalHeight = logicalHeight
-        Outer = [| { X = 0.0; Y = 0.0 }
-                   { X = logicalWidth; Y = 0.0 }
-                   { X = logicalWidth; Y = logicalHeight }
-                   { X = 0.0; Y = logicalHeight } |]
-        Islands = Array.empty
-        Dragging = None
-        DragOffset = None
-        SvgInfo = None
-        LastMoveMs = None
-        VertexRadius = initRadius
-    }
 
 // ---------- JS interop helpers ----------
 let getSvgInfo (js: IJSRuntime) =
@@ -182,6 +208,35 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
             js.InvokeAsync<JsonElement>("getSvgCoords", [| box "polygon-editor-svg"; box ev.ClientX; box ev.ClientY |]).AsTask()
             |> Async.AwaitTask
         return { X = result.GetProperty("x").GetDouble(); Y = result.GetProperty("y").GetDouble() }
+    }
+
+// ---------- Initial Model ----------
+let initBound = 400.0, 400.0
+let initEntry = { X = 15.0; Y = 15.0 }
+let initRadius = 6
+let minBound = 48.0
+let maxBound = 4800.0
+
+let initModel =
+    let logicalWidth, logicalHeight = initBound
+    {
+        UseBoundary = true
+        UseAbsolute = false
+        PolygonEnabled= true        
+        LogicalWidth = logicalWidth
+        LogicalHeight = logicalHeight
+        Outer = [| { X = 0.0; Y = 0.0 }
+                   { X = logicalWidth; Y = 0.0 }
+                   { X = logicalWidth; Y = logicalHeight }
+                   { X = 0.0; Y = logicalHeight } |]
+        Islands = Array.empty
+        Dragging = None
+        DragOffset = None
+        SvgInfo = None
+        LastMoveMs = None
+        VertexRadius = initRadius
+        EntryPoint = initEntry
+        DraggingEntry = false
     }
 
 // ---------- Update ----------
@@ -229,13 +284,17 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             let! info = getSvgInfo js
             let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
 
-            // find vertex hit using squared radius test
             let rHit = float model.VertexRadius + 4.0
+            let rEntryHit = float model.VertexRadius + 4.0 // hit radius for entry point
             let mutable drag: DragInfo option = None
+            let mutable entryDrag = false
+
+            // 1️⃣ Check vertices in outer polygon
             for i = 0 to model.Outer.Length - 1 do
                 if drag.IsNone && withinRadiusSq model.Outer.[i] svgPt rHit then
                     drag <- Some { PolyIndex = 0; VertexIndex = i }
 
+            // 2️⃣ Check vertices in islands
             if drag.IsNone then
                 for pi = 0 to model.Islands.Length - 1 do
                     let poly = model.Islands.[pi]
@@ -243,67 +302,80 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                         if drag.IsNone && withinRadiusSq poly.[vi] svgPt rHit then
                             drag <- Some { PolyIndex = pi + 1; VertexIndex = vi }
 
-            match drag with
-            | Some d ->
-                // compute offset so vertex doesn't jump to pointer
-                let v = if d.PolyIndex = 0 then model.Outer.[d.VertexIndex] else model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
+            // 3️⃣ Check entry point
+            if drag.IsNone && withinRadiusSq model.EntryPoint svgPt rEntryHit then
+                entryDrag <- true
+
+            match drag, entryDrag with
+            | Some d, _ ->
+                let v =
+                    if d.PolyIndex = 0 then model.Outer.[d.VertexIndex]
+                    else model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
                 let offset = { X = svgPt.X - v.X; Y = svgPt.Y - v.Y }
                 let newModel = snapshot model
-                return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info;}
-            | None ->
-                // no drag — keep svg info cache for quick mapping later
+                return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info }
+            | None, true ->
+                let offset = { X = svgPt.X - model.EntryPoint.X; Y = svgPt.Y - model.EntryPoint.Y }
+                let newModel = snapshot model
+                return { newModel with DraggingEntry = true; DragOffset = Some offset; SvgInfo = Some info }
+            | None, false ->
                 return { model with SvgInfo = Some info }
         }
+
 
     | PointerUp -> async { return { model with Dragging = None; DragOffset = None; LastMoveMs = None;} }
 
     | PointerMove ev ->
         async {
-            // Throttle etc. unchanged
+            // Throttle
             let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
             match model.LastMoveMs with
             | Some last when nowMs - last < 16.0 -> return model
             | _ ->
                 match model.Dragging, model.DragOffset, model.SvgInfo with
+                // -------------------------------------------------------
+                // 1) Dragging the entry point
+                // -------------------------------------------------------
+                | None, Some offset, Some info when model.DraggingEntry ->
+                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                    let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+
+                    // Only accept if inside outer and not inside any island
+                    let insideOuter = isInsidePolygon model.Outer newEntry
+                    let outsideIslands = not (model.Islands |> Array.exists (fun isl -> isInsidePolygon isl newEntry))
+
+                    if insideOuter && outsideIslands then
+                        return { model with EntryPoint = newEntry; LastMoveMs = Some nowMs }
+                    else
+                        return model
+
+                // -------------------------------------------------------
+                // 2) Dragging a polygon vertex (outer or island)
+                // -------------------------------------------------------
                 | Some drag, Some offset, Some info ->
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
                     let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
 
-                    // Check if allowed to update vertex
                     let allowed =
                         if drag.PolyIndex = 0 then
-                            // Outer polygon update: 
-                            // Build new outer with moved vertex
                             let newOuter = 
                                 let arr = Array.copy model.Outer
                                 arr.[drag.VertexIndex] <- newPt
                                 arr
-        
-                            // Check no self intersection in outer polygon
+
                             let noSelfIntersect = not (polygonSelfIntersects newOuter)
-
-                            // Check no intersections with any island
                             let noIntersectsIslands = not (model.Islands |> Array.exists (fun island -> polygonsIntersect newOuter island))
-
-                            // Also, all islands must remain inside outer polygon after move (optional, for safety)
                             let islandsInside = model.Islands |> Array.forall (fun island -> isPolygonInside newOuter island)
 
                             noSelfIntersect && noIntersectsIslands && islandsInside
-
                         else
-                            // Island update:
                             let islandIdx = drag.PolyIndex - 1
                             let newIslands = Array.copy model.Islands
                             let poly = Array.copy newIslands.[islandIdx]
                             poly.[drag.VertexIndex] <- newPt
 
-                            // Check island stays inside outer polygon
                             let insideOuter = isPolygonInside model.Outer poly
-
-                            // Check island has no self intersections
                             let noSelfIntersect = not (polygonSelfIntersects poly)
-
-                            // Check island does not intersect other islands (excluding self)
                             let noIntersectsOthers =
                                 model.Islands
                                 |> Array.mapi (fun i isl -> i, isl)
@@ -324,12 +396,23 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                                 updatedIslands.[drag.PolyIndex - 1] <- poly
                                 { model with Islands = updatedIslands; LastMoveMs = Some nowMs }
 
-                        return updatedModel
+                        // After vertex move, validate entry point
+                        let entryValid =
+                            isInsidePolygon updatedModel.Outer updatedModel.EntryPoint &&
+                            not (updatedModel.Islands |> Array.exists (fun isl -> isInsidePolygon isl updatedModel.EntryPoint))
+
+                        let finalModel =
+                            if entryValid then updatedModel
+                            else
+                                { updatedModel with
+                                    EntryPoint = closestValidEntryPoint updatedModel.Outer updatedModel.Islands }
+
+                        return finalModel
                     else
-                        // reject move if outside outer polygon boundary
                         return model
                 | _ -> return model
         }
+
 
     | DoubleClick ev ->
         async {
@@ -468,6 +551,44 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
         }
 
     | RemoveVertex _ -> async { return model }
+
+    | StartDragEntry ev ->
+        async {
+            match model.SvgInfo with
+            | Some info ->
+                let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                let offset = { X = svgPt.X - model.EntryPoint.X; Y = svgPt.Y - model.EntryPoint.Y }
+                return { model with DraggingEntry = true; DragOffset = Some offset }
+            | None ->
+                return model
+        }
+
+    | MoveDragEntry ev ->
+        async {
+            match model.SvgInfo, model.DraggingEntry, model.DragOffset with
+            | Some info, true, Some offset ->
+                let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+
+                let insideOuter = isInsidePolygon model.Outer newEntry
+                let outsideIslands =
+                    not (model.Islands |> Array.exists (fun isl -> isInsidePolygon isl newEntry))
+
+                if insideOuter && outsideIslands then
+                    return { model with EntryPoint = newEntry }
+                else
+                    // if invalid, snap to nearest valid position
+                    return { model with EntryPoint = closestValidEntryPoint model.Outer model.Islands }
+            | _ ->
+                return model
+        }
+
+    | EndDragEntry ->
+        async {
+            return { model with DraggingEntry = false; DragOffset = None }
+        }
+
+
 
 // ---------- View (lighter-weight) ----------
 type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
@@ -629,7 +750,7 @@ let view model dispatch (js: IJSRuntime) =
                     .sw(string bndStWdI)
                     .Elt()
 
-            // Outer vertices (circles). Draw texts only if ShowLabels = true
+            // Outer vertices
             for i = 0 to model.Outer.Length - 1 do
                 let pt = model.Outer.[i]
                 let id = sprintf "outerVertex-%d" i
@@ -689,8 +810,18 @@ let view model dispatch (js: IJSRuntime) =
                         .tf(boundLabel)
                         .nm(sprintf "(%0.0f, %0.0f)" pt.X cartY)
                         .Elt()
+
+            // --- Entry point ---
+            let entryIcon = [|0.0,0.0;0.0,100.0;20.0,100.0;20.0,65.0;60.0,65.0;60.0,50.0;20.0,50.0;20.0,35.0;60.0,35.0;60.0,20.0;20.0,20.0;20.0,0.0|]
+                            |> Array.map (fun (x, y) -> model.EntryPoint.X + (x * boundScale * 0.15),model.EntryPoint.Y + (y * boundScale * 0.15))
+                            |> Array.map (fun (x, y) -> sprintf "%f,%f" x y)
+                            |> String.concat " "
+            bdrPgn()
+                .cs("entryPoint")
+                .pt(entryIcon)
+                .sw("1")
+                .Elt()
         }
-        
         match model.PolygonEnabled with
         | true -> polygonEditorSvg
         | false ->     div {
