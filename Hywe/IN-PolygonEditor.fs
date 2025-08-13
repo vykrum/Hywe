@@ -817,7 +817,7 @@ let view model dispatch (js: IJSRuntime) =
             bdrPgn()
                 .cs("entryPoint")
                 .pt(entryIcon)
-                .sw("1")
+                .sw("0")
                 .Elt()
         }
         match model.PolygonEnabled with

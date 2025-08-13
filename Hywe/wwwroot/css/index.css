@@ -712,11 +712,13 @@ input[type="checkbox"] {
 }
 
 .entryPoint {
-    fill: green;
-    fill-opacity: 0.5;
-    cursor: move;
+    fill: #8F8F8F;
+    cursor: grab;
 }
-
+    .entryPoint:hover {
+        fill: #B3B3B3;
+        cursor: grab;
+    }
 .outerPolygon {
     stroke: #E3DCCC;
     fill: #CDDFE1;
