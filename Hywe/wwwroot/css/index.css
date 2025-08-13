@@ -588,32 +588,36 @@ video.fullscreen-bg {
 
 .control-fields {
     display: grid;
-    grid-template-columns: repeat(2, auto);
-    gap: 0.25rem 0.5rem;
-    align-items: start;
+    grid-template-columns: 100px auto;
+    column-gap: 1rem;
 }
 
     .control-fields p {
         display: grid;
         align-items: center;
-        grid-template-columns: 50px 1fr;
+        grid-template-columns: 60px 1fr;
         margin: 0;
     }
 
     .control-fields label {
-        min-width: 25px;
-        text-align: right;
+        min-width: 30px;
+        text-align: left;
+        padding-left: 5px;
     }
 
     .control-fields input {
         width: 100%;
+        text-align: right;
         box-sizing: border-box;
     }
 
 .boundaryInput {
-    width: 25px;
-    padding: 0.2rem;
-    font-size: 0.9rem;
+    width: 30px;
+    min-width: 25px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    box-sizing: border-box;
 }
 
 .polygon-editor-instructions {
@@ -628,7 +632,7 @@ input[type="checkbox"] {
     -moz-appearance: none;
     width: 16px;
     height: 16px;
-    border: 2px solid black;
+    border: 1px solid black;
     border-radius: 3px;
     display: inline-block;
     position: relative;
@@ -637,13 +641,13 @@ input[type="checkbox"] {
 }
 
     input[type="checkbox"]:checked {
-        background-color: black; /* black fill when checked */
+        background-color: black;
     }
 
         input[type="checkbox"]:checked::after {
             content: '';
             position: absolute;
-            top: 2px;
+            top: 1px;
             left: 5px;
             width: 3px;
             height: 8px;
@@ -665,15 +669,7 @@ input[type="checkbox"] {
     margin: 40px
 }
 
-.boundaryInput {
-    width: 30px;
-    min-width: 25px;
-    border: none;
-    outline: none;
-    padding: 4px 2px;
-    font-size: 14px;
-    box-sizing: border-box;
-}
+
 
 .outerVertex {
     fill: #BBB2C7;
