@@ -721,6 +721,7 @@ let view model dispatch (js: IJSRuntime) =
 
             sprintf "%f %f %f %f" minX minY safeW safeH
         
+        // Polygon Editor
         let polygonEditorSvg =
             svg {
             attr.id "polygon-editor-svg"
@@ -820,6 +821,7 @@ let view model dispatch (js: IJSRuntime) =
                 .sw("0")
                 .Elt()
         }
+
         match model.PolygonEnabled with
         | true -> polygonEditorSvg
         | false ->     div {
