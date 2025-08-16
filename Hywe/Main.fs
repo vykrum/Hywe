@@ -186,7 +186,7 @@ let view model dispatch (js: IJSRuntime) =
             button {
                 attr.``class`` ("hywe-toggle-btn" + if model.ActiveTab = Boundary then " active" else "")
                 on.click (fun _ -> dispatch ToggleBoundary)
-                text "Bind"
+                text "Confine"
             }
 
             // --- Node/Code toggle ---
@@ -200,7 +200,7 @@ let view model dispatch (js: IJSRuntime) =
                         // Toggle Node <-> Code
                         dispatch ToggleEditorMode
                 )
-                text (if isCode then "Code" else "Node")
+                text (if isCode then "Refine" else "Define")
             }
         }
 
