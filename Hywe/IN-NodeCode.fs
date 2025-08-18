@@ -138,7 +138,7 @@ let computeCanvasBounds (nodes: TreeNode list) =
     maxX, maxY - minY
 
 // ----------------------------------------
-// View: Hexagon nodes, vertical buttons
+// View: Hexagon nodes
 // ----------------------------------------
 
 let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =      
@@ -236,7 +236,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             p {
                 attr.style "white-space: nowrap; overflow-x: visible;"
                 span { text "Outline boundary in " }
-                span { attr.style "font-weight: bold;"; text "Bind" }
+                span { attr.style "font-weight: bold;"; text "Confine" }
             }
             p {
                 attr.style "white-space: nowrap; overflow-x: visible;"

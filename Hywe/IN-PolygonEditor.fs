@@ -171,7 +171,6 @@ let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
           Y = outer |> Array.averageBy (fun p -> p.Y) }
 
 // ---------- Utility functions ----------
-
 let clampPt (model: PolygonEditorModel) (pt: Point) =
     {
         X = max 0.0 (min model.LogicalWidth pt.X)
