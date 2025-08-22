@@ -329,6 +329,8 @@ video.fullscreen-bg {
         pointer-events: none;
         transition: opacity 0.5s ease;
         z-index: 550;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     #introduction.fade-out {
@@ -357,8 +359,8 @@ video.fullscreen-bg {
     cursor: pointer;
     transition: opacity 0.5s ease;
     /* Desktop positioning */
-    top: 120px; /* space below header */
-    left: 140px; /* roughly aligns with acronym image */
+    top: 100px; /* space below header */
+    left: 130px; /* roughly aligns with acronym image */
     width: 100%;
     max-width: 220px; /* limit width */
     box-sizing: border-box;
