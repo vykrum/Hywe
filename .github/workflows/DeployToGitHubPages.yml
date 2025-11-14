@@ -1,8 +1,8 @@
 name: DeployToGitHubPages
 
 env:
-  PROJECT_PATH: Hywe/Hywe.fsproj
-  PUBLISH_DIR: Hywe/bin/Release/net8.0/publish/wwwroot
+  PROJECT_PATH: src/Hywe/Hywe.fsproj
+  PUBLISH_DIR: src/Hywe/bin/Release/net8.0/publish/wwwroot
   REPO_API_URL: https://api.github.com/repos/vykrum/Hywe
 
 on:
