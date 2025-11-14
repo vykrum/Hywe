@@ -2,43 +2,7 @@ name: Update Sitemap
 
 on:
   push:
-    branches: [name: Update Sitemap
-
-on:
-  push:
     branches: [main]
-
-jobs:
-  generate-sitemap:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up date
-        id: date
-        run: echo "date=$(date -u +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-
-      - name: Generate sitemap.xml
-        run: |
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > sitemap.xml
-          echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> sitemap.xml
-          echo '  <url>' >> sitemap.xml
-          echo '    <loc>https://hywe.in/</loc>' >> sitemap.xml
-          echo "    <lastmod>${{ steps.date.outputs.date }}</lastmod>" >> sitemap.xml
-          echo '    <priority>1.0</priority>' >> sitemap.xml
-          echo '  </url>' >> sitemap.xml
-          echo '</urlset>' >> sitemap.xml
-
-      - name: Commit sitemap
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add sitemap.xml
-          git commit -m "Update sitemap.xml [skip ci]" || echo "No changes to commit"
-          git push
-]
 
 jobs:
   generate-sitemap:
