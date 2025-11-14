@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<Compile Include="CR-Hexel.fs" />
+		<Compile Include="CR-Coxel.fs" />
+		<Compile Include="VZ-Geometry.fs" />
+		<Compile Include="VZ-Bridge.fs" />
+		<Compile Include="IN-PolygonEditor.fs" />
+		<Compile Include="IN-NodeCode.fs" />
+		<Compile Include="VZ-CodeNode.fs" />
+		<Compile Include="CR-Parse.fs" />
+		<Compile Include="IN-Page.fs" />
+		<Compile Include="Main.fs" />
+		<Compile Include="Startup.fs" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Bolero" Version="0.23.52" />
+		<PackageReference Include="Bolero.Build" Version="0.23.52" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.8" />
+		<!--<PackageReference Include="System.Net.Http.Json" Version="8.0.0" />-->
+		<!--<PackageReference Include="System.Text.Json" Version="9.0.0-preview.7.24405.7" />-->
+	</ItemGroup>
+
+</Project>

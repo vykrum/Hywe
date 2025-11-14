@@ -1,0 +1,8 @@
+# robots.txt for HYWE
+# This file controls how web crawlers index the HYWE site.
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://hywe.in/sitemap.xml

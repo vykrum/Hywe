@@ -1,0 +1,69 @@
+name: DeployToGitHubPages
+
+env:
+  PROJECT_PATH: Hywe/Hywe.fsproj
+  PUBLISH_DIR: Hywe/bin/Release/net8.0/publish/wwwroot
+  REPO_API_URL: https://api.github.com/repos/vykrum/Hywe
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          dotnet-quality: 'ga'
+
+      - name: Install wasm-tools workload
+        run: dotnet workload install wasm-tools
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Publish Bolero app (Release + Trimming)
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false
+
+      - name: Rewrite base href
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          base_href: /
+
+      - name: Create CNAME file
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+
+      - name: Compress WASM and DLL files
+        run: |
+          find ${{ env.PUBLISH_DIR }} -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 {} \;
+          find ${{ env.PUBLISH_DIR }} -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 {} \;
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.PUBLISH_DIR }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

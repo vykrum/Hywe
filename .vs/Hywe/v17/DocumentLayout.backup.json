@@ -1,0 +1,94 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|c:\\users\\vykru\\onedrive\\programming\\hywe\\src\\hywe\\cr-parse.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}",
+      "RelativeMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|solutionrelative:src\\hywe\\cr-parse.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|c:\\users\\vykru\\onedrive\\programming\\hywe\\src\\hywe\\vz-geometry.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}",
+      "RelativeMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|solutionrelative:src\\hywe\\vz-geometry.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|c:\\users\\vykru\\onedrive\\programming\\hywe\\src\\hywe\\cr-hexel.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}",
+      "RelativeMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|solutionrelative:src\\hywe\\cr-hexel.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|c:\\users\\vykru\\onedrive\\programming\\hywe\\src\\hywe\\in-polygoneditor.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}",
+      "RelativeMoniker": "D:0:0:{862B1A56-5ECB-4B7E-B533-E7BEB3747C38}|src\\Hywe\\Hywe.fsproj|solutionrelative:src\\hywe\\in-polygoneditor.fs||{8A5AA6CF-46E3-4520-A70A-7393D15233E9}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 328,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CR-Hexel.fs",
+              "DocumentMoniker": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\CR-Hexel.fs",
+              "RelativeDocumentMoniker": "src\\Hywe\\CR-Hexel.fs",
+              "ToolTip": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\CR-Hexel.fs",
+              "RelativeToolTip": "src\\Hywe\\CR-Hexel.fs",
+              "ViewState": "AgIAAAUBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-30T12:24:09.98Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IN-PolygonEditor.fs",
+              "DocumentMoniker": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\IN-PolygonEditor.fs",
+              "RelativeDocumentMoniker": "src\\Hywe\\IN-PolygonEditor.fs",
+              "ToolTip": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\IN-PolygonEditor.fs",
+              "RelativeToolTip": "src\\Hywe\\IN-PolygonEditor.fs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-27T14:57:16.719Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CR-Parse.fs",
+              "DocumentMoniker": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\CR-Parse.fs",
+              "RelativeDocumentMoniker": "src\\Hywe\\CR-Parse.fs",
+              "ToolTip": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\CR-Parse.fs",
+              "RelativeToolTip": "src\\Hywe\\CR-Parse.fs",
+              "ViewState": "AgIAAPsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-27T13:54:11.473Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "VZ-Geometry.fs",
+              "DocumentMoniker": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\VZ-Geometry.fs",
+              "RelativeDocumentMoniker": "src\\Hywe\\VZ-Geometry.fs",
+              "ToolTip": "C:\\Users\\vykru\\OneDrive\\Programming\\Hywe\\src\\Hywe\\VZ-Geometry.fs",
+              "RelativeToolTip": "src\\Hywe\\VZ-Geometry.fs",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAAAP8AAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-08-14T04:50:45.598Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
