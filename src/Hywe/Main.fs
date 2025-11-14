@@ -8,7 +8,6 @@ open Bolero.Html
 open Bridge
 open Page
 open NodeCode
-open CodeNode
 open PolygonEditor
 
 type Model =
