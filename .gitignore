@@ -1,1 +1,131 @@
+###############################
+#   .NET / F# / Blazor
+###############################
+
+# Build output
+bin/
+obj/
+
+# Razor Component compile outputs
+*.g.cs
+*.g.i.cs
+
+# ASP.NET static assets auto-generated metadata
+wwwroot/**/*.gz
+wwwroot/**/*.br
+
+# Local user secrets (if used)
+secrets.json
+
+# .NET generated files
+project.lock.json
+project.fragment.lock.json
+
+# Paket (if ever used)
+.paket/
+paket-files/
+
+###############################
+#   Visual Studio / Rider
+###############################
+
+# VS cache and working directories
 .vs/
+.vscode/
+.idea/
+
+# Debugger files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+###############################
+#   Node / NPM / JS build
+###############################
+
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build artifacts (if using bundlers)
+dist/
+build/
+temp/
+tmp/
+
+###############################
+#   OS & Editor Junk Files
+###############################
+
+# macOS / Linux / Windows junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Backup / temp files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+*.tmp.*
+
+###############################
+#   F# Script / Tools
+###############################
+
+# F# interactive cache
+.fsac-cache/
+.fsi/
+
+# FAKE build
+.fake/
+
+###############################
+#   JetBrains Rider
+###############################
+
+.idea/
+*.iml
+
+###############################
+#   Blazor WASM specific
+###############################
+
+# WASM bootstrap cache
+wwwroot/_framework/**/*.map
+wwwroot/_framework/blazor.boot.json
+
+# Publish output
+wwwroot/build/
+wwwroot/release/
+
+###############################
+#   WebGL-related exclusions
+###############################
+
+# If you generate binary buffers, ignore transient ones
+*.glcache
+*.shadercache
+
+###############################
+#   GitHub Actions
+###############################
+
+# Ignore deployment artifacts
+*.publishlog
+*.deploymsg
+
+###############################
+#   OneDrive conflict junk
+###############################
+
+* - Copy.*
+* - Conflicted Copy*
