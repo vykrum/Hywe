@@ -716,7 +716,7 @@ let view model dispatch (js: IJSRuntime) =
                 }
                 p {
                     attr.id "bndOrnot"
-                    label { text "Bound:" }
+                    label { text "Boundary:" }
                     input {
                         attr.``type`` "checkbox"
                         attr.``checked`` model.UseBoundary
