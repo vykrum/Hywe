@@ -68,8 +68,8 @@ let deriveData (stx: string) (elv : int): DerivedData =
 ///
 
 // Defaults
-let beeyond = "(1/96/Dock),(1.1/96/Logistics),(1.2/96/Lab),"+
-              "(1.3/96/Habitation),(1.4/96/Power)"
+let beeyond = $"(1/{NodeCode.initWeight}/Dock),(1.1/{NodeCode.initWeight}/Logistics),(1.2/{NodeCode.initWeight}/Lab),"+
+              $"(1.3/{NodeCode.initWeight}/Habitation),(1.4/{NodeCode.initWeight}/Power)"
 
 let beedroom = "(0/W=15/H=15/S=5,5/X=1/Q=VRCWEE),"+
                 "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),(2.1/12/Staircase),"+

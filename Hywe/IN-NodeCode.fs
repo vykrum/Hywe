@@ -36,7 +36,7 @@ type svLn = Template<"""
 // --------------------
 // Helpers
 // --------------------
-
+let initWeight = 96
 let randomNames = [
     "<Hive>"; "<Cell>"; "<Comb>"; "<Hex>"; "<Core>"; "<Dock>"; "<Ring>";
     "<Link>"; "<Arc>"; "<Mod>"; "<Buzz>"; "<Wax>"; "<Sting>"; "<Veil>";
@@ -94,7 +94,7 @@ let updateSub msg model =
             let newChild =
                 { Id = Guid.NewGuid()
                   Name = getRandomName ()
-                  Weight = "24"
+                  Weight = $"{initWeight}"
                   X = 0.0
                   Y = 0.0
                   Children = [] }
