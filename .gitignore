@@ -14,8 +14,8 @@ wwwroot/css/*.map
 
 # ---- IDE / Editor ----
 .vs/
-*.vscode/
-*.idea/
+.vscode/
+.idea/
 *.swp
 *.swo
 
@@ -25,20 +25,29 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-package-lock.json
+
+# Allow package.json and package-lock.json (they SHOULD be committed)
+# If you really want to force deletion, uncomment the next line:
+# package-lock.json
 
 # ---- System files ----
 Thumbs.db
 desktop.ini
 .DS_Store
 
-# ---- Backup files ----
+# ---- Backup / Temp files ----
 *~
 *.tmp
 *.bak
+*.fq2~
+*.k0z~
+*.orig
 
 # ---- Logs ----
 *.log
 
 # ---- Publish Output ----
 publish/
+
+# ---- Misc editor artifacts ----
+*.ionide
