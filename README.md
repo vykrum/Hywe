@@ -1,4 +1,4 @@
-**H Y W E** is a browser-based design sandbox where structured intent metamorphoses into **amorphous spatial configurations**.
+**H Y W E**  is a browser-based design sandbox where structured intent metamorphoses into **amorphous spatial configurations**.
 
 ---
 ![Hywe Banner](https://vykrum.github.io/Hywe/images/hyweLogoBanner.png)
