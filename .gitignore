@@ -1,4 +1,4 @@
-# ---- Build artifacts (F# / .NET / Blazor) ----
+# ---- Build artifacts (F# / .NET / Blazor) ---
 bin/
 obj/
 *.user
@@ -12,14 +12,14 @@ obj/
 wwwroot/dist/
 wwwroot/css/*.map
 
-# ---- IDE / Editor ----
+# ---- IDE / Editor ---
 .vs/
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# ---- Node / JS Tooling ----
+# ---- Node / JS Tooling ---
 node_modules/
 npm-debug.log*
 yarn-debug.log*
