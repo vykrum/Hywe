@@ -255,6 +255,70 @@ let hxlLin
 
 ///
 
+let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
+    // Determine primary axis
+    let vert =
+        match sqn with
+        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW
+        | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> true
+        | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS
+        | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> false
+
+    let primary = if vert then snd else fst
+    let secondary = if vert then fst else snd
+
+    // Split array by Δ=2 along primary axis
+    let splitByDelta2 (arr: (int*int)[]) : (int*int)[][] =
+        match arr with
+        | [||] -> [||]
+        | _ ->
+            let folder (groups, currGroup) p =
+                match currGroup with
+                | [||] -> (groups, [|p|])
+                | _ ->
+                    let last = currGroup.[currGroup.Length - 1]
+                    match abs (primary p - primary last) with
+                    | 2 -> (groups, Array.append currGroup [|p|])
+                    | _ -> (Array.append groups [|currGroup|], [|p|])
+            let groups, lastGroup = Array.fold folder ([||], [||]) arr
+            Array.append groups [|lastGroup|]
+
+    // Check secondary-axis oscillation using recursion + pattern matching
+    let rec oscillates (values: int[]) idx =
+        match idx >= values.Length - 2 with
+        | true -> true
+        | false ->
+            match abs (values.[idx+1] - values.[idx]), abs (values.[idx+2] - values.[idx+1]) with
+            | 1, 1 -> oscillates values (idx + 1)
+            | _ -> false
+
+    // Post-process subarrays for oscillation
+    let processOscillation (subarrays: (int*int)[][]) : (int*int)[][] =
+        subarrays
+        |> Array.map (fun arr ->
+            match arr.Length with
+            | n when n <= 2 -> arr
+            | _ ->
+                let values = arr |> Array.map secondary
+                match oscillates values 0 with
+                | true ->
+                    let first = arr.[0]
+                    let last  = arr.[arr.Length - 1]
+                    let low = min (secondary first) (secondary last)
+                    match vert with
+                    | true  -> [| (low, snd first); (low, snd last) |]
+                    | false -> [| (fst first, low); (fst last, low) |]
+                | false -> arr
+        )
+
+    // --- Pipeline ---
+    arr
+    |> splitByDelta2
+    |> processOscillation
+    |> Array.collect id  // Flatten
+
+///
+
 /// <summary> Hexel Polygon </summary>
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="vtx"> Integer coordinates of polygon vertices. </param> 
@@ -265,7 +329,7 @@ let hxlPgn
     (sqn: Sqn) 
     (elv: int)
     (vtx: (int * int)[]): Hxl[] =
-    
+
     if vtx.Length < 2 then [||] else
     let stx, sty = Array.head vtx
     let xx, yy, _ =
@@ -273,7 +337,7 @@ let hxlPgn
         |> Array.last
         |> hxlCrd
 
-    // Replace start vertex with endpoint of (0,0) → first vertex
+    // Replace start vertex with endpoint of (0,0) first vertex
     let vt1 = Array.concat [| [|xx,yy|]; Array.tail vtx |]
 
     // Ensure closure

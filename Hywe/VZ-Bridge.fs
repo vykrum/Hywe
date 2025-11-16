@@ -195,8 +195,9 @@ let svgCoxels
     (scl : int) = 
 
     // Vertices
-    let crd = Array.map (fun x -> cxlPrm x elv) cxl
-
+    let sqn = cxl |> Array.map (fun x ->x.Seqn)
+    let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
+    let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
     // Log crd to console
     crd
     |> Array.iteri (fun i arr ->
@@ -415,12 +416,13 @@ let extrudePolygons
     (elv: int)
     : Async<unit> =
 
-    // --- Convert Cxl -> float polygon safely
+    // Convert Cxl to float polygon
     let toPoly (x: Cxl) =
         cxlPrm x elv
+        |> Geometry.removeSawtooth x.Seqn
         |> Array.map (fun (xi, yi) -> (float xi, float yi))
 
-    // --- Safe polygon + color sync
+    // Safe polygon + color sync
     let polygonsWithColor =
         cxl
         |> Array.map toPoly
@@ -437,7 +439,7 @@ let extrudePolygons
             polygonsWithColor |> Array.map fst,
             polygonsWithColor |> Array.map snd
 
-    // --- Safe color normalization
+    // Safe color normalization
     let normalizeColor (rgba: string) =
         rgba.Replace("rgba(", "")
             .Replace(")", "")
@@ -452,33 +454,33 @@ let extrudePolygons
     async {
         do! Async.Sleep 30
 
-        // --- Incremental heights (always consistent)
+        // Incremental heights
         let heights =
             polygonsFinal
             |> Array.mapi (fun i _ -> initHeight - float i * 0.01)
 
-        // --- JS color array
+        // JS color array
         let colorsJs =
             colorsFinal |> Array.map normalizeColor
 
-        // --- Mesh generation
+        // Mesh generation
         let meshes =
             polygonsFinal
             |> Array.mapi (fun i poly ->
                 polygonMesh poly heights.[i]
             )
 
-        // --- JS structure (triangles -> 3D coords)
+        // JS structure (triangles -> 3D coords)
         let meshesJs =
             meshes
             |> Array.map (Array.map (Array.map (fun (x, y, z) -> [| x; -y; z |])))
 
-        // --- Edge polygons (same polygons used for top/bottom/vertical edges) ---
+        // Edge polygons (same polygons used for top/bottom/vertical edges) ---
         let edgePolygonsJs =
             polygonsFinal
             |> Array.map (Array.map (fun (x, y) -> [| x; -y |]))  // match coordinate inversion in meshesJs
 
-        // --- Invoke JS safely (no exception propagation)
+        // Invoke JS safely
         do!
             js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshesJs, colorsJs, heights,edgePolygonsJs).AsTask()
             |> Async.AwaitTask
