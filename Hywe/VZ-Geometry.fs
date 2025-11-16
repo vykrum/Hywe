@@ -330,11 +330,10 @@ let hxlLin
     |> processOscillation
     |> Array.collect id*)
 
+
 let removeSawtooth (sqn : Sqn) (arr : (int * int)[]) : (int * int)[] =
 
-    //--------------------------------------------------------------------
-    // 1. Determine primary axis
-    //--------------------------------------------------------------------
+    // Determine primary axis
     let vert =
         match sqn with
         | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW
@@ -344,10 +343,7 @@ let removeSawtooth (sqn : Sqn) (arr : (int * int)[]) : (int * int)[] =
     let primary  = if vert then snd else fst
     let secondary = if vert then fst else snd
 
-
-    //--------------------------------------------------------------------
-    // 2. Split arr sequentially by Δ = 2 (order dependent → NO PARALLEL)
-    //--------------------------------------------------------------------
+    // Split arr sequentially by Δ = 2
     let splitByDelta2 (arr: (int*int)[]) : (int*int)[][] =
         if arr.Length = 0 then [||]
         else
@@ -363,10 +359,7 @@ let removeSawtooth (sqn : Sqn) (arr : (int * int)[]) : (int * int)[] =
             let groups, lastGroup = Array.fold folder ([||],[||]) arr
             Array.append groups [|lastGroup|]
 
-
-    //--------------------------------------------------------------------
-    // 3. Oscillation check (pure + recursive)
-    //--------------------------------------------------------------------
+    // Oscillation check (pure + recursive)
     let rec oscillates (values:int[]) idx =
         match idx >= values.Length - 2 with
         | true -> true
@@ -376,14 +369,7 @@ let removeSawtooth (sqn : Sqn) (arr : (int * int)[]) : (int * int)[] =
             | 1,1 -> oscillates values (idx+1)
             | _ -> false
 
-
-    //--------------------------------------------------------------------
-    // 4. Post-process each group (parallel-safe)
-    //
-    //    ✔ All groups are independent
-    //    ✔ No shared state
-    //    ✔ No mutation outside local scope
-    //--------------------------------------------------------------------
+    // Post-process each group (parallel-safe)
     let processGroup (grp : (int*int)[]) =
         match grp.Length with
         | 0 | 1 | 2 -> grp
@@ -401,13 +387,11 @@ let removeSawtooth (sqn : Sqn) (arr : (int * int)[]) : (int * int)[] =
                     [| (fst first, low); (fst last, low) |]
 
 
-    //--------------------------------------------------------------------
-    // 5. Main pipeline
-    //--------------------------------------------------------------------
+    // Main pipeline
     arr
-    |> splitByDelta2                       // sequential
-    |> Array.Parallel.map processGroup     // SAFE parallel stage
-    |> Array.collect id                    // flatten (cheap)
+    |> splitByDelta2
+    |> Array.Parallel.map processGroup
+    |> Array.collect id
 
 
 ///
