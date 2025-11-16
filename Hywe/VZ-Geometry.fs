@@ -255,7 +255,7 @@ let hxlLin
 
 ///
 
-(*let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
+let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
     // --- Determine primary axis ---
     let vert =
         match sqn with
@@ -310,7 +310,7 @@ let hxlLin
     let processOscillation (groups: (int*int)[][]) =
         groups
         |> Array.map (function
-            | g when g.Length <= 2 -> g
+            | g when g.Length <= 3 -> g
             | g ->
                 let secValues = g |> Array.map secondary
                 if oscillates secValues then
@@ -328,69 +328,6 @@ let hxlLin
     arr
     |> splitByDelta2
     |> processOscillation
-    |> Array.collect id*)
-
-
-let removeSawtooth (sqn : Sqn) (arr : (int * int)[]) : (int * int)[] =
-
-    // Determine primary axis
-    let vert =
-        match sqn with
-        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW
-        | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> true
-        | _ -> false
-
-    let primary  = if vert then snd else fst
-    let secondary = if vert then fst else snd
-
-    // Split arr sequentially by Δ = 2
-    let splitByDelta2 (arr: (int*int)[]) : (int*int)[][] =
-        if arr.Length = 0 then [||]
-        else
-            let folder (groups, curr) p =
-                match curr with
-                | [||] -> groups, [|p|]
-                | _ ->
-                    let last = curr.[curr.Length - 1]
-                    let dp = abs (primary p - primary last)
-                    match dp with
-                    | 2 -> groups, Array.append curr [|p|]       // continue group
-                    | _ -> Array.append groups [|curr|], [|p|]   // split here
-            let groups, lastGroup = Array.fold folder ([||],[||]) arr
-            Array.append groups [|lastGroup|]
-
-    // Oscillation check (pure + recursive)
-    let rec oscillates (values:int[]) idx =
-        match idx >= values.Length - 2 with
-        | true -> true
-        | false ->
-            match abs(values.[idx+1] - values.[idx]),
-                  abs(values.[idx+2] - values.[idx+1]) with
-            | 1,1 -> oscillates values (idx+1)
-            | _ -> false
-
-    // Post-process each group (parallel-safe)
-    let processGroup (grp : (int*int)[]) =
-        match grp.Length with
-        | 0 | 1 | 2 -> grp
-        | _ ->
-            let vals = grp |> Array.map secondary
-            match oscillates vals 0 with
-            | false -> grp
-            | true ->
-                let first = grp.[0]
-                let last  = grp.[grp.Length - 1]
-                let low = min (secondary first) (secondary last)
-                if vert then
-                    [| (low, snd first); (low, snd last) |]
-                else
-                    [| (fst first, low); (fst last, low) |]
-
-
-    // Main pipeline
-    arr
-    |> splitByDelta2
-    |> Array.Parallel.map processGroup
     |> Array.collect id
 
 
