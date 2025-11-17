@@ -239,11 +239,6 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             attr.``class`` "instructions"
             p {
                 attr.style "white-space: nowrap; overflow-x: visible;"
-                span { text "Outline boundary in " }
-                span { attr.style "font-weight: bold;"; text "Confine" }
-            }
-            p {
-                attr.style "white-space: nowrap; overflow-x: visible;"
                 span { attr.style "font-weight: bold;"; text "Click " }
                 span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
                 span { text " to add child node" }
@@ -265,6 +260,11 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             p {
                 span { attr.style "font-weight: bold;"; text "Click" }
                 span { text " hyWEAVE to execute or update" }
+            }
+            p {
+                attr.style "white-space: nowrap; overflow-x: visible;"
+                span { text "Outline boundary in " }
+                span { attr.style "font-weight: bold;"; text "Bind" }
             }
         }
 

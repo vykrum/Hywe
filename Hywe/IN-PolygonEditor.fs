@@ -298,9 +298,9 @@ let initOuter = [| { X = 0.0; Y = 0.0 }
 
 let initModel =
     {
-        UseBoundary = true
-        UseAbsolute = false
-        PolygonEnabled = true        
+        UseBoundary = false
+        UseAbsolute = true
+        PolygonEnabled = false        
         LogicalWidth = initWidth
         LogicalHeight = initHeight
         Outer = initOuter

@@ -10,6 +10,15 @@ open Page
 open NodeCode
 open PolygonEditor
 
+// Types
+type ActivePanel =
+    | EditorPanel
+    | BoundaryPanel
+
+type EditorMode =
+    | Interactive
+    | Syntax
+
 type Model =
     {
         Sequence: string
@@ -20,8 +29,8 @@ type Model =
         Derived : DerivedData
         IsHyweaving: bool
         PolygonEditor: PolygonEditorModel
-        ActiveTab: EditorTab
-        LastEditorTab: EditorTab
+        ActivePanel: ActivePanel
+        EditorMode: EditorMode
     }
 
 type Message =
@@ -33,11 +42,11 @@ type Message =
     | FinishHyweave
     | PolygonEditorMsg of PolygonEditorMessage
     | PolygonEditorUpdated of PolygonEditorModel
-    | SetActiveTab of EditorTab
+    | SetActivePanel of ActivePanel
     | ToggleEditorMode
     | ToggleBoundary
 
-// --- Polygon export consumer  ---
+// Polygon export consumer
 let mutable private latestOuterStr   : string = ""
 let mutable private latestIslandsStr : string = ""
 let mutable private latestAbsStr     : string = "1"
@@ -49,9 +58,9 @@ let mutable private latestPublished  : bool = false
 // Keep PolygonEditor state in sync
 let private syncPolygonState (p: PolygonEditorModel) =
     let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
-    let w', h',entry', outer',islands' =
+    let w', h', entry', outer', islands' =
         if not p.UseBoundary then
-            0, 0 ,"0,0","",""  
+            0, 0, "0,0", "", ""
         else
             w, h, entry, outer, islands
     latestOuterStr   <- outer'
@@ -62,19 +71,20 @@ let private syncPolygonState (p: PolygonEditorModel) =
     latestHeight     <- h'
     latestPublished  <- true
 
-// Default Input
+// Defaults / init 
 let elv = 0
 let initialTree = NodeCode.initModel beeyond
 let initialSequence = allSqns.[11]
-let initialOutput = NodeCode.getOutput 
-                        initialTree 
-                        initialSequence 
-                        latestWidth 
-                        latestHeight 
-                        latestAbsStr 
-                        latestEntryStr 
-                        latestOuterStr 
+let initialOutput = NodeCode.getOutput
+                        initialTree
+                        initialSequence
+                        latestWidth
+                        latestHeight
+                        latestAbsStr
+                        latestEntryStr
+                        latestOuterStr
                         latestIslandsStr
+
 let initModel =
     {
         Sequence = initialSequence
@@ -84,21 +94,23 @@ let initModel =
         LastValidTree = initialTree
         Derived = deriveData initialOutput 0
         IsHyweaving = false
-        PolygonEditor = PolygonEditor.initModel 
-        ActiveTab = Editor false
-        LastEditorTab = Editor false
+        PolygonEditor = PolygonEditor.initModel
+        ActivePanel = EditorPanel
+        EditorMode = Interactive
     }
 
+// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
     | SetSqnIndex i ->
         { model with Sequence = indexToSqn i }, Cmd.none
 
-    | SetStx1 value -> 
+    | SetStx1 value ->
         { model with stx1 = value }, Cmd.none
 
     | StartHyweave ->
-        { model with IsHyweaving = true },
+        let model2 = { model with ActivePanel = EditorPanel; IsHyweaving = true }
+        model2,
         Cmd.OfAsync.perform
             (fun () -> async {
                 do! Async.Sleep 50
@@ -107,22 +119,20 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | RunHyweave ->
         let updatedStx1 =
-            match model.ActiveTab with
-            | Editor true -> model.stx1 
-            | _ -> NodeCode.getOutput 
-                    model.Tree 
-                    model.Sequence 
-                    latestWidth 
-                    latestHeight 
-                    latestAbsStr 
-                    latestEntryStr 
-                    latestOuterStr 
+            match model.EditorMode with
+            | Syntax -> model.stx1
+            | Interactive ->
+                NodeCode.getOutput
+                    model.Tree
+                    model.Sequence
+                    latestWidth
+                    latestHeight
+                    latestAbsStr
+                    latestEntryStr
+                    latestOuterStr
                     latestIslandsStr
-        let newModel = {
-            model with
-                stx1 = updatedStx1
-                Derived = deriveData updatedStx1 elv
-        }
+
+        let newModel = { model with stx1 = updatedStx1; Derived = deriveData updatedStx1 elv }
         newModel,
         Cmd.OfAsync.perform
             (fun () -> async {
@@ -135,20 +145,16 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | TreeMsg subMsg ->
         let updatedTree = updateSub subMsg model.Tree
-        let newOutput = NodeCode.getOutput 
-                            updatedTree 
-                            model.Sequence 
-                            latestWidth 
-                            latestHeight 
-                            latestAbsStr 
-                            latestEntryStr 
-                            latestOuterStr 
+        let newOutput = NodeCode.getOutput
+                            updatedTree
+                            model.Sequence
+                            latestWidth
+                            latestHeight
+                            latestAbsStr
+                            latestEntryStr
+                            latestOuterStr
                             latestIslandsStr
-        {
-            model with 
-                Tree = updatedTree
-                stx1 = newOutput
-        }, Cmd.none
+        { model with Tree = updatedTree; stx1 = newOutput }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
         model,
@@ -161,13 +167,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         syncPolygonState newPolygonModel
         { model with PolygonEditor = newPolygonModel }, Cmd.none
 
-    | SetActiveTab tab ->
-    { model with ActiveTab = tab }, Cmd.none
+    | SetActivePanel panel ->
+        { model with ActivePanel = panel }, Cmd.none
 
     | ToggleEditorMode ->
-        match model.ActiveTab, model.LastEditorTab with
-        // Code -> Node
-        | Editor true, Editor _ ->
+        match model.EditorMode with
+        | Syntax ->
             let maybeSubModel =
                 model.stx1
                 |> CodeNode.preprocessCode
@@ -179,39 +184,31 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     { Root = laidOut; HideInstructions = model.Tree.HideInstructions }
                 )
 
-            let newModel =
-                maybeSubModel
-                |> Option.map (fun subModel ->
-                    let newOutput =
-                        NodeCode.getOutput
-                            subModel
-                            model.Sequence
-                            latestWidth
-                            latestHeight
-                            latestAbsStr
-                            latestEntryStr
-                            latestOuterStr
-                            latestIslandsStr
+            match maybeSubModel with
+            | Some subModel ->
+                let newOutput =
+                    NodeCode.getOutput
+                        subModel
+                        model.Sequence
+                        latestWidth
+                        latestHeight
+                        latestAbsStr
+                        latestEntryStr
+                        latestOuterStr
+                        latestIslandsStr
 
-                    { model with
-                        Tree = subModel
-                        stx1 = newOutput
-                        LastValidTree = subModel
-                        ActiveTab = Editor false
-                        LastEditorTab = Editor false
-                        ParseError = false
-                    }
-                )
-                |> Option.defaultValue
-                    { model with
-                        Tree = model.LastValidTree
-                        ParseError = true
-                    }
+                { model with
+                    Tree = subModel
+                    stx1 = newOutput
+                    LastValidTree = subModel
+                    EditorMode = Interactive
+                    ParseError = false
+                }, Cmd.none
 
-            newModel, Cmd.none
+            | None ->
+                { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
 
-        // Node -> Code
-        | Editor false, Editor _ ->
+        | Interactive ->
             let newOutput =
                 NodeCode.getOutput
                     model.Tree
@@ -226,202 +223,175 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             { model with
                 stx1 = newOutput
                 LastValidTree = model.Tree
-                ActiveTab = Editor true
-                LastEditorTab = Editor true
+                EditorMode = Syntax
                 ParseError = false
             }, Cmd.none
-
-        // Editor tab but last editor tab is Boundary (fallback)
-        | Editor _, Boundary ->
-            // Treat same as Node -> Code fallback
-            let newOutput =
-                NodeCode.getOutput
-                    model.Tree
-                    model.Sequence
-                    latestWidth
-                    latestHeight
-                    latestAbsStr
-                    latestEntryStr
-                    latestOuterStr
-                    latestIslandsStr
-
-            { model with
-                stx1 = newOutput
-                LastValidTree = model.Tree
-                ActiveTab = Editor true
-                LastEditorTab = Editor true
-                ParseError = false
-            }, Cmd.none
-
-        // Boundary tab
-        | Boundary, _ ->
-            model, Cmd.none
 
     | ToggleBoundary ->
-        match model.ActiveTab with
-        | Boundary ->
-            // Leaving Boundary → back to Editor
-            let updatedStx1 = NodeCode.getOutput 
-                                model.Tree 
-                                model.Sequence 
-                                latestWidth 
-                                latestHeight 
-                                latestAbsStr 
-                                latestEntryStr 
-                                latestOuterStr 
+        match model.ActivePanel with
+        | BoundaryPanel ->
+            // Leaving Boundary -> go back to EditorPanel
+            let updatedStx1 = NodeCode.getOutput
+                                model.Tree
+                                model.Sequence
+                                latestWidth
+                                latestHeight
+                                latestAbsStr
+                                latestEntryStr
+                                latestOuterStr
                                 latestIslandsStr
             syncPolygonState model.PolygonEditor
-            { 
-                model with 
-                    ActiveTab = model.LastEditorTab 
-                    stx1 = updatedStx1
-            }, Cmd.none
+            { model with ActivePanel = EditorPanel; stx1 = updatedStx1 }, Cmd.none
 
-        | Editor _ ->
-            // Enter Boundary, remember current editor
-            let updatedStx1 = NodeCode.getOutput 
-                                model.Tree 
-                                model.Sequence 
-                                latestWidth 
-                                latestHeight 
-                                latestAbsStr 
-                                latestEntryStr 
-                                latestOuterStr 
+        | EditorPanel ->
+            // Enter Boundary: remember nothing special - just switch panel
+            let updatedStx1 = NodeCode.getOutput
+                                model.Tree
+                                model.Sequence
+                                latestWidth
+                                latestHeight
+                                latestAbsStr
+                                latestEntryStr
+                                latestOuterStr
                                 latestIslandsStr
-            { 
-                model with 
-                    LastEditorTab = model.ActiveTab
-                    ActiveTab = Boundary
-                    stx1 = updatedStx1
-            }, Cmd.none
+            { model with ActivePanel = BoundaryPanel; stx1 = updatedStx1 }, Cmd.none
 
-// Interface
-let view model dispatch (js: IJSRuntime) =
-    let isCode =
-        match model.LastEditorTab with
-        | Editor adv -> adv
-        | _ -> false
-
-    let activeTabClass tab =
-        match model.ActiveTab, tab with
-        | Boundary, Boundary -> "hywe-toggle-btn active"
-        | Editor _, Editor _ when model.ActiveTab <> Boundary -> "hywe-toggle-btn active"
-        | _ -> "hywe-toggle-btn"
-
+// View helpers
+let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
     let nodeCodeButtonText =
-        match model.LastEditorTab with
-        | Editor true -> "Refine"
-        | _ -> "Define"
+        match model.EditorMode with
+        | Syntax -> "Node"
+        | Interactive -> "Code"
 
-    concat {
-        // --- Top buttons ---
+    div {
+        attr.style "display:flex; gap:5px; align-self:flex-start; padding-left:10px; padding-right:10px;"
+        button {
+            attr.``class`` "hywe-toggle-btn"
+            on.click (fun _ -> dispatch ToggleEditorMode)
+            text nodeCodeButtonText
+        }
+    }
+
+let private viewBoundaryOutputButton (model: Model) (dispatch: Message -> unit) =
+    let buttonText =
+        match model.ActivePanel with
+        | EditorPanel -> "Bind"
+        | BoundaryPanel -> "Hywe"
+
+    div {
+        attr.style "display:flex; gap:5px; align-self:flex-start; padding-left:10px; padding-right:10px;"
+        button {
+            attr.``class`` "hywe-toggle-btn"
+            on.click (fun _ -> dispatch ToggleBoundary)
+            text buttonText
+        }
+    }
+
+
+let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
+    match model.EditorMode with
+    | Syntax ->
         div {
-            attr.style "display:flex; gap:5px; align-self:flex-start; padding-left:10px; padding-right:10px;"
+            attr.id "hywe-input-syntax"
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
+            textarea {
+                attr.``class`` "hyweSyntax"
+                on.input (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
+                text model.stx1
+            }
+        }
+    | Interactive ->
+        div {
+            attr.id "hywe-input-interactive"
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: stretch; box-sizing: border-box; padding: 0 10px; gap: 5px;"
 
-            // Boundary toggle
-            button {
-                attr.``class`` (activeTabClass Boundary)
-                on.click (fun _ -> dispatch ToggleBoundary)
-                text "Confine"
+            div {
+                attr.style "flex:1; overflow-y:hidden;"
+                viewTreeEditor model.Tree (TreeMsg >> dispatch)
             }
 
-            // Node/Code toggle
-            button {
-                attr.``class`` (activeTabClass (Editor isCode))
-                on.click (fun _ ->
-                    match model.ActiveTab with
-                    | Boundary -> dispatch ToggleBoundary
-                    | Editor _ -> dispatch ToggleEditorMode
-                )
-                text nodeCodeButtonText
+            div {
+                attr.id "hywe-sequence-selector"
+                attr.style "width:auto; max-width:100%; margin-top:5px;"
+                sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
             }
         }
 
-        // --- Active Panel ---
-        match model.ActiveTab with
-        | Boundary ->
-            div {
-                attr.id "hywe-polygon-editor"
-                attr.style "width:100%; height:auto; margin:5px;"
-                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
-            }
-        | Editor adv ->
-            match adv with
+let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
+    div {
+        attr.style "width: 100%; display:flex; justify-content:center; box-sizing:border-box; padding: 8px 10px;"
+        button {
+            attr.id "hywe-hyweave"
+            attr.``class`` "hyWeaveButton"
+            attr.disabled model.IsHyweaving
+            on.click (fun _ -> dispatch StartHyweave)
+            match model.IsHyweaving with
             | true ->
+                span { attr.``class`` "spinner" }
+                text " h y W E A V E i n g . . ."
+            | false -> text "h y W E A V E"
+        }
+    }
+
+let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
+    match model.ActivePanel with
+    | BoundaryPanel ->
+        div {
+            attr.id "hywe-polygon-editor"
+            attr.style "width:100%; height:auto; margin:5px;"
+            PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
+        }
+
+    | EditorPanel ->
+        div {
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px;"
+            concat {
                 div {
-                    attr.id "hywe-input-syntax"
-                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
-                    textarea {
-                        attr.``class`` "hyweSyntax"
-                        on.input (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
-                        text model.stx1
-                    }
-                }
-            | false ->
-                div {
-                    attr.id "hywe-input-interactive"
-                    attr.style "width: 100%; display: flex; flex-direction: column; align-items: stretch; box-sizing: border-box; padding: 0 10px; gap: 5px;"
-
-                    div {
-                        attr.style "flex:1; overflow-y:hidden;"
-                        viewTreeEditor model.Tree (TreeMsg >> dispatch)
-                    }
-
-                    div {
-                        attr.id "hywe-sequence-selector"
-                        attr.style "width:auto; max-width:100%; margin-top:5px;"
-                        sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-                    }
-                }
-
-        // --- Hyweave, SVG, Table ---
-        match model.ActiveTab with
-        | Boundary -> ()
-        | Editor _ ->
-            div {
-                attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px;"
-                concat {
-                    button {
-                        attr.id "hywe-hyweave"
-                        attr.``class`` "hyWeaveButton"
-                        attr.disabled model.IsHyweaving
-                        on.click (fun _ -> dispatch StartHyweave)
-                        match model.IsHyweaving with
-                        | true ->
-                            span { attr.``class`` "spinner" }
-                            text " h y W E A V E i n g . . ."
-                        | false -> text "h y W E A V E"
-                    }
-
-                    div {
-                        attr.id "hywe-svg-container"
-                        attr.``class`` "flex-container"
-                        attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
-                        svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
-                    }
-
-                    div {
-                        attr.style "width:95%; max-width:1200px; align-items: center; justify-content:center; margin:auto; aspect-ratio: 3/2; background:transparent;"
-                        canvas {
-                            attr.id "hywe-extruded-polygon"
-                            attr.style "width:95%; align-items: center; justify-content:center; height:100%; display:block; border:none;"
-                        }
-                        async {
-                            do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0
-                        }
-                        |> Async.StartImmediate
-                    }
+                    attr.id "hywe-svg-container"
+                    attr.``class`` "flex-container"
+                    attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
+                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
                 }
 
                 div {
-                    attr.id "hywe-table-wrapper"
-                    attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
-                    viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+                    attr.style "width:95%; max-width:1200px; align-items: center; justify-content:center; margin:auto; aspect-ratio: 3/2; background:transparent;"
+                    canvas {
+                        attr.id "hywe-extruded-polygon"
+                        attr.style "width:95%; align-items: center; justify-content:center; height:100%; display:block; border:none;"
+                    }
+                    async {
+                        do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0
+                    } |> Async.StartImmediate
                 }
             }
+
+            div {
+                attr.id "hywe-table-wrapper"
+                attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
+                viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+            }
+        }
+
+// Main view
+let view model dispatch (js: IJSRuntime) =
+    concat {
+        // Node Code button
+        viewNodeCodeButton model dispatch
+
+        // Editor Panel
+        viewEditorPanel model dispatch
+
+        // Hywe button
+        viewHyweButton model dispatch
+
+        // Boundary Toggle button
+        viewBoundaryOutputButton model dispatch
+
+        // Active Panel
+        viewHywePanel model dispatch js
     }
- 
-// Bolero component handling state updates and rendering the user interface
+
+// Bolero wiring
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
