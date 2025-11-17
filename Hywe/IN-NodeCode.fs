@@ -261,11 +261,6 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 span { attr.style "font-weight: bold;"; text "Click" }
                 span { text " hyWEAVE to execute or update" }
             }
-            p {
-                attr.style "white-space: nowrap; overflow-x: visible;"
-                span { text "Outline boundary in " }
-                span { attr.style "font-weight: bold;"; text "Bind" }
-            }
         }
 
     div {
