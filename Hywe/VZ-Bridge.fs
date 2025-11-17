@@ -359,7 +359,7 @@ let triangulatePolygon
 
         triangles |> List.rev |> List.toArray
 
-/// Gracefully extrudes a polygon
+/// Extrudes a polygon
 let polygonMesh 
     (poly2D: (float * float)[]) 
     (height: float) : (float * float * float)[][] =

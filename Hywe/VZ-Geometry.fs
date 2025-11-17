@@ -256,66 +256,80 @@ let hxlLin
 ///
 
 let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
-    // Determine primary axis
+    // --- Determine primary axis ---
     let vert =
         match sqn with
-        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW
-        | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> true
-        | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS
-        | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> false
+        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW
+        | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> true
+        | _ -> false
 
-    let primary = if vert then snd else fst
+    let primary   = if vert then snd else fst
     let secondary = if vert then fst else snd
 
-    // Split array by Δ=2 along primary axis
-    let splitByDelta2 (arr: (int*int)[]) : (int*int)[][] =
-        match arr with
-        | [||] -> [||]
+    // --- Split by Δ=2 along primary axis ---
+    let splitByDelta2 (points: (int*int)[]) =
+        if points.Length = 0 then [||] else
+
+        let groups = ResizeArray<ResizeArray<(int*int)>>()
+        let curr   = ResizeArray<(int*int)>()
+
+        curr.Add points.[0]
+
+        for i in 1 .. points.Length-1 do
+            let p    = points.[i]
+            let prev = points.[i-1]
+
+            if abs(primary p - primary prev) = 2 then
+                curr.Add p
+            else
+                groups.Add(curr |> ResizeArray)
+                curr.Clear()
+                curr.Add p
+
+        groups.Add(curr |> ResizeArray)
+
+        groups
+        |> Seq.map (fun g -> g.ToArray())
+        |> Seq.toArray
+
+    // --- Detect oscillation on secondary axis ---
+    let rec oscillates values =
+        match values with
+        | [||] | [|_|] | [|_;_|] -> false
         | _ ->
-            let folder (groups, currGroup) p =
-                match currGroup with
-                | [||] -> (groups, [|p|])
-                | _ ->
-                    let last = currGroup.[currGroup.Length - 1]
-                    match abs (primary p - primary last) with
-                    | 2 -> (groups, Array.append currGroup [|p|])
-                    | _ -> (Array.append groups [|currGroup|], [|p|])
-            let groups, lastGroup = Array.fold folder ([||], [||]) arr
-            Array.append groups [|lastGroup|]
+            let rec loop i =
+                if i >= values.Length - 2 then true
+                else
+                    match abs(values.[i+1] - values.[i]),
+                          abs(values.[i+2] - values.[i+1]) with
+                    | 1, 1 -> loop (i+1)
+                    | _    -> false
+            loop 0
 
-    // Check secondary-axis oscillation using recursion + pattern matching
-    let rec oscillates (values: int[]) idx =
-        match idx >= values.Length - 2 with
-        | true -> true
-        | false ->
-            match abs (values.[idx+1] - values.[idx]), abs (values.[idx+2] - values.[idx+1]) with
-            | 1, 1 -> oscillates values (idx + 1)
-            | _ -> false
+    // --- Reduce oscillatory groups ---
+    let processOscillation (groups: (int*int)[][]) =
+        groups
+        |> Array.map (function
+            | g when g.Length <= 3 -> g
+            | g ->
+                let secValues = g |> Array.map secondary
+                if oscillates secValues then
+                    let f = g.[0]
+                    let l = g.[g.Length-1]
+                    let low = min (secondary f) (secondary l)
 
-    // Post-process subarrays for oscillation
-    let processOscillation (subarrays: (int*int)[][]) : (int*int)[][] =
-        subarrays
-        |> Array.map (fun arr ->
-            match arr.Length with
-            | n when n <= 2 -> arr
-            | _ ->
-                let values = arr |> Array.map secondary
-                match oscillates values 0 with
-                | true ->
-                    let first = arr.[0]
-                    let last  = arr.[arr.Length - 1]
-                    let low = min (secondary first) (secondary last)
-                    match vert with
-                    | true  -> [| (low, snd first); (low, snd last) |]
-                    | false -> [| (fst first, low); (fst last, low) |]
-                | false -> arr
-        )
+                    if vert then
+                        [| (low, snd f); (low, snd l) |]
+                    else
+                        [| (fst f, low); (fst l, low) |]
+                else g)
 
     // --- Pipeline ---
     arr
     |> splitByDelta2
     |> processOscillation
-    |> Array.collect id  // Flatten
+    |> Array.collect id
+
 
 ///
 
