@@ -264,9 +264,10 @@ let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
         | Interactive -> "Code"
 
     div {
-        attr.style "display:flex; gap:5px; align-self:flex-start; padding-left:10px; padding-right:10px;"
+        attr.style "display:flex; gap:5px; padding-left:10px; padding-right:10px;"
         button {
             attr.``class`` "hywe-toggle-btn"
+            attr.style "margin-left:auto;"
             on.click (fun _ -> dispatch ToggleEditorMode)
             text nodeCodeButtonText
         }
@@ -275,11 +276,11 @@ let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
 let private viewBoundaryOutputButton (model: Model) (dispatch: Message -> unit) =
     let buttonText =
         match model.ActivePanel with
-        | EditorPanel -> "Bind"
-        | BoundaryPanel -> "Hywe"
+        | EditorPanel -> "Modify Boundary Parameters"
+        | BoundaryPanel -> "View Spatial Configuration"
 
     div {
-        attr.style "display:flex; gap:5px; align-self:flex-start; padding-left:10px; padding-right:10px;"
+        attr.style "display:flex; gap:5px; justify-content:center; padding-left:10px; padding-right:10px;"
         button {
             attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch ToggleBoundary)

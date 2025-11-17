@@ -231,23 +231,24 @@ input[type=number] {
 .hywe-toggle-btn {
     background: none;
     border: none;
-    appearance: none; /* remove browser default styles */
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     padding: 0;
     margin-right: 5px;
     font-size: 12px;
-    color: #888; /* light gray text */
+    color: #888;
     cursor: pointer;
     line-height: 1.2;
+    font-weight: 300;
 }
 
     .hywe-toggle-btn:hover {
-        color: #333; /* dark gray on hover */
+        color: #333;
     }
 
     .hywe-toggle-btn.active {
-        color: #000; /* darkest for active */
+        color: #000; 
         font-weight: 500;
     }
 
