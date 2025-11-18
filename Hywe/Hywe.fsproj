@@ -2,6 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+		<UseBrowserLink>false</UseBrowserLink>
 	</PropertyGroup>
 	
 	<ItemGroup>
