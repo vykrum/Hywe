@@ -294,16 +294,6 @@ video.fullscreen-bg {
     will-change: opacity;
 }
 
-.fade-container {
-    opacity: 0;
-    transition: opacity 0.8s ease;
-    will-change: opacity;
-}
-
-    .fade-container.visible {
-        opacity: 1;
-    }
-
 #introduction {
     position: fixed;
     top: 0;
@@ -455,11 +445,7 @@ video.fullscreen-bg {
    INDRODUCTION SEAMLESS CROSSFADE
    ========================================= */
 
-#loading-frame,
-#introduction,
-#page-content,
-#main,
-#footer {
+.wc-opacity {
     will-change: opacity;
 }
 

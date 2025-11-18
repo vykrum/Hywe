@@ -7,18 +7,41 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+function applyWillChange(el, property = 'opacity') {
+    if (!el) return;
+    el.style.willChange = property;
+}
+function clearWillChange(el) {
+    if (!el) return;
+    el.style.willChange = '';
+}
+function fadeWithWillChange(el, action) {
+    if (!el) return;
+
+    applyWillChange(el);
+
+    const handler = () => {
+        clearWillChange(el);
+        el.removeEventListener('transitionend', handler);
+    };
+
+    el.addEventListener('transitionend', handler);
+    action(); // perform the opacity change
+}
+
 // --- HYWE Metadata Centralization ---
 const PUBLISHED_DATE = "2022-08-15T00:00:00Z";
-const MODIFIED_DATE = "2025-11-08T00:00:00Z"; // or new Date().toISOString()
+const MODIFIED_DATE = "2025-11-08T00:00:00Z";
 
 document.addEventListener("DOMContentLoaded", () => {
+
     // Update meta tags
     const metaPub = document.querySelector('meta[property="article:published_time"]');
     const metaMod = document.querySelector('meta[property="article:modified_time"]');
     if (metaPub) metaPub.setAttribute("content", PUBLISHED_DATE);
     if (metaMod) metaMod.setAttribute("content", MODIFIED_DATE);
 
-    // Update JSON-LD structured data
+    // Update JSON-LD
     const ld = document.getElementById("hywe-schema");
     if (ld) {
         try {
@@ -31,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- Loading Animation ---
+    // --- Loading Animation Elements ---
     const loader = document.getElementById('loading-frame');
     const content = document.getElementById('page-content');
     const intro = document.getElementById('introduction');
@@ -39,53 +62,73 @@ document.addEventListener("DOMContentLoaded", () => {
     const mainDiv = document.getElementById('main');
     const footer = document.getElementById('footer');
 
-    // Ensure starting opacity for fade-in targets
+    // Ensure starting opacity for fade targets
     if (content) content.style.opacity = '0';
     if (mainDiv) mainDiv.style.opacity = '0';
     if (footer) footer.style.opacity = '0';
 
-    // === Seamless Loader Fade Out + Content Fade In ===
+    // ---------------------------------------------------
+    //  LOADER FADE OUT  + CONTENT FADE IN (with delay)
+    // ---------------------------------------------------
+
+    const LOADING_DURATION = 2000; // <-- increase for longer "Loading..."
+
     if (loader) {
-        requestAnimationFrame(() => {
-            loader.style.transition = 'opacity 0.8s ease';
-            loader.style.opacity = '0';                // fade out loader
-            if (content) content.classList.add('fade-in'); // fade in page content
-            if (intro) intro.classList.add('ready');       // fade in intro
-            if (tapMsg) tapMsg.classList.add('visible');
-        });
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                fadeWithWillChange(loader, () => {
+                    loader.style.transition = 'opacity 0.8s ease';
+                    loader.style.opacity = '0';    // fade out loader
+                });
+
+                if (content) {
+                    fadeWithWillChange(content, () => {
+                        content.classList.add('fade-in'); // fade in page content
+                    });
+                }
+
+                if (intro) intro.classList.add('ready');
+                if (tapMsg) tapMsg.classList.add('visible');
+            });
+        }, LOADING_DURATION);
 
         loader.addEventListener('transitionend', (e) => {
             if (e.propertyName === 'opacity') loader.style.display = 'none';
         }, { once: true });
     }
 
-    // === Show Main App After Intro Tap or Timeout ===
+
+    // ------------------------------------
+    //   MAIN SCREEN SHOW (Tap or Timeout)
+    // ------------------------------------
     function showMain() {
         if (!intro) return;
-        intro.classList.add('fade-out');        // fades intro to 0.25 opacity
+
+        fadeWithWillChange(intro, () => {
+            intro.classList.add('fade-out');
+        });
+
         intro.addEventListener('transitionend', () => {
-            intro.style.display = 'none';       // hide intro
-            mainDiv.style.display = 'block';    // show main
-            footer.style.display = 'flex';      // show footer
+            intro.style.display = 'none';
+            mainDiv.style.display = 'block';
+            footer.style.display = 'flex';
+
             requestAnimationFrame(() => {
-                mainDiv.style.opacity = '1';    // fade in main
-                footer.style.opacity = '1';     // fade in footer
+                fadeWithWillChange(mainDiv, () => { mainDiv.style.opacity = '1'; });
+                fadeWithWillChange(footer, () => { footer.style.opacity = '1'; });
             });
         }, { once: true });
     }
 
-    // Tap to continue
     if (intro) intro.addEventListener('click', showMain);
 
-    // Auto-show main after 10s if no tap
+    // Auto show after 10s
     setTimeout(() => {
         if (intro && intro.style.display !== 'none') showMain();
     }, 10000);
-
 });
 
-// --- Polygon Editor Utility Functions ---
-// return basic bounding client rect + viewBox mapping used by toSvgCoordsFromInfo
+// --- SVG Utilities ---
 window.getSvgInfo = function (svgId) {
     const svg = document.getElementById(svgId);
     if (!svg) {
@@ -106,15 +149,13 @@ window.getSvgInfo = function (svgId) {
             } else {
                 vb.w = rect.width; vb.h = rect.height;
             }
-        } else {
-            if (svg.viewBox && svg.viewBox.baseVal) {
-                vb.x = svg.viewBox.baseVal.x || 0;
-                vb.y = svg.viewBox.baseVal.y || 0;
-                vb.w = svg.viewBox.baseVal.width || rect.width;
-                vb.h = svg.viewBox.baseVal.height || rect.height;
-            } else {
-                vb.w = rect.width; vb.h = rect.height;
-            }
+        } else if (svg.viewBox && svg.viewBox.baseVal) {
+            vb = {
+                x: svg.viewBox.baseVal.x,
+                y: svg.viewBox.baseVal.y,
+                w: svg.viewBox.baseVal.width || rect.width,
+                h: svg.viewBox.baseVal.height || rect.height
+            };
         }
     } catch (e) {
         vb = { x: 0, y: 0, w: rect.width, h: rect.height };
@@ -132,31 +173,31 @@ window.getSvgInfo = function (svgId) {
     };
 };
 
-// precise mapping: client coords -> svg coords (used for double-click and contextmenu)
 window.getSvgCoords = function (svgId, clientX, clientY) {
     const svg = document.getElementById(svgId);
-    if (!svg || !svg.createSVGPoint) {
-        return { x: clientX, y: clientY };
-    }
+    if (!svg || !svg.createSVGPoint) return { x: clientX, y: clientY };
+
     const pt = svg.createSVGPoint();
     pt.x = clientX;
     pt.y = clientY;
+
     const ctm = svg.getScreenCTM();
     if (!ctm) {
         const info = window.getSvgInfo(svgId);
-        const x = info.viewBoxX + (clientX - info.left) * info.viewBoxW / info.width;
-        const y = info.viewBoxY + (clientY - info.top) * info.viewBoxH / info.height;
-        return { x: x, y: y };
+        return {
+            x: info.viewBoxX + (clientX - info.left) * info.viewBoxW / info.width,
+            y: info.viewBoxY + (clientY - info.top) * info.viewBoxH / info.height
+        };
     }
+
     const inv = ctm.inverse();
     const svgP = pt.matrixTransform(inv);
     return { x: svgP.x, y: svgP.y };
 };
 
+// Debug receiver
 window.hywe = {
     receiveSvgData: function (data) {
         console.log("[hywe] Received data from F#:", data);
-        // Example: if you want to visualize
-        // document.getElementById("svg-log").innerText = JSON.stringify(data, null, 2);
     }
 };
