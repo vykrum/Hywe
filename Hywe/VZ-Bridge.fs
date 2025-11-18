@@ -198,12 +198,13 @@ let svgCoxels
     let sqn = cxl |> Array.map (fun x ->x.Seqn)
     let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
     let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
+
     // Log crd to console
-    crd
+(*    crd
     |> Array.iteri (fun i arr ->
         let line = arr |> Array.map (fun (x,y) -> $"({x},{y})") |> String.concat "; "
         printfn "Cxl %d: %s" i line
-    )
+    )*)
 
     // Shift and Scale Vertices
     let padd = 5*scl
