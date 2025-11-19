@@ -282,9 +282,9 @@ video.fullscreen-bg {
     pointer-events: none
 }
 
-/* =====================
+/* =============================
    INTRO / LOADING / TRANSITIONS
-   ===================== */
+   ============================= */
 #loading-frame {
     position: fixed;
     inset: 0;
