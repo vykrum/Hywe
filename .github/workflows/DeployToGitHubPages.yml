@@ -35,8 +35,8 @@ jobs:
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
       - name: Publish Bolero app (Release + Trimming)
-        # run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false -p:DeployAOT=true
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false
+        # run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false -p:DeployAOT=true
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
