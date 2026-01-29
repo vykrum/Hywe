@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<UseBrowserLink>false</UseBrowserLink>
+		<RunAOTCompilation Condition="'$(DeployAOT)' == 'true'">true</RunAOTCompilation>
 	</PropertyGroup>
 	
 	<ItemGroup>
