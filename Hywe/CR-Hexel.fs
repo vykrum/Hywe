@@ -2,6 +2,7 @@
 /// Collections of hexels in a hexagonal grid form Coxels.
 /// A hexel can have a maximum of six neighbouring/adjacent hexels.
 /// All neighbouring hexels share at least one common edge </summary>
+
 module Hexel
 ///
 
