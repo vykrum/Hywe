@@ -34,9 +34,22 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
-      - name: Publish Bolero app (Release + Trimming)
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false
-        # run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -p:BlazorEnableTimeZoneSupport=false -p:DeployAOT=true
+      - name: Restore workloads
+        run: dotnet workload restore
+
+      - name: Ensure publish dir
+        run: mkdir -p ${{ env.PUBLISH_DIR }}
+
+      - name: List installed workloads (debug)
+        run: dotnet workload list
+
+      - name: Publish Bolero app (Release + Trimming + AOT for GH Pages)
+        run: |
+            dotnet publish ${{ env.PROJECT_PATH }} -c Release \
+              -p:BlazorEnableTimeZoneSupport=false \
+              -p:DeployAOT=true \
+              -p:PublishTrimmed=true \
+              -o ${{ env.PUBLISH_DIR }}
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1

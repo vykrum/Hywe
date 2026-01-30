@@ -22,8 +22,8 @@
 	
 	<ItemGroup>
 		<PackageReference Include="Bolero" Version="0.24.39" />
-		<PackageReference Include="Bolero.Build" Version="0.23.52" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.8" />
+		<PackageReference Include="Bolero.Build" Version="0.24.39" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" />
 		<!--<PackageReference Include="System.Net.Http.Json" Version="8.0.0" />-->
 		<!--<PackageReference Include="System.Text.Json" Version="9.0.0-preview.7.24405.7" />-->
 	</ItemGroup>
