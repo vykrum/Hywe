@@ -51,3 +51,4 @@ publish/
 
 # ---- Misc editor artifacts ----
 *.ionide
+/.github/upgrades/scenarios/new-dotnet-version_a57610
