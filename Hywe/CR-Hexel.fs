@@ -70,6 +70,14 @@ type Sqn =
     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
 ///
 
+
+let (|Vertical|Horizontal|) sqn =
+    match sqn with
+    | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW 
+    | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> Vertical
+    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE 
+    | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> Horizontal
+
 /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel.
 /// Each array begins with the location of Host hexel followed by the rest in a particular order.
 /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2 </summary>
@@ -114,12 +122,8 @@ let identity
 /// <summary> Extract coordinates from hexel. </summary>
 /// <param name="hexel"> Hexel of type AV/RV. </param>
 /// <returns> Tuple of integers representing three dimensional coordinates. </returns>
-let hxlCrd 
-    (hxl : Hxl) = 
-    match hxl with 
-    | AV (a,b,c) -> (a,b,c)
-    | RV (a,b,c) -> (a,b,c)
-    | EX (a,b,c) -> (a,b,c)
+let hxlCrd = function
+    | AV(x,y,z) | RV(x,y,z) | EX(x,y,z) -> (x,y,z)
 ///
 
 /// <summary> Valid Hexels. </summary>
@@ -129,33 +133,25 @@ let hxlCrd
 let hxlVld 
     (sqn : Sqn)
     (hxl : Hxl) = 
-        let validate 
-            sqn 
-            crx 
-            cry 
-            crz = 
-                match sqn with
-                | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
-                    -> match crx,cry with 
-                        | a,b when (b%4 = 0) -> (a + (a%2)), b, crz
-                        | a,b when (a%2 = 0)-> a+1, (b + (b%2)), crz
-                        | _,b-> crx, (b + (b%2)), crz
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> match crx,cry with 
-                        | a,b when (a%4 = 0) -> a, (b + (b%2)), crz
-                        | a,b when (b%2 = 0) -> (a + (a%2)), b+1, crz
-                        | a , _->  (a + (a%2)), cry, crz
-        // Get hexel coordinayes
-        let crx,cry,crz = hxlCrd hxl
-        // Validate coordinates
-        let x1,y1,z1 = validate sqn crx cry crz
-        // Revalidate changed coordinates
-        let vld = validate sqn x1 y1 z1
-        // Hexels with validated coordinates
-        match hxl with
-        | AV(_) -> AV(vld)
-        | RV(_) -> RV(vld)
-        | EX(_) -> EX(vld)
+    let validate s x y z =
+        match s, x, y with
+        // Using our Active Pattern 'Vertical'
+        | Vertical, a, b when b % 4 = 0 -> (a + (a % 2)), b, z
+        | Vertical, a, b when a % 2 = 0 -> a + 1, (b + (b % 2)), z
+        | Vertical, _, b                -> x, (b + (b % 2)), z
+        
+        // Using our Active Pattern 'Horizontal'
+        | Horizontal, a, b when a % 4 = 0 -> a, (b + (b % 2)), z
+        | Horizontal, a, b when b % 2 = 0 -> (a + (a % 2)), b + 1, z
+        | Horizontal, a, _                -> (a + (a % 2)), y, z
+
+    let x, y, z = hxlCrd hxl
+    let vld = validate sqn x y z |> fun (x1, y1, z1) -> validate sqn x1 y1 z1
+
+    match hxl with
+    | AV _ -> AV vld
+    | RV _ -> RV vld
+    | EX _ -> EX vld
 ///
 
 /// <summary> Change all hexel types to a uniform type.</summary>
@@ -165,22 +161,20 @@ let hxlVld
 let hxlUni
     (opt : int)
     (hxl : Hxl[]) = 
-    hxl
-    |> Array.Parallel.map(fun x -> hxlCrd x)
-    |> Array.Parallel.map(fun x -> match opt with 
-                                                    | 1 -> AV x
-                                                    | 2 -> RV x
-                                                    | 3 -> EX x
-                                                    | _ -> AV x)
+    let constructor = 
+            match opt with
+            | 1 -> AV
+            | 2 -> RV
+            | 3 -> EX
+            | _ -> AV
+    hxl |> Array.map (hxlCrd >> constructor)
 ///
 
 /// <summary> Get Hexel from Tuple. </summary>
 /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param>
 let getHxls 
     (hxo : (Hxl*int)[]) = 
-    hxo
-    |> Array.map(fun x 
-                    -> fst x)
+    hxo |> Array.map fst
 ///
 
 /// <summary> Adjacent Hexels. </summary>

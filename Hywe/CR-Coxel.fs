@@ -36,12 +36,9 @@ type Cxl =
 /// <typeparam name="Label">  Name of coxel. </typeparam>
 /// <typeparam name="Refid">  Reference ID. </typeparam>
 /// <typeparam name="Count">  Number of hexels as a string. </typeparam>
-let prpVlu 
-    (prp : Prp) = 
-    match prp with 
-    | Label prp -> prp
-    | Refid prp -> prp
-    | Count prp -> prp.ToString()
+let prpVlu = function 
+    | Label s | Refid s -> s
+    | Count i -> string i
 ///
 
 /// <summary> Creating an array of coxels. </summary>
@@ -55,150 +52,81 @@ let coxel
     (ini : (Hxl*Prp*Prp*Prp)[])
     (occ : Hxl[]) = 
         
-    let bas = Array.Parallel.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
-    let szn = Array.Parallel.map(fun (_,_,y,z) -> y,z) ini
-    let idn = Array.Parallel.map (fun(x,y,_,_)-> x,y) ini
+    let bas = ini |> Array.map (fun (h, _, p, _) -> h, int (prpVlu p))
+    let szn = ini |> Array.map (fun (_, _, y, z) -> y, z)
+    let idn = ini |> Array.map (fun (h, r, _, _) -> h, r)
 
-    let cnt = 
-            bas
-            |> Array.Parallel.map (fun x -> snd x)
-            |> Array.max
-    let acc = Array.chunkBySize 1 bas
-    let oc1 = (Array.append occ (getHxls bas)) |> hxlUni 1 
+    let cnt = bas |> Array.map snd |> function [||] -> 0 | x -> Array.max x
+    let acc = bas |> Array.map (fun x -> [| x |])
+    let oc1 = (Array.append occ (getHxls bas)) |> hxlUni 1
         
     let rec clsts 
-        (hxo: (Hxl*int)[])
-        (elv : int)
-        (occ : Hxl[])
-        (acc:(Hxl*int)[][])
-        (cnt : int)= 
-            
+        (hxo : (Hxl * int)[]) 
+        (elv : int) 
+        (occ : Hxl[]) 
+        (acc : (Hxl * int)[][]) 
+        (cnt : int) = 
+    
         match cnt with 
-        | c when c < 0x1 -> acc
+        | c when c < 1 -> acc
         | _ -> 
-                let occ = 
-                    acc 
-                    |> Array.concat 
-                    |> getHxls
-                    |> Array.append occ
-                    |> Array.append (getHxls hxo)
-                    |> Array.distinct
-                    |> hxlUni 1
+            //Fuse transformation: Find new heads and decrement counts in one pass
+            let hx1 = 
+                acc |> Array.Parallel.mapi (fun i row ->
+                    let (_, count) = hxo.[i]
+                    row 
+                    |> Array.tryFind (fun a -> (available sqn elv a occ) > 0)
+                    |> function
+                       | Some (h, _) -> (h, count - 1)
+                       | None        -> (hxlVld sqn (RV(0,0,elv)), 0xFFFFFFFF)
+                )
 
-                let rpt = Array.Parallel.map (fun x 
-                                                -> (snd x) - 0x1) hxo
-                let hx1 =  
-                    acc
-                    |> Array.Parallel.map (fun x
-                                            -> Array.filter (fun a -> (available sqn elv a occ) > 0x0) x)
-                    |> Array.Parallel.map (fun x 
-                                            -> Array.tryHead x)
-                    |> Array.Parallel.map (fun x 
-                                            -> match x with
-                                                | Some a -> a 
-                                                | None ->  (hxlVld sqn (RV(0,0,elv)),0xFFFFFFFF))                
-                    |> Array.map2 (fun x y 
-                                    -> fst y, x) rpt
-                    
-                let inc = increments sqn elv hx1 occ
+            let inc = increments sqn elv hx1 occ
                             
-                let acc = Array.map2  (fun x y
-                                        -> Array.append x y) 
-                            acc
-                            (Array.chunkBySize 1 inc)
-                // Avoid bridge in Coxel
-                //let acc = ac1 
-                //            |> Array.Parallel.map (fun x -> match Array.length x > 3 with
-                //                                            | false -> x
-                //                                            | true -> 
-                //                                                    let h1 = hxlUni 1 (getHxls x) 
-                //                                                    let h2 = h1.[Array.length h1 - 2]
-                //                                                    let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
-                //                                                    let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
-                //                                                    match b1 && b2 with 
-                //                                                    | false -> x
-                //                                                    | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
-
-                let occ = Array.concat[|getHxls 
-                    (Array.concat [|
-                    Array.concat acc
+            //Efficiently grow the accumulator
+            let nextAcc = 
+                Array.map2 (fun current (newEl: Hxl * int) -> 
+                    Array.append current [| newEl |]) 
+                    acc 
                     inc
-                    hx1|]);occ|] 
-                        |> hxlUni 1
 
-                (clsts hx1 elv occ acc (cnt - 0x1))
-         
+            //Rebuild occupancy: Extract Hxl from (Hxl * int) tuples explicitly
+            let nextOcc = 
+                [| 
+                    yield! occ
+                    yield! (hxo |> Array.map fst) // Extract Hxl from hxo
+                    yield! (inc |> Array.map fst) // Extract Hxl from inc
+                    yield! (hx1 |> Array.map fst) // Extract Hxl from hx1
+                |] 
+                |> Array.distinct
+                |> hxlUni 1
+
+            clsts hx1 elv nextOcc nextAcc (cnt - 1)
+
     let cls = 
         clsts bas elv oc1 acc cnt
-            |> Array.Parallel.map(fun x 
-                                    -> Array.filter(fun (_,z) -> z >= 0) x)
+        |> Array.Parallel.map (fun row -> 
+            row |> Array.filter (fun (_, z) -> z >= 0))
         
-    let cl1 = 
-        cls
-        |> Array.Parallel.map(fun x -> getHxls x)
+    let cl1 = cls |> Array.Parallel.map getHxls
 
- (*  // Avoid single unclustered cell towards the end
-    let hxlElm (sqn:Sqn) (hxl:Hxl[])=
-        let hxo = hxl
-        let avl = 5
-        let hxl = hxlUni 1 hxl
-        let acc = hxl |> Array.filter (fun x -> (available sqn x hxl) < avl)
-        let rec elm (sqn:Sqn) (hxl:Hxl[]) (acc: Hxl[]) = 
-            let hx1 = hxl
-            match (Array.length hx1 = Array.length acc) with
-            | true -> acc
-            | false -> 
-                        let hx1 = acc
-                        let acc = hx1|> Array.filter (fun x -> (available sqn x hx1) < avl)
-                        elm sqn hx1 acc
-        let hx1 = elm sqn hxl acc
-        hxlRst hxo hx1
+    Array.map3 (fun (y, z) (h, r) (cluster: Hxl[]) ->
+            let hx1 = hxlChk sqn elv (Array.append occ cluster) cluster
 
-   let cl01 = 
-        cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x)
-        //|> Array.Parallel.map(fun x -> x |> hxlFil sqn)
-
-    //let cl01 = cl00 |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
- 
-    let cl1 = Array.map2 (fun x y 
-                                -> Array.append [|Array.head x|] y) cl00 cl01*)
-
-    let cxl =
-        Array.map3 (fun x y z ->
-            // z -> candidate hexel cluster (Hxl[])
-            // Ensure we get a safe hx1 from hxlChk
-            let hx1 = z |> hxlChk sqn elv (Array.append occ z)
-
-            // pattern-match hx1 so we never call Array.head on empty array
-            match Array.toList hx1 with
-            | [] ->
-                // fallback when hx1 is empty: choose defaults
+            match hx1 with
+            | [||] ->
                 {
-                    Name = snd x
-                    Rfid = snd y
-                    Size = fst x
-                    Seqn = sqn
-                    Base = identity elv           // fallback base
-                    Hxls = [||]               // no hexels available
+                    Name = z; Rfid = r; Size = y; Seqn = sqn
+                    Base = identity elv; Hxls = [||]
                 }
-            | head :: _ ->
-                // hx1 is non-empty, safe to use head and build Hxls
-                let rest =
-                    match Array.length hx1 > 0 with
-                    | true -> Array.except ([| head; identity elv |]) hx1
-                    | false -> [||] // unreachable because of match, but kept for clarity
-
+            | _ ->
+                let head = hx1.[0]
+                let rest = hx1 |> Array.filter (fun x -> x <> head && x <> identity elv)
                 {
-                    Name = snd x
-                    Rfid = snd y
-                    Size = fst x
-                    Seqn = sqn
-                    Base = head
-                    Hxls = rest
+                    Name = z; Rfid = r; Size = y; Seqn = sqn
+                    Base = head; Hxls = rest
                 }
         ) szn idn cl1
-
-    cxl
 ///
 
 /// <summary> Count open/exposed Hexels. </summary>
@@ -350,17 +278,26 @@ let cxlHxl
                                     | true -> Array.append av01 br01
                                     | false -> Array.append av01 (Array.rev br01)
     // Clockwise sequence
-    let pr02 = match Array.length pr01 > 2 with 
-                    | false -> pr01
-                    | true -> 
-                            let x1,y1,_ = hxlCrd (Array.last pr01)
-                            let x2,y2,_ = hxlCrd (Array.head pr01)
-                            let x3, y3,_ = hxlCrd (pr01[1])
-                            let gs = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
-                            match gs with 
-                            | 0 when x2 > x1 -> pr01
-                            | a when a < 0 -> pr01
-                            | _ -> Array.rev pr01
+    let pr02 = 
+        match pr01 with
+        // If array has 0, 1, or 2 elements, just return it
+        | [| |] | [| _ |] | [| _; _ |] -> pr01 
+        | _ ->
+            let (x1, y1, _) = hxlCrd (Array.last pr01)
+            let (x2, y2, _) = hxlCrd (Array.head pr01)
+            let (x3, y3, _) = hxlCrd pr01.[1]
+        
+            // The cross product (signed area)
+            let gs = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
+
+            // Compare sign to determine orientation
+            match sign gs with
+            | -1 -> pr01                // Already correct orientation
+            | 0  ->                     // Collinear case
+                match x2 > x1 with 
+                | true -> pr01 
+                | false -> Array.rev pr01
+            | _  -> Array.rev pr01      // Opposite orientation, flip it
 
     {|
         Base = cxl.Base
@@ -375,55 +312,30 @@ let cxlHxl
 /// <summary> Coxel Offseted Boundary Wrap </summary>
 /// <param name="cxl"> Coxel. </param>
 /// <returns> Boundary Wrap vertices. </returns>
-let cxlPrm
-    (cxl : Cxl)
-    (elv : int) : (int*int)[] =
-    let rec removeCollinear (points: (int * int)[]) : (int * int)[] =
-        let len = points.Length
-        match len with
-        | 0 | 1 | 2 -> points
-        | _ when len < 100 ->
-            // Small arrays → do sequential recursive cleaning
-            let (x1, y1) = points.[0]
-            let (x2, y2) = points.[1]
-            let (x3, y3) = points.[2]
-            let rest = points.[3..]
-            let cross = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-            match cross with
-            | 0 -> removeCollinear (Array.append [| (x1, y1) |] (Array.append [| (x3, y3) |] rest))
-            | _ -> Array.append [| (x1, y1) |] (removeCollinear points.[1..])
-        | _ ->
-            // Large arrays → split into halves and process in parallel
-            let mid = len / 2
-            let left = points.[..mid]
-            let right = points.[mid..]
+let (|Collinear|Turning|) (p1, p2, p3) =
+    let (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3
+    let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
+    match crossProduct with
+    | 0 -> Collinear
+    | _ -> Turning
 
-            let results =
-                [| left; right |]
-                |> Array.Parallel.map removeCollinear
+let cxlPrm 
+    (cxl : Cxl) 
+    (elv : int) =
+    let rec clean points =
+        match points with
+        // Match 3 points at a time and apply our Active Pattern
+        | p1 :: p2 :: p3 :: rest ->
+            match (p1, p2, p3) with
+            | Collinear -> clean (p1 :: p3 :: rest)      // Drop p2
+            | Turning   -> p1 :: clean (p2 :: p3 :: rest) // Keep p1, move to p2
+        | _ -> points
 
-            let leftCleaned, rightCleaned = results.[0], results.[1]
-
-            // Merge boundaries carefully — ensure no duplicate collinear points at the join
-            let merged =
-                match Array.tryLast leftCleaned, Array.tryHead rightCleaned with
-                | Some (x1, y1), Some (x2, y2) when leftCleaned.Length >= 2 && rightCleaned.Length >= 2 ->
-                    let (x0, y0) = leftCleaned.[leftCleaned.Length - 2]
-                    let (x3, y3) = rightCleaned.[1]
-                    let cross = (y1 - y0) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-                    match cross with
-                    | 0 -> Array.append leftCleaned.[..leftCleaned.Length-2] rightCleaned
-                    | _ -> Array.append leftCleaned rightCleaned
-                | _ -> Array.append leftCleaned rightCleaned
-
-            merged
-
-    let prm =
-        hxlOfs cxl.Seqn elv cxl.Hxls 
-        |> Array.map (fun x -> hxlCrd x) 
-        |> Array.map (fun (x,y,_) -> (x,y))
-
-    removeCollinear prm
+    hxlOfs cxl.Seqn elv cxl.Hxls 
+    |> Array.map (hxlCrd >> (fun (x, y, _) -> x, y))
+    |> Array.toList
+    |> clean
+    |> List.toArray
 ///
 
 /// <summary> Coxel Center </summary>
