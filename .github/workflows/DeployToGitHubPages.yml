@@ -2,7 +2,7 @@ name: DeployToGitHubPages
 
 env:
   PROJECT_PATH: Hywe/Hywe.fsproj
-  PUBLISH_DIR: Hywe/bin/Release/net8.0/publish/wwwroot
+  PUBLISH_DIR: Hywe/bin/Release/net8.0/publish
   REPO_API_URL: https://api.github.com/repos/vykrum/Hywe
 
 on:
@@ -31,44 +31,44 @@ jobs:
       - name: Install wasm-tools workload
         run: dotnet workload install wasm-tools
 
-      - name: Restore dependencies
-        run: dotnet restore ${{ env.PROJECT_PATH }}
-
       - name: Restore workloads
         run: dotnet workload restore
 
-      - name: Ensure publish dir
-        run: mkdir -p ${{ env.PUBLISH_DIR }}
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
 
-      - name: List installed workloads (debug)
-        run: dotnet workload list
+      - name: Ensure wasm-tools-net8 installed
+        run: dotnet workload install wasm-tools-net8 --skip-manifest-update || true
+
+      - name: Ensure publish dir
+        run: mkdir -p ${{ env.PUBLISH_DIR }}/wwwroot
 
       - name: Publish Bolero app (Release + Trimming + AOT for GH Pages)
         run: |
-            dotnet publish ${{ env.PROJECT_PATH }} -c Release \
-              -p:BlazorEnableTimeZoneSupport=false \
-              -p:DeployAOT=true \
-              -p:PublishTrimmed=true \
-              -o ${{ env.PUBLISH_DIR }}
+          dotnet publish ${{ env.PROJECT_PATH }} -c Release \
+            -p:BlazorEnableTimeZoneSupport=false \
+            -p:DeployAOT=true \
+            -p:PublishTrimmed=true \
+            -o ${{ env.PUBLISH_DIR }}
 
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:
-          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          html_path: ${{ env.PUBLISH_DIR }}/wwwroot/index.html
           base_href: /
 
       - name: Create CNAME file
-        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/CNAME
+        run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/wwwroot/CNAME
 
       - name: Compress WASM and DLL files
         run: |
-          find ${{ env.PUBLISH_DIR }} -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 {} \;
-          find ${{ env.PUBLISH_DIR }} -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 {} \;
+          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 {} \;
+          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 {} \;
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ env.PUBLISH_DIR }}
+          path: ${{ env.PUBLISH_DIR }}/wwwroot
 
   deploy:
     needs: build
