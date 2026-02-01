@@ -10,15 +10,17 @@ open Page
 open NodeCode
 open PolygonEditor
 
-// Types
+/// <summary> Specifies the currently visible configuration panel. </summary>
 type ActivePanel =
     | EditorPanel
     | BoundaryPanel
 
+/// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =
     | Interactive
     | Syntax
 
+/// <summary> Central application state for the interface. </summary>
 type Model =
     {
         Sequence: string
@@ -33,6 +35,7 @@ type Model =
         EditorMode: EditorMode
     }
 
+/// <summary> Messages representing all possible state changes in the main module. </summary>
 type Message =
     | SetSqnIndex of int
     | SetStx1 of string
@@ -55,8 +58,10 @@ let mutable private latestWidth    : int = 40
 let mutable private latestHeight   : int = 40
 let mutable private latestPublished  : bool = false
 
-// Keep PolygonEditor state in sync
-let private syncPolygonState (p: PolygonEditorModel) =
+/// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
+/// <param name="p"> The current PolygonEditorModel. </param>
+let private syncPolygonState 
+    (p: PolygonEditorModel) =
     let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
     let w', h', entry', outer', islands' =
         if not p.UseBoundary then
@@ -100,6 +105,11 @@ let initModel =
     }
 
 // Update
+/// <summary> Processes incoming messages to produce a new model and optional commands. </summary>
+/// <param name="js"> The JavaScript runtime for interop. </param>
+/// <param name="message"> The message to handle. </param>
+/// <param name="model"> The current state. </param>
+/// <returns> The updated model and Elmish command. </returns>
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
     | SetSqnIndex i ->
@@ -257,6 +267,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             { model with ActivePanel = BoundaryPanel; stx1 = updatedStx1 }, Cmd.none
 
 // View helpers
+/// <summary> Renders the toggle button for switching between Node and Code views. </summary>
 let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
     let nodeCodeButtonText =
         match model.EditorMode with
@@ -273,6 +284,7 @@ let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
         }
     }
 
+/// <summary> Renders the button to toggle boundary parameter modification. </summary>
 let private viewBoundaryOutputButton (model: Model) (dispatch: Message -> unit) =
     let buttonText =
         match model.ActivePanel with
@@ -288,7 +300,7 @@ let private viewBoundaryOutputButton (model: Model) (dispatch: Message -> unit) 
         }
     }
 
-
+/// <summary> Renders the input section based on the current EditorMode. </summary>
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
     match model.EditorMode with
     | Syntax ->
@@ -318,6 +330,7 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
             }
         }
 
+/// <summary> Renders the primary action button for starting the weaving process. </summary>
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     div {
         attr.style "width: 100%; display:flex; justify-content:center; box-sizing:border-box; padding: 8px 10px;"
@@ -334,6 +347,7 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
         }
     }
 
+/// <summary> Renders the primary action button for starting the weaving process. </summary>
 let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     match model.ActivePanel with
     | BoundaryPanel ->
@@ -373,7 +387,7 @@ let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRun
             }
         }
 
-// Main view
+/// <summary> The main view composition. </summary>
 let view model dispatch (js: IJSRuntime) =
     concat {
         // Node Code button
@@ -392,7 +406,7 @@ let view model dispatch (js: IJSRuntime) =
         viewHywePanel model dispatch js
     }
 
-// Bolero wiring
+/// <summary> Bolero Component entry point for the Hywe application. </summary>
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
