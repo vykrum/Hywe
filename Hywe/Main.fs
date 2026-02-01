@@ -63,11 +63,12 @@ let mutable private latestPublished  : bool = false
 let private syncPolygonState 
     (p: PolygonEditorModel) =
     let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
+    
     let w', h', entry', outer', islands' =
-        if not p.UseBoundary then
-            0, 0, "0,0", "", ""
-        else
-            w, h, entry, outer, islands
+        match p.UseBoundary with
+        | false -> 0, 0, "0,0", "", ""
+        | true  -> w, h, entry, outer, islands
+        
     latestOuterStr   <- outer'
     latestIslandsStr <- islands'
     latestAbsStr     <- absolute
