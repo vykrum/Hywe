@@ -89,17 +89,20 @@ type svtx = Template<
 let polygonCentroid (poly: (int * int)[]) =
     match poly with
     | [||] -> 0, 0
-    | [|p|] -> p
+    | [| p |] -> p
     | _ ->
+        let n = poly.Length
+        // folder: (accumulator) -> (current_element) -> (new_accumulator)
         let (sx, sy, a) =
-            poly
-            |> Array.pairwise
-            |> Array.fold (fun (sx, sy, a) ((x1, y1), (x2, y2)) ->
+            [| 0 .. n - 1 |] // Generate indices to iterate
+            |> Array.fold (fun (accSx, accSy, accA) i ->
+                let (x1, y1) = poly.[i]
+                let (x2, y2) = poly.[(i + 1) % n]
                 let cross = x1 * y2 - x2 * y1
-                (sx + (x1 + x2) * cross,
-                 sy + (y1 + y2) * cross,
-                 a + cross)
-            ) (0, 0, 0)
+                (accSx + (x1 + x2) * cross,
+                 accSy + (y1 + y2) * cross,
+                 accA + cross)
+            ) (0, 0, 0) // Initial state
 
         match a with
         | 0 -> poly.[0]
@@ -107,25 +110,26 @@ let polygonCentroid (poly: (int * int)[]) =
 
 /// Integer point-in-polygon
 let pointInPolygon (px, py) (poly: (int * int)[]) =
-    let rec loop i j acc =
+    let rec check i j acc =
         match i < poly.Length with
         | false -> acc
         | true ->
             let (xi, yi) = poly.[i]
             let (xj, yj) = poly.[j]
-            let crosses =
+            let isIntersecting =
                 match (yi > py, yj > py) with
-                | (true, false)
-                | (false, true) ->
+                | (true, false) | (false, true) ->
                     px < (xj - xi) * (py - yi) / ((yj - yi) + 1) + xi
                 | _ -> false
-            loop (i + 1) i (if crosses then not acc else acc)
+            check (i + 1) i (if isIntersecting then not acc else acc)
+    
     match poly with
     | [||] -> false
-    | _ -> loop 0 (poly.Length - 1) false
+    | _ -> check 0 (poly.Length - 1) false
 
 /// Label position within coxel
-let labelPosition (poly: (int * int)[]) =
+let labelPosition 
+    (poly: (int * int)[]) =
     match poly with
     | [||] -> -10, -10
     | [|p|] -> p
@@ -198,13 +202,6 @@ let svgCoxels
     let sqn = cxl |> Array.map (fun x ->x.Seqn)
     let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
     let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
-
-    // Log crd to console
-(*    crd
-    |> Array.iteri (fun i arr ->
-        let line = arr |> Array.map (fun (x,y) -> $"({x},{y})") |> String.concat "; "
-        printfn "Cxl %d: %s" i line
-    )*)
 
     // Shift and Scale Vertices
     let padd = 5*scl
@@ -306,9 +303,12 @@ let svgCoxels
 /// Renders an extruded polygon on a canvas via JS WebGL
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.
 let triangulatePolygon 
-    (points: (float * float)[]) : (float * float)[][] =
-    if points = null || points.Length < 3 then [||]
-    else
+    (points: (float * float)[]) 
+    : (float * float)[][] =
+    match points with
+    | null -> [||]
+    | p when p.Length < 3 -> [||]
+    | _ ->
         let cross (ax, ay) (bx, by) (cx, cy) =
             (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
 
@@ -316,97 +316,101 @@ let triangulatePolygon
             let c1 = cross (ax, ay) (bx, by) (px, py)
             let c2 = cross (bx, by) (cx, cy) (px, py)
             let c3 = cross (cx, cy) (ax, ay) (px, py)
-            (c1 >= 0.0 && c2 >= 0.0 && c3 >= 0.0)
-            || (c1 <= 0.0 && c2 <= 0.0 && c3 <= 0.0)
+            (c1 >= 0.0 && c2 >= 0.0 && c3 >= 0.0) || (c1 <= 0.0 && c2 <= 0.0 && c3 <= 0.0)
 
-        let area =
-            points
-            |> Array.mapi (fun i (x1, y1) ->
+        let area = 
+            points 
+            |> Array.indexed 
+            |> Array.fold (fun acc (i, (x1, y1)) ->
                 let (x2, y2) = points.[(i + 1) % points.Length]
-                x1 * y2 - x2 * y1)
-            |> Array.sum
+                acc + (x1 * y2 - x2 * y1)) 0.0
 
-        let pts =
-            if area < 0.0 then Array.rev points else Array.copy points
+        let initialPts = 
+            match area < 0.0 with
+            | true -> points |> Array.rev |> Array.toList
+            | false -> points |> Array.toList
 
-        let mutable remaining = [ for p in pts -> p ]
-        let mutable triangles = []
+        // The 'acc' must be a list of arrays (triangles)
+        let rec clip (remaining: (float * float) list) (acc: (float * float) array list) (attempts: int) =
+            match remaining with
+            // Case 1: Exactly 3 points left - this is the final triangle
+            | [p1; p2; p3] -> 
+                ([| p1; p2; p3 |] :: acc) |> List.rev |> List.toArray
+            
+            // Case 2: Safety exit to prevent infinite recursion on invalid polygons
+            | _ when attempts > remaining.Length -> 
+                acc |> List.rev |> List.toArray
+            
+            // Case 3: More than 3 points - try to find an ear
+            | _ ->
+                let n = remaining.Length
+                // We pick 3 consecutive points: the last one, the first, and the second
+                let prev = remaining.[n - 1]
+                let curr = remaining.[0]
+                let next = remaining.[1]
+                
+                let isEar = 
+                    match cross prev curr next > 0.0 with
+                    | false -> false
+                    | true ->
+                        remaining 
+                        |> List.exists (fun p -> 
+                            // A point is inside the triangle if it's not one of the vertices
+                            if p = prev || p = curr || p = next then false
+                            else pointInTriangle prev curr next p)
+                        |> not
 
-        while remaining.Length > 3 do
-            let n = remaining.Length
-            let mutable earFound = false
-            let mutable i = 0
-            while i < n && not earFound do
-                let prev = remaining.[(i + n - 1) % n]
-                let curr = remaining.[i]
-                let next = remaining.[(i + 1) % n]
-                if cross prev curr next > 0.0 then
-                    let others =
-                        remaining
-                        |> List.mapi (fun j p -> j, p)
-                        |> List.filter (fun (j,_) -> j <> i && j <> (i + 1) % n && j <> (i + n - 1) % n)
-                        |> List.map snd
-                    let hasInside =
-                        others |> List.exists (pointInTriangle prev curr next)
-                    if not hasInside then
-                        triangles <- [| prev; curr; next |] :: triangles
-                        remaining <- remaining |> List.filter (fun x -> x <> curr)
-                        earFound <- true
-                i <- i + 1
-            if not earFound then i <- n 
+                match isEar with
+                | true ->
+                    // Remove 'curr' and add triangle to accumulator
+                    clip (remaining.Tail) ([| prev; curr; next |] :: acc) 0
+                | false ->
+                    // Rotate list: move head to tail and increment attempts
+                    let rotated = remaining.Tail @ [remaining.Head]
+                    clip rotated acc (attempts + 1)
 
-        if remaining.Length = 3 then
-            triangles <- [| remaining.[0]; remaining.[1]; remaining.[2] |] :: triangles
-
-        triangles |> List.rev |> List.toArray
+        clip initialPts [] 0
 
 /// Extrudes a polygon
 let polygonMesh 
     (poly2D: (float * float)[]) 
-    (height: float) : (float * float * float)[][] =
-    // --- Default negative box polygon
-    let defaultBox =
-        [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |]
+    (height: float) 
+    : (float * float * float)[][] =
 
-    // --- Safe triangulate using Option
-    let safeTriangulate poly =
-        match poly |> Array.length with
-        | n when n < 3 -> None
-        | _ ->
-            match triangulatePolygon poly with
-            | null | [||] -> None
-            | tris -> Some tris
-
-    // --- Base polygon selection
-    let basePoly =
-        match poly2D |> Array.length with
-        | n when n < 3 -> defaultBox
+    let basePoly = 
+        match poly2D.Length with
+        | n when n < 3 -> [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |]
         | _ -> poly2D
 
-    // --- Top faces
-    let topTris =
-        match safeTriangulate basePoly with
-        | Some tris ->
-            tris |> Array.map (Array.map (fun (x, y) -> (x, y, height)))
-        | None ->
-            // fallback triangulate defaultBox (guaranteed valid)
-            triangulatePolygon defaultBox
-            |> Array.map (Array.map (fun (x, y) -> (x, y, height)))
+    match triangulatePolygon basePoly with
+    | [||] -> [||]
+    | tris ->
+        // 1. Recursive Top Faces
+        let rec getTopFaces i acc =
+            match i < tris.Length with
+            | false -> acc
+            | true ->
+                let tri = tris.[i] |> Array.map (fun (x, y) -> (x, y, height))
+                getTopFaces (i + 1) (tri :: acc)
 
-    // --- Side walls (each edge -> 2 triangles)
-    let walls =
-        basePoly
-        |> Array.mapi (fun i (x1, y1) ->
-            let (x2, y2) = basePoly.[(i + 1) % basePoly.Length]
-            let base1, base2 = (x1, y1, 0.0), (x2, y2, 0.0)
-            let top1, top2 = (x1, y1, height), (x2, y2, height)
-            [|
-                [| base1; base2; top2 |]
-                [| base1; top2; top1 |]
-            |])
-        |> Array.concat
+        // 2. Recursive Side Walls (2 triangles per edge)
+        let rec getSideWalls i acc =
+            match i < basePoly.Length with
+            | false -> acc
+            | true ->
+                let (x1, y1) = basePoly.[i]
+                let (x2, y2) = basePoly.[(i + 1) % basePoly.Length]
+                
+                let wall1 = [| (x1, y1, 0.0); (x2, y2, 0.0); (x2, y2, height) |]
+                let wall2 = [| (x1, y1, 0.0); (x2, y2, height); (x1, y1, height) |]
+                
+                getSideWalls (i + 1) (wall2 :: wall1 :: acc)
 
-    Array.concat [ topTris; walls ]
+        // Combine lists and convert to final array
+        let topList = getTopFaces 0 []
+        let allFaces = getSideWalls 0 topList
+        
+        allFaces |> List.toArray
 
 let extrudePolygons
     (js: IJSRuntime)
@@ -417,73 +421,66 @@ let extrudePolygons
     (elv: int)
     : Async<unit> =
 
-    // Convert Cxl to float polygon
+    // 1. Helper: Point conversion
     let toPoly (x: Cxl) =
         cxlPrm x elv
         |> Geometry.removeSawtooth x.Seqn
         |> Array.map (fun (xi, yi) -> (float xi, float yi))
 
-    // Safe polygon + color sync
-    let polygonsWithColor =
-        cxl
-        |> Array.map toPoly
-        |> Array.zip colors
-        |> Array.choose (fun (clr, poly) ->
-            if poly.Length >= 3 then Some (poly, clr) else None
-        )
+    // 2. Helper: Color normalization
+    let normalizeColor (rgba: string) =
+        let parts = 
+            rgba.Replace("rgba(", "").Replace(")", "").Split(',')
+            |> Array.choose (fun s -> 
+                match System.Double.TryParse(s.Trim()) with
+                | true, v -> Some v
+                | _ -> None)
+        match parts with
+        | [| r; g; b; _ |] 
+        | [| r; g; b |] -> [| r / 255.0; g / 255.0; b / 255.0 |]
+        | _ -> [| 0.8; 0.8; 0.8 |]
 
-    let polygonsFinal, colorsFinal =
-        if polygonsWithColor.Length = 0 then
+    // 3. Process initial data
+    let polygonsWithColor =
+        Array.zip colors (Array.map toPoly cxl)
+        |> Array.choose (function
+            | (clr, poly) when poly.Length >= 3 -> Some (poly, clr)
+            | _ -> None)
+
+    let (polygonsFinal: (float * float)[][]), (colorsFinal: string[]) =
+        match polygonsWithColor with
+        | [||] -> 
             [| [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |] |],
             [| "rgba(200,200,200,1)" |]
-        else
-            polygonsWithColor |> Array.map fst,
-            polygonsWithColor |> Array.map snd
+        | items -> Array.unzip items
 
-    // Safe color normalization
-    let normalizeColor (rgba: string) =
-        rgba.Replace("rgba(", "")
-            .Replace(")", "")
-            .Split(',')
-        |> Array.map (fun s -> s.Trim() |> float)
-        |> fun parts ->
-            match parts with
-            | [| r; g; b; _ |] -> [| r / 255.0; g / 255.0; b / 255.0 |]
-            | [| r; g; b |] -> [| r / 255.0; g / 255.0; b / 255.0 |]
-            | _ -> [| 0.8; 0.8; 0.8 |]
+    // 4. Loop-free Mesh Assembler (Tail Recursive)
+    let rec buildMeshes i accMeshes accEdges accHeights =
+        match i < polygonsFinal.Length with
+        | false -> 
+            (List.rev accMeshes |> List.toArray, 
+             List.rev accEdges |> List.toArray, 
+             List.rev accHeights |> List.toArray)
+        | true ->
+            let h = initHeight - float i * 0.01
+            let poly = polygonsFinal.[i]
+            
+            // Generate mesh and transform for WebGL (Flipping Y)
+            let mesh = 
+                polygonMesh poly h 
+                |> Array.map (Array.map (fun (x, y, z) -> [| x; -y; z |]))
+            
+            let edge = poly |> Array.map (fun (x, y) -> [| x; -y |])
+            
+            buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights)
 
+    // 5. Final Async Execution
     async {
         do! Async.Sleep 30
+        
+        let colorsJs = colorsFinal |> Array.map normalizeColor
+        let meshes, edges, heights = buildMeshes 0 [] [] []
 
-        // Incremental heights
-        let heights =
-            polygonsFinal
-            |> Array.mapi (fun i _ -> initHeight - float i * 0.01)
-
-        // JS color array
-        let colorsJs =
-            colorsFinal |> Array.map normalizeColor
-
-        // Mesh generation
-        let meshes =
-            polygonsFinal
-            |> Array.mapi (fun i poly ->
-                polygonMesh poly heights.[i]
-            )
-
-        // JS structure (triangles -> 3D coords)
-        let meshesJs =
-            meshes
-            |> Array.map (Array.map (Array.map (fun (x, y, z) -> [| x; -y; z |])))
-
-        // Edge polygons (same polygons used for top/bottom/vertical edges) ---
-        let edgePolygonsJs =
-            polygonsFinal
-            |> Array.map (Array.map (fun (x, y) -> [| x; -y |]))  // match coordinate inversion in meshesJs
-
-        // Invoke JS safely
-        do!
-            js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshesJs, colorsJs, heights,edgePolygonsJs).AsTask()
+        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges).AsTask()
             |> Async.AwaitTask
     }
-
