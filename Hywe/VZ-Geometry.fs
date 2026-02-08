@@ -281,6 +281,147 @@ let removeSawtooth
     |> Array.collect id
 ///
 
+/// <summary> Calculates the signed area of a polygon using the Shoelace formula. </summary>
+/// <param name="poly"> Array of (x, y) coordinates defining the polygon. </param>
+/// <returns> The calculated area as a float. </returns>
+let polygonArea 
+    (poly: (int * int)[]) =
+    match poly with
+    | [||] | [|_|] | [|_; _|] -> 0.0
+    | pts ->
+        let n = pts.Length
+        let area = 
+            pts 
+            |> Array.mapi (fun i (x, y) ->
+                let (nx, ny) = pts.[(i + 1) % n]
+                (x * ny) - (nx * y))
+            |> Array.sum
+        float area / 2.0
+
+///
+
+/// <summary> Calculates the net area of a polygon by subtracting the area of holes. </summary>
+/// <param name="outer"> Coordinates of the outer boundary. </param>
+/// <param name="holes"> Array of coordinate arrays defining interior holes. </param>
+/// <returns> The net area as a float. </returns>
+let polygonWithHolesArea 
+    (outer: (int * int)[]) 
+    (holes: (int * int)[][]) =
+
+    match outer, holes with
+    | [||], _ -> 0.0
+    | _, [||] -> abs (polygonArea outer)
+    | outerPts, holePolys ->
+        let outerArea = abs (polygonArea outerPts)
+        let holesArea =
+            holePolys
+            |> Array.sumBy (fun hole ->
+                match hole with
+                | [||] | [| _ |] | [| _; _ |] -> 0.0
+                | _ -> abs (polygonArea hole))
+        outerArea - holesArea
+
+/// <summary> Ensures that a polygon vertex array is closed by appending the first vertex to the end if necessary. </summary>
+let ensureClosed (pts: (int*int)[]) =
+    match pts with
+    | [||] -> pts
+    | _ ->
+        let first = pts.[0]
+        let last = pts.[pts.Length-1]
+        if first = last then pts
+        else Array.append pts [| first |]
+
+/// <summary> Removes consecutive duplicate points from a polygon vertex array. </summary>
+let dedupeSequential (pts: (int*int)[]) =
+    pts
+    |> Array.fold (fun acc p ->
+        match acc with
+        | [] -> [p]
+        | h::_ when h = p -> acc
+        | _ -> p :: acc
+    ) []
+    |> List.rev
+    |> Array.ofList
+
+/// <summary> Normalizes the winding order of a polygon to be either clockwise or counterclockwise. </summary>
+let normalizeWinding (ccw: bool) (pts: (int*int)[]) =
+    let pts = ensureClosed pts |> dedupeSequential
+    if pts.Length < 4 then pts
+    else
+        let a = polygonArea pts
+        match ccw, a > 0.0 with
+        | true, false -> Array.rev pts
+        | false, true -> Array.rev pts
+        | _ -> pts
+
+/// <summary> Computes the bounding box of a set of points. </summary>
+let bounds (pts: (int*int)[]) =
+    let xs = pts |> Array.map fst
+    let ys = pts |> Array.map snd
+    Array.min xs, Array.min ys, Array.max xs, Array.max ys
+
+/// <summary> Computes the centroid (geometric center) of a set of points. </summary>
+let centroid (pts: (int*int)[]) =
+    let n = float pts.Length
+    let sx = pts |> Array.sumBy (fst >> float)
+    let sy = pts |> Array.sumBy (snd >> float)
+    sx / n, sy / n
+
+/// <summary> Determines if a point is inside a polygon using the ray-casting algorithm. </summary>
+let pointInPolygon (px,py) (poly:(int*int)[]) =
+    let rec loop i j inside =
+        if i = poly.Length then inside else
+        let xi, yi = poly.[i]
+        let xj, yj = poly.[j]
+        let intersect =
+            ((yi > py) <> (yj > py)) &&
+            (px < (xj-xi) * (py-yi) / (yj-yi+1) + xi)
+        loop (i+1) i (if intersect then not inside else inside)
+    loop 0 (poly.Length-1) false
+
+/// <summary> Determines if two line segments intersect. </summary>
+let ccw (ax,ay) (bx,by) (cx,cy) =
+    (cy-ay)*(bx-ax) > (by-ay)*(cx-ax)
+
+/// <summary> Checks if the line segments AB and CD intersect. </summary>
+let segmentsIntersect a b c d =
+    ccw a c d <> ccw b c d && ccw a b c <> ccw a b d
+
+/// <summary> Determines if a polygon has self-intersecting edges. </summary>
+let hasSelfIntersections (pts:(int*int)[]) =
+    let p = ensureClosed pts
+    let n = p.Length-1
+    seq {
+        for i in 0..n-2 do
+            for j in i+2..n-2 do
+                if i <> 0 || j <> n-2 then
+                    yield segmentsIntersect p.[i] p.[i+1] p.[j] p.[j+1]
+    } |> Seq.exists id
+
+/// <summary> Determines if three points are collinear. </summary>
+let isCollinear (ax,ay) (bx,by) (cx,cy) =
+    (bx-ax)*(cy-ay) = (by-ay)*(cx-ax)
+
+let removeCollinear (pts:(int*int)[]) =
+    let p = ensureClosed pts
+    [|
+        for i in 1..p.Length-2 do
+            let a = p.[i-1]
+            let b = p.[i]
+            let c = p.[i+1]
+            if not (isCollinear a b c) then yield b
+    |]
+    |> fun mid -> Array.concat [| [|p.[0]|]; mid; [|p.[p.Length-1]|] |]
+
+/// <summary> Cleans a polygon by deduplicating vertices, ensuring closure, removing collinear points, and eliminating sawtooth artifacts. </summary>
+let cleanPolygon sqn pts =
+    pts
+    |> dedupeSequential
+    |> ensureClosed
+    |> removeCollinear
+    |> removeSawtooth sqn
+    |> normalizeWinding true
+
 /// <summary> Hexel Polygon </summary>
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="vtx"> Integer coordinates of polygon vertices. </param> 
@@ -302,9 +443,7 @@ let hxlPgn
     let vt1 = Array.concat [| [|xx,yy|]; Array.tail vtx |]
 
     // Ensure closure
-    let verts =
-        if vt1.[0] = vt1.[vt1.Length - 1] then vt1
-        else Array.append vt1 [|vt1.[0]|]
+    let verts = cleanPolygon sqn vt1
 
     // Build polygon edges, chaining each segment
     let acc = ResizeArray<Hxl>()
@@ -321,42 +460,3 @@ let hxlPgn
 
     acc.ToArray()
 ///
-
-/// <summary> Calculates the signed area of a polygon using the Shoelace formula. </summary>
-/// <param name="poly"> Array of (x, y) coordinates defining the polygon. </param>
-/// <returns> The calculated area as a float. </returns>
-let polygonArea 
-    (poly: (int * int)[]) =
-    match poly with
-    | [||] | [|_|] | [|_; _|] -> 0.0
-    | pts ->
-        let n = pts.Length
-        let area = 
-            pts 
-            |> Array.mapi (fun i (x, y) ->
-                let (nx, ny) = pts.[(i + 1) % n]
-                (x * ny) - (nx * y))
-            |> Array.sum
-        float (abs area) / 2.0
-///
-
-/// <summary> Calculates the net area of a polygon by subtracting the area of holes. </summary>
-/// <param name="outer"> Coordinates of the outer boundary. </param>
-/// <param name="holes"> Array of coordinate arrays defining interior holes. </param>
-/// <returns> The net area as a float. </returns>
-let polygonWithHolesArea 
-    (outer: (int * int)[]) 
-    (holes: (int * int)[][]) =
-    match outer, holes with
-    | [||], _ -> 0.0
-    | _, [||] -> polygonArea outer
-    | outerPts, holePolys ->
-        let outerArea = polygonArea outerPts
-        let holesArea =
-            holePolys
-            |> Array.sumBy (fun hole ->
-                match hole with
-                | [||] | [| _ |] | [| _; _ |] -> 0.0
-                | _ -> polygonArea hole)
-        outerArea - holesArea
-

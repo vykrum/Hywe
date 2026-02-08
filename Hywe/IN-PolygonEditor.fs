@@ -34,6 +34,10 @@ type PolygonEditorModel =
         DraggingEntry: bool
     }
 
+type EditorState =
+    | Stable of PolygonEditorModel
+    | FreshlyImported of PolygonEditorModel
+
 type PolygonEditorMessage =
     | ToggleBoundary of bool
     | ToggleAbsolute of bool
@@ -47,6 +51,7 @@ type PolygonEditorMessage =
     | StartDragEntry of MouseEventArgs
     | MoveDragEntry of MouseEventArgs
     | EndDragEntry
+    | ImportFromSyntax of string * string * string * string * int * int
 
 // ---------- Geometry helpers ----------
 let inline sqr x = x * x
@@ -169,6 +174,49 @@ let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
         { X = outer |> Array.averageBy (fun p -> p.X)
           Y = outer |> Array.averageBy (fun p -> p.Y) }
 
+// ---------- Import helpers ----------
+
+let parsePoint (s: string) : Result<Point, string> =
+    match s.Split(',', StringSplitOptions.RemoveEmptyEntries) with
+    | [| x; y |] ->
+        match Double.TryParse x, Double.TryParse y with
+        | (true, xv), (true, yv) ->
+            Ok { X = xv * 10.0; Y = yv * 10.0 }
+        | _ -> Error $"Invalid point: {s}"
+    | _ -> Error $"Invalid point format: {s}"
+
+let sequenceResults (arr: Result<'a,'e> array) : Result<'a array,'e> =
+    let buffer = ResizeArray<'a>()
+    let mutable err : 'e option = None
+    let mutable i = 0
+
+    while i < arr.Length && err.IsNone do
+        match arr.[i] with
+        | Ok v -> buffer.Add v
+        | Error e -> err <- Some e
+        i <- i + 1
+
+    match err with
+    | Some e -> Error e
+    | None -> Ok (buffer.ToArray())
+
+let parsePoly (s: string) : Result<Point[], string> =
+    s.Split(',', StringSplitOptions.RemoveEmptyEntries)
+    |> Array.chunkBySize 2
+    |> Array.map (fun a -> parsePoint (String.concat "," a))
+    |> sequenceResults
+
+let parseIslands (s: string) : Result<Point[][], string> =
+    if String.IsNullOrWhiteSpace s then Ok [||]
+    else
+        s.Split('-', StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map (fun isl ->
+            isl.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            |> Array.chunkBySize 2
+            |> Array.map (fun a -> parsePoint (String.concat "," a))
+            |> sequenceResults)
+        |> sequenceResults
+
 // ---------- Utility functions ----------
 let clampPt (model: PolygonEditorModel) (pt: Point) =
     {
@@ -178,7 +226,6 @@ let clampPt (model: PolygonEditorModel) (pt: Point) =
 
 let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
     { model with Dragging = None; DragOffset = None }
-
 
 // ---------- JS interop helpers ----------
 let getSvgInfo (js: IJSRuntime) =
@@ -281,6 +328,46 @@ let exportPolygonStrings (model: PolygonEditorModel) : string * string * string 
     let h = int (System.Math.Round(model.LogicalHeight/ 10.0))
     outer, islands, absolute, entry, w, h
 
+// ---------- Import function ----------
+let importPolygonStrings
+    (outerStr: string)
+    (islandsStr: string)
+    (absStr: string)
+    (entryStr: string)
+    (w: int)
+    (h: int)
+    (model: PolygonEditorModel)
+    : Result<PolygonEditorModel, string> =
+
+    match parsePoly outerStr,
+          parseIslands islandsStr,
+          parsePoint entryStr with
+
+    | Ok outer, Ok islands, Ok entry ->
+
+        let width = float w * 10.0
+        let height = float h * 10.0
+
+        let fixedEntry = ensureEntryWithin outer islands entry
+
+        Ok
+            { model with
+                Outer = outer
+                Islands = islands
+                EntryPoint = fixedEntry
+                LogicalWidth = width
+                LogicalHeight = height
+                UseAbsolute = absStr = "1"
+                UseBoundary = true
+                PolygonEnabled = true
+                Dragging = None
+                DragOffset = None
+                SvgInfo = None }
+
+    | Error e, _, _ -> Error e
+    | _, Error e, _ -> Error e
+    | _, _, Error e -> Error e
+
 
 // ---------- Initial Model ----------
 
@@ -295,6 +382,7 @@ let initOuter = [| { X = 0.0; Y = 0.0 }
                    { X = initWidth; Y = 0.0 }
                    { X = initWidth; Y = initHeight }
                    { X = 0.0; Y = initHeight } |]
+let initIslands = Array.empty
 
 let initModel =
     {
@@ -304,7 +392,7 @@ let initModel =
         LogicalWidth = initWidth
         LogicalHeight = initHeight
         Outer = initOuter
-        Islands = Array.empty
+        Islands = initIslands
         Dragging = None
         DragOffset = None
         SvgInfo = None
@@ -668,7 +756,14 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             return { model with DraggingEntry = false; DragOffset = None }
         }
 
-// ---------- View (lighter-weight) ----------
+    | ImportFromSyntax (outer, islands, abs, entry, w, h) ->
+        async {
+            match importPolygonStrings outer islands abs entry w h model with
+            | Ok m -> return snapshot m
+            | Error _ -> return model
+        }
+
+// ---------- View ----------
 type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
 type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
 type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="0.1" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">

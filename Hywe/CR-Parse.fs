@@ -3,7 +3,9 @@
 open Hexel
 open Coxel
 open Geometry
+open PolygonEditor
 open System
+open Microsoft.FSharp.Reflection
 
 // Sample Space Program Input Format
 let spaceStr =
@@ -13,6 +15,30 @@ let spaceStr =
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
 ///
+
+let tryParseUnion<'T> (s: string) : 'T option =
+    if not (FSharpType.IsUnion typeof<'T>) then None
+    else
+        FSharpType.GetUnionCases typeof<'T>
+        |> Array.tryFind (fun c -> c.Name = s)
+        |> Option.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> 'T)
+
+let tryParseFloat (s: string) =
+    match Double.TryParse s with
+    | true, v -> Some v
+    | _ -> None
+
+let tryParseInt (s: string) =
+    match Int32.TryParse s with
+    | true, v -> Some v
+    | _ -> None
+
+let getAttr key f fallback (m: Map<string,string>) =
+    m
+    |> Map.tryFind key
+    |> Option.bind (fun v -> try Some (f v) with _ -> None)
+    |> Option.defaultValue fallback
+
 
 /// <summary> Categorize constituent Hexels within a Coxel. 
 ///</summary>
@@ -114,7 +140,44 @@ let spaceSeq
                                                             -> x, max hxlAreaX (fst y), snd y))z)
     spcAt1,spcKey
 
-///    
+///
+
+/// Parses "0,0,10,0-2,2,4,4" into float segments
+let parsePolygon (s: string) : (float * float)[] =
+    s.Split(',', StringSplitOptions.RemoveEmptyEntries)
+    |> Array.choose (fun x ->
+        match Double.TryParse(x.Trim()) with
+        | true, v -> Some v
+        | _ -> None)
+    |> fun nums ->
+        match nums.Length % 2 with
+        | 0 ->
+            nums
+            |> Array.chunkBySize 2
+            |> Array.choose (function
+                | [| a; b |] -> Some (a, b)
+                | _ -> None)
+        | _ -> 
+            // better to fail loudly during dev
+            [||]
+
+let parsePolyIslands (s: string) : (float * float)[][] =
+    match String.IsNullOrWhiteSpace s with
+    | true -> [||]
+    | false ->
+        s.Split('-', StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map parsePolygon
+
+let polyToPoints scale (seg: (float*float)[]) =
+    seg |> Array.map (fun (x,y) -> { Point.X = x * scale; Y = y * scale })
+
+let parseCoords value =
+    parsePolygon value
+    |> polyToPoints 10.0
+
+let parseIslands value =
+    parsePolyIslands value
+    |> Array.map (polyToPoints 10.0)
 
 /// <summary> Generate coxels based on string data. </summary>
 /// <param name="seq"> Sequence. </param>
@@ -126,36 +189,14 @@ let spaceCxl
     (str : string) = 
     
     // Attributes
-    let spcAt1 = fst (spaceSeq str)
+    let spcAt1, spcTree = spaceSeq str
+
     // Attribute Q for Sequence
-    let seq = match spcAt1 |> Map.tryFind "Q" with 
-                | Some a -> match a with 
-                            | "VRCWEE" -> VRCWEE
-                            | "VRCCEE" -> VRCCEE
-                            | "VRCWSE" -> VRCWSE
-                            | "VRCCSE" -> VRCCSE
-                            | "VRCWSW" -> VRCWSW
-                            | "VRCCSW" -> VRCCSW
-                            | "VRCWWW" -> VRCWWW
-                            | "VRCCWW" -> VRCCWW
-                            | "VRCWNW" -> VRCWNW
-                            | "VRCCNW" -> VRCCNW
-                            | "VRCWNE" -> VRCWNE
-                            | "VRCCNE" -> VRCCNE
-                            | "HRCWNN" -> HRCWNN
-                            | "HRCCNN" -> HRCCNN
-                            | "HRCWNE" -> HRCWNE
-                            | "HRCCNE" -> HRCCNE
-                            | "HRCWSE" -> HRCWSE
-                            | "HRCCSE" -> HRCCSE
-                            | "HRCWSS" -> HRCWSS
-                            | "HRCCSS" -> HRCCSS
-                            | "HRCWSW" -> HRCWSW
-                            | "HRCCSW" -> HRCCSW
-                            | "HRCWNW" -> HRCWNW
-                            | "HRCCNW" -> HRCCNW
-                            | _        -> VRCWEE
-                | None -> VRCWEE
+    let seq =
+        spcAt1
+        |> Map.tryFind "Q"
+        |> Option.bind tryParseUnion<Sqn>
+        |> Option.defaultValue VRCWEE
 
     // Attribute L for Elevation
     let elv = match spcAt1 |> Map.tryFind "L" with 
@@ -176,46 +217,29 @@ let spaceCxl
                             | false -> bdWd
                     | None -> bdWd
 
-    let parsePolygonString (s: string) : (int * int)[][] =
-        let parseSegment (segment: string) =
-            segment.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            |> Array.map (fun x -> x.Trim())
-            |> Array.choose (fun x ->
-                match System.Int32.TryParse(x) with
-                | true, v -> Some v
-                | false, _ -> None
-            )
-            |> fun numbers ->
-                match numbers with
-                | [||] -> [||]
-                | ns when ns.Length % 2 <> 0 -> [||]
-                | ns ->
-                    ns
-                    |> Array.chunkBySize 2
-                    |> Array.map (function
-                        | [|a; b|] -> a, b
-                        | _ -> failwith "Unexpected chunk length"
-                    )
-
-        match String.IsNullOrWhiteSpace(s) with
-        | true -> [||]
-        | false ->
-            s.Split('-', StringSplitOptions.RemoveEmptyEntries)
-            |> Array.map parseSegment
-
     // Attribute O for Outer Boundary Vertices
-    let bdOu = match spcAt1 |> Map.tryFind "O" with 
-                | Some a -> Array.concat (parsePolygonString a)
-                | None -> match bdWd = 0 with 
-                            | true -> [||]
-                            | false -> 
-                                    let b = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
-                                    Array.concat (parsePolygonString b)
+    let bdOu =
+        match spcAt1 |> Map.tryFind "O" with 
+        | Some a ->
+            parsePolygon a
+            |> Array.map (fun (x,y) -> int x, int y)
+
+        | None ->
+            match bdWd = 0 with 
+            | true -> [||]
+            | false -> 
+                let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
+                parsePolygon a
+                |> Array.map (fun (x,y) -> int x, int y)
 
     // Attribute I for Island Boundary Vertices
-    let bdIs = match spcAt1 |> Map.tryFind "I" with 
-                | Some a -> parsePolygonString a
-                | None -> [||]
+    let bdIs =
+        match spcAt1 |> Map.tryFind "I" with 
+        | Some a ->
+            parsePolyIslands a
+            |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
+        | None -> [||]
+
 
     // Attribute E for Entry Hexel
     let bsHx =
@@ -240,8 +264,7 @@ let spaceCxl
                         |> Array.last
     
     // Total Count
-    let cxlCnt = spaceSeq str 
-                |> snd 
+    let cxlCnt = spcTree
                 |> Array.concat
                 |> Array.Parallel.map (fun (_,x,_) -> x)
                 |> Array.sum |> float
@@ -272,8 +295,7 @@ let spaceCxl
 
     // Parse Space String
     let tree01 = 
-        spaceSeq str
-        |> snd
+        spcTree
         |> Array.Parallel.map (fun x -> Array.Parallel.map (fun (a,b,c) -> Refid a, Count (int (float b * bdPr)), Label c) x)
 
     // Flatten and guard against empty parse results
@@ -357,3 +379,61 @@ let spaceCxl
             | false -> cxCxCx seq tree01 oc1 ac1
 
     result,Array.append [|bdOu|] bdIs
+
+let private extractAttrsFromHyw (text: string) =
+    let m = System.Text.RegularExpressions.Regex.Match(text, @"\(([^)]*)\)")
+    match m.Success with
+    | false -> Map.empty
+    | true ->
+        m.Groups.[1].Value.Split('/', StringSplitOptions.RemoveEmptyEntries)
+        |> Array.choose (fun token ->
+            match token.Split('=', 2) with
+            | [| k; v |] -> Some (k.Trim(), v.Trim())
+            | _ -> None)
+        |> Map.ofArray
+
+/// Parses the .hyw content and returns an updated PolygonEditorModel
+let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
+
+    let attrs = extractAttrsFromHyw content
+
+    let baseModel = 
+        { current with 
+            Islands = [||]
+            UseBoundary = true
+            PolygonEnabled = true }
+
+    let finalModel =
+        attrs
+        |> Map.fold (fun m key v ->
+            match key with
+            | "W" ->
+                match tryParseFloat v with
+                | Some num -> { m with LogicalWidth = num * 10.0 }
+                | None -> m
+
+            | "H" ->
+                match tryParseFloat v with
+                | Some num -> { m with LogicalHeight = num * 10.0 }
+                | None -> m
+
+            | "O" ->
+                match parseCoords v with
+                | pts when pts.Length > 0 -> { m with Outer = pts }
+                | _ -> m
+
+            | "I" ->
+                { m with Islands = parseIslands v }
+
+            | "A" ->
+                { m with UseAbsolute = (v = "1") }
+
+            | "E" ->
+                match parseCoords v with
+                | [| pt |] -> { m with EntryPoint = pt }
+                | _ -> m
+
+            | _ -> m
+        ) baseModel
+
+    FreshlyImported finalModel

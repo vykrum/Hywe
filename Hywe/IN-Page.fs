@@ -63,6 +63,7 @@ let deriveData (stx: string) (elv : int): DerivedData =
         cxlAvl = cxlAvl
         cxClr1 = cxClr1
         cxOuIl = cxOuIl
+
     }
 
 ///

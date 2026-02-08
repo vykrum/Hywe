@@ -30,7 +30,7 @@ type Model =
         ParseError: bool
         Derived : DerivedData
         IsHyweaving: bool
-        PolygonEditor: PolygonEditorModel
+        PolygonEditor: EditorState
         ActivePanel: ActivePanel
         EditorMode: EditorMode
     }
@@ -48,14 +48,17 @@ type Message =
     | SetActivePanel of ActivePanel
     | ToggleEditorMode
     | ToggleBoundary
+    | ExportRequested
+    | ImportRequested
+    | FileImported of string
 
 // Polygon export consumer
 let mutable private latestOuterStr   : string = ""
 let mutable private latestIslandsStr : string = ""
 let mutable private latestAbsStr     : string = "1"
-let mutable private latestEntryStr   : string = "0,0"
-let mutable private latestWidth    : int = 40
-let mutable private latestHeight   : int = 40
+let mutable private latestEntryStr   : string = "5,5"
+let mutable private latestWidth    : int = 30
+let mutable private latestHeight   : int = 30
 let mutable private latestPublished  : bool = false
 
 /// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
@@ -100,7 +103,7 @@ let initModel =
         LastValidTree = initialTree
         Derived = deriveData initialOutput 0
         IsHyweaving = false
-        PolygonEditor = PolygonEditor.initModel
+        PolygonEditor = Stable PolygonEditor.initModel
         ActivePanel = EditorPanel
         EditorMode = Interactive
     }
@@ -131,7 +134,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | RunHyweave ->
         let updatedStx1 =
             match model.EditorMode with
-            | Syntax -> model.stx1
+            | Syntax ->
+                let inner = 
+                    match model.PolygonEditor with 
+                    | Stable m | FreshlyImported m -> m
+
+                let newState = Parse.importFromHyw model.stx1 inner
+                let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                syncPolygonState finalPoly
+                model.stx1
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
@@ -143,7 +154,24 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     latestOuterStr
                     latestIslandsStr
 
-        let newModel = { model with stx1 = updatedStx1; Derived = deriveData updatedStx1 elv }
+        let newModel =
+            match model.EditorMode with
+            | Syntax ->
+                let inner = 
+                    match model.PolygonEditor with 
+                    | Stable m | FreshlyImported m -> m
+
+                let newState = Parse.importFromHyw model.stx1 inner
+
+                { model with 
+                    stx1 = updatedStx1
+                    Derived = deriveData updatedStx1 elv
+                    PolygonEditor = newState }
+
+            | Interactive ->
+                { model with 
+                    stx1 = updatedStx1
+                    Derived = deriveData updatedStx1 elv }
         newModel,
         Cmd.OfAsync.perform
             (fun () -> async {
@@ -168,15 +196,19 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with Tree = updatedTree; stx1 = newOutput }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
+        let currentInnerModel = 
+            match model.PolygonEditor with
+            | Stable m | FreshlyImported m -> m
+
         model,
         Cmd.OfAsync.perform
             (PolygonEditor.update js subMsg)
-            model.PolygonEditor
+            currentInnerModel
             PolygonEditorUpdated
 
-    | PolygonEditorUpdated newPolygonModel ->
-        syncPolygonState newPolygonModel
-        { model with PolygonEditor = newPolygonModel }, Cmd.none
+    | PolygonEditorUpdated newModel ->
+        syncPolygonState newModel
+        { model with PolygonEditor = Stable newModel }, Cmd.none
 
     | SetActivePanel panel ->
         { model with ActivePanel = panel }, Cmd.none
@@ -239,33 +271,92 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | ToggleBoundary ->
+        let updatedStx1 = NodeCode.getOutput 
+                            model.Tree model.Sequence 
+                            latestWidth latestHeight latestAbsStr 
+                            latestEntryStr latestOuterStr latestIslandsStr
+
         match model.ActivePanel with
         | BoundaryPanel ->
-            // Leaving Boundary -> go back to EditorPanel
-            let updatedStx1 = NodeCode.getOutput
-                                model.Tree
-                                model.Sequence
-                                latestWidth
-                                latestHeight
-                                latestAbsStr
-                                latestEntryStr
-                                latestOuterStr
-                                latestIslandsStr
-            syncPolygonState model.PolygonEditor
             { model with ActivePanel = EditorPanel; stx1 = updatedStx1 }, Cmd.none
 
         | EditorPanel ->
-            // Enter Boundary: remember nothing special - just switch panel
-            let updatedStx1 = NodeCode.getOutput
-                                model.Tree
-                                model.Sequence
-                                latestWidth
-                                latestHeight
-                                latestAbsStr
-                                latestEntryStr
-                                latestOuterStr
-                                latestIslandsStr
-            { model with ActivePanel = BoundaryPanel; stx1 = updatedStx1 }, Cmd.none
+            let currentInner = 
+                match model.PolygonEditor with 
+                | Stable m | FreshlyImported m -> m
+        
+            // 1. Parse the text into a new model
+            let updatedEditorState = Parse.importFromHyw updatedStx1 currentInner
+        
+            // 2. Extract the record to sync with JS/Canvas
+            let finalPoly = 
+                match updatedEditorState with 
+                | FreshlyImported m | Stable m -> m
+
+            { model with 
+                ActivePanel = BoundaryPanel
+                stx1 = updatedStx1 
+                // 3. MUST ASSIGN THE NEW STATE HERE
+                PolygonEditor = updatedEditorState 
+            }, 
+            Cmd.ofMsg (PolygonEditorUpdated finalPoly)
+    
+    | ExportRequested ->
+        let doExport () =
+            task {
+                do! js.InvokeVoidAsync("downloadHywFile", "design.hyw", model.stx1).AsTask()
+            }
+        model, Cmd.OfTask.perform doExport () (fun _ -> FinishHyweave)
+
+    | ImportRequested ->
+        let doClick () =
+            task {
+                do! js.InvokeVoidAsync("clickElement", "hyw-import-hidden").AsTask()
+            }
+        model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
+
+    | FileImported content ->
+        match System.String.IsNullOrWhiteSpace content with
+        | true -> model, Cmd.none
+        | false ->
+            let clean = content.Trim()
+            
+            // 1. Sync Node Tree (Reflects in "Node" view)
+            let newTree = 
+                clean 
+                |> CodeNode.preprocessCode 
+                |> fun processed ->
+                    try 
+                        let tree = CodeNode.parseOutput processed
+                        let laidOut = NodeCode.layoutTree tree 0 (ref 100.0)
+                        { Root = laidOut; HideInstructions = model.Tree.HideInstructions }
+                    with _ -> model.Tree // Fallback to current if parse fails
+
+            // 2. Sync Polygon Editor (Reflects in "Boundary" view)
+            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newState = Parse.importFromHyw clean inner
+            let finalPoly = match newState with FreshlyImported m | Stable m -> m
+            
+            // 3. Sync Global Mutables (Reflects in 3D Canvas)
+            syncPolygonState finalPoly
+
+            // 4. Update the Model
+            { model with 
+                stx1 = clean
+                Tree = newTree
+                LastValidTree = newTree
+                Derived = deriveData clean elv 
+                PolygonEditor = newState 
+                ParseError = false
+            }, 
+            Cmd.batch [
+                // Force UI components to notice the update
+                Cmd.ofMsg (PolygonEditorUpdated finalPoly)
+                
+                Cmd.OfTask.attempt (fun () -> task { 
+                    do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
+                }) () (fun _ -> FinishHyweave)
+            ]
 
 // View helpers
 /// <summary> Renders the toggle button for switching between Node and Code views. </summary>
@@ -310,8 +401,9 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
             textarea {
                 attr.``class`` "hyweSyntax"
-                on.input (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
-                text model.stx1
+                attr.key (model.stx1.GetHashCode().ToString())
+                attr.value model.stx1 
+                on.change (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
             }
         }
     | Interactive ->
@@ -352,11 +444,20 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
 let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     match model.ActivePanel with
     | BoundaryPanel ->
-        div {
-            attr.id "hywe-polygon-editor"
-            attr.style "width:100%; height:auto; margin:5px;"
-            PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
-        }
+        // Pattern match on the state to apply the refresh key
+        match model.PolygonEditor with
+        | FreshlyImported inner ->
+            div {
+                attr.id "hywe-polygon-editor"
+                attr.key "fresh-sync" 
+                PolygonEditor.view inner (PolygonEditorMsg >> dispatch) js
+            }
+        | Stable inner ->
+            div {
+                attr.id "hywe-polygon-editor"
+                attr.key "stable-ui"
+                PolygonEditor.view inner (PolygonEditorMsg >> dispatch) js
+            }
 
     | EditorPanel ->
         div {
@@ -388,9 +489,43 @@ let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRun
             }
         }
 
+/// <summary> Renders the Import/Export toolbar. </summary>
+let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
+    div {
+        attr.style "display:flex; gap:10px; padding: 10px; margin-bottom: 10px; justify-content: right;"
+        
+        button {
+            attr.``class`` "hywe-toggle-btn"
+            on.click (fun _ -> dispatch ExportRequested)
+            text "Export"
+        }
+
+        button {
+            attr.``class`` "hywe-toggle-btn"
+            on.click (fun _ -> dispatch ImportRequested)
+            text "Import"
+        }
+
+        input {
+            attr.id "hyw-import-hidden"
+            attr.``type`` "file"
+            attr.style "display:none"
+            attr.accept ".hyw"
+            on.change (fun e ->
+                async {
+                    let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
+                    dispatch (FileImported content)
+                } |> Async.StartImmediate
+            )
+        }
+    }
+
 /// <summary> The main view composition. </summary>
 let view model dispatch (js: IJSRuntime) =
     concat {
+        // Storage Toolbar
+        viewPersistenceToolbar model dispatch js
+        
         // Node Code button
         viewNodeCodeButton model dispatch
 

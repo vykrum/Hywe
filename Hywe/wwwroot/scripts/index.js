@@ -201,3 +201,38 @@ window.hywe = {
         console.log("[hywe] Received data from F#:", data);
     }
 };
+
+// ------------------------------------
+//   MAIN SCREEN SHOW (Tap or Timeout)
+// ------------------------------------
+// Local Persistence
+window.saveToBrowser = (key, data) => localStorage.setItem(key, data);
+window.loadFromBrowser = (key) => localStorage.getItem(key) || "";
+
+// Export .hyw file
+window.downloadHywFile = (filename, content) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+};
+
+// Import .hyw file
+window.readHywFile = (fileInputId) => {
+    const input = document.getElementById(fileInputId);
+    if (!input || !input.files.length) return Promise.resolve("");
+
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target.result;
+            input.value = "";
+            resolve(result);
+        };
+        reader.readAsText(input.files[0]);
+    });
+};
+
+window.clickElement = (id) => document.getElementById(id).click();

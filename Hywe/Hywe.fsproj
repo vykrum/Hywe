@@ -16,6 +16,7 @@
 		<Compile Include="VZ-CodeNode.fs" />
 		<Compile Include="CR-Parse.fs" />
 		<Compile Include="IN-Page.fs" />
+		<Compile Include="IN-Storage.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>
