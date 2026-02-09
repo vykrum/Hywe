@@ -1,16 +1,14 @@
 module Storage
-    
 open Microsoft.JSInterop
-open System.Threading.Tasks
 
-// Triggered on every change to prevent work loss
-let autoSave (js: IJSRuntime) (content: string) =
-    js.InvokeVoidAsync("saveToBrowser", "last_session", content)
+// Saves to browser internal memory (Shadow Save)
+let shadowSave (js: IJSRuntime) (content: string) =
+    js.InvokeVoidAsync("saveToBrowser", "hywe_backup", content)
 
-// Triggered by "Export" button
-let exportFile (js: IJSRuntime) (content: string) =
-    js.InvokeVoidAsync("downloadHywFile", "design.hyw", content)
+// Triggers the session-based "Save" (File System Access)
+let saveToDisk (js: IJSRuntime) (content: string) =
+    js.InvokeAsync<bool>("saveHywFile", content)
 
-// Triggered by "Import" button
-let importFile (js: IJSRuntime) (inputId: string) : Task<string> =
-    js.InvokeAsync<string>("readHywFile", inputId).AsTask()
+// Traditional file import (via hidden input)
+let importFile (js: IJSRuntime) (id: string) =
+    js.InvokeAsync<string>("readHywFile", id)

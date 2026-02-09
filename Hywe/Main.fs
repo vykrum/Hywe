@@ -33,6 +33,7 @@ type Model =
         PolygonEditor: EditorState
         ActivePanel: ActivePanel
         EditorMode: EditorMode
+        HasFileHandle : bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -48,7 +49,8 @@ type Message =
     | SetActivePanel of ActivePanel
     | ToggleEditorMode
     | ToggleBoundary
-    | ExportRequested
+    | SaveRequested
+    | FileHandleUpdated of bool
     | ImportRequested
     | FileImported of string
 
@@ -106,6 +108,7 @@ let initModel =
         PolygonEditor = Stable PolygonEditor.initModel
         ActivePanel = EditorPanel
         EditorMode = Interactive
+        HasFileHandle = false
     }
 
 // Update
@@ -132,52 +135,29 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () (fun _ -> RunHyweave)
 
     | RunHyweave ->
+        // Keep the "Run" fast by only saving to localStorage
+        // This ensures that even if you refresh without "Saving" to disk,
+        // your work is still in the browser's memory.
         let updatedStx1 =
             match model.EditorMode with
             | Syntax ->
-                let inner = 
-                    match model.PolygonEditor with 
-                    | Stable m | FreshlyImported m -> m
-
+                let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw model.stx1 inner
-                let finalPoly = match newState with Stable m | FreshlyImported m -> m
-                syncPolygonState finalPoly
+                syncPolygonState (match newState with Stable m | FreshlyImported m -> m)
                 model.stx1
             | Interactive ->
-                NodeCode.getOutput
-                    model.Tree
-                    model.Sequence
-                    latestWidth
-                    latestHeight
-                    latestAbsStr
-                    latestEntryStr
-                    latestOuterStr
-                    latestIslandsStr
+                NodeCode.getOutput model.Tree model.Sequence latestWidth latestHeight 
+                                   latestAbsStr latestEntryStr latestOuterStr latestIslandsStr
 
-        let newModel =
-            match model.EditorMode with
-            | Syntax ->
-                let inner = 
-                    match model.PolygonEditor with 
-                    | Stable m | FreshlyImported m -> m
+        let newModel = { model with stx1 = updatedStx1; Derived = deriveData updatedStx1 elv }
 
-                let newState = Parse.importFromHyw model.stx1 inner
-
-                { model with 
-                    stx1 = updatedStx1
-                    Derived = deriveData updatedStx1 elv
-                    PolygonEditor = newState }
-
-            | Interactive ->
-                { model with 
-                    stx1 = updatedStx1
-                    Derived = deriveData updatedStx1 elv }
-        newModel,
-        Cmd.OfAsync.perform
-            (fun () -> async {
-                do! Async.Sleep 100
+        let internalBackup () =
+            task {
+                do! (js.InvokeVoidAsync("saveToBrowser", "hywe_backup", updatedStx1)).AsTask()
+                do! Async.Sleep 100 |> Async.StartAsTask 
                 return ()
-            }) () (fun _ -> FinishHyweave)
+            }
+        newModel, Cmd.OfTask.perform internalBackup () (fun _ -> FinishHyweave)
 
     | FinishHyweave ->
         { model with IsHyweaving = false }, Cmd.none
@@ -301,12 +281,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, 
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
     
-    | ExportRequested ->
-        let doExport () =
+    | SaveRequested ->
+        let doSave () =
             task {
-                do! js.InvokeVoidAsync("downloadHywFile", "design.hyw", model.stx1).AsTask()
+                // JS returns true if a file was successfully picked/written
+                return! (js.InvokeAsync<bool>("saveHywFile", model.stx1)).AsTask()
             }
-        model, Cmd.OfTask.perform doExport () (fun _ -> FinishHyweave)
+        model, Cmd.OfTask.perform doSave () (fun success -> FileHandleUpdated success)
+
+    | FileHandleUpdated success ->
+        // Update the UI to show we are "Linked" for this session
+        { model with HasFileHandle = success }, Cmd.none
 
     | ImportRequested ->
         let doClick () =
@@ -496,14 +481,14 @@ let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (j
         
         button {
             attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ExportRequested)
-            text "Export"
+            on.click (fun _ -> dispatch SaveRequested)
+            text "Save"
         }
 
         button {
             attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch ImportRequested)
-            text "Import"
+            text "Load"
         }
 
         input {
