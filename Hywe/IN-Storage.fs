@@ -1,14 +1,18 @@
 module Storage
+
+open System
 open Microsoft.JSInterop
 
-// Saves to browser internal memory (Shadow Save)
-let shadowSave (js: IJSRuntime) (content: string) =
+// Shadow save for browser refresh persistence
+let autoSave (js: IJSRuntime) (content: string) =
     js.InvokeVoidAsync("saveToBrowser", "hywe_backup", content)
 
-// Triggers the session-based "Save" (File System Access)
-let saveToDisk (js: IJSRuntime) (content: string) =
-    js.InvokeAsync<bool>("saveHywFile", content)
+// Generates timestamped filename and triggers download
+let saveFile (js: IJSRuntime) (content: string) =
+    let timestamp = DateTime.Now.ToString("yyMMddHHmm")
+    let fileName = sprintf "%s.hyw" timestamp
+    js.InvokeVoidAsync("downloadHywFile", fileName, content)
 
-// Traditional file import (via hidden input)
-let importFile (js: IJSRuntime) (id: string) =
-    js.InvokeAsync<string>("readHywFile", id)
+// Traditional import
+let importFile (js: IJSRuntime) (inputId: string) =
+    js.InvokeAsync<string>("readHywFile", inputId)

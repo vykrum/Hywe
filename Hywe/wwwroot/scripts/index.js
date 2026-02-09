@@ -209,32 +209,20 @@ window.hywe = {
 window.saveToBrowser = (key, data) => localStorage.setItem(key, data);
 window.loadFromBrowser = (key) => localStorage.getItem(key) || "";
 
-// Save .hyw file
-let sessionFileHandle = null;
+// Download .hyw file
+window.downloadHywFile = (filename, content) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
 
-window.saveHywFile = async (content) => {
-    try {
-        // If we don't have a file yet this session, ask for one
-        if (!sessionFileHandle) {
-            sessionFileHandle = await window.showSaveFilePicker({
-                suggestedName: 'hywe.hyw',
-                types: [{
-                    description: 'Hyweave File',
-                    accept: { 'text/plain': ['.hyw'] },
-                }],
-            });
-        }
+    anchor.href = url;
+    anchor.download = filename;
 
-        // Perform the silent write
-        const writable = await sessionFileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
-        return true;
-    } catch (error) {
-        // If user cancels the picker, we reset so the next click tries again
-        console.warn("Save cancelled or failed:", error);
-        return false;
-    }
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+
+    URL.revokeObjectURL(url);
 };
 
 // Import .hyw file

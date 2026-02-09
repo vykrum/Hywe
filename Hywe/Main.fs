@@ -33,7 +33,6 @@ type Model =
         PolygonEditor: EditorState
         ActivePanel: ActivePanel
         EditorMode: EditorMode
-        HasFileHandle : bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -50,7 +49,6 @@ type Message =
     | ToggleEditorMode
     | ToggleBoundary
     | SaveRequested
-    | FileHandleUpdated of bool
     | ImportRequested
     | FileImported of string
 
@@ -108,7 +106,6 @@ let initModel =
         PolygonEditor = Stable PolygonEditor.initModel
         ActivePanel = EditorPanel
         EditorMode = Interactive
-        HasFileHandle = false
     }
 
 // Update
@@ -135,29 +132,56 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () (fun _ -> RunHyweave)
 
     | RunHyweave ->
-        // Keep the "Run" fast by only saving to localStorage
-        // This ensures that even if you refresh without "Saving" to disk,
-        // your work is still in the browser's memory.
         let updatedStx1 =
             match model.EditorMode with
             | Syntax ->
-                let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+                let inner = 
+                    match model.PolygonEditor with 
+                    | Stable m | FreshlyImported m -> m
+
                 let newState = Parse.importFromHyw model.stx1 inner
-                syncPolygonState (match newState with Stable m | FreshlyImported m -> m)
+                let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                syncPolygonState finalPoly
                 model.stx1
             | Interactive ->
-                NodeCode.getOutput model.Tree model.Sequence latestWidth latestHeight 
-                                   latestAbsStr latestEntryStr latestOuterStr latestIslandsStr
+                NodeCode.getOutput
+                    model.Tree
+                    model.Sequence
+                    latestWidth
+                    latestHeight
+                    latestAbsStr
+                    latestEntryStr
+                    latestOuterStr
+                    latestIslandsStr
 
-        let newModel = { model with stx1 = updatedStx1; Derived = deriveData updatedStx1 elv }
+        // Trigger the Shadow Save to browser memory immediately
+        Storage.autoSave js updatedStx1 |> ignore
 
-        let internalBackup () =
-            task {
-                do! (js.InvokeVoidAsync("saveToBrowser", "hywe_backup", updatedStx1)).AsTask()
-                do! Async.Sleep 100 |> Async.StartAsTask 
+        let newModel =
+            match model.EditorMode with
+            | Syntax ->
+                let inner = 
+                    match model.PolygonEditor with 
+                    | Stable m | FreshlyImported m -> m
+
+                let newState = Parse.importFromHyw updatedStx1 inner
+
+                { model with 
+                    stx1 = updatedStx1
+                    Derived = deriveData updatedStx1 elv
+                    PolygonEditor = newState }
+
+            | Interactive ->
+                { model with 
+                    stx1 = updatedStx1
+                    Derived = deriveData updatedStx1 elv }
+                
+        newModel,
+        Cmd.OfAsync.perform
+            (fun () -> async {
+                do! Async.Sleep 100
                 return ()
-            }
-        newModel, Cmd.OfTask.perform internalBackup () (fun _ -> FinishHyweave)
+            }) () (fun _ -> FinishHyweave)
 
     | FinishHyweave ->
         { model with IsHyweaving = false }, Cmd.none
@@ -282,16 +306,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
     
     | SaveRequested ->
-        let doSave () =
-            task {
-                // JS returns true if a file was successfully picked/written
-                return! (js.InvokeAsync<bool>("saveHywFile", model.stx1)).AsTask()
-            }
-        model, Cmd.OfTask.perform doSave () (fun success -> FileHandleUpdated success)
-
-    | FileHandleUpdated success ->
-        // Update the UI to show we are "Linked" for this session
-        { model with HasFileHandle = success }, Cmd.none
+        // 1. Save to Downloads with timestamp
+        Storage.saveFile js model.stx1 |> ignore
+        // 2. Also update Shadow Save so the session is current
+        Storage.autoSave js model.stx1 |> ignore
+        model, Cmd.none
 
     | ImportRequested ->
         let doClick () =
