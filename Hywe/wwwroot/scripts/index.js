@@ -242,3 +242,89 @@ window.readHywFile = (fileInputId) => {
 };
 
 window.clickElement = (id) => document.getElementById(id).click();
+
+window.hywePdfEngine = {
+    parseColor: function (colorStr) {
+        if (!colorStr || typeof colorStr !== 'string' || !colorStr.startsWith("rgba"))
+            return colorStr || "#000000";
+        const values = colorStr.replace(/rgba?\(|\)/g, '').split(',').map(v => parseInt(v.trim()));
+        return "#" + ((1 << 24) + (values[0] << 16) + (values[1] << 8) + values[2]).toString(16).slice(1);
+    },
+
+    renderContactSheet: function (configs) {
+        try {
+            const { jsPDF } = window.jspdf || window;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            // 1. Calculate Global Max with zero-protection
+            const globalMaxW = Math.max(...configs.map(c => Number(c.w) || 1));
+            const globalMaxH = Math.max(...configs.map(c => Number(c.h) || 1));
+
+            const pageWidth = 297;
+            const pageHeight = 210;
+            const margin = 10;
+            const cols = 6;
+            const rows = 4;
+            const cellW = (pageWidth - (margin * 2)) / cols;
+            const cellH = (pageHeight - (margin * 3)) / rows;
+
+            // 2. Final scale safety
+            const scale = Math.min((cellW * 0.8) / globalMaxW, (cellH * 0.8) / globalMaxH) || 1.0;
+
+            configs.forEach((cfg, i) => {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+
+                // Centering math
+                const cellCenterX = margin + (col * cellW) + (cellW / 2);
+                const cellCenterY = margin + (row * cellH) + (cellH / 2);
+                const ox = cellCenterX - (globalMaxW * scale / 2);
+                const oy = cellCenterY - (globalMaxH * scale / 2);
+
+                if (cfg.shapes && Array.isArray(cfg.shapes)) {
+                    cfg.shapes.forEach(s => {
+                        // Validate points exist and have at least one X,Y pair
+                        if (s.points && s.points.length >= 2) {
+                            doc.setFillColor(this.parseColor(s.color));
+
+                            // Force numeric conversion to stop jsPDF.scale error
+                            const startX = Number(ox + (s.points[0] * scale));
+                            const startY = Number(oy + (s.points[1] * scale));
+
+                            if (isFinite(startX) && isFinite(startY)) {
+                                doc.moveTo(startX, startY);
+                                for (let j = 2; j < s.points.length; j += 2) {
+                                    const px = Number(ox + (s.points[j] * scale));
+                                    const py = Number(oy + (s.points[j + 1] * scale));
+                                    if (isFinite(px) && isFinite(py)) doc.lineTo(px, py);
+                                }
+                                doc.fill();
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 3. Simple Legend
+            const legendItems = {};
+            if (configs[0]?.shapes) {
+                configs[0].shapes.forEach(s => { if (s.name) legendItems[s.name] = s.color; });
+                doc.setFontSize(7);
+                let idx = 0;
+                Object.entries(legendItems).forEach(([name, color]) => {
+                    const lx = margin + ((idx % 8) * 35);
+                    const ly = pageHeight - 15 + (Math.floor(idx / 8) * 5);
+                    doc.setFillColor(this.parseColor(color));
+                    doc.circle(lx, ly - 1, 1.5, 'F');
+                    doc.text(name, lx + 4, ly);
+                    idx++;
+                });
+            }
+
+            doc.save(`Hyweave_Batch_${Date.now()}.pdf`);
+        } catch (err) {
+            console.error("PDF Export Failure:", err);
+            alert("Export failed. Check console for details.");
+        }
+    }
+};

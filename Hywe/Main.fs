@@ -1,5 +1,6 @@
 ﻿module Hywe.Main
 
+open System
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Elmish
@@ -48,6 +49,8 @@ type Message =
     | SetActivePanel of ActivePanel
     | ToggleEditorMode
     | ToggleBoundary
+    | ExportPdfRequested
+    | FinishExport
     | SaveRequested
     | ImportRequested
     | FileImported of string
@@ -305,6 +308,50 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, 
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
     
+    | ExportPdfRequested ->
+        { model with IsHyweaving = true }, 
+        Cmd.OfAsync.perform (fun () ->
+            let rec computeBatch i acc = async {
+                match i < 24 with
+                | false -> return acc
+                | true ->
+                    let sqnStr = indexToSqn i
+                    let forcedStr = injectSqn model.stx1 sqnStr
+                
+                    let cxls, _ = Parse.spaceCxl [||] forcedStr
+                    let derived = deriveData forcedStr 0
+                
+                    let configData = 
+                        let drawingData = getPdfDrawingData cxls derived.cxClr1 0 10 
+                        {| 
+                            sqnName = sqnStr
+                            shapes = drawingData.shapes
+                            w = drawingData.w
+                            h = drawingData.h
+                        |}
+                
+                    do! Async.Sleep 5
+                    return! computeBatch (i + 1) (configData :: acc)
+            }
+            async {
+                try
+                    let! results = computeBatch 0 []
+                    let payload = results |> List.toArray |> Array.rev
+                
+                    // Use InvokeAsync instead of InvokeVoidAsync for better error trapping during debug
+                    do! js.InvokeVoidAsync("hywePdfEngine.renderContactSheet", payload).AsTask() 
+                        |> Async.AwaitTask
+                with ex ->
+                    // This ensures that even if JS fails, the spinner stops
+                    Console.WriteLine($"PDF Export Error: {ex.Message}")
+            
+                return ()
+            }
+        ) () (fun _ -> FinishExport)
+
+    | FinishExport ->
+            { model with IsHyweaving = false }, Cmd.none
+
     | SaveRequested ->
         // 1. Save to Downloads with timestamp
         Storage.saveFile js model.stx1 |> ignore
@@ -497,7 +544,6 @@ let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRun
 let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     div {
         attr.style "display:flex; gap:10px; padding: 10px; margin-bottom: 10px; justify-content: right;"
-        
         button {
             attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch SaveRequested)
@@ -508,6 +554,12 @@ let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (j
             attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch ImportRequested)
             text "Load"
+        }
+
+        button {
+            attr.``class`` "hywe-toggle-btn"
+            on.click (fun _ -> dispatch ExportPdfRequested)
+            text "PDF"
         }
 
         input {

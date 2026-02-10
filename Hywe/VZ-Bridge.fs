@@ -5,6 +5,7 @@ open Bolero.Html
 open Hexel
 open Coxel
 open Microsoft.JSInterop
+open System
 ///
 
 type hxgn = Template<
@@ -92,9 +93,8 @@ let polygonCentroid (poly: (int * int)[]) =
     | [| p |] -> p
     | _ ->
         let n = poly.Length
-        // folder: (accumulator) -> (current_element) -> (new_accumulator)
         let (sx, sy, a) =
-            [| 0 .. n - 1 |] // Generate indices to iterate
+            [| 0 .. n - 1 |]
             |> Array.fold (fun (accSx, accSy, accA) i ->
                 let (x1, y1) = poly.[i]
                 let (x2, y2) = poly.[(i + 1) % n]
@@ -102,11 +102,16 @@ let polygonCentroid (poly: (int * int)[]) =
                 (accSx + (x1 + x2) * cross,
                  accSy + (y1 + y2) * cross,
                  accA + cross)
-            ) (0, 0, 0) // Initial state
+            ) (0, 0, 0)
 
-        match a with
-        | 0 -> poly.[0]
-        | _ -> (sx / (3 * a), sy / (3 * a))
+        // Safety check: a is 2 * Area. If Area < 1 unit, use simple average.
+        // This prevents the sx / (3 * a) crash.
+        if Math.Abs(a) < 1 then 
+            let avgX = poly |> Array.averageBy (fun (x, _) -> float x) |> int
+            let avgY = poly |> Array.averageBy (fun (_, y) -> float y) |> int
+            (avgX, avgY)
+        else 
+            (sx / (3 * a), sy / (3 * a))
 
 /// Integer point-in-polygon
 let pointInPolygon (px, py) (poly: (int * int)[]) =
@@ -116,10 +121,17 @@ let pointInPolygon (px, py) (poly: (int * int)[]) =
         | true ->
             let (xi, yi) = poly.[i]
             let (xj, yj) = poly.[j]
+            
             let isIntersecting =
+                // Check if the point's Y is between the edge's Ys
                 match (yi > py, yj > py) with
                 | (true, false) | (false, true) ->
-                    px < (xj - xi) * (py - yi) / ((yj - yi) + 1) + xi
+                    let dy = yj - yi
+                    // Denominator check: if dy is 0, it's a horizontal line. Skip.
+                    if dy = 0 then false
+                    else 
+                        // Standard ray-casting formula
+                        px < (xj - xi) * (py - yi) / dy + xi
                 | _ -> false
             check (i + 1) i (if isIntersecting then not acc else acc)
     
@@ -128,29 +140,26 @@ let pointInPolygon (px, py) (poly: (int * int)[]) =
     | _ -> check 0 (poly.Length - 1) false
 
 /// Label position within coxel
-let labelPosition 
-    (poly: (int * int)[]) =
+let labelPosition (poly: (int * int)[]) =
     match poly with
-    | [||] -> -10, -10
+    | [||] -> 0, 0
     | [|p|] -> p
     | _ ->
         let cx, cy = polygonCentroid poly
         let xs = poly |> Array.map fst
         let ys = poly |> Array.map snd
-        let avgx = Array.sum xs / xs.Length
-        let avgy = Array.sum ys / ys.Length
+        
+        // Prevent division by zero if poly.Length is somehow 0
+        let len = Math.Max(1, poly.Length)
+        let avgx = Array.sum xs / len
+        let avgy = Array.sum ys / len
 
-        // recursively shift centroid inward until it's inside
         let rec inward (x, y) step =
-            match pointInPolygon (x, y) poly with
-            | true -> (x, y)
-            | false ->
+            if pointInPolygon (x, y) poly then (x, y)
+            else
                 match step with
                 | 0 -> (avgx, avgy)
-                | _ ->
-                    let nx = (x + avgx) / 2
-                    let ny = (y + avgy) / 2
-                    inward (nx, ny) (step - 1)
+                | _ -> inward ((x + avgx) / 2, (y + avgy) / 2) (step - 1)
 
         inward (cx, cy) 3
 
@@ -484,3 +493,53 @@ let extrudePolygons
         do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges).AsTask()
             |> Async.AwaitTask
     }
+
+/// Extracts high-fidelity coordinates for the PDF Engine
+let getPdfDrawingData (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
+    let sqn = cxl |> Array.map (fun x -> x.Seqn)
+    let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
+    let coords = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
+    
+    // Safety check for empty geometry to prevent crash in Array.minBy
+    let flattened = Array.concat coords
+    match flattened.Length with
+    | 0 -> 
+        {| shapes = [||]; w = 1.0; h = 1.0 |}
+    | _ ->
+        let minX = fst (Array.minBy fst flattened)
+        let maxX = fst (Array.maxBy fst flattened)
+        let minY = snd (Array.minBy snd flattened)
+        let maxY = snd (Array.maxBy snd flattened)
+        
+        let currentWidth = float (maxX - minX)
+        let currentHeight = float (maxY - minY)
+        
+        // Prevent index errors by taking the minimum length of all input arrays
+        let len = 
+            [| coords.Length; cxl.Length; colors.Length |] 
+            |> Array.min
+        
+        let shapes = 
+            [| 0 .. len - 1 |] 
+            |> Array.map (fun i ->
+                try
+                    let pts = coords.[i]
+                    let label = cxl.[i]
+                    
+                    // We still calculate lx/ly so the Legend can potentially 
+                    // use them or for centering logic
+                    let lx, ly = labelPosition pts
+                    
+                    {|
+                        points = pts |> Array.collect (fun (px, py) -> [| float (px - minX); float (py - minY) |])
+                        name = prpVlu label.Name
+                        color = colors.[i]
+                        lx = float (lx - minX)
+                        ly = float (ly - minY)
+                    |}
+                with _ ->
+                    // Fallback for a single broken shape within the variation
+                    {| points = [||]; name = ""; color = "rgba(0,0,0,0)"; lx = 0.0; ly = 0.0 |}
+            )
+
+        {| shapes = shapes; w = currentWidth; h = currentHeight |}

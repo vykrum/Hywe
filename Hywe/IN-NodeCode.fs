@@ -48,6 +48,16 @@ let randomNames = [
 let rng = System.Random()
 let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
 
+/// Replaces the sequence (Q=) in the string using Regex (declarative)
+let injectSqn (input: string) (newSqn: string) =
+    let pattern = "Q=[A-Z]+"
+    let replacement = "Q=" + newSqn
+    let regex = System.Text.RegularExpressions.Regex(pattern)
+    
+    match regex.IsMatch(input) with
+    | true  -> regex.Replace(input, replacement)
+    | false -> input + $"(0/Q={newSqn})"
+
 // --------------------
 // Layout
 // --------------------
