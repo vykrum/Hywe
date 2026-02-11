@@ -312,9 +312,62 @@ let svgCoxels
 type PreviewShape = {| color: string; points: float[]; name: string; lx: float; ly: float |}
 type PreviewConfig = {| sqnName: string; shapes: PreviewShape[]; w: float; h: float |}
 
-let VariationPreview (configs: PreviewConfig[]) (onClose: unit -> unit) : Node =
-    let cols, rows = 6, 4
+/// Extracts high-fidelity coordinates for Geometry generation
+let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
+    let sqn = cxl |> Array.map (fun x -> x.Seqn)
+    let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
+    let coords = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
+    
+    // Safety check for empty geometry to prevent crash in Array.minBy
+    let flattened = Array.concat coords
+    match flattened.Length with
+    | 0 -> 
+        {| shapes = [||]; w = 1.0; h = 1.0 |}
+    | _ ->
+        let minX = fst (Array.minBy fst flattened)
+        let maxX = fst (Array.maxBy fst flattened)
+        let minY = snd (Array.minBy snd flattened)
+        let maxY = snd (Array.maxBy snd flattened)
+        
+        let currentWidth = float (maxX - minX)
+        let currentHeight = float (maxY - minY)
+        
+        // Prevent index errors by taking the minimum length of all input arrays
+        let len = 
+            [| coords.Length; cxl.Length; colors.Length |] 
+            |> Array.min
+        
+        let shapes = 
+            [| 0 .. len - 1 |] 
+            |> Array.map (fun i ->
+                try
+                    let pts = coords.[i]
+                    let label = cxl.[i]
+                    
+                    // We still calculate lx/ly so the Legend can potentially 
+                    // use them or for centering logic
+                    let lx, ly = labelPosition pts
+                    
+                    {|
+                        points = pts |> Array.collect (fun (px, py) -> [| float (px - minX); float (py - minY) |])
+                        name = prpVlu label.Name
+                        color = colors.[i]
+                        lx = float (lx - minX)
+                        ly = float (ly - minY)
+                    |}
+                with _ ->
+                    // Fallback for a single broken shape within the variation
+                    {| points = [||]; name = ""; color = "rgba(0,0,0,0)"; lx = 0.0; ly = 0.0 |}
+            )
+
+        {| shapes = shapes; w = currentWidth; h = currentHeight |}
+
+let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (js: IJSRuntime) : Node =
+    let totalItems = configs.Length
+    let cols = 8 
+    let rows = (totalItems + cols - 1) / cols
     let cellW, cellH = 160.0, 160.0
+    let svgPadding = 40.0 
     
     let getMax getter =
         if Array.isEmpty configs then 1.0
@@ -327,31 +380,20 @@ let VariationPreview (configs: PreviewConfig[]) (onClose: unit -> unit) : Node =
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
     div {
-        attr.style "background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;"
+        attr.style "background: transparent; padding: 20px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;"
         
-        div {
-            attr.style "display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"
-            h3 { "Batch Variation Preview" }
-            button { 
-                attr.``class`` "hywe-toggle-btn"
-                on.click (fun _ -> onClose())
-                "✕ Close" 
-            }
-        }
-
-        // svg works, so we keep it as a CE
+        // 1. SVG is now first
         svg {
-            "viewBox" => $"0 0 {float cols * cellW} {float rows * cellH}"
-            attr.style "display: block; width: 100%; height: auto;"
+            attr.id "variation-svg-output"
+            "viewBox" => $"{ -svgPadding } { -svgPadding } { (float cols * cellW) + (svgPadding * 2.0) } { (float rows * cellH) + (svgPadding * 2.0) }"
+            attr.style "display: block; width: 100%; height: auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
 
-            // Safe collection rendering using 'for'
             for i in 0 .. (configs.Length - 1) do
                 let cfg = configs.[i]
                 let col, row = i % cols, i / cols
                 let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
                 
-                // Use 'elt' for the missing 'g' builder
                 elt "g" {
                     for s in cfg.shapes do
                         let xy = 
@@ -361,18 +403,30 @@ let VariationPreview (configs: PreviewConfig[]) (onClose: unit -> unit) : Node =
                             |> String.concat " "
                         
                         elt "g" {
-                            // Fluent builder inside the CE
                             plgn().pt(xy).cl(s.color).op("0.8").Elt()
-                            
-                            // Use 'elt' for title tooltip
                             elt "title" { s.name }
                         }
+                    
                     svtx()
                         .xx(string (ox + (maxW * scale / 2.0)))
-                        .yy(string (oy + (maxH * scale / 2.0)))
+                        .yy(string (oy + (maxH * scale / 2.0) + (maxH * scale / 2.0) + 10.0))
                         .nm(cfg.sqnName)
                         .Elt()
                 }
+        }
+
+        // 2. Button container is now second (bottom)
+        div {
+            attr.style "display: flex; justify-content: flex-end;"
+            button {
+                attr.``class`` "hywe-toggle-btn"
+                on.click (fun _ -> 
+                    async {
+                        do! js.InvokeVoidAsync("downloadVariationPdf", "variation-svg-output").AsTask() |> Async.AwaitTask
+                    } |> Async.StartImmediate
+                )
+                text "Download PDF"
+            }
         }
     }
 
@@ -561,52 +615,3 @@ let extrudePolygons
             |> Async.AwaitTask
     }
 
-/// Extracts high-fidelity coordinates for the PDF Engine
-let getPdfDrawingData (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
-    let sqn = cxl |> Array.map (fun x -> x.Seqn)
-    let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
-    let coords = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
-    
-    // Safety check for empty geometry to prevent crash in Array.minBy
-    let flattened = Array.concat coords
-    match flattened.Length with
-    | 0 -> 
-        {| shapes = [||]; w = 1.0; h = 1.0 |}
-    | _ ->
-        let minX = fst (Array.minBy fst flattened)
-        let maxX = fst (Array.maxBy fst flattened)
-        let minY = snd (Array.minBy snd flattened)
-        let maxY = snd (Array.maxBy snd flattened)
-        
-        let currentWidth = float (maxX - minX)
-        let currentHeight = float (maxY - minY)
-        
-        // Prevent index errors by taking the minimum length of all input arrays
-        let len = 
-            [| coords.Length; cxl.Length; colors.Length |] 
-            |> Array.min
-        
-        let shapes = 
-            [| 0 .. len - 1 |] 
-            |> Array.map (fun i ->
-                try
-                    let pts = coords.[i]
-                    let label = cxl.[i]
-                    
-                    // We still calculate lx/ly so the Legend can potentially 
-                    // use them or for centering logic
-                    let lx, ly = labelPosition pts
-                    
-                    {|
-                        points = pts |> Array.collect (fun (px, py) -> [| float (px - minX); float (py - minY) |])
-                        name = prpVlu label.Name
-                        color = colors.[i]
-                        lx = float (lx - minX)
-                        ly = float (ly - minY)
-                    |}
-                with _ ->
-                    // Fallback for a single broken shape within the variation
-                    {| points = [||]; name = ""; color = "rgba(0,0,0,0)"; lx = 0.0; ly = 0.0 |}
-            )
-
-        {| shapes = shapes; w = currentWidth; h = currentHeight |}

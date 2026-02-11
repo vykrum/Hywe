@@ -13,9 +13,11 @@ open PolygonEditor
 
 /// <summary> Specifies the currently visible configuration panel. </summary>
 type ActivePanel =
-    | EditorPanel
     | BoundaryPanel
-    | PreviewPanel
+    | LayoutPanel
+    | TablePanel
+    | ViewPanel
+    | ComparePanel
 
 /// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =
@@ -110,7 +112,7 @@ let initModel =
         Derived = deriveData initialOutput 0
         IsHyweaving = false
         PolygonEditor = Stable PolygonEditor.initModel
-        ActivePanel = EditorPanel
+        ActivePanel = LayoutPanel // Changed from EditorPanel
         EditorMode = Interactive
         BatchPreview = None
     }
@@ -130,7 +132,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with stx1 = value }, Cmd.none
 
     | StartHyweave ->
-        let model2 = { model with ActivePanel = EditorPanel; IsHyweaving = true }
+        // Changed to LayoutPanel
+        let model2 = { model with ActivePanel = LayoutPanel; IsHyweaving = true }
         model2,
         Cmd.OfAsync.perform
             (fun () -> async {
@@ -222,7 +225,33 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with PolygonEditor = Stable newModel }, Cmd.none
 
     | SetActivePanel panel ->
-        { model with ActivePanel = panel }, Cmd.none
+        match panel with
+        | ComparePanel ->
+            // Trigger calculation if we don't have results or if you want to refresh
+            let model' = { model with ActivePanel = panel; IsHyweaving = true }
+            model', Cmd.OfAsync.perform (fun () ->
+                let rec computeBatch i acc = async {
+                    match i >= 24 with
+                    | true -> return acc
+                    | false ->
+                        let sqnStr = indexToSqn i
+                        let forcedStr = injectSqn model.stx1 sqnStr
+                        let cxls, _ = Parse.spaceCxl [||] forcedStr
+                        let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
+                        let configData = 
+                            {| sqnName = sqnStr; w = d.w; h = d.h
+                               shapes = d.shapes |> Array.map (fun s -> 
+                                 {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                            |}
+                        do! Async.Sleep 5
+                        return! computeBatch (i + 1) (configData :: acc)
+                }
+                async {
+                    let! results = computeBatch 0 []
+                    return results |> List.toArray |> Array.rev
+                }) () SetBatchPreview
+        | _ -> 
+            { model with ActivePanel = panel }, Cmd.none
 
     | ToggleEditorMode ->
         match model.EditorMode with
@@ -284,8 +313,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | ToggleBoundary ->
         match model.ActivePanel with
         | BoundaryPanel -> 
-            { model with ActivePanel = EditorPanel }, Cmd.none
-        | EditorPanel ->
+            { model with ActivePanel = LayoutPanel }, Cmd.none
+        | _ -> 
+            // Logic for entering BoundaryPanel
             let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
             let newState = Parse.importFromHyw model.stx1 inner
             let finalPoly = match newState with FreshlyImported m | Stable m -> m
@@ -293,21 +323,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ActivePanel = BoundaryPanel
                 PolygonEditor = newState 
             }, Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-        | PreviewPanel -> 
-            { model with ActivePanel = EditorPanel }, Cmd.none
 
     | SetBatchPreview results ->
         { model with 
             BatchPreview = Some results
             IsHyweaving = false 
-            ActivePanel = PreviewPanel // Auto-switch to the new panel
+            ActivePanel = ComparePanel 
         }, Cmd.none
 
     | CloseBatch ->
-        // Return to the Editor when closing the preview
         { model with 
             BatchPreview = None
-            ActivePanel = EditorPanel 
+            ActivePanel = LayoutPanel 
         }, Cmd.none
 
     | ExportPdfRequested ->
@@ -320,7 +347,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         let sqnStr = indexToSqn i
                         let forcedStr = injectSqn model.stx1 sqnStr
                         let cxls, _ = Parse.spaceCxl [||] forcedStr
-                        let d = getPdfDrawingData cxls (deriveData forcedStr 0).cxClr1 0 10 
+                        let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
                         let configData = 
                             {| sqnName = sqnStr; w = d.w; h = d.h
                                shapes = d.shapes |> Array.map (fun s -> 
@@ -393,36 +420,45 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
 // View helpers
 /// <summary> Renders the toggle button for switching between Node and Code views. </summary>
-let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
+let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     let nodeCodeButtonText =
         match model.EditorMode with
         | Syntax -> "Node"
         | Interactive -> "Code"
 
     div {
-        attr.style "display:flex; gap:5px; padding-left:10px; padding-right:10px;"
+        // Changed justify-content to flex-start to align buttons to the left
+        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: flex-start; align-items: center;"
+        
         button {
             attr.``class`` "hywe-toggle-btn"
-            attr.style "margin-left:auto;"
+            on.click (fun _ -> dispatch SaveRequested)
+            text "Save"
+        }
+
+        button {
+            attr.``class`` "hywe-toggle-btn"
+            on.click (fun _ -> dispatch ImportRequested)
+            text "Load"
+        }
+
+        input {
+            attr.id "hyw-import-hidden"
+            attr.``type`` "file"
+            attr.style "display:none"
+            attr.accept ".hyw"
+            on.change (fun e ->
+                async {
+                    let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
+                    dispatch (FileImported content)
+                } |> Async.StartImmediate
+            )
+        }
+        
+        button {
+            attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch ToggleEditorMode)
             text nodeCodeButtonText
-        }
-    }
-
-/// <summary> Renders the boundary toggle button. </summary>
-let private viewBoundaryOutputButton (model: Model) (dispatch: Message -> unit) =
-    let buttonText =
-        match model.ActivePanel with
-        | EditorPanel -> "Modify Boundary Parameters"
-        | BoundaryPanel -> "View Spatial Configuration"
-        | PreviewPanel -> "Return to Editor" // Added missing case
-
-    div {
-        attr.style "display:flex; gap:5px; justify-content:center; padding: 0 10px;"
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ToggleBoundary)
-            text buttonText
         }
     }
 
@@ -449,12 +485,6 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
                 attr.style "flex:1; overflow-y:hidden;"
                 viewTreeEditor model.Tree (TreeMsg >> dispatch)
             }
-
-            div {
-                attr.id "hywe-sequence-selector"
-                attr.style "width:auto; max-width:100%; margin-top:5px;"
-                sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-            }
         }
 
 /// <summary> Renders the primary action button for starting the weaving process. </summary>
@@ -474,128 +504,107 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
         }
     }
 
-/// <summary> Renders the primary action button for starting the weaving process. </summary>
-let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
-    match model.ActivePanel with
-    | BoundaryPanel ->
-        // Pattern match on the state to apply the refresh key
-        match model.PolygonEditor with
-        | FreshlyImported inner ->
-            div {
-                attr.id "hywe-polygon-editor"
-                attr.key "fresh-sync" 
-                PolygonEditor.view inner (PolygonEditorMsg >> dispatch) js
-            }
-        | Stable inner ->
-            div {
-                attr.id "hywe-polygon-editor"
-                attr.key "stable-ui"
-                PolygonEditor.view inner (PolygonEditorMsg >> dispatch) js
-            }
-
-    | EditorPanel ->
-        div {
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px;"
-            concat {
-                div {
-                    attr.id "hywe-svg-container"
-                    attr.``class`` "flex-container"
-                    attr.style "flex-wrap:wrap; justify-content:center; max-width:100%; overflow-x:auto;"
-                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
-                }
-
-                div {
-                    attr.style "width:95%; max-width:1200px; align-items: center; justify-content:center; margin:auto; aspect-ratio: 3/2; background:transparent;"
-                    canvas {
-                        attr.id "hywe-extruded-polygon"
-                        attr.style "width:95%; align-items: center; justify-content:center; height:100%; display:block; border:none;"
-                    }
-                    async {
-                        do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0
-                    } |> Async.StartImmediate
-                }
-            }
-
-            div {
-                attr.id "hywe-table-wrapper"
-                attr.style "width: 100vw; margin-top: 5px; margin-left: calc(-20px); margin-right: calc(-20px); box-sizing: border-box;"
-                viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
-            }
-        }
-
-    | PreviewPanel ->
-            div {
-                attr.style "width: 100%; min-height: 500px; background: #1e1e1e;"
-                cond model.BatchPreview <| function
-                    | Some results -> 
-                        VariationPreview results (fun () -> dispatch (SetActivePanel EditorPanel))
-                    | None -> 
-                        div { 
-                            attr.style "padding: 100px; text-align: center; color: white;"
-                            span { attr.``class`` "spinner" }
-                            text " Generating 24 variations from current STX1..." 
-                        }
-            }
-
-/// <summary> Renders the Import/Export toolbar. </summary>
-let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
+/// <summary> Renders the tab navigation bar. </summary>
+let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
     div {
-        attr.style "display:flex; gap:10px; padding: 10px; margin-bottom: 10px; justify-content: right;"
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch SaveRequested)
-            text "Save"
-        }
+        attr.style "display:flex; width: 100%; justify-content: center; gap: 10px; margin: 10px 0; border-bottom: 1px solid #333;"
+        
+        let tab title panel =
+            let isActive = model.ActivePanel = panel
+            button {
+                attr.style (
+                    "padding: 8px 16px; cursor: pointer; border: none; font-weight: bold; " +
+                    (if isActive then "background: #444; color: white;" 
+                     else "background: transparent; color: #888;")
+                )
+                on.click (fun _ -> dispatch (SetActivePanel panel))
+                text title
+            }
 
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ImportRequested)
-            text "Load"
-        }
-
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ExportPdfRequested)
-            text "Compare"
-        }
-
-        input {
-            attr.id "hyw-import-hidden"
-            attr.``type`` "file"
-            attr.style "display:none"
-            attr.accept ".hyw"
-            on.change (fun e ->
-                async {
-                    let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
-                    dispatch (FileImported content)
-                } |> Async.StartImmediate
-            )
-        }
+        tab "Boundary" BoundaryPanel
+        tab "Layout" LayoutPanel
+        tab "Table" TablePanel
+        tab "View" ViewPanel
+        tab "Compare" ComparePanel
     }
 
+/// <summary> Renders the primary action button for starting the weaving process. </summary>
+let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
+    div {
+        attr.style "padding: 10px; min-height: 400px;"
+        
+        match model.ActivePanel with
+        | BoundaryPanel ->
+            let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            div { 
+                attr.id "hywe-polygon-editor"
+                PolygonEditor.view currentInner (PolygonEditorMsg >> dispatch) js 
+            }
 
+        | LayoutPanel ->
+            div {
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
+                
+                div {
+                    attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
+                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                }
+
+                div {
+                    attr.id "hywe-svg-container"
+                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
+                }
+            }
+        
+        | TablePanel ->
+            div {
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
+                div {
+                    attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
+                    viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+                }
+            }
+
+        | ViewPanel ->
+            div {
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
+                div {
+                    attr.style "width:95%; max-width:1200px; aspect-ratio: 3/2;"
+                    canvas { attr.id "hywe-extruded-polygon"; attr.style "width:100%; height:100%;" }
+                    async { do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
+                    |> Async.StartImmediate
+                }
+            }
+        | ComparePanel ->
+            div {
+                // Changed background to #ffffff
+                attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
+        
+                cond model.BatchPreview <| function
+                    | Some results -> 
+                        alternateConfigurations results (fun () -> dispatch (SetActivePanel LayoutPanel)) js
+                    | None -> 
+                        div { 
+                            attr.style "text-align:center; padding: 100px; color: #888; width: 100%;"
+                            span { attr.``class`` "spinner"; attr.style "display: block; margin: 0 auto 20px;" }
+                            text "Generating 24 variations..." 
+                        }
+            }
+    }
 
 /// <summary> The main view composition. </summary>
 let view model dispatch (js: IJSRuntime) =
     concat {
-        
-        // Storage Toolbar
-        viewPersistenceToolbar model dispatch js
-        
-        // Node Code button
-        viewNodeCodeButton model dispatch
-
-        // Editor Panel
+        // Node/Code toggle
+        viewNodeCodeButtons model dispatch js
+        // Interactive Tree and Text Editor
         viewEditorPanel model dispatch
-
-        // Hywe button
+        // Hyweave
         viewHyweButton model dispatch
-
-        // Boundary Toggle button
-        viewBoundaryOutputButton model dispatch
-
-        // Active Panel
-        viewHywePanel model dispatch js
+        // Tabs
+        viewHyweTabs model dispatch 
+        // Boundary Editor, Layout View, Batch Compare
+        viewHywePanels model dispatch js
     }
 
 /// <summary> Bolero Component entry point for the Hywe application. </summary>
