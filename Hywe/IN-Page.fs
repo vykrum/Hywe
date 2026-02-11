@@ -5,6 +5,20 @@ open System
 open Coxel
 open Parse
 
+/// <summary> Specifies the currently visible configuration panel. </summary>
+type ActivePanel =
+    | BoundaryPanel
+    | LayoutPanel
+    | TablePanel
+    | ViewPanel
+    | ComparePanel
+
+/// <summary> Specifies the input methodology - flowchart or text </summary>
+type EditorMode =
+    | Interactive
+    | Syntax
+
+
 type EditorTab =
     | Boundary
     | Editor of isAdvanced: bool
@@ -15,8 +29,6 @@ type DerivedData = {
     cxClr1: string[]
     cxOuIl: (int*int)[][]
 }
-
-
 
 // Consistent Pastel Color
 let hexToRgb (hex: string) =

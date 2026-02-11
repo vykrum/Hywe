@@ -87,7 +87,8 @@ type svtx = Template<
 ///
 
 /// Integer-safe polygon centroid
-let polygonCentroid (poly: (int * int)[]) =
+let polygonCentroid 
+    (poly: (int * int)[]) =
     match poly with
     | [||] -> 0, 0
     | [| p |] -> p
@@ -114,7 +115,9 @@ let polygonCentroid (poly: (int * int)[]) =
             (sx / (3 * a), sy / (3 * a))
 
 /// Integer point-in-polygon
-let pointInPolygon (px, py) (poly: (int * int)[]) =
+let pointInPolygon 
+    (px, py) 
+    (poly: (int * int)[]) =
     let rec check i j acc =
         match i < poly.Length with
         | false -> acc
@@ -140,7 +143,8 @@ let pointInPolygon (px, py) (poly: (int * int)[]) =
     | _ -> check 0 (poly.Length - 1) false
 
 /// Label position within coxel
-let labelPosition (poly: (int * int)[]) =
+let labelPosition 
+    (poly: (int * int)[]) =
     match poly with
     | [||] -> 0, 0
     | [|p|] -> p

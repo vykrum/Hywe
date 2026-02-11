@@ -1,6 +1,5 @@
 ﻿module Hywe.Main
 
-open System
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Elmish
@@ -10,19 +9,6 @@ open Bridge
 open Page
 open NodeCode
 open PolygonEditor
-
-/// <summary> Specifies the currently visible configuration panel. </summary>
-type ActivePanel =
-    | BoundaryPanel
-    | LayoutPanel
-    | TablePanel
-    | ViewPanel
-    | ComparePanel
-
-/// <summary> Specifies the input methodology - flowchart or text </summary>
-type EditorMode =
-    | Interactive
-    | Syntax
 
 /// <summary> Central application state for the interface. </summary>
 type Model =
@@ -116,8 +102,9 @@ let initModel =
         EditorMode = Interactive
         BatchPreview = None
     }
+///
 
-// Update
+/// Update
 /// <summary> Processes incoming messages to produce a new model and optional commands. </summary>
 /// <param name="js"> The JavaScript runtime for interop. </param>
 /// <param name="message"> The message to handle. </param>
