@@ -368,10 +368,10 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
 
 let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (js: IJSRuntime) : Node =
     let totalItems = configs.Length
-    let cols = 8 
+    let cols = 3 
     let rows = (totalItems + cols - 1) / cols
-    let cellW, cellH = 160.0, 160.0
-    let svgPadding = 40.0 
+    let cellW, cellH = 200.0, 200.0 
+    let svgPadding = 50.0 
     
     let getMax getter =
         if Array.isEmpty configs then 1.0
@@ -386,47 +386,52 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
     div {
         attr.style "background: transparent; padding: 20px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;"
         
-        // 1. SVG is now first
         svg {
             attr.id "variation-svg-output"
             "viewBox" => $"{ -svgPadding } { -svgPadding } { (float cols * cellW) + (svgPadding * 2.0) } { (float rows * cellH) + (svgPadding * 2.0) }"
-            attr.style "display: block; width: 100%; height: auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
+            attr.style "display: block; width: 100%; height: auto; background: #ffffff;"
 
             for i in 0 .. (configs.Length - 1) do
                 let cfg = configs.[i]
                 let col, row = i % cols, i / cols
                 let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
-                
+            
                 elt "g" {
+                    // Loop through each of the 10 shapes per configuration
                     for s in cfg.shapes do
                         let xy = 
                             s.points 
                             |> Array.chunkBySize 2 
                             |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") 
                             |> String.concat " "
-                        
-                        elt "g" {
-                            plgn().pt(xy).cl(s.color).op("0.8").Elt()
-                            elt "title" { s.name }
-                        }
                     
+                        elt "g" {
+                            elt "title" { text s.name } 
+                        
+                            plgn()
+                                .pt(xy)
+                                .cl(s.color)
+                                .op("0.8") 
+                                .Elt()
+                        }
+                
+                    // Sequence Label
                     svtx()
                         .xx(string (ox + (maxW * scale / 2.0)))
-                        .yy(string (oy + (maxH * scale / 2.0) + (maxH * scale / 2.0) + 10.0))
+                        .yy(string (oy + (maxH * scale / 2.0) + (maxH * scale / 2.0) + 12.0))
                         .nm(cfg.sqnName)
                         .Elt()
                 }
         }
 
-        // 2. Button container is now second (bottom)
         div {
             attr.style "display: flex; justify-content: flex-end;"
             button {
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> 
                     async {
-                        do! js.InvokeVoidAsync("downloadVariationPdf", "variation-svg-output").AsTask() |> Async.AwaitTask
+                        do! js.InvokeVoidAsync("alternateConfigurationsPdf", "variation-svg-output").AsTask() |> Async.AwaitTask
                     } |> Async.StartImmediate
                 )
                 text "Download PDF"

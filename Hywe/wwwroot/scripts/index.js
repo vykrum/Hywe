@@ -243,16 +243,21 @@ window.readHywFile = (fileInputId) => {
 
 window.clickElement = (id) => document.getElementById(id).click();
 
-window.downloadVariationPdf = async (svgId) => {
+// PDF download from SVG
+window.alternateConfigurationsPdf = async (svgId) => {
     const { jsPDF } = window.jspdf;
     const svg = document.getElementById(svgId);
     if (!svg) return;
 
-    const viewBox = svg.viewBox.baseVal;
+    const vb = svg.viewBox.baseVal;
+    const width = vb.width;
+    const height = vb.height;
+
+    // Custom format matches the F# grid aspect ratio exactly
     const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: height > width ? 'portrait' : 'landscape',
         unit: 'px',
-        format: [viewBox.width, viewBox.height]
+        format: [width, height]
     });
 
     const svgData = new XMLSerializer().serializeToString(svg);
@@ -262,17 +267,21 @@ window.downloadVariationPdf = async (svgId) => {
 
     img.onload = function () {
         const canvas = document.createElement("canvas");
-        canvas.width = viewBox.width;
-        canvas.height = viewBox.height;
-        const ctx = canvas.getContext("2d");
+        const dpi = 2; // High resolution for clear text and shapes
+        canvas.width = width * dpi;
+        canvas.height = height * dpi;
 
+        const ctx = canvas.getContext("2d");
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
+
+        // Use full canvas dimensions to prevent clipping of negative offsets
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         const imgData = canvas.toDataURL("image/jpeg", 1.0);
-        pdf.addImage(imgData, 'JPEG', 0, 0, viewBox.width, viewBox.height);
-        pdf.save(`Hyweave_Batch_${new Date().getTime()}.pdf`);
+        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+        pdf.save(`Alternate_Configurations.pdf`);
+
         URL.revokeObjectURL(url);
     };
     img.src = url;
