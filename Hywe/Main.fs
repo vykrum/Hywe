@@ -15,6 +15,7 @@ open PolygonEditor
 type ActivePanel =
     | EditorPanel
     | BoundaryPanel
+    | PreviewPanel
 
 /// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =
@@ -34,6 +35,7 @@ type Model =
         PolygonEditor: EditorState
         ActivePanel: ActivePanel
         EditorMode: EditorMode
+        BatchPreview: PreviewConfig[] option
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -47,10 +49,11 @@ type Message =
     | PolygonEditorMsg of PolygonEditorMessage
     | PolygonEditorUpdated of PolygonEditorModel
     | SetActivePanel of ActivePanel
+    | SetBatchPreview of PreviewConfig[]
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
-    | FinishExport
+    | CloseBatch
     | SaveRequested
     | ImportRequested
     | FileImported of string
@@ -109,6 +112,7 @@ let initModel =
         PolygonEditor = Stable PolygonEditor.initModel
         ActivePanel = EditorPanel
         EditorMode = Interactive
+        BatchPreview = None
     }
 
 // Update
@@ -278,79 +282,57 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | ToggleBoundary ->
-        let updatedStx1 = NodeCode.getOutput 
-                            model.Tree model.Sequence 
-                            latestWidth latestHeight latestAbsStr 
-                            latestEntryStr latestOuterStr latestIslandsStr
-
         match model.ActivePanel with
-        | BoundaryPanel ->
-            { model with ActivePanel = EditorPanel; stx1 = updatedStx1 }, Cmd.none
-
+        | BoundaryPanel -> 
+            { model with ActivePanel = EditorPanel }, Cmd.none
         | EditorPanel ->
-            let currentInner = 
-                match model.PolygonEditor with 
-                | Stable m | FreshlyImported m -> m
-        
-            // 1. Parse the text into a new model
-            let updatedEditorState = Parse.importFromHyw updatedStx1 currentInner
-        
-            // 2. Extract the record to sync with JS/Canvas
-            let finalPoly = 
-                match updatedEditorState with 
-                | FreshlyImported m | Stable m -> m
-
+            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newState = Parse.importFromHyw model.stx1 inner
+            let finalPoly = match newState with FreshlyImported m | Stable m -> m
             { model with 
                 ActivePanel = BoundaryPanel
-                stx1 = updatedStx1 
-                // 3. MUST ASSIGN THE NEW STATE HERE
-                PolygonEditor = updatedEditorState 
-            }, 
-            Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-    
-    | ExportPdfRequested ->
-        { model with IsHyweaving = true }, 
-        Cmd.OfAsync.perform (fun () ->
-            let rec computeBatch i acc = async {
-                match i < 24 with
-                | false -> return acc
-                | true ->
-                    let sqnStr = indexToSqn i
-                    let forcedStr = injectSqn model.stx1 sqnStr
-                
-                    let cxls, _ = Parse.spaceCxl [||] forcedStr
-                    let derived = deriveData forcedStr 0
-                
-                    let configData = 
-                        let drawingData = getPdfDrawingData cxls derived.cxClr1 0 10 
-                        {| 
-                            sqnName = sqnStr
-                            shapes = drawingData.shapes
-                            w = drawingData.w
-                            h = drawingData.h
-                        |}
-                
-                    do! Async.Sleep 5
-                    return! computeBatch (i + 1) (configData :: acc)
-            }
-            async {
-                try
-                    let! results = computeBatch 0 []
-                    let payload = results |> List.toArray |> Array.rev
-                
-                    // Use InvokeAsync instead of InvokeVoidAsync for better error trapping during debug
-                    do! js.InvokeVoidAsync("hywePdfEngine.renderContactSheet", payload).AsTask() 
-                        |> Async.AwaitTask
-                with ex ->
-                    // This ensures that even if JS fails, the spinner stops
-                    Console.WriteLine($"PDF Export Error: {ex.Message}")
-            
-                return ()
-            }
-        ) () (fun _ -> FinishExport)
+                PolygonEditor = newState 
+            }, Cmd.ofMsg (PolygonEditorUpdated finalPoly)
+        | PreviewPanel -> 
+            { model with ActivePanel = EditorPanel }, Cmd.none
 
-    | FinishExport ->
-            { model with IsHyweaving = false }, Cmd.none
+    | SetBatchPreview results ->
+        { model with 
+            BatchPreview = Some results
+            IsHyweaving = false 
+            ActivePanel = PreviewPanel // Auto-switch to the new panel
+        }, Cmd.none
+
+    | CloseBatch ->
+        // Return to the Editor when closing the preview
+        { model with 
+            BatchPreview = None
+            ActivePanel = EditorPanel 
+        }, Cmd.none
+
+    | ExportPdfRequested ->
+            { model with IsHyweaving = true }, 
+            Cmd.OfAsync.perform (fun () ->
+                let rec computeBatch i acc = async {
+                    match i >= 24 with
+                    | true -> return acc
+                    | false ->
+                        let sqnStr = indexToSqn i
+                        let forcedStr = injectSqn model.stx1 sqnStr
+                        let cxls, _ = Parse.spaceCxl [||] forcedStr
+                        let d = getPdfDrawingData cxls (deriveData forcedStr 0).cxClr1 0 10 
+                        let configData = 
+                            {| sqnName = sqnStr; w = d.w; h = d.h
+                               shapes = d.shapes |> Array.map (fun s -> 
+                                {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                            |}
+                        do! Async.Sleep 5
+                        return! computeBatch (i + 1) (configData :: acc)
+                }
+                async {
+                    let! results = computeBatch 0 []
+                    return results |> List.toArray |> Array.rev
+                }) () SetBatchPreview
 
     | SaveRequested ->
         // 1. Save to Downloads with timestamp
@@ -427,15 +409,16 @@ let private viewNodeCodeButton (model: Model) (dispatch: Message -> unit) =
         }
     }
 
-/// <summary> Renders the button to toggle boundary parameter modification. </summary>
+/// <summary> Renders the boundary toggle button. </summary>
 let private viewBoundaryOutputButton (model: Model) (dispatch: Message -> unit) =
     let buttonText =
         match model.ActivePanel with
         | EditorPanel -> "Modify Boundary Parameters"
         | BoundaryPanel -> "View Spatial Configuration"
+        | PreviewPanel -> "Return to Editor" // Added missing case
 
     div {
-        attr.style "display:flex; gap:5px; justify-content:center; padding-left:10px; padding-right:10px;"
+        attr.style "display:flex; gap:5px; justify-content:center; padding: 0 10px;"
         button {
             attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch ToggleBoundary)
@@ -540,6 +523,20 @@ let private viewHywePanel (model: Model) (dispatch: Message -> unit) (js: IJSRun
             }
         }
 
+    | PreviewPanel ->
+            div {
+                attr.style "width: 100%; min-height: 500px; background: #1e1e1e;"
+                cond model.BatchPreview <| function
+                    | Some results -> 
+                        VariationPreview results (fun () -> dispatch (SetActivePanel EditorPanel))
+                    | None -> 
+                        div { 
+                            attr.style "padding: 100px; text-align: center; color: white;"
+                            span { attr.``class`` "spinner" }
+                            text " Generating 24 variations from current STX1..." 
+                        }
+            }
+
 /// <summary> Renders the Import/Export toolbar. </summary>
 let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     div {
@@ -559,7 +556,7 @@ let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (j
         button {
             attr.``class`` "hywe-toggle-btn"
             on.click (fun _ -> dispatch ExportPdfRequested)
-            text "PDF"
+            text "Compare"
         }
 
         input {
@@ -576,9 +573,12 @@ let private viewPersistenceToolbar (model: Model) (dispatch: Message -> unit) (j
         }
     }
 
+
+
 /// <summary> The main view composition. </summary>
 let view model dispatch (js: IJSRuntime) =
     concat {
+        
         // Storage Toolbar
         viewPersistenceToolbar model dispatch js
         

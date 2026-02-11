@@ -309,6 +309,73 @@ let svgCoxels
 
 ///
 
+type PreviewShape = {| color: string; points: float[]; name: string; lx: float; ly: float |}
+type PreviewConfig = {| sqnName: string; shapes: PreviewShape[]; w: float; h: float |}
+
+let VariationPreview (configs: PreviewConfig[]) (onClose: unit -> unit) : Node =
+    let cols, rows = 6, 4
+    let cellW, cellH = 160.0, 160.0
+    
+    let getMax getter =
+        if Array.isEmpty configs then 1.0
+        else 
+            let m = configs |> Array.map getter |> Array.max
+            if m <= 0.0 then 1.0 else m
+
+    let maxW = getMax (fun c -> c.w)
+    let maxH = getMax (fun c -> c.h)
+    let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
+
+    div {
+        attr.style "background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #ddd;"
+        
+        div {
+            attr.style "display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"
+            h3 { "Batch Variation Preview" }
+            button { 
+                attr.``class`` "hywe-toggle-btn"
+                on.click (fun _ -> onClose())
+                "✕ Close" 
+            }
+        }
+
+        // svg works, so we keep it as a CE
+        svg {
+            "viewBox" => $"0 0 {float cols * cellW} {float rows * cellH}"
+            attr.style "display: block; width: 100%; height: auto;"
+
+            // Safe collection rendering using 'for'
+            for i in 0 .. (configs.Length - 1) do
+                let cfg = configs.[i]
+                let col, row = i % cols, i / cols
+                let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
+                let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
+                
+                // Use 'elt' for the missing 'g' builder
+                elt "g" {
+                    for s in cfg.shapes do
+                        let xy = 
+                            s.points 
+                            |> Array.chunkBySize 2 
+                            |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") 
+                            |> String.concat " "
+                        
+                        elt "g" {
+                            // Fluent builder inside the CE
+                            plgn().pt(xy).cl(s.color).op("0.8").Elt()
+                            
+                            // Use 'elt' for title tooltip
+                            elt "title" { s.name }
+                        }
+                    svtx()
+                        .xx(string (ox + (maxW * scale / 2.0)))
+                        .yy(string (oy + (maxH * scale / 2.0)))
+                        .nm(cfg.sqnName)
+                        .Elt()
+                }
+        }
+    }
+
 /// Renders an extruded polygon on a canvas via JS WebGL
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.
 let triangulatePolygon 
