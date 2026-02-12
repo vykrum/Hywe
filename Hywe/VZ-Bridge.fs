@@ -368,10 +368,10 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
 
 let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (js: IJSRuntime) : Node =
     let totalItems = configs.Length
-    let cols = 3 
+    let cols = 4 
     let rows = (totalItems + cols - 1) / cols
     let cellW, cellH = 200.0, 200.0 
-    let svgPadding = 50.0 
+    let svgPadding = 20.0 
     
     let getMax getter =
         if Array.isEmpty configs then 1.0
@@ -385,7 +385,14 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
 
     div {
         attr.style "background: transparent; padding: 20px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;"
-        
+        // Header Text
+        div {
+            attr.style "width: 100%; text-align: center; padding: 10px 0;"
+            span { 
+                attr.style "font-family: sans-serif; font-size: 0.9em; color: #666; letter-spacing: 0.5em; font-weight: bold;"
+                text "a l t e r n a t e C o n f i g u r a t i o n s" 
+            }
+        }
         svg {
             attr.id "variation-svg-output"
             "viewBox" => $"{ -svgPadding } { -svgPadding } { (float cols * cellW) + (svgPadding * 2.0) } { (float rows * cellH) + (svgPadding * 2.0) }"
@@ -426,7 +433,7 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
         }
 
         div {
-            attr.style "display: flex; justify-content: flex-end;"
+            attr.style "display: flex; justify-content: center;"
             button {
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> 

@@ -14,7 +14,7 @@ open PolygonEditor
 type Model =
     {
         Sequence: string
-        stx1 : string
+        SrcOfTrth : string
         Tree : SubModel
         LastValidTree: SubModel
         ParseError: bool
@@ -24,12 +24,13 @@ type Model =
         ActivePanel: ActivePanel
         EditorMode: EditorMode
         BatchPreview: PreviewConfig[] option
+        LastBatchSrc: string option
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
 type Message =
     | SetSqnIndex of int
-    | SetStx1 of string
+    | SetSrcOfTrth of string
     | TreeMsg of SubMsg
     | StartHyweave
     | RunHyweave
@@ -91,7 +92,7 @@ let initialOutput = NodeCode.getOutput
 let initModel =
     {
         Sequence = initialSequence
-        stx1 = initialOutput
+        SrcOfTrth = initialOutput
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
@@ -101,6 +102,7 @@ let initModel =
         ActivePanel = LayoutPanel // Changed from EditorPanel
         EditorMode = Interactive
         BatchPreview = None
+        LastBatchSrc = None
     }
 ///
 
@@ -115,8 +117,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetSqnIndex i ->
         { model with Sequence = indexToSqn i }, Cmd.none
 
-    | SetStx1 value ->
-        { model with stx1 = value }, Cmd.none
+    | SetSrcOfTrth value ->
+        { model with SrcOfTrth = value }, Cmd.none
 
     | StartHyweave ->
         // Changed to LayoutPanel
@@ -129,17 +131,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () (fun _ -> RunHyweave)
 
     | RunHyweave ->
-        let updatedStx1 =
+        let updatedSrcOfTrth =
             match model.EditorMode with
             | Syntax ->
                 let inner = 
                     match model.PolygonEditor with 
                     | Stable m | FreshlyImported m -> m
 
-                let newState = Parse.importFromHyw model.stx1 inner
+                let newState = Parse.importFromHyw model.SrcOfTrth inner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
                 syncPolygonState finalPoly
-                model.stx1
+                model.SrcOfTrth
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
@@ -152,7 +154,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     latestIslandsStr
 
         // Trigger the Shadow Save to browser memory immediately
-        Storage.autoSave js updatedStx1 |> ignore
+        Storage.autoSave js updatedSrcOfTrth |> ignore
 
         let newModel =
             match model.EditorMode with
@@ -161,17 +163,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     match model.PolygonEditor with 
                     | Stable m | FreshlyImported m -> m
 
-                let newState = Parse.importFromHyw updatedStx1 inner
+                let newState = Parse.importFromHyw updatedSrcOfTrth inner
 
                 { model with 
-                    stx1 = updatedStx1
-                    Derived = deriveData updatedStx1 elv
+                    SrcOfTrth = updatedSrcOfTrth
+                    Derived = deriveData updatedSrcOfTrth elv
                     PolygonEditor = newState }
 
             | Interactive ->
                 { model with 
-                    stx1 = updatedStx1
-                    Derived = deriveData updatedStx1 elv }
+                    SrcOfTrth = updatedSrcOfTrth
+                    Derived = deriveData updatedSrcOfTrth elv }
                 
         newModel,
         Cmd.OfAsync.perform
@@ -194,7 +196,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                             latestEntryStr
                             latestOuterStr
                             latestIslandsStr
-        { model with Tree = updatedTree; stx1 = newOutput }, Cmd.none
+        { model with Tree = updatedTree; SrcOfTrth = newOutput }, Cmd.none
 
     | PolygonEditorMsg subMsg ->
         let currentInnerModel = 
@@ -213,30 +215,47 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SetActivePanel panel ->
         match panel with
-        | ComparePanel ->
-            // Trigger calculation if we don't have results or if you want to refresh
-            let model' = { model with ActivePanel = panel; IsHyweaving = true }
-            model', Cmd.OfAsync.perform (fun () ->
-                let rec computeBatch i acc = async {
-                    match i >= 24 with
-                    | true -> return acc
-                    | false ->
-                        let sqnStr = indexToSqn i
-                        let forcedStr = injectSqn model.stx1 sqnStr
-                        let cxls, _ = Parse.spaceCxl [||] forcedStr
-                        let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                        let configData = 
-                            {| sqnName = sqnStr; w = d.w; h = d.h
-                               shapes = d.shapes |> Array.map (fun s -> 
-                                 {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                            |}
-                        do! Async.Sleep 5
-                        return! computeBatch (i + 1) (configData :: acc)
-                }
-                async {
-                    let! results = computeBatch 0 []
-                    return results |> List.toArray |> Array.rev
-                }) () SetBatchPreview
+        | BatchPanel ->
+            // Decide if we need to wipe the cache based on a string comparison
+            let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
+        
+            match isStale with
+            | true -> 
+                // 1. Clear cache (shows "Generating" message)
+                // 2. Start calculation
+                let model' = 
+                    { model with 
+                        ActivePanel = panel
+                        IsHyweaving = true
+                        BatchPreview = None // This clears the cache immediately
+                    }
+            
+                model', Cmd.OfAsync.perform (fun () ->
+                    let rec computeBatch i acc = async {
+                        match i >= 24 with
+                        | true -> return acc
+                        | false ->
+                            let sqnStr = indexToSqn i
+                            let forcedStr = injectSqn model.SrcOfTrth sqnStr
+                            let cxls, _ = Parse.spaceCxl [||] forcedStr
+                            let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
+                            let configData = 
+                                {| sqnName = sqnStr; w = d.w; h = d.h
+                                   shapes = d.shapes |> Array.map (fun s -> 
+                                     {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                                |}
+                            do! Async.Sleep 5
+                            return! computeBatch (i + 1) (configData :: acc)
+                    }
+                    async {
+                        let! results = computeBatch 0 []
+                        return results |> List.toArray |> Array.rev
+                    }) () SetBatchPreview
+
+            | false -> 
+                // Data is the same, just switch tabs and show existing results
+                { model with ActivePanel = panel }, Cmd.none
+            
         | _ -> 
             { model with ActivePanel = panel }, Cmd.none
 
@@ -244,7 +263,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         match model.EditorMode with
         | Syntax ->
             let maybeSubModel =
-                model.stx1
+                model.SrcOfTrth
                 |> CodeNode.preprocessCode
                 |> fun processed ->
                     try Some (CodeNode.parseOutput processed)
@@ -269,7 +288,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
                 { model with
                     Tree = subModel
-                    stx1 = newOutput
+                    SrcOfTrth = newOutput
                     LastValidTree = subModel
                     EditorMode = Interactive
                     ParseError = false
@@ -291,7 +310,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     latestIslandsStr
 
             { model with
-                stx1 = newOutput
+                SrcOfTrth = newOutput
                 LastValidTree = model.Tree
                 EditorMode = Syntax
                 ParseError = false
@@ -304,7 +323,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | _ -> 
             // Logic for entering BoundaryPanel
             let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw model.stx1 inner
+            let newState = Parse.importFromHyw model.SrcOfTrth inner
             let finalPoly = match newState with FreshlyImported m | Stable m -> m
             { model with 
                 ActivePanel = BoundaryPanel
@@ -314,15 +333,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetBatchPreview results ->
         { model with 
             BatchPreview = Some results
+            LastBatchSrc = Some model.SrcOfTrth // Store the string used for this batch
             IsHyweaving = false 
-            ActivePanel = ComparePanel 
+            ActivePanel = BatchPanel 
         }, Cmd.none
 
     | CloseBatch ->
-        { model with 
-            BatchPreview = None
-            ActivePanel = LayoutPanel 
-        }, Cmd.none
+        { model with ActivePanel = LayoutPanel }, Cmd.none
 
     | ExportPdfRequested ->
             { model with IsHyweaving = true }, 
@@ -332,7 +349,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     | true -> return acc
                     | false ->
                         let sqnStr = indexToSqn i
-                        let forcedStr = injectSqn model.stx1 sqnStr
+                        let forcedStr = injectSqn model.SrcOfTrth sqnStr
                         let cxls, _ = Parse.spaceCxl [||] forcedStr
                         let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
                         let configData = 
@@ -350,9 +367,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SaveRequested ->
         // 1. Save to Downloads with timestamp
-        Storage.saveFile js model.stx1 |> ignore
+        Storage.saveFile js model.SrcOfTrth |> ignore
         // 2. Also update Shadow Save so the session is current
-        Storage.autoSave js model.stx1 |> ignore
+        Storage.autoSave js model.SrcOfTrth |> ignore
         model, Cmd.none
 
     | ImportRequested ->
@@ -389,12 +406,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
             // 4. Update the Model
             { model with 
-                stx1 = clean
+                SrcOfTrth = clean
                 Tree = newTree
                 LastValidTree = newTree
                 Derived = deriveData clean elv 
                 PolygonEditor = newState 
                 ParseError = false
+                LastBatchSrc = None
             }, 
             Cmd.batch [
                 // Force UI components to notice the update
@@ -458,9 +476,9 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
             textarea {
                 attr.``class`` "hyweSyntax"
-                attr.key (model.stx1.GetHashCode().ToString())
-                attr.value model.stx1 
-                on.change (fun e -> dispatch (SetStx1 (unbox<string> e.Value)))
+                attr.key (model.SrcOfTrth.GetHashCode().ToString())
+                attr.value model.SrcOfTrth
+                on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
             }
         }
     | Interactive ->
@@ -512,7 +530,7 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
         tab "Layout" LayoutPanel
         tab "Table" TablePanel
         tab "View" ViewPanel
-        tab "Compare" ComparePanel
+        tab "Batch" BatchPanel
     }
 
 /// <summary> Renders the primary action button for starting the weaving process. </summary>
@@ -562,7 +580,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     |> Async.StartImmediate
                 }
             }
-        | ComparePanel ->
+        | BatchPanel ->
             div {
                 // Changed background to #ffffff
                 attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
