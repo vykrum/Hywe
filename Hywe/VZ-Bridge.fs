@@ -399,13 +399,13 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
 
 
     // 4. HEADER & TOTAL CANVAS MATH
-    let headerHeight = 120.0 
+    let headerHeight = 60.0 
     let totalWidth = (float cols * cellW)
     let totalHeight = (float rows * cellH) + headerHeight + legendTotalHeight + 40.0
 
     div {
         attr.id "pdf-export-container"
-        attr.style "background: #ffffff; padding: 40px; width: 100%; display: flex; flex-direction: column; align-items: center;"
+        attr.style "background: #ffffff; padding: 0px 40px; width: 100%; display: flex; flex-direction: column; align-items: center;"
         
         svg {
             attr.id "variation-svg-output"
@@ -438,7 +438,7 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 let lx = totalWidth - 40.0 - borderInset
                 // ly: Moves into the negative header space
                 // We start at the very top (-headerHeight) and add the inset + a small margin
-                let ly = -headerHeight + borderInset + 5.0 
+                let ly = -headerHeight + borderInset + 7.5 
                 "transform" => $"translate({lx}, {ly}) scale(0.04)"
 
                 elt "path" {
@@ -458,7 +458,7 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                     // We add the offset to the x position
                     "x" => (horizontalOffset + (charSpacing * float (i + 1)))
                     "y" => (-headerHeight / 1.5)
-                    attr.style $"font-family: sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal;"
+                    attr.style $"font-family: sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal;dominant-baseline: hanging;"
                     text (labelPhrase.[i].ToString())
                 }
 
@@ -495,7 +495,7 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
 
         // Download Button
         div {
-            attr.style "margin-top: 30px;"
+            attr.style "margin-top: 5px;"
             button {
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> 
