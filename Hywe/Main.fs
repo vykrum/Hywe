@@ -25,6 +25,7 @@ type Model =
         EditorMode: EditorMode
         BatchPreview: PreviewConfig[] option
         LastBatchSrc: string option
+        SelectedPreviewIndex : int option
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -42,6 +43,7 @@ type Message =
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
+    | TapPreview of int
     | CloseBatch
     | SaveRequested
     | ImportRequested
@@ -103,6 +105,7 @@ let initModel =
         EditorMode = Interactive
         BatchPreview = None
         LastBatchSrc = None
+        SelectedPreviewIndex = None
     }
 ///
 
@@ -116,15 +119,32 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     match message with
     | SetSqnIndex i ->
         let newSqn = indexToSqn i
-        // 1. Inject the new sequence into the string immediately
-        let newSrc = injectSqn model.SrcOfTrth newSqn
     
-        // 2. Update model with both the new sequence and the updated string
+        // Determine the new Source of Truth based on the current mode
+        let updatedSrc = 
+            match model.EditorMode with
+            | Interactive -> 
+                // In Interactive mode, we must rebuild the string from the Tree + New Sequence
+                NodeCode.getOutput 
+                    model.Tree 
+                    newSqn 
+                    latestWidth 
+                    latestHeight 
+                    latestAbsStr 
+                    latestEntryStr 
+                    latestOuterStr 
+                    latestIslandsStr
+            | Syntax -> 
+                // In Syntax mode, we just inject the new sequence into the existing string
+                injectSqn model.SrcOfTrth newSqn
+
+        // Update the model with the synchronized state
         let modelWithNewSqn = 
             { model with 
                 Sequence = newSqn
-                SrcOfTrth = newSrc
+                SrcOfTrth = updatedSrc
                 IsHyweaving = true 
+                SelectedPreviewIndex = None // Reset any tap-labels from the batch view
             }
 
         modelWithNewSqn,
@@ -233,18 +253,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetActivePanel panel ->
         match panel with
         | BatchPanel ->
-            // Decide if we need to wipe the cache based on a string comparison
+            // Compare current code to the code used for the last generated batch
             let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
         
             match isStale with
             | true -> 
-                // 1. Clear cache (shows "Generating" message)
-                // 2. Start calculation
+                // 1. Reset state: clear old previews, clear selection index, and start loader
                 let model' = 
                     { model with 
                         ActivePanel = panel
                         IsHyweaving = true
-                        BatchPreview = None // This clears the cache immediately
+                        BatchPreview = None 
+                        SelectedPreviewIndex = None // Reset selection so old labels don't persist
                     }
             
                 model', Cmd.OfAsync.perform (fun () ->
@@ -255,22 +275,28 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                             let sqnStr = indexToSqn i
                             let forcedStr = injectSqn model.SrcOfTrth sqnStr
                             let cxls, _ = Parse.spaceCxl [||] forcedStr
+                    
+                            // Generate geometry for this specific variation
                             let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
+                    
                             let configData = 
                                 {| sqnName = sqnStr; w = d.w; h = d.h
                                    shapes = d.shapes |> Array.map (fun s -> 
                                      {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
                                 |}
+                        
+                            // Yield control to UI thread to keep the spinner spinning
                             do! Async.Sleep 5
                             return! computeBatch (i + 1) (configData :: acc)
                     }
                     async {
                         let! results = computeBatch 0 []
+                        // Reverse to maintain correct order (0 to 23)
                         return results |> List.toArray |> Array.rev
                     }) () SetBatchPreview
 
             | false -> 
-                // Data is the same, just switch tabs and show existing results
+                // Data is identical to the last run; just switch tabs
                 { model with ActivePanel = panel }, Cmd.none
             
         | _ -> 
@@ -355,8 +381,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             ActivePanel = BatchPanel 
         }, Cmd.none
 
+    | TapPreview i ->
+        let nextSelection = 
+            match model.SelectedPreviewIndex with
+            | Some current when current = i -> None
+            | _ -> Some i
+    
+        { model with SelectedPreviewIndex = nextSelection }, Cmd.none
+
     | CloseBatch ->
-        { model with ActivePanel = LayoutPanel }, Cmd.none
+        // Reset selection when closing the panel
+        { model with ActivePanel = LayoutPanel; SelectedPreviewIndex = None }, Cmd.none
 
     | ExportPdfRequested ->
             { model with IsHyweaving = true }, 
@@ -617,12 +652,16 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
         | BatchPanel ->
             div {
-                // Changed background to #ffffff
                 attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
         
                 cond model.BatchPreview <| function
                     | Some results -> 
-                        alternateConfigurations results (fun () -> dispatch (SetActivePanel LayoutPanel)) js
+                        alternateConfigurations 
+                            results 
+                            model.SelectedPreviewIndex // 1. Current selection state
+                            TapPreview                 // 2. The Message constructor
+                            dispatch                   // 3. The Elmish dispatcher
+                            (fun () -> dispatch (SetActivePanel LayoutPanel)) js
                     | None -> 
                         div { 
                             attr.style "text-align:center; padding: 100px; color: #888; width: 100%;"

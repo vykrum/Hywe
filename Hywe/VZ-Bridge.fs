@@ -366,8 +366,15 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
 
         {| shapes = shapes; w = currentWidth; h = currentHeight |}
 
-let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (js: IJSRuntime) : Node =
-    // 1. GRID CONSTANTS (Define these first!)
+let alternateConfigurations 
+    (configs: PreviewConfig[]) 
+    (selectedIndex: int option) 
+    (onTap: int -> 'msg)
+    (dispatch: 'msg -> unit)
+    (onClose: unit -> unit)
+    (js: IJSRuntime): Node =
+    
+    // 1. GRID CONSTANTS
     let totalItems = configs.Length
     let cols = 4 
     let rows = (totalItems + cols - 1) / cols
@@ -386,7 +393,7 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
     let maxH = getMax (fun c -> c.h)
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
-    // 3. LEGEND MATH (Needs uniqueShapes from configs)
+    // 3. LEGEND MATH
     let uniqueShapes = 
         match configs.Length with
         | 0 -> [||]
@@ -397,11 +404,11 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
     let legendRows = ceil (float uniqueShapes.Length / float legendItemsPerRow)
     let legendTotalHeight = (max 1.0 legendRows) * legendItemHeight
 
-
     // 4. HEADER & TOTAL CANVAS MATH
     let headerHeight = 60.0 
     let totalWidth = (float cols * cellW)
     let totalHeight = (float rows * cellH) + headerHeight + legendTotalHeight + 40.0
+    let borderColor = "#444"
 
     div {
         attr.id "pdf-export-container"
@@ -412,42 +419,15 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
             "viewBox" => $"{ -svgPadding } { -headerHeight } { totalWidth + (svgPadding * 2.0) } { totalHeight }"
             attr.style "display: block; width: 100%; height: auto; background: #ffffff;"
             
-            // --- PDF-ONLY BORDER ---
-            let borderInset = 10.0
-            let borderColor = "#444"
+            // --- BACKGROUND CATCHER (Click Outside) ---
             elt "rect" {
-                attr.id "pdf-border"
-                // Move starting point inwards
-                "x" => (-svgPadding + borderInset)
-                "y" => (-headerHeight + borderInset)
-                // Reduce total size to maintain the inset on all sides
-                "width" => (totalWidth + (svgPadding * 2.0) - (borderInset * 2.0))
-                "height" => (totalHeight - (borderInset * 2.0))
-                "fill" => "none"
-                "stroke" => borderColor
-                "stroke-width" => "1.5"
-                attr.style "visibility: hidden;"
+                "x" => -svgPadding; "y" => -headerHeight
+                "width" => totalWidth + (svgPadding * 2.0); "height" => totalHeight
+                "fill" => "white"; "fill-opacity" => "0.01"
+                on.click (fun _ -> dispatch (onTap -1))
             }
 
-            // --- PDF-ONLY LOGO (Header Position) ---
-            elt "g" {
-                attr.id "pdf-logo"
-                attr.style "visibility: hidden;" // Hidden on the web UI
-
-                // lx: Pushes to the right side
-                let lx = totalWidth - 40.0 - borderInset
-                // ly: Moves into the negative header space
-                // We start at the very top (-headerHeight) and add the inset + a small margin
-                let ly = -headerHeight + borderInset + 7.5 
-                "transform" => $"translate({lx}, {ly}) scale(0.04)"
-
-                elt "path" {
-                    "fill" => borderColor
-                    "d" => "M 167 836 Q 167 850 179 857 L 279 915 Q 317 937 317 893 L 317 600 Q 317 575 342 575 L 500 575 Q 525 575 525 600 L 525 738 Q 525 788 575 788 L 748 788 Q 841 788 760 834 L 488 992 Q 450 1013 488 1035 L 588 1093 Q 600 1100 613 1093 L 1021 857 Q 1033 850 1033 836 L 1033 364 Q 1033 350 1021 343 L 921 285 Q 883 263 883 307 L 883 613 Q 883 638 858 638 L 700 638 Q 675 638 675 613 L 675 450 Q 675 425 650 425 L 430 425 Q 337 425 418 378 L 713 208 Q 750 187 713 165 L 613 104 Q 600 100 588 104 L 179 343 Q 167 350 167 364 L 167 836"
-                }
-            }
-
-            // --- HEADER ---
+            // --- HEADER (Fixed Interpolation) ---
             let labelPhrase = "alternATE◦CONFIGURATions"
             let restrictedWidth = totalWidth * 0.7 
             let horizontalOffset = (totalWidth - restrictedWidth) / 2.0
@@ -455,10 +435,12 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
 
             for i in 0 .. labelPhrase.Length - 1 do
                 elt "text" {
-                    // We add the offset to the x position
                     "x" => (horizontalOffset + (charSpacing * float (i + 1)))
                     "y" => (-headerHeight / 1.5)
-                    attr.style $"font-family: sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal;dominant-baseline: hanging;"
+    
+                    // Correct way to pass the string as an Attr
+                    attr.style $"font-family: sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal; dominant-baseline: hanging;"
+    
                     text (labelPhrase.[i].ToString())
                 }
 
@@ -468,13 +450,39 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 let col, row = i % cols, i / cols
                 let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
-            
+                let isSelected = selectedIndex = Some i
+
                 elt "g" {
                     for s in cfg.shapes do
-                        let xy = s.points |> Array.chunkBySize 2 |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") |> String.concat " "
-                        elt "g" { plgn().pt(xy).cl(s.color).op("0.8").Elt() }
+                        // Filter: Only show if polygon has points
+                        if not (Array.isEmpty s.points) then
+                            let xy = s.points 
+                                     |> Array.chunkBySize 2 
+                                     |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") 
+                                     |> String.concat " "
+            
+                            elt "g" { 
+                                on.click (fun _ -> dispatch (onTap i))
+                                "onclick:stopPropagation" => true
                     
-                    svtx().xx(string (ox + (maxW * scale / 2.0))).yy(string (oy + (maxH * scale / 2.0) + (maxH * scale / 2.0) + 12.0)).nm(cfg.sqnName).Elt()
+                                attr.style "cursor: pointer;"
+                                plgn().pt(xy).cl(s.color).op("0.8").Elt() 
+
+                                // Temporary Labels
+                                if isSelected then
+                                    let tx = ox + (s.lx * scale)
+                                    let ty = oy + (s.ly * scale)
+                                    elt "text" {
+                                        "x" => tx; "y" => (ty + 3.0)
+                                        attr.style "font-family:sans-serif; font-size:9px; fill:white; text-anchor:middle; font-weight:bold; pointer-events:none;"
+                                        text s.name 
+                                    }
+                            }
+
+                    // Permanent label below
+                    let labelX = ox + (maxW * scale / 2.0)
+                    let labelY = oy + (maxH * scale) + 12.0
+                    svtx().xx(string labelX).yy(string labelY).nm(cfg.sqnName).Elt()
                 }
 
             // --- LEGEND ---
@@ -485,33 +493,34 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 let currC = float (i % legendItemsPerRow)
                 let lx = currC * (totalWidth / float legendItemsPerRow)
                 let ly = legendStartY + (currR * legendItemHeight)
-                
+    
                 elt "g" {
                     "transform" => $"translate({lx+30.0}, {ly})"
                     elt "rect" { "y" => -12.0; "width" => 14; "height" => 14; "fill" => s.color }
-                    elt "text" { "x" => 20.0; text s.name }
+                    elt "text" { 
+                        "x" => 20.0 
+                        // Add explicit font-family here
+                        attr.style "font-family: Arial, Helvetica, sans-serif; font-size: 12px; fill: #333;"
+                        text s.name 
+                    }
                 }
         }
-
-        // Download Button
+        // --- DOWNLOAD BUTTON ---
         div {
-            attr.style "margin-top: 5px;"
+            attr.style "margin-top: 10px;"
             button {
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> 
-                    async {
-                        let now = System.DateTime.Now
-                        let datePart = now.ToString("yyMMddmm")
-                        let fileName = $"Hyw{datePart}.pdf"
-
-                        // TARGET THE SVG ID: "variation-svg-output"
-                        do! js.InvokeVoidAsync("alternateConfigurationsPdf", "variation-svg-output", fileName).AsTask() 
-                            |> Async.AwaitTask
-                    } |> Async.StartImmediate
+                    let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                    let fileName = "HywVariations_" + datePart + ".svg"
+            
+                    // Call our new SVG downloader
+                    js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() 
+                    |> ignore
                 )
-                text "Download PDF"
+                text "Download SVG"
             }
-        }
+}
     }
 
 /// Renders an extruded polygon on a canvas via JS WebGL
