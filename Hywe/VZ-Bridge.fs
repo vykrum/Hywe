@@ -367,12 +367,14 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
         {| shapes = shapes; w = currentWidth; h = currentHeight |}
 
 let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (js: IJSRuntime) : Node =
+    // 1. GRID CONSTANTS (Define these first!)
     let totalItems = configs.Length
     let cols = 4 
     let rows = (totalItems + cols - 1) / cols
     let cellW, cellH = 200.0, 200.0 
     let svgPadding = 20.0 
     
+    // 2. SCALE MATH
     let getMax getter =
         match Array.isEmpty configs with
         | true -> 1.0
@@ -384,10 +386,22 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
     let maxH = getMax (fun c -> c.h)
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
-    let headerHeight = 120.0 // Increased slightly for spacing
-    let legendHeight = 100.0
+    // 3. LEGEND MATH (Needs uniqueShapes from configs)
+    let uniqueShapes = 
+        match configs.Length with
+        | 0 -> [||]
+        | _ -> configs.[0].shapes |> Array.distinctBy (fun s -> s.name)
+
+    let legendItemsPerRow = 8 
+    let legendItemHeight = 25.0
+    let legendRows = ceil (float uniqueShapes.Length / float legendItemsPerRow)
+    let legendTotalHeight = (max 1.0 legendRows) * legendItemHeight
+
+
+    // 4. HEADER & TOTAL CANVAS MATH
+    let headerHeight = 120.0 
     let totalWidth = (float cols * cellW)
-    let totalHeight = (float rows * cellH) + headerHeight + legendHeight
+    let totalHeight = (float rows * cellH) + headerHeight + legendTotalHeight + 40.0
 
     div {
         attr.id "pdf-export-container"
@@ -464,24 +478,18 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 }
 
             // --- LEGEND ---
-            let uniqueShapes = configs.[0].shapes |> Array.distinctBy (fun s -> s.name)
-            let legendY = (float rows * cellH) + 40.0
-            let numShapes = match uniqueShapes.Length with | 0 -> 1 | n -> n
-            let itemWidth = totalWidth / float numShapes
-
+            let legendStartY = (float rows * cellH) + 40.0
             for i in 0 .. uniqueShapes.Length - 1 do
                 let s = uniqueShapes.[i]
-                let lx = (itemWidth * float i) + (itemWidth / 2.0)
+                let currR = floor (float i / float legendItemsPerRow)
+                let currC = float (i % legendItemsPerRow)
+                let lx = currC * (totalWidth / float legendItemsPerRow)
+                let ly = legendStartY + (currR * legendItemHeight)
+                
                 elt "g" {
-                    elt "rect" {
-                        "x" => (lx - 40.0); "y" => (legendY - 12.0)
-                        "width" => 14; "height" => 14; "fill" => s.color 
-                    }
-                    elt "text" {
-                        "x" => (lx - 20.0); "y" => legendY
-                        attr.style "font-family: sans-serif; font-size: 14px; fill: #444;"
-                        text s.name
-                    }
+                    "transform" => $"translate({lx+30.0}, {ly})"
+                    elt "rect" { "y" => -12.0; "width" => 14; "height" => 14; "fill" => s.color }
+                    elt "text" { "x" => 20.0; text s.name }
                 }
         }
 

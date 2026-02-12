@@ -139,7 +139,7 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
                 attr.max (string maxIndex)
                 attr.step "1"
                 attr.value (string currentIndex)
-                on.change (fun ev ->
+                on.input (fun ev ->
                     match ev.Value with
                     | :? string as s ->
                         match System.Int32.TryParse(s) with

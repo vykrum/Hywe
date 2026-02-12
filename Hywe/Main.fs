@@ -115,7 +115,24 @@ let initModel =
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
     | SetSqnIndex i ->
-        { model with Sequence = indexToSqn i }, Cmd.none
+        let newSqn = indexToSqn i
+        // 1. Inject the new sequence into the string immediately
+        let newSrc = injectSqn model.SrcOfTrth newSqn
+    
+        // 2. Update model with both the new sequence and the updated string
+        let modelWithNewSqn = 
+            { model with 
+                Sequence = newSqn
+                SrcOfTrth = newSrc
+                IsHyweaving = true 
+            }
+
+        modelWithNewSqn,
+        Cmd.OfAsync.perform
+            (fun () -> async {
+                do! Async.Sleep 5 
+                return ()
+            }) () (fun _ -> RunHyweave)
 
     | SetSrcOfTrth value ->
         { model with SrcOfTrth = value }, Cmd.none
