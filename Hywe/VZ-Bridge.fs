@@ -374,37 +374,81 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
     let svgPadding = 20.0 
     
     let getMax getter =
-        if Array.isEmpty configs then 1.0
-        else 
+        match Array.isEmpty configs with
+        | true -> 1.0
+        | false -> 
             let m = configs |> Array.map getter |> Array.max
-            if m <= 0.0 then 1.0 else m
+            match m <= 0.0 with | true -> 1.0 | false -> m
 
     let maxW = getMax (fun c -> c.w)
     let maxH = getMax (fun c -> c.h)
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
-    div {
-        attr.style "background: transparent; padding: 20px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;"
-        
-        // Header
-        div {
-            // align-self: center forces this specific div to the middle of the column
-            attr.style "display: flex; justify-content: space-between; width: 85%; max-width: 1000px; align-self: center; margin-bottom: 30px; margin-top: 20px;"
-        
-            let labelPhrase = "alternATE◦CONFIGURATions"
-            for i in 0 .. labelPhrase.Length - 1 do
-                span {
-                    attr.style "font-family: sans-serif; font-size: 1.0em; color: #333; font-weight: normal;"
-                    text (labelPhrase.[i].ToString())
-                }
-        }
+    let headerHeight = 120.0 // Increased slightly for spacing
+    let legendHeight = 100.0
+    let totalWidth = (float cols * cellW)
+    let totalHeight = (float rows * cellH) + headerHeight + legendHeight
 
-        // Alternate Configurations SVG
+    div {
+        attr.id "pdf-export-container"
+        attr.style "background: #ffffff; padding: 40px; width: 100%; display: flex; flex-direction: column; align-items: center;"
+        
         svg {
             attr.id "variation-svg-output"
-            "viewBox" => $"{ -svgPadding } { -svgPadding } { (float cols * cellW) + (svgPadding * 2.0) } { (float rows * cellH) + (svgPadding * 2.0) }"
+            "viewBox" => $"{ -svgPadding } { -headerHeight } { totalWidth + (svgPadding * 2.0) } { totalHeight }"
             attr.style "display: block; width: 100%; height: auto; background: #ffffff;"
+            
+            // --- PDF-ONLY BORDER ---
+            let borderInset = 10.0
+            let borderColor = "#444"
+            elt "rect" {
+                attr.id "pdf-border"
+                // Move starting point inwards
+                "x" => (-svgPadding + borderInset)
+                "y" => (-headerHeight + borderInset)
+                // Reduce total size to maintain the inset on all sides
+                "width" => (totalWidth + (svgPadding * 2.0) - (borderInset * 2.0))
+                "height" => (totalHeight - (borderInset * 2.0))
+                "fill" => "none"
+                "stroke" => borderColor
+                "stroke-width" => "1.5"
+                attr.style "visibility: hidden;"
+            }
 
+            // --- PDF-ONLY LOGO (Header Position) ---
+            elt "g" {
+                attr.id "pdf-logo"
+                attr.style "visibility: hidden;" // Hidden on the web UI
+
+                // lx: Pushes to the right side
+                let lx = totalWidth - 40.0 - borderInset
+                // ly: Moves into the negative header space
+                // We start at the very top (-headerHeight) and add the inset + a small margin
+                let ly = -headerHeight + borderInset + 5.0 
+                "transform" => $"translate({lx}, {ly}) scale(0.04)"
+
+                elt "path" {
+                    "fill" => borderColor
+                    "d" => "M 167 836 Q 167 850 179 857 L 279 915 Q 317 937 317 893 L 317 600 Q 317 575 342 575 L 500 575 Q 525 575 525 600 L 525 738 Q 525 788 575 788 L 748 788 Q 841 788 760 834 L 488 992 Q 450 1013 488 1035 L 588 1093 Q 600 1100 613 1093 L 1021 857 Q 1033 850 1033 836 L 1033 364 Q 1033 350 1021 343 L 921 285 Q 883 263 883 307 L 883 613 Q 883 638 858 638 L 700 638 Q 675 638 675 613 L 675 450 Q 675 425 650 425 L 430 425 Q 337 425 418 378 L 713 208 Q 750 187 713 165 L 613 104 Q 600 100 588 104 L 179 343 Q 167 350 167 364 L 167 836"
+                }
+            }
+
+            // --- HEADER ---
+            let labelPhrase = "alternATE◦CONFIGURATions"
+            let restrictedWidth = totalWidth * 0.7 
+            let horizontalOffset = (totalWidth - restrictedWidth) / 2.0
+            let charSpacing = restrictedWidth / float (labelPhrase.Length + 1)
+
+            for i in 0 .. labelPhrase.Length - 1 do
+                elt "text" {
+                    // We add the offset to the x position
+                    "x" => (horizontalOffset + (charSpacing * float (i + 1)))
+                    "y" => (-headerHeight / 1.5)
+                    attr.style $"font-family: sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal;"
+                    text (labelPhrase.[i].ToString())
+                }
+
+            // --- THE GRID ---
             for i in 0 .. (configs.Length - 1) do
                 let cfg = configs.[i]
                 let col, row = i % cols, i / cols
@@ -412,72 +456,48 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
             
                 elt "g" {
-                    // Loop through each of the 10 shapes per configuration
                     for s in cfg.shapes do
-                        let xy = 
-                            s.points 
-                            |> Array.chunkBySize 2 
-                            |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") 
-                            |> String.concat " "
+                        let xy = s.points |> Array.chunkBySize 2 |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") |> String.concat " "
+                        elt "g" { plgn().pt(xy).cl(s.color).op("0.8").Elt() }
                     
-                        elt "g" {
-                            elt "title" { text s.name } 
-                        
-                            plgn()
-                                .pt(xy)
-                                .cl(s.color)
-                                .op("0.8") 
-                                .Elt()
-                        }
-                
-                    // Sequence Label
-                    svtx()
-                        .xx(string (ox + (maxW * scale / 2.0)))
-                        .yy(string (oy + (maxH * scale / 2.0) + (maxH * scale / 2.0) + 12.0))
-                        .nm(cfg.sqnName)
-                        .Elt()
+                    svtx().xx(string (ox + (maxW * scale / 2.0))).yy(string (oy + (maxH * scale / 2.0) + (maxH * scale / 2.0) + 12.0)).nm(cfg.sqnName).Elt()
                 }
-        }
 
-        // Legend 
-        div {
-            attr.style "display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; max-width: 90%;"
-        
-            // We pull the names and colors from the first variation (configs.[0])
-            let uniqueShapes = 
-                configs.[0].shapes 
-                |> Array.distinctBy (fun s -> s.name)
+            // --- LEGEND ---
+            let uniqueShapes = configs.[0].shapes |> Array.distinctBy (fun s -> s.name)
+            let legendY = (float rows * cellH) + 40.0
+            let numShapes = match uniqueShapes.Length with | 0 -> 1 | n -> n
+            let itemWidth = totalWidth / float numShapes
 
-            for s in uniqueShapes do
-                div {
-                    attr.style "display: flex; align-items: center; gap: 8px;"
-                
-                    // Color Swatch
-                    div {
-                        attr.style (sprintf "width: 12px; height: 12px; border-radius: 2px; background: %s;" s.color)
+            for i in 0 .. uniqueShapes.Length - 1 do
+                let s = uniqueShapes.[i]
+                let lx = (itemWidth * float i) + (itemWidth / 2.0)
+                elt "g" {
+                    elt "rect" {
+                        "x" => (lx - 40.0); "y" => (legendY - 12.0)
+                        "width" => 14; "height" => 14; "fill" => s.color 
                     }
-                
-                    // Label Name
-                    span {
-                        attr.style "font-family: sans-serif; font-size: 0.8em; color: #444; text-transform: lowercase;"
+                    elt "text" {
+                        "x" => (lx - 20.0); "y" => legendY
+                        attr.style "font-family: sans-serif; font-size: 14px; fill: #444;"
                         text s.name
                     }
                 }
         }
 
-        // Download PDF Button
+        // Download Button
         div {
-            attr.style "display: flex; justify-content: center;"
+            attr.style "margin-top: 30px;"
             button {
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> 
                     async {
-                        // "24" + YearMonthDayMinute
-                        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                        let now = System.DateTime.Now
+                        let datePart = now.ToString("yyMMddmm")
                         let fileName = $"Hyw{datePart}.pdf"
 
-                        // Ensure your JS function: alternateConfigurationsPdf(id, fileName)
-                        do! js.InvokeVoidAsync("alternateConfigurationsPdf", "pdf-export-container", fileName).AsTask() 
+                        // TARGET THE SVG ID: "variation-svg-output"
+                        do! js.InvokeVoidAsync("alternateConfigurationsPdf", "variation-svg-output", fileName).AsTask() 
                             |> Async.AwaitTask
                     } |> Async.StartImmediate
                 )

@@ -244,45 +244,60 @@ window.readHywFile = (fileInputId) => {
 window.clickElement = (id) => document.getElementById(id).click();
 
 // PDF download from SVG
-window.alternateConfigurationsPdf = async (svgId) => {
+window.alternateConfigurationsPdf = async (svgId, fileName) => {
     const { jsPDF } = window.jspdf;
     const svg = document.getElementById(svgId);
-    if (!svg) return;
+    const proceed = svg ? true : false;
+    if (!proceed) return;
 
-    const vb = svg.viewBox.baseVal;
-    const width = vb.width;
-    const height = vb.height;
+    const border = document.getElementById("pdf-border");
+    const logo = document.getElementById("pdf-logo");
 
-    // Custom format matches the F# grid aspect ratio exactly
-    const pdf = new jsPDF({
-        orientation: height > width ? 'portrait' : 'landscape',
-        unit: 'px',
-        format: [width, height]
-    });
+    // 1. Show the PDF-only elements
+    border && (border.style.visibility = "visible");
+    logo && (logo.style.visibility = "visible");
 
+    // 2. Serialize SVG to a string
     const svgData = new XMLSerializer().serializeToString(svg);
+
+    // 3. Hide them back on the web UI
+    border && (border.style.visibility = "hidden");
+    logo && (logo.style.visibility = "hidden");
+
+    // 4. Create a Data URL from the serialized SVG
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
+
     const img = new Image();
+    img.crossOrigin = "anonymous"; // Essential for external GitHub images
 
     img.onload = function () {
+        const vb = svg.viewBox.baseVal;
         const canvas = document.createElement("canvas");
-        const dpi = 2; // High resolution for clear text and shapes
-        canvas.width = width * dpi;
-        canvas.height = height * dpi;
+        const dpi = 2;
+
+        canvas.width = vb.width * dpi;
+        canvas.height = vb.height * dpi;
 
         const ctx = canvas.getContext("2d");
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Use full canvas dimensions to prevent clipping of negative offsets
+        // Draw the high-res version to the canvas
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
+        const pdf = new jsPDF({
+            orientation: vb.height > vb.width ? 'p' : 'l',
+            unit: 'px',
+            format: [vb.width, vb.height]
+        });
+
         const imgData = canvas.toDataURL("image/jpeg", 1.0);
-        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-        pdf.save(`Alternate_Configurations.pdf`);
+        pdf.addImage(imgData, 'JPEG', 0, 0, vb.width, vb.height);
+        pdf.save(fileName);
 
         URL.revokeObjectURL(url);
     };
+
     img.src = url;
 };
