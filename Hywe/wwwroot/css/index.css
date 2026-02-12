@@ -190,7 +190,7 @@ input[type=number] {
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
-        transform: translateY(0px);
+        transform: translateY(2px);
     }
 
 .hyWeaveButton {
