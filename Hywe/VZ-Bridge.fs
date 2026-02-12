@@ -472,7 +472,13 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> 
                     async {
-                        do! js.InvokeVoidAsync("alternateConfigurationsPdf", "variation-svg-output").AsTask() |> Async.AwaitTask
+                        // "24" + YearMonthDayMinute
+                        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                        let fileName = $"Hyw{datePart}.pdf"
+
+                        // Ensure your JS function: alternateConfigurationsPdf(id, fileName)
+                        do! js.InvokeVoidAsync("alternateConfigurationsPdf", "pdf-export-container", fileName).AsTask() 
+                            |> Async.AwaitTask
                     } |> Async.StartImmediate
                 )
                 text "Download PDF"
