@@ -385,14 +385,21 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
 
     div {
         attr.style "background: transparent; padding: 20px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;"
-        // Header Text
+        
+        // Header
         div {
-            attr.style "width: 100%; text-align: center; padding: 10px 0;"
-            span { 
-                attr.style "font-family: sans-serif; font-size: 0.9em; color: #666; letter-spacing: 0.5em; font-weight: bold;"
-                text "a l t e r n a t e C o n f i g u r a t i o n s" 
-            }
+            // align-self: center forces this specific div to the middle of the column
+            attr.style "display: flex; justify-content: space-between; width: 85%; max-width: 1000px; align-self: center; margin-bottom: 30px; margin-top: 20px;"
+        
+            let labelPhrase = "alternATE◦CONFIGURATions"
+            for i in 0 .. labelPhrase.Length - 1 do
+                span {
+                    attr.style "font-family: sans-serif; font-size: 1.0em; color: #333; font-weight: normal;"
+                    text (labelPhrase.[i].ToString())
+                }
         }
+
+        // Alternate Configurations SVG
         svg {
             attr.id "variation-svg-output"
             "viewBox" => $"{ -svgPadding } { -svgPadding } { (float cols * cellW) + (svgPadding * 2.0) } { (float rows * cellH) + (svgPadding * 2.0) }"
@@ -432,6 +439,33 @@ let alternateConfigurations (configs: PreviewConfig[]) (onClose: unit -> unit) (
                 }
         }
 
+        // Legend 
+        div {
+            attr.style "display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; max-width: 90%;"
+        
+            // We pull the names and colors from the first variation (configs.[0])
+            let uniqueShapes = 
+                configs.[0].shapes 
+                |> Array.distinctBy (fun s -> s.name)
+
+            for s in uniqueShapes do
+                div {
+                    attr.style "display: flex; align-items: center; gap: 8px;"
+                
+                    // Color Swatch
+                    div {
+                        attr.style (sprintf "width: 12px; height: 12px; border-radius: 2px; background: %s;" s.color)
+                    }
+                
+                    // Label Name
+                    span {
+                        attr.style "font-family: sans-serif; font-size: 0.8em; color: #444; text-transform: lowercase;"
+                        text s.name
+                    }
+                }
+        }
+
+        // Download PDF Button
         div {
             attr.style "display: flex; justify-content: center;"
             button {

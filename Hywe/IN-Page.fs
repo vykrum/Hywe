@@ -104,6 +104,8 @@ let allSqns : string list = [
 ]
 let indexToSqn i = allSqns.[i]
 let sqnToIndex sqn = allSqns |> List.findIndex ((=) sqn)
+
+// Sequence Slider Component
 let sequenceSlider (selected: string) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
     let maxIndex = 23
