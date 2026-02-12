@@ -582,6 +582,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
                 div {
+                    attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
+                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                }
+                div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
                     viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
                 }
@@ -589,14 +593,28 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
         | ViewPanel ->
             div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; overflow-x: hidden;"
+        
                 div {
-                    attr.style "width:95%; max-width:1200px; aspect-ratio: 3/2;"
-                    canvas { attr.id "hywe-extruded-polygon"; attr.style "width:100%; height:100%;" }
+                    attr.id "hywe-sequence-selector"; attr.style "width: 100%; max-width: 100vw;"
+                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                }                
+        
+                div {
+                    // Added max-width: 100% and changed aspect-ratio handling
+                    attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
+            
+                    canvas { 
+                        attr.id "hywe-extruded-polygon"
+                        // Ensure the canvas itself respects the container bounds
+                        attr.style "width: 100%; height: 100%; display: block;" 
+                    }
+            
                     async { do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
                     |> Async.StartImmediate
                 }
             }
+
         | BatchPanel ->
             div {
                 // Changed background to #ffffff
