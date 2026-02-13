@@ -154,17 +154,18 @@ input[type=number] {
 .slider-track-container {
     position: relative;
     height: 10px;
+    display: flex;
+    align-items: center;
 }
 
 .custom-slider {
     position: absolute;
-    top: -14px;
     left: 0;
     width: 100%;
     -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent; 
     background: transparent;
-    height: 16px;
+    height: 20px;
     border-radius: 2px;
     cursor: pointer;
     padding: 0;
@@ -180,7 +181,7 @@ input[type=number] {
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
-        transform: translateY(0px);
+        margin-top: -20px;
     }
 
     .custom-slider::-moz-range-thumb {
@@ -190,7 +191,7 @@ input[type=number] {
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
-        margin-top: 0;
+        transform: translateY(-14px);
     }
 
 .hyWeaveButton {
