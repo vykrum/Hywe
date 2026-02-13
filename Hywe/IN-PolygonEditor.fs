@@ -781,13 +781,11 @@ type bdcrTx = Template<"""
 let controlAndInstructions model dispatch =
     let renderNumericInput labelText value msg =
         div {
-            attr.style "display: flex; align-items: center; gap: 4px;"
-            label { attr.style "font-size: 0.85em; color: #444;"; text labelText }
+            attr.``class`` "field-group"
+            label { text labelText }
             input {
                 attr.``class`` "boundaryInput"
                 attr.``type`` "number"
-                attr.step "1"
-                attr.style "width: 50px; padding: 2px; font-size: 0.9em;"
                 attr.value (string (value / 10.0))
                 attr.disabled (not model.UseBoundary)
                 on.change (fun ev ->
@@ -800,42 +798,35 @@ let controlAndInstructions model dispatch =
 
     div {
         attr.``class`` "control-and-instructions"
-        // Key changes: justify-content center and flex-nowrap
-        attr.style "display: flex; flex-flow: row nowrap; gap: 15px; align-items: center; justify-content: center; width: 100%; padding: 5px 0;"
+        attr.style "display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: 12px; width: 100%;"
 
-        // --- Column 1: Toggles ---
+        // Col 1: Small Toggles
         div {
-            attr.style "display: flex; flex-direction: column; gap: 8px;"
+            attr.``class`` "toggle-column"
             
-            // Toggle 1: Boundary
             div {
                 attr.``class`` "toggle-group"
                 button {
-                    attr.``type`` "button"
                     attr.``class`` (match model.UseBoundary with | false -> "toggle-btn active" | _ -> "toggle-btn")
                     on.click (fun _ -> dispatch (ToggleBoundary false))
                     text "Unbound"
                 }
                 button {
-                    attr.``type`` "button"
                     attr.``class`` (match model.UseBoundary with | true -> "toggle-btn active" | _ -> "toggle-btn")
                     on.click (fun _ -> dispatch (ToggleBoundary true))
                     text "Boundary"
                 }
             }
 
-            // Toggle 2: Absolute/Relative
             div {
                 attr.``class`` "toggle-group"
-                attr.style (match model.UseBoundary with | true -> "display: flex;" | _ -> "display: flex; opacity: 0.3; pointer-events: none;")
+                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
                 button {
-                    attr.``type`` "button"
                     attr.``class`` (match model.UseAbsolute with | false -> "toggle-btn active" | _ -> "toggle-btn")
                     on.click (fun _ -> dispatch (ToggleAbsolute false))
                     text "Relative"
                 }
                 button {
-                    attr.``type`` "button"
                     attr.``class`` (match model.UseAbsolute with | true -> "toggle-btn active" | _ -> "toggle-btn")
                     on.click (fun _ -> dispatch (ToggleAbsolute true))
                     text "Absolute"
@@ -843,19 +834,19 @@ let controlAndInstructions model dispatch =
             }
         }
 
-        // --- Column 2: Dimensions ---
+        // Col 2: Dimensions
         div {
-            attr.style "display: flex; flex-direction: column; gap: 12px; border-left: 1px solid #eee; border-right: 1px solid #eee; padding: 0 15px;"
-            renderNumericInput "W:" model.LogicalWidth UpdateLogicalWidth
-            renderNumericInput "H:" model.LogicalHeight UpdateLogicalHeight
+            attr.``class`` "dimension-fields"
+            renderNumericInput "Width:" model.LogicalWidth UpdateLogicalWidth
+            renderNumericInput "Height:" model.LogicalHeight UpdateLogicalHeight
         }
 
-        // --- Column 3: Instructions ---
+        // Col 3: Tight Instructions
         div {
-            attr.style "font-size: 0.75em; color: #777; line-height: 1.3; min-width: 160px;"
-            p { attr.style "margin: 0;"; text "• Click edge: add point" }
-            p { attr.style "margin: 0;"; text "• Dbl-click point: delete" }
-            p { attr.style "margin: 0;"; text "• Dbl-click inside: Island" }
+            attr.``class`` "polygon-editor-instructions"
+            p { text "• Click edge: add" }
+            p { text "• Dbl-click pt: del" }
+            p { text "• Dbl-click in: island" }
         }
     }
 

@@ -716,10 +716,77 @@ video.fullscreen-bg {
     user-select: none;
 }
 
-/* --- Instructions Column --- */
-.polygon-editor-instructions {
-    font-size: 0.75rem;
-    color: #666;
-    line-height: 1.4;
-    min-width: 180px;
+
+/* Container */
+.control-and-instructions {
+    margin-top: 5px;
 }
+
+/* Column 1: Toggles */
+.toggle-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-left: 20px; /* Stronger than padding for shifting the block */
+}
+
+.toggle-group {
+    display: inline-flex;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #d1d1d1;
+}
+
+.toggle-btn {
+    padding: 3px 6px; /* Tighter padding */
+    font-size: 9px; /* Smaller font */
+    font-weight: 700;
+    text-transform: uppercase;
+    border: none;
+    background: #f0f0f0;
+    color: #888;
+    cursor: pointer;
+    min-width: 65px; /* Reduced width */
+    transition: all 0.1s ease;
+    outline: none;
+}
+
+    .toggle-btn.active {
+        background: #333333;
+        color: white;
+    }
+
+/* Column 2: Dimensions */
+.dimension-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 12px;
+    border-left: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+}
+
+.field-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+    .field-group label {
+        font-size: 0.8rem;
+        color: #5A3E2B;
+    }
+
+/* Column 3: Narrow Instructions */
+.polygon-editor-instructions {
+    font-size: 0.7rem;
+    color: #888;
+    line-height: 1.1;
+    max-width: 110px; /* Aggressively narrow */
+}
+
+    .polygon-editor-instructions p {
+        margin: 0;
+        white-space: nowrap; /* Prevents awkward wrapping */
+    }
