@@ -74,16 +74,19 @@ let distancePointToSegmentSq p a b =
             distanceSq p proj
 
 let isInsidePolygon (poly: Point[]) (pt: Point) =
-    let mutable c = false
     let n = poly.Length
-    for i in 0..n-1 do
-        let j = (i + n - 1) % n
+    [| 0 .. n - 1 |]
+    |> Array.fold (fun acc i ->
         let vi = poly.[i]
-        let vj = poly.[j]
-        if (vi.Y > pt.Y) <> (vj.Y > pt.Y) then
-            let xIntersect = (vj.X - vi.X)*(pt.Y - vi.Y)/(vj.Y - vi.Y) + vi.X
-            if pt.X < xIntersect then c <- not c
-    c
+        let vj = poly.[(i + n - 1) % n]
+        match (vi.Y > pt.Y) <> (vj.Y > pt.Y) with
+        | true ->
+            let xIntersect = (vj.X - vi.X) * (pt.Y - vi.Y) / (vj.Y - vi.Y) + vi.X
+            match pt.X < xIntersect with
+            | true -> not acc
+            | false -> acc
+        | false -> acc
+    ) false
 
 let isPolygonInside outer inner =
     inner |> Array.forall (isInsidePolygon outer)
@@ -173,6 +176,28 @@ let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
     else
         { X = outer |> Array.averageBy (fun p -> p.X)
           Y = outer |> Array.averageBy (fun p -> p.Y) }
+
+let isConfigurationValid (outer: Point[]) (islands: Point[][]) =
+    let allIslandsValid = 
+        islands 
+        |> Array.forall (fun isl -> 
+            not (polygonSelfIntersects isl) && 
+            isPolygonInside outer isl)
+            
+    let noIslandIntersections =
+        islands 
+        |> Array.mapi (fun i a -> 
+            islands 
+            |> Array.mapi (fun j b -> i, j, b) 
+            |> Array.forall (fun (idxA, idxB, bPoly) -> 
+                match idxA = idxB with 
+                | true -> true 
+                | false -> not (polygonsIntersect a bPoly)))
+        |> Array.forall id
+
+    match not (polygonSelfIntersects outer) with
+    | true -> allIslandsValid && noIslandIntersections
+    | false -> false
 
 // ---------- Import helpers ----------
 
@@ -339,34 +364,31 @@ let importPolygonStrings
     (model: PolygonEditorModel)
     : Result<PolygonEditorModel, string> =
 
-    match parsePoly outerStr,
-          parseIslands islandsStr,
-          parsePoint entryStr with
+    parsePoly outerStr
+    |> Result.bind (fun outer ->
+        parseIslands islandsStr
+        |> Result.bind (fun islands ->
+            parsePoint entryStr
+            |> Result.map (fun entry ->
+                let width = float w * 10.0
+                let height = float h * 10.0
+                let fixedEntry = ensureEntryWithin outer islands entry
 
-    | Ok outer, Ok islands, Ok entry ->
-
-        let width = float w * 10.0
-        let height = float h * 10.0
-
-        let fixedEntry = ensureEntryWithin outer islands entry
-
-        Ok
-            { model with
-                Outer = outer
-                Islands = islands
-                EntryPoint = fixedEntry
-                LogicalWidth = width
-                LogicalHeight = height
-                UseAbsolute = absStr = "1"
-                UseBoundary = true
-                PolygonEnabled = true
-                Dragging = None
-                DragOffset = None
-                SvgInfo = None }
-
-    | Error e, _, _ -> Error e
-    | _, Error e, _ -> Error e
-    | _, _, Error e -> Error e
+                { model with
+                    Outer = outer
+                    Islands = islands
+                    EntryPoint = fixedEntry
+                    LogicalWidth = width
+                    LogicalHeight = height
+                    UseAbsolute = (absStr = "1")
+                    UseBoundary = true
+                    PolygonEnabled = true
+                    Dragging = None
+                    DragOffset = None
+                    SvgInfo = None }
+            )
+        )
+    )
 
 
 // ---------- Initial Model ----------
@@ -406,13 +428,16 @@ let initModel =
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
     | ToggleBoundary isChecked ->
-        async{ return
-                    { model with
-                        UseBoundary = isChecked
-                        PolygonEnabled = isChecked
-                        UseAbsolute = if isChecked then model.UseAbsolute else true
-                    }
-            }
+        async { 
+            return
+                { model with
+                    UseBoundary = isChecked
+                    PolygonEnabled = isChecked
+                    UseAbsolute = match isChecked with
+                                  | true -> false
+                                  | false -> true
+                }
+        }
 
     | ToggleAbsolute isChecked -> async{ 
                                             let updated = { model with UseAbsolute = isChecked }
@@ -495,90 +520,69 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
 
     | PointerMove ev ->
         async {
-            // Throttle
             let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
-            match model.LastMoveMs with
-            | Some last when nowMs - last < 16.0 -> return model
-            | _ ->
-                match model.Dragging, model.DragOffset, model.SvgInfo with
-                // -------------------------------------------------------
-                // 1) Dragging the entry point
-                // -------------------------------------------------------
-                | None, Some offset, Some info when model.DraggingEntry ->
-                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                    let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+        
+            // Throttling check using pattern matching
+            return! match model.LastMoveMs with
+                    | Some last when nowMs - last < 16.0 -> async { return model }
+                    | _ -> 
+                        match model.Dragging, model.DragOffset, model.SvgInfo with
+                        // -------------------------------------------------------
+                        // 1) Dragging the entry point
+                        // -------------------------------------------------------
+                        | None, Some offset, Some info when model.DraggingEntry ->
+                            async {
+                                let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                                let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
 
-                    // Only accept if inside outer and not inside any island
-                    let insideOuter = isInsidePolygon model.Outer newEntry
-                    let outsideIslands = not (model.Islands |> Array.exists (fun isl -> isInsidePolygon isl newEntry))
+                                let insideOuter = isInsidePolygon model.Outer newEntry
+                                let outsideIslands = not (model.Islands |> Array.exists (fun isl -> isInsidePolygon isl newEntry))
 
-                    if insideOuter && outsideIslands then
-                        return { model with EntryPoint = newEntry; LastMoveMs = Some nowMs }
-                    else
-                        return model
+                                return match insideOuter && outsideIslands with
+                                       | true -> { model with EntryPoint = newEntry; LastMoveMs = Some nowMs }
+                                       | false -> model
+                            }
 
-                // -------------------------------------------------------
-                // 2) Dragging a polygon vertex (outer or island)
-                // -------------------------------------------------------
-                | Some drag, Some offset, Some info ->
-                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                    let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+                        // -------------------------------------------------------
+                        // 2) Dragging a polygon vertex (outer or island)
+                        // -------------------------------------------------------
+                        | Some drag, Some offset, Some info ->
+                            async {
+                                let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                                let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
 
-                    let allowed =
-                        if drag.PolyIndex = 0 then
-                            let newOuter = 
-                                let arr = Array.copy model.Outer
-                                arr.[drag.VertexIndex] <- newPt
-                                arr
+                                // Generate the proposed state based on what is being dragged
+                                let proposedModel = 
+                                    match drag.PolyIndex = 0 with
+                                    | true ->
+                                        let newOuter = Array.copy model.Outer
+                                        newOuter.[drag.VertexIndex] <- newPt
+                                        { model with Outer = newOuter }
+                                    | false ->
+                                        let islandIdx = drag.PolyIndex - 1
+                                        let newIslands = Array.copy model.Islands
+                                        let poly = Array.copy newIslands.[islandIdx]
+                                        poly.[drag.VertexIndex] <- newPt
+                                        newIslands.[islandIdx] <- poly
+                                        { model with Islands = newIslands }
 
-                            let noSelfIntersect = not (polygonSelfIntersects newOuter)
-                            let noIntersectsIslands = not (model.Islands |> Array.exists (fun island -> polygonsIntersect newOuter island))
-                            let islandsInside = model.Islands |> Array.forall (fun island -> isPolygonInside newOuter island)
-
-                            noSelfIntersect && noIntersectsIslands && islandsInside
-                        else
-                            let islandIdx = drag.PolyIndex - 1
-                            let newIslands = Array.copy model.Islands
-                            let poly = Array.copy newIslands.[islandIdx]
-                            poly.[drag.VertexIndex] <- newPt
-
-                            let insideOuter = isPolygonInside model.Outer poly
-                            let noSelfIntersect = not (polygonSelfIntersects poly)
-                            let noIntersectsOthers =
-                                model.Islands
-                                |> Array.mapi (fun i isl -> i, isl)
-                                |> Array.forall (fun (i, isl) -> i = islandIdx || not (polygonsIntersect poly isl))
-
-                            insideOuter && noSelfIntersect && noIntersectsOthers
-
-                    if allowed then
-                        let updatedModel =
-                            if drag.PolyIndex = 0 then
-                                let arr = Array.copy model.Outer
-                                arr.[drag.VertexIndex] <- newPt
-                                { model with Outer = arr; LastMoveMs = Some nowMs }
-                            else
-                                let updatedIslands = Array.copy model.Islands
-                                let poly = Array.copy updatedIslands.[drag.PolyIndex - 1]
-                                poly.[drag.VertexIndex] <- newPt
-                                updatedIslands.[drag.PolyIndex - 1] <- poly
-                                { model with Islands = updatedIslands; LastMoveMs = Some nowMs }
-
-                        // After vertex move, validate entry point
-                        let entryValid =
-                            isInsidePolygon updatedModel.Outer updatedModel.EntryPoint &&
-                            not (updatedModel.Islands |> Array.exists (fun isl -> isInsidePolygon isl updatedModel.EntryPoint))
-
-                        let finalModel =
-                            if entryValid then updatedModel
-                            else
-                                { updatedModel with
-                                    EntryPoint = closestValidEntryPoint updatedModel.Outer updatedModel.Islands }
-                        //publishPolygon finalModel
-                        return finalModel
-                    else
-                        return model
-                | _ -> return model
+                                // Validate the entire configuration using the pipeline helper
+                                return match isConfigurationValid proposedModel.Outer proposedModel.Islands with
+                                       | false -> model
+                                       | true ->
+                                           // Check if existing entry point is still valid in new geometry
+                                           let isEntryValid = 
+                                                isInsidePolygon proposedModel.Outer proposedModel.EntryPoint &&
+                                                not (proposedModel.Islands |> Array.exists (fun isl -> isInsidePolygon isl proposedModel.EntryPoint))
+                                       
+                                           match isEntryValid with
+                                           | true -> { proposedModel with LastMoveMs = Some nowMs }
+                                           | false -> 
+                                                { proposedModel with 
+                                                    EntryPoint = closestValidEntryPoint proposedModel.Outer proposedModel.Islands
+                                                    LastMoveMs = Some nowMs }
+                            }
+                        | _ -> async { return model }
         }
 
     | DoubleClick ev ->
@@ -773,131 +777,128 @@ type bdcrTx = Template<"""
     </text>
     """>
 
-let view model dispatch (js: IJSRuntime) =
-    let boundScale = match model.LogicalWidth with
-                     | w when w <> fst initBound -> w / fst initBound
-                     | _ -> 1.0
-    let boundRadius = max 1 (int (float initRadius * boundScale))
-    let boundLabel = max 1(int (float (initRadius + 4) * boundScale))  
-    let bndTxtRr = max 1(int(float (initRadius + 6) * boundScale))
-    let bndStWdO = max 1 (int (6.0 * boundScale))
-    let bndStWdI = max 1 (int (4.0 * boundScale))
-
-    div {
+// Control and Instructions panel with numeric inputs and checkboxes
+let controlAndInstructions model dispatch =
+    let renderNumericInput labelText value msg =
         div {
-            attr.``class`` "control-and-instructions"
-
-            // --- Controls ---
-            div {
-                attr.``class`` "control-fields"
-                p {
-                    label { text "Width:" }
-                    input {
-                        attr.``class`` "boundaryInput"
-                        attr.``type`` "number"
-                        attr.step "1"
-                        attr.min (string minBound)
-                        attr.max (string maxBound)
-                        attr.value (string (model.LogicalWidth/10.0))
-                        "readOnly" => (not model.UseBoundary)
-                        attr.style (if model.UseBoundary then "color: black;" else "color: gray;")
-                        on.change (fun ev ->
-                            if model.UseBoundary then
-                                match System.Double.TryParse(string ev.Value) with
-                                | true, v -> dispatch (UpdateLogicalWidth (v* 10.0))
-                                | false, _ -> ()
-                        )
-                    }
-                }
-                p {
-                    attr.id "bndOrnot"
-                    label { text "Boundary:" }
-                    input {
-                        attr.``type`` "checkbox"
-                        attr.``checked`` model.UseBoundary
-                        on.change (fun ev ->
-                            let isChecked = ev.Value :?> bool
-                            dispatch (ToggleBoundary isChecked)
-                        )
-                    }
-                }
-                p {
-                    label { text "Height:" }
-                    input {
-                        attr.``class`` "boundaryInput"
-                        attr.``type`` "number"
-                        attr.step "1"
-                        attr.min (string minBound)
-                        attr.max (string maxBound)
-                        attr.value (string (model.LogicalHeight/10.0))
-                        "readOnly" => (not model.UseBoundary)
-                        attr.style (if model.UseBoundary then "color: black;" else "color: gray;")
-                        on.change (fun ev ->
-                            if model.UseBoundary then
-                                match System.Double.TryParse(string ev.Value) with
-                                | true, v -> dispatch (UpdateLogicalHeight (v* 10.0))
-                                | false, _ -> ()
-                        )
-                    }
-                }
-                p {
-                    attr.id "absOrRel"
-                    label { text "Absolute:" }
-                    input {
-                        attr.``type`` "checkbox"
-                        attr.``checked`` (if model.UseBoundary then model.UseAbsolute else true)
-                        attr.disabled (not model.UseBoundary)
-                        on.change (fun ev ->
-                            if model.UseBoundary then
-                                let isChecked = ev.Value :?> bool
-                                dispatch (ToggleAbsolute isChecked)
-                        )
-                    }
-                }
-            }
-
-            // --- Instructions ---
-            div {
-                attr.``class`` "polygon-editor-instructions"
-                p { text "Click on edge to add vertex."}
-                p { text "Double-click on vertex to remove." }
-                p { text "Double-click  within to add Island." }
-                p { text "Double-click island to remove." }
+            attr.style "display: flex; align-items: center; gap: 4px;"
+            label { attr.style "font-size: 0.85em; color: #444;"; text labelText }
+            input {
+                attr.``class`` "boundaryInput"
+                attr.``type`` "number"
+                attr.step "1"
+                attr.style "width: 50px; padding: 2px; font-size: 0.9em;"
+                attr.value (string (value / 10.0))
+                attr.disabled (not model.UseBoundary)
+                on.change (fun ev ->
+                    match System.Double.TryParse (string ev.Value) with
+                    | (true, v) -> dispatch (msg (v * 10.0))
+                    | _ -> ()
+                )
             }
         }
 
-        // Bounding Box
-        let boundingBoxWithLogical model =
-            let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
-            if allPoints.Length = 0 then
-                (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
-            else
-                let minX = allPoints |> Array.minBy (fun p -> p.X)
-                let maxX = allPoints |> Array.maxBy (fun p -> p.X)
-                let minY = allPoints |> Array.minBy (fun p -> p.Y)
-                let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
-                let minX' = min 0.0 minX.X
-                let minY' = min 0.0 minY.Y
-                let maxX' = max model.LogicalWidth maxX.X
-                let maxY' = max model.LogicalHeight maxY.Y
-                (minX', minY', maxX' - minX', maxY' - minY')
+    div {
+        attr.``class`` "control-and-instructions"
+        // Key changes: justify-content center and flex-nowrap
+        attr.style "display: flex; flex-flow: row nowrap; gap: 15px; align-items: center; justify-content: center; width: 100%; padding: 5px 0;"
 
-        let viewBoxString =
-            let (x, y, w, h) = boundingBoxWithLogical model
-            let padding = 50.0 * boundScale
+        // --- Column 1: Toggles ---
+        div {
+            attr.style "display: flex; flex-direction: column; gap: 8px;"
+            
+            // Toggle 1: Boundary
+            div {
+                attr.``class`` "toggle-group"
+                button {
+                    attr.``type`` "button"
+                    attr.``class`` (match model.UseBoundary with | false -> "toggle-btn active" | _ -> "toggle-btn")
+                    on.click (fun _ -> dispatch (ToggleBoundary false))
+                    text "Unbound"
+                }
+                button {
+                    attr.``type`` "button"
+                    attr.``class`` (match model.UseBoundary with | true -> "toggle-btn active" | _ -> "toggle-btn")
+                    on.click (fun _ -> dispatch (ToggleBoundary true))
+                    text "Boundary"
+                }
+            }
 
-            // Allow min-x / min-y to go negative
-            let minX = x - padding
-            let minY = y - padding
+            // Toggle 2: Absolute/Relative
+            div {
+                attr.``class`` "toggle-group"
+                attr.style (match model.UseBoundary with | true -> "display: flex;" | _ -> "display: flex; opacity: 0.3; pointer-events: none;")
+                button {
+                    attr.``type`` "button"
+                    attr.``class`` (match model.UseAbsolute with | false -> "toggle-btn active" | _ -> "toggle-btn")
+                    on.click (fun _ -> dispatch (ToggleAbsolute false))
+                    text "Relative"
+                }
+                button {
+                    attr.``type`` "button"
+                    attr.``class`` (match model.UseAbsolute with | true -> "toggle-btn active" | _ -> "toggle-btn")
+                    on.click (fun _ -> dispatch (ToggleAbsolute true))
+                    text "Absolute"
+                }
+            }
+        }
 
-            // Ensure width / height never negative or zero
-            let safeW = max 1.0 (w + 2.0 * padding)
-            let safeH = max 1.0 (h + 2.0 * padding)
+        // --- Column 2: Dimensions ---
+        div {
+            attr.style "display: flex; flex-direction: column; gap: 12px; border-left: 1px solid #eee; border-right: 1px solid #eee; padding: 0 15px;"
+            renderNumericInput "W:" model.LogicalWidth UpdateLogicalWidth
+            renderNumericInput "H:" model.LogicalHeight UpdateLogicalHeight
+        }
 
-            sprintf "%f %f %f %f" minX minY safeW safeH
-        
-        // Polygon Editor
-        let polygonEditorSvg =
+        // --- Column 3: Instructions ---
+        div {
+            attr.style "font-size: 0.75em; color: #777; line-height: 1.3; min-width: 160px;"
+            p { attr.style "margin: 0;"; text "• Click edge: add point" }
+            p { attr.style "margin: 0;"; text "• Dbl-click point: delete" }
+            p { attr.style "margin: 0;"; text "• Dbl-click inside: Island" }
+        }
+    }
+
+// Polygon Editor SVG with polygons, vertices, and event handlers
+let polygonEditorSvg model dispatch =
+            let boundScale = match model.LogicalWidth with
+                                | w when w <> fst initBound -> w / fst initBound
+                                | _ -> 1.0            
+            let boundRadius = max 1 (int (float initRadius * boundScale))
+            let boundLabel = max 1(int (float (initRadius + 4) * boundScale))  
+            let bndTxtRr = max 1(int(float (initRadius + 6) * boundScale))
+            let bndStWdO = max 1 (int (6.0 * boundScale))
+            let bndStWdI = max 1 (int (4.0 * boundScale))            
+            
+            let boundingBoxWithLogical =
+                let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
+                if allPoints.Length = 0 then
+                    (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
+                else
+                    let minX = allPoints |> Array.minBy (fun p -> p.X)
+                    let maxX = allPoints |> Array.maxBy (fun p -> p.X)
+                    let minY = allPoints |> Array.minBy (fun p -> p.Y)
+                    let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
+                    let minX' = min 0.0 minX.X
+                    let minY' = min 0.0 minY.Y
+                    let maxX' = max model.LogicalWidth maxX.X
+                    let maxY' = max model.LogicalHeight maxY.Y
+                    (minX', minY', maxX' - minX', maxY' - minY')
+
+            let viewBoxString =
+                let (x, y, w, h) = boundingBoxWithLogical
+                let padding = 50.0 * boundScale
+
+                // Allow min-x / min-y to go negative
+                let minX = x - padding
+                let minY = y - padding
+
+                // Ensure width / height never negative or zero
+                let safeW = max 1.0 (w + 2.0 * padding)
+                let safeH = max 1.0 (h + 2.0 * padding)
+
+                sprintf "%f %f %f %f" minX minY safeW safeH
+
             svg {
             attr.id "polygon-editor-svg"
             attr.``class`` "polygon-editor-svg"
@@ -999,10 +1000,14 @@ let view model dispatch (js: IJSRuntime) =
                 .Elt()
         }
 
+let view model dispatch (js: IJSRuntime) =
+    div {
+        controlAndInstructions model dispatch
+
         match model.PolygonEnabled with
-        | true -> polygonEditorSvg
+        | true -> polygonEditorSvg model dispatch
         | false ->     div {
                             attr.style "pointer-events:none; opacity:0.5;"
-                            polygonEditorSvg }
+                            polygonEditorSvg model dispatch}
     }
 
