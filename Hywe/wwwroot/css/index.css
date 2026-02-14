@@ -517,6 +517,7 @@ video.fullscreen-bg {
     .nodebutton1:hover {
         opacity: 1; 
     }
+
 .nodebutton2 {
     font-size: 10px;
     font-weight: bold;
@@ -537,6 +538,28 @@ video.fullscreen-bg {
     .nodebutton2:hover {
     opacity: 1;
 }
+
+.delete-hint,
+.nodebutton1:hover::after {
+    position: absolute;
+    bottom: 110%;      /* Floats slightly above the '×' */
+    left: 50%;
+    transform: translateX(-50%);
+    color: #bdc3c7;    /* Subtle light grey */
+    font-size: 8px;
+    font-weight: normal;
+    white-space: nowrap;
+    pointer-events: none;
+    background: transparent !important;
+}
+
+/* Desktop Hover: Only shows if the device supports hover */
+@media (hover: hover) {
+    .nodebutton1:hover::after {
+        content: "tap twice to delete";
+    }
+}
+
 
 /* =====================
    FOOTER LICENSE

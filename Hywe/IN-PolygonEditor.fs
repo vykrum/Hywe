@@ -844,9 +844,10 @@ let controlAndInstructions model dispatch =
         // Col 3: Tight Instructions
         div {
             attr.``class`` "polygon-editor-instructions"
-            p { text "• Click edge: add" }
-            p { text "• Dbl-click pt: del" }
-            p { text "• Dbl-click in: island" }
+            p { text "• Clk edg: add vtx" }
+            p { text "• Dbl-clk vtx: del" }
+            p { text "• Dbl-clk in: island" }
+            p { text "• Dbl-clk island: del" }
         }
     }
 

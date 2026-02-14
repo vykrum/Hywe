@@ -1,6 +1,7 @@
 ﻿module NodeCode
 
 open System
+open Elmish
 open Bolero
 open Bolero.Html
 open Microsoft.AspNetCore.Components
@@ -18,15 +19,16 @@ type TreeNode =
       Children: TreeNode list }
 
 type SubModel = 
-    { Root: TreeNode 
-      HideInstructions: bool}
+    { Root: TreeNode
+      PrimedNode: Guid option  }
 
 type SubMsg =
     | AddChild of Guid
     | UpdateName of Guid * string
     | UpdateWeight of Guid * string
     | DeleteNode of Guid
-    | SetHideInstructions of bool
+    | PrimeDeletion of Guid
+    | ClearPrime
 
 type svLn = Template<"""
     <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
@@ -48,7 +50,6 @@ let randomNames = [
 let rng = System.Random()
 let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
 
-/// Replaces the sequence (Q=) in the string using Regex (declarative)
 let injectSqn (input: string) (newSqn: string) =
     let pattern = "Q=[A-Z]+"
     let replacement = "Q=" + newSqn
@@ -97,37 +98,37 @@ let rec removeNodeById id (node: TreeNode) : TreeNode option =
         let newChildren = node.Children |> List.choose (removeNodeById id)
         Some { node with Children = newChildren }
 
-let updateSub msg model =
+let updateSub msg model : SubModel * Cmd<SubMsg> =
     match msg with
+    | PrimeDeletion id -> 
+        { model with PrimedNode = Some id }, 
+        Cmd.OfAsync.perform (fun () -> async {
+            do! Async.Sleep 2000
+            return ()
+        }) () (fun _ -> ClearPrime)
+
+    | ClearPrime -> 
+        { model with PrimedNode = None }, Cmd.none
+
     | AddChild id ->
         let addChild n =
-            let newChild =
-                { Id = Guid.NewGuid()
-                  Name = getRandomName ()
-                  Weight = $"{initWeight}"
-                  X = 0.0
-                  Y = 0.0
-                  Children = [] }
+            let newChild = { Id = Guid.NewGuid(); Name = getRandomName (); Weight = $"{initWeight}"; X = 0.0; Y = 0.0; Children = [] }
             { n with Children = n.Children @ [newChild] }
-
         let newRoot = updateNodeById id addChild model.Root
-        { model with Root = layoutTree newRoot 0 (ref 100.0) }
+        { model with Root = layoutTree newRoot 0 (ref 0.0) }, Cmd.none
 
     | UpdateName (id, newName) ->
         let newRoot = updateNodeById id (fun n -> { n with Name = newName }) model.Root
-        { model with Root = newRoot }
+        { model with Root = newRoot }, Cmd.none
 
     | UpdateWeight (id, newWeight) ->
         let newRoot = updateNodeById id (fun n -> { n with Weight = newWeight }) model.Root
-        { model with Root = newRoot }
+        { model with Root = newRoot }, Cmd.none 
 
     | DeleteNode id ->
         match removeNodeById id model.Root with
-        | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 100.0) }
-        | None -> model
-
-    | SetHideInstructions hide ->
-        { model with HideInstructions = hide }
+        | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 0.0); PrimedNode = None }, Cmd.none
+        | None -> model, Cmd.none
 
 // --------------------
 // Output / Flatten Helpers
@@ -146,8 +147,8 @@ let rec flattenTree node =
     node :: (node.Children |> List.collect flattenTree)
 
 let computeCanvasBounds (nodes: TreeNode list) =
-    let minY = nodes |> List.map (fun n -> n.Y - 35.0) |> List.min   // top of hex
-    let maxY = nodes |> List.map (fun n -> n.Y + 35.0) |> List.max   // bottom of hex
+    let minY = nodes |> List.map (fun n -> n.Y - 35.0) |> List.min
+    let maxY = nodes |> List.map (fun n -> n.Y + 35.0) |> List.max
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
     maxX, maxY - minY
 
@@ -157,6 +158,8 @@ let computeCanvasBounds (nodes: TreeNode list) =
 
 let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =      
     let renderNode (node: TreeNode) : Node =
+        let isPrimed = model.PrimedNode = Some node.Id
+        
         let outerStyle =
             $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; " +
             "width:60px; height:60px; background-color:#d3d3d1; " +
@@ -172,11 +175,23 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             attr.style outerStyle
             div {
                 attr.style innerStyle
-                // Remove button or placeholder
+
+                // Minimalist hint (Styling moved to CSS class)
+                match isPrimed with
+                | true ->
+                    span {
+                        attr.``class`` "delete-hint"
+                        text "double-tap to delete"
+                    }
+                | false -> text ""
+
                 match node.Id = model.Root.Id with
                 | false ->
                     button {
                         attr.``class`` "nodebutton1"
+                        // Removed title to let CSS hover handle desktop tooltip
+                        attr.style "touch-action: manipulation;"
+                        on.click (fun _ -> dispatch (PrimeDeletion node.Id))
                         on.dblclick (fun _ -> dispatch (DeleteNode node.Id))
                         text "×"
                     }
@@ -186,10 +201,10 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                         text "_"
                     }
 
-                // Name input
                 input {
                     attr.``type`` "text"
                     attr.``class`` "nodename"
+                    attr.title "Edit in place"
                     "maxlength" => "10"
                     attr.value node.Name
                     on.input (fun (e: ChangeEventArgs) ->
@@ -197,14 +212,11 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     )
                 }
 
-                // Weight input
                 input {
                     attr.``type`` "number"
-                    attr.min "3"
-                    attr.max "999"
-                    attr.step "1"
-                    attr.value node.Weight
                     attr.``class`` "nodeweight"
+                    attr.title "Edit in place"
+                    attr.value node.Weight
                     on.input (fun (e: ChangeEventArgs) ->
                         let v = string e.Value
                         let rounded =
@@ -218,15 +230,14 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     )
                 }
 
-                // Add child button
                 button {
                     attr.``class`` "nodebutton2"
+                    attr.title "Clk: Add Node"
                     on.click (fun _ -> dispatch (AddChild node.Id))
                     text "+"
                 }
             }
         }
-
     let renderConnection (parent: TreeNode) (child: TreeNode) : Node =
         svLn()
             .x1($"{parent.X}")
@@ -243,45 +254,10 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let lines = collectConnections model.Root
     let canvasWidth, canvasHeight = computeCanvasBounds nodes
 
-    // Instructions
-    let instructions = 
-        div {
-            attr.``class`` "instructions"
-            p {
-                attr.style "white-space: nowrap; overflow-x: visible;"
-                span { attr.style "font-weight: bold;"; text "Click " }
-                span { attr.style "font-weight: bold; color: #2E86C1;"; text " + " }
-                span { text " to add child node" }
-            }
-            p {
-                span { attr.style "font-weight: bold;"; text "Double Click " }
-                span { attr.style "font-weight: bold; color: #E67E22;"; text " x " }
-                span { text " to delete a node and its descendants" }
-            }
-            p {
-                span { attr.style "font-weight: bold;"; text "Edit in place " }
-                span { text "node labels and values" }
-            }
-            p {
-                span { attr.style "font-weight: bold;"; text "Slide " }
-                span { attr.style "font-weight: bold; color: #4CAF50;"; text " ○ " }
-                span { text " to select a procedural variation" }
-            }
-            p {
-                span { attr.style "font-weight: bold;"; text "Click" }
-                span { text " hyWEAVE to execute or update" }
-            }
-        }
-
     div {
         attr.style "width:100%; overflow-x:auto; padding-top:16px; display:flex; justify-content:center;"
         div {
-            attr.``class`` (if model.HideInstructions then "instructions hide" else "instructions")
-            instructions
-        }
-        div {
             attr.style $"position:relative; width:{canvasWidth}px; height:{max 150.0 canvasHeight}px;"
-            on.mousedown (fun _ -> dispatch (SetHideInstructions true))
             svg {
                 attr.style $"position:absolute; top:0; left:0; width:{canvasWidth}px; height:{canvasHeight}px; z-index:0;"
                 for line in lines do line
@@ -290,7 +266,6 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             for node in nodes do
                 renderNode node
         }
-        
     }
 
 // -------------------- 
@@ -321,7 +296,6 @@ let buildTree (input: string) : TreeNode list =
         )
 
     lines
-    // Parse and skip root placeholders like 0/Q=VRCCNE
     |> List.choose (fun line ->
         let parts = line.Split('/')
         let path = parts.[0]
@@ -342,6 +316,5 @@ let initModel (inputString: string) : SubModel =
     match buildTree inputString with
     | [] -> failwith "No valid nodes found in input string."
     | rootNode::_ -> 
-        { Root = layoutTree rootNode 0 (ref 100.0); HideInstructions=false }
-
-
+        { Root = layoutTree rootNode 0 (ref 0.0)
+          PrimedNode = None}

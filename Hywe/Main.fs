@@ -59,7 +59,6 @@ let mutable private latestHeight   : int = 30
 let mutable private latestPublished  : bool = false
 
 /// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
-/// <param name="p"> The current PolygonEditorModel. </param>
 let private syncPolygonState 
     (p: PolygonEditorModel) =
     let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
@@ -101,30 +100,21 @@ let initModel =
         Derived = deriveData initialOutput 0
         IsHyweaving = false
         PolygonEditor = Stable PolygonEditor.initModel
-        ActivePanel = LayoutPanel // Changed from EditorPanel
+        ActivePanel = LayoutPanel 
         EditorMode = Interactive
         BatchPreview = None
         LastBatchSrc = None
         SelectedPreviewIndex = None
     }
-///
 
 /// Update
-/// <summary> Processes incoming messages to produce a new model and optional commands. </summary>
-/// <param name="js"> The JavaScript runtime for interop. </param>
-/// <param name="message"> The message to handle. </param>
-/// <param name="model"> The current state. </param>
-/// <returns> The updated model and Elmish command. </returns>
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     match message with
     | SetSqnIndex i ->
         let newSqn = indexToSqn i
-    
-        // Determine the new Source of Truth based on the current mode
         let updatedSrc = 
             match model.EditorMode with
             | Interactive -> 
-                // In Interactive mode, we must rebuild the string from the Tree + New Sequence
                 NodeCode.getOutput 
                     model.Tree 
                     newSqn 
@@ -135,16 +125,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     latestOuterStr 
                     latestIslandsStr
             | Syntax -> 
-                // In Syntax mode, we just inject the new sequence into the existing string
                 injectSqn model.SrcOfTrth newSqn
 
-        // Update the model with the synchronized state
         let modelWithNewSqn = 
             { model with 
                 Sequence = newSqn
                 SrcOfTrth = updatedSrc
                 IsHyweaving = true 
-                SelectedPreviewIndex = None // Reset any tap-labels from the batch view
+                SelectedPreviewIndex = None 
             }
 
         modelWithNewSqn,
@@ -158,7 +146,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with SrcOfTrth = value }, Cmd.none
 
     | StartHyweave ->
-        // Changed to LayoutPanel
         let model2 = { model with ActivePanel = LayoutPanel; IsHyweaving = true }
         model2,
         Cmd.OfAsync.perform
@@ -171,10 +158,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let updatedSrcOfTrth =
             match model.EditorMode with
             | Syntax ->
-                let inner = 
-                    match model.PolygonEditor with 
-                    | Stable m | FreshlyImported m -> m
-
+                let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw model.SrcOfTrth inner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
                 syncPolygonState finalPoly
@@ -190,23 +174,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     latestOuterStr
                     latestIslandsStr
 
-        // Trigger the Shadow Save to browser memory immediately
         Storage.autoSave js updatedSrcOfTrth |> ignore
 
         let newModel =
             match model.EditorMode with
             | Syntax ->
-                let inner = 
-                    match model.PolygonEditor with 
-                    | Stable m | FreshlyImported m -> m
-
+                let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw updatedSrcOfTrth inner
-
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
                     Derived = deriveData updatedSrcOfTrth elv
                     PolygonEditor = newState }
-
             | Interactive ->
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
@@ -223,23 +201,24 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsHyweaving = false }, Cmd.none
 
     | TreeMsg subMsg ->
-        let updatedTree = updateSub subMsg model.Tree
-        let newOutput = NodeCode.getOutput
-                            updatedTree
-                            model.Sequence
-                            latestWidth
-                            latestHeight
-                            latestAbsStr
-                            latestEntryStr
-                            latestOuterStr
-                            latestIslandsStr
-        { model with Tree = updatedTree; SrcOfTrth = newOutput }, Cmd.none
+            // Destructure the tuple returned by updateSub
+            let updatedTree, treeCmd = NodeCode.updateSub subMsg model.Tree 
+        
+            let newOutput = NodeCode.getOutput
+                                updatedTree
+                                model.Sequence
+                                latestWidth
+                                latestHeight
+                                latestAbsStr
+                                latestEntryStr
+                                latestOuterStr
+                                latestIslandsStr
+                            
+            // Return the new model and map the treeCmd to the Main Message type
+            { model with Tree = updatedTree; SrcOfTrth = newOutput }, Cmd.map TreeMsg treeCmd
 
     | PolygonEditorMsg subMsg ->
-        let currentInnerModel = 
-            match model.PolygonEditor with
-            | Stable m | FreshlyImported m -> m
-
+        let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
         model,
         Cmd.OfAsync.perform
             (PolygonEditor.update js subMsg)
@@ -253,18 +232,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetActivePanel panel ->
         match panel with
         | BatchPanel ->
-            // Compare current code to the code used for the last generated batch
             let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
-        
             match isStale with
             | true -> 
-                // 1. Reset state: clear old previews, clear selection index, and start loader
                 let model' = 
                     { model with 
                         ActivePanel = panel
                         IsHyweaving = true
                         BatchPreview = None 
-                        SelectedPreviewIndex = None // Reset selection so old labels don't persist
+                        SelectedPreviewIndex = None 
                     }
             
                 model', Cmd.OfAsync.perform (fun () ->
@@ -275,30 +251,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                             let sqnStr = indexToSqn i
                             let forcedStr = injectSqn model.SrcOfTrth sqnStr
                             let cxls, _ = Parse.spaceCxl [||] forcedStr
-                    
-                            // Generate geometry for this specific variation
                             let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                    
                             let configData = 
                                 {| sqnName = sqnStr; w = d.w; h = d.h
                                    shapes = d.shapes |> Array.map (fun s -> 
                                      {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
                                 |}
-                        
-                            // Yield control to UI thread to keep the spinner spinning
                             do! Async.Sleep 5
                             return! computeBatch (i + 1) (configData :: acc)
                     }
                     async {
                         let! results = computeBatch 0 []
-                        // Reverse to maintain correct order (0 to 23)
                         return results |> List.toArray |> Array.rev
                     }) () SetBatchPreview
-
             | false -> 
-                // Data is identical to the last run; just switch tabs
                 { model with ActivePanel = panel }, Cmd.none
-            
         | _ -> 
             { model with ActivePanel = panel }, Cmd.none
 
@@ -312,8 +279,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     try Some (CodeNode.parseOutput processed)
                     with _ -> None
                 |> Option.map (fun tree ->
-                    let laidOut = NodeCode.layoutTree tree 0 (ref 100.0)
-                    { Root = laidOut; HideInstructions = model.Tree.HideInstructions }
+                    let laidOut = NodeCode.layoutTree tree 0 (ref 0.0)
+                    { Root = laidOut
+                      PrimedNode = None}
                 )
 
             match maybeSubModel with
@@ -336,7 +304,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     EditorMode = Interactive
                     ParseError = false
                 }, Cmd.none
-
             | None ->
                 { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
 
@@ -364,7 +331,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | BoundaryPanel -> 
             { model with ActivePanel = LayoutPanel }, Cmd.none
         | _ -> 
-            // Logic for entering BoundaryPanel
             let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
             let newState = Parse.importFromHyw model.SrcOfTrth inner
             let finalPoly = match newState with FreshlyImported m | Stable m -> m
@@ -376,7 +342,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetBatchPreview results ->
         { model with 
             BatchPreview = Some results
-            LastBatchSrc = Some model.SrcOfTrth // Store the string used for this batch
+            LastBatchSrc = Some model.SrcOfTrth 
             IsHyweaving = false 
             ActivePanel = BatchPanel 
         }, Cmd.none
@@ -386,11 +352,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match model.SelectedPreviewIndex with
             | Some current when current = i -> None
             | _ -> Some i
-    
         { model with SelectedPreviewIndex = nextSelection }, Cmd.none
 
     | CloseBatch ->
-        // Reset selection when closing the panel
         { model with ActivePanel = LayoutPanel; SelectedPreviewIndex = None }, Cmd.none
 
     | ExportPdfRequested ->
@@ -418,9 +382,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 }) () SetBatchPreview
 
     | SaveRequested ->
-        // 1. Save to Downloads with timestamp
         Storage.saveFile js model.SrcOfTrth |> ignore
-        // 2. Also update Shadow Save so the session is current
         Storage.autoSave js model.SrcOfTrth |> ignore
         model, Cmd.none
 
@@ -436,27 +398,22 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | true -> model, Cmd.none
         | false ->
             let clean = content.Trim()
-            
-            // 1. Sync Node Tree (Reflects in "Node" view)
             let newTree = 
                 clean 
                 |> CodeNode.preprocessCode 
                 |> fun processed ->
                     try 
                         let tree = CodeNode.parseOutput processed
-                        let laidOut = NodeCode.layoutTree tree 0 (ref 100.0)
-                        { Root = laidOut; HideInstructions = model.Tree.HideInstructions }
-                    with _ -> model.Tree // Fallback to current if parse fails
+                        let laidOut = NodeCode.layoutTree tree 0 (ref 0.0)
+                        { Root = laidOut
+                          PrimedNode = None}
+                    with _ -> model.Tree 
 
-            // 2. Sync Polygon Editor (Reflects in "Boundary" view)
             let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
             let newState = Parse.importFromHyw clean inner
             let finalPoly = match newState with FreshlyImported m | Stable m -> m
-            
-            // 3. Sync Global Mutables (Reflects in 3D Canvas)
             syncPolygonState finalPoly
 
-            // 4. Update the Model
             { model with 
                 SrcOfTrth = clean
                 Tree = newTree
@@ -467,16 +424,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 LastBatchSrc = None
             }, 
             Cmd.batch [
-                // Force UI components to notice the update
                 Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-                
                 Cmd.OfTask.attempt (fun () -> task { 
                     do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
                 }) () (fun _ -> FinishHyweave)
             ]
 
 // View helpers
-/// <summary> Renders the toggle button for switching between Node and Code views. </summary>
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     let nodeCodeButtonText =
         match model.EditorMode with
@@ -484,7 +438,6 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         | Interactive -> "Code"
 
     div {
-        // Changed justify-content to flex-start to align buttons to the left
         attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: flex-start; align-items: center;"
         
         button {
@@ -519,7 +472,6 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         }
     }
 
-/// <summary> Renders the input section based on the current EditorMode. </summary>
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
     match model.EditorMode with
     | Syntax ->
@@ -536,15 +488,13 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
     | Interactive ->
         div {
             attr.id "hywe-input-interactive"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: stretch; box-sizing: border-box; padding: 0 10px; gap: 5px;"
-
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px;"
             div {
-                attr.style "flex:1; overflow-y:hidden;"
+                attr.style "flex:1; overflow-y:hidden; display: flex; justify-content: center; width: 100%;"
                 viewTreeEditor model.Tree (TreeMsg >> dispatch)
             }
         }
 
-/// <summary> Renders the primary action button for starting the weaving process. </summary>
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     div {
         attr.style "width: 100%; display:flex; justify-content:center; box-sizing:border-box; padding: 8px 10px;"
@@ -561,7 +511,6 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
         }
     }
 
-/// <summary> Renders the tab navigation bar. </summary>
 let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
     div {
         attr.style "display:flex; width: 100%; justify-content: center; gap: 10px; margin: 10px 0; border-bottom: 1px solid #333;"
@@ -585,7 +534,6 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
         tab "Batch" BatchPanel
     }
 
-/// <summary> Renders the primary action button for starting the weaving process. </summary>
 let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     div {
         attr.style "padding: 10px; min-height: 400px;"
@@ -601,12 +549,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | LayoutPanel ->
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
-                
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
                     sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
                 }
-
                 div {
                     attr.id "hywe-svg-container"
                     svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
@@ -629,22 +575,16 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | ViewPanel ->
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; overflow-x: hidden;"
-        
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%; max-width: 100vw;"
                     sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
                 }                
-        
                 div {
-                    // Added max-width: 100% and changed aspect-ratio handling
                     attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
-            
                     canvas { 
                         attr.id "hywe-extruded-polygon"
-                        // Ensure the canvas itself respects the container bounds
                         attr.style "width: 100%; height: 100%; display: block;" 
                     }
-            
                     async { do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
                     |> Async.StartImmediate
                 }
@@ -653,14 +593,13 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | BatchPanel ->
             div {
                 attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
-        
                 cond model.BatchPreview <| function
                     | Some results -> 
                         alternateConfigurations 
                             results 
-                            model.SelectedPreviewIndex // 1. Current selection state
-                            TapPreview                 // 2. The Message constructor
-                            dispatch                   // 3. The Elmish dispatcher
+                            model.SelectedPreviewIndex 
+                            TapPreview                   
+                            dispatch                   
                             (fun () -> dispatch (SetActivePanel LayoutPanel)) js
                     | None -> 
                         div { 
@@ -671,22 +610,15 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
     }
 
-/// <summary> The main view composition. </summary>
 let view model dispatch (js: IJSRuntime) =
     concat {
-        // Node/Code toggle
         viewNodeCodeButtons model dispatch js
-        // Interactive Tree and Text Editor
         viewEditorPanel model dispatch
-        // Hyweave
         viewHyweButton model dispatch
-        // Tabs
         viewHyweTabs model dispatch 
-        // Boundary Editor, Layout View, Batch Compare
         viewHywePanels model dispatch js
     }
 
-/// <summary> Bolero Component entry point for the Hywe application. </summary>
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
