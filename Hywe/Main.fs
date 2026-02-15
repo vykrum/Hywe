@@ -289,7 +289,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     try Some (CodeNode.parseOutput processed)
                     with _ -> None
                 |> Option.map (fun tree ->
-                    let laidOut = NodeCode.layoutTree tree 0 (ref 0.0)
+                    let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
                     { Root = laidOut; ConfirmingId = None }
                 )
 
@@ -413,7 +413,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 |> fun processed ->
                     try 
                         let tree = CodeNode.parseOutput processed
-                        let laidOut = NodeCode.layoutTree tree 0 (ref 0.0)
+                        let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
                         { Root = laidOut; ConfirmingId = None }
                     with _ -> model.Tree 
 
