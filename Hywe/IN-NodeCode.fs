@@ -103,12 +103,12 @@ let updateSub msg model =
     
     | DeleteNode id -> 
         match removeNodeById id model.Root with
-        | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 0.0); ConfirmingId = None }, Cmd.none
+        | Some newRoot -> { model with Root = layoutTree newRoot 0 (ref 100.0); ConfirmingId = None }, Cmd.none
         | None -> model, Cmd.none
 
     | AddChild parentId ->
         let newRoot = addChildToNodeById model.Root parentId 
-        { model with Root = layoutTree newRoot 0 (ref 0.0) }, Cmd.none
+        { model with Root = layoutTree newRoot 0 (ref 100.0) }, Cmd.none
 
     | UpdateName (id, name) ->
         // Correct order: id, then function, then root
@@ -247,4 +247,4 @@ let getOutput (model: SubModel) q w h x e o i =
 let initModel (inputString: string) : SubModel =
     match buildTree inputString with
     | [] -> failwith "No valid nodes found."
-    | rootNode::_ -> { Root = layoutTree rootNode 0 (ref 0.0); ConfirmingId = None }
+    | rootNode::_ -> { Root = layoutTree rootNode 0 (ref 100.0); ConfirmingId = None }
