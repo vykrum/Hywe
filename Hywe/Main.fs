@@ -19,6 +19,7 @@ type Model =
         LastValidTree: SubModel
         ParseError: bool
         Derived : DerivedData
+        NeedsHyweave: bool
         IsHyweaving: bool
         PolygonEditor: EditorState
         ActivePanel: ActivePanel
@@ -98,6 +99,7 @@ let initModel =
         ParseError = false
         LastValidTree = initialTree
         Derived = deriveData initialOutput 0
+        NeedsHyweave = false
         IsHyweaving = false
         PolygonEditor = Stable PolygonEditor.initModel
         ActivePanel = LayoutPanel 
@@ -146,7 +148,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with SrcOfTrth = value }, Cmd.none
 
     | StartHyweave ->
-        let model2 = { model with ActivePanel = LayoutPanel; IsHyweaving = true }
+        let model2 = { model with 
+                        ActivePanel = LayoutPanel
+                        IsHyweaving = true
+                        NeedsHyweave = false}
         model2,
         Cmd.OfAsync.perform
             (fun () -> async {
@@ -213,9 +218,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 latestEntryStr
                                 latestOuterStr
                                 latestIslandsStr
-                            
-            // Return the new model and map the treeCmd to the Main Message type
-            { model with Tree = updatedTree; SrcOfTrth = newOutput }, Cmd.map TreeMsg treeCmd
+            { model with 
+                Tree = updatedTree 
+                SrcOfTrth = newOutput 
+                NeedsHyweave = true }, 
+            Cmd.map TreeMsg treeCmd
 
     | PolygonEditorMsg subMsg ->
         let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -280,8 +287,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     with _ -> None
                 |> Option.map (fun tree ->
                     let laidOut = NodeCode.layoutTree tree 0 (ref 0.0)
-                    { Root = laidOut
-                      PrimedNode = None}
+                    { Root = laidOut; ConfirmingId = None }
                 )
 
             match maybeSubModel with
@@ -405,8 +411,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     try 
                         let tree = CodeNode.parseOutput processed
                         let laidOut = NodeCode.layoutTree tree 0 (ref 0.0)
-                        { Root = laidOut
-                          PrimedNode = None}
+                        { Root = laidOut; ConfirmingId = None }
                     with _ -> model.Tree 
 
             let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -496,18 +501,33 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
         }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
+    let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
+    
+    let buttonClass = 
+        match syntaxAltered with
+        | true -> "hyWeaveButton needs-update"
+        | false -> "hyWeaveButton"
+
     div {
-        attr.style "width: 100%; display:flex; justify-content:center; box-sizing:border-box; padding: 8px 10px;"
+        attr.``class`` "hyweave-container"
         button {
             attr.id "hywe-hyweave"
-            attr.``class`` "hyWeaveButton"
+            attr.``class`` buttonClass
             attr.disabled model.IsHyweaving
             on.click (fun _ -> dispatch StartHyweave)
+            
             match model.IsHyweaving with
             | true ->
                 span { attr.``class`` "spinner" }
                 text " h y W E A V E i n g . . ."
-            | false -> text "h y W E A V E"
+            | false -> 
+                match syntaxAltered with
+                | true ->
+                    span { attr.``class`` "hyweave-prompt"; text "Spatial syntax altered," }
+                    span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
+                    span { attr.``class`` "hyweave-prompt"; text "to regenerate layout" }
+                | false -> 
+                    text "h y W E A V E"
         }
     }
 

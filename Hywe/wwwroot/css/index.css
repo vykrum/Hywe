@@ -194,24 +194,7 @@ input[type=number] {
         transform: translateY(-14px);
     }
 
-.hyWeaveButton {
-    background-color: #363636;
-    width: 100%;
-    opacity: 1;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    cursor: pointer;
-}
 
-    .hyWeaveButton:hover {
-        opacity: 0.8;
-    }
 
 .hyweSyntax {
     font-family: Consolas, "PT Mono", "Courier New", Courier, monospace;
@@ -464,27 +447,66 @@ video.fullscreen-bg {
    NODE INPUTS
    ===================== */
 .nodename {
-    width: 50px;
+    width: 44px;
     font-size: 10px;
     margin-top: 3px;
     color: #999;
     text-align: center;
     border: none;
     outline: none;
-    background: white;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
     -webkit-tap-highlight-color: transparent;
+    transition: border-bottom-color 0.2s;
 }
+
+    .nodename:hover, .nodename:focus {
+        border-bottom: 1px solid #3498db;
+        color: #666;
+    }
+
 .nodeweight {
-    width: 50px;
+    width: 36px;
     font-size: 12px;
     margin-bottom: 3px;
     color: #555;
+    font-weight: bold;
     text-align: center;
     border: none;
     outline: none;
-    background: white;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
     -webkit-tap-highlight-color: transparent;
+    transition: border-bottom-color 0.2s;
 }
+
+    .nodeweight:hover, .nodeweight:focus {
+        border-bottom: 1px solid #3498db;
+        color: #222; /* High contrast while editing */
+    }
+
+.nodename::placeholder {
+    color: #eee;
+    font-weight: normal;
+}
+
+.node-confirm-del {
+    color: #E67E22;
+    font-weight: bold;
+    font-size: 10px;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.node-confirm-cancel {
+    color: #999;
+    font-size: 9px;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
 .nodebutton0 {
     font-size: 10px;
     font-weight: bold;
@@ -538,28 +560,56 @@ video.fullscreen-bg {
     .nodebutton2:hover {
     opacity: 1;
 }
+/* =====================
+   HYWEAVE Button & Pulse
+   ===================== */
 
-.delete-hint,
-.nodebutton1:hover::after {
-    position: absolute;
-    bottom: 110%;      /* Floats slightly above the '×' */
-    left: 50%;
-    transform: translateX(-50%);
-    color: #bdc3c7;    /* Subtle light grey */
-    font-size: 8px;
-    font-weight: normal;
+/* Layout Container remains full width and centered */
+.hyweave-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 8px 10px;
+}
+
+/* Base button appearance - REVERTED TO ORIGINAL DIMENSIONS */
+.hyWeaveButton {
+    background-color: #363636;
+    width: 100%;
+    /* Removed min-height and flex-column */
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row; /* Horizontal alignment */
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 16px;
+    transition: border-color 0.4s ease;
+}
+
+.needs-update {
+    border-color: #2E86C1 !important;
+}
+
+/* Prompt text on the same line, slightly smaller */
+.hyweave-prompt {
+    font-size: 11px;
+    opacity: 0.6;
+    color: #CDDFE1;
+    font-style: italic;
+    white-space: nowrap; /* Prevents text from wrapping to a new line */
+}
+
+.hyweave-main-text {
+    /* Identical to your original text style */
+    color: white;
     white-space: nowrap;
-    pointer-events: none;
-    background: transparent !important;
 }
-
-/* Desktop Hover: Only shows if the device supports hover */
-@media (hover: hover) {
-    .nodebutton1:hover::after {
-        content: "tap twice to delete";
-    }
-}
-
 
 /* =====================
    FOOTER LICENSE
