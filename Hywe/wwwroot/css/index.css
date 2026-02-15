@@ -212,6 +212,9 @@ input[type=number] {
     box-sizing: border-box;
 }
 
+/* =====================
+   TOGGLE BUTTON
+   ===================== */
 .hywe-toggle-btn {
     background: none;
     border: none;
@@ -561,7 +564,7 @@ video.fullscreen-bg {
     opacity: 1;
 }
 /* =====================
-   HYWEAVE Button & Pulse
+   HYWEAVE Button
    ===================== */
 
 /* Layout Container remains full width and centered */
@@ -573,22 +576,19 @@ video.fullscreen-bg {
     padding: 8px 10px;
 }
 
-/* Base button appearance - REVERTED TO ORIGINAL DIMENSIONS */
 .hyWeaveButton {
     background-color: #363636;
     width: 100%;
-    /* Removed min-height and flex-column */
+    height: 42px;
     border: 2px solid transparent;
     border-radius: 8px;
     color: white;
-    padding: 10px;
     cursor: pointer;
     display: flex;
-    flex-direction: row; /* Horizontal alignment */
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 16px;
+    gap: 6px;
     transition: border-color 0.4s ease;
 }
 

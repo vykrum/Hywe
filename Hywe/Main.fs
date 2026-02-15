@@ -234,7 +234,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | PolygonEditorUpdated newModel ->
         syncPolygonState newModel
-        { model with PolygonEditor = Stable newModel }, Cmd.none
+        { model with 
+            PolygonEditor = Stable newModel
+            NeedsHyweave = true        },
+            Cmd.none
 
     | SetActivePanel panel ->
         match panel with
@@ -523,9 +526,9 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
             | false -> 
                 match syntaxAltered with
                 | true ->
-                    span { attr.``class`` "hyweave-prompt"; text "Spatial syntax altered," }
+                    span { attr.``class`` "hyweave-prompt"; text "syntax altered" }
                     span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
-                    span { attr.``class`` "hyweave-prompt"; text "to regenerate layout" }
+                    span { attr.``class`` "hyweave-prompt"; text "to regenerate" }
                 | false -> 
                     text "h y W E A V E"
         }
