@@ -563,6 +563,69 @@ video.fullscreen-bg {
     .nodebutton2:hover {
     opacity: 1;
 }
+
+/* Container and SVG */
+.tree-container {
+    width: 100%;
+    overflow-x: auto;
+    padding-top: 16px;
+    display: flex;
+    justify-content: center;
+}
+
+.tree-canvas {
+    position: relative;
+}
+
+.tree-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}
+
+/* The Hexagon Node */
+.node-outer {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background-color: #d3d3d1;
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.node-inner {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    background-color: white;
+    clip-path: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: default;
+    z-index: 1;
+    gap: 2px;
+    padding: 2px;
+}
+
+/* Branch Highlighting (The Orange Glow) */
+.node-outer.is-affected {
+    background-color: #E67E22;
+}
+
+    .node-outer.is-affected .node-inner {
+        background-color: #fef5ee; /* Very light orange tint */
+    }
+
+.node-outer.is-confirming .node-inner {
+    background-color: #fdf2e9; /* Slightly deeper tint for the source */
+}
 /* =====================
    HYWEAVE Button
    ===================== */
@@ -588,7 +651,7 @@ video.fullscreen-bg {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 12px;
     transition: border-color 0.4s ease;
 }
 
@@ -615,40 +678,44 @@ video.fullscreen-bg {
     position: relative;
     display: inline-flex;
     align-items: center;
+    min-width: fit-content;
 }
 
-.stop-label {
+/* The 'weaving' text fades out at 5s */
+.stop-state .weaving-label {
+    animation: fadeOutAtFive 0.5s forwards 5s;
+}
+
+/* The 'STOP' text fades in at 5s */
+.stop-state .stop-label {
     position: absolute;
     left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
-    white-space: pre; /* Keeps the two spaces between STOP and h y w e... */
-    pointer-events: none;
+    white-space: nowrap;
+    animation: fadeInAtFive 0.5s forwards 5s;
 }
 
-/* Logic: After 5 seconds of the 'stop-state' class being active */
-.stop-state .weaving-label {
-    animation: fadeOutLabel 0s forwards 5s;
-}
-
-.stop-state .stop-label {
-    animation: fadeInLabel 0.5s forwards 5s;
-}
-
-@keyframes fadeOutLabel {
+@keyframes fadeOutAtFive {
     to {
         opacity: 0;
-        visibility: hidden;
     }
 }
 
-@keyframes fadeInLabel {
-    from {
-        opacity: 0;
-    }
-
+@keyframes fadeInAtFive {
     to {
         opacity: 1;
+        pointer-events: auto;
     }
+}
+
+.spinner {
+    flex-shrink: 0;
 }
 
 /* =====================

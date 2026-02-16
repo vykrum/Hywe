@@ -545,8 +545,12 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
         button {
             attr.id "hywe-hyweave"
             attr.``class`` buttonClass
-            attr.disabled model.IsHyweaving 
-            on.click (fun _ -> dispatch StartHyweave)
+            attr.disabled model.IsCancelling 
+
+            on.click (fun _ -> 
+                match model.IsHyweaving with
+                | true -> dispatch CancelBatch
+                | false -> dispatch StartHyweave)
             
             match model.IsHyweaving with
             | true ->
@@ -556,9 +560,8 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
                     span { attr.``class`` "weaving-label"; text " h y W E A V E i n g . . ." }
                     span { 
                         attr.``class`` "stop-label"
-                        // Orange STOP text with exactly two spaces
-                        span { attr.style "color: #E67E22; font-weight: bold;"; text "S T O P" } 
-                        text "  h y W E A V E i n g" 
+                        span { attr.style "color: #E67E22; font-weight: bold;white-space: pre"; text " S T O P " } 
+                        text "h y W E A V E i n g" 
                     }
                 }
             | false -> 
