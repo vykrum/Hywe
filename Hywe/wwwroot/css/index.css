@@ -611,6 +611,46 @@ video.fullscreen-bg {
     white-space: nowrap;
 }
 
+.label-stack {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.stop-label {
+    position: absolute;
+    left: 0;
+    opacity: 0;
+    white-space: pre; /* Keeps the two spaces between STOP and h y w e... */
+    pointer-events: none;
+}
+
+/* Logic: After 5 seconds of the 'stop-state' class being active */
+.stop-state .weaving-label {
+    animation: fadeOutLabel 0s forwards 5s;
+}
+
+.stop-state .stop-label {
+    animation: fadeInLabel 0.5s forwards 5s;
+}
+
+@keyframes fadeOutLabel {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes fadeInLabel {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
 /* =====================
    FOOTER LICENSE
    ===================== */

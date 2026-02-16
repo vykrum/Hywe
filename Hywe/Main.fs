@@ -25,6 +25,8 @@ type Model =
         ActivePanel: ActivePanel
         EditorMode: EditorMode
         BatchPreview: PreviewConfig[] option
+        IsCancelling: bool
+        CancelToken: System.Threading.CancellationTokenSource option
         LastBatchSrc: string option
         SelectedPreviewIndex : int option
     }
@@ -46,6 +48,8 @@ type Message =
     | ExportPdfRequested
     | TapPreview of int
     | CloseBatch
+    | CancelBatch
+    | BatchCancelled
     | SaveRequested
     | ImportRequested
     | FileImported of string
@@ -101,6 +105,8 @@ let initModel =
         Derived = deriveData initialOutput 0
         NeedsHyweave = false
         IsHyweaving = false
+        IsCancelling = false
+        CancelToken = None
         PolygonEditor = Stable PolygonEditor.initModel
         ActivePanel = LayoutPanel 
         EditorMode = Interactive
@@ -138,11 +144,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }
 
         modelWithNewSqn,
-        Cmd.OfAsync.perform
-            (fun () -> async {
-                do! Async.Sleep 5 
-                return ()
-            }) () (fun _ -> RunHyweave)
+        Cmd.batch [
+                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete)
+                    Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 5 }) () (fun _ -> RunHyweave)
+                ]
 
     | SetSrcOfTrth value ->
         { model with SrcOfTrth = value }, Cmd.none
@@ -153,11 +158,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         IsHyweaving = true
                         NeedsHyweave = false}
         model2,
-        Cmd.OfAsync.perform
-            (fun () -> async {
-                do! Async.Sleep 50
-                return ()
-            }) () (fun _ -> RunHyweave)
+        Cmd.batch [
+                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete)
+                    Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 50 }) () (fun _ -> RunHyweave)
+                ]
 
     | RunHyweave ->
         let updatedSrcOfTrth =
@@ -203,7 +207,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () (fun _ -> FinishHyweave)
 
     | FinishHyweave ->
-        { model with IsHyweaving = false }, Cmd.none
+            { model with 
+                IsHyweaving = false
+                NeedsHyweave = false
+            }, Cmd.none
 
     | TreeMsg subMsg ->
             // Destructure the tuple returned by updateSub
@@ -245,39 +252,57 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
             match isStale with
             | true -> 
+                let cts = new System.Threading.CancellationTokenSource()
                 let model' = 
                     { model with 
                         ActivePanel = panel
                         IsHyweaving = true
+                        IsCancelling = false 
+                        CancelToken = Some cts
                         BatchPreview = None 
-                        SelectedPreviewIndex = None 
                     }
-            
-                model', Cmd.OfAsync.perform (fun () ->
-                    let rec computeBatch i acc = async {
-                        match i >= 24 with
-                        | true -> return acc
-                        | false ->
+
+                model', Cmd.OfAsync.perform (fun (token: System.Threading.CancellationToken) ->
+                    // Type annotation (m: Model) helps the compiler find .SrcOfTrth
+                    let rec compute (m: Model) i acc = async {
+                        if i >= 24 || token.IsCancellationRequested then 
+                            return acc
+                        else
                             let sqnStr = indexToSqn i
-                            let forcedStr = injectSqn model.SrcOfTrth sqnStr
+                            let forcedStr = injectSqn m.SrcOfTrth sqnStr
                             let cxls, _ = Parse.spaceCxl [||] forcedStr
                             let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
+                        
+                            // We define configData inside the loop logic
                             let configData = 
                                 {| sqnName = sqnStr; w = d.w; h = d.h
                                    shapes = d.shapes |> Array.map (fun s -> 
                                      {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
                                 |}
+                        
                             do! Async.Sleep 5
-                            return! computeBatch (i + 1) (configData :: acc)
+                            // Pass configData into the next recursive call
+                            return! compute m (i + 1) (configData :: acc)
                     }
                     async {
-                        let! results = computeBatch 0 []
+                        let! results = compute model 0 []
+                        // CONVERSION: Model expects PreviewConfig[], so we convert List to Array
                         return results |> List.toArray |> Array.rev
-                    }) () SetBatchPreview
+                    }) cts.Token SetBatchPreview
+
             | false -> 
                 { model with ActivePanel = panel }, Cmd.none
-        | _ -> 
+
+        // This handles the "Incomplete pattern match" error
+        | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel ->
             { model with ActivePanel = panel }, Cmd.none
+    
+    | CancelBatch ->
+        model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
+        { model with IsCancelling = true }, Cmd.none
+    
+    | BatchCancelled ->
+        { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
 
     | ToggleEditorMode ->
         match model.EditorMode with
@@ -353,6 +378,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             BatchPreview = Some results
             LastBatchSrc = Some model.SrcOfTrth 
             IsHyweaving = false 
+            IsCancelling = false
             ActivePanel = BatchPanel 
         }, Cmd.none
 
@@ -507,22 +533,34 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
     
     let buttonClass = 
-        match syntaxAltered with
-        | true -> "hyWeaveButton needs-update"
-        | false -> "hyWeaveButton"
+        match model.IsHyweaving with
+        | true -> "hyWeaveButton stop-state" 
+        | false -> 
+            match syntaxAltered with
+            | true -> "hyWeaveButton needs-update"
+            | false -> "hyWeaveButton"
 
     div {
         attr.``class`` "hyweave-container"
         button {
             attr.id "hywe-hyweave"
             attr.``class`` buttonClass
-            attr.disabled model.IsHyweaving
+            attr.disabled model.IsHyweaving 
             on.click (fun _ -> dispatch StartHyweave)
             
             match model.IsHyweaving with
             | true ->
                 span { attr.``class`` "spinner" }
-                text " h y W E A V E i n g . . ."
+                span { 
+                    attr.``class`` "label-stack"
+                    span { attr.``class`` "weaving-label"; text " h y W E A V E i n g . . ." }
+                    span { 
+                        attr.``class`` "stop-label"
+                        // Orange STOP text with exactly two spaces
+                        span { attr.style "color: #E67E22; font-weight: bold;"; text "S T O P" } 
+                        text "  h y W E A V E i n g" 
+                    }
+                }
             | false -> 
                 match syntaxAltered with
                 | true ->
