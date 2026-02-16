@@ -293,7 +293,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | false -> 
                 { model with ActivePanel = panel }, Cmd.none
 
-        // This handles the "Incomplete pattern match" error
         | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel ->
             { model with ActivePanel = panel }, Cmd.none
     
