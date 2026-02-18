@@ -83,7 +83,7 @@ let deriveData (stx: string) (elv : int): DerivedData =
 
 ///
 
-// Defaults
+// Default Syntax
 let beeyond = $"(1/{NodeCode.initWeight}/Dock),(1.1/{NodeCode.initWeight}/Logistics),(1.2/{NodeCode.initWeight}/Lab),"+
               $"(1.3/{NodeCode.initWeight}/Habitation),(1.4/{NodeCode.initWeight}/Power)"
 
