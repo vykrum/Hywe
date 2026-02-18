@@ -12,6 +12,7 @@ type ActivePanel =
     | TablePanel
     | ViewPanel
     | BatchPanel
+    | TeachPanel
 
 /// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =

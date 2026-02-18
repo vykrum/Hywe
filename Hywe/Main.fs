@@ -29,6 +29,8 @@ type Model =
         CancelToken: System.Threading.CancellationTokenSource option
         LastBatchSrc: string option
         SelectedPreviewIndex : int option
+        UserDescription : string 
+        IsSavingToHynteract : bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -53,6 +55,9 @@ type Message =
     | SaveRequested
     | ImportRequested
     | FileImported of string
+    | SetDescription of string
+    | RecordToHynteract
+    | RecordResult of bool
 
 // Polygon export consumer
 let mutable private latestOuterStr   : string = ""
@@ -113,6 +118,8 @@ let initModel =
         BatchPreview = None
         LastBatchSrc = None
         SelectedPreviewIndex = None
+        UserDescription = ""
+        IsSavingToHynteract = false
     }
 
 /// Update
@@ -293,7 +300,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | false -> 
                 { model with ActivePanel = panel }, Cmd.none
 
-        | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel ->
+        | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel | TeachPanel ->
             { model with ActivePanel = panel }, Cmd.none
     
     | CancelBatch ->
@@ -463,6 +470,33 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 }) () (fun _ -> FinishHyweave)
             ]
 
+    | SetDescription d -> 
+        { model with UserDescription = d }, Cmd.none
+
+    | RecordToHynteract ->
+            let apiUri = "https://hynteract.vercel.app/api/record"
+            let payload = {| 
+                prompt = model.UserDescription
+                syntax = model.SrcOfTrth 
+            |}
+
+            let postData() = async {
+                try
+                    let! response = js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
+                    return response
+                with _ -> 
+                    return false
+            }
+        
+            { model with IsSavingToHynteract = true }, 
+            Cmd.OfAsync.perform postData () RecordResult
+
+    | RecordResult success ->
+        { model with 
+            IsSavingToHynteract = false
+            UserDescription = if success then "" else model.UserDescription 
+        }, Cmd.none
+
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     let nodeCodeButtonText =
@@ -595,6 +629,7 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
         tab "Table" TablePanel
         tab "View" ViewPanel
         tab "Batch" BatchPanel
+        tab "Teach" TeachPanel
     }
 
 let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
@@ -670,6 +705,34 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             span { attr.``class`` "spinner"; attr.style "display: block; margin: 0 auto 20px;" }
                             text "Generating 24 variations..." 
                         }
+            }
+
+        | TeachPanel ->
+            div {
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #fafafa; border-radius: 8px; border: 1px solid #ddd;"
+                
+                h3 { attr.style "margin: 0; color: #333;"; text "Hynteract Training Portal" }
+                
+                div {
+                    attr.style "width: 100%; max-width: 800px;"
+                    label { attr.style "display: block; margin-bottom: 8px; font-weight: bold; color: #666;"; text "Configuration Description" }
+                    textarea {
+                        attr.style "width: 100%; height: 150px; padding: 15px; border: 2px solid #eee; border-radius: 6px; font-size: 1rem; resize: vertical;"
+                        attr.placeholder "Describe the current spatial layout for Hynteract (e.g. 'Large open-plan office with three breakout zones...')"
+                        attr.value model.UserDescription
+                        on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
+                    }
+                }
+
+                button {
+                    attr.style "padding: 12px 30px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"
+                    attr.disabled (model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription)
+                    on.click (fun _ -> dispatch RecordToHynteract)
+                    text (if model.IsSavingToHynteract then "Syncing to Hynteract..." else "Record Training Pair")
+                }
+
+                if not model.IsSavingToHynteract && model.UserDescription = "" then
+                    span { attr.style "color: #27ae60; font-size: 0.9em;"; text "Successfully committed to Hugging Face via Hynteract bridge." }
             }
     }
 

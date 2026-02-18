@@ -272,3 +272,18 @@ window.downloadSvgFile = (svgId, filename) => {
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 };
+
+// Record Descriptions to Hynteract 
+window.recordToHynteract = async (url, data) => {
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return response.ok;
+    } catch (e) {
+        console.error("Hynteract sync failed", e);
+        return false;
+    }
+};
