@@ -31,6 +31,7 @@ type Model =
         SelectedPreviewIndex : int option
         UserDescription : string 
         IsSavingToHynteract : bool
+        ShowSuccessMessage : bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -58,6 +59,8 @@ type Message =
     | SetDescription of string
     | RecordToHynteract
     | RecordResult of bool
+    | StartVoiceCapture
+    | OnVoiceResult of string
 
 // Polygon export consumer
 let mutable private latestOuterStr   : string = ""
@@ -120,6 +123,7 @@ let initModel =
         SelectedPreviewIndex = None
         UserDescription = ""
         IsSavingToHynteract = false
+        ShowSuccessMessage = false
     }
 
 /// Update
@@ -475,27 +479,38 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | RecordToHynteract ->
             let apiUri = "https://hynteract.vercel.app/api/record"
+            // CHANGE: Match standard 'instruction' and 'output' labels
             let payload = {| 
-                prompt = model.UserDescription
-                syntax = model.SrcOfTrth 
+                instruction = model.UserDescription
+                output = model.SrcOfTrth 
             |}
 
             let postData() = async {
                 try
+                    // This calls your JavaScript 'recordToHynteract' function
                     let! response = js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
                     return response
                 with _ -> 
                     return false
             }
-        
+    
             { model with IsSavingToHynteract = true }, 
             Cmd.OfAsync.perform postData () RecordResult
 
     | RecordResult success ->
         { model with 
             IsSavingToHynteract = false
+            ShowSuccessMessage = success
             UserDescription = if success then "" else model.UserDescription 
-        }, Cmd.none
+        }, 
+        if success then 
+            Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave) // Using a dummy msg to trigger refresh
+        else Cmd.none
+
+    | StartVoiceCapture -> model, Cmd.none
+    
+    | OnVoiceResult text ->
+        { model with UserDescription = text }, Cmd.none
 
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
@@ -710,13 +725,29 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | TeachPanel ->
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #fafafa; border-radius: 8px; border: 1px solid #ddd;"
-                
+        
                 h3 { attr.style "margin: 0; color: #333;"; text "Hynteract Training Portal" }
-                
+        
                 div {
                     attr.style "width: 100%; max-width: 800px;"
-                    label { attr.style "display: block; margin-bottom: 8px; font-weight: bold; color: #666;"; text "Configuration Description" }
+    
+                    // Header for Textarea with Mic Button
+                    div {
+                        attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"
+                        label { attr.style "font-weight: bold; color: #666;"; text "Configuration Description" }
+        
+                        button {
+                            attr.style "background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                            attr.title "Start Voice Capture"
+                            // No DotNetObjectReference needed. JS handles the DOM injection.
+                            on.click (fun _ -> js.InvokeVoidAsync("startTranscription") |> ignore)
+                            text "🎤"
+                        }
+                    }
+
                     textarea {
+                        // Set the ID so the external JS script knows where to 'type'
+                        attr.id "hynteract-desc-input"
                         attr.style "width: 100%; height: 150px; padding: 15px; border: 2px solid #eee; border-radius: 6px; font-size: 1rem; resize: vertical;"
                         attr.placeholder "Describe the current spatial layout for Hynteract (e.g. 'Large open-plan office with three breakout zones...')"
                         attr.value model.UserDescription
@@ -724,15 +755,24 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     }
                 }
 
-                button {
-                    attr.style "padding: 12px 30px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"
-                    attr.disabled (model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription)
-                    on.click (fun _ -> dispatch RecordToHynteract)
-                    text (if model.IsSavingToHynteract then "Syncing to Hynteract..." else "Record Training Pair")
+                // Action Buttons
+                div {
+                    attr.style "display: flex; gap: 12px; align-items: center;"
+    
+                    button {
+                        attr.style "padding: 12px 30px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"
+                        attr.disabled (model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription)
+                        on.click (fun _ -> dispatch RecordToHynteract)
+                        text (if model.IsSavingToHynteract then "Syncing to Hynteract..." else "Record Training Pair")
+                    }
                 }
 
-                if not model.IsSavingToHynteract && model.UserDescription = "" then
-                    span { attr.style "color: #27ae60; font-size: 0.9em;"; text "Successfully committed to Hugging Face via Hynteract bridge." }
+                // Success Notification
+                if model.ShowSuccessMessage then
+                    span { 
+                        attr.style "color: #27ae60; font-size: 0.9em; font-weight: 500; animation: fadein 0.5s;"
+                        text "Successfully committed to Hugging Face via Hynteract bridge." 
+                    }
             }
     }
 
