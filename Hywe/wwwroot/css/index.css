@@ -719,6 +719,54 @@ video.fullscreen-bg {
 }
 
 /* =====================
+   NAVIGATION ICONS
+   ===================== */
+.hywe-tab-strip {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    gap: 12px;
+    padding: 4px 0; /* Slightly more padding to breathe with borders */
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: transparent;
+}
+
+.hywe-tab-btn {
+    background: transparent;
+    border: 1px solid transparent; /* Keeps layout stable */
+    outline: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: #999;
+    transition: all 0.2s ease;
+    /* Typography for active text */
+    font-family: 'Optima', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+    .hywe-tab-btn svg {
+        width: 1.3rem; /* Slightly smaller to match text height */
+        height: 1.3rem;
+        fill: currentColor;
+    }
+
+    /* Compact Bordered Selection */
+    .hywe-tab-btn.active {
+        background: rgba(0, 0, 0, 0.03);
+        color: #000 !important;
+        padding: 0 8px;
+    }
+
+
+/* =====================
    FOOTER LICENSE
    ===================== */
 .license-footer {

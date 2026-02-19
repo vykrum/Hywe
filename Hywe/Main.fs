@@ -625,26 +625,29 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
 
 let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
     div {
-        attr.style "display:flex; width: 100%; justify-content: center; gap: 10px; margin: 10px 0; border-bottom: 1px solid #333;"
+        attr.``class`` "hywe-tab-strip"
         
-        let tab title panel =
+        let tab title path panel =
             let isActive = model.ActivePanel = panel
+            let activeClass = match isActive with true -> " active" | false -> ""
+
             button {
-                attr.style (
-                    "padding: 8px 16px; cursor: pointer; border: none; font-weight: bold; " +
-                    (if isActive then "background: #444; color: white;" 
-                     else "background: transparent; color: #888;")
-                )
+                attr.title title 
+                attr.``class`` ("hywe-tab-btn" + activeClass)
                 on.click (fun _ -> dispatch (SetActivePanel panel))
-                text title
+                
+                // Show text if active, icon if inactive
+                match isActive with
+                | true -> text title
+                | false -> drawIcon path
             }
 
-        tab "Boundary" BoundaryPanel
-        tab "Layout" LayoutPanel
-        tab "Table" TablePanel
-        tab "View" ViewPanel
-        tab "Batch" BatchPanel
-        tab "Teach" TeachPanel
+        tab "Boundary" iconBoundary BoundaryPanel
+        tab "Layout"   iconLayout   LayoutPanel
+        tab "Table"    iconTable    TablePanel
+        tab "View"     iconView     ViewPanel
+        tab "Batch"    iconBatch    BatchPanel
+        tab "Teach"    iconTeach    TeachPanel
     }
 
 let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
@@ -725,54 +728,55 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | TeachPanel ->
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #fafafa; border-radius: 8px; border: 1px solid #ddd;"
-        
+
                 h3 { attr.style "margin: 0; color: #333;"; text "Hynteract Training Portal" }
-        
+
                 div {
                     attr.style "width: 100%; max-width: 800px;"
-    
-                    // Header for Textarea with Mic Button
+
                     div {
                         attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"
                         label { attr.style "font-weight: bold; color: #666;"; text "Configuration Description" }
-        
+
                         button {
                             attr.style "background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
                             attr.title "Start Voice Capture"
-                            // No DotNetObjectReference needed. JS handles the DOM injection.
                             on.click (fun _ -> js.InvokeVoidAsync("startTranscription") |> ignore)
                             text "🎤"
                         }
                     }
 
                     textarea {
-                        // Set the ID so the external JS script knows where to 'type'
                         attr.id "hynteract-desc-input"
-                        attr.style "width: 100%; height: 150px; padding: 15px; border: 2px solid #eee; border-radius: 6px; font-size: 1rem; resize: vertical;"
+                        // ADDED: box-sizing: border-box;
+                        attr.style "width: 100%; height: 150px; padding: 15px; border: 2px solid #eee; border-radius: 6px; font-size: 1rem; resize: vertical; box-sizing: border-box;"
                         attr.placeholder "Describe the current spatial layout for Hynteract (e.g. 'Large open-plan office with three breakout zones...')"
                         attr.value model.UserDescription
                         on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
                     }
                 }
 
-                // Action Buttons
                 div {
                     attr.style "display: flex; gap: 12px; align-items: center;"
-    
+
                     button {
                         attr.style "padding: 12px 30px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"
+                        // Using match instead of if-else for the label to maintain style
+                        let btnText = match model.IsSavingToHynteract with true -> "Syncing to Hynteract..." | false -> "Record Training Pair"
                         attr.disabled (model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription)
                         on.click (fun _ -> dispatch RecordToHynteract)
-                        text (if model.IsSavingToHynteract then "Syncing to Hynteract..." else "Record Training Pair")
+                        text btnText
                     }
                 }
 
-                // Success Notification
-                if model.ShowSuccessMessage then
+                // Maintaining your conditional logic for notifications
+                match model.ShowSuccessMessage with
+                | true ->
                     span { 
                         attr.style "color: #27ae60; font-size: 0.9em; font-weight: 500; animation: fadein 0.5s;"
                         text "Successfully committed to Hugging Face via Hynteract bridge." 
                     }
+                | false -> ()
             }
     }
 

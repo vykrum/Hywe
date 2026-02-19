@@ -152,6 +152,21 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
         }
     }
 
+// Tab Icons
+let iconBoundary = "M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v10H7V7z"
+let iconLayout   = "M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5v-6h-5v6zm6 0h5v-6h-5v6zm-6-7h5V5h-5v6zm6-6v6h5V5h-5z"
+let iconTable    = "M4 18h16V6H4v12zm2-10h12v2H6V8zm0 4h12v2H6v-2zm0 4h12v2H6v-2z"
+let iconView     = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+let iconBatch    = "M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"
+let iconTeach    = "M5 13.18v2.81c0 .73.4 1.41 1.05 1.76l5 2.63c.59.32 1.29.32 1.88 0l5-2.63c.65-.35 1.05-1.03 1.05-1.76v-2.81l-6 3.16c-.63.33-1.37.33-2 0l-6-3.16zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"
+
+let drawIcon path =
+    svg {
+        "viewBox" => "0 0 24 24"
+        attr.style "width: 1.6rem; height: 1.6rem; fill: currentColor;"
+        elt "path" { "d" => path }
+    }
+
 // Hywe Table
 let renderRow (cxl: Cxl) (clr: string) (avl: int) =
     // Area of each Hexel is 4 sq units
