@@ -177,9 +177,9 @@ input[type=number] {
     .custom-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         -webkit-tap-highlight-color: transparent;
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
+        height: 22px;
+        width: 14px;
+        border-radius: 8px;
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
@@ -187,9 +187,9 @@ input[type=number] {
     }
 
     .custom-slider::-moz-range-thumb {
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
+        height: 22px;
+        width: 14px;
+        border-radius: 8px;
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
