@@ -165,11 +165,13 @@ input[type=number] {
     -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent; 
     background: transparent;
-    height: 20px;
+    height: 32px;
     border-radius: 2px;
     cursor: pointer;
     padding: 0;
     margin: 0;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
     .custom-slider::-webkit-slider-thumb {
@@ -181,7 +183,7 @@ input[type=number] {
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
-        margin-top: -20px;
+        margin-top: -2px;
     }
 
     .custom-slider::-moz-range-thumb {
