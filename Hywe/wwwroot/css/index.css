@@ -183,7 +183,7 @@ input[type=number] {
         border: 1px solid #4CAF50;
         background: transparent;
         cursor: pointer;
-        margin-top: -20px;
+        margin-top: -22px;
     }
 
     .custom-slider::-moz-range-thumb {
