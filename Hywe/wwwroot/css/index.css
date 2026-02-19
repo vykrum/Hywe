@@ -753,7 +753,7 @@ video.fullscreen-bg {
 }
 
     .hywe-tab-btn svg {
-        width: 1.3rem; /* Slightly smaller to match text height */
+        width: 1.3rem;
         height: 1.3rem;
         fill: currentColor;
     }
@@ -763,6 +763,7 @@ video.fullscreen-bg {
         background: rgba(0, 0, 0, 0.03);
         color: #000 !important;
         padding: 0 8px;
+        min-width: 32px;
     }
 
 

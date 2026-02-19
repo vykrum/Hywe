@@ -645,7 +645,7 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
         tab "Boundary" iconBoundary BoundaryPanel
         tab "Layout"   iconLayout   LayoutPanel
         tab "Table"    iconTable    TablePanel
-        tab "View"     iconView     ViewPanel
+        tab "3D"       icon3D       ViewPanel
         tab "Batch"    iconBatch    BatchPanel
         tab "Teach"    iconTeach    TeachPanel
     }
