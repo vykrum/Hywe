@@ -692,7 +692,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; overflow-x: hidden;"
                 div {
-                    attr.id "hywe-sequence-selector"; attr.style "width: 100%; max-width: 100vw;"
+                    attr.id "hywe-sequence-selector"; attr.style "padding: 8px 0;width: 100%; max-width: 100vw;"
                     sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
                 }                
                 div {
