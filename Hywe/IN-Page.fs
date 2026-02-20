@@ -152,7 +152,7 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
         }
     }
 
-// Tab Icons
+// Tab Panel Icons
 let iconBoundary = "M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v10H7V7z"
 let iconLayout   = "M12 2l3.5 2v4l-3.5 2-3.5-2V4l3.5-2z M7 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z M17 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z"
 let iconTable    = "M4 18h16V6H4v12zm2-10h12v2H6V8zm0 4h12v2H6v-2zm0 4h12v2H6v-2z"
