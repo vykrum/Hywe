@@ -227,7 +227,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | TreeMsg subMsg ->
-            // Destructure the tuple returned by updateSub
             let updatedTree, treeCmd = NodeCode.updateSub subMsg model.Tree 
         
             let newOutput = NodeCode.getOutput
