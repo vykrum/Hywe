@@ -32,6 +32,7 @@ type Model =
         UserDescription : string 
         IsSavingToHynteract : bool
         ShowSuccessMessage : bool
+        IsRecording : bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -61,6 +62,7 @@ type Message =
     | RecordResult of bool
     | StartVoiceCapture
     | OnVoiceResult of string
+
 
 // Polygon export consumer
 let mutable private latestOuterStr   : string = ""
@@ -124,6 +126,7 @@ let initModel =
         UserDescription = ""
         IsSavingToHynteract = false
         ShowSuccessMessage = false
+        IsRecording = false
     }
 
 /// Update
@@ -507,10 +510,23 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave) // Using a dummy msg to trigger refresh
         else Cmd.none
 
-    | StartVoiceCapture -> model, Cmd.none
-    
+    | StartVoiceCapture -> 
+        { model with IsRecording = true }, 
+        Cmd.OfAsync.perform (fun () -> 
+            async {
+                // 1. Trigger the JS transcription
+                do! js.InvokeVoidAsync("startTranscription").AsTask() |> Async.AwaitTask
+                // 2. We wait a moment for the JS 'onend' logic to finish if needed
+                // or just return to signal we are done.
+                return ()
+            }) () (fun _ -> OnVoiceResult model.UserDescription)
+
     | OnVoiceResult text ->
-        { model with UserDescription = text }, Cmd.none
+        // This is the "Off Switch"
+        { model with 
+            IsRecording = false 
+            // Note: the text is already updated by the JS dispatching the 'input' event
+        }, Cmd.none
 
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
@@ -727,54 +743,60 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
         | TeachPanel ->
             div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; background: #fafafa; border-radius: 8px; border: 1px solid #ddd;"
-
-                h3 { attr.style "margin: 0; color: #333;"; text "Hynteract Training Portal" }
-
+                attr.``class`` "teach-panel-container"
                 div {
                     attr.style "width: 100%; max-width: 800px;"
-
-                    div {
-                        attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"
-                        label { attr.style "font-weight: bold; color: #666;"; text "Configuration Description" }
-
-                        button {
-                            attr.style "background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-                            attr.title "Start Voice Capture"
-                            on.click (fun _ -> js.InvokeVoidAsync("startTranscription") |> ignore)
-                            text "🎤"
-                        }
-                    }
-
                     textarea {
                         attr.id "hynteract-desc-input"
-                        // ADDED: box-sizing: border-box;
-                        attr.style "width: 100%; height: 150px; padding: 15px; border: 2px solid #eee; border-radius: 6px; font-size: 1rem; resize: vertical; box-sizing: border-box;"
-                        attr.placeholder "Describe the current spatial layout for Hynteract (e.g. 'Large open-plan office with three breakout zones...')"
+                        attr.``class`` "teach-textarea"
+                        attr.placeholder "Dataset Generation\n\nDescribe the space flow: Which main nodes contain sub-spaces? How do the paths branch out? \n\nExample: 'The Great Room acts as a central hub, leading to a kitchen cluster on one side and a hallway with three bedrooms on the other.'"
                         attr.value model.UserDescription
                         on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
                     }
                 }
 
                 div {
-                    attr.style "display: flex; gap: 12px; align-items: center;"
+                    attr.``class`` "teach-action-bar"
 
                     button {
-                        attr.style "padding: 12px 30px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;"
-                        // Using match instead of if-else for the label to maintain style
-                        let btnText = match model.IsSavingToHynteract with true -> "Syncing to Hynteract..." | false -> "Record Training Pair"
-                        attr.disabled (model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription)
+                        attr.``class`` (match model.IsRecording with | true -> "mic-button recording" | false -> "mic-button")
+                        attr.title "Start Voice Capture"
+                        on.click (fun _ -> dispatch StartVoiceCapture)
+                        
+                        rawHtml """
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>"""
+                    }
+
+                    button {
+                        let isBusy = model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription
+    
+                        attr.``class`` (
+                            match isBusy with 
+                            | true -> "record-submit-btn disabled" 
+                            | false -> "record-submit-btn active"
+                        )
+    
+                        let btnText = 
+                            match model.IsSavingToHynteract with 
+                            | true -> "Committing..." 
+                            | false -> "Commit to Dataset"
+    
+                        attr.disabled isBusy
                         on.click (fun _ -> dispatch RecordToHynteract)
                         text btnText
                     }
                 }
 
-                // Maintaining your conditional logic for notifications
                 match model.ShowSuccessMessage with
                 | true ->
                     span { 
-                        attr.style "color: #27ae60; font-size: 0.9em; font-weight: 500; animation: fadein 0.5s;"
-                        text "Successfully committed to Hugging Face via Hynteract bridge." 
+                        attr.style "color: #27ae60; font-size: 0.85em; font-weight: 500;"
+                        text "✓ Spatial relationship successfully mapped to model." 
                     }
                 | false -> ()
             }

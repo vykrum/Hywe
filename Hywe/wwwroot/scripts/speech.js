@@ -1,23 +1,26 @@
 window.startTranscription = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        alert("Speech recognition is not supported in this browser.");
-        return;
-    }
+    return new Promise((resolve) => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Speech recognition is not supported.");
+            resolve();
+            return;
+        }
 
-    const recognition = new SpeechRecognition();
-    const textArea = document.getElementById("hynteract-desc-input");
+        const recognition = new SpeechRecognition();
+        const textArea = document.getElementById("hynteract-desc-input");
 
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const currentVal = textArea.value;
+            textArea.value = currentVal ? `${currentVal} ${transcript}` : transcript;
+            textArea.dispatchEvent(new Event('input', { bubbles: true }));
+        };
 
-        // Append transcription to current text
-        const currentVal = textArea.value;
-        textArea.value = currentVal ? `${currentVal} ${transcript}` : transcript;
+        // This is the key: the F# 'await' finishes when this resolves
+        recognition.onend = () => resolve();
+        recognition.onerror = () => resolve();
 
-        // CRITICAL: Trigger 'input' event so Bolero's 'on.input' captures the change
-        textArea.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-
-    recognition.start();
+        recognition.start();
+    });
 };
