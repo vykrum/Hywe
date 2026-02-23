@@ -77,6 +77,7 @@ let (|Vertical|Horizontal|) sqn =
     | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> Vertical
     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE 
     | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> Horizontal
+///
 
 /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel.
 /// Each array begins with the location of Host hexel followed by the rest in a particular order.

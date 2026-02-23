@@ -24,7 +24,7 @@ type Model =
         PolygonEditor: EditorState
         ActivePanel: ActivePanel
         EditorMode: EditorMode
-        BatchPreview: PreviewConfig[] option
+        BatchPreview: BatchConfgrtns[] option
         IsCancelling: bool
         CancelToken: System.Threading.CancellationTokenSource option
         LastBatchSrc: string option
@@ -46,11 +46,11 @@ type Message =
     | PolygonEditorMsg of PolygonEditorMessage
     | PolygonEditorUpdated of PolygonEditorModel
     | SetActivePanel of ActivePanel
-    | SetBatchPreview of PreviewConfig[]
+    | SetBatchPreview of BatchConfgrtns[]
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
-    | TapPreview of int
+    | TapBatchPreview of int
     | CloseBatch
     | CancelBatch
     | BatchCancelled
@@ -394,7 +394,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             ActivePanel = BatchPanel 
         }, Cmd.none
 
-    | TapPreview i ->
+    | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with
             | Some current when current = i -> None
@@ -729,7 +729,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         alternateConfigurations 
                             results 
                             model.SelectedPreviewIndex 
-                            TapPreview                   
+                            TapBatchPreview                   
                             dispatch                   
                             (fun () -> dispatch (SetActivePanel LayoutPanel)) js
                     | None -> 

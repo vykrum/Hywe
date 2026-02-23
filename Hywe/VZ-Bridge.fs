@@ -313,8 +313,8 @@ let svgCoxels
 
 ///
 
-type PreviewShape = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type PreviewConfig = {| sqnName: string; shapes: PreviewShape[]; w: float; h: float |}
+type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float |}
 
 /// Extracts high-fidelity coordinates for Geometry generation
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
@@ -367,7 +367,7 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
         {| shapes = shapes; w = currentWidth; h = currentHeight |}
 
 let alternateConfigurations 
-    (configs: PreviewConfig[]) 
+    (configs: BatchConfgrtns[]) 
     (selectedIndex: int option) 
     (onTap: int -> 'msg)
     (dispatch: 'msg -> unit)
