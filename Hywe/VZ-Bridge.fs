@@ -6,6 +6,7 @@ open Hexel
 open Coxel
 open Microsoft.JSInterop
 open System.Text.Json
+open System.Text.Json.Serialization
 open System
 ///
 
@@ -534,20 +535,19 @@ let alternateConfigurations
 }
     }
 
-let serializeConfiguration 
-    (batchOption: BatchConfgrtns[] option) : string =
-    batchOption
-    |> Option.defaultValue [||]
-    |> Array.map (fun config ->
-        config.sqnName, 
-        config.shapes |> Array.map (fun s -> 
-            // Rounding points to 2 decimal places to save string space
-            let roundedPoints = s.points |> Array.map (fun p -> System.Math.Round(p, 2))
-            (s.name, roundedPoints)
-        )
-    )
-    |> readOnlyDict
-    |> JsonSerializer.Serialize
+type ExportPayload = {
+    [<JsonPropertyName("instruction")>] Instruction: string
+    [<JsonPropertyName("description")>] Description: string
+    [<JsonPropertyName("configuration")>] Configuration: string
+}
+
+let serializeConfiguration (configs: BatchConfgrtns[] option) =
+    match configs with
+    | None -> "[]"
+    | Some c -> 
+        // Force conversion to a plain array of objects if BatchConfgrtns 
+        // contains problematic F# types like Tuples.
+        JsonSerializer.Serialize(c)
 
 /// Renders an extruded polygon on a canvas via JS WebGL
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.

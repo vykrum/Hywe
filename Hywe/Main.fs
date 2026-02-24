@@ -480,40 +480,46 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with UserDescription = d }, Cmd.none
 
     | RecordToHynteract ->
-        let apiUri = "https://hynteract.vercel.app/api/record"
+            let apiUri = "https://hynteract.vercel.app/api/record"
 
-        // Only activate the default index if no selection was made earlier
-        let activeIndex = 
-            match model.SelectedPreviewIndex with
-            | Some index -> index
-            | None -> 0 
+            let activeIndex = 
+                match model.SelectedPreviewIndex with
+                | Some index -> index
+                | None -> 0 
 
-        // Extract the configuration for the dataset payload
-        let selectedConfig = 
-            match model.BatchPreview with
-            | Some batch when batch.Length > activeIndex -> [| batch.[activeIndex] |]
-            | _ -> [||]
+            let selectedConfig = 
+                match model.BatchPreview with
+                | Some batch ->
+                    match batch.Length > activeIndex with
+                    | true -> [| batch.[activeIndex] |]
+                    | false -> [||]
+                | None -> [||]
 
-        let configString = Bridge.serializeConfiguration (Some selectedConfig)
+            let configString = Bridge.serializeConfiguration (Some selectedConfig)
 
-        let payload = {| 
-            Instruction = model.SrcOfTrth 
-            Description = model.UserDescription
-            Configuration = configString 
-        |}
+            // FIX: Use a Dictionary instead of an Anonymous Record {| |}
+            // This avoids the System.Text.Json ConstructorContainsNullParameterNames error
+            let payload = 
+                dict [
+                    "Instruction", box model.SrcOfTrth
+                    "Description", box model.UserDescription
+                    "Configuration", box configString
+                ]
 
-        let postData() = async {
-            try
-                return! js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
-            with _ -> return false
-        }
+            let postData() = async {
+                try
+                    // Using the dictionary here ensures safe serialization
+                    let! result = js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
+                    return result
+                with _ -> 
+                    return false
+            }
 
-        { model with 
-            IsSavingToHynteract = true
-            // Persist the selection so the UI reflects what was committed
-            SelectedPreviewIndex = Some activeIndex 
-        }, 
-        Cmd.OfAsync.perform postData () RecordResult
+            { model with 
+                IsSavingToHynteract = true
+                SelectedPreviewIndex = Some activeIndex 
+            }, 
+            Cmd.OfAsync.perform postData () RecordResult
 
     | RecordResult success ->
         { model with 
