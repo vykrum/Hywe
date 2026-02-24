@@ -38,14 +38,14 @@ let getAttr key f fallback (m: Map<string,string>) =
     |> Map.tryFind key
     |> Option.bind (fun v -> try Some (f v) with _ -> None)
     |> Option.defaultValue fallback
-
+///
 
 /// <summary> Categorize constituent Hexels within a Coxel. 
 ///</summary>
 /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
 /// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
 /// <summary>
-/// Categorize constituent Hexels within a Coxel (safe + pattern matching version)
+/// Categorize constituent Hexels within a Coxel
 /// </summary>
 let spaceSeq 
     (spaceStr:string) = 
@@ -178,6 +178,7 @@ let parseCoords value =
 let parseIslands value =
     parsePolyIslands value
     |> Array.map (polyToPoints 10.0)
+///
 
 /// <summary> Generate coxels based on string data. </summary>
 /// <param name="seq"> Sequence. </param>

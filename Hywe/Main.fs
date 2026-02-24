@@ -480,24 +480,40 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with UserDescription = d }, Cmd.none
 
     | RecordToHynteract ->
-            let apiUri = "https://hynteract.vercel.app/api/record"
-            // CHANGE: Match standard 'instruction' and 'output' labels
-            let payload = {| 
-                instruction = model.UserDescription
-                output = model.SrcOfTrth 
-            |}
+        let apiUri = "https://hynteract.vercel.app/api/record"
 
-            let postData() = async {
-                try
-                    // This calls your JavaScript 'recordToHynteract' function
-                    let! response = js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
-                    return response
-                with _ -> 
-                    return false
-            }
-    
-            { model with IsSavingToHynteract = true }, 
-            Cmd.OfAsync.perform postData () RecordResult
+        // Only activate the default index if no selection was made earlier
+        let activeIndex = 
+            match model.SelectedPreviewIndex with
+            | Some index -> index
+            | None -> 0 
+
+        // Extract the configuration for the dataset payload
+        let selectedConfig = 
+            match model.BatchPreview with
+            | Some batch when batch.Length > activeIndex -> [| batch.[activeIndex] |]
+            | _ -> [||]
+
+        let configString = Bridge.serializeConfiguration (Some selectedConfig)
+
+        let payload = {| 
+            Instruction = model.SrcOfTrth 
+            Description = model.UserDescription
+            Configuration = configString 
+        |}
+
+        let postData() = async {
+            try
+                return! js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
+            with _ -> return false
+        }
+
+        { model with 
+            IsSavingToHynteract = true
+            // Persist the selection so the UI reflects what was committed
+            SelectedPreviewIndex = Some activeIndex 
+        }, 
+        Cmd.OfAsync.perform postData () RecordResult
 
     | RecordResult success ->
         { model with 

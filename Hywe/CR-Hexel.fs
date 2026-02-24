@@ -70,7 +70,6 @@ type Sqn =
     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
 ///
 
-
 let (|Vertical|Horizontal|) sqn =
     match sqn with
     | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW 
