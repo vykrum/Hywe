@@ -5,6 +5,7 @@ open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
+open Parse
 open Bridge
 open Page
 open NodeCode
@@ -62,7 +63,6 @@ type Message =
     | RecordResult of bool
     | StartVoiceCapture
     | OnVoiceResult of string
-
 
 // Polygon export consumer
 let mutable private latestOuterStr   : string = ""
@@ -480,46 +480,26 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with UserDescription = d }, Cmd.none
 
     | RecordToHynteract ->
-            let apiUri = "https://hynteract.vercel.app/api/record"
-
-            let activeIndex = 
-                match model.SelectedPreviewIndex with
-                | Some index -> index
-                | None -> 0 
-
-            let selectedConfig = 
-                match model.BatchPreview with
-                | Some batch ->
-                    match batch.Length > activeIndex with
-                    | true -> [| batch.[activeIndex] |]
-                    | false -> [||]
-                | None -> [||]
-
-            let configString = Bridge.serializeConfiguration (Some selectedConfig)
-
-            // FIX: Use a Dictionary instead of an Anonymous Record {| |}
-            // This avoids the System.Text.Json ConstructorContainsNullParameterNames error
-            let payload = 
-                dict [
-                    "Instruction", box model.SrcOfTrth
-                    "Description", box model.UserDescription
-                    "Configuration", box configString
-                ]
-
-            let postData() = async {
-                try
-                    // Using the dictionary here ensures safe serialization
-                    let! result = js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
-                    return result
-                with _ -> 
-                    return false
-            }
-
-            { model with 
-                IsSavingToHynteract = true
-                SelectedPreviewIndex = Some activeIndex 
-            }, 
-            Cmd.OfAsync.perform postData () RecordResult
+        let activeIndex = match model.SelectedPreviewIndex with | Some i -> i | None -> 0
+        
+        // Return the "Saving" state IMMEDIATELY
+        { model with IsSavingToHynteract = true; SelectedPreviewIndex = Some activeIndex },
+        
+        // Move the Dataset Generation into the Async task
+        Cmd.OfAsync.perform (fun () -> async {
+            try
+                // HEAVY LIFTING HAPPENS HERE, NOT ON THE UI THREAD
+                let config = Parse.getBtchCrdsAllSequences model.SrcOfTrth latestOuterStr latestIslandsStr
+                let apiUri = "https://hynteract.vercel.app/api/record"
+                let payload = {| 
+                    Instruction = model.SrcOfTrth 
+                    Description = model.UserDescription
+                    Configuration = config 
+                |}
+                
+                return! js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
+            with _ -> return false
+        }) () RecordResult
 
     | RecordResult success ->
         { model with 

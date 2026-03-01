@@ -5,9 +5,9 @@ open Bolero.Html
 open Hexel
 open Coxel
 open Microsoft.JSInterop
-open System.Text.Json
-open System.Text.Json.Serialization
 open System
+open System.Text
+open System.Text.Json
 ///
 
 type hxgn = Template<
@@ -312,11 +312,36 @@ let svgCoxels
         
         }
     svg
-
 ///
 
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
 type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float |}
+
+/// Extracts high-fidelity coordinates for Geometry generation
+let getBtchCrds (cxl: Cxl[]) =
+    // Estimate capacity: 10 chars per int * 3 ints per hex * total hexes
+    let totalHexes = cxl |> Array.sumBy (fun x -> x.Hxls.Length)
+    let sb = StringBuilder(totalHexes * 30) 
+
+    cxl |> Array.iteri (fun i item ->
+        // Add comma separator for all but the first row
+        match i with
+        | 0 -> ()
+        | _ -> sb.Append(" , ") |> ignore
+        
+        item.Hxls |> Array.iteri (fun j hxl ->
+            let (a, b, c) = hxlCrd hxl
+            // Add space for all but the first tuple in a row
+            match j with
+            | 0 -> ()
+            | _ -> sb.Append(" ") |> ignore
+            
+            sb.Append(a).Append(" ")
+              .Append(b).Append(" ")
+              .Append(c) |> ignore
+        )
+    )
+    sb.ToString()
 
 /// Extracts high-fidelity coordinates for Geometry generation
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
@@ -535,19 +560,20 @@ let alternateConfigurations
 }
     }
 
-type ExportPayload = {
-    [<JsonPropertyName("instruction")>] Instruction: string
-    [<JsonPropertyName("description")>] Description: string
-    [<JsonPropertyName("configuration")>] Configuration: string
-}
-
-let serializeConfiguration (configs: BatchConfgrtns[] option) =
-    match configs with
-    | None -> "[]"
-    | Some c -> 
-        // Force conversion to a plain array of objects if BatchConfgrtns 
-        // contains problematic F# types like Tuples.
-        JsonSerializer.Serialize(c)
+let serializeConfiguration 
+    (batchOption: BatchConfgrtns[] option) : string =
+    batchOption
+    |> Option.defaultValue [||]
+    |> Array.map (fun config ->
+        config.sqnName, 
+        config.shapes |> Array.map (fun s -> 
+            // Rounding points to 2 decimal places to save string space
+            let roundedPoints = s.points |> Array.map (fun p -> System.Math.Round(p, 2))
+            (s.name, roundedPoints)
+        )
+    )
+    |> readOnlyDict
+    |> JsonSerializer.Serialize
 
 /// Renders an extruded polygon on a canvas via JS WebGL
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.

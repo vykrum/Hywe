@@ -5,6 +5,7 @@ open Coxel
 open Geometry
 open PolygonEditor
 open System
+open System.Text
 open Microsoft.FSharp.Reflection
 
 // Sample Space Program Input Format
@@ -179,6 +180,43 @@ let parseIslands value =
     parsePolyIslands value
     |> Array.map (polyToPoints 10.0)
 ///
+
+/// 1. Area Logic
+let getNtArea (bdOu: (int*int)[]) (bdIs: (int*int)[][]) = 
+    polygonWithHolesArea bdOu bdIs
+
+/// 2. Tree Mapping (Dataset Generation Version)
+let getTree01 (ntArea: float) (cxlCnt: float) (spcTree: (string * int * string) array array) =
+    let bdPr = if cxlCnt > 0.0 then (ntArea / cxlCnt) / 4.0 else 1.0
+    spcTree |> Array.map (fun row -> 
+        row |> Array.map (fun (id, cnt, lb) -> 
+            (Refid id, Count (int (float cnt * bdPr)), Label lb)))
+
+/// 3. Recursive Generation (Dataset Generation Version)
+let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc: Cxl[]) =
+    match Array.tryHead tre with 
+    | None -> acc
+    | Some currentBatch ->
+        let newOcc = Array.append occ (Array.concat (acc |> Array.map (fun x -> x.Hxls)))
+        let nextTre = Array.tail tre
+        
+        // Use the triple pattern to find the hostId
+        let hostId = currentBatch |> Array.head |> fun (id, _, _) -> id
+        let bsCx = acc |> Array.find (fun x -> x.Rfid = hostId)
+        
+        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x)) = x)
+        let cnt = (Array.length currentBatch) - 1
+        let chBs = if (Array.length chHx) >= cnt then 
+                       let divs = (Array.length chHx) / cnt 
+                       Array.chunkBySize divs chHx |> Array.map Array.head |> Array.take cnt
+                   else Array.append chHx (Array.replicate (cnt - Array.length chHx) (identity elv))
+        
+        let cxc1 = coxel seq elv (Array.map2 (fun a (_, c, d) -> a, hostId, c, d) chBs (Array.tail currentBatch)) newOcc
+        let chOc1 = hxlUni 2 (Array.append newOcc (Array.concat (cxc1 |> Array.map (fun x -> x.Hxls))))
+        let cxc2 = cxc1 |> Array.map (fun x -> { x with Hxls = hxlChk seq elv chOc1 x.Hxls; Base = hxlChk seq elv chOc1 [|x.Base|] |> Array.head })
+        
+        cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
+
 
 /// <summary> Generate coxels based on string data. </summary>
 /// <param name="seq"> Sequence. </param>
@@ -438,3 +476,120 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
         ) baseModel
 
     FreshlyImported finalModel
+
+// Placeholder: Dataset Generation
+let getBtchCrdsAllSequences (str: string) (ouStr: string) (ilStr: string) =
+    // --- 1. Base36 Helper (Integer Optimized) ---
+    let toBase36 (n: int64) =
+        let chars = "0123456789abcdefghijklmnopqrstuvwxyz"
+        let isNeg = n < 0L
+        let absN = abs n
+        
+        let rec convert n acc = 
+            match n < 36L with
+            | true -> string chars.[int n] + acc
+            | false -> convert (n / 36L) (string chars.[int (n % 36L)] + acc)
+            
+        let body = match absN = 0L with | true -> "0" | false -> convert absN ""
+        match isNeg with | true -> "-" + body | false -> body
+
+    // --- 2. Input Parsing & Attribute Extraction ---
+    let spcAt1, spcTree = spaceSeq str 
+    
+    // Extract Dimensions
+    let bdWd = spcAt1 |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.defaultValue 0
+    let bdHt = spcAt1 |> Map.tryFind "H" |> Option.bind tryParseInt |> Option.defaultValue bdWd
+
+    // Resolve boundaries: If O is empty, build a rect from W and H
+    let finalOuStr = 
+        match (Map.tryFind "O" spcAt1), ouStr with
+        | Some o, _ when o <> "" -> o
+        | _, s when s <> "" -> s
+        | _ -> $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0" // Default Box
+                     
+    let finalIlStr = 
+        match (Map.tryFind "I" spcAt1), ilStr with
+        | Some i, _ -> i
+        | _, s -> s
+
+    let elv = spcAt1 |> Map.tryFind "L" |> Option.bind tryParseInt |> Option.defaultValue 0
+    let dfltSeq = VRCWEE
+
+    let bdOu = parsePolygon finalOuStr |> Array.map (fun (x,y) -> int x, int y) 
+    let bdIs = parsePolyIslands finalIlStr |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y)) 
+
+    // Generate static occupancy (Boundaries)
+    let ouHx = match finalOuStr = "" with | true -> [||] | false -> hxlPgn dfltSeq elv bdOu 
+    let ilHx = match finalIlStr = "" with | true -> [||] | false -> bdIs |> Array.map (fun x -> hxlPgn dfltSeq elv x)
+    let finalStaticOcc = Array.concat [| ouHx; Array.concat ilHx |]
+
+    // --- 3. Property & Tree Processing ---
+    let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_, cnt, _) -> float cnt) |> Array.sum
+    let ntAreaVal = getNtArea bdOu bdIs
+    let tree01Val = getTree01 ntAreaVal cxlCnt spcTree
+
+    let allSqn = FSharpType.GetUnionCases(typeof<Sqn>) 
+                 |> Array.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> Sqn)
+
+    // --- 4. Recursive Batch Execution (Performance Optimized) ---
+    let allCxlBatches = allSqn |> Array.map (fun forcedSeq ->
+        let flatTree = Array.concat tree01Val
+        match Array.tryHead flatTree with
+        | None -> [||]
+        | Some (id, ct, lb) ->
+            // Entry Point
+            let bsHx = match spcAt1 |> Map.tryFind "E" with
+                       | Some a -> 
+                            let p = a.Split ',' |> Array.choose (fun s -> match Int32.TryParse s with | true,v -> Some v | _ -> None)
+                            match p with | [|x;y|] -> hxlLin forcedSeq elv (identity elv) (AV(x,y,elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
+                       | None -> AV(0,0,elv)
+
+            let cti = match ct with | Count x when x > 0 -> Count (x - 1) | _ -> Count 0
+            
+            // 1. Initialize HashSet with static occupancy for O(1) lookups
+            let occupancySet = System.Collections.Generic.HashSet<Hxl>(finalStaticOcc)
+            occupancySet.Add(bsHx) |> ignore
+
+            // 2. Initial Coxel
+            let ac0 = coxel forcedSeq elv ([| bsHx, id, cti, lb |]) (Array.ofSeq occupancySet)
+            
+            // 3. Filter using the HashSet instead of Array.except
+            let filteredHxls = ac0.[0].Hxls |> Array.filter (fun h -> occupancySet.Add(h))
+            let ac1 = [| { ac0.[0] with Hxls = filteredHxls } |]
+            
+            match Array.length flatTree < 2 with
+            | true -> ac1
+            | false -> 
+                // Convert current state back to array for the recursive function
+                let currentOcc = Array.ofSeq occupancySet
+                cxCxCx forcedSeq elv tree01Val currentOcc ac1
+    )
+
+// --- 5. StringBuilder for Final String ---
+    let sb = StringBuilder()
+    sb.Append(toBase36 (int64 elv)).Append("|") |> ignore
+    
+    allCxlBatches |> Array.iteri (fun i batch ->
+        // Handle semicolon separator between sequences
+        match i > 0 with 
+        | true -> sb.Append(";") |> ignore 
+        | false -> ()
+        
+        batch |> Array.iteri (fun j cxl ->
+            // Handle comma separator between Coxels
+            match j > 0 with 
+            | true -> sb.Append(",") |> ignore 
+            | false -> ()
+            
+            cxl.Hxls |> Array.iteri (fun k h ->
+                let (ax, ay, _) = hxlCrd h
+                // Handle space separator between Hexel coordinates
+                match k > 0 with 
+                | true -> sb.Append(" ") |> ignore 
+                | false -> ()
+                
+                sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
+            )
+        )
+    )
+    sb.ToString()
