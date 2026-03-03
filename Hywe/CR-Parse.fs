@@ -216,7 +216,7 @@ let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc:
         let cxc2 = cxc1 |> Array.map (fun x -> { x with Hxls = hxlChk seq elv chOc1 x.Hxls; Base = hxlChk seq elv chOc1 [|x.Base|] |> Array.head })
         
         cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
-
+///
 
 /// <summary> Generate coxels based on string data. </summary>
 /// <param name="seq"> Sequence. </param>
@@ -477,106 +477,16 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
 
     FreshlyImported finalModel
 
-// Placeholder: Dataset Generation
-let getSingleSequence (sqn: Sqn) (str: string) (ouStr: string) (ilStr: string) =
-    let toBase36 (n: int64) =
-        let chars = "0123456789abcdefghijklmnopqrstuvwxyz"
-        let absN = abs n
-        let rec convert n acc = 
-            match n < 36L with
-            | true -> string chars.[int n] + acc
-            | false -> convert (n / 36L) (string chars.[int (n % 36L)] + acc)
-        let body = if absN = 0L then "0" else convert absN ""
-        if n < 0L then "-" + body else body
-
-    // 1. Core Parsing
-    let spcAt1, spcTree = spaceSeq str 
-    let elv = spcAt1 |> Map.tryFind "L" |> Option.bind tryParseInt |> Option.defaultValue 0
-    let bdWd = spcAt1 |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.defaultValue 30
-    let bdHt = spcAt1 |> Map.tryFind "H" |> Option.bind tryParseInt |> Option.defaultValue bdWd
-
-    let finalOuStr = match (Map.tryFind "O" spcAt1), ouStr with | Some o, _ when o <> "" -> o | _, s when s <> "" -> s | _ -> $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
-    let finalIlStr = match (Map.tryFind "I" spcAt1), ilStr with | Some i, _ -> i | _, s -> s
-
-    let bdOu = parsePolygon finalOuStr |> Array.map (fun (x,y) -> int x, int y) 
-    let bdIs = parsePolyIslands finalIlStr |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y)) 
-
-    // 2. Define staticOcc BEFORE batchResult
-    let ouHx = if finalOuStr = "" then [||] else hxlPgn sqn elv bdOu 
-    let ilHx = if finalIlStr = "" then [||] else bdIs |> Array.collect (hxlPgn sqn elv)
-    let staticOcc = Array.concat [| ouHx; ilHx |]
-
-    // 3. Define tree01Val BEFORE batchResult
-    let ntAreaVal = getNtArea bdOu bdIs
-    let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_, cnt, _) -> float cnt) |> Array.sum
-    let tree01Val = getTree01 ntAreaVal cxlCnt spcTree
-    let flatTree = Array.concat tree01Val
-
-    // 4. Generation Logic (Flattened for Scope)
-    let batchResult = 
-        match Array.tryHead flatTree with
-        | None -> [||]
-        | Some (id, ct, lb) ->
-            // A. Define Entry Point Safely
-            let bsHx = 
-                match spcAt1 |> Map.tryFind "E" with
-                | Some a -> 
-                    let p = a.Split ',' |> Array.choose (fun s -> match Int32.TryParse s with | true,v -> Some v | _ -> None)
-                    match p with 
-                    | [|x;y|] -> 
-                        let lin = hxlLin sqn elv (identity elv) (AV(x,y,elv)) |> hxlUni 1
-                        match Array.tryLast lin with | Some h -> h | None -> identity elv
-                    | _ -> identity elv
-                | None -> identity elv
-
-            // B. Define CTI Safely
-            let cti = match ct with | Count x when x > 0 -> Count (x - 1) | _ -> Count 0
-            
-            // C. Initialize HashSet with explicit Hxl type
-            let (occSet: System.Collections.Generic.HashSet<Hxl>) = 
-                System.Collections.Generic.HashSet<Hxl>(staticOcc |> Seq.ofArray)
-            
-            occSet.Add(bsHx) |> ignore
-
-            // D. Generate initial Coxel
-            let ac0 = coxel sqn elv ([| bsHx, id, cti, lb |]) (Array.ofSeq occSet)
-            
-            // E. Final recursive step
-            match Array.tryHead ac0 with
-            | None -> [||]
-            | Some (firstCxl: Cxl) -> 
-                let filteredHxls = 
-                    firstCxl.Hxls 
-                    |> Array.filter (fun h -> occSet.Add(h))
-                
-                let ac1 = [| { firstCxl with Hxls = filteredHxls } |]
-                
-                match flatTree.Length < 2 with
-                | true -> ac1
-                | false -> cxCxCx sqn elv tree01Val (Array.ofSeq occSet) ac1
-
-    // 5. Final Serialization
-    let sb = System.Text.StringBuilder()
-    batchResult |> Array.iteri (fun j cxl ->
-        if j > 0 then sb.Append(",") |> ignore
-        cxl.Hxls |> Array.iteri (fun k h ->
-            let (ax, ay, _) = hxlCrd h
-            if k > 0 then sb.Append(" ") |> ignore
-            sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
-        )
-    )
-    sb.ToString()
-
-/// Helper to convert int64 to Base36 string
-let toBase36 (value: int64) =
-    let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    let rec convert v acc =
-        match v = 0L with
-        | true -> match acc = "" with | true -> "0" | false -> acc
-        | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
-    convert (abs value) ""
-
 let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (initialOcc : Hxl[]) = 
+    /// Helper to convert int64 to Base36 string
+    let toBase36 (value: int64) =
+        let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        let rec convert v acc =
+            match v = 0L with
+            | true -> match acc = "" with | true -> "0" | false -> acc
+            | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
+        convert (abs value) ""
+    
     // 1. Attribute Extraction (Fixing 'Option' to 'bool' issues)
     let spcAt1, spcTree = spaceSeq str
     let elv = match spcAt1 |> Map.tryFind "L" with | Some a -> a |> int | None -> 0
