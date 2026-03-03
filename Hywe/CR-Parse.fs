@@ -566,3 +566,120 @@ let getSingleSequence (sqn: Sqn) (str: string) (ouStr: string) (ilStr: string) =
         )
     )
     sb.ToString()
+
+/// Helper to convert int64 to Base36 string
+let toBase36 (value: int64) =
+    let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    let rec convert v acc =
+        match v = 0L with
+        | true -> match acc = "" with | true -> "0" | false -> acc
+        | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
+    convert (abs value) ""
+
+let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (initialOcc : Hxl[]) = 
+    // 1. Attribute Extraction (Fixing 'Option' to 'bool' issues)
+    let spcAt1, spcTree = spaceSeq str
+    let elv = match spcAt1 |> Map.tryFind "L" with | Some a -> a |> int | None -> 0
+    let bdWd = 
+        match spcAt1 |> Map.tryFind "W" with 
+        | Some a -> 
+            let v = a |> int
+            match v > 0 with | true -> v | false -> 0 
+        | None -> 0
+    let bdHt = 
+        match spcAt1 |> Map.tryFind "H" with 
+        | Some a -> 
+            match bdWd > 0 with | true -> a |> int | false -> bdWd 
+        | None -> bdWd
+
+    // 2. Boundary Vertices
+    let bdOu =
+        match ouStr <> "" with 
+        | true -> parsePolygon ouStr |> Array.map (fun (x,y) -> int x, int y)
+        | false -> 
+            match bdWd = 0 with 
+            | true -> [||]
+            | false -> parsePolygon $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0" |> Array.map (fun (x,y) -> int x, int y)
+
+    let bdIs = match ilStr <> "" with | true -> parsePolyIslands ilStr |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y)) | false -> [||]
+
+    // 3. Entry Hexel
+    let bsHx =
+        match spcAt1 |> Map.tryFind "E" with
+        | Some a ->
+            let parts = a.Split ',' |> Array.choose (fun s -> match System.Int32.TryParse(s.Trim()) with | true, v -> Some v | _ -> None)
+            match parts with | [| x; y |] -> hxlLin seq elv (identity elv) (AV(x, y, elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
+        | None -> match bdWd = 0 with | true -> AV(0, 0, elv) | false -> hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv)) |> hxlUni 1 |> Array.last
+    
+    // 4. Scaling (Attribute X - Added catch-all for exhaustive patterns)
+    let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_,x,_) -> x) |> Array.sum |> float
+    let ntArea = polygonWithHolesArea bdOu bdIs
+    let bdPr = 
+        match spcAt1 |> Map.tryFind "X" with 
+        | Some "0" -> match cxlCnt > 0.0 with | true -> (ntArea / cxlCnt) / 4.0 | false -> 1.0
+        | Some a -> match System.Double.TryParse a with | true, v -> v | _ -> 1.0
+        | None -> 1.0
+
+    // 5. Build Occupancy
+    let ouHx = match bdWd = 0 with | true -> [||] | false -> hxlPgn seq elv bdOu 
+    let ilHx = match bdWd = 0 with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn seq elv)
+    let occ = Array.concat [|initialOcc; ouHx; ilHx|]
+
+    // 6. Tree Transformation
+    let tree01 = spcTree |> Array.map (Array.map (fun (a,b,c) -> Refid a, Count (int (float b * bdPr)), Label c))
+    let flatEntries = tree01 |> Array.concat
+
+    // 7. Core Recursive Logic (Internal Helpers)
+    let cxlCxl (seq : Sqn) (tre : (Prp*Prp*Prp)[]) (occ : Hxl[]) (acc : Cxl[]) = 
+        let targetId = tre |> Array.map (fun (a,_,_) -> a) |> Array.head
+        let bsCx = acc |> Array.find (fun x -> x.Rfid = targetId)
+        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+        let cnt = (Array.length tre) - 1
+        let chBs = 
+            match (Array.length chHx) >= cnt with 
+            | true -> 
+                let divs = match cnt > 0 with | true -> (Array.length chHx) / cnt | false -> 1
+                chHx |> Array.chunkBySize divs |> Array.map Array.head |> Array.take cnt
+            | false -> Array.append chHx (Array.replicate (max 0 (cnt - (Array.length chHx))) (identity elv))
+        
+        let cxc1 = coxel seq elv (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs (Array.tail tre)) occ
+        let chOc1 = hxlUni 2 (Array.append occ (cxc1 |> Array.collect (fun x -> x.Hxls)))
+        cxc1 |> Array.map (fun x -> 
+            let h2 = hxlChk seq elv chOc1 x.Hxls
+            let b2 = hxlChk seq elv chOc1 [|x.Base|] |> Array.tryHead |> Option.defaultValue x.Base
+            { x with Hxls = h2; Base = b2 })
+        
+    let rec cxCxCx (seq : Sqn) (tre : (Prp*Prp*Prp)[][]) (occ : Hxl[]) (acc : Cxl[]) =
+        match Array.tryHead tre with 
+        | Some a -> 
+            let currentOcc = Array.append occ (acc |> Array.collect (fun x -> x.Hxls))
+            cxCxCx seq (Array.tail tre) currentOcc (Array.append acc (cxlCxl seq a currentOcc acc))
+        | None -> acc
+
+    // 8. Execution and Serialization (Dataset Generation with ; delimiter)
+    let finalBatch = 
+        match Array.tryHead flatEntries with
+        | None -> [||]
+        | Some (id, ct, lb) ->
+            let rawVal = match ct with | Count x -> x | _ -> 0
+            let cti = match rawVal > 0 with | true -> Count (rawVal - 1) | false -> Count 0
+            let ac0 = coxel seq elv [| bsHx, id, cti, lb |] occ
+            
+            match Array.tryHead ac0 with
+            | None -> [||]
+            | Some firstCxl ->
+                let ac1 = [| { firstCxl with Hxls = Array.except occ (Array.append [| firstCxl.Base |] firstCxl.Hxls) } |]
+                let oc1 = Array.concat [| occ; [| bsHx |]; (Array.head ac1).Hxls |]
+                match (Array.length flatEntries < 2) with | true -> ac1 | false -> cxCxCx seq tree01 oc1 ac1
+
+    // StringBuilder for CSV-friendly coordinate blocks
+    let sb = System.Text.StringBuilder()
+    finalBatch |> Array.iteri (fun j cxl ->
+        match j > 0 with | true -> sb.Append(";") |> ignore | false -> ()
+        cxl.Hxls |> Array.iteri (fun k h ->
+            let (ax, ay, _) = hxlCrd h
+            match k > 0 with | true -> sb.Append(" ") |> ignore | false -> ()
+            sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
+        )
+    )
+    sb.ToString()

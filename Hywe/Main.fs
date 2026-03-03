@@ -68,8 +68,8 @@ let mutable private latestOuterStr   : string = ""
 let mutable private latestIslandsStr : string = ""
 let mutable private latestAbsStr     : string = "1"
 let mutable private latestEntryStr   : string = "5,5"
-let mutable private latestWidth    : int = 30
-let mutable private latestHeight   : int = 30
+let mutable private latestWidth      : int = 30
+let mutable private latestHeight     : int = 30
 let mutable private latestPublished  : bool = false
 
 /// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
@@ -485,34 +485,40 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let currentIslands = latestIslandsStr
 
         { model with IsSavingToHynteract = true },
-        
+    
         Cmd.OfAsync.perform (fun () -> async {
             try
-                // Mapping each Sqn case to its name and generated coordinate string
-                let keyedData = 
+                // Iterate through the 24 orientations
+                let configMap = 
                     Hexel.sqnArray 
                     |> Array.map (fun sqnCase -> 
-                        let keyName = sprintf "%A" sqnCase
+                        let key = sprintf "%A" sqnCase
                         let data = 
                             try 
-                                Parse.getSingleSequence sqnCase currentSrc currentOuter currentIslands
+                                // ADDED: [||] as the 5th argument for initialOcc
+                                Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands [||]
                             with ex -> 
-                                printfn "Dataset Generation failed for %s: %s" keyName ex.Message
-                                "" // Return empty string for this key so the rest can save
-                        keyName, data)
-                    |> dict
+                                printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
+                                "" 
+                        key, data)
+                    |> Map.ofArray
 
-                let apiUri = "https://hynteract.vercel.app/api/record"
+                // Ensure the payload matches the Hynteract API schema
                 let payload = {| 
-                    Instruction = currentSrc 
-                    Description = currentDesc 
-                    Sequences = keyedData 
+                    instruction = currentSrc 
+                    description = currentDesc 
+                    configuration = configMap 
                 |}
+
+                // Async invocation of the JavaScript interop
+                let! success = 
+                    js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() 
+                    |> Async.AwaitTask
                 
-                // Pass the 24-key object to JS
-                return! js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
+                return success
+            
             with ex -> 
-                printfn "General Dataset Generation/Transfer Error: %s" ex.Message
+                printfn "Critical Recording Failure: %s" ex.Message
                 return false
         }) () RecordResult
 
