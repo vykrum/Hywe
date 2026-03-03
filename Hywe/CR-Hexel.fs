@@ -112,6 +112,11 @@ let sequence
     | HRCCNW -> [| 0,0; -2, 1; -2,-1;  0,-2;  2,-1;  2, 1;  0, 2|]
 ///
 
+let sqnArray = [|
+    VRCWEE; VRCCEE; VRCWSE; VRCCSE; VRCWSW; VRCCSW; VRCWWW; VRCCWW; VRCWNW; VRCCNW; VRCWNE; VRCCNE
+    HRCWNN; HRCCNN; HRCWNE; HRCCNE; HRCWSE; HRCCSE; HRCWSS; HRCCSS; HRCWSW; HRCCSW; HRCWNW; HRCCNW
+|]
+
 /// <summary> Identity Hexel. </summary>
 /// <returns> Available (AV) Hexel at global origin. </returns>
 let identity 

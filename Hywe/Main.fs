@@ -480,25 +480,36 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with UserDescription = d }, Cmd.none
 
     | RecordToHynteract ->
-        let activeIndex = match model.SelectedPreviewIndex with | Some i -> i | None -> 0
+        let currentSrc = model.SrcOfTrth
+        let currentDesc = model.UserDescription
+        let currentOuter = latestOuterStr
+        let currentIslands = latestIslandsStr
+
+        { model with IsSavingToHynteract = true },
         
-        // Return the "Saving" state IMMEDIATELY
-        { model with IsSavingToHynteract = true; SelectedPreviewIndex = Some activeIndex },
-        
-        // Move the Dataset Generation into the Async task
         Cmd.OfAsync.perform (fun () -> async {
             try
-                // HEAVY LIFTING HAPPENS HERE, NOT ON THE UI THREAD
-                let config = Parse.getBtchCrdsAllSequences model.SrcOfTrth latestOuterStr latestIslandsStr
+                // Mapping each Sqn case directly to its coordinate string
+                let keyedData = 
+                    Hexel.sqnArray 
+                    |> Array.map (fun sqnCase -> 
+                        // The key becomes "VRCWEE", "VRCCEE", etc.
+                        let keyName = sprintf "%A" sqnCase
+                        let singleSqnStr = Parse.getSingleSequence sqnCase currentSrc currentOuter currentIslands
+                        keyName, singleSqnStr)
+                    |> dict
+
                 let apiUri = "https://hynteract.vercel.app/api/record"
                 let payload = {| 
-                    Instruction = model.SrcOfTrth 
-                    Description = model.UserDescription
-                    Configuration = config 
+                    Instruction = currentSrc 
+                    Description = currentDesc 
+                    Configuration = keyedData 
                 |}
                 
                 return! js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
-            with _ -> return false
+            with ex -> 
+                printfn "Dataset Generation Error: %s" ex.Message
+                return false
         }) () RecordResult
 
     | RecordResult success ->

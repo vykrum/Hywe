@@ -478,118 +478,73 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
     FreshlyImported finalModel
 
 // Placeholder: Dataset Generation
-let getBtchCrdsAllSequences (str: string) (ouStr: string) (ilStr: string) =
-    // --- 1. Base36 Helper (Integer Optimized) ---
+let getSingleSequence (sqn: Sqn) (str: string) (ouStr: string) (ilStr: string) =
+    // --- 1. Base36 Helper (Local to function) ---
     let toBase36 (n: int64) =
         let chars = "0123456789abcdefghijklmnopqrstuvwxyz"
-        let isNeg = n < 0L
         let absN = abs n
-        
         let rec convert n acc = 
             match n < 36L with
             | true -> string chars.[int n] + acc
             | false -> convert (n / 36L) (string chars.[int (n % 36L)] + acc)
-            
         let body = match absN = 0L with | true -> "0" | false -> convert absN ""
-        match isNeg with | true -> "-" + body | false -> body
+        match n < 0L with | true -> "-" + body | false -> body
 
-    // --- 2. Input Parsing & Attribute Extraction ---
+    // --- 2. Initial Setup (Same as before but filtered for one Sqn) ---
     let spcAt1, spcTree = spaceSeq str 
-    
-    // Extract Dimensions
-    let bdWd = spcAt1 |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.defaultValue 0
+    let bdWd = spcAt1 |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.defaultValue 30
     let bdHt = spcAt1 |> Map.tryFind "H" |> Option.bind tryParseInt |> Option.defaultValue bdWd
-
-    // Resolve boundaries: If O is empty, build a rect from W and H
-    let finalOuStr = 
-        match (Map.tryFind "O" spcAt1), ouStr with
-        | Some o, _ when o <> "" -> o
-        | _, s when s <> "" -> s
-        | _ -> $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0" // Default Box
-                     
-    let finalIlStr = 
-        match (Map.tryFind "I" spcAt1), ilStr with
-        | Some i, _ -> i
-        | _, s -> s
-
     let elv = spcAt1 |> Map.tryFind "L" |> Option.bind tryParseInt |> Option.defaultValue 0
-    let dfltSeq = VRCWEE
+
+    let finalOuStr = match (Map.tryFind "O" spcAt1), ouStr with | Some o, _ when o <> "" -> o | _, s when s <> "" -> s | _ -> $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
+    let finalIlStr = match (Map.tryFind "I" spcAt1), ilStr with | Some i, _ -> i | _, s -> s
 
     let bdOu = parsePolygon finalOuStr |> Array.map (fun (x,y) -> int x, int y) 
     let bdIs = parsePolyIslands finalIlStr |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y)) 
 
-    // Generate static occupancy (Boundaries)
-    let ouHx = match finalOuStr = "" with | true -> [||] | false -> hxlPgn dfltSeq elv bdOu 
-    let ilHx = match finalIlStr = "" with | true -> [||] | false -> bdIs |> Array.map (fun x -> hxlPgn dfltSeq elv x)
-    let finalStaticOcc = Array.concat [| ouHx; Array.concat ilHx |]
+    let staticOcc = 
+        Array.concat [| 
+            (match finalOuStr = "" with | true -> [||] | false -> hxlPgn sqn elv bdOu)
+            (match finalIlStr = "" with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn sqn elv))
+        |]
 
-    // --- 3. Property & Tree Processing ---
-    let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_, cnt, _) -> float cnt) |> Array.sum
+    // --- 3. Generation Logic ---
     let ntAreaVal = getNtArea bdOu bdIs
+    let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_, cnt, _) -> float cnt) |> Array.sum
     let tree01Val = getTree01 ntAreaVal cxlCnt spcTree
+    let flatTree = Array.concat tree01Val
 
-    let allSqn = FSharpType.GetUnionCases(typeof<Sqn>) 
-                 |> Array.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> Sqn)
-
-    // --- 4. Recursive Batch Execution (Performance Optimized) ---
-    let allCxlBatches = allSqn |> Array.map (fun forcedSeq ->
-        let flatTree = Array.concat tree01Val
+    let batchResults = 
         match Array.tryHead flatTree with
         | None -> [||]
         | Some (id, ct, lb) ->
-            // Entry Point
-            let bsHx = match spcAt1 |> Map.tryFind "E" with
-                       | Some a -> 
-                            let p = a.Split ',' |> Array.choose (fun s -> match Int32.TryParse s with | true,v -> Some v | _ -> None)
-                            match p with | [|x;y|] -> hxlLin forcedSeq elv (identity elv) (AV(x,y,elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
-                       | None -> AV(0,0,elv)
+            let bsHx = 
+                match spcAt1 |> Map.tryFind "E" with
+                | Some a -> 
+                    let p = a.Split ',' |> Array.choose (fun s -> match Int32.TryParse s with | true,v -> Some v | _ -> None)
+                    match p with | [|x;y|] -> hxlLin sqn elv (identity elv) (AV(x,y,elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
+                | None -> AV(0,0,elv)
 
             let cti = match ct with | Count x when x > 0 -> Count (x - 1) | _ -> Count 0
-            
-            // 1. Initialize HashSet with static occupancy for O(1) lookups
-            let occupancySet = System.Collections.Generic.HashSet<Hxl>(finalStaticOcc)
+            let occupancySet = System.Collections.Generic.HashSet<Hxl>(staticOcc)
             occupancySet.Add(bsHx) |> ignore
 
-            // 2. Initial Coxel
-            let ac0 = coxel forcedSeq elv ([| bsHx, id, cti, lb |]) (Array.ofSeq occupancySet)
-            
-            // 3. Filter using the HashSet instead of Array.except
+            let ac0 = coxel sqn elv ([| bsHx, id, cti, lb |]) (Array.ofSeq occupancySet)
             let filteredHxls = ac0.[0].Hxls |> Array.filter (fun h -> occupancySet.Add(h))
             let ac1 = [| { ac0.[0] with Hxls = filteredHxls } |]
             
             match Array.length flatTree < 2 with
             | true -> ac1
-            | false -> 
-                // Convert current state back to array for the recursive function
-                let currentOcc = Array.ofSeq occupancySet
-                cxCxCx forcedSeq elv tree01Val currentOcc ac1
-    )
+            | false -> cxCxCx sqn elv tree01Val (Array.ofSeq occupancySet) ac1
 
-// --- 5. StringBuilder for Final String ---
+    // --- 4. Serialize this single sequence ---
     let sb = StringBuilder()
-    sb.Append(toBase36 (int64 elv)).Append("|") |> ignore
-    
-    allCxlBatches |> Array.iteri (fun i batch ->
-        // Handle semicolon separator between sequences
-        match i > 0 with 
-        | true -> sb.Append(";") |> ignore 
-        | false -> ()
-        
-        batch |> Array.iteri (fun j cxl ->
-            // Handle comma separator between Coxels
-            match j > 0 with 
-            | true -> sb.Append(",") |> ignore 
-            | false -> ()
-            
-            cxl.Hxls |> Array.iteri (fun k h ->
-                let (ax, ay, _) = hxlCrd h
-                // Handle space separator between Hexel coordinates
-                match k > 0 with 
-                | true -> sb.Append(" ") |> ignore 
-                | false -> ()
-                
-                sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
-            )
+    batchResults |> Array.iteri (fun j cxl ->
+        match j > 0 with | true -> sb.Append(",") |> ignore | false -> ()
+        cxl.Hxls |> Array.iteri (fun k h ->
+            let (ax, ay, _) = hxlCrd h
+            match k > 0 with | true -> sb.Append(" ") |> ignore | false -> ()
+            sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
         )
     )
     sb.ToString()
