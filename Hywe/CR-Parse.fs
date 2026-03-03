@@ -479,7 +479,6 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
 
 // Placeholder: Dataset Generation
 let getSingleSequence (sqn: Sqn) (str: string) (ouStr: string) (ilStr: string) =
-    // --- 1. Base36 Helper (Local to function) ---
     let toBase36 (n: int64) =
         let chars = "0123456789abcdefghijklmnopqrstuvwxyz"
         let absN = abs n
@@ -487,14 +486,14 @@ let getSingleSequence (sqn: Sqn) (str: string) (ouStr: string) (ilStr: string) =
             match n < 36L with
             | true -> string chars.[int n] + acc
             | false -> convert (n / 36L) (string chars.[int (n % 36L)] + acc)
-        let body = match absN = 0L with | true -> "0" | false -> convert absN ""
-        match n < 0L with | true -> "-" + body | false -> body
+        let body = if absN = 0L then "0" else convert absN ""
+        if n < 0L then "-" + body else body
 
-    // --- 2. Initial Setup (Same as before but filtered for one Sqn) ---
+    // 1. Core Parsing
     let spcAt1, spcTree = spaceSeq str 
+    let elv = spcAt1 |> Map.tryFind "L" |> Option.bind tryParseInt |> Option.defaultValue 0
     let bdWd = spcAt1 |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.defaultValue 30
     let bdHt = spcAt1 |> Map.tryFind "H" |> Option.bind tryParseInt |> Option.defaultValue bdWd
-    let elv = spcAt1 |> Map.tryFind "L" |> Option.bind tryParseInt |> Option.defaultValue 0
 
     let finalOuStr = match (Map.tryFind "O" spcAt1), ouStr with | Some o, _ when o <> "" -> o | _, s when s <> "" -> s | _ -> $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
     let finalIlStr = match (Map.tryFind "I" spcAt1), ilStr with | Some i, _ -> i | _, s -> s
@@ -502,48 +501,67 @@ let getSingleSequence (sqn: Sqn) (str: string) (ouStr: string) (ilStr: string) =
     let bdOu = parsePolygon finalOuStr |> Array.map (fun (x,y) -> int x, int y) 
     let bdIs = parsePolyIslands finalIlStr |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y)) 
 
-    let staticOcc = 
-        Array.concat [| 
-            (match finalOuStr = "" with | true -> [||] | false -> hxlPgn sqn elv bdOu)
-            (match finalIlStr = "" with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn sqn elv))
-        |]
+    // 2. Define staticOcc BEFORE batchResult
+    let ouHx = if finalOuStr = "" then [||] else hxlPgn sqn elv bdOu 
+    let ilHx = if finalIlStr = "" then [||] else bdIs |> Array.collect (hxlPgn sqn elv)
+    let staticOcc = Array.concat [| ouHx; ilHx |]
 
-    // --- 3. Generation Logic ---
+    // 3. Define tree01Val BEFORE batchResult
     let ntAreaVal = getNtArea bdOu bdIs
     let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_, cnt, _) -> float cnt) |> Array.sum
     let tree01Val = getTree01 ntAreaVal cxlCnt spcTree
     let flatTree = Array.concat tree01Val
 
-    let batchResults = 
+    // 4. Generation Logic (Flattened for Scope)
+    let batchResult = 
         match Array.tryHead flatTree with
         | None -> [||]
         | Some (id, ct, lb) ->
+            // A. Define Entry Point Safely
             let bsHx = 
                 match spcAt1 |> Map.tryFind "E" with
                 | Some a -> 
                     let p = a.Split ',' |> Array.choose (fun s -> match Int32.TryParse s with | true,v -> Some v | _ -> None)
-                    match p with | [|x;y|] -> hxlLin sqn elv (identity elv) (AV(x,y,elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
-                | None -> AV(0,0,elv)
+                    match p with 
+                    | [|x;y|] -> 
+                        let lin = hxlLin sqn elv (identity elv) (AV(x,y,elv)) |> hxlUni 1
+                        match Array.tryLast lin with | Some h -> h | None -> identity elv
+                    | _ -> identity elv
+                | None -> identity elv
 
+            // B. Define CTI Safely
             let cti = match ct with | Count x when x > 0 -> Count (x - 1) | _ -> Count 0
-            let occupancySet = System.Collections.Generic.HashSet<Hxl>(staticOcc)
-            occupancySet.Add(bsHx) |> ignore
-
-            let ac0 = coxel sqn elv ([| bsHx, id, cti, lb |]) (Array.ofSeq occupancySet)
-            let filteredHxls = ac0.[0].Hxls |> Array.filter (fun h -> occupancySet.Add(h))
-            let ac1 = [| { ac0.[0] with Hxls = filteredHxls } |]
             
-            match Array.length flatTree < 2 with
-            | true -> ac1
-            | false -> cxCxCx sqn elv tree01Val (Array.ofSeq occupancySet) ac1
+            // C. Initialize HashSet with explicit Hxl type
+            let (occSet: System.Collections.Generic.HashSet<Hxl>) = 
+                System.Collections.Generic.HashSet<Hxl>(staticOcc |> Seq.ofArray)
+            
+            occSet.Add(bsHx) |> ignore
 
-    // --- 4. Serialize this single sequence ---
-    let sb = StringBuilder()
-    batchResults |> Array.iteri (fun j cxl ->
-        match j > 0 with | true -> sb.Append(",") |> ignore | false -> ()
+            // D. Generate initial Coxel
+            let ac0 = coxel sqn elv ([| bsHx, id, cti, lb |]) (Array.ofSeq occSet)
+            
+            // E. Final recursive step
+            match Array.tryHead ac0 with
+            | None -> [||]
+            | Some (firstCxl: Cxl) -> 
+                let filteredHxls = 
+                    firstCxl.Hxls 
+                    |> Array.filter (fun h -> occSet.Add(h))
+                
+                let ac1 = [| { firstCxl with Hxls = filteredHxls } |]
+                
+                match flatTree.Length < 2 with
+                | true -> ac1
+                | false -> cxCxCx sqn elv tree01Val (Array.ofSeq occSet) ac1
+
+    // 5. Final Serialization
+    let sb = System.Text.StringBuilder()
+    batchResult |> Array.iteri (fun j cxl ->
+        if j > 0 then sb.Append(",") |> ignore
         cxl.Hxls |> Array.iteri (fun k h ->
             let (ax, ay, _) = hxlCrd h
-            match k > 0 with | true -> sb.Append(" ") |> ignore | false -> ()
+            if k > 0 then sb.Append(" ") |> ignore
             sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
         )
     )

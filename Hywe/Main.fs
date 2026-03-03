@@ -5,7 +5,6 @@ open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
-open Parse
 open Bridge
 open Page
 open NodeCode
@@ -489,26 +488,31 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         
         Cmd.OfAsync.perform (fun () -> async {
             try
-                // Mapping each Sqn case directly to its coordinate string
+                // Mapping each Sqn case to its name and generated coordinate string
                 let keyedData = 
                     Hexel.sqnArray 
                     |> Array.map (fun sqnCase -> 
-                        // The key becomes "VRCWEE", "VRCCEE", etc.
                         let keyName = sprintf "%A" sqnCase
-                        let singleSqnStr = Parse.getSingleSequence sqnCase currentSrc currentOuter currentIslands
-                        keyName, singleSqnStr)
+                        let data = 
+                            try 
+                                Parse.getSingleSequence sqnCase currentSrc currentOuter currentIslands
+                            with ex -> 
+                                printfn "Dataset Generation failed for %s: %s" keyName ex.Message
+                                "" // Return empty string for this key so the rest can save
+                        keyName, data)
                     |> dict
 
                 let apiUri = "https://hynteract.vercel.app/api/record"
                 let payload = {| 
                     Instruction = currentSrc 
                     Description = currentDesc 
-                    Configuration = keyedData 
+                    Sequences = keyedData 
                 |}
                 
+                // Pass the 24-key object to JS
                 return! js.InvokeAsync<bool>("recordToHynteract", apiUri, payload).AsTask() |> Async.AwaitTask
             with ex -> 
-                printfn "Dataset Generation Error: %s" ex.Message
+                printfn "General Dataset Generation/Transfer Error: %s" ex.Message
                 return false
         }) () RecordResult
 

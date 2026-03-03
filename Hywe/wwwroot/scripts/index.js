@@ -274,17 +274,48 @@ window.downloadSvgFile = (svgId, filename) => {
 };
 
 // Record Descriptions to Hynteract 
-window.recordToHynteract = async (uri, payload) => {
+let recordBuffer = {
+    Instruction: "",
+    Description: "",
+    Sequences: {}
+};
+
+window.prepareRecord = (instruction, description) => {
+    recordBuffer = {
+        Instruction: instruction,
+        Description: description,
+        Sequences: {}
+    };
+};
+
+window.appendSequence = (key, data) => {
+    recordBuffer.Sequences[key] = data;
+};
+
+window.commitRecord = async (apiUri) => {
     try {
-        const response = await fetch(uri, {
+        const response = await fetch(apiUri, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(recordBuffer)
+        });
+        return response.ok;
+    } catch (e) {
+        console.error("API Commit Failed", e);
+        return false;
+    }
+};
+
+window.recordToHynteract = async (apiUri, payload) => {
+    try {
+        const response = await fetch(apiUri, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        const result = await response.json();
-        return result.success === true;
+        return response.ok;
     } catch (e) {
-        console.error("Sync failed", e);
+        console.error("Hynteract Error:", e);
         return false;
     }
 };
