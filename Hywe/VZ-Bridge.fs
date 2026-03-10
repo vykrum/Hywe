@@ -168,7 +168,6 @@ let labelPosition
                 | _ -> inward ((x + avgx) / 2, (y + avgy) / 2) (step - 1)
 
         inward (cx, cy) 3
-
 ///
 
 /// <summary> Scale and Shift origin</summary>
