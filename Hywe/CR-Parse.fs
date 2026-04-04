@@ -71,9 +71,11 @@ let spaceSeq
                     |> Array.Parallel.map(fun x -> x.Remove(0,1)) 
                     |> Array.Parallel.map(fun x -> x.Remove(x.Length-1,1))
                     |> Array.Parallel.map (fun x -> x.Split "/")
+    
     let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "0") with
                     | true -> spcMp1
                     | false -> Array.append [|[|"0";"Q=22"|]|] spcMp1
+    
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
@@ -105,10 +107,12 @@ let spaceSeq
         |> snd 
         |> Array.windowed 2 
         |> Array.Parallel.map(fun x -> x[0],[|x[1]|])
+    
     let spcKy03 = 
         spcKy01 
         |> Array.tail 
         |> Array.partition (fun (x,_) -> x.Length = 1)
+    
     let spcKy04 = 
         (Array.append spcKy02 (fst spcKy03)) 
         |> Array.groupBy (fun (x,_) -> x)
@@ -119,6 +123,7 @@ let spaceSeq
         |> Array.Parallel.map (fun x -> Array.concat x)
         |> Array.Parallel.map (fun x -> Array.distinct x)
         |> Array.Parallel.map (fun x -> Array.sort x)
+    
     let spcKy05 = 
         (snd spcKy03)
         |> Array.Parallel.map (fun (x,y) 
@@ -140,7 +145,6 @@ let spaceSeq
                                 -> (Array.Parallel.map (fun (x,y) 
                                                             -> x, max hxlAreaX (fst y), snd y))z)
     spcAt1,spcKey
-
 ///
 
 /// Parses "0,0,10,0-2,2,4,4" into float segments
@@ -181,18 +185,18 @@ let parseIslands value =
     |> Array.map (polyToPoints 10.0)
 ///
 
-/// 1. Area Logic
+/// Area Logic
 let getNtArea (bdOu: (int*int)[]) (bdIs: (int*int)[][]) = 
     polygonWithHolesArea bdOu bdIs
 
-/// 2. Tree Mapping (Dataset Generation Version)
+/// Tree Mapping (Dataset Generation Version)
 let getTree01 (ntArea: float) (cxlCnt: float) (spcTree: (string * int * string) array array) =
     let bdPr = if cxlCnt > 0.0 then (ntArea / cxlCnt) / 4.0 else 1.0
     spcTree |> Array.map (fun row -> 
         row |> Array.map (fun (id, cnt, lb) -> 
             (Refid id, Count (int (float cnt * bdPr)), Label lb)))
 
-/// 3. Recursive Generation (Dataset Generation Version)
+/// Recursive Generation (Dataset Generation Version)
 let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc: Cxl[]) =
     match Array.tryHead tre with 
     | None -> acc
@@ -216,6 +220,55 @@ let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc:
         let cxc2 = cxc1 |> Array.map (fun x -> { x with Hxls = hxlChk seq elv chOc1 x.Hxls; Base = hxlChk seq elv chOc1 [|x.Base|] |> Array.head })
         
         cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
+///
+
+let hxlAreaFactor = 4.0
+
+/// Consolidates all reproportioning logic into one call.
+let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * int * string)[][]) =
+    // 1. Calculate the total requested count from the input string
+    let cxlCnt = rawTree |> Array.concat |> Array.sumBy (fun (_, x, _) -> x) |> float
+        
+    // 2. Calculate the Ratio (based on Attribute X or Auto-scale)
+    let ratio = 
+        match attributes |> Map.tryFind "X" with
+        | Some "0" -> if cxlCnt > 0.0 then (ntArea / cxlCnt) / hxlAreaFactor else 1.0
+        | Some a -> match System.Double.TryParse a with | true, v -> v | _ -> 1.0
+        | None -> 1.0
+
+    // 3. Determine target total hexels based on actual site area
+    let targetTotal = int (ntArea / hxlAreaFactor)
+    let flatTree = rawTree |> Array.concat
+        
+    // 4. Calculate initial counts and fractional remainders
+    let initialData = 
+        flatTree |> Array.map (fun (id, cnt, lb) ->
+            let ideal = float cnt * ratio
+            {| Id = id; Label = lb; Ideal = ideal; Floor = max 1 (int ideal); Remainder = ideal - floor (float (max 1 (int ideal))) |})
+
+    let currentSum = initialData |> Array.sumBy (fun x -> x.Floor)
+    let totalToDistribute = targetTotal - currentSum
+
+    // 5. Largest Remainder Distribution: Fill the gap to match targetTotal exactly
+    let distributedCounts =
+        if totalToDistribute > 0 then
+            let bonusIndices = 
+                initialData 
+                |> Array.mapi (fun i x -> i, x.Remainder)
+                |> Array.sortByDescending snd
+                |> Array.take (min totalToDistribute initialData.Length)
+                |> Array.map fst |> Set.ofArray
+            initialData |> Array.mapi (fun i x -> if bonusIndices.Contains i then x.Floor + 1 else x.Floor)
+        else
+            initialData |> Array.map (fun x -> x.Floor)
+
+    // 6. Map back to the original tree structure
+    let mutable idx = 0
+    rawTree |> Array.map (fun row ->
+        row |> Array.map (fun (id, _, lb) ->
+            let finalCount = distributedCounts.[idx]
+            idx <- idx + 1
+            Refid id, Count finalCount, Label lb))
 ///
 
 /// <summary> Generate coxels based on string data. </summary>
@@ -279,7 +332,6 @@ let spaceCxl
             |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
         | None -> [||]
 
-
     // Attribute E for Entry Hexel
     let bsHx =
         match spcAt1 |> Map.tryFind "E" with
@@ -301,24 +353,9 @@ let spaceCxl
             | false ->  hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv))
                         |> hxlUni 1
                         |> Array.last
-    
-    // Total Count
-    let cxlCnt = spcTree
-                |> Array.concat
-                |> Array.Parallel.map (fun (_,x,_) -> x)
-                |> Array.sum |> float
 
     // Site Net Area
     let ntArea = polygonWithHolesArea bdOu bdIs
-
-    // Attribute X for Count Proportion
-    let bdPr = match spcAt1 |> Map.tryFind "X" with 
-                | Some a -> match a with
-                            | "0" -> match cxlCnt > 0 with 
-                                        | true -> (ntArea / cxlCnt) / 4.0
-                                        | false -> 1.0
-                            | _ -> a |> float
-                | None -> 1.0
 
     // Outer Hexels 
     let ouHx = match bdWd = 0 with 
@@ -333,9 +370,7 @@ let spaceCxl
     let occ = Array.concat [|occ;ouHx;Array.concat ilHx|]
 
     // Parse Space String
-    let tree01 = 
-        spcTree
-        |> Array.Parallel.map (fun x -> Array.Parallel.map (fun (a,b,c) -> Refid a, Count (int (float b * bdPr)), Label c) x)
+    let tree01 = applyReproportioning spcAt1 ntArea spcTree
 
     // Flatten and guard against empty parse results
     let flatEntries = tree01 |> Array.concat
@@ -521,14 +556,8 @@ let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (i
             match parts with | [| x; y |] -> hxlLin seq elv (identity elv) (AV(x, y, elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
         | None -> match bdWd = 0 with | true -> AV(0, 0, elv) | false -> hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv)) |> hxlUni 1 |> Array.last
     
-    // 4. Scaling (Attribute X - Added catch-all for exhaustive patterns)
-    let cxlCnt = spcTree |> Array.concat |> Array.map (fun (_,x,_) -> x) |> Array.sum |> float
+    // 4. Scaling (Attribute X)
     let ntArea = polygonWithHolesArea bdOu bdIs
-    let bdPr = 
-        match spcAt1 |> Map.tryFind "X" with 
-        | Some "0" -> match cxlCnt > 0.0 with | true -> (ntArea / cxlCnt) / 4.0 | false -> 1.0
-        | Some a -> match System.Double.TryParse a with | true, v -> v | _ -> 1.0
-        | None -> 1.0
 
     // 5. Build Occupancy
     let ouHx = match bdWd = 0 with | true -> [||] | false -> hxlPgn seq elv bdOu 
@@ -536,7 +565,7 @@ let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (i
     let occ = Array.concat [|initialOcc; ouHx; ilHx|]
 
     // 6. Tree Transformation
-    let tree01 = spcTree |> Array.map (Array.map (fun (a,b,c) -> Refid a, Count (int (float b * bdPr)), Label c))
+    let tree01 = applyReproportioning spcAt1 ntArea spcTree
     let flatEntries = tree01 |> Array.concat
 
     // 7. Core Recursive Logic (Internal Helpers)
