@@ -67,9 +67,9 @@ type Message =
 let mutable private latestOuterStr   : string = ""
 let mutable private latestIslandsStr : string = ""
 let mutable private latestAbsStr     : string = "1"
-let mutable private latestEntryStr   : string = "5,5"
-let mutable private latestWidth      : int = 30
-let mutable private latestHeight     : int = 30
+let mutable private latestEntryStr   : string = "0,0"
+let mutable private latestWidth      : int = 0
+let mutable private latestHeight     : int = 0
 let mutable private latestPublished  : bool = false
 
 /// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
