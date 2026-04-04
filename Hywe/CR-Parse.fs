@@ -226,48 +226,60 @@ let hxlAreaFactor = 4.0
 
 /// Consolidates all reproportioning logic into one call.
 let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * int * string)[][]) =
-    // 1. Calculate the total requested count from the input string
-    let cxlCnt = rawTree |> Array.concat |> Array.sumBy (fun (_, x, _) -> x) |> float
-        
-    // 2. Calculate the Ratio (based on Attribute X or Auto-scale)
-    let ratio = 
-        match attributes |> Map.tryFind "X" with
-        | Some "0" -> if cxlCnt > 0.0 then (ntArea / cxlCnt) / hxlAreaFactor else 1.0
-        | Some a -> match System.Double.TryParse a with | true, v -> v | _ -> 1.0
-        | None -> 1.0
-
-    // 3. Determine target total hexels based on actual site area
-    let targetTotal = int (ntArea / hxlAreaFactor)
+    let hxlAreaFactor = 4.0
+    
+    // 1. Calculate requested totals
     let flatTree = rawTree |> Array.concat
+    let totalRequested = flatTree |> Array.sumBy (fun (_, cnt, _) -> cnt) |> float
+    
+    // 2. Identify Unbound State
+    // If area is 0 or Outer attribute is missing, we are unbound.
+    let isUnbound = ntArea <= 0.0 || not (attributes.ContainsKey "O")
+
+    // 3. Determine Scaling Ratio
+    let ratio = 
+        if isUnbound then 1.0
+        else
+            match attributes |> Map.tryFind "X" with
+            | Some "0" -> if totalRequested > 0.0 then (ntArea / totalRequested) / hxlAreaFactor else 1.0
+            | Some a -> match Double.TryParse a with | true, v -> v | _ -> 1.0
+            | None -> 1.0
+
+    // 4. Target hexel count
+    let targetTotal = 
+        if isUnbound then int totalRequested 
+        else int (ntArea / hxlAreaFactor)
         
-    // 4. Calculate initial counts and fractional remainders
+    // 5. Calculate floors and remainders
     let initialData = 
         flatTree |> Array.map (fun (id, cnt, lb) ->
             let ideal = float cnt * ratio
-            {| Id = id; Label = lb; Ideal = ideal; Floor = max 1 (int ideal); Remainder = ideal - floor (float (max 1 (int ideal))) |})
+            // Ensure every space has at least 1 hexel if it was requested
+            let flr = if cnt > 0 then max 1 (int (floor ideal)) else 0
+            {| Id = id; Label = lb; Ideal = ideal; Floor = flr; Remainder = ideal - float flr |})
 
+    // 6. Distribute difference (The Largest Remainder Method)
     let currentSum = initialData |> Array.sumBy (fun x -> x.Floor)
-    let totalToDistribute = targetTotal - currentSum
+    let diff = targetTotal - currentSum
 
-    // 5. Largest Remainder Distribution: Fill the gap to match targetTotal exactly
     let distributedCounts =
-        if totalToDistribute > 0 then
+        if diff > 0 && not isUnbound then
             let bonusIndices = 
                 initialData 
                 |> Array.mapi (fun i x -> i, x.Remainder)
                 |> Array.sortByDescending snd
-                |> Array.take (min totalToDistribute initialData.Length)
+                |> Array.truncate diff
                 |> Array.map fst |> Set.ofArray
             initialData |> Array.mapi (fun i x -> if bonusIndices.Contains i then x.Floor + 1 else x.Floor)
         else
             initialData |> Array.map (fun x -> x.Floor)
 
-    // 6. Map back to the original tree structure
-    let mutable idx = 0
+    // 7. Reconstruct the nested array structure (Fixes the 'int' compatibility error)
+    let mutable pointer = 0
     rawTree |> Array.map (fun row ->
         row |> Array.map (fun (id, _, lb) ->
-            let finalCount = distributedCounts.[idx]
-            idx <- idx + 1
+            let finalCount = distributedCounts.[pointer]
+            pointer <- pointer + 1
             Refid id, Count finalCount, Label lb))
 ///
 
@@ -280,7 +292,7 @@ let spaceCxl
     (occ : Hxl[])
     (str : string) = 
     
-    // Attributes
+    // Get Attributes and Tree
     let spcAt1, spcTree = spaceSeq str
 
     // Attribute Q for Sequence
@@ -295,6 +307,7 @@ let spaceCxl
                 | Some a -> a |> int
                 | None -> 0
 
+
     // Attribute W for Width
     let bdWd = match spcAt1 |> Map.tryFind "W" with 
                 | Some a -> match a |> int > 0 with
@@ -307,30 +320,30 @@ let spaceCxl
                 | Some a -> match bdWd > 0 with 
                             | true -> a |> int
                             | false -> bdWd
-                    | None -> bdWd
+                | None -> 0
 
     // Attribute O for Outer Boundary Vertices
     let bdOu =
         match spcAt1 |> Map.tryFind "O" with 
         | Some a ->
-            parsePolygon a
-            |> Array.map (fun (x,y) -> int x, int y)
-
+            parsePolygon a |> Array.map (fun (x,y) -> int x, int y)
         | None ->
-            match bdWd = 0 with 
-            | true -> [||]
-            | false -> 
+            match bdWd > 0 with 
+            | true -> 
                 let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
-                parsePolygon a
-                |> Array.map (fun (x,y) -> int x, int y)
+                parsePolygon a |> Array.map (fun (x,y) -> int x, int y)
+            | false -> [||]
 
     // Attribute I for Island Boundary Vertices
     let bdIs =
-        match spcAt1 |> Map.tryFind "I" with 
-        | Some a ->
-            parsePolyIslands a
-            |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
-        | None -> [||]
+        match Array.isEmpty bdOu with
+        | true -> [||] // No boundary, no islands
+        | false ->
+            match spcAt1 |> Map.tryFind "I" with 
+            | Some a ->
+                parsePolyIslands a
+                |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
+            | None -> [||]
 
     // Attribute E for Entry Hexel
     let bsHx =
