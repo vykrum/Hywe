@@ -5,7 +5,6 @@ open Coxel
 open Geometry
 open PolygonEditor
 open System
-open System.Text
 open Microsoft.FSharp.Reflection
 
 // Sample Space Program Input Format
