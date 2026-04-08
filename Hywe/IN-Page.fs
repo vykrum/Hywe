@@ -80,7 +80,6 @@ let deriveData (stx: string) (elv : int): DerivedData =
         cxOuIl = cxOuIl
 
     }
-
 ///
 
 // Default Syntax
@@ -220,5 +219,3 @@ let viewHyweTable (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
             }
         }
     }
-
-
