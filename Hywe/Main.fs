@@ -5,7 +5,7 @@ open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
-open Bridge
+open Layout
 open Page
 open NodeCode
 open PolygonEditor
@@ -298,7 +298,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     }
                     async {
                         let! results = compute model 0 []
-                        // CONVERSION: Model expects PreviewConfig[], so we convert List to Array
                         return results |> List.toArray |> Array.rev
                     }) cts.Token SetBatchPreview
 
@@ -722,7 +721,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+                    Table.viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
                 }
             }
 
@@ -739,7 +738,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.id "hywe-extruded-polygon"
                         attr.style "width: 100%; height: 100%; display: block;" 
                     }
-                    async { do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
+                    async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
                     |> Async.StartImmediate
                 }
             }
