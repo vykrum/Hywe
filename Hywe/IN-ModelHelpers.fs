@@ -7,9 +7,8 @@ open Page
 open NodeCode
 open PolygonEditor
 open ModelTypes
-
-open Bolero
 open Bolero.Html
+
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
     match panel with
     | BatchPanel ->
@@ -212,6 +211,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
                 do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
             }) () (fun _ -> FinishHyweave)
         ]
+
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     let nodeCodeButtonText =
