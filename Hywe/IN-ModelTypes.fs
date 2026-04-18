@@ -5,6 +5,8 @@ open Page
 open NodeCode
 open PolygonEditor
 
+let elv = 0
+
 type PolygonExportData = {
     OuterStr: string
     IslandsStr: string
