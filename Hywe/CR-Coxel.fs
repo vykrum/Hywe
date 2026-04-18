@@ -163,45 +163,47 @@ let cxlHxl
         (elv : int)
         (hxo : Hxl[]) = 
         /// <summary> Arrange/sort hexels in continuous sequence. </summary>
-        /// <param name="sqn"> Sequence to follow. </param>
-        /// <param name="hxl"> Array of hexels. </param>
-        /// <param name="acc"> Accumulator for recursive function. </param>
-        /// <param name="cnt"> Counter. </param>
-        /// <returns> Array of sorted hexels </returns>
-        let rec arr 
-            (sqn : Sqn)
-            (elv : int)
-            (hxl : Hxl[]) 
-            (acc : Hxl[]) 
-            (cnt : int)
-            (opt : bool) = 
-            match cnt with 
-            | a when cnt <= 0x1 -> acc
-            | _ -> 
-                let hxl = Array.except acc hxl
-                let hx1 = ((Array.filter (fun x -> Array.contains x hxl) 
-                                (adjacent sqn (Array.last acc))))                
-                let hx2 = match opt with 
-                                | false -> Array.tryHead hx1
-                                | true -> Array.tryLast hx1
-                let hx3 = match hx2 with 
-                                | Some a -> [|a|]
-                                | None -> [||]
-                let acc = Array.append acc  hx3
-                arr sqn elv hxl acc (cnt-1) opt
+        let arr (hxl : Hxl[]) (opt : bool) = 
+            let availableSet = System.Collections.Generic.HashSet<Hxl>(hxl)
+            let startNode = Array.last hxl
+            let acc = System.Collections.Generic.List<Hxl>()
+            acc.Add(startNode)
+            availableSet.Remove(startNode) |> ignore
+            
+            let mutable current = startNode
+            let mutable cnt = hxl.Length
+            let mutable running = true
+            
+            while running && cnt > 1 do
+                let adj = adjacent sqn current
+                let validAdj = adj |> Array.filter (fun x -> availableSet.Contains(x))
+                
+                let nextOpt = 
+                    if opt then Array.tryLast validAdj
+                    else Array.tryHead validAdj
+                    
+                match nextOpt with
+                | Some nxt ->
+                    acc.Add(nxt)
+                    availableSet.Remove(nxt) |> ignore
+                    current <- nxt
+                    cnt <- cnt - 1
+                | None -> 
+                    running <- false
+            acc.ToArray()
 
-        let hxl = hxo|> Array.sortByDescending 
-                    (fun x -> available sqn elv x hxo)
+        let hxl = hxo |> Array.sortByDescending (fun x -> available sqn elv x hxo)
         let a1 = 
             match hxl with 
             | [||] -> [||]
-            | _ -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) true
+            | _ -> arr hxl true
 
         let b1 = Array.length a1 = Array.length hxl
             
         let ar1 = match b1 with 
                     | true -> a1
-                    | false -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) false
+                    | false -> arr hxl false
+
         match hxo with 
         | [||] -> [||]
         | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
@@ -214,41 +216,48 @@ let cxlHxl
         (elv : int)
         (hxo : Hxl[]) =      
         let hxl = hxlUni 1 hxo
-        let rec ctSq 
-            (sqn : Sqn)
-            (hxl : Hxl[])
-            (acc : Hxl[])
-            (cnt : int) = 
-            match cnt with 
-            | x when x<=1 -> acc
-            | _ -> 
-                    let b = Array.last acc
-                    let hxl = Array.except [|b|] hxl
-                    let d = (adjacent sqn b) |> Array.tail
-                    let e = d |> Array.filter
-                                (fun x -> Array.contains x hxl) 
-                                |> Array.tryHead
-                    let f = match e with 
-                                | Some a -> [|a|]
-                                | None -> [||]
-                    let acc = Array.append acc f
-                    ctSq sqn hxl acc (cnt-1)
+        
+        let ctSq (hxlArr : Hxl[]) = 
+            let availableSet = System.Collections.Generic.HashSet<Hxl>(hxlArr)
+            let startNode = Array.head hxlArr
+            let acc = System.Collections.Generic.List<Hxl>()
+            acc.Add(startNode)
+            availableSet.Remove(startNode) |> ignore
+            
+            let mutable current = startNode
+            let mutable cnt = hxlArr.Length
+            let mutable running = true
+            
+            while running && cnt > 1 do
+                let d = (adjacent sqn current) |> Array.tail
+                let e = d |> Array.tryFind (fun x -> availableSet.Contains(x))
+                match e with
+                | Some nxt ->
+                    acc.Add(nxt)
+                    availableSet.Remove(nxt) |> ignore
+                    current <- nxt
+                    cnt <- cnt - 1
+                | None ->
+                    running <- false
+            acc.ToArray()
 
-        let hxl = hxl |> Array.sortByDescending 
-                    (fun x -> available sqn elv x hxl)
+        let hxl = hxl |> Array.sortByDescending (fun x -> available sqn elv x hxl)
         let cnt = Array.length(hxl)
-        let arr =  match hxl with 
-                        | [||] -> [||]
-                        | _ -> ctSq sqn hxl ([|Array.head hxl|]) cnt
+        let arr =  
+            match hxl with 
+            | [||] -> [||]
+            | _ -> ctSq hxl
+        
         let bln = cnt = Array.length(arr)
         let ar1 = match bln with 
                     | true -> arr
-                    | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+                    | false -> ctSq (Array.rev hxl)
+
         match hxo with 
         | [||] -> [||]
         | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
                 | true -> ar1
-                | false -> hxlUni 2 ar1
+                | false -> hxlUni 1 ar1
 
     let avrv = cxl.Hxls 
             |> Array.Parallel.partition
