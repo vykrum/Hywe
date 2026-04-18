@@ -1,4 +1,4 @@
-﻿module Hywe.Main
+module Hywe.Main
 
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
@@ -9,100 +9,24 @@ open Layout
 open Page
 open NodeCode
 open PolygonEditor
-
-/// <summary> Central application state for the interface. </summary>
-type Model =
-    {
-        Sequence: string
-        SrcOfTrth : string
-        Tree : SubModel
-        LastValidTree: SubModel
-        ParseError: bool
-        Derived : DerivedData
-        NeedsHyweave: bool
-        IsHyweaving: bool
-        PolygonEditor: EditorState
-        ActivePanel: ActivePanel
-        EditorMode: EditorMode
-        BatchPreview: BatchConfgrtns[] option
-        IsCancelling: bool
-        CancelToken: System.Threading.CancellationTokenSource option
-        LastBatchSrc: string option
-        SelectedPreviewIndex : int option
-        UserDescription : string 
-        IsSavingToHynteract : bool
-        ShowSuccessMessage : bool
-        IsRecording : bool
-    }
-
-/// <summary> Messages representing all possible state changes in the main module. </summary>
-type Message =
-    | SetSqnIndex of int
-    | SetSrcOfTrth of string
-    | TreeMsg of SubMsg
-    | StartHyweave
-    | RunHyweave
-    | FinishHyweave
-    | PolygonEditorMsg of PolygonEditorMessage
-    | PolygonEditorUpdated of PolygonEditorModel
-    | SetActivePanel of ActivePanel
-    | SetBatchPreview of BatchConfgrtns[]
-    | ToggleEditorMode
-    | ToggleBoundary
-    | ExportPdfRequested
-    | TapBatchPreview of int
-    | CloseBatch
-    | CancelBatch
-    | BatchCancelled
-    | SaveRequested
-    | ImportRequested
-    | FileImported of string
-    | SetDescription of string
-    | RecordToHynteract
-    | RecordResult of bool
-    | StartVoiceCapture
-    | OnVoiceResult of string
-
-// Polygon export consumer
-let mutable private latestOuterStr   : string = ""
-let mutable private latestIslandsStr : string = ""
-let mutable private latestAbsStr     : string = "1"
-let mutable private latestEntryStr   : string = "0,0"
-let mutable private latestWidth      : int = 0
-let mutable private latestHeight     : int = 0
-let mutable private latestPublished  : bool = false
-
-/// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
-let private syncPolygonState 
-    (p: PolygonEditorModel) =
-    let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
-    
-    let w', h', entry', outer', islands' =
-        match p.UseBoundary with
-        | false -> 0, 0, "0,0", "", ""
-        | true  -> w, h, entry, outer, islands
-        
-    latestOuterStr   <- outer'
-    latestIslandsStr <- islands'
-    latestAbsStr     <- absolute
-    latestEntryStr   <- entry'
-    latestWidth      <- w'
-    latestHeight     <- h'
-    latestPublished  <- true
+open ModelTypes
+open Helper
 
 // Defaults / init 
 let elv = 0
 let initialTree = NodeCode.initModel beeyond
 let initialSequence = allSqns.[11]
+let initialPolygonExport = syncPolygonState PolygonEditor.initModel
+
 let initialOutput = NodeCode.getOutput
                         initialTree
                         initialSequence
-                        latestWidth
-                        latestHeight
-                        latestAbsStr
-                        latestEntryStr
-                        latestOuterStr
-                        latestIslandsStr
+                        initialPolygonExport.Width
+                        initialPolygonExport.Height
+                        initialPolygonExport.AbsStr
+                        initialPolygonExport.EntryStr
+                        initialPolygonExport.OuterStr
+                        initialPolygonExport.IslandsStr
 
 let initModel =
     {
@@ -126,6 +50,7 @@ let initModel =
         IsSavingToHynteract = false
         ShowSuccessMessage = false
         IsRecording = false
+        PolygonExport = initialPolygonExport
     }
 
 /// Update
@@ -139,12 +64,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 NodeCode.getOutput 
                     model.Tree 
                     newSqn 
-                    latestWidth 
-                    latestHeight 
-                    latestAbsStr 
-                    latestEntryStr 
-                    latestOuterStr 
-                    latestIslandsStr
+                    model.PolygonExport.Width
+                    model.PolygonExport.Height
+                    model.PolygonExport.AbsStr
+                    model.PolygonExport.EntryStr
+                    model.PolygonExport.OuterStr
+                    model.PolygonExport.IslandsStr
             | Syntax -> 
                 injectSqn model.SrcOfTrth newSqn
 
@@ -183,18 +108,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw model.SrcOfTrth inner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
-                syncPolygonState finalPoly
                 model.SrcOfTrth
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
                     model.Sequence
-                    latestWidth
-                    latestHeight
-                    latestAbsStr
-                    latestEntryStr
-                    latestOuterStr
-                    latestIslandsStr
+                    model.PolygonExport.Width
+                    model.PolygonExport.Height
+                    model.PolygonExport.AbsStr
+                    model.PolygonExport.EntryStr
+                    model.PolygonExport.OuterStr
+                    model.PolygonExport.IslandsStr
 
         Storage.autoSave js updatedSrcOfTrth |> ignore
 
@@ -203,10 +127,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | Syntax ->
                 let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw updatedSrcOfTrth inner
+                let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                let newExport = syncPolygonState finalPoly
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
                     Derived = deriveData updatedSrcOfTrth elv
-                    PolygonEditor = newState }
+                    PolygonEditor = newState 
+                    PolygonExport = newExport }
             | Interactive ->
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
@@ -231,12 +158,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let newOutput = NodeCode.getOutput
                                 updatedTree
                                 model.Sequence
-                                latestWidth
-                                latestHeight
-                                latestAbsStr
-                                latestEntryStr
-                                latestOuterStr
-                                latestIslandsStr
+                                model.PolygonExport.Width
+                                model.PolygonExport.Height
+                                model.PolygonExport.AbsStr
+                                model.PolygonExport.EntryStr
+                                model.PolygonExport.OuterStr
+                                model.PolygonExport.IslandsStr
             { model with 
                 Tree = updatedTree 
                 SrcOfTrth = newOutput 
@@ -252,124 +179,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonEditorUpdated
 
     | PolygonEditorUpdated newModel ->
-        syncPolygonState newModel
+        let newExport = syncPolygonState newModel
         { model with 
             PolygonEditor = Stable newModel
+            PolygonExport = newExport
             NeedsHyweave = true        },
             Cmd.none
 
-    | SetActivePanel panel ->
-        match panel with
-        | BatchPanel ->
-            let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
-            match isStale with
-            | true -> 
-                let cts = new System.Threading.CancellationTokenSource()
-                let model' = 
-                    { model with 
-                        ActivePanel = panel
-                        IsHyweaving = true
-                        IsCancelling = false 
-                        CancelToken = Some cts
-                        BatchPreview = None 
-                    }
-
-                model', Cmd.OfAsync.perform (fun (token: System.Threading.CancellationToken) ->
-                    // Type annotation (m: Model) helps the compiler find .SrcOfTrth
-                    let rec compute (m: Model) i acc = async {
-                        if i >= 24 || token.IsCancellationRequested then 
-                            return acc
-                        else
-                            let sqnStr = indexToSqn i
-                            let forcedStr = injectSqn m.SrcOfTrth sqnStr
-                            let cxls, _ = Parse.spaceCxl [||] forcedStr
-                            let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                        
-                            // We define configData inside the loop logic
-                            let configData = 
-                                {| sqnName = sqnStr; w = d.w; h = d.h
-                                   shapes = d.shapes |> Array.map (fun s -> 
-                                     {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                                |}
-                        
-                            do! Async.Sleep 5
-                            // Pass configData into the next recursive call
-                            return! compute m (i + 1) (configData :: acc)
-                    }
-                    async {
-                        let! results = compute model 0 []
-                        return results |> List.toArray |> Array.rev
-                    }) cts.Token SetBatchPreview
-
-            | false -> 
-                { model with ActivePanel = panel }, Cmd.none
-
-        | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel | TeachPanel ->
-            { model with ActivePanel = panel }, Cmd.none
-    
-    | CancelBatch ->
-        model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
-        { model with IsCancelling = true }, Cmd.none
-    
-    | BatchCancelled ->
-        { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
-
-    | ToggleEditorMode ->
-        match model.EditorMode with
-        | Syntax ->
-            let maybeSubModel =
-                model.SrcOfTrth
-                |> CodeNode.preprocessCode
-                |> fun processed ->
-                    try Some (CodeNode.parseOutput processed)
-                    with _ -> None
-                |> Option.map (fun tree ->
-                    let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                    { Root = laidOut; ConfirmingId = None }
-                )
-
-            match maybeSubModel with
-            | Some subModel ->
-                let newOutput =
-                    NodeCode.getOutput
-                        subModel
-                        model.Sequence
-                        latestWidth
-                        latestHeight
-                        latestAbsStr
-                        latestEntryStr
-                        latestOuterStr
-                        latestIslandsStr
-
-                { model with
-                    Tree = subModel
-                    SrcOfTrth = newOutput
-                    LastValidTree = subModel
-                    EditorMode = Interactive
-                    ParseError = false
-                }, Cmd.none
-            | None ->
-                { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
-
-        | Interactive ->
-            let newOutput =
-                NodeCode.getOutput
-                    model.Tree
-                    model.Sequence
-                    latestWidth
-                    latestHeight
-                    latestAbsStr
-                    latestEntryStr
-                    latestOuterStr
-                    latestIslandsStr
-
-            { model with
-                SrcOfTrth = newOutput
-                LastValidTree = model.Tree
-                EditorMode = Syntax
-                ParseError = false
-            }, Cmd.none
-
+    | SetActivePanel panel -> handleSetActivePanel model panel
+    | ToggleEditorMode -> handleToggleEditorMode model
+    | ExportPdfRequested -> handleExportPdfRequested model
+    | RecordToHynteract -> handleRecordToHynteract model js
+    | FileImported content -> handleFileImported model content js
     | ToggleBoundary ->
         match model.ActivePanel with
         | BoundaryPanel -> 
@@ -382,7 +203,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ActivePanel = BoundaryPanel
                 PolygonEditor = newState 
             }, Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-
     | SetBatchPreview results ->
         { model with 
             BatchPreview = Some results
@@ -391,136 +211,31 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             IsCancelling = false
             ActivePanel = BatchPanel 
         }, Cmd.none
-
     | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with
             | Some current when current = i -> None
             | _ -> Some i
         { model with SelectedPreviewIndex = nextSelection }, Cmd.none
-
     | CloseBatch ->
         { model with ActivePanel = LayoutPanel; SelectedPreviewIndex = None }, Cmd.none
-
-    | ExportPdfRequested ->
-            { model with IsHyweaving = true }, 
-            Cmd.OfAsync.perform (fun () ->
-                let rec computeBatch i acc = async {
-                    match i >= 24 with
-                    | true -> return acc
-                    | false ->
-                        let sqnStr = indexToSqn i
-                        let forcedStr = injectSqn model.SrcOfTrth sqnStr
-                        let cxls, _ = Parse.spaceCxl [||] forcedStr
-                        let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                        let configData = 
-                            {| sqnName = sqnStr; w = d.w; h = d.h
-                               shapes = d.shapes |> Array.map (fun s -> 
-                                {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                            |}
-                        do! Async.Sleep 5
-                        return! computeBatch (i + 1) (configData :: acc)
-                }
-                async {
-                    let! results = computeBatch 0 []
-                    return results |> List.toArray |> Array.rev
-                }) () SetBatchPreview
-
+    | CancelBatch ->
+        model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
+        { model with IsCancelling = true }, Cmd.none
+    | BatchCancelled ->
+        { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
     | SaveRequested ->
         Storage.saveFile js model.SrcOfTrth |> ignore
         Storage.autoSave js model.SrcOfTrth |> ignore
         model, Cmd.none
-
     | ImportRequested ->
         let doClick () =
             task {
                 do! js.InvokeVoidAsync("clickElement", "hyw-import-hidden").AsTask()
             }
         model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
-
-    | FileImported content ->
-        match System.String.IsNullOrWhiteSpace content with
-        | true -> model, Cmd.none
-        | false ->
-            let clean = content.Trim()
-            let newTree = 
-                clean 
-                |> CodeNode.preprocessCode 
-                |> fun processed ->
-                    try 
-                        let tree = CodeNode.parseOutput processed
-                        let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                        { Root = laidOut; ConfirmingId = None }
-                    with _ -> model.Tree 
-
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw clean inner
-            let finalPoly = match newState with FreshlyImported m | Stable m -> m
-            syncPolygonState finalPoly
-
-            { model with 
-                SrcOfTrth = clean
-                Tree = newTree
-                LastValidTree = newTree
-                Derived = deriveData clean elv 
-                PolygonEditor = newState 
-                ParseError = false
-                LastBatchSrc = None
-            }, 
-            Cmd.batch [
-                Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-                Cmd.OfTask.attempt (fun () -> task { 
-                    do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
-                }) () (fun _ -> FinishHyweave)
-            ]
-
     | SetDescription d -> 
         { model with UserDescription = d }, Cmd.none
-
-    | RecordToHynteract ->
-        let currentSrc = model.SrcOfTrth
-        let currentDesc = model.UserDescription
-        let currentOuter = latestOuterStr
-        let currentIslands = latestIslandsStr
-
-        { model with IsSavingToHynteract = true },
-    
-        Cmd.OfAsync.perform (fun () -> async {
-            try
-                // Iterate through the 24 orientations
-                let configMap = 
-                    Hexel.sqnArray 
-                    |> Array.map (fun sqnCase -> 
-                        let key = sprintf "%A" sqnCase
-                        let data = 
-                            try 
-                                // ADDED: [||] as the 5th argument for initialOcc
-                                Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands [||]
-                            with ex -> 
-                                printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
-                                "" 
-                        key, data)
-                    |> Map.ofArray
-
-                // Ensure the payload matches the Hynteract API schema
-                let payload = {| 
-                    instruction = currentSrc 
-                    description = currentDesc 
-                    configuration = configMap 
-                |}
-
-                // Async invocation of the JavaScript interop
-                let! success = 
-                    js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() 
-                    |> Async.AwaitTask
-                
-                return success
-            
-            with ex -> 
-                printfn "Critical Recording Failure: %s" ex.Message
-                return false
-        }) () RecordResult
-
     | RecordResult success ->
         { model with 
             IsSavingToHynteract = false
@@ -528,27 +243,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             UserDescription = if success then "" else model.UserDescription 
         }, 
         if success then 
-            Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave) // Using a dummy msg to trigger refresh
+            Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave)
         else Cmd.none
-
     | StartVoiceCapture -> 
         { model with IsRecording = true }, 
         Cmd.OfAsync.perform (fun () -> 
             async {
-                // 1. Trigger the JS transcription
                 do! js.InvokeVoidAsync("startTranscription").AsTask() |> Async.AwaitTask
-                // 2. We wait a moment for the JS 'onend' logic to finish if needed
-                // or just return to signal we are done.
                 return ()
             }) () (fun _ -> OnVoiceResult model.UserDescription)
-
     | OnVoiceResult text ->
-        // This is the "Off Switch"
-        { model with 
-            IsRecording = false 
-            // Note: the text is already updated by the JS dispatching the 'input' event
-        }, Cmd.none
-
+        { model with IsRecording = false }, Cmd.none
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     let nodeCodeButtonText =
@@ -817,7 +522,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 | true ->
                     span { 
                         attr.style "color: #27ae60; font-size: 0.85em; font-weight: 500;"
-                        text "✓ Spatial relationship successfully mapped to model." 
+                        text "? Spatial relationship successfully mapped to model." 
                     }
                 | false -> ()
             }
