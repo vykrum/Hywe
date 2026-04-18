@@ -1,4 +1,4 @@
-﻿module Coxel
+module Coxel
 
 open Hexel
 ///
@@ -85,8 +85,9 @@ let coxel
                             
             //Efficiently grow the accumulator
             let nextAcc = 
-                Array.map2 (fun current (newEl: Hxl * int) -> 
-                    Array.append current [| newEl |]) 
+                Array.map2 (fun (current: (Hxl * int)[]) (newEl: Hxl * int) -> 
+                    let len = current.Length
+                    Array.init (len + 1) (fun i -> if i < len then current.[i] else newEl)) 
                     acc 
                     inc
 

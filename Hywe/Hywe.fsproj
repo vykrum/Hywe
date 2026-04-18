@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -19,6 +19,8 @@
 		<Compile Include="CR-Parse.fs" />
 		<Compile Include="IN-Page.fs" />
 		<Compile Include="IN-Storage.fs" />
+		<Compile Include="IN-ModelTypes.fs" />
+		<Compile Include="IN-ModelHelpers.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>
