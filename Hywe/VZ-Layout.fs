@@ -1,4 +1,4 @@
-﻿module Layout
+module Layout
 
 open Bolero
 open Bolero.Html
@@ -218,7 +218,7 @@ let svgCoxels
     let sqn = cxl |> Array.map (fun x ->x.Seqn)
     let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
     //let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
-    let crd = Array.map2 (fun a b -> Geometry.filterOddSecondary a b) sqn cr1
+    let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
 
     // Shift and Scale Vertices
     let padd = 5*scl
@@ -350,7 +350,7 @@ let getBtchCrds (cxl: Cxl[]) =
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
     let sqn = cxl |> Array.map (fun x -> x.Seqn)
     let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
-    let coords = Array.map2 (fun a b -> Geometry.filterOddSecondary a b) sqn cr1
+    let coords = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
     
     // Safety check for empty geometry to prevent crash in Array.minBy
     let flattened = Array.concat coords
