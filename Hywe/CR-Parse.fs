@@ -232,8 +232,8 @@ let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawT
     let totalRequested = flatTree |> Array.sumBy (fun (_, cnt, _) -> cnt) |> float
     
     // 2. Identify Unbound State
-    // If area is 0 or Outer attribute is missing, we are unbound.
-    let isUnbound = ntArea <= 0.0 || not (attributes.ContainsKey "O")
+    // Unbound when there is no actual site area to constrain against.
+    let isUnbound = ntArea <= 0.0
 
     // 3. Determine Scaling Ratio
     let ratio = 
@@ -328,15 +328,12 @@ let generateCoreLayout
 
     // 6. Island Boundary
     let bdIs =
-        match Array.isEmpty bdOu with
-        | true -> [||]
-        | false ->
-            match ilStrOverride with
-            | Some il when il <> "" -> parsePolyIslands il |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
-            | _ ->
-                match spcAt1 |> Map.tryFind "I" with 
-                | Some a -> parsePolyIslands a |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
-                | None -> [||]
+        match ilStrOverride with
+        | Some il when il <> "" -> parsePolyIslands il |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
+        | _ ->
+            match spcAt1 |> Map.tryFind "I" with 
+            | Some a -> parsePolyIslands a |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
+            | None -> [||]
 
     // 7. Entry Hexel
     let bsHx =
@@ -355,8 +352,8 @@ let generateCoreLayout
     let ntArea = polygonWithHolesArea bdOu bdIs
 
     // 9. Occupancy
-    let ouHx = match bdWd = 0 with | true -> [||] | false -> hxlPgn seq elv bdOu 
-    let ilHx = match bdWd = 0 with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn seq elv)
+    let ouHx = match Array.isEmpty bdOu with | true -> [||] | false -> hxlPgn seq elv bdOu 
+    let ilHx = match Array.isEmpty bdIs with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn seq elv)
     let occ = 
         let list = System.Collections.Generic.List<Hxl>(initialOcc.Length + ouHx.Length + ilHx.Length)
         list.AddRange(initialOcc)
