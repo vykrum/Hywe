@@ -127,7 +127,7 @@ let extrudePolygons
     // 1. Helper: Point conversion
     let toPoly (x: Cxl) =
         cxlPrm x elv
-        |> Geometry.filterOddSecondary x.Seqn
+        |> Geometry.removeSawtooth x.Seqn
         |> Array.map (fun (xi, yi) -> (float xi, float yi))
 
     // 2. Helper: Color normalization

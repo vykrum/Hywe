@@ -1,4 +1,4 @@
-﻿module Geometry
+module Geometry
 
 open Hexel
 ///
@@ -77,21 +77,71 @@ let hxlLin
     let result = div |> Array.map (fun (a,b) -> RV(a, b, sz))
     match result.Length with 0 -> [| stt; enn |] |> Array.distinct | _ -> result
 ///
+/// <summary> Removes aliasing/sawtooth artifacts from a sequence of hex coordinates. </summary>
+/// <param name="sqn"> The grid sequence orientation. </param>
+/// <param name="arr"> Array of (x, y) coordinates. </param>
+/// <returns> A cleaned array of (x, y) coordinates. </returns>
+let removeSawtooth 
+    (sqn : Sqn) 
+    (arr : (int*int)[]) : (int*int)[] =
+    let (primary, secondary) = 
+        match sqn with
+        | Vertical   -> (snd, fst)
+        | Horizontal -> (fst, snd)
 
-let filterOddSecondary sqn (arr: (int * int)[]) =
-        let secondary =
-            match sqn with
-            | Vertical   -> snd
-            | Horizontal -> fst
+    let splitByDelta2 (points: (int*int)[]) =
+        match points.Length with
+        | 0 -> [||]
+        | _ -> 
+            let folder (acc: (int*int) list list) point =
+                match acc with
+                | [] -> [[point]]
+                | currentGroup :: rest ->
+                    match abs(primary point - primary (List.head currentGroup)) with
+                    | 2 -> (point :: currentGroup) :: rest
+                    | _ -> [point] :: currentGroup :: rest
+            
+            points 
+            |> Array.fold folder [] 
+            |> List.map (List.rev >> Array.ofList)
+            |> List.rev
+            |> Array.ofList
 
-        let parityCounts =
-            arr
-            |> Array.countBy (fun p -> secondary p % 2)
+    let rec oscillates values =
+        match values with
+        | [||] | [|_|] | [|_;_|] -> false
+        | _ ->
+            let rec loop i =
+                match i >= values.Length - 2 with
+                | true -> true
+                | false ->
+                    match abs(values.[i+1] - values.[i]), 
+                          abs(values.[i+2] - values.[i+1]) with
+                    | 1, 1 -> loop (i+1)
+                    | _    -> false
+            loop 0
 
-        let targetParity =
-            parityCounts |> Array.maxBy snd |> fst
+    let processOscillation (groups: (int*int)[][]) =
+        groups
+        |> Array.map (fun g ->
+            match g.Length <= 3 with
+            | true -> g
+            | false ->
+                let secValues = g |> Array.map secondary
+                match oscillates secValues with
+                | false -> g
+                | true ->
+                    let f, l = g.[0], g.[g.Length-1]
+                    let low = min (secondary f) (secondary l)
+                    match sqn with
+                    | Vertical   -> [| (low, snd f); (low, snd l) |]
+                    | Horizontal -> [| (fst f, low); (fst l, low) |]
+        )
 
-        arr |> Array.filter (fun p -> secondary p % 2 = targetParity)
+    arr
+    |> splitByDelta2
+    |> processOscillation
+    |> Array.collect id
 
 /// <summary> Calculates the signed area of a polygon using the Shoelace formula. </summary>
 /// <param name="poly"> Array of (x, y) coordinates defining the polygon. </param>
@@ -231,7 +281,7 @@ let cleanPolygon sqn pts =
     |> dedupeSequential
     |> ensureClosed
     |> removeCollinear
-    |> filterOddSecondary sqn
+    |> removeSawtooth sqn
     |> normalizeWinding true
 ///
 
