@@ -84,64 +84,49 @@ let hxlLin
 let removeSawtooth 
     (sqn : Sqn) 
     (arr : (int*int)[]) : (int*int)[] =
+    if arr.Length = 0 then [||] else
     let (primary, secondary) = 
         match sqn with
         | Vertical   -> (snd, fst)
         | Horizontal -> (fst, snd)
 
-    let splitByDelta2 (points: (int*int)[]) =
-        match points.Length with
-        | 0 -> [||]
-        | _ -> 
-            let folder (acc: (int*int) list list) point =
-                match acc with
-                | [] -> [[point]]
-                | currentGroup :: rest ->
-                    match abs(primary point - primary (List.head currentGroup)) with
-                    | 2 -> (point :: currentGroup) :: rest
-                    | _ -> [point] :: currentGroup :: rest
+    let result = ResizeArray<int*int>()
+    
+    let mutable i = 0
+    let n = arr.Length
+    while i < n do
+        let mutable j = i
+        while j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) = 2 do
+            j <- j + 1
             
-            points 
-            |> Array.fold folder [] 
-            |> List.map (List.rev >> Array.ofList)
-            |> List.rev
-            |> Array.ofList
+        let groupLen = j - i + 1
+        if groupLen > 3 then
+            let mutable isOscillating = true
+            for k = i to j - 1 do
+                if abs(secondary arr.[k+1] - secondary arr.[k]) <> 1 then
+                    isOscillating <- false
+            
+            if isOscillating then
+                let f = arr.[i]
+                let l = arr.[j]
+                let low = min (secondary f) (secondary l)
+                match sqn with
+                | Vertical   -> 
+                    result.Add((low, snd f))
+                    result.Add((low, snd l))
+                | Horizontal -> 
+                    result.Add((fst f, low))
+                    result.Add((fst l, low))
+            else
+                for k = i to j do
+                    result.Add(arr.[k])
+        else
+            for k = i to j do
+                result.Add(arr.[k])
+                
+        i <- j + 1
 
-    let rec oscillates values =
-        match values with
-        | [||] | [|_|] | [|_;_|] -> false
-        | _ ->
-            let rec loop i =
-                match i >= values.Length - 2 with
-                | true -> true
-                | false ->
-                    match abs(values.[i+1] - values.[i]), 
-                          abs(values.[i+2] - values.[i+1]) with
-                    | 1, 1 -> loop (i+1)
-                    | _    -> false
-            loop 0
-
-    let processOscillation (groups: (int*int)[][]) =
-        groups
-        |> Array.map (fun g ->
-            match g.Length <= 3 with
-            | true -> g
-            | false ->
-                let secValues = g |> Array.map secondary
-                match oscillates secValues with
-                | false -> g
-                | true ->
-                    let f, l = g.[0], g.[g.Length-1]
-                    let low = min (secondary f) (secondary l)
-                    match sqn with
-                    | Vertical   -> [| (low, snd f); (low, snd l) |]
-                    | Horizontal -> [| (fst f, low); (fst l, low) |]
-        )
-
-    arr
-    |> splitByDelta2
-    |> processOscillation
-    |> Array.collect id
+    result.ToArray()
 
 /// <summary> Calculates the signed area of a polygon using the Shoelace formula. </summary>
 /// <param name="poly"> Array of (x, y) coordinates defining the polygon. </param>
@@ -195,15 +180,14 @@ let ensureClosed (pts: (int*int)[]) =
 
 /// <summary> Removes consecutive duplicate points from a polygon vertex array. </summary>
 let dedupeSequential (pts: (int*int)[]) =
-    pts
-    |> Array.fold (fun acc p ->
-        match acc with
-        | [] -> [p]
-        | h::_ when h = p -> acc
-        | _ -> p :: acc
-    ) []
-    |> List.rev
-    |> Array.ofList
+    if pts.Length = 0 then pts
+    else
+        let res = ResizeArray<int*int>(pts.Length)
+        res.Add(pts.[0])
+        for i = 1 to pts.Length - 1 do
+            if pts.[i] <> res.[res.Count - 1] then
+                res.Add(pts.[i])
+        res.ToArray()
 
 /// <summary> Normalizes the winding order of a polygon to be either clockwise or counterclockwise. </summary>
 let normalizeWinding (ccw: bool) (pts: (int*int)[]) =
@@ -253,12 +237,17 @@ let segmentsIntersect a b c d =
 let hasSelfIntersections (pts:(int*int)[]) =
     let p = ensureClosed pts
     let n = p.Length-1
-    seq {
-        for i in 0..n-2 do
-            for j in i+2..n-2 do
-                if i <> 0 || j <> n-2 then
-                    yield segmentsIntersect p.[i] p.[i+1] p.[j] p.[j+1]
-    } |> Seq.exists id
+    let mutable found = false
+    let mutable i = 0
+    while i <= n - 2 && not found do
+        let mutable j = i + 2
+        while j <= n - 2 && not found do
+            if i <> 0 || j <> n - 2 then
+                if segmentsIntersect p.[i] p.[i+1] p.[j] p.[j+1] then
+                    found <- true
+            j <- j + 1
+        i <- i + 1
+    found
 
 /// <summary> Determines if three points are collinear. </summary>
 let isCollinear (ax,ay) (bx,by) (cx,cy) =
@@ -266,22 +255,27 @@ let isCollinear (ax,ay) (bx,by) (cx,cy) =
 
 let removeCollinear (pts:(int*int)[]) =
     let p = ensureClosed pts
-    [|
-        for i in 1..p.Length-2 do
+    if p.Length < 3 then p
+    else
+        let res = ResizeArray<int*int>(p.Length)
+        res.Add(p.[0])
+        for i = 1 to p.Length - 2 do
             let a = p.[i-1]
             let b = p.[i]
             let c = p.[i+1]
-            if not (isCollinear a b c) then yield b
-    |]
-    |> fun mid -> Array.concat [| [|p.[0]|]; mid; [|p.[p.Length-1]|] |]
+            if not (isCollinear a b c) then 
+                res.Add(b)
+        res.Add(p.[p.Length-1])
+        res.ToArray()
 
 /// <summary> Cleans a polygon by deduplicating vertices, ensuring closure, removing collinear points, and eliminating sawtooth artifacts. </summary>
 let cleanPolygon sqn pts =
     pts
     |> dedupeSequential
+    |> removeSawtooth sqn
+    |> dedupeSequential
     |> ensureClosed
     |> removeCollinear
-    |> removeSawtooth sqn
     |> normalizeWinding true
 ///
 

@@ -401,6 +401,43 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.id "hywe-extruded-polygon"
                         attr.style "width: 100%; height: 100%; display: block;" 
                     }
+                    
+                    svg {
+                        attr.id "webgl-labels-overlay"
+                        attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible;"
+                        
+                        for i, cxl in model.Derived.cxCxl1 |> Array.indexed do
+                            let name = Coxel.prpVlu cxl.Name
+                            let massColor = 
+                                if model.Derived.cxClr1 <> null && i < model.Derived.cxClr1.Length then model.Derived.cxClr1.[i] 
+                                else "#666666"
+                            let fw = if i = 0 then "700" else "400"
+                            let clr = if i = 0 then "#333333" else "#666666"
+                            let pId = sprintf "webgl-path-%d" i
+                            
+                            elt "g" {
+                                "id" => sprintf "mass-label-g-%d" i
+                                "display" => "none"
+                                
+                                elt "path" {
+                                    "id" => pId
+                                    "d" => "M -60 -5 Q 0 -25 60 -5"
+                                    "fill" => "transparent"
+                                }
+                                elt "text" {
+                                    "font-family" => "Verdana"; "font-size" => "10px"; "font-weight" => fw; "fill" => clr
+                                    elt "textPath" {
+                                        "href" => ("#" + pId)
+                                        "startOffset" => "50%"; "text-anchor" => "middle"
+                                        text name
+                                    }
+                                }
+                                elt "circle" {
+                                    "cx" => "0"; "cy" => "0"; "r" => "4"; "fill" => massColor; "stroke" => "#ffffff"; "stroke-width" => "1.5"
+                                }
+                            }
+                    }
+
                     async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
                     |> Async.StartImmediate
                 }
