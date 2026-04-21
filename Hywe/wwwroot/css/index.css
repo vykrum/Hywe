@@ -1,4 +1,4 @@
-﻿html, body {
+html, body {
     width: 100%;
     height: 99%;
     margin: 0;
@@ -39,7 +39,7 @@
         color: white;
         font-size: 20px;
         font-weight: normal;
-        padding: 0 10px 7px 10px; /* exact original */
+        padding: 0 10px 7px 10px;
     }
 
     .site-header .logo-acronym {
@@ -136,12 +136,11 @@ input[type=number] {
     box-sizing: border-box;
 }
 
+/* Character labels above the sequence selector slider */
 .slider-labels {
     display: flex;
     justify-content: space-between;
     font-size: 0.85rem;
-    transform: translateY(0rem);
-    padding: 0 0px;
 }
 
 .slider-label {
@@ -198,6 +197,10 @@ input[type=number] {
 
 
 
+/* =====================
+   SYNTAX INPUT
+   ===================== */
+/* Monospace textarea for the hyw space syntax */
 .hyweSyntax {
     font-family: Consolas, "PT Mono", "Courier New", Courier, monospace;
     resize: none;
@@ -244,8 +247,10 @@ input[type=number] {
 /* =====================
    SPINNER & VIDEO
    ===================== */
+/* Animated loading indicator — used in hyWeave button and other loading states */
 .spinner {
     display: inline-block;
+    flex-shrink: 0;
     width: 14px;
     height: 14px;
     border: 2px solid #ccc;
@@ -315,11 +320,7 @@ video.fullscreen-bg {
         -webkit-overflow-scrolling: touch;
     }
 
-    #introduction.fade-out {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.8s ease;
-    }
+
 
     #introduction.ready section {
         opacity: 1;
@@ -430,10 +431,11 @@ video.fullscreen-bg {
     }
 }
 
-/* =========================================
-   INDRODUCTION SEAMLESS CROSSFADE
-   ========================================= */
+/* =====================
+   CROSSFADE HELPERS
+   ===================== */
 
+/* Hint to browser for GPU compositing during opacity transitions */
 .wc-opacity {
     will-change: opacity;
 }
@@ -671,7 +673,6 @@ video.fullscreen-bg {
 }
 
 .hyweave-main-text {
-    /* Identical to your original text style */
     color: white;
     white-space: nowrap;
 }
@@ -716,9 +717,7 @@ video.fullscreen-bg {
     }
 }
 
-.spinner {
-    flex-shrink: 0;
-}
+
 
 /* =====================
    NAVIGATION ICONS
@@ -907,66 +906,38 @@ video.fullscreen-bg {
     opacity: 1;
 }
 
+/* Download button anchored to the footer flow */
+.layout-download-btn {
+    display: inline-block;
+    margin-top: 35px;    /* Increased distance from SVG */
+    margin-bottom: 5px;
+    left: auto;
+    transform: none;
+    z-index: 500;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    padding: 5px 18px;
+    font-size: 11px;
+    color: #666;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    pointer-events: auto;
+}
+
+    .layout-download-btn:hover {
+        color: #111;
+        background: rgba(255, 255, 255, 0.97);
+        border-color: rgba(0, 0, 0, 0.25);
+    }
+
 /* =========================================
    POLYGON EDITOR
    ========================================= */
-.control-and-instructions {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    padding: 10px 0;
-    margin-top: 5px;
-}
 
-/* Toggle Buttons - Using your UI tones */
-.toggle-group {
-    display: inline-flex;
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid #d1d1d1;
-}
-
-.toggle-btn {
-    padding: 5px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    border: none;
-    background: #f0f0f0;
-    color: #777;
-    cursor: pointer;
-    min-width: 80px;
-    transition: all 0.1s ease;
-}
-
-    .toggle-btn.active {
-        background: #8F8F8F;
-        color: white;
-    }
-
-    .toggle-btn:hover:not(.active) {
-        background: #CDDFE1; 
-        color: #555;
-    }
-/* --- Dimension Column --- */
-.dimension-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 20px;
-    border-left: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
-}
-
-.field-group {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
+/* Width/Height text input for boundary dimensions */
 .boundaryInput {
     width: 45px;
     border: none;
@@ -976,7 +947,7 @@ video.fullscreen-bg {
     color: #333;
 }
 
-/* --- Reverted Polygon Editor Styles --- */
+/* SVG drawing canvas for the polygon editor */
 .polygon-editor-svg {
     background-color: #f0f0f0;
     margin: 40px;
@@ -1059,9 +1030,14 @@ video.fullscreen-bg {
     user-select: none;
 }
 
-
-/* Container */
+/* Controls bar above the polygon SVG: toggles + dimensions + instructions */
 .control-and-instructions {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
     margin-top: 5px;
 }
 
@@ -1081,15 +1057,15 @@ video.fullscreen-bg {
 }
 
 .toggle-btn {
-    padding: 3px 6px; /* Tighter padding */
-    font-size: 9px; /* Smaller font */
+    padding: 3px 6px;
+    font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
     border: none;
     background: #f0f0f0;
     color: #888;
     cursor: pointer;
-    min-width: 65px; /* Reduced width */
+    min-width: 65px;
     transition: all 0.1s ease;
     outline: none;
 }
@@ -1097,6 +1073,11 @@ video.fullscreen-bg {
     .toggle-btn.active {
         background: #333333;
         color: white;
+    }
+
+    .toggle-btn:hover:not(.active) {
+        background: #CDDFE1;
+        color: #555;
     }
 
 /* Column 2: Dimensions */

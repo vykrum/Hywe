@@ -1,4 +1,4 @@
-﻿module Page
+module Page
 
 open Bolero.Html
 open System
@@ -47,10 +47,11 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
 
     [| 0 .. count - 1 |]
     |> Array.map (fun i ->
-        if i = 0 then
+        match i = 0 with
+        | true ->
             // First color: base color
             $"rgba({baseR}, {baseG}, {baseB}, {opacity})"
-        else
+        | false ->
             // Remaining: pastel variations
             let hueShift = (i * 137) % 360
             let angleRad = float hueShift * Math.PI / 180.0
@@ -68,9 +69,9 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
 
 let deriveData (stx: string) (elv : int): DerivedData =
     let bsOc = [||]
-    //let cxCxl1 = fst(spaceCxl bsOc stx)
-    //let cxOuIl = snd(spaceCxl bsOc stx)
-    let cxCxl1, cxOuIl = spaceCxl bsOc stx
+    //let cxCxl1 = fst(generateCxlLayout stx None None None bsOc)
+    //let cxOuIl = snd(generateCxlLayout stx None None None bsOc)
+    let cxCxl1, cxOuIl = generateCxlLayout stx None None None bsOc
     let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn elv
     let cxClr1 = generatePastels "#888888" (Array.length cxCxl1) 0.85
     {
@@ -122,8 +123,9 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
             for i in 0 .. maxIndex -> 
                 span {
                     attr.``class`` (
-                        if i = currentIndex then "slider-label active"
-                        else "slider-label"
+                        match i = currentIndex with 
+                        | true -> "slider-label active"
+                        | false -> "slider-label"
                     )
                     text (labelPhrase.[i].ToString())
                 }

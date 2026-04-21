@@ -27,12 +27,12 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
 
             model', Cmd.OfAsync.perform (fun (token: System.Threading.CancellationToken) ->
                 let rec compute (m: Model) i acc = async {
-                    if i >= 24 || token.IsCancellationRequested then 
-                        return acc
-                    else
+                    match i >= 24 || token.IsCancellationRequested with 
+                    | true -> return acc
+                    | false ->
                         let sqnStr = indexToSqn i
                         let forcedStr = injectSqn m.SrcOfTrth sqnStr
-                        let cxls, _ = Parse.spaceCxl [||] forcedStr
+                        let cxls, _ = Parse.generateCxlLayout forcedStr None None None [||]
                         let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
                         
                         let configData = 
@@ -160,7 +160,7 @@ let handleExportPdfRequested (model: Model) : Model * Cmd<Message> =
             | false ->
                 let sqnStr = indexToSqn i
                 let forcedStr = injectSqn model.SrcOfTrth sqnStr
-                let cxls, _ = Parse.spaceCxl [||] forcedStr
+                let cxls, _ = Parse.generateCxlLayout forcedStr None None None [||]
                 let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
                 let configData = 
                     {| sqnName = sqnStr; w = d.w; h = d.h
@@ -371,7 +371,17 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-svg-container"
-                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
+                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10 (Some "layout-svg-output")
+                }
+                button {
+                    attr.``class`` "layout-download-btn"
+                    on.click (fun _ ->
+                        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                        let fileName = "HyweLayout_" + datePart + ".svg"
+                        js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName).AsTask()
+                        |> ignore
+                    )
+                    text "Download SVG"
                 }
             }
         
@@ -409,10 +419,11 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         for i, cxl in model.Derived.cxCxl1 |> Array.indexed do
                             let name = Coxel.prpVlu cxl.Name
                             let massColor = 
-                                if model.Derived.cxClr1 <> null && i < model.Derived.cxClr1.Length then model.Derived.cxClr1.[i] 
-                                else "#666666"
-                            let fw = if i = 0 then "700" else "400"
-                            let clr = if i = 0 then "#333333" else "#666666"
+                                match model.Derived.cxClr1 <> null && i < model.Derived.cxClr1.Length with 
+                                | true -> model.Derived.cxClr1.[i] 
+                                | false -> "#666666"
+                            let fw = match i = 0 with | true -> "700" | false -> "400"
+                            let clr = match i = 0 with | true -> "#333333" | false -> "#666666"
                             let pId = sprintf "webgl-path-%d" i
                             
                             elt "g" {

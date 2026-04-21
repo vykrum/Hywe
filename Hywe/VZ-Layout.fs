@@ -204,7 +204,11 @@ let crd
 
 /// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>
+/// <param name="bdr"> Boundary polygons </param>
+/// <param name="elv"> Elevation level </param>
 /// <param name="clr"> Array of colors </param>
+/// <param name="scl"> Scale factor </param>
+/// <param name="svgId"> Optional id to assign to the SVG element </param>
 /// <returns> Polygon Vertices </returns>
 
 let svgCoxels
@@ -212,7 +216,8 @@ let svgCoxels
     (bdr : (int*int)[][])
     (elv : int)
     (clr : string[])
-    (scl : int) = 
+    (scl : int)
+    (svgId : string option) = 
 
     // Vertices
     let sqn = cxl |> Array.map (fun x ->x.Seqn)
@@ -243,6 +248,7 @@ let svgCoxels
         svg {
             "viewBox" => $"0 0 {wdt} {hgt}"
             attr.``style`` (sprintf "display: block; width: 100%%; height: auto; max-width: %dpx;" wdt)
+            attr.id (svgId |> Option.defaultValue "")
 
             let prp = Array.zip crd2 clr
             for (xxyy, color) in prp do
@@ -571,21 +577,18 @@ let alternateConfigurations
                 }
         }
         // --- DOWNLOAD BUTTON ---
-        div {
-            attr.style "margin-top: 10px;"
-            button {
-                attr.``class`` "hywe-toggle-btn"
-                on.click (fun _ -> 
-                    let datePart = System.DateTime.Now.ToString("yyMMddmm")
-                    let fileName = "HywVariations_" + datePart + ".svg"
-            
-                    // Call our new SVG downloader
-                    js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() 
-                    |> ignore
-                )
-                text "Download SVG"
-            }
-}
+        button {
+            attr.``class`` "layout-download-btn"
+            on.click (fun _ -> 
+                let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                let fileName = "HywVariations_" + datePart + ".svg"
+        
+                // Call our new SVG downloader
+                js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() 
+                |> ignore
+            )
+            text "Download SVG"
+        }
     }
 
 let serializeConfiguration 

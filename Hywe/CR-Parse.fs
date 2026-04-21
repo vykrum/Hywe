@@ -16,6 +16,9 @@ let spaceStr =
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
 ///
 
+/// <summary> Parses a string into a discriminated union case. </summary>
+/// <param name="s"> The string to parse. </param>
+/// <returns> The union case or None. </returns>
 let tryParseUnion<'T> (s: string) : 'T option =
     if not (FSharpType.IsUnion typeof<'T>) then None
     else
@@ -23,16 +26,28 @@ let tryParseUnion<'T> (s: string) : 'T option =
         |> Array.tryFind (fun c -> c.Name = s)
         |> Option.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> 'T)
 
+/// <summary> Parses a string into a float safely. </summary>
+/// <param name="s"> The string to parse. </param>
+/// <returns> The parsed float or None. </returns>
 let tryParseFloat (s: string) =
     match Double.TryParse s with
     | true, v -> Some v
     | _ -> None
 
+/// <summary> Parses a string into an integer safely. </summary>
+/// <param name="s"> The string to parse. </param>
+/// <returns> The parsed integer or None. </returns>
 let tryParseInt (s: string) =
     match Int32.TryParse s with
     | true, v -> Some v
     | _ -> None
 
+/// <summary> Retrieves an attribute from a map with a fallback. </summary>
+/// <param name="key"> The key to look up. </param>
+/// <param name="f"> The conversion function. </param>
+/// <param name="fallback"> The default value if parsing fails. </param>
+/// <param name="m"> The map to search. </param>
+/// <returns> The resulting parsed value. </returns>
 let getAttr key f fallback (m: Map<string,string>) =
     m
     |> Map.tryFind key
@@ -40,13 +55,9 @@ let getAttr key f fallback (m: Map<string,string>) =
     |> Option.defaultValue fallback
 ///
 
-/// <summary> Categorize constituent Hexels within a Coxel. 
-///</summary>
+/// <summary> Categorize constituent Hexels within a Coxel. </summary>
 /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
-/// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
-/// <summary>
-/// Categorize constituent Hexels within a Coxel
-/// </summary>
+/// <returns> A tuple of parsed attributes and space tree definitions. </returns>
 let spaceSeq 
     (spaceStr:string) = 
     // Each hexel is 4sq units in area
@@ -190,7 +201,7 @@ let getNtArea (bdOu: (int*int)[]) (bdIs: (int*int)[][]) =
 
 /// Tree Mapping (Dataset Generation Version)
 let getTree01 (ntArea: float) (cxlCnt: float) (spcTree: (string * int * string) array array) =
-    let bdPr = if cxlCnt > 0.0 then (ntArea / cxlCnt) / 4.0 else 1.0
+    let bdPr = match cxlCnt > 0.0 with | true -> (ntArea / cxlCnt) / 4.0 | false -> 1.0
     spcTree |> Array.map (fun row -> 
         row |> Array.map (fun (id, cnt, lb) -> 
             (Refid id, Count (int (float cnt * bdPr)), Label lb)))
@@ -209,10 +220,13 @@ let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc:
         
         let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x)) = x)
         let cnt = (Array.length currentBatch) - 1
-        let chBs = if (Array.length chHx) >= cnt then 
-                       let divs = (Array.length chHx) / cnt 
-                       Array.chunkBySize divs chHx |> Array.map Array.head |> Array.take cnt
-                   else Array.append chHx (Array.replicate (cnt - Array.length chHx) (identity elv))
+        let chBs = 
+            match (Array.length chHx) >= cnt with 
+            | true -> 
+                let divs = (Array.length chHx) / cnt 
+                Array.chunkBySize divs chHx |> Array.map Array.head |> Array.take cnt
+            | false -> 
+                Array.append chHx (Array.replicate (cnt - Array.length chHx) (identity elv))
         
         let cxc1 = coxel seq elv (Array.map2 (fun a (_, c, d) -> a, hostId, c, d) chBs (Array.tail currentBatch)) newOcc
         let chOc1 = hxlUni 2 (Array.append newOcc (Array.concat (cxc1 |> Array.map (fun x -> x.Hxls))))
@@ -223,7 +237,11 @@ let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc:
 
 let hxlAreaFactor = 4.0
 
-/// Consolidates all reproportioning logic into one call.
+/// <summary> Consolidates all reproportioning logic into one call. </summary>
+/// <param name="attributes"> Parsed site attribute map. </param>
+/// <param name="ntArea"> Net site area in sq units. </param>
+/// <param name="rawTree"> Nested space tree of (id * count * label). </param>
+/// <returns> Tree with counts scaled to fill the available site area. </returns>
 let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * int * string)[][]) =
     let hxlAreaFactor = 4.0
     
@@ -232,29 +250,38 @@ let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawT
     let totalRequested = flatTree |> Array.sumBy (fun (_, cnt, _) -> cnt) |> float
     
     // 2. Identify Unbound State
-    // Unbound when there is no actual site area to constrain against.
     let isUnbound = ntArea <= 0.0
 
-    // 3. Determine Scaling Ratio
-    let ratio = 
-        if isUnbound then 1.0
-        else
-            match attributes |> Map.tryFind "X" with
-            | Some "0" -> if totalRequested > 0.0 then (ntArea / totalRequested) / hxlAreaFactor else 1.0
-            | Some a -> match Double.TryParse a with | true, v -> v | _ -> 1.0
-            | None -> 1.0
-
-    // 4. Target hexel count
+    // 3. Target hexel count (how many hexels fit in the site)
     let targetTotal = 
-        if isUnbound then int totalRequested 
-        else int (ntArea / hxlAreaFactor)
-        
+        match isUnbound with
+        | true -> int totalRequested 
+        | false -> int (ntArea / hxlAreaFactor)
+
+    // 4. Determine Scaling Ratio
+    //    - Unbound:         ratio = 1.0  (use requested counts as-is)
+    //    - Absolute (X=0):  ratio = ntArea / totalRequested / hxlAreaFactor
+    //    - Explicit X=n:    ratio = n    (user-specified multiplier)
+    //    - Relative+Bound:  ratio = targetTotal / totalRequested
+    //                       (scale proportionally so layout fills the site)
+    let ratio = 
+        match isUnbound with
+        | true -> 1.0
+        | false ->
+            match attributes |> Map.tryFind "X" with
+            | Some "0" -> match totalRequested > 0.0 with | true -> (ntArea / totalRequested) / hxlAreaFactor | false -> 1.0
+            | Some a -> match Double.TryParse a with | true, v -> v | _ -> 1.0
+            | None -> 
+                // Relative + Boundary: scale so totals fill the site
+                match totalRequested > 0.0 with 
+                | true -> float targetTotal / totalRequested 
+                | false -> 1.0
+
     // 5. Calculate floors and remainders
     let initialData = 
         flatTree |> Array.map (fun (id, cnt, lb) ->
             let ideal = float cnt * ratio
-            // Ensure every space has at least 1 hexel if it was requested
-            let flr = if cnt > 0 then max 1 (int (floor ideal)) else 0
+            let flr = match cnt > 0 with | true -> max 1 (int (floor ideal)) | false -> 0
             {| Id = id; Label = lb; Ideal = ideal; Floor = flr; Remainder = ideal - float flr |})
 
     // 6. Distribute difference (The Largest Remainder Method)
@@ -262,27 +289,31 @@ let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawT
     let diff = targetTotal - currentSum
 
     let distributedCounts =
-        if diff > 0 && not isUnbound then
+        match diff > 0 && not isUnbound with
+        | true ->
             let bonusIndices = 
                 initialData 
                 |> Array.mapi (fun i x -> i, x.Remainder)
                 |> Array.sortByDescending snd
                 |> Array.truncate diff
                 |> Array.map fst |> Set.ofArray
-            initialData |> Array.mapi (fun i x -> if bonusIndices.Contains i then x.Floor + 1 else x.Floor)
-        else
+            initialData |> Array.mapi (fun i x -> match bonusIndices.Contains i with | true -> x.Floor + 1 | false -> x.Floor)
+        | false ->
             initialData |> Array.map (fun x -> x.Floor)
 
-    // 7. Reconstruct the nested array structure (Fixes the 'int' compatibility error)
-    let mutable pointer = 0
-    rawTree |> Array.map (fun row ->
-        row |> Array.map (fun (id, _, lb) ->
-            let finalCount = distributedCounts.[pointer]
-            pointer <- pointer + 1
-            Refid id, Count finalCount, Label lb))
+    // 7. Reconstruct the nested array structure
+    let finalTree, _ = 
+        rawTree |> Array.mapFold (fun ptr row ->
+            let newRow, newPtr = 
+                row |> Array.mapFold (fun p (id, _, lb) ->
+                    (Refid id, Count distributedCounts.[p], Label lb), p + 1
+                ) ptr
+            newRow, newPtr
+        ) 0
+    finalTree
 ///
 
-let generateCoreLayout 
+let generateCxlLayout 
     (str: string) 
     (seqOverride: Sqn option) 
     (ouStrOverride: string option) 
@@ -380,63 +411,33 @@ let generateCoreLayout
             | Some firstCxl ->
                 let ac1 = [| { firstCxl with Hxls = Array.except occ (Array.append [| firstCxl.Base |] firstCxl.Hxls) } |]
                 
-                let globalOcc = System.Collections.Generic.List<Hxl>()
-                globalOcc.AddRange(occ)
-                globalOcc.Add(bsHx)
-                globalOcc.AddRange(ac1.[0].Hxls)
+                let initialGlobalOcc = 
+                    [| occ; [|bsHx|]; ac1.[0].Hxls |] |> Array.concat
                 
-                let cxlCxl (tre : (Prp*Prp*Prp)[]) (currentAcc: Cxl[]) = 
-                    let targetId = tre |> Array.map (fun (a,_,_) -> a) |> Array.head
-                    let bsCx = currentAcc |> Array.find (fun x -> x.Rfid = targetId)
-                    let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
-                    let cnt = (Array.length tre) - 1
-                    let chBs = 
-                        match (Array.length chHx) >= cnt with 
-                        | true -> 
-                            let divs = match cnt > 0 with | true -> (Array.length chHx) / cnt | false -> 1
-                            chHx |> Array.chunkBySize divs |> Array.map Array.head |> Array.take cnt
-                        | false -> 
-                            Array.append chHx (Array.replicate (max 0 (cnt - (Array.length chHx))) (identity elv))
-                    
-                    let cxc1 = coxel seq elv (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs (Array.tail tre)) (globalOcc.ToArray())
-                    
-                    let localOcc = System.Collections.Generic.List<Hxl>()
-                    localOcc.AddRange(globalOcc)
-                    for cx in cxc1 do localOcc.AddRange(cx.Hxls)
-                    let chOc1 = hxlUni 2 (localOcc.ToArray())
-                    
-                    cxc1 |> Array.map (fun x -> 
-                        let h2 = hxlChk seq elv chOc1 x.Hxls
-                        let b2 = hxlChk seq elv chOc1 [|x.Base|] |> Array.tryHead |> Option.defaultValue x.Base
-                        { x with Hxls = h2; Base = b2 })
-                
-                let finalAcc = System.Collections.Generic.List<Cxl>()
-                finalAcc.AddRange(ac1)
-
-                let rec cxCxCx (tre : (Prp*Prp*Prp)[][]) =
+                let rec cxCxCx (tre : (Prp*Prp*Prp)[][]) (currentAcc: Cxl[]) (currentOcc: Hxl[]) =
                     match Array.tryHead tre with 
                     | Some a -> 
-                        let newCxls = cxlCxl a (finalAcc.ToArray())
-                        finalAcc.AddRange(newCxls)
-                        for cx in newCxls do globalOcc.AddRange(cx.Hxls)
-                        cxCxCx (Array.tail tre)
-                    | None -> ()
+                        let targetId = a |> Array.head |> fun (i,_,_) -> i
+                        let bsIdx = currentAcc |> Array.findIndex (fun x -> x.Rfid = targetId)
+                        let bsCx = currentAcc.[bsIdx]
+                        
+                        let updatedHost, newCxls, newOcc = coxelChildren seq elv bsCx a currentOcc
+                        
+                        let nextAcc = 
+                            let mappedAcc = currentAcc |> Array.mapi (fun i cx -> match i = bsIdx with | true -> updatedHost | false -> cx)
+                            Array.append mappedAcc newCxls
+                            
+                        cxCxCx (Array.tail tre) nextAcc newOcc
+                    | None -> currentAcc
 
-                if (Array.length flatEntries < 2) then ()
-                else cxCxCx tree01
-
-                finalAcc.ToArray()
+                match Array.length flatEntries < 2 with
+                | true -> ac1
+                | false -> cxCxCx tree01 ac1 initialGlobalOcc
 
     result, Array.append [|bdOu|] bdIs
 ///
 
-/// <summary> Generate coxels based on string data. </summary>
-/// <param name="seq"> Sequence. </param>
-/// <param name="bas"> Base hexel. </param>
-/// <param name="occ"> Unavailable hexels. </param>
-/// <returns> Coxel array </returns>    
-let spaceCxl (occ : Hxl[]) (str : string) = 
-    generateCoreLayout str None None None occ
+
 
 let private extractAttrsFromHyw (text: string) =
     let m = System.Text.RegularExpressions.Regex.Match(text, @"\(([^)]*)\)")
@@ -505,15 +506,15 @@ let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (i
             | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
         convert (abs value) ""
 
-    let finalBatch, _ = generateCoreLayout str (Some seq) (Some ouStr) (Some ilStr) initialOcc
+    let finalBatch, _ = generateCxlLayout str (Some seq) (Some ouStr) (Some ilStr) initialOcc
 
-    let sb = System.Text.StringBuilder()
-    finalBatch |> Array.iteri (fun j cxl ->
-        match j > 0 with | true -> sb.Append(";") |> ignore | false -> ()
-        cxl.Hxls |> Array.iteri (fun k h ->
+    finalBatch
+    |> Array.map (fun cxl ->
+        cxl.Hxls 
+        |> Array.map (fun h ->
             let (ax, ay, _) = hxlCrd h
-            match k > 0 with | true -> sb.Append(" ") |> ignore | false -> ()
-            sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
+            toBase36 (int64 ax) + "." + toBase36 (int64 ay)
         )
+        |> String.concat " "
     )
-    sb.ToString()
+    |> String.concat ";"
