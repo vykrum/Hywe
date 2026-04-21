@@ -107,7 +107,7 @@ window.disposeWebGL = (canvasId) => {
 
 // --- Initialize WebGL extruded polygons ---
 // --- Initialize WebGL extruded polygons ---
-window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolygons) => {
+window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolygons, centroids) => {
     window.disposeWebGL(canvasId);
 
     const canvas = document.getElementById(canvasId);
@@ -120,7 +120,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
         gl = canvas.getContext("webgl");
         if (!gl) {
             console.warn("WebGL context not available, retrying in 50ms...");
-            setTimeout(() => window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons), 50);
+            setTimeout(() => window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids), 50);
             return;
         }
         canvas._glContext = gl;
@@ -164,6 +164,38 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
     const scaleXY = 2 / Math.max(maxX - minX, maxY - minY);
     const scaleZ = scaleXY;
 
+    // --- Normalize Centroids ---
+    const modelCentroids = (centroids || []).map(([x, y, z]) => [
+        (x - cx) * scaleXY,
+        (y - cy) * scaleXY,
+        z * scaleZ
+    ]);
+
+    // --- Precompute Wall Candidates for Labels ---
+    const massWalls = [];
+    if (edgePolygons?.length) {
+        edgePolygons.forEach((poly, i) => {
+            const height = (heights?.[i] ?? 1.0) * scaleZ;
+            let walls = [];
+            for (let j = 0; j < poly.length; j++) {
+                const [x1, y1] = poly[j];
+                const [x2, y2] = poly[(j + 1) % poly.length];
+
+                const nx1 = (x1 - cx) * scaleXY;
+                const ny1 = (y1 - cy) * scaleXY;
+                const nx2 = (x2 - cx) * scaleXY;
+                const ny2 = (y2 - cy) * scaleXY;
+
+                // Midpoint of the wall, vertically centered
+                let mx = (nx1 + nx2) / 2;
+                let my = (ny1 + ny2) / 2;
+                let mz = height / 2;
+                walls.push([mx, my, mz]);
+            }
+            massWalls.push(walls);
+        });
+    }
+
     // --- Prepare face buffers (top + bottom) ---
     const faceVertices = [], faceColors = [];
     meshes.forEach((tris, i) => {
@@ -182,8 +214,9 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
                 faceColors.push(...col);
             });
 
-            // Bottom face
-            tri.forEach(([x, y]) => {
+            // Bottom face (reversed winding for correct outward normal)
+            for (let j = tri.length - 1; j >= 0; j--) {
+                const [x, y] = tri[j];
                 const nx = (x - cx) * scaleXY;
                 const ny = (y - cy) * scaleXY;
                 const nz = 0;
@@ -191,7 +224,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
                 const col = baseColor.map(c => c * shade);
                 faceVertices.push(nx, ny, nz);
                 faceColors.push(...col);
-            });
+            }
         });
     });
 
@@ -210,10 +243,10 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
                 const nx2 = (x2 - cx) * scaleXY;
                 const ny2 = (y2 - cy) * scaleXY;
 
-                // Wall (two triangles per edge)
+                // Wall (two triangles per edge, outward winding)
                 const wallVerts = [
-                    [nx1, ny1, 0], [nx1, ny1, height], [nx2, ny2, height],
-                    [nx1, ny1, 0], [nx2, ny2, height], [nx2, ny2, 0]
+                    [nx1, ny1, 0], [nx2, ny2, height], [nx1, ny1, height],
+                    [nx1, ny1, 0], [nx2, ny2, 0], [nx2, ny2, height]
                 ];
                 wallVerts.forEach(([vx, vy, vz]) => {
                     faceVertices.push(vx, vy, vz);
@@ -316,7 +349,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
 
         canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); console.warn("WebGL context lost."); });
         canvas.addEventListener("webglcontextrestored", () => {
-            window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons);
+            window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids);
         });
         canvas._listenersAdded = true;
     }
@@ -324,6 +357,30 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // --- Helpers for Labels ---
+    function transformPoint(m, v) {
+        let x = v[0], y = v[1], z = v[2], w = 1.0;
+        let resX = m[0]*x + m[4]*y + m[8]*z + m[12]*w;
+        let resY = m[1]*x + m[5]*y + m[9]*z + m[13]*w;
+        let resZ = m[2]*x + m[6]*y + m[10]*z + m[14]*w;
+        let resW = m[3]*x + m[7]*y + m[11]*z + m[15]*w;
+        return { x: resX/resW, y: resY/resW, z: resZ/resW, w: resW };
+    }
+
+    function multiplyMat4(a, b) {
+        let out = new Float32Array(16);
+        for(let col = 0; col < 4; col++) {
+            for(let row = 0; row < 4; row++) {
+                out[col*4+row] = 
+                    a[0*4+row]*b[col*4+0] + 
+                    a[1*4+row]*b[col*4+1] + 
+                    a[2*4+row]*b[col*4+2] + 
+                    a[3*4+row]*b[col*4+3];
+            }
+        }
+        return out;
+    }
 
     // --- Draw loop ---
     function draw() {
@@ -359,6 +416,88 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
             if (aPos !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, edgeBuf); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aPos); }
             if (aCol !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, edgeColorBuf); gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aCol); }
             gl.drawArrays(gl.LINES, 0, edgeVertices.length / 3);
+        }
+
+        // --- Update HTML Labels ---
+        if (modelCentroids && modelCentroids.length > 0) {
+            const vpMatrix = multiplyMat4(proj, view);
+            
+            // Dynamically select the best anchor based on camera elevation
+            let dynamicAnchors = [];
+            for (let i = 0; i < modelCentroids.length; i++) {
+                let walls = massWalls[i];
+                let height = (heights?.[i] ?? 1.0) * scaleZ;
+                let topCenter = [modelCentroids[i][0], modelCentroids[i][1], height];
+                
+                let bestPoint = topCenter; 
+                
+                // If the camera is below the top surface, the roof isn't clearly visible. Use the closest wall.
+                if (camZ <= height) {
+                    if (walls && walls.length > 0) {
+                        let minDist = Infinity;
+                        for (let w = 0; w < walls.length; w++) {
+                            let pt = walls[w];
+                            let distSq = (pt[0] - camX)**2 + (pt[1] - camY)**2 + (pt[2] - camZ)**2;
+                            if (distSq < minDist) {
+                                minDist = distSq;
+                                bestPoint = pt;
+                            }
+                        }
+                    }
+                }
+                dynamicAnchors.push(bestPoint);
+            }
+
+            let screenPts = dynamicAnchors.map((c, i) => {
+                let pt = transformPoint(vpMatrix, c);
+                let px = (pt.x + 1) / 2 * w;
+                let py = (-pt.y + 1) / 2 * h; // WebGL NDC y is up, screen y is down
+                return { i: i, x: px, y: py, z: pt.z, w_clip: pt.w };
+            });
+
+            // Filter points behind camera OR off-screen entirely
+            screenPts = screenPts.filter(p => 
+                p.w_clip > 0 && 
+                p.z >= -1.0 && p.z <= 1.0 &&
+                p.x >= -40 && p.x <= w + 40 &&
+                p.y >= -40 && p.y <= h + 40
+            );
+            
+            // Sort points from front to back (closest to camera first)
+            screenPts.sort((a, b) => a.z - b.z);
+
+            // Simple 2D Occlusion Culling
+            // If two labels overlap significantly, we hide the one that is further away
+            const labelRadiusX = 25; 
+            const labelRadiusY = 10; 
+            for (let k = 0; k < screenPts.length; k++) {
+                let curr = screenPts[k];
+                if (curr.hidden) continue;
+
+                for (let l = k + 1; l < screenPts.length; l++) {
+                    let next = screenPts[l];
+                    if (next.hidden) continue;
+
+                    // Check overlap
+                    if (Math.abs(curr.x - next.x) < labelRadiusX && Math.abs(curr.y - next.y) < labelRadiusY) {
+                        next.hidden = true; // 'next' is guaranteed to be further away because of the z-sort
+                    }
+                }
+            }
+
+            // Apply to DOM
+            for (let j = 0; j < modelCentroids.length; j++) {
+                let labelDiv = document.getElementById('mass-label-g-' + j);
+                if (!labelDiv) continue;
+
+                let pt = screenPts.find(p => p.i === j && !p.hidden);
+                if (pt) {
+                    labelDiv.setAttribute('display', 'block');
+                    labelDiv.setAttribute('transform', 'translate(' + pt.x + ', ' + pt.y + ')');
+                } else {
+                    labelDiv.setAttribute('display', 'none');
+                }
+            }
         }
 
         canvas._drawLoopId = requestAnimationFrame(draw);

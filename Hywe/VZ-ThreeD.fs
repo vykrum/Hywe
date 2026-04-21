@@ -77,8 +77,7 @@ let triangulatePolygon
 /// Extrudes a polygon
 let polygonMesh 
     (poly2D: (float * float)[]) 
-    (height: float) 
-    : (float * float * float)[][] =
+    : (float * float)[][] =
 
     let basePoly = 
         match poly2D.Length with
@@ -87,33 +86,7 @@ let polygonMesh
 
     match triangulatePolygon basePoly with
     | [||] -> [||]
-    | tris ->
-        // 1. Recursive Top Faces
-        let rec getTopFaces i acc =
-            match i < tris.Length with
-            | false -> acc
-            | true ->
-                let tri = tris.[i] |> Array.map (fun (x, y) -> (x, y, height))
-                getTopFaces (i + 1) (tri :: acc)
-
-        // 2. Recursive Side Walls (2 triangles per edge)
-        let rec getSideWalls i acc =
-            match i < basePoly.Length with
-            | false -> acc
-            | true ->
-                let (x1, y1) = basePoly.[i]
-                let (x2, y2) = basePoly.[(i + 1) % basePoly.Length]
-                
-                let wall1 = [| (x1, y1, 0.0); (x2, y2, 0.0); (x2, y2, height) |]
-                let wall2 = [| (x1, y1, 0.0); (x2, y2, height); (x1, y1, height) |]
-                
-                getSideWalls (i + 1) (wall2 :: wall1 :: acc)
-
-        // Combine lists and convert to final array
-        let topList = getTopFaces 0 []
-        let allFaces = getSideWalls 0 topList
-        
-        allFaces |> List.toArray
+    | tris -> tris
 
 let extrudePolygons
     (js: IJSRuntime)
@@ -127,7 +100,11 @@ let extrudePolygons
     // 1. Helper: Point conversion
     let toPoly (x: Cxl) =
         cxlPrm x elv
-        |> Geometry.removeSawtooth x.Seqn
+        |> Geometry.cleanPolygon x.Seqn
+        |> fun pts -> 
+            if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
+                pts.[0 .. pts.Length - 2] 
+            else pts
         |> Array.map (fun (xi, yi) -> (float xi, float yi))
 
     // 2. Helper: Color normalization
@@ -158,32 +135,37 @@ let extrudePolygons
         | items -> Array.unzip items
 
     // 4. Loop-free Mesh Assembler (Tail Recursive)
-    let rec buildMeshes i accMeshes accEdges accHeights =
+    let rec buildMeshes i accMeshes accEdges accHeights accCentroids =
         match i < polygonsFinal.Length with
         | false -> 
             (List.rev accMeshes |> List.toArray, 
              List.rev accEdges |> List.toArray, 
-             List.rev accHeights |> List.toArray)
+             List.rev accHeights |> List.toArray,
+             List.rev accCentroids |> List.toArray)
         | true ->
             let h = initHeight - float i * 0.01
             let poly = polygonsFinal.[i]
             
             // Generate mesh and transform for WebGL (Flipping Y)
             let mesh = 
-                polygonMesh poly h 
-                |> Array.map (Array.map (fun (x, y, z) -> [| x; -y; z |]))
+                polygonMesh poly 
+                |> Array.map (Array.map (fun (x, y) -> [| x; -y |]))
             
             let edge = poly |> Array.map (fun (x, y) -> [| x; -y |])
             
-            buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights)
+            let cx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
+            let cy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
+            let centroid = [| cx; -cy; h / 2.0 |]
+            
+            buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (centroid :: accCentroids)
 
     // 5. Final Async Execution
     async {
         do! Async.Sleep 30
         
         let colorsJs = colorsFinal |> Array.map normalizeColor
-        let meshes, edges, heights = buildMeshes 0 [] [] []
+        let meshes, edges, heights, centroids = buildMeshes 0 [] [] [] []
 
-        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges).AsTask()
+        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges, centroids).AsTask()
             |> Async.AwaitTask
     }

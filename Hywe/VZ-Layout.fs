@@ -493,7 +493,7 @@ let alternateConfigurations
                 let isSelected = selectedIndex = Some i
 
                 elt "g" {
-                    for s in cfg.shapes do
+                    for j, s in cfg.shapes |> Array.indexed do
                         // Filter: Only show if polygon has points
                         if not (Array.isEmpty s.points) then
                             let xy = s.points 
@@ -512,10 +512,35 @@ let alternateConfigurations
                                 if isSelected then
                                     let tx = ox + (s.lx * scale)
                                     let ty = oy + (s.ly * scale)
+                                    let pathId = $"batch_path_{i}_{j}"
+                                    let r = 10.0
+                                    
+                                    elt "path" {
+                                        "id" => pathId
+                                        "fill" => "none"
+                                        "d" => $"M {tx},{ty + r} A {r},{r} 0 1,1 {tx},{ty - r} A {r},{r} 0 1,1 {tx},{ty + r}"
+                                    }
+                                    
                                     elt "text" {
-                                        "x" => tx; "y" => (ty + 3.0)
-                                        attr.style "font-family:sans-serif; font-size:9px; fill:white; text-anchor:middle; font-weight:bold; pointer-events:none;"
-                                        text s.name 
+                                        "font-weight" => if j = 0 then "700" else "400"
+                                        "fill" => if j = 0 then "#333333" else "#666666"
+                                        "font-size" => "10px"
+                                        "font-family" => "Verdana"
+                                        "text-anchor" => "middle"
+                                        attr.style "text-transform: lowercase; pointer-events: none;"
+                                        elt "textPath" {
+                                            "href" => $"#{pathId}"
+                                            "startOffset" => "50%"
+                                            "letter-spacing" => "0.5px"
+                                            text s.name
+                                        }
+                                    }
+                                    
+                                    elt "circle" {
+                                        "cx" => tx
+                                        "cy" => ty
+                                        "r" => 5.0
+                                        "fill" => s.color
                                     }
                             }
 
