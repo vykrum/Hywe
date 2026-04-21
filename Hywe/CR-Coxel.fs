@@ -130,6 +130,49 @@ let coxel
         ) szn idn cl1
 ///
 
+/// <summary> Generate child coxels. </summary>
+/// <param name="sqn"> Sequence. </param>
+/// <param name="elv"> Elevation. </param>
+/// <param name="bsCx"> Host/Base Coxel. </param>
+/// <param name="tre"> Batch of target properties (includes Host ID as first element). </param>
+/// <param name="occ"> Currently occupied hexels. </param>
+/// <returns> A tuple of (Updated Host Coxel, Generated Child Coxels, Updated Occupied Hexels) </returns>
+let coxelChildren
+    (sqn : Sqn)
+    (elv : int)
+    (bsCx : Cxl)
+    (tre : (Prp*Prp*Prp)[])
+    (occ : Hxl[]) =
+    
+    let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+    let cnt = (Array.length tre) - 1
+    
+    let chBs = 
+        match (Array.length chHx) >= cnt with 
+        | true -> 
+            let divs = match cnt > 0 with | true -> (Array.length chHx) / cnt | false -> 1
+            chHx |> Array.chunkBySize divs |> Array.map Array.head |> Array.take cnt
+        | false -> 
+            Array.append chHx (Array.replicate (max 0 (cnt - (Array.length chHx))) (identity elv))
+            
+    let ini = Array.map2 (fun a (b, c, d) -> a, b, c, d) chBs (Array.tail tre)
+    let cxc1 = coxel sqn elv ini occ
+    
+    let chOc1 = 
+        cxc1
+        |> Array.collect (fun cx -> cx.Hxls)
+        |> Array.append occ
+        |> hxlUni 2
+    
+    let finalCxc =
+        cxc1 |> Array.map (fun x -> 
+            let h2 = hxlChk sqn elv chOc1 x.Hxls
+            let b2 = hxlChk sqn elv chOc1 [|x.Base|] |> Array.tryHead |> Option.defaultValue x.Base
+            { x with Hxls = h2; Base = b2 })
+            
+    bsCx, finalCxc, chOc1
+///
+
 /// <summary> Count open/exposed Hexels. </summary>
 /// <param name="cxl"> A coxel. </param>
 /// <param name="sqn"> Sequence to follow. </param>
@@ -170,26 +213,26 @@ let cxlHxl
             acc.Add(startNode)
             availableSet.Remove(startNode) |> ignore
             
-            let mutable current = startNode
-            let mutable cnt = hxl.Length
-            let mutable running = true
-            
-            while running && cnt > 1 do
-                let adj = adjacent sqn current
-                let validAdj = adj |> Array.filter (fun x -> availableSet.Contains(x))
-                
-                let nextOpt = 
-                    if opt then Array.tryLast validAdj
-                    else Array.tryHead validAdj
+            let rec loop current cnt =
+                match cnt with
+                | c when c <= 1 -> ()
+                | _ ->
+                    let adj = adjacent sqn current
+                    let validAdj = adj |> Array.filter (fun x -> availableSet.Contains(x))
                     
-                match nextOpt with
-                | Some nxt ->
-                    acc.Add(nxt)
-                    availableSet.Remove(nxt) |> ignore
-                    current <- nxt
-                    cnt <- cnt - 1
-                | None -> 
-                    running <- false
+                    let nextOpt = 
+                        match opt with
+                        | true -> Array.tryLast validAdj
+                        | false -> Array.tryHead validAdj
+                        
+                    match nextOpt with
+                    | Some nxt ->
+                        acc.Add(nxt)
+                        availableSet.Remove(nxt) |> ignore
+                        loop nxt (cnt - 1)
+                    | None -> ()
+
+            loop startNode hxl.Length
             acc.ToArray()
 
         let hxl = hxo |> Array.sortByDescending (fun x -> available sqn elv x hxo)
@@ -224,21 +267,20 @@ let cxlHxl
             acc.Add(startNode)
             availableSet.Remove(startNode) |> ignore
             
-            let mutable current = startNode
-            let mutable cnt = hxlArr.Length
-            let mutable running = true
-            
-            while running && cnt > 1 do
-                let d = (adjacent sqn current) |> Array.tail
-                let e = d |> Array.tryFind (fun x -> availableSet.Contains(x))
-                match e with
-                | Some nxt ->
-                    acc.Add(nxt)
-                    availableSet.Remove(nxt) |> ignore
-                    current <- nxt
-                    cnt <- cnt - 1
-                | None ->
-                    running <- false
+            let rec loop current cnt =
+                match cnt with
+                | c when c <= 1 -> ()
+                | _ ->
+                    let d = (adjacent sqn current) |> Array.tail
+                    let e = d |> Array.tryFind (fun x -> availableSet.Contains(x))
+                    match e with
+                    | Some nxt ->
+                        acc.Add(nxt)
+                        availableSet.Remove(nxt) |> ignore
+                        loop nxt (cnt - 1)
+                    | None -> ()
+
+            loop startNode hxlArr.Length
             acc.ToArray()
 
         let hxl = hxl |> Array.sortByDescending (fun x -> available sqn elv x hxl)
