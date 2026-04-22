@@ -245,7 +245,7 @@ let increment
     | _ -> (hxlVld sqn (identity elv),-1)
 ///
 
-/// <summary> Increment Hexel using HashSet for performance. </summary>
+/// <summary> Increment Hexel using HashSet for performance while maintaining original selection logic. </summary>
 let incrementSet 
     (sqn : Sqn)
     (elv : int)
@@ -254,18 +254,31 @@ let incrementSet
     match hxo with 
     | x, y when y >= 0 -> 
         let adj = adjacent sqn x
-        // We look for the first available neighbor. 
-        // Original logic used Array.except which is expensive.
-        // We also check for connectivity (inc2 logic).
-        let mutable found = None
-        let mutable i = 1
-        while i < adj.Length && found.IsNone do
+        // inc1: Filtered available neighbors
+        let inc1 = ResizeArray<Hxl>()
+        for i = 1 to 6 do
             let n = adj.[i]
-            if not (occ.Contains(n)) && n <> (identity elv) then
-                found <- Some n
-            i <- i + 1
-            
-        match found with
+            // Original logic: Array.except occ, where occ included hxo and identity elv
+            if not (occ.Contains(n)) && n <> x && n <> (identity elv) then
+                inc1.Add(n)
+        
+        let inc2 = 
+            match inc1.Count >= 2 with
+            | true ->
+                let head = inc1.[0]
+                let next = inc1.[1]
+                // Check adjacency of the first two available neighbors
+                let adjNext = adjacent sqn next
+                let mutable isAdj = false
+                for k = 0 to 6 do if adjNext.[k] = head then isAdj <- true
+                
+                match isAdj with
+                | true -> Some head
+                | false -> Some inc1.[inc1.Count - 1]
+            | false ->
+                if inc1.Count = 1 then Some inc1.[0] else None
+                
+        match inc2 with 
         | Some a -> a, y
         | None -> (hxlVld sqn (identity elv), -1)
     | _ -> (hxlVld sqn (identity elv), -1)

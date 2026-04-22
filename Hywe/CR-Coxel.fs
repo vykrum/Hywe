@@ -83,14 +83,14 @@ let coxel
                 acc |> Array.Parallel.mapi (fun i row ->
                     let (_, count) = hxo.[i]
                     
-                    // Scan backwards to find the first hexel with available neighbors
+                    // Scan forward to find the first hexel with available neighbors (restores original growth behavior)
                     let mutable foundPoint = None
-                    let mutable j = row.Count - 1
-                    while j >= 0 && foundPoint.IsNone do
+                    let mutable j = 0
+                    while j < row.Count && foundPoint.IsNone do
                         let h, _ = row.[j]
                         if (availableSet sqn elv h occSet) > 0 then
                             foundPoint <- Some h
-                        j <- j - 1
+                        j <- j + 1
                     
                     match foundPoint with
                     | Some h -> (h, count - 1)
