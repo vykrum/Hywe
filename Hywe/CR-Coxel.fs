@@ -57,57 +57,64 @@ let coxel
     let idn = ini |> Array.map (fun (h, r, _, _) -> h, r)
 
     let cnt = bas |> Array.map snd |> function [||] -> 0 | x -> Array.max x
-    let acc = bas |> Array.map (fun x -> [| x |])
-    let oc1 = (Array.append occ (getHxls bas)) |> hxlUni 1
+    
+    // Use ResizeArrays for efficient growth
+    let acc = bas |> Array.map (fun x -> 
+        let list = System.Collections.Generic.List<Hxl * int>()
+        list.Add(x)
+        list)
+    
+    // Use HashSet for O(1) occupancy checks
+    let initialOcc = Array.append occ (getHxls bas)
+    let occSet = hxlSet initialOcc
         
     let rec clsts 
         (hxo : (Hxl * int)[]) 
         (elv : int) 
-        (occ : Hxl[]) 
-        (acc : (Hxl * int)[][]) 
+        (occSet : System.Collections.Generic.HashSet<Hxl>) 
+        (acc : System.Collections.Generic.List<Hxl * int>[]) 
         (cnt : int) = 
     
         match cnt with 
         | c when c < 1 -> acc
         | _ -> 
-            //Fuse transformation: Find new heads and decrement counts in one pass
+            // Find growth points in parallel
             let hx1 = 
                 acc |> Array.Parallel.mapi (fun i row ->
                     let (_, count) = hxo.[i]
-                    row 
-                    |> Array.tryFind (fun a -> (available sqn elv a occ) > 0)
-                    |> function
-                       | Some (h, _) -> (h, count - 1)
-                       | None        -> (hxlVld sqn (RV(0,0,elv)), 0xFFFFFFFF)
+                    
+                    // Scan backwards to find the first hexel with available neighbors
+                    let mutable foundPoint = None
+                    let mutable j = row.Count - 1
+                    while j >= 0 && foundPoint.IsNone do
+                        let h, _ = row.[j]
+                        if (availableSet sqn elv h occSet) > 0 then
+                            foundPoint <- Some h
+                        j <- j - 1
+                    
+                    match foundPoint with
+                    | Some h -> (h, count - 1)
+                    | None   -> (hxlVld sqn (RV(0,0,elv)), 0xFFFFFFFF)
                 )
 
-            let inc = increments sqn elv hx1 occ
+            // Calculate increments for this step
+            let currentOcc = occSet |> Seq.toArray
+            let inc = increments sqn elv hx1 currentOcc
                             
-            //Efficiently grow the accumulator
-            let nextAcc = 
-                Array.map2 (fun (current: (Hxl * int)[]) (newEl: Hxl * int) -> 
-                    let len = current.Length
-                    Array.init (len + 1) (fun i -> if i < len then current.[i] else newEl)) 
-                    acc 
-                    inc
+            // Update clusters and occupancy set
+            for i = 0 to acc.Length - 1 do
+                let newEl = inc.[i]
+                acc.[i].Add(newEl)
+                let h, _ = newEl
+                let x, y, z = hxlCrd h
+                occSet.Add(AV(x, y, z)) |> ignore
 
-            //Rebuild occupancy: Extract Hxl from (Hxl * int) tuples explicitly
-            let nextOcc = 
-                [| 
-                    yield! occ
-                    yield! (hxo |> Array.map fst) // Extract Hxl from hxo
-                    yield! (inc |> Array.map fst) // Extract Hxl from inc
-                    yield! (hx1 |> Array.map fst) // Extract Hxl from hx1
-                |] 
-                |> Array.distinct
-                |> hxlUni 1
-
-            clsts hx1 elv nextOcc nextAcc (cnt - 1)
+            clsts hx1 elv occSet acc (cnt - 1)
 
     let cls = 
-        clsts bas elv oc1 acc cnt
-        |> Array.Parallel.map (fun row -> 
-            row |> Array.filter (fun (_, z) -> z >= 0))
+        clsts bas elv occSet acc cnt
+        |> Array.map (fun row -> 
+            row.ToArray() |> Array.filter (fun (_, z) -> z >= 0))
         
     let cl1 = cls |> Array.Parallel.map getHxls
 
