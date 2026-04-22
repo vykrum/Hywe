@@ -51,6 +51,9 @@ jobs:
             -p:PublishTrimmed=true \
             -o ${{ env.PUBLISH_DIR }}
 
+      - name: Clean up debug symbols (.pdb)
+        run: find ${{ env.PUBLISH_DIR }}/wwwroot -name "*.pdb" -type f -delete
+
       - name: Rewrite base href
         uses: SteveSandersonMS/ghaction-rewrite-base-href@v1
         with:

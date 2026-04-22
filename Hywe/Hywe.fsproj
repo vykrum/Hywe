@@ -4,6 +4,8 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<UseBrowserLink>false</UseBrowserLink>
 		<RunAOTCompilation Condition="'$(DeployAOT)' == 'true'">true</RunAOTCompilation>
+		<PublishTrimmed>true</PublishTrimmed>
+		<WasmBuildNativeStrip>true</WasmBuildNativeStrip>
 	</PropertyGroup>
 	
 	<ItemGroup>
