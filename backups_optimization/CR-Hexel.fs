@@ -176,15 +176,6 @@ let hxlUni
     hxl |> Array.map (hxlCrd >> constructor)
 ///
 
-/// <summary> Create a HashSet of AV hexels for O(1) lookup. </summary>
-let hxlSet (hxls: Hxl seq) = 
-    let set = System.Collections.Generic.HashSet<Hxl>()
-    for h in hxls do
-        let x,y,z = hxlCrd h
-        set.Add(AV(x,y,z)) |> ignore
-    set
-///
-
 /// <summary> Get Hexel from Tuple. </summary>
 /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param>
 let getHxls 
@@ -245,45 +236,6 @@ let increment
     | _ -> (hxlVld sqn (identity elv),-1)
 ///
 
-/// <summary> Increment Hexel using HashSet for performance while maintaining original selection logic. </summary>
-let incrementSet 
-    (sqn : Sqn)
-    (elv : int)
-    (hxo : Hxl * int) 
-    (occ : System.Collections.Generic.HashSet<Hxl>) = 
-    match hxo with 
-    | x, y when y >= 0 -> 
-        let adj = adjacent sqn x
-        // inc1: Filtered available neighbors
-        let inc1 = ResizeArray<Hxl>()
-        for i = 1 to 6 do
-            let n = adj.[i]
-            // Original logic: Array.except occ, where occ included hxo and identity elv
-            if not (occ.Contains(n)) && n <> x && n <> (identity elv) then
-                inc1.Add(n)
-        
-        let inc2 = 
-            match inc1.Count >= 2 with
-            | true ->
-                let head = inc1.[0]
-                let next = inc1.[1]
-                // Check adjacency of the first two available neighbors
-                let adjNext = adjacent sqn next
-                let mutable isAdj = false
-                for k = 0 to 6 do if adjNext.[k] = head then isAdj <- true
-                
-                match isAdj with
-                | true -> Some head
-                | false -> Some inc1.[inc1.Count - 1]
-            | false ->
-                if inc1.Count = 1 then Some inc1.[0] else None
-                
-        match inc2 with 
-        | Some a -> a, y
-        | None -> (hxlVld sqn (identity elv), -1)
-    | _ -> (hxlVld sqn (identity elv), -1)
-///
-
 /// <summary> Available Adjacent Hexels. </summary>
 /// <param name="sqn"> Sequence to follow. </param>
 /// <param name="hxo"> Hexel or Tuple containing Base hexel of collection and size. </param> 
@@ -304,21 +256,6 @@ let available
     |> Array.except 
         (Array.append occ [|hx1|])
     |> Array.length
-///
-
-/// <summary> Available Adjacent Hexels using HashSet for performance. </summary>
-let availableSet 
-    (sqn : Sqn)
-    (elv : int)
-    (hxo : Hxl)
-    (occ : System.Collections.Generic.HashSet<Hxl>) =  
-    let adj = adjacent sqn hxo
-    let mutable count = 0
-    for i = 1 to 6 do
-        let n = adj.[i]
-        if not (occ.Contains(n)) && n <> hxo then
-            count <- count + 1
-    count
 ///
 
 ///<summary> Assign Hexel type. </summary>
@@ -442,41 +379,23 @@ let increments
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
         (inc : (Hxl*int)[]) 
-        (occSet : System.Collections.Generic.HashSet<Hxl>) =   
+        (occ : Hxl[]) =   
+        let in1 = Array.map (fun x -> snd x)inc
+        let lc1 = getHxls hxo 
         let ic1 = getHxls inc 
+        let oc1 = Array.concat[|occ;lc1;ic1|] |> hxlUni 1
+        let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
+        let bl1 = Array.map2 (fun x y -> x=y) [|(0x0)..(Array.length ic1)-(0x1)|] id1   
+        let tp1 = Array.zip3 bl1 ic1 hxo  
+        tp1 |> Array.map2 (fun d (a,b,c) 
+                            -> match a with 
+                                | true -> b,d
+                                | false -> 
+                                        match ((available sqn elv c oc1) > 0x0) with 
+                                        | false -> (fst c),-1
+                                        | true -> fst(increment sqn elv c oc1),d) in1
         
-        // Use a local set for batch-level duplicate tracking
-        let localBatchSet = System.Collections.Generic.HashSet<Hxl>()
-        
-        Array.map2 (fun (hxBase, weight) (hxInc, _) ->
-            if hxInc <> (hxlVld sqn (identity elv)) && not (localBatchSet.Contains(hxInc)) then
-                localBatchSet.Add(hxInc) |> ignore
-                hxInc, weight
-            else
-                // Try to find an alternative
-                let next = incrementSet sqn elv (hxBase, weight) occSet
-                if fst next <> (hxlVld sqn (identity elv)) && not (localBatchSet.Contains(fst next)) then
-                    localBatchSet.Add(fst next) |> ignore
-                    next
-                else
-                    (hxlVld sqn (identity elv)), -1
-        ) hxo inc
-
-    let occSet = hxlSet occ
-    for (h, _) in hxo do
-        let x,y,z = hxlCrd h
-        occSet.Add(AV(x,y,z)) |> ignore
-        
-    let inc = 
-        hxo |> Array.map (fun st -> 
-            let next = incrementSet sqn elv st occSet
-            if fst next <> (hxlVld sqn (identity elv)) then
-                let x,y,z = hxlCrd (fst next)
-                occSet.Add(AV(x,y,z)) |> ignore
-            next
-        )
-            
-    replaceDuplicate sqn hxo inc occSet
+    replaceDuplicate sqn hxo inc occ
 ///
 
 /// <summary> Boundary Hexels Ring. </summary>
