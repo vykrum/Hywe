@@ -78,9 +78,9 @@ let coxel
         match cnt with 
         | c when c < 1 -> acc
         | _ -> 
-            // Find growth points in parallel
+            // Find growth points (sequential for WASM stability)
             let hx1 = 
-                acc |> Array.Parallel.mapi (fun i row ->
+                acc |> Array.mapi (fun i row ->
                     let (_, count) = hxo.[i]
                     
                     // Scan forward to find the first hexel with available neighbors (restores original growth behavior)
@@ -98,8 +98,7 @@ let coxel
                 )
 
             // Calculate increments for this step
-            let currentOcc = occSet |> Seq.toArray
-            let inc = increments sqn elv hx1 currentOcc
+            let inc = incrementsSet sqn elv hx1 occSet
                             
             // Update clusters and occupancy set
             for i = 0 to acc.Length - 1 do
@@ -116,10 +115,11 @@ let coxel
         |> Array.map (fun row -> 
             row.ToArray() |> Array.filter (fun (_, z) -> z >= 0))
         
-    let cl1 = cls |> Array.Parallel.map getHxls
+    let cl1 = cls |> Array.map getHxls
 
     Array.map3 (fun (y, z) (h, r) (cluster: Hxl[]) ->
-            let hx1 = hxlChk sqn elv (Array.append occ cluster) cluster
+            let clusterOcc = hxlSet (Array.append occ cluster)
+            let hx1 = hxlChkSet sqn elv clusterOcc cluster
 
             match hx1 with
             | [||] ->
@@ -173,8 +173,10 @@ let coxelChildren
     
     let finalCxc =
         cxc1 |> Array.map (fun x -> 
-            let h2 = hxlChk sqn elv chOc1 x.Hxls
-            let b2 = hxlChk sqn elv chOc1 [|x.Base|] |> Array.tryHead |> Option.defaultValue x.Base
+            let clusterOcc = hxlSet (Array.append chOc1 x.Hxls)
+            let h2 = hxlChkSet sqn elv clusterOcc x.Hxls
+            let baseCheck = hxlChkSet sqn elv clusterOcc [|x.Base|]
+            let b2 = if Array.isEmpty baseCheck then x.Base else baseCheck.[0]
             { x with Hxls = h2; Base = b2 })
             
     bsCx, finalCxc, chOc1

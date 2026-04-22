@@ -256,11 +256,12 @@ let incrementSet
         let adj = adjacent sqn x
         // inc1: Filtered available neighbors
         let inc1 = ResizeArray<Hxl>()
-        for i = 1 to 6 do
-            let n = adj.[i]
-            // Original logic: Array.except occ, where occ included hxo and identity elv
-            if not (occ.Contains(n)) && n <> x && n <> (identity elv) then
-                inc1.Add(n)
+        // Only AV hexels have growable neighbors (adj length will be 7)
+        if adj.Length > 1 then
+            for i = 1 to adj.Length - 1 do
+                let n = adj.[i]
+                if not (occ.Contains(n)) && n <> x && n <> (identity elv) then
+                    inc1.Add(n)
         
         let inc2 = 
             match inc1.Count >= 2 with
@@ -314,29 +315,37 @@ let availableSet
     (occ : System.Collections.Generic.HashSet<Hxl>) =  
     let adj = adjacent sqn hxo
     let mutable count = 0
-    for i = 1 to 6 do
-        let n = adj.[i]
-        if not (occ.Contains(n)) && n <> hxo then
-            count <- count + 1
+    if adj.Length > 1 then
+        for i = 1 to adj.Length - 1 do
+            let n = adj.[i]
+            if not (occ.Contains(n)) && n <> hxo then
+                count <- count + 1
     count
 ///
 
-///<summary> Assign Hexel type. </summary>
-/// <param name="sqn"> Sequence to follow. </param>
-/// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
-/// <param name="hxl"> All constituent hexels. </param>
-/// <returns> Reassigned Hexel Types </returns>
+/// <summary> Optimized version of hxlChk using a HashSet for performance. </summary>
+let hxlChkSet
+    (sqn : Sqn)
+    (elv : int)
+    (occSet : System.Collections.Generic.HashSet<Hxl>)
+    (hxl : Hxl[]) = 
+    hxl |> Array.map (fun x -> 
+        match (x = EX(hxlCrd x)) with 
+        | true -> x
+        | false -> 
+            // We check availability against the provided set
+            if (availableSet sqn elv x occSet) < 1 then 
+                RV(hxlCrd x)
+            else 
+                AV(hxlCrd x))
+
 let hxlChk
     (sqn : Sqn)
     (elv : int)
     (occ : Hxl[])
     (hxl : Hxl[]) = 
-    hxl |> Array.map (fun x -> 
-                                match (x = EX(hxlCrd x)) with 
-                                | true -> x
-                                | false -> match (available sqn elv x (Array.append occ hxl)) < 1 with 
-                                            | true -> RV(hxlCrd x)
-                                            | false -> AV(hxlCrd x))
+    let occSet = hxlSet (Array.append occ hxl)
+    hxlChkSet sqn elv occSet hxl
 ///
 
 ///<summary> Add Hexel at Narrow Bridge. </summary>
@@ -418,42 +427,27 @@ let hxlFil
 /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
 /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
 /// <returns> Array of Tuples containing Base hexel of collection and reduced size. </returns>
-let increments 
+/// <summary> Optimized increments using a HashSet for occupancy. </summary>
+let incrementsSet 
     (sqn : Sqn)
     (elv : int)
     (hxo : (Hxl*int)[]) 
-    (occ : Hxl[]) = 
-    let occ = (Array.append occ (getHxls hxo)) |> hxlUni 1
-    let inc = 
-        Array.scan (fun ac st -> 
-        let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity elv|]|]) |> hxlUni 1
-        increment sqn elv st (Array.append[|fst ac|] occ )) 
-            hxo[0] hxo
-            |> Array.tail
-    ///
+    (occSet : System.Collections.Generic.HashSet<Hxl>) = 
     
-    /// <summary> Generate alternate hexel in cases where there are overlapping hexels </summary>
-    /// <param name="sqn"> Sequence to follow. </param>
-    /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
-    /// <param name="hxo"> Array of Tuples containing Incremental hexel of collection and reduced size. </param>
-    /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
-    /// <returns> Array of Tuples containing alternate incremental hexel of collection and reduced size. </returns>
-    let replaceDuplicate 
+    // Nested helper for duplicate tracking
+    let replaceDuplicateSet 
         (sqn : Sqn)
+        (elv : int)
         (hxo : (Hxl*int)[]) 
         (inc : (Hxl*int)[]) 
         (occSet : System.Collections.Generic.HashSet<Hxl>) =   
-        let ic1 = getHxls inc 
         
-        // Use a local set for batch-level duplicate tracking
         let localBatchSet = System.Collections.Generic.HashSet<Hxl>()
-        
         Array.map2 (fun (hxBase, weight) (hxInc, _) ->
             if hxInc <> (hxlVld sqn (identity elv)) && not (localBatchSet.Contains(hxInc)) then
                 localBatchSet.Add(hxInc) |> ignore
                 hxInc, weight
             else
-                // Try to find an alternative
                 let next = incrementSet sqn elv (hxBase, weight) occSet
                 if fst next <> (hxlVld sqn (identity elv)) && not (localBatchSet.Contains(fst next)) then
                     localBatchSet.Add(fst next) |> ignore
@@ -462,7 +456,7 @@ let increments
                     (hxlVld sqn (identity elv)), -1
         ) hxo inc
 
-    let occSet = hxlSet occ
+    // Add current heads to occupancy
     for (h, _) in hxo do
         let x,y,z = hxlCrd h
         occSet.Add(AV(x,y,z)) |> ignore
@@ -476,7 +470,16 @@ let increments
             next
         )
             
-    replaceDuplicate sqn hxo inc occSet
+    replaceDuplicateSet sqn elv hxo inc occSet
+
+/// <summary> Increment Hexels. </summary>
+let increments 
+    (sqn : Sqn)
+    (elv : int)
+    (hxo : (Hxl*int)[]) 
+    (occ : Hxl[]) = 
+    let occSet = hxlSet occ
+    incrementsSet sqn elv hxo occSet
 ///
 
 /// <summary> Boundary Hexels Ring. </summary>
