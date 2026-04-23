@@ -107,7 +107,7 @@ let coxel
                 let h, _ = newEl
                 let x, y, z = hxlCrd h
                 occSet.Add(AV(x, y, z)) |> ignore
-
+            
             clsts hx1 elv occSet acc (cnt - 1)
 
     let cls = 
@@ -389,22 +389,28 @@ let cxlPrm
             | Turning   -> p1 :: clean (p2 :: p3 :: rest)
         | _ -> points
 
+    // "Halfway" Boundary Logic:
+    // Instead of using the centers of neighboring hexels (outset), 
+    // we calculate the midpoint between each interior hexel and its exterior neighbor.
+    // This aligns the boundary exactly with the shared edges of the hex grid.
     let outside = hxlOfs cxl.Seqn elv cxl.Hxls
     let insideSet = hxlSet cxl.Hxls
     
     outside 
     |> Array.collect (fun hout ->
         let (ox, oy, _) = hxlCrd hout
+        // Check all neighbors of each 'outside' hexel
         adjacent cxl.Seqn hout 
         |> Array.choose (fun n -> 
             let (ix, iy, _) = hxlCrd n
+            // If the neighbor is 'inside' the coxel, the boundary vertex is the midpoint
             if insideSet.Contains(AV(ix, iy, elv)) then
                 Some ( (float ox + float ix) / 2.0, (float oy + float iy) / 2.0 )
             else None)
     )
-    |> Array.distinct
+    |> Array.distinct // Remove duplicate midpoints (shared by multiple edges)
     |> Array.toList
-    |> clean
+    |> clean         // Remove collinear points and clean the polygon winding
     |> List.toArray
 ///
 
@@ -427,17 +433,16 @@ let cxlCnt
         let sumX = hxXY |> Array.sumBy fst
         let sumY = hxXY |> Array.sumBy snd
         
-        let centerX = sumX / numPoints
-        let centerY = sumY / numPoints
-        let center = (centerX, centerY)
+        let centerX = float sumX / float numPoints
+        let centerY = float sumY / float numPoints
+        
         let closestHxl = 
-                    hxls 
-                    |> Array.minBy (fun hxl ->
-                        let x, y, _ = hxlCrd hxl
-                        let centerX, centerY = center 
-                        let dx = x - centerX
-                        let dy = y - centerY
-                        dx*dx + dy*dy
-                    )
+            hxls 
+            |> Array.minBy (fun hxl ->
+                let x, y, _ = hxlCrd hxl
+                let dx = float x - centerX
+                let dy = float y - centerY
+                dx*dx + dy*dy
+            )
         let finalX, finalY, _ = hxlCrd closestHxl
         (finalX, finalY)

@@ -190,8 +190,6 @@ let crd
     (hxXY02,hxMxmX,hxMxmY)
 ///
 
-
-
 /// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>
 /// <param name="bdr"> Boundary polygons </param>
@@ -217,13 +215,20 @@ let svgCoxels
     // Shift and Scale Vertices
     let padd = float (5*scl)
     let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a * float scl, b * float scl)x) crd
+    // --- Coordinate Transformation & Offsetting ---
+    // Calculate global shifts to normalize the layout within the SVG viewport
     let minX1 = fst (Array.minBy fst (Array.concat crd1))
     let maxX1 = fst (Array.maxBy fst (Array.concat crd1))
     let minY1 = snd (Array.minBy snd (Array.concat crd1))
     let maxY1 = snd (Array.maxBy snd (Array.concat crd1))
+    
+    // Shift points into the positive coordinate space with padding
     let shfX = (-1.0 * minX1) + padd
     let shfY = (-1.0 * minY1) + padd
+    
+    // Transform all vertices (already calculated as midpoints in cxlPrm)
     let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
+    
     let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
     let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
     
@@ -591,6 +596,3 @@ let serializeConfiguration
     )
     |> readOnlyDict
     |> JsonSerializer.Serialize
-
-
-

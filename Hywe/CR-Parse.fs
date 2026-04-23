@@ -60,8 +60,6 @@ let getAttr key f fallback (m: Map<string,string>) =
 /// <returns> A tuple of parsed attributes and space tree definitions. </returns>
 let spaceSeq 
     (spaceStr:string) = 
-    // Each hexel is 4sq units in area
-    let hxlAreaX = 4
     let splitTopLevel (s: string) : string[] =
         let rec loop (acc: string list) (curr: string) (depth: int) (chars: char list) =
             match chars with
@@ -234,83 +232,34 @@ let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc:
         
         cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
 ///
-
+let hxlAreaX = 4
 let hxlAreaFactor = 4.0
 
 /// <summary> Consolidates all reproportioning logic into one call. </summary>
-/// <param name="attributes"> Parsed site attribute map. </param>
-/// <param name="ntArea"> Net site area in sq units. </param>
+/// <param name="boundaryArea"> Net site area in sq units. </param>
+/// <param name="totalNodeArea"> Sum of all requested node areas. </param>
 /// <param name="rawTree"> Nested space tree of (id * area * label). </param>
 /// <returns> Tree with counts scaled to fill the available site area. </returns>
-let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * float * string)[][]) =
+let applyReproportioning (boundaryArea: float) (totalNodeArea: float) (rawTree: (string * float * string)[][]) =
     let hxlAreaFactor = 4.0
     
-    // 1. Calculate requested totals (in Area units)
-    let flatTree = rawTree |> Array.concat
-    let totalRequested = flatTree |> Array.sumBy (fun (_, area, _) -> area)
-    
-    // 2. Identify Unbound State
-    let isUnbound = ntArea <= 0.0
-
-    // 3. Target hexel count (how many hexels fit in the site)
-    let targetTotal = 
-        match isUnbound with
-        | true -> int (Math.Round(totalRequested / hxlAreaFactor))
-        | false -> int (Math.Round(ntArea / hxlAreaFactor))
-
-    // 4. Determine Scaling Ratio (Area scaling)
-    //    - Unbound:         ratio = 1.0  (use requested areas as-is)
-    //    - Absolute (X=0):  ratio = ntArea / totalRequested
-    //    - Explicit X=n:    ratio = n    (user-specified multiplier)
-    //    - Relative+Bound:  ratio = ntArea / totalRequested
-    //                       (scale proportionally so layout fills the site)
+    // 1. Determine Scaling Ratio
+    let isUnbound = boundaryArea <= 0.0
     let ratio = 
-        match isUnbound with
-        | true -> 1.0
-        | false ->
-            match attributes |> Map.tryFind "X" with
-            | Some "0" -> match totalRequested > 0.0 with | true -> ntArea / totalRequested | false -> 1.0
-            | Some a -> match Double.TryParse a with | true, v -> v | _ -> 1.0
-            | None -> 
-                // Relative + Boundary: scale so totals fill the site
-                match totalRequested > 0.0 with 
-                | true -> ntArea / totalRequested 
-                | false -> 1.0
+        if isUnbound || totalNodeArea <= 0.0 then 1.0 
+        else boundaryArea / totalNodeArea
 
-    // 5. Calculate floors and remainders (convert to hexels)
-    let initialData = 
-        flatTree |> Array.map (fun (id, area, lb) ->
-            let ideal = (area * ratio) / hxlAreaFactor
-            let flr = match area > 0.0 with | true -> max 1 (int (floor ideal)) | false -> 0
-            {| Id = id; Label = lb; Ideal = ideal; Floor = flr; Remainder = ideal - float flr |})
-
-    // 6. Distribute difference (The Largest Remainder Method)
-    let currentSum = initialData |> Array.sumBy (fun x -> x.Floor)
-    let diff = targetTotal - currentSum
-
-    let distributedCounts =
-        match diff > 0 && not isUnbound with
-        | true ->
-            let bonusIndices = 
-                initialData 
-                |> Array.mapi (fun i x -> i, x.Remainder)
-                |> Array.sortByDescending snd
-                |> Array.truncate diff
-                |> Array.map fst |> Set.ofArray
-            initialData |> Array.mapi (fun i x -> match bonusIndices.Contains i with | true -> x.Floor + 1 | false -> x.Floor)
-        | false ->
-            initialData |> Array.map (fun x -> x.Floor)
-
-    // 7. Reconstruct the nested array structure
-    let finalTree, _ = 
-        rawTree |> Array.mapFold (fun ptr row ->
-            let newRow, newPtr = 
-                row |> Array.mapFold (fun p (id, _, lb) ->
-                    (Refid id, Count distributedCounts.[p], Label lb), p + 1
-                ) ptr
-            newRow, newPtr
-        ) 0
-    finalTree
+    // 2. Scale and Round each node
+    rawTree |> Array.map (fun row ->
+        row |> Array.map (fun (id, area, lb) ->
+            // idealCount = (node area * scale ratio) / area per hexel (4.0)
+            let idealCount = (area * ratio) / hxlAreaFactor
+            let finalCount = 
+                if area > 0.0 then max 1 (int (Math.Round(idealCount)))
+                else 0
+            (Refid id, Count finalCount, Label lb)
+        )
+    )
 ///
 
 let generateCxlLayout 
@@ -379,10 +328,11 @@ let generateCxlLayout
             | true -> AV(0, 0, elv)
             | false -> hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv)) |> hxlUni 1 |> Array.last
 
-    // 8. Site Net Area
+    // 8. Site Net Area: Geometric area of the site boundary string (in sq units).
     let ntArea = polygonWithHolesArea bdOu bdIs
 
-    // 9. Occupancy
+    // 9. Occupancy: Defines blocked hexels. 
+    // Boundary hexels (ouHx) are currently added to 'occ', making them obstacles for nodes.
     let ouHx = match Array.isEmpty bdOu with | true -> [||] | false -> hxlPgn seq elv bdOu 
     let ilHx = match Array.isEmpty bdIs with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn seq elv)
     let occ = 
@@ -392,8 +342,14 @@ let generateCxlLayout
         list.AddRange(ilHx)
         list.ToArray()
 
-    // 10. Parse Space String
-    let tree01 = applyReproportioning spcAt1 ntArea spcTree
+    // 10. Reproportioning: Calculates node counts (Size) based on ntArea and requested areas.
+    // Sum the areas of all unique nodes to determine the scaling ratio.
+    let totalRequested = 
+        spcTree 
+        |> Array.concat 
+        |> Array.distinctBy (fun (id, _, _) -> id) 
+        |> Array.sumBy (fun (_, a, _) -> a)
+    let tree01 = applyReproportioning ntArea totalRequested spcTree
     let flatEntries = tree01 |> Array.concat
 
     // 11. Core Recursive Logic
@@ -402,32 +358,27 @@ let generateCxlLayout
         | None -> [||]
         | Some (id, ct, lb) ->
             let cti = match ct with | Count x when x > 0 -> Count (x - 1) | _ -> Count 0
-            let firstPrpId = tree01 |> Array.concat |> Array.head |> fun (i,_,_) -> i
-            let firstPrpLb = tree01 |> Array.concat |> Array.head |> fun (_,_,l) -> l
-            let ac0 = coxel seq elv [| bsHx, firstPrpId, cti, firstPrpLb |] occ
+            let ac0 = coxel seq elv [| bsHx, id, cti, lb |] occ
 
             match Array.tryHead ac0 with
             | None -> [||]
             | Some firstCxl ->
                 let ac1 = [| { firstCxl with Hxls = Array.except occ (Array.append [| firstCxl.Base |] firstCxl.Hxls) } |]
-                
-                let initialGlobalOcc = 
-                    [| occ; [|bsHx|]; ac1.[0].Hxls |] |> Array.concat
+                let initialGlobalOcc = [| occ; [|bsHx|]; ac1.[0].Hxls |] |> Array.concat
                 
                 let rec cxCxCx (tre : (Prp*Prp*Prp)[][]) (currentAcc: Cxl[]) (currentOcc: Hxl[]) =
                     match Array.tryHead tre with 
                     | Some a -> 
-                        let targetId = a |> Array.head |> fun (i,_,_) -> i
-                        let bsIdx = currentAcc |> Array.findIndex (fun x -> x.Rfid = targetId)
-                        let bsCx = currentAcc.[bsIdx]
-                        
-                        let updatedHost, newCxls, newOcc = coxelChildren seq elv bsCx a currentOcc
-                        
-                        let nextAcc = 
-                            let mappedAcc = currentAcc |> Array.mapi (fun i cx -> match i = bsIdx with | true -> updatedHost | false -> cx)
-                            Array.append mappedAcc newCxls
-                            
-                        cxCxCx (Array.tail tre) nextAcc newOcc
+                        let parentPrp = a |> Array.head |> fun (i,_,_) -> i
+                        match currentAcc |> Array.tryFindIndex (fun x -> x.Rfid = parentPrp) with
+                        | Some bsIdx ->
+                            let bsCx = currentAcc.[bsIdx]
+                            let updatedHost, newCxls, newOcc = coxelChildren seq elv bsCx a currentOcc
+                            let nextAcc = 
+                                let mappedAcc = currentAcc |> Array.mapi (fun i cx -> if i = bsIdx then updatedHost else cx)
+                                Array.append mappedAcc newCxls
+                            cxCxCx (Array.tail tre) nextAcc newOcc
+                        | None -> cxCxCx (Array.tail tre) currentAcc currentOcc
                     | None -> currentAcc
 
                 match Array.length flatEntries < 2 with
