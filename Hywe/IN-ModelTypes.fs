@@ -16,6 +16,20 @@ type PolygonExportData = {
     Height: int
 }
 
+type OnboardingStep =
+    | Welcome
+    | BoundaryGuide
+    | NodeGuide
+    | LayoutGuide
+    | Finish
+
+type OnboardingState = {
+    IsActive: bool
+    IsAutoSimulating: bool
+    CurrentStep: OnboardingStep
+    SeenSteps: Set<OnboardingStep>
+}
+
 /// <summary> Central application state for the interface. </summary>
 type Model =
     {
@@ -40,6 +54,7 @@ type Model =
         ShowSuccessMessage : bool
         IsRecording : bool
         PolygonExport: PolygonExportData
+        Onboarding: OnboardingState
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -69,6 +84,11 @@ type Message =
     | RecordResult of bool
     | StartVoiceCapture
     | OnVoiceResult of string
+    | NextOnboardingStep
+    | SkipOnboarding
+    | RestartOnboarding
+    | StartAutoSimulation
+    | StopAutoSimulation
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
 let syncPolygonState (p: PolygonEditorModel) =

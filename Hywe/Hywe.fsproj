@@ -22,6 +22,7 @@
 		<Compile Include="IN-Page.fs" />
 		<Compile Include="IN-Storage.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
+		<Compile Include="VZ-Help.fs" />
 		<Compile Include="IN-ModelHelpers.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />

@@ -48,6 +48,12 @@ let initModel =
         ShowSuccessMessage = false
         IsRecording = false
         PolygonExport = initialPolygonExport
+        Onboarding = {
+            IsActive = true
+            IsAutoSimulating = true
+            CurrentStep = Welcome
+            SeenSteps = Set.empty
+        }
     }
 
 /// Update
@@ -161,10 +167,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 model.PolygonExport.EntryStr
                                 model.PolygonExport.OuterStr
                                 model.PolygonExport.IslandsStr
+            
+            // Auto-dismiss onboarding on tree interaction
+            let onboarding = 
+                if model.Onboarding.IsActive then 
+                    { model.Onboarding with IsActive = false; IsAutoSimulating = false }
+                else model.Onboarding
+
             { model with 
                 Tree = updatedTree 
                 SrcOfTrth = newOutput 
-                NeedsHyweave = true }, 
+                NeedsHyweave = true
+                Onboarding = onboarding }, 
             Cmd.map TreeMsg treeCmd
 
     | PolygonEditorMsg subMsg ->
@@ -252,6 +266,57 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | OnVoiceResult text ->
         { model with IsRecording = false }, Cmd.none
 
+    | NextOnboardingStep ->
+        if not model.Onboarding.IsActive then model, Cmd.none
+        else
+        let nextStep = 
+            match model.Onboarding.CurrentStep with
+            | Welcome -> BoundaryGuide
+            | BoundaryGuide -> NodeGuide
+            | NodeGuide -> LayoutGuide
+            | LayoutGuide -> Finish
+            | Finish -> Finish
+
+        let isFinished = nextStep = Finish && model.Onboarding.CurrentStep = Finish
+        let newActivePanel = 
+            match nextStep with
+            | BoundaryGuide -> BoundaryPanel
+            | NodeGuide -> LayoutPanel
+            | LayoutGuide -> LayoutPanel
+            | _ -> model.ActivePanel
+
+        let cmd = 
+            if model.Onboarding.IsAutoSimulating && not isFinished then
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 7000 }) () (fun _ -> NextOnboardingStep)
+            else Cmd.none
+
+        { model with 
+            Onboarding = { model.Onboarding with 
+                            CurrentStep = nextStep
+                            IsActive = not isFinished
+                            SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
+            ActivePanel = newActivePanel
+        }, cmd
+
+    | SkipOnboarding ->
+        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }, 
+        Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete) // Just in case
+
+    | RestartOnboarding ->
+        { model with 
+            Onboarding = { IsActive = true; IsAutoSimulating = true; CurrentStep = Welcome; SeenSteps = Set.empty } 
+            ActivePanel = LayoutPanel
+        }, Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> NextOnboardingStep)
+
+    | StartAutoSimulation ->
+        { model with Onboarding = { model.Onboarding with IsAutoSimulating = true; CurrentStep = Welcome } },
+        Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> NextOnboardingStep)
+
+    | StopAutoSimulation ->
+        { model with Onboarding = { model.Onboarding with IsAutoSimulating = false } }, Cmd.none
+
+open Help
+
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
@@ -260,6 +325,15 @@ type MyApp() =
 
     override this.Program =
         Program.mkProgram
-            (fun _ -> initModel, Cmd.none)
+            (fun _ -> initModel, 
+                      if initModel.Onboarding.IsActive && initModel.Onboarding.IsAutoSimulating then 
+                          Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> NextOnboardingStep)
+                      else Cmd.none)
             (fun msg model -> update this.JSRuntime msg model)
-            (fun model dispatch -> view model dispatch this.JSRuntime)
+            (fun model dispatch -> 
+                Html.div {
+                    view model dispatch this.JSRuntime
+                    if model.Onboarding.IsActive then
+                        Help.viewHelp model.Onboarding dispatch
+                }
+            )

@@ -1,4 +1,4 @@
-﻿module NodeCode
+module NodeCode
 
 open System
 open Elmish

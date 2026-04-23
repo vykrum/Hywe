@@ -220,38 +220,44 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         | Interactive -> "Code"
 
     div {
-        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: flex-start; align-items: center;"
+        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: space-between; align-items: center;"
         
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch SaveRequested)
-            text "Save"
+        div {
+            attr.style "display:flex; gap:10px; align-items: center;"
+            button {
+                attr.id "hywe-save-btn"
+                attr.``class`` "hywe-toggle-btn"
+                on.click (fun _ -> dispatch SaveRequested)
+                text "Save"
+            }
+
+            button {
+                attr.``class`` "hywe-toggle-btn"
+                on.click (fun _ -> dispatch ImportRequested)
+                text "Load"
+            }
+
+            input {
+                attr.id "hyw-import-hidden"
+                attr.``type`` "file"
+                attr.style "display:none"
+                attr.accept ".hyw"
+                on.change (fun e ->
+                    async {
+                        let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
+                        dispatch (FileImported content)
+                    } |> Async.StartImmediate
+                )
+            }
+            
+            button {
+                attr.``class`` "hywe-toggle-btn"
+                on.click (fun _ -> dispatch ToggleEditorMode)
+                text nodeCodeButtonText
+            }
         }
 
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ImportRequested)
-            text "Load"
-        }
-
-        input {
-            attr.id "hyw-import-hidden"
-            attr.``type`` "file"
-            attr.style "display:none"
-            attr.accept ".hyw"
-            on.change (fun e ->
-                async {
-                    let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
-                    dispatch (FileImported content)
-                } |> Async.StartImmediate
-            )
-        }
-        
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ToggleEditorMode)
-            text nodeCodeButtonText
-        }
+        Help.renderHelpButton dispatch
     }
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =

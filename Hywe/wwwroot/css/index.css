@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     width: 100%;
     height: 99%;
     margin: 0;
@@ -31,21 +32,21 @@ html, body {
     gap: 10px;
 }
 
-    .site-header img:first-child {
-        flex-shrink: 0;
-    }
+.site-header img:first-child {
+    flex-shrink: 0;
+}
 
-    .site-header .title {
-        color: white;
-        font-size: 20px;
-        font-weight: normal;
-        padding: 0 10px 7px 10px;
-    }
+.site-header .title {
+    color: white;
+    font-size: 20px;
+    font-weight: normal;
+    padding: 0 10px 7px 10px;
+}
 
-    .site-header .logo-acronym {
-        opacity: 1;
-        z-index: 200;
-    }
+.site-header .logo-acronym {
+    opacity: 1;
+    z-index: 200;
+}
 
 /* =====================
    OFFSCREEN HELPERS
@@ -62,7 +63,7 @@ html, body {
 }
 
 /* =====================
-   INTSTRUCTIONS
+   INSTRUCTIONS
    ===================== */
 .instructions {
     position: absolute;
@@ -81,16 +82,16 @@ html, body {
     transition: opacity 1.6s ease-in-out, visibility 1.6s ease-in-out;
 }
 
-    .instructions.hide {
-        opacity: 0;
-        visibility: hidden;
-    }
+.instructions.hide {
+    opacity: 0;
+    visibility: hidden;
+}
 
-    .instructions p {
-        margin-top: 0.6em;
-        margin-bottom: 0.1em;
-        line-height: 1;
-    }
+.instructions p {
+    margin-top: 0.6em;
+    margin-bottom: 0.1em;
+    line-height: 1;
+}
 
 /* =====================
    FLEX & FADE CONTAINERS
@@ -107,9 +108,9 @@ html, body {
     transition: opacity 0.8s ease-in-out;
 }
 
-    .fade-container.visible {
-        opacity: 1;
-    }
+.fade-container.visible {
+    opacity: 1;
+}
 
 /* =====================
    FORM ELEMENTS
@@ -164,7 +165,7 @@ input[type=number] {
     width: 100%;
     -webkit-appearance: none;
     appearance: none;
-    -webkit-tap-highlight-color: transparent; 
+    -webkit-tap-highlight-color: transparent;
     background: transparent;
     height: 32px;
     border-radius: 2px;
@@ -175,27 +176,27 @@ input[type=number] {
     transform: translateY(-50%);
 }
 
-    .custom-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        -webkit-tap-highlight-color: transparent;
-        height: 22px;
-        width: 14px;
-        border-radius: 8px;
-        border: 1px solid #4CAF50;
-        background: transparent;
-        cursor: pointer;
-        margin-top: -24px;
-    }
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    height: 22px;
+    width: 14px;
+    border-radius: 8px;
+    border: 1px solid #4CAF50;
+    background: transparent;
+    cursor: pointer;
+    margin-top: -24px;
+}
 
-    .custom-slider::-moz-range-thumb {
-        height: 22px;
-        width: 14px;
-        border-radius: 8px;
-        border: 1px solid #4CAF50;
-        background: transparent;
-        cursor: pointer;
-        transform: translateY(-14px);
-    }
+.custom-slider::-moz-range-thumb {
+    height: 22px;
+    width: 14px;
+    border-radius: 8px;
+    border: 1px solid #4CAF50;
+    background: transparent;
+    cursor: pointer;
+    transform: translateY(-14px);
+}
 
 
 
@@ -237,14 +238,14 @@ input[type=number] {
     font-weight: 300;
 }
 
-    .hywe-toggle-btn:hover {
-        color: #333;
-    }
+.hywe-toggle-btn:hover {
+    color: #333;
+}
 
-    .hywe-toggle-btn.active {
-        color: #000; 
-        font-weight: 500;
-    }
+.hywe-toggle-btn.active {
+    color: #000;
+    font-weight: 500;
+}
 
 /* =====================
    SPINNER & VIDEO
@@ -305,30 +306,30 @@ video.fullscreen-bg {
     cursor: pointer;
 }
 
-    #introduction * {
-        -webkit-tap-highlight-color: transparent;
-    }
+#introduction * {
+    -webkit-tap-highlight-color: transparent;
+}
 
-    #introduction.ready {
-        opacity: 1;
-    }
+#introduction.ready {
+    opacity: 1;
+}
 
-    #introduction section {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.5s ease;
-        z-index: 550;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+#introduction section {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    z-index: 550;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
 
 
 
-    #introduction.ready section {
-        opacity: 1;
-        pointer-events: auto;
-        cursor: pointer;
-    }
+#introduction.ready section {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
 
 .intro-section {
     position: absolute;
@@ -344,10 +345,13 @@ video.fullscreen-bg {
     cursor: pointer;
     transition: opacity 0.5s ease;
     /* Desktop positioning */
-    top: 100px; /* space below header */
-    left: 130px; /* roughly aligns with acronym image */
+    top: 100px;
+    /* space below header */
+    left: 130px;
+    /* roughly aligns with acronym image */
     width: 100%;
-    max-width: 220px; /* limit width */
+    max-width: 220px;
+    /* limit width */
     box-sizing: border-box;
 }
 
@@ -360,13 +364,15 @@ video.fullscreen-bg {
     line-height: 1.5;
 }
 
-    .tapText.visible {
-        opacity: 0.6; /* Faded until user hovers/taps */
-    }
+.tapText.visible {
+    opacity: 0.6;
+    /* Faded until user hovers/taps */
+}
 
-    .tapText:hover {
-        opacity: 1; /* Optional for visual feedback */
-    }
+.tapText:hover {
+    opacity: 1;
+    /* Optional for visual feedback */
+}
 
 @media (max-width: 220px) {
     .intro-section {
@@ -374,7 +380,8 @@ video.fullscreen-bg {
         left: 0;
         right: 0;
         margin: 0 auto;
-        max-width: calc(100% - 50px); /* 20px margin each side */
+        max-width: calc(100% - 50px);
+        /* 20px margin each side */
     }
 }
 
@@ -387,15 +394,16 @@ video.fullscreen-bg {
     animation: fadeIn 0.8s ease forwards;
 }
 
-    .loadingText span::after {
-        content: '';
-        display: inline-block;
-        width: 1ch;
-        text-align: left;
-        animation: dots 1.2s steps(4, end) infinite;
-    }
+.loadingText span::after {
+    content: '';
+    display: inline-block;
+    width: 1ch;
+    text-align: left;
+    animation: dots 1.2s steps(4, end) infinite;
+}
 
-#main, #footer {
+#main,
+#footer {
     opacity: 0;
     display: none;
     transition: opacity 0.8s ease;
@@ -469,10 +477,11 @@ video.fullscreen-bg {
     transition: border-bottom-color 0.2s;
 }
 
-    .nodename:hover, .nodename:focus {
-        border-bottom: 1px solid #3498db;
-        color: #666;
-    }
+.nodename:hover,
+.nodename:focus {
+    border-bottom: 1px solid #3498db;
+    color: #666;
+}
 
 .nodeweight {
     width: 36px;
@@ -489,10 +498,12 @@ video.fullscreen-bg {
     transition: border-bottom-color 0.2s;
 }
 
-    .nodeweight:hover, .nodeweight:focus {
-        border-bottom: 1px solid #3498db;
-        color: #222; /* High contrast while editing */
-    }
+.nodeweight:hover,
+.nodeweight:focus {
+    border-bottom: 1px solid #3498db;
+    color: #222;
+    /* High contrast while editing */
+}
 
 .nodename::placeholder {
     color: #eee;
@@ -528,6 +539,7 @@ video.fullscreen-bg {
     border: none !important;
     outline: none !important;
 }
+
 .nodebutton1 {
     font-size: 10px;
     font-weight: bold;
@@ -545,9 +557,10 @@ video.fullscreen-bg {
     border: none !important;
     outline: none !important;
 }
-    .nodebutton1:hover {
-        opacity: 1; 
-    }
+
+.nodebutton1:hover {
+    opacity: 1;
+}
 
 .nodebutton2 {
     font-size: 10px;
@@ -566,7 +579,8 @@ video.fullscreen-bg {
     border: none !important;
     outline: none !important;
 }
-    .nodebutton2:hover {
+
+.nodebutton2:hover {
     opacity: 1;
 }
 
@@ -625,13 +639,16 @@ video.fullscreen-bg {
     background-color: #E67E22;
 }
 
-    .node-outer.is-affected .node-inner {
-        background-color: #fef5ee; /* Very light orange tint */
-    }
+.node-outer.is-affected .node-inner {
+    background-color: #fef5ee;
+    /* Very light orange tint */
+}
 
 .node-outer.is-confirming .node-inner {
-    background-color: #fdf2e9; /* Slightly deeper tint for the source */
+    background-color: #fdf2e9;
+    /* Slightly deeper tint for the source */
 }
+
 /* =====================
    HYWEAVE Button
    ===================== */
@@ -671,7 +688,8 @@ video.fullscreen-bg {
     opacity: 0.6;
     color: #CDDFE1;
     font-style: italic;
-    white-space: nowrap; /* Prevents text from wrapping to a new line */
+    white-space: nowrap;
+    /* Prevents text from wrapping to a new line */
 }
 
 .hyweave-main-text {
@@ -729,7 +747,8 @@ video.fullscreen-bg {
     width: 100%;
     justify-content: center;
     gap: 12px;
-    padding: 4px 0; /* Slightly more padding to breathe with borders */
+    padding: 4px 0;
+    /* Slightly more padding to breathe with borders */
     border-top: 1px solid rgba(0, 0, 0, 0.08);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     background: transparent;
@@ -737,7 +756,8 @@ video.fullscreen-bg {
 
 .hywe-tab-btn {
     background: transparent;
-    border: 1px solid transparent; /* Keeps layout stable */
+    border: 1px solid transparent;
+    /* Keeps layout stable */
     outline: none;
     padding: 4px 8px;
     cursor: pointer;
@@ -755,19 +775,19 @@ video.fullscreen-bg {
     letter-spacing: 0.5px;
 }
 
-    .hywe-tab-btn svg {
-        width: 1.3rem;
-        height: 1.3rem;
-        fill: currentColor;
-    }
+.hywe-tab-btn svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: currentColor;
+}
 
-    /* Compact Bordered Selection */
-    .hywe-tab-btn.active {
-        background: rgba(0, 0, 0, 0.03);
-        color: #000 !important;
-        padding: 0 8px;
-        min-width: 32px;
-    }
+/* Compact Bordered Selection */
+.hywe-tab-btn.active {
+    background: rgba(0, 0, 0, 0.03);
+    color: #000 !important;
+    padding: 0 8px;
+    min-width: 32px;
+}
 
 /* =====================
    TEACH PANEL
@@ -797,9 +817,9 @@ video.fullscreen-bg {
     transition: border-color 0.3s ease;
 }
 
-    .teach-textarea:focus {
-        border-color: #ccc;
-    }
+.teach-textarea:focus {
+    border-color: #ccc;
+}
 
 /* Action Bar */
 .teach-action-bar {
@@ -814,7 +834,8 @@ video.fullscreen-bg {
 /* Combined sizing for both buttons */
 .mic-button,
 .record-submit-btn {
-    height: 42px; /* Set a fixed height */
+    height: 42px;
+    /* Set a fixed height */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -828,23 +849,24 @@ video.fullscreen-bg {
     padding: 0;
     margin: 0;
     cursor: pointer;
-    width: 42px; /* Match height to keep it square */
+    width: 42px;
+    /* Match height to keep it square */
     outline: none;
     transition: transform 0.2s ease;
 }
 
-    .mic-button svg {
-        stroke: #888;
-        transition: stroke 0.3s ease;
-    }
+.mic-button svg {
+    stroke: #888;
+    transition: stroke 0.3s ease;
+}
 
-    .mic-button.recording svg {
-        stroke: #ff4d4d;
-    }
+.mic-button.recording svg {
+    stroke: #ff4d4d;
+}
 
-    .mic-button.recording {
-        animation: mic-pulse 1.5s infinite ease-in-out;
-    }
+.mic-button.recording {
+    animation: mic-pulse 1.5s infinite ease-in-out;
+}
 
 /* Submit Button styling */
 .record-submit-btn {
@@ -853,20 +875,21 @@ video.fullscreen-bg {
     border: none;
     font-weight: 600;
     cursor: pointer;
-    background-color: #333; /* Darker theme for training tools */
+    background-color: #333;
+    /* Darker theme for training tools */
     color: white;
     transition: background-color 0.2s ease;
 }
 
-    .record-submit-btn.active:hover {
-        background-color: #111;
-    }
+.record-submit-btn.active:hover {
+    background-color: #111;
+}
 
-    .record-submit-btn.disabled {
-        background-color: #f5f5f5;
-        color: #bbb;
-        cursor: not-allowed;
-    }
+.record-submit-btn.disabled {
+    background-color: #f5f5f5;
+    color: #bbb;
+    cursor: not-allowed;
+}
 
 @keyframes mic-pulse {
     0% {
@@ -894,15 +917,15 @@ video.fullscreen-bg {
     transition: opacity 0.3s ease;
 }
 
-    .license-footer a {
-        color: #808080;
-        text-decoration: none;
-    }
+.license-footer a {
+    color: #808080;
+    text-decoration: none;
+}
 
-        .license-footer a:hover {
-            color: #aaa;
-            text-decoration: underline;
-        }
+.license-footer a:hover {
+    color: #aaa;
+    text-decoration: underline;
+}
 
 #footer.visible .license-footer {
     opacity: 1;
@@ -911,7 +934,8 @@ video.fullscreen-bg {
 /* Download button anchored to the footer flow */
 .layout-download-btn {
     display: inline-block;
-    margin-top: 35px;    /* Increased distance from SVG */
+    margin-top: 35px;
+    /* Increased distance from SVG */
     margin-bottom: 5px;
     left: auto;
     transform: none;
@@ -929,11 +953,11 @@ video.fullscreen-bg {
     pointer-events: auto;
 }
 
-    .layout-download-btn:hover {
-        color: #111;
-        background: rgba(255, 255, 255, 0.97);
-        border-color: rgba(0, 0, 0, 0.25);
-    }
+.layout-download-btn:hover {
+    color: #111;
+    background: rgba(255, 255, 255, 0.97);
+    border-color: rgba(0, 0, 0, 0.25);
+}
 
 /* =========================================
    POLYGON EDITOR
@@ -972,27 +996,27 @@ video.fullscreen-bg {
     cursor: move;
 }
 
-    .outerVertex:hover {
-        fill: #C4B7D5;
-    }
+.outerVertex:hover {
+    fill: #C4B7D5;
+}
 
 .islandVertex {
     fill: #C6B2BE;
     cursor: move;
 }
 
-    .islandVertex:hover {
-        fill: #D3B6C8;
-    }
+.islandVertex:hover {
+    fill: #D3B6C8;
+}
 
 .entryPoint {
     fill: #8F8F8F;
     cursor: grab;
 }
 
-    .entryPoint:hover {
-        fill: #B3B3B3;
-    }
+.entryPoint:hover {
+    fill: #B3B3B3;
+}
 
 /* Polygon Fills */
 .outerPolygon {
@@ -1002,9 +1026,9 @@ video.fullscreen-bg {
     cursor: cell;
 }
 
-    .outerPolygon:hover {
-        stroke: #D6CFAF;
-    }
+.outerPolygon:hover {
+    stroke: #D6CFAF;
+}
 
 .islandPolygon {
     stroke: #E3DCCC;
@@ -1013,9 +1037,9 @@ video.fullscreen-bg {
     cursor: cell;
 }
 
-    .islandPolygon:hover {
-        stroke: #D6CFAF;
-    }
+.islandPolygon:hover {
+    stroke: #D6CFAF;
+}
 
 /* Label Styles */
 .outerVertexLabel {
@@ -1026,7 +1050,8 @@ video.fullscreen-bg {
     fill: #5C1A1B;
 }
 
-.outerVertexLabel, .islandVertexLabel {
+.outerVertexLabel,
+.islandVertexLabel {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     pointer-events: none;
     user-select: none;
@@ -1048,7 +1073,8 @@ video.fullscreen-bg {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-left: 20px; /* Stronger than padding for shifting the block */
+    margin-left: 20px;
+    /* Stronger than padding for shifting the block */
 }
 
 .toggle-group {
@@ -1072,15 +1098,15 @@ video.fullscreen-bg {
     outline: none;
 }
 
-    .toggle-btn.active {
-        background: #333333;
-        color: white;
-    }
+.toggle-btn.active {
+    background: #333333;
+    color: white;
+}
 
-    .toggle-btn:hover:not(.active) {
-        background: #CDDFE1;
-        color: #555;
-    }
+.toggle-btn:hover:not(.active) {
+    background: #CDDFE1;
+    color: #555;
+}
 
 /* Column 2: Dimensions */
 .dimension-fields {
@@ -1099,20 +1125,171 @@ video.fullscreen-bg {
     gap: 6px;
 }
 
-    .field-group label {
-        font-size: 0.8rem;
-        color: #5A3E2B;
-    }
+.field-group label {
+    font-size: 0.8rem;
+    color: #5A3E2B;
+}
 
 /* Column 3: Narrow Instructions */
 .polygon-editor-instructions {
     font-size: 0.7rem;
     color: #888;
     line-height: 1.1;
-    max-width: 110px; /* Aggressively narrow */
+    max-width: 110px;
+    /* Aggressively narrow */
 }
 
-    .polygon-editor-instructions p {
-        margin: 0;
-        white-space: nowrap; /* Prevents awkward wrapping */
+.polygon-editor-instructions p {
+    margin: 0;
+    white-space: nowrap;
+    /* Prevents awkward wrapping */
+}
+/* =========================================
+   ONBOARDING & TOOLTIPS
+   ========================================= */
+
+.onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 2000;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.onboarding-tooltip {
+    z-index: 2100;
+    width: 100px;
+    max-width: 80vw;
+    pointer-events: auto;
+}
+
+.tooltip-glass {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(54, 54, 54, 0.15); /* Using app's dark color for subtle border */
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    color: #363636;
+    font-size: 0.72rem;
+    font-family: inherit;
+    animation: tooltipAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.onb-green { 
+    color: #27ae60; 
+    font-weight: 800; 
+    font-size: 1rem; 
+    padding: 0 1px;
+}
+.onb-orange { 
+    color: #e67e22; 
+    font-weight: 800; 
+    font-size: 1rem; 
+    padding: 0 1px;
+}
+
+.onboarding-link {
+    background: transparent;
+    color: #2E86C1;
+    border: none;
+    padding: 2px 0;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    text-decoration: none;
+}
+
+.onboarding-link:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+}
+
+.onboarding-skip-link {
+    background: transparent;
+    color: #888;
+    border: none;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.onboarding-skip-link:hover {
+    color: #363636;
+}
+
+@keyframes tooltipAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
     }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Specific Positions */
+
+.onboarding-tooltip.top-left-header {
+    position: absolute;
+    top: 75px;
+    left: 10px;
+}
+
+.onboarding-tooltip.lower-left-slider {
+    position: absolute;
+    top: 410px; 
+    left: 10px;
+}
+
+
+/* Help Button Trigger */
+.help-trigger-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: transparent;
+    color: #999;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.help-trigger-btn:hover {
+    border-color: #363636;
+    color: #363636;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* Auto-Tour progress */
+.auto-tour-indicator {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.progress-bar-fill {
+    height: 1.5px;
+    background: #2E86C1;
+    border-radius: 2px;
+    width: 0%;
+    animation: autoProgress 6s linear infinite;
+}
+
+@keyframes autoProgress {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+
