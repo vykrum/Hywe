@@ -295,6 +295,29 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             ActivePanel = newActivePanel
         }, cmd
 
+    | PreviousOnboardingStep ->
+        if not model.Onboarding.IsActive then model, Cmd.none
+        else
+        let prevStep = 
+            match model.Onboarding.CurrentStep with
+            | Welcome -> Welcome
+            | BoundaryGuide -> Welcome
+            | NodeGuide -> BoundaryGuide
+            | LayoutGuide -> NodeGuide
+            | Finish -> LayoutGuide
+
+        let newActivePanel = 
+            match prevStep with
+            | BoundaryGuide -> BoundaryPanel
+            | NodeGuide -> LayoutPanel
+            | LayoutGuide -> LayoutPanel
+            | _ -> LayoutPanel
+
+        { model with 
+            Onboarding = { model.Onboarding with CurrentStep = prevStep }
+            ActivePanel = newActivePanel
+        }, Cmd.none
+
     | SkipOnboarding ->
         { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }, 
         Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete) // Just in case

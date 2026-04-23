@@ -85,6 +85,7 @@ type Message =
     | StartVoiceCapture
     | OnVoiceResult of string
     | NextOnboardingStep
+    | PreviousOnboardingStep
     | SkipOnboarding
     | RestartOnboarding
     | StartAutoSimulation

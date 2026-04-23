@@ -1183,14 +1183,16 @@ video.fullscreen-bg {
 .onb-green { 
     color: #27ae60; 
     font-weight: 800; 
-    font-size: 1rem; 
+    font-size: 0.85rem; 
     padding: 0 1px;
+    line-height: 1;
 }
 .onb-orange { 
     color: #e67e22; 
     font-weight: 800; 
-    font-size: 1rem; 
+    font-size: 0.85rem; 
     padding: 0 1px;
+    line-height: 1;
 }
 
 .onboarding-link {
