@@ -99,7 +99,7 @@ let spaceSeq
     let spcMp5 = Array.append [|spcMp2 |> Array.head|] spcMp3
     let spcMp6 = spcMp5 
                 |> Array.tail
-                |> Array.Parallel.map (fun x -> (x[0],((int x[1])/hxlAreaX,x[2]))) 
+                |> Array.Parallel.map (fun x -> (x[0],(float x[1],x[2]))) 
                 |> Array.sortBy (fun (x,_) -> x)
                 |> Map.ofArray
 
@@ -153,7 +153,7 @@ let spaceSeq
         spcKy06
         |> Array.Parallel.map (fun z 
                                 -> (Array.Parallel.map (fun (x,y) 
-                                                            -> x, max hxlAreaX (fst y), snd y))z)
+                                                            -> x, fst y, snd y))z)
     spcAt1,spcKey
 ///
 
@@ -200,11 +200,11 @@ let getNtArea (bdOu: (int*int)[]) (bdIs: (int*int)[][]) =
     polygonWithHolesArea bdOu bdIs
 
 /// Tree Mapping (Dataset Generation Version)
-let getTree01 (ntArea: float) (cxlCnt: float) (spcTree: (string * int * string) array array) =
-    let bdPr = match cxlCnt > 0.0 with | true -> (ntArea / cxlCnt) / 4.0 | false -> 1.0
+let getTree01 (ntArea: float) (totalRequested: float) (spcTree: (string * float * string) array array) =
+    let ratio = match totalRequested > 0.0 with | true -> ntArea / totalRequested | false -> 1.0
     spcTree |> Array.map (fun row -> 
-        row |> Array.map (fun (id, cnt, lb) -> 
-            (Refid id, Count (int (float cnt * bdPr)), Label lb)))
+        row |> Array.map (fun (id, area, lb) -> 
+            (Refid id, Count (int (Math.Round((area * ratio) / 4.0))), Label lb)))
 
 /// Recursive Generation (Dataset Generation Version)
 let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc: Cxl[]) =
@@ -240,14 +240,14 @@ let hxlAreaFactor = 4.0
 /// <summary> Consolidates all reproportioning logic into one call. </summary>
 /// <param name="attributes"> Parsed site attribute map. </param>
 /// <param name="ntArea"> Net site area in sq units. </param>
-/// <param name="rawTree"> Nested space tree of (id * count * label). </param>
+/// <param name="rawTree"> Nested space tree of (id * area * label). </param>
 /// <returns> Tree with counts scaled to fill the available site area. </returns>
-let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * int * string)[][]) =
+let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * float * string)[][]) =
     let hxlAreaFactor = 4.0
     
-    // 1. Calculate requested totals
+    // 1. Calculate requested totals (in Area units)
     let flatTree = rawTree |> Array.concat
-    let totalRequested = flatTree |> Array.sumBy (fun (_, cnt, _) -> cnt) |> float
+    let totalRequested = flatTree |> Array.sumBy (fun (_, area, _) -> area)
     
     // 2. Identify Unbound State
     let isUnbound = ntArea <= 0.0
@@ -255,33 +255,33 @@ let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawT
     // 3. Target hexel count (how many hexels fit in the site)
     let targetTotal = 
         match isUnbound with
-        | true -> int totalRequested 
-        | false -> int (ntArea / hxlAreaFactor)
+        | true -> int (Math.Round(totalRequested / hxlAreaFactor))
+        | false -> int (Math.Round(ntArea / hxlAreaFactor))
 
-    // 4. Determine Scaling Ratio
-    //    - Unbound:         ratio = 1.0  (use requested counts as-is)
-    //    - Absolute (X=0):  ratio = ntArea / totalRequested / hxlAreaFactor
+    // 4. Determine Scaling Ratio (Area scaling)
+    //    - Unbound:         ratio = 1.0  (use requested areas as-is)
+    //    - Absolute (X=0):  ratio = ntArea / totalRequested
     //    - Explicit X=n:    ratio = n    (user-specified multiplier)
-    //    - Relative+Bound:  ratio = targetTotal / totalRequested
+    //    - Relative+Bound:  ratio = ntArea / totalRequested
     //                       (scale proportionally so layout fills the site)
     let ratio = 
         match isUnbound with
         | true -> 1.0
         | false ->
             match attributes |> Map.tryFind "X" with
-            | Some "0" -> match totalRequested > 0.0 with | true -> (ntArea / totalRequested) / hxlAreaFactor | false -> 1.0
+            | Some "0" -> match totalRequested > 0.0 with | true -> ntArea / totalRequested | false -> 1.0
             | Some a -> match Double.TryParse a with | true, v -> v | _ -> 1.0
             | None -> 
                 // Relative + Boundary: scale so totals fill the site
                 match totalRequested > 0.0 with 
-                | true -> float targetTotal / totalRequested 
+                | true -> ntArea / totalRequested 
                 | false -> 1.0
 
-    // 5. Calculate floors and remainders
+    // 5. Calculate floors and remainders (convert to hexels)
     let initialData = 
-        flatTree |> Array.map (fun (id, cnt, lb) ->
-            let ideal = float cnt * ratio
-            let flr = match cnt > 0 with | true -> max 1 (int (floor ideal)) | false -> 0
+        flatTree |> Array.map (fun (id, area, lb) ->
+            let ideal = (area * ratio) / hxlAreaFactor
+            let flr = match area > 0.0 with | true -> max 1 (int (floor ideal)) | false -> 0
             {| Id = id; Label = lb; Ideal = ideal; Floor = flr; Remainder = ideal - float flr |})
 
     // 6. Distribute difference (The Largest Remainder Method)
