@@ -28,7 +28,7 @@ type DerivedData = {
     cxCxl1: Cxl[]
     cxlAvl: int[]
     cxClr1: string[]
-    cxOuIl: (int*int)[][]
+    cxOuIl: (float*float)[][]
 }
 
 // Consistent Pastel Color

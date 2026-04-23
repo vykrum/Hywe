@@ -373,27 +373,36 @@ let cxlHxl
 /// <summary> Coxel Offseted Boundary Wrap </summary>
 /// <param name="cxl"> Coxel. </param>
 /// <returns> Boundary Wrap vertices. </returns>
-let (|Collinear|Turning|) (p1, p2, p3) =
+let (|Collinear|Turning|) (p1: float * float, p2: float * float, p3: float * float) =
     let (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3
     let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-    match crossProduct with
-    | 0 -> Collinear
-    | _ -> Turning
+    if System.Math.Abs(crossProduct) < 0.0001 then Collinear else Turning
 
 let cxlPrm 
     (cxl : Cxl) 
     (elv : int) =
     let rec clean points =
         match points with
-        // Match 3 points at a time and apply our Active Pattern
         | p1 :: p2 :: p3 :: rest ->
             match (p1, p2, p3) with
-            | Collinear -> clean (p1 :: p3 :: rest)      // Drop p2
-            | Turning   -> p1 :: clean (p2 :: p3 :: rest) // Keep p1, move to p2
+            | Collinear -> clean (p1 :: p3 :: rest)
+            | Turning   -> p1 :: clean (p2 :: p3 :: rest)
         | _ -> points
 
-    hxlOfs cxl.Seqn elv cxl.Hxls 
-    |> Array.map (hxlCrd >> (fun (x, y, _) -> x, y))
+    let outside = hxlOfs cxl.Seqn elv cxl.Hxls
+    let insideSet = hxlSet cxl.Hxls
+    
+    outside 
+    |> Array.collect (fun hout ->
+        let (ox, oy, _) = hxlCrd hout
+        adjacent cxl.Seqn hout 
+        |> Array.choose (fun n -> 
+            let (ix, iy, _) = hxlCrd n
+            if insideSet.Contains(AV(ix, iy, elv)) then
+                Some ( (float ox + float ix) / 2.0, (float oy + float iy) / 2.0 )
+            else None)
+    )
+    |> Array.distinct
     |> Array.toList
     |> clean
     |> List.toArray

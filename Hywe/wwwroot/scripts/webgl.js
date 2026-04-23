@@ -51,7 +51,7 @@ window.glShaders = {
         varying vec3 v_color;
         uniform vec3 u_overrideColor;
         void main() {
-            float alpha = 0.95;
+            float alpha = 1.0;
             if (u_overrideColor.r < 0.0)
                 gl_FragColor = vec4(v_color, alpha);
             else
