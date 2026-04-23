@@ -105,7 +105,6 @@ let extrudePolygons
             if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
                 pts.[0 .. pts.Length - 2] 
             else pts
-        |> Array.map (fun (xi, yi) -> (float xi, float yi))
 
     // 2. Helper: Color normalization
     let normalizeColor (rgba: string) =

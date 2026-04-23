@@ -1,5 +1,6 @@
 module Geometry
 
+open System
 open Hexel
 ///
 
@@ -83,27 +84,27 @@ let hxlLin
 /// <returns> A cleaned array of (x, y) coordinates. </returns>
 let removeSawtooth 
     (sqn : Sqn) 
-    (arr : (int*int)[]) : (int*int)[] =
+    (arr : (float*float)[]) : (float*float)[] =
     if arr.Length = 0 then [||] else
     let (primary, secondary) = 
         match sqn with
         | Vertical   -> (snd, fst)
         | Horizontal -> (fst, snd)
 
-    let result = ResizeArray<int*int>()
+    let result = ResizeArray<float*float>()
     
     let mutable i = 0
     let n = arr.Length
     while i < n do
         let mutable j = i
-        while j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) = 2 do
+        while j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) < 2.1 && abs(primary arr.[j+1] - primary arr.[j]) > 1.9 do
             j <- j + 1
             
         let groupLen = j - i + 1
         if groupLen > 3 then
             let mutable isOscillating = true
             for k = i to j - 1 do
-                if abs(secondary arr.[k+1] - secondary arr.[k]) <> 1 then
+                if abs(secondary arr.[k+1] - secondary arr.[k]) < 0.9 || abs(secondary arr.[k+1] - secondary arr.[k]) > 1.1 then
                     isOscillating <- false
             
             if isOscillating then
@@ -132,7 +133,7 @@ let removeSawtooth
 /// <param name="poly"> Array of (x, y) coordinates defining the polygon. </param>
 /// <returns> The calculated area as a float. </returns>
 let polygonArea 
-    (poly: (int * int)[]) =
+    (poly: (float * float)[]) =
     match poly with
     | [||] | [|_|] | [|_; _|] -> 0.0
     | pts ->
@@ -143,7 +144,7 @@ let polygonArea
                 let (nx, ny) = pts.[(i + 1) % n]
                 (x * ny) - (nx * y))
             |> Array.sum
-        float area / 2.0
+        area / 2.0
 
 ///
 
@@ -152,8 +153,8 @@ let polygonArea
 /// <param name="holes"> Array of coordinate arrays defining interior holes. </param>
 /// <returns> The net area as a float. </returns>
 let polygonWithHolesArea 
-    (outer: (int * int)[]) 
-    (holes: (int * int)[][]) =
+    (outer: (float * float)[]) 
+    (holes: (float * float)[][]) =
 
     match outer, holes with
     | [||], _ -> 0.0
@@ -169,7 +170,7 @@ let polygonWithHolesArea
         outerArea - holesArea
 
 /// <summary> Ensures that a polygon vertex array is closed by appending the first vertex to the end if necessary. </summary>
-let ensureClosed (pts: (int*int)[]) =
+let ensureClosed (pts: (float*float)[]) =
     match pts with
     | [||] -> pts
     | _ ->
@@ -179,10 +180,10 @@ let ensureClosed (pts: (int*int)[]) =
         else Array.append pts [| first |]
 
 /// <summary> Removes consecutive duplicate points from a polygon vertex array. </summary>
-let dedupeSequential (pts: (int*int)[]) =
+let dedupeSequential (pts: (float*float)[]) =
     if pts.Length = 0 then pts
     else
-        let res = ResizeArray<int*int>(pts.Length)
+        let res = ResizeArray<float*float>(pts.Length)
         res.Add(pts.[0])
         for i = 1 to pts.Length - 1 do
             if pts.[i] <> res.[res.Count - 1] then
@@ -190,7 +191,7 @@ let dedupeSequential (pts: (int*int)[]) =
         res.ToArray()
 
 /// <summary> Normalizes the winding order of a polygon to be either clockwise or counterclockwise. </summary>
-let normalizeWinding (ccw: bool) (pts: (int*int)[]) =
+let normalizeWinding (ccw: bool) (pts: (float*float)[]) =
     let pts = ensureClosed pts |> dedupeSequential
     if pts.Length < 4 then pts
     else
@@ -201,27 +202,27 @@ let normalizeWinding (ccw: bool) (pts: (int*int)[]) =
         | _ -> pts
 
 /// <summary> Computes the bounding box of a set of points. </summary>
-let bounds (pts: (int*int)[]) =
+let bounds (pts: (float*float)[]) =
     let xs = pts |> Array.map fst
     let ys = pts |> Array.map snd
     Array.min xs, Array.min ys, Array.max xs, Array.max ys
 
 /// <summary> Computes the centroid (geometric center) of a set of points. </summary>
-let centroid (pts: (int*int)[]) =
+let centroid (pts: (float*float)[]) =
     let n = float pts.Length
-    let sx = pts |> Array.sumBy (fst >> float)
-    let sy = pts |> Array.sumBy (snd >> float)
+    let sx = pts |> Array.sumBy fst
+    let sy = pts |> Array.sumBy snd
     sx / n, sy / n
 
 /// <summary> Determines if a point is inside a polygon using the ray-casting algorithm. </summary>
-let pointInPolygon (px,py) (poly:(int*int)[]) =
+let pointInPolygon (px: float, py: float) (poly:(float*float)[]) =
     let rec loop i j inside =
         if i = poly.Length then inside else
         let xi, yi = poly.[i]
         let xj, yj = poly.[j]
         let intersect =
             ((yi > py) <> (yj > py)) &&
-            (px < (xj-xi) * (py-yi) / (yj-yi+1) + xi)
+            (px < (xj-xi) * (py-yi) / (yj-yi+0.0001) + xi)
         loop (i+1) i (if intersect then not inside else inside)
     loop 0 (poly.Length-1) false
 
@@ -234,7 +235,7 @@ let segmentsIntersect a b c d =
     ccw a c d <> ccw b c d && ccw a b c <> ccw a b d
 
 /// <summary> Determines if a polygon has self-intersecting edges. </summary>
-let hasSelfIntersections (pts:(int*int)[]) =
+let hasSelfIntersections (pts:(float*float)[]) =
     let p = ensureClosed pts
     let n = p.Length-1
     let mutable found = false
@@ -250,14 +251,14 @@ let hasSelfIntersections (pts:(int*int)[]) =
     found
 
 /// <summary> Determines if three points are collinear. </summary>
-let isCollinear (ax,ay) (bx,by) (cx,cy) =
-    (bx-ax)*(cy-ay) = (by-ay)*(cx-ax)
+let isCollinear (ax: float, ay: float) (bx: float, by: float) (cx: float, cy: float) =
+    abs((bx-ax)*(cy-ay) - (by-ay)*(cx-ax)) < 0.0001
 
-let removeCollinear (pts:(int*int)[]) =
+let removeCollinear (pts:(float*float)[]) =
     let p = ensureClosed pts
     if p.Length < 3 then p
     else
-        let res = ResizeArray<int*int>(p.Length)
+        let res = ResizeArray<float*float>(p.Length)
         res.Add(p.[0])
         for i = 1 to p.Length - 2 do
             let a = p.[i-1]
@@ -287,17 +288,17 @@ let cleanPolygon sqn pts =
 let hxlPgn 
     (sqn: Sqn) 
     (elv: int)
-    (vtx: (int * int)[]): Hxl[] =
+    (vtx: (float * float)[]): Hxl[] =
 
     if vtx.Length < 2 then [||] else
     let stx, sty = Array.head vtx
     let xx, yy, _ =
-        hxlLin sqn elv (RV(0,0,elv)) (RV(stx,sty,elv))
+        hxlLin sqn elv (RV(0,0,elv)) (RV(int (Math.Round stx), int (Math.Round sty), elv))
         |> Array.last
         |> hxlCrd
 
     // Replace start vertex with endpoint of (0,0) first vertex
-    let vt1 = Array.concat [| [|xx,yy|]; Array.tail vtx |]
+    let vt1 = Array.concat [| [|float xx, float yy|]; Array.tail vtx |]
 
     // Ensure closure
     let verts = cleanPolygon sqn vt1
@@ -307,11 +308,12 @@ let hxlPgn
     let mutable lastOpt : Hxl option = None
 
     for (x2, y2) in verts do
+        let ix, iy = int (Math.Round x2), int (Math.Round y2)
         match lastOpt with
         | None ->
-            lastOpt <- Some (RV(x2, y2, elv))
+            lastOpt <- Some (RV(ix, iy, elv))
         | Some last ->
-            let seg = hxlLin sqn elv last (RV(x2, y2, elv))
+            let seg = hxlLin sqn elv last (RV(ix, iy, elv))
             acc.AddRange(seg)
             lastOpt <- Some (Array.last seg)
 

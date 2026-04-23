@@ -196,7 +196,7 @@ let parseIslands value =
 ///
 
 /// Area Logic
-let getNtArea (bdOu: (int*int)[]) (bdIs: (int*int)[][]) = 
+let getNtArea (bdOu: (float*float)[]) (bdIs: (float*float)[][]) = 
     polygonWithHolesArea bdOu bdIs
 
 /// Tree Mapping (Dataset Generation Version)
@@ -318,7 +318,7 @@ let generateCxlLayout
     (seqOverride: Sqn option) 
     (ouStrOverride: string option) 
     (ilStrOverride: string option) 
-    (initialOcc : Hxl[]) : Cxl[] * (int*int)[][] =
+    (initialOcc : Hxl[]) : Cxl[] * (float*float)[][] =
     
     // 1. Get Attributes and Tree
     let spcAt1, spcTree = spaceSeq str
@@ -346,24 +346,24 @@ let generateCxlLayout
     // 5. Outer Boundary
     let bdOu =
         match ouStrOverride with
-        | Some ou when ou <> "" -> parsePolygon ou |> Array.map (fun (x,y) -> int x, int y)
+        | Some ou when ou <> "" -> parsePolygon ou
         | _ ->
             match spcAt1 |> Map.tryFind "O" with 
-            | Some a -> parsePolygon a |> Array.map (fun (x,y) -> int x, int y)
+            | Some a -> parsePolygon a
             | None ->
                 match bdWd > 0 with 
                 | true -> 
                     let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
-                    parsePolygon a |> Array.map (fun (x,y) -> int x, int y)
+                    parsePolygon a
                 | false -> [||]
 
     // 6. Island Boundary
     let bdIs =
         match ilStrOverride with
-        | Some il when il <> "" -> parsePolyIslands il |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
+        | Some il when il <> "" -> parsePolyIslands il
         | _ ->
             match spcAt1 |> Map.tryFind "I" with 
-            | Some a -> parsePolyIslands a |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
+            | Some a -> parsePolyIslands a
             | None -> [||]
 
     // 7. Entry Hexel

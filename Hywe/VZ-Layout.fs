@@ -88,11 +88,11 @@ type svtx = Template<
 
 ///
 
-/// Integer-safe polygon centroid
+/// Polygon centroid
 let polygonCentroid 
-    (poly: (int * int)[]) =
+    (poly: (float * float)[]) =
     match poly with
-    | [||] -> 0, 0
+    | [||] -> 0.0, 0.0
     | [| p |] -> p
     | _ ->
         let n = poly.Length
@@ -105,21 +105,19 @@ let polygonCentroid
                 (accSx + (x1 + x2) * cross,
                  accSy + (y1 + y2) * cross,
                  accA + cross)
-            ) (0, 0, 0)
+            ) (0.0, 0.0, 0.0)
 
-        // Safety check: a is 2 * Area. If Area < 1 unit, use simple average.
-        // This prevents the sx / (3 * a) crash.
-        if Math.Abs(a) < 1 then 
-            let avgX = poly |> Array.averageBy (fun (x, _) -> float x) |> int
-            let avgY = poly |> Array.averageBy (fun (_, y) -> float y) |> int
+        if Math.Abs(a) < 0.001 then 
+            let avgX = poly |> Array.averageBy fst
+            let avgY = poly |> Array.averageBy snd
             (avgX, avgY)
         else 
-            (sx / (3 * a), sy / (3 * a))
+            (sx / (3.0 * a), sy / (3.0 * a))
 
-/// Integer point-in-polygon
+/// Point-in-polygon
 let pointInPolygon 
-    (px, py) 
-    (poly: (int * int)[]) =
+    (px: float, py: float) 
+    (poly: (float * float)[]) =
     let rec check i j acc =
         match i < poly.Length with
         | false -> acc
@@ -128,14 +126,11 @@ let pointInPolygon
             let (xj, yj) = poly.[j]
             
             let isIntersecting =
-                // Check if the point's Y is between the edge's Ys
                 match (yi > py, yj > py) with
                 | (true, false) | (false, true) ->
                     let dy = yj - yi
-                    // Denominator check: if dy is 0, it's a horizontal line. Skip.
-                    if dy = 0 then false
+                    if Math.Abs(dy) < 0.0001 then false
                     else 
-                        // Standard ray-casting formula
                         px < (xj - xi) * (py - yi) / dy + xi
                 | _ -> false
             check (i + 1) i (if isIntersecting then not acc else acc)
@@ -146,26 +141,21 @@ let pointInPolygon
 
 /// Label position within coxel
 let labelPosition 
-    (poly: (int * int)[]) =
+    (poly: (float * float)[]) =
     match poly with
-    | [||] -> 0, 0
+    | [||] -> 0.0, 0.0
     | [|p|] -> p
     | _ ->
         let cx, cy = polygonCentroid poly
-        let xs = poly |> Array.map fst
-        let ys = poly |> Array.map snd
-        
-        // Prevent division by zero if poly.Length is somehow 0
-        let len = Math.Max(1, poly.Length)
-        let avgx = Array.sum xs / len
-        let avgy = Array.sum ys / len
+        let avgx = poly |> Array.averageBy fst
+        let avgy = poly |> Array.averageBy snd
 
         let rec inward (x, y) step =
             if pointInPolygon (x, y) poly then (x, y)
             else
                 match step with
                 | 0 -> (avgx, avgy)
-                | _ -> inward ((x + avgx) / 2, (y + avgy) / 2) (step - 1)
+                | _ -> inward ((x + avgx) / 2.0, (y + avgy) / 2.0) (step - 1)
 
         inward (cx, cy) 3
 ///
@@ -213,7 +203,7 @@ let crd
 
 let svgCoxels
     (cxl : Cxl[])
-    (bdr : (int*int)[][])
+    (bdr : (float*float)[][])
     (elv : int)
     (clr : string[])
     (scl : int)
@@ -222,26 +212,25 @@ let svgCoxels
     // Vertices
     let sqn = cxl |> Array.map (fun x ->x.Seqn)
     let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
-    //let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
     let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
 
     // Shift and Scale Vertices
-    let padd = 5*scl
-    let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a*scl,b*scl)x) crd
-    let minX1 = fst (Array.minBy (fun (x,_) -> x) (Array.concat crd1))
-    let maxX1 = fst (Array.maxBy (fun (x,_) -> x) (Array.concat crd1))
-    let minY1 = snd (Array.minBy (fun (_,x) -> x) (Array.concat crd1))
-    let maxY1 = snd (Array.maxBy (fun (_,x) -> x) (Array.concat crd1))
-    let shfX = (-1 * minX1) + padd
-    let shfY = (-1 * minY1) + padd
+    let padd = float (5*scl)
+    let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a * float scl, b * float scl)x) crd
+    let minX1 = fst (Array.minBy fst (Array.concat crd1))
+    let maxX1 = fst (Array.maxBy fst (Array.concat crd1))
+    let minY1 = snd (Array.minBy snd (Array.concat crd1))
+    let maxY1 = snd (Array.maxBy snd (Array.concat crd1))
+    let shfX = (-1.0 * minX1) + padd
+    let shfY = (-1.0 * minY1) + padd
     let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
-    let wdt = (maxX1 - minX1)+(padd*2)+15
-    let hgt = (maxY1 - minY1)+(padd*1)+0
+    let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
+    let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
     
     // Labels
     let lPs = Array.map(fun a -> 
                                 let x,y = cxlCnt a
-                                (x * scl) + shfX,(y * scl) + shfY) cxl
+                                (float x * float scl) + shfX,(float y * float scl) + shfY) cxl
     let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
 
     let svg = 
@@ -267,21 +256,21 @@ let svgCoxels
 
             // Boundary Outlines
             for boundary in bdr do
-            let xy =
-                boundary
-                |> Array.map (fun (x, y) -> [| (x * scl) + shfX; (y * scl) + shfY |])
-                |> Array.concat
-                |> Array.map string
-                |> String.concat ","
+                let xy =
+                    boundary
+                    |> Array.map (fun (x, y) -> [| (float x * float scl) + shfX; (float y * float scl) + shfY |])
+                    |> Array.concat
+                    |> Array.map string
+                    |> String.concat ","
 
-            // Draw boundary outline in contrasting color
-            plgn()
-                .pt(xy)
-                .st("#000000")
-                .cl("none")
-                .sw("2")
-                .op("0.1")
-                .Elt()
+                // Draw boundary outline in contrasting color
+                plgn()
+                    .pt(xy)
+                    .st("#000000")
+                    .cl("none")
+                    .sw("2")
+                    .op("0.1")
+                    .Elt()
 
             let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
             let prp1 = Array.zip crd2 clr
@@ -291,10 +280,10 @@ let svgCoxels
             for i, (xxyy, label, color, path) in prp |> Array.indexed do
                 let x, y =
                     match xxyy with
-                    | [||] -> -10, -10
+                    | [||] -> -10.0, -10.0
                     | _ -> snd label
 
-                let r = 10
+                let r = 10.0
                 crPh()
                     .pathid(path)
                     .sx($"{x}")
@@ -384,19 +373,16 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
                     let pts = coords.[i]
                     let label = cxl.[i]
                     
-                    // We still calculate lx/ly so the Legend can potentially 
-                    // use them or for centering logic
                     let lx, ly = labelPosition pts
                     
                     {|
-                        points = pts |> Array.collect (fun (px, py) -> [| float (px - minX); float (py - minY) |])
+                        points = pts |> Array.collect (fun (px, py) -> [| px - minX; py - minY |])
                         name = prpVlu label.Name
                         color = colors.[i]
-                        lx = float (lx - minX)
-                        ly = float (ly - minY)
+                        lx = lx - minX
+                        ly = ly - minY
                     |}
                 with _ ->
-                    // Fallback for a single broken shape within the variation
                     {| points = [||]; name = ""; color = "rgba(0,0,0,0)"; lx = 0.0; ly = 0.0 |}
             )
 
