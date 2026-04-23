@@ -2,7 +2,6 @@ module Help
 
 open Bolero.Html
 open ModelTypes
-open Page
 
 type TooltipDef = {
     Title: string
@@ -25,7 +24,7 @@ let getOnboardingStepData step =
           Position = "lower-left-slider" }
     | NodeGuide ->
         { Title = "The Main Blueprint"
-          Content = "Click + to add a node and - to delete a node and its descendents"
+          Content = "Click + to add a node and x to delete a node and its descendents"
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | LayoutGuide ->
@@ -40,9 +39,9 @@ let getOnboardingStepData step =
           Position = "top-left-header" }
 
 let renderHelpButton (dispatch: Message -> unit) =
-    button {
+    span {
         attr.id "hywe-help-trigger"
-        attr.``class`` "help-trigger-btn"
+        attr.style "cursor: pointer; color: #888; font-size: 14px; margin-left: 10px;"
         on.click (fun _ -> dispatch RestartOnboarding)
         text "?"
     }
@@ -59,7 +58,7 @@ let renderFormattedContent (content: string) =
                 for c in word do
                     match c with
                     | '+' -> span { attr.``class`` "onb-green"; text "+" }
-                    | '-' | '×' -> span { attr.``class`` "onb-orange"; text (string c) }
+                    | 'x' | '×' when cleanWord.Length = 1 -> span { attr.``class`` "onb-orange"; text (string c) }
                     | _ -> text (string c)
             if i < words.Length - 1 then text " "
     }
@@ -78,11 +77,6 @@ let viewHelp (state: OnboardingState) (dispatch: Message -> unit) =
             div {
                 attr.``class`` "tooltip-glass"
                 
-                if state.IsAutoSimulating then
-                    div {
-                        attr.``class`` "auto-tour-indicator"
-                        div { attr.``class`` "progress-bar-fill" }
-                    }
 
                 if not (System.String.IsNullOrWhiteSpace data.Title) then
                     h4 {

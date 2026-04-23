@@ -50,7 +50,7 @@ let initModel =
         PolygonExport = initialPolygonExport
         Onboarding = {
             IsActive = true
-            IsAutoSimulating = true
+            IsAutoSimulating = false
             CurrentStep = Welcome
             SeenSteps = Set.empty
         }
@@ -285,10 +285,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | LayoutGuide -> LayoutPanel
             | _ -> model.ActivePanel
 
-        let cmd = 
-            if model.Onboarding.IsAutoSimulating && not isFinished then
-                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 7000 }) () (fun _ -> NextOnboardingStep)
-            else Cmd.none
+        let cmd = Cmd.none
 
         { model with 
             Onboarding = { model.Onboarding with 
@@ -304,13 +301,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | RestartOnboarding ->
         { model with 
-            Onboarding = { IsActive = true; IsAutoSimulating = true; CurrentStep = Welcome; SeenSteps = Set.empty } 
+            Onboarding = { IsActive = true; IsAutoSimulating = false; CurrentStep = Welcome; SeenSteps = Set.empty } 
             ActivePanel = LayoutPanel
-        }, Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> NextOnboardingStep)
+        }, Cmd.none
 
     | StartAutoSimulation ->
-        { model with Onboarding = { model.Onboarding with IsAutoSimulating = true; CurrentStep = Welcome } },
-        Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> NextOnboardingStep)
+        model, Cmd.none
 
     | StopAutoSimulation ->
         { model with Onboarding = { model.Onboarding with IsAutoSimulating = false } }, Cmd.none
@@ -325,10 +321,7 @@ type MyApp() =
 
     override this.Program =
         Program.mkProgram
-            (fun _ -> initModel, 
-                      if initModel.Onboarding.IsActive && initModel.Onboarding.IsAutoSimulating then 
-                          Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> NextOnboardingStep)
-                      else Cmd.none)
+            (fun _ -> initModel, Cmd.none)
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 
                 Html.div {

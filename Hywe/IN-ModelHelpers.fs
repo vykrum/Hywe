@@ -223,7 +223,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: space-between; align-items: center;"
         
         div {
-            attr.style "display:flex; gap:10px; align-items: center;"
+            attr.style "display:flex; gap:4px; align-items: center;"
             button {
                 attr.id "hywe-save-btn"
                 attr.``class`` "hywe-toggle-btn"
@@ -255,9 +255,9 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 on.click (fun _ -> dispatch ToggleEditorMode)
                 text nodeCodeButtonText
             }
-        }
 
-        Help.renderHelpButton dispatch
+            Help.renderHelpButton dispatch
+        }
     }
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
