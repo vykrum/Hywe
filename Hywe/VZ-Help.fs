@@ -34,7 +34,7 @@ let getOnboardingStepData step =
           Position = "lower-left-slider" }
     | Finish ->
         { Title = "Now let's give HYWE a try!"
-          Content = "Add Nodes, Alter Sizes or Change Boundary. Click 'hyWEAVE' to generate the updated configuration."
+          Content = "Add Nodes, Alter Sizes or Change Boundaries. Click 'hyWEAVE' to generate the updated configuration."
           TargetId = "hywe-hyweave"
           Position = "top-left-header" }
 
