@@ -76,9 +76,9 @@ let spaceSeq
                     .Replace("\t","")
                     .Replace(" ",""))
                     |> splitTopLevel
-                    |> Array.Parallel.map(fun x -> x.Remove(0,1)) 
-                    |> Array.Parallel.map(fun x -> x.Remove(x.Length-1,1))
-                    |> Array.Parallel.map (fun x -> x.Split "/")
+                    |> Array.map(fun x -> x.Remove(0,1)) 
+                    |> Array.map(fun x -> x.Remove(x.Length-1,1))
+                    |> Array.map (fun x -> x.Split "/")
     
     let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "0") with
                     | true -> spcMp1
@@ -87,8 +87,8 @@ let spaceSeq
     let spcAt1 = spcMp2 
                 |> Array.head 
                 |> Array.tail
-                |> Array.Parallel.map (fun x -> x.Split("="))
-                |> Array.Parallel.map (fun x -> x[0],x[1])
+                |> Array.map (fun x -> x.Split("="))
+                |> Array.map (fun x -> x[0],x[1])
                 |> Map.ofArray
 
     let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1])
@@ -97,7 +97,7 @@ let spaceSeq
     let spcMp5 = Array.append [|spcMp2 |> Array.head|] spcMp3
     let spcMp6 = spcMp5 
                 |> Array.tail
-                |> Array.Parallel.map (fun x -> (x[0],(float x[1],x[2]))) 
+                |> Array.map (fun x -> (x[0],(float x[1],x[2]))) 
                 |> Array.sortBy (fun (x,_) -> x)
                 |> Map.ofArray
 
@@ -114,7 +114,7 @@ let spaceSeq
         |> Array.head 
         |> snd 
         |> Array.windowed 2 
-        |> Array.Parallel.map(fun x -> x[0],[|x[1]|])
+        |> Array.map(fun x -> x[0],[|x[1]|])
     
     let spcKy03 = 
         spcKy01 
@@ -124,17 +124,17 @@ let spaceSeq
     let spcKy04 = 
         (Array.append spcKy02 (fst spcKy03)) 
         |> Array.groupBy (fun (x,_) -> x)
-        |> Array.Parallel.map (fun x -> snd x)
-        |> Array.Parallel.map (fun x 
-                                -> (Array.Parallel.map(fun (y,z)
+        |> Array.map (fun x -> snd x)
+        |> Array.map (fun x 
+                                -> (Array.map(fun (y,z)
                                                         -> Array.append[|y|] z))x)
-        |> Array.Parallel.map (fun x -> Array.concat x)
-        |> Array.Parallel.map (fun x -> Array.distinct x)
-        |> Array.Parallel.map (fun x -> Array.sort x)
+        |> Array.map (fun x -> Array.concat x)
+        |> Array.map (fun x -> Array.distinct x)
+        |> Array.map (fun x -> Array.sort x)
     
     let spcKy05 = 
         (snd spcKy03)
-        |> Array.Parallel.map (fun (x,y) 
+        |> Array.map (fun (x,y) 
                                 -> Array.append [|x|] y)
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
@@ -143,14 +143,14 @@ let spaceSeq
                 |  true -> [|[|"1"|]|]
                 | false -> spcKy05
         a
-        |> Array.Parallel.map(fun x 
-                                    -> (Array.Parallel.map (fun y 
+        |> Array.map(fun x 
+                                    -> (Array.map (fun y 
                                                                 -> y, spcMp6 
                                                                 |> Map.find y))x)
     let spcKey =
         spcKy06
-        |> Array.Parallel.map (fun z 
-                                -> (Array.Parallel.map (fun (x,y) 
+        |> Array.map (fun z 
+                                -> (Array.map (fun (x,y) 
                                                             -> x, fst y, snd y))z)
     spcAt1,spcKey
 ///

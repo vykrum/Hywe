@@ -311,10 +311,10 @@ let cxlHxl
                 | false -> hxlUni 1 ar1
 
     let avrv = cxl.Hxls 
-            |> Array.Parallel.partition
+            |> Array.partition
                 (fun x -> x = AV(hxlCrd x))
     let rv01 = (snd avrv) 
-            |> Array.Parallel.partition
+            |> Array.partition
                 (fun x-> (available 
                     cxl.Seqn
                     elv

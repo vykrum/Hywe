@@ -19,22 +19,22 @@ let getOnboardingStepData step =
           Position = "top-left-header" }
     | BoundaryGuide ->
         { Title = "Unbound by Default"
-          Content = "Activate Boundary to activate the interactive polygon editor. Activate Relative to reproportion sizes to fit inside."
+          Content = "Activate Boundary to manipulate the interactive editor and specify the Entry zone. Activate Relative to reproportion sizes to fit inside."
           TargetId = "hywe-polygon-editor"
           Position = "lower-left-slider" }
     | NodeGuide ->
         { Title = "The Main Blueprint"
-          Content = "Change size values inline, click + to add a child node and x to delete a node and all of its descendents"
+          Content = "Change labels and sizes inline, click + to Add a Child Node and x to Delete a Node and all of its descendents"
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | LayoutGuide ->
         { Title = "Procedural Options"
-          Content = "Slide through the 24 alternate configurations generated for every tree defined above."
+          Content = "Slide to explore the 24 alternate configurations generated for the tree structure defined above."
           TargetId = "hywe-sequence-selector"
           Position = "lower-left-slider" }
     | Finish ->
         { Title = "End of the Beginning"
-          Content = "Now add a node or alter a size. Remember to click 'hyWEAVE' to update the layout generated below."
+          Content = "Now Add a Node or Alter a Size. Remember to click 'hyWEAVE' to generate an updated configuration."
           TargetId = "hywe-hyweave"
           Position = "top-left-header" }
 
@@ -48,29 +48,39 @@ let renderHelpButton (dispatch: Message -> unit) =
 
 /// Helper to render text with colored + and -/- symbols
 let renderFormattedContent (content: string) =
-    let words = content.Split(' ')
+    let words = content.Split([| ' ' |], System.StringSplitOptions.None)
     span {
-        for i, word in words |> Seq.indexed do
+        for i = 0 to words.Length - 1 do
+            let word = words.[i]
             let cleanWord = word.TrimEnd([| '.'; ','; ';'; ':' |])
             if cleanWord = "Boundary" || cleanWord = "Relative" then
                 strong { text word }
             else
-                for c in word do
+                for j = 0 to word.Length - 1 do
+                    let c = word.[j]
                     match c with
                     | '+' -> span { attr.``class`` "onb-green"; text "+" }
                     | 'x' | '×' when cleanWord.Length = 1 -> span { attr.``class`` "onb-orange"; text (string c) }
+                    | 'E' when cleanWord = "Entry" -> strong { text "E" }
                     | _ -> text (string c)
             if i < words.Length - 1 then text " "
     }
 
 let viewHelp (state: OnboardingState) (dispatch: Message -> unit) =
     let data = getOnboardingStepData state.CurrentStep
-    
+    let stepId = 
+        match state.CurrentStep with
+        | Welcome -> "onboarding-step-Welcome"
+        | BoundaryGuide -> "onboarding-step-BoundaryGuide"
+        | NodeGuide -> "onboarding-step-NodeGuide"
+        | LayoutGuide -> "onboarding-step-LayoutGuide"
+        | Finish -> "onboarding-step-Finish"
+
     div {
         attr.``class`` "onboarding-overlay"
         
         div {
-            attr.id (sprintf "onboarding-step-%A" state.CurrentStep)
+            attr.id stepId
             attr.``class`` ("onboarding-tooltip " + data.Position)
             attr.style "position: absolute;"
             
