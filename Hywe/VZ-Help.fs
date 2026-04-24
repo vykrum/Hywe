@@ -38,14 +38,6 @@ let getOnboardingStepData step =
           TargetId = "hywe-hyweave"
           Position = "top-left-header" }
 
-let renderHelpButton (dispatch: Message -> unit) =
-    span {
-        attr.id "hywe-help-trigger"
-        attr.style "cursor: pointer; color: #888; font-size: 14px; margin-left: 10px;"
-        on.click (fun _ -> dispatch RestartOnboarding)
-        text "?"
-    }
-
 /// Helper to render text with colored + and -/- symbols
 let renderFormattedContent (content: string) =
     let words = content.Split([| ' ' |], System.StringSplitOptions.None)
