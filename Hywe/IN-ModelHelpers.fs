@@ -255,8 +255,6 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 on.click (fun _ -> dispatch ToggleEditorMode)
                 text nodeCodeButtonText
             }
-
-            Help.renderHelpButton dispatch
         }
     }
 
