@@ -13,8 +13,8 @@ type TooltipDef = {
 let getOnboardingStepData step =
     match step with
     | Welcome ->
-        { Title = "Welcome to Hywe"
-          Content = "Grow the interactive tree on the right to outline the flow of your spaces."
+        { Title = "Welcome to HYWE"
+          Content = "The interactive tree on the right is the primary interface. This is where you will design space hierarchies."
           TargetId = "hywe-save-btn"
           Position = "top-left-header" }
     | BoundaryGuide ->
@@ -23,18 +23,18 @@ let getOnboardingStepData step =
           TargetId = "hywe-polygon-editor"
           Position = "lower-left-slider" }
     | NodeGuide ->
-        { Title = "The Main Blueprint"
+        { Title = "Chart your Design Intent"
           Content = "Change labels and sizes inline, click + to Add a Child Node and x to Delete a Node and all of its descendents"
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | LayoutGuide ->
-        { Title = "Procedural Options"
+        { Title = "The Procedural Variations"
           Content = "Slide to explore the 24 alternate configurations generated for the tree structure defined above."
           TargetId = "hywe-sequence-selector"
           Position = "lower-left-slider" }
     | Finish ->
-        { Title = "End of the Beginning"
-          Content = "Now Add a Node or Alter a Size. Remember to click 'hyWEAVE' to generate an updated configuration."
+        { Title = "Now let's give HYWE a try!"
+          Content = "Add Nodes, Alter Sizes or Change Boundary. Click 'hyWEAVE' to generate the updated configuration."
           TargetId = "hywe-hyweave"
           Position = "top-left-header" }
 

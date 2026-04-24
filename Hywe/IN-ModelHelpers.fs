@@ -254,6 +254,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> dispatch ToggleEditorMode)
                 text nodeCodeButtonText
+            }
         }
     }
 
