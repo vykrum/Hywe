@@ -597,7 +597,8 @@ video.fullscreen-bg {
     user-select: none;
 }
 
-.tree-container.is-dragging-any input {
+.tree-container.is-dragging-any input,
+.tree-container.is-dragging-any .node-outer {
     pointer-events: none;
 }
 
