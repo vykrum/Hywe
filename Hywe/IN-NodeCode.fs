@@ -5,6 +5,7 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Microsoft.AspNetCore.Components
+open Microsoft.AspNetCore.Components.Web
 
 // --------------------
 // Data Structures
@@ -190,61 +191,69 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
         ]
 
     div {
-        attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px; pointer-events:none;"
+        attr.``class`` outerClasses
+        attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px;"
         
-        div {
-            attr.``class`` outerClasses
-            attr.style "position:absolute; inset:0; pointer-events:auto;"
-            
-            on.pointerdown (fun _ -> if not isRoot then dispatch (DragStart node.Id))
-            on.pointerover (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch (DragOver (Some node.Id)))
-            on.pointerout (fun _ -> if not isRoot && model.DraggingId.IsSome && isDropTarget then dispatch (DragOver None))
-            on.pointerup (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch PerformMove)
+        on.pointerdown (fun e -> 
+            if not isRoot then 
+                dispatch (DragStart node.Id)
+        )
+        // This is the magic for touch devices: release capture so other nodes can receive pointerover
+        attr.attr "onpointerdown" "if(this.releasePointerCapture) this.releasePointerCapture(event.pointerId)"
 
-            div {
-                attr.``class`` "node-inner"
-                match isConfirmingThis with
-                | true -> 
-                    button {
-                        attr.``class`` "node-confirm-del"
-                        on.click (fun _ -> dispatch (DeleteNode node.Id))
-                        text "DELETE"
-                    }
-                    button {
-                        attr.``class`` "node-confirm-cancel"
-                        on.click (fun _ -> dispatch CancelDelete)
-                        text "CANCEL"
-                    }
-                | false ->
-                    concat {
-                        let isNotRoot = node.Id <> model.Root.Id
-                        match isNotRoot with
-                        | true -> 
-                            button { 
-                                attr.``class`` "nodebutton1"
-                                on.click (fun _ -> dispatch (ConfirmDelete node.Id))
-                                text "×" 
-                            }
-                        | false -> ()
-    
-                        input {
-                            attr.``class`` "nodename"
-                            attr.value node.Name
-                            on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
-                        }
-                        input {
-                            attr.``class`` "nodeweight"
-                            attr.value node.Weight
-                            on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
-                        }
-                        
+        on.pointerover (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch (DragOver (Some node.Id)))
+        on.pointerout (fun _ -> if not isRoot && model.DraggingId.IsSome && isDropTarget then dispatch (DragOver None))
+        on.pointerup (fun _ -> if model.DraggingId.IsSome then dispatch PerformMove)
+
+        div {
+            attr.``class`` "node-inner"
+            match isConfirmingThis with
+            | true -> 
+                button {
+                    attr.``class`` "node-confirm-del"
+                    "onpointerdown:stopPropagation" => true
+                    on.click (fun _ -> dispatch (DeleteNode node.Id))
+                    text "DELETE"
+                }
+                button {
+                    attr.``class`` "node-confirm-cancel"
+                    "onpointerdown:stopPropagation" => true
+                    on.click (fun _ -> dispatch CancelDelete)
+                    text "CANCEL"
+                }
+            | false ->
+                concat {
+                    let isNotRoot = node.Id <> model.Root.Id
+                    match isNotRoot with
+                    | true -> 
                         button { 
-                            attr.``class`` "nodebutton2"
-                            on.click (fun _ -> dispatch (AddChild node.Id))
-                            text "+" 
+                            attr.``class`` "nodebutton1"
+                            "onpointerdown:stopPropagation" => true
+                            on.click (fun _ -> dispatch (ConfirmDelete node.Id))
+                            text "×" 
                         }
+                    | false -> ()
+
+                    input {
+                        attr.``class`` "nodename"
+                        attr.value node.Name
+                        "onpointerdown:stopPropagation" => true
+                        on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
                     }
-            }
+                    input {
+                        attr.``class`` "nodeweight"
+                        attr.value node.Weight
+                        "onpointerdown:stopPropagation" => true
+                        on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
+                    }
+                    
+                    button { 
+                        attr.``class`` "nodebutton2"
+                        "onpointerdown:stopPropagation" => true
+                        on.click (fun _ -> dispatch (AddChild node.Id))
+                        text "+" 
+                    }
+                }
         }
     }
 
@@ -289,6 +298,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
     div {
         attr.``class`` containerClasses
+        attr.style (if model.DraggingId.IsSome then "touch-action: none;" else "")
         on.pointerup (fun _ -> if model.DraggingId.IsSome then dispatch DragEnd)
         div {
             attr.``class`` "tree-canvas"
