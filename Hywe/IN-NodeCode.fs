@@ -28,8 +28,10 @@ type SubModel =
     { Root: TreeNode
       ConfirmingId: System.Guid option
       DraggingId: System.Guid option
+      PendingDragId: System.Guid option
       DropTargetId: System.Guid option
       SvgInfo: SvgInfo option
+      PointerDownPos: Point option
       LastMoveMs: float option }
 
 type SubMsg =
@@ -42,7 +44,7 @@ type SubMsg =
     | PointerDown of MouseEventArgs
     | PointerMove of MouseEventArgs
     | PointerUp
-    | DragStartInternal of System.Guid * SvgInfo
+    | DragStartInternal of System.Guid * SvgInfo * Point
     | PointerUpInternal
 
 type svLn = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>""">
@@ -183,7 +185,7 @@ let updateSub (js: IJSRuntime) msg model =
         let newRoot = updateNodeById id (fun n -> { n with Weight = weight }) model.Root
         { model with Root = newRoot }, Cmd.none
     | PointerDown ev ->
-        model, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
+        { model with PointerDownPos = None; PendingDragId = None }, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
             let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
             let rec findNode node =
                 if pt.X >= node.X - 30.0 && pt.X <= node.X + 30.0 &&
@@ -191,16 +193,16 @@ let updateSub (js: IJSRuntime) msg model =
                 else node.Children |> List.tryPick findNode
             let hitId = findNode model.Root
             match hitId with
-            | Some id when id <> model.Root.Id -> DragStartInternal (id, info)
+            | Some id when id <> model.Root.Id -> DragStartInternal (id, info, pt)
             | _ -> PointerUpInternal
         )
     | PointerMove ev ->
-        match model.DraggingId, model.SvgInfo with
-        | Some _, Some info ->
-            let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
-            match model.LastMoveMs with
-            | Some last when nowMs - last < 16.0 -> model, Cmd.none
-            | _ ->
+        let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
+        match model.LastMoveMs with
+        | Some last when nowMs - last < 16.0 -> model, Cmd.none
+        | _ ->
+            match model.DraggingId, model.SvgInfo with
+            | Some _, Some info ->
                 let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
                 let rec findNode node =
                     if pt.X >= node.X - 30.0 && pt.X <= node.X + 30.0 &&
@@ -209,8 +211,22 @@ let updateSub (js: IJSRuntime) msg model =
                 
                 let targetId = findNode model.Root
                 { model with DropTargetId = targetId; LastMoveMs = Some nowMs }, Cmd.none
-        | _ -> model, Cmd.none
+
+            | None, Some info -> 
+                match model.PendingDragId, model.PointerDownPos with
+                | Some pendingId, Some startPt ->
+                    let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
+                    let dx = pt.X - startPt.X
+                    let dy = pt.Y - startPt.Y
+                    let dist = sqrt (dx*dx + dy*dy)
+                    if dist > 5.0 then
+                        { model with DraggingId = Some pendingId; PendingDragId = None; LastMoveMs = Some nowMs }, Cmd.none
+                    else model, Cmd.none
+                | _ -> model, Cmd.none
+            | _ -> model, Cmd.none
+
     | PointerUp ->
+        let model = { model with PendingDragId = None; PointerDownPos = None }
         match model.DraggingId, model.DropTargetId with
         | Some sourceId, Some targetId when sourceId <> targetId ->
             let sourceNode = findNodeById sourceId model.Root
@@ -226,10 +242,10 @@ let updateSub (js: IJSRuntime) msg model =
                         { model with Root = layoutTree newRoot 0 (ref 50.0); DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
                     | _ -> { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
         | _ -> { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
-    | DragStartInternal (id, info) -> 
-        { model with DraggingId = Some id; SvgInfo = Some info; DropTargetId = None }, Cmd.none
+    | DragStartInternal (id, info, pt) -> 
+        { model with PendingDragId = Some id; SvgInfo = Some info; PointerDownPos = Some pt; DropTargetId = None }, Cmd.none
     | PointerUpInternal ->
-        { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+        { model with DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None }, Cmd.none
 
 // --------------------
 // View
@@ -401,4 +417,4 @@ let initModel (inputString: string) : SubModel =
     let hasNodes = List.isEmpty treeResult
     match hasNodes with
     | true -> failwith "No valid nodes found."
-    | false -> { Root = layoutTree treeResult.Head 0 (ref 50.0); ConfirmingId = None; DraggingId = None; DropTargetId = None; SvgInfo = None; LastMoveMs = None }
+    | false -> { Root = layoutTree treeResult.Head 0 (ref 50.0); ConfirmingId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
