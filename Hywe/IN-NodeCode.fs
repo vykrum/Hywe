@@ -99,19 +99,19 @@ let rec extractNode (id: Guid) (node: TreeNode) : TreeNode option * TreeNode opt
                 newNode)
         (Some { node with Children = newChildren }, extracted)
 
-let rec insertAfter (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
+let rec insertBefore (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
     let rec insertInList list =
         match list with
         | [] -> []
         | h :: t ->
-            if h.Id = targetId then h :: nodeToInsert :: t
+            if h.Id = targetId then nodeToInsert :: h :: t
             else h :: insertInList t
     
     let hasTarget = node.Children |> List.exists (fun c -> c.Id = targetId)
     if hasTarget then
         { node with Children = insertInList node.Children }
     else
-        { node with Children = node.Children |> List.map (insertAfter targetId nodeToInsert) }
+        { node with Children = node.Children |> List.map (insertBefore targetId nodeToInsert) }
 
 // --------------------
 // Layout
@@ -167,7 +167,7 @@ let updateSub msg model =
                     let (rootWithoutSource, extracted) = extractNode sourceId model.Root
                     match rootWithoutSource, extracted with
                     | Some rs, Some ex ->
-                        let newRoot = insertAfter targetId ex rs
+                        let newRoot = insertBefore targetId ex rs
                         { model with Root = layoutTree newRoot 0 (ref 50.0); DraggingId = None; DropTargetId = None }, Cmd.none
                     | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
         | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
