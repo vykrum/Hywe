@@ -99,19 +99,19 @@ let rec extractNode (id: Guid) (node: TreeNode) : TreeNode option * TreeNode opt
                 newNode)
         (Some { node with Children = newChildren }, extracted)
 
-let rec insertAfter (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
+let rec insertBefore (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
     let rec insertInList list =
         match list with
         | [] -> []
         | h :: t ->
-            if h.Id = targetId then h :: nodeToInsert :: t
+            if h.Id = targetId then nodeToInsert :: h :: t
             else h :: insertInList t
     
     let hasTarget = node.Children |> List.exists (fun c -> c.Id = targetId)
     if hasTarget then
         { node with Children = insertInList node.Children }
     else
-        { node with Children = node.Children |> List.map (insertAfter targetId nodeToInsert) }
+        { node with Children = node.Children |> List.map (insertBefore targetId nodeToInsert) }
 
 // --------------------
 // Layout
@@ -167,7 +167,7 @@ let updateSub msg model =
                     let (rootWithoutSource, extracted) = extractNode sourceId model.Root
                     match rootWithoutSource, extracted with
                     | Some rs, Some ex ->
-                        let newRoot = insertAfter targetId ex rs
+                        let newRoot = insertBefore targetId ex rs
                         { model with Root = layoutTree newRoot 0 (ref 50.0); DraggingId = None; DropTargetId = None }, Cmd.none
                     | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
         | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
@@ -190,61 +190,63 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
         ]
 
     div {
-        attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px; pointer-events:none;"
+        attr.``class`` outerClasses
+        attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px;"
         
-        div {
-            attr.``class`` outerClasses
-            attr.style "position:absolute; inset:0; pointer-events:auto;"
-            
-            on.pointerdown (fun _ -> if not isRoot then dispatch (DragStart node.Id))
-            on.pointerover (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch (DragOver (Some node.Id)))
-            on.pointerout (fun _ -> if not isRoot && model.DraggingId.IsSome && isDropTarget then dispatch (DragOver None))
-            on.pointerup (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch PerformMove)
+        on.pointerdown (fun _ -> if not isRoot then dispatch (DragStart node.Id))
+        on.pointerover (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch (DragOver (Some node.Id)))
+        on.pointerout (fun _ -> if not isRoot && model.DraggingId.IsSome && isDropTarget then dispatch (DragOver None))
+        on.pointerup (fun _ -> if model.DraggingId.IsSome then dispatch PerformMove)
 
-            div {
-                attr.``class`` "node-inner"
-                match isConfirmingThis with
-                | true -> 
-                    button {
-                        attr.``class`` "node-confirm-del"
-                        on.click (fun _ -> dispatch (DeleteNode node.Id))
-                        text "DELETE"
-                    }
-                    button {
-                        attr.``class`` "node-confirm-cancel"
-                        on.click (fun _ -> dispatch CancelDelete)
-                        text "CANCEL"
-                    }
-                | false ->
-                    concat {
-                        let isNotRoot = node.Id <> model.Root.Id
-                        match isNotRoot with
-                        | true -> 
-                            button { 
-                                attr.``class`` "nodebutton1"
-                                on.click (fun _ -> dispatch (ConfirmDelete node.Id))
-                                text "×" 
-                            }
-                        | false -> ()
-    
-                        input {
-                            attr.``class`` "nodename"
-                            attr.value node.Name
-                            on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
-                        }
-                        input {
-                            attr.``class`` "nodeweight"
-                            attr.value node.Weight
-                            on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
-                        }
-                        
+        div {
+            attr.``class`` "node-inner"
+            match isConfirmingThis with
+            | true -> 
+                button {
+                    attr.``class`` "node-confirm-del"
+                    "onpointerdown:stopPropagation" => true
+                    on.click (fun _ -> dispatch (DeleteNode node.Id))
+                    text "DELETE"
+                }
+                button {
+                    attr.``class`` "node-confirm-cancel"
+                    "onpointerdown:stopPropagation" => true
+                    on.click (fun _ -> dispatch CancelDelete)
+                    text "CANCEL"
+                }
+            | false ->
+                concat {
+                    let isNotRoot = node.Id <> model.Root.Id
+                    match isNotRoot with
+                    | true -> 
                         button { 
-                            attr.``class`` "nodebutton2"
-                            on.click (fun _ -> dispatch (AddChild node.Id))
-                            text "+" 
+                            attr.``class`` "nodebutton1"
+                            "onpointerdown:stopPropagation" => true
+                            on.click (fun _ -> dispatch (ConfirmDelete node.Id))
+                            text "×" 
                         }
+                    | false -> ()
+
+                    input {
+                        attr.``class`` "nodename"
+                        attr.value node.Name
+                        "onpointerdown:stopPropagation" => true
+                        on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
                     }
-            }
+                    input {
+                        attr.``class`` "nodeweight"
+                        attr.value node.Weight
+                        "onpointerdown:stopPropagation" => true
+                        on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
+                    }
+                    
+                    button { 
+                        attr.``class`` "nodebutton2"
+                        "onpointerdown:stopPropagation" => true
+                        on.click (fun _ -> dispatch (AddChild node.Id))
+                        text "+" 
+                    }
+                }
         }
     }
 
@@ -289,6 +291,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
     div {
         attr.``class`` containerClasses
+        attr.style (if model.DraggingId.IsSome then "touch-action: none;" else "")
         on.pointerup (fun _ -> if model.DraggingId.IsSome then dispatch DragEnd)
         div {
             attr.``class`` "tree-canvas"
