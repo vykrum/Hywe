@@ -591,6 +591,14 @@ video.fullscreen-bg {
     padding-top: 16px;
     display: flex;
     justify-content: center;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.tree-container.is-dragging-any input {
+    pointer-events: none;
 }
 
 .tree-canvas {
@@ -615,6 +623,12 @@ video.fullscreen-bg {
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s, transform 0.1s;
+    cursor: grab;
+    touch-action: none;
+}
+
+.node-outer:active {
+    cursor: grabbing;
 }
 
 .node-inner {
@@ -647,6 +661,21 @@ video.fullscreen-bg {
 .node-outer.is-confirming .node-inner {
     background-color: #fdf2e9;
     /* Slightly deeper tint for the source */
+}
+
+.node-outer.is-dragging {
+    opacity: 0.5;
+    transform: scale(0.9);
+}
+
+.node-outer.is-drop-target {
+    background-color: #3498db;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+.node-outer.is-drop-target .node-inner {
+    background-color: #ebf5fb;
 }
 
 /* =====================

@@ -66,7 +66,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
                 with _ -> None
             |> Option.map (fun tree ->
                 let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                { Root = laidOut; ConfirmingId = None }
+                { Root = laidOut; ConfirmingId = None; DraggingId = None; DropTargetId = None }
             )
 
         match maybeSubModel with
@@ -187,7 +187,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
                 try 
                     let tree = CodeNode.parseOutput processed
                     let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                    { Root = laidOut; ConfirmingId = None }
+                    { Root = laidOut; ConfirmingId = None; DraggingId = None; DropTargetId = None }
                 with _ -> model.Tree 
 
         let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
