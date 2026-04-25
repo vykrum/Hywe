@@ -156,7 +156,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | TreeMsg subMsg ->
-            let updatedTree, treeCmd = NodeCode.updateSub subMsg model.Tree 
+            let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
         
             let newOutput = NodeCode.getOutput
                                 updatedTree
@@ -168,16 +168,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 model.PolygonExport.OuterStr
                                 model.PolygonExport.IslandsStr
             
-            // Auto-dismiss onboarding on tree interaction
+            // Auto-dismiss onboarding on meaningful tree interaction
+            let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
             let onboarding = 
-                if model.Onboarding.IsActive then 
+                if model.Onboarding.IsActive && not isMoving then 
                     { model.Onboarding with IsActive = false; IsAutoSimulating = false }
                 else model.Onboarding
 
             { model with 
                 Tree = updatedTree 
                 SrcOfTrth = newOutput 
-                NeedsHyweave = true
+                NeedsHyweave = if isMoving then model.NeedsHyweave else true
                 Onboarding = onboarding }, 
             Cmd.map TreeMsg treeCmd
 

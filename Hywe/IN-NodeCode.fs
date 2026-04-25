@@ -4,10 +4,14 @@ open System
 open Elmish
 open Bolero
 open Bolero.Html
+open Microsoft.JSInterop
+open Microsoft.AspNetCore.Components.Web
 
 // --------------------
 // Data Structures
 // --------------------
+type Point = { X: float; Y: float }
+
 type TreeNode =
     { Id: Guid
       Name: string
@@ -16,11 +20,17 @@ type TreeNode =
       Y: float
       Children: TreeNode list }
 
+type SvgInfo =
+    { ViewBoxX: float; ViewBoxY: float; ViewBoxW: float; ViewBoxH: float
+      ClientLeft: float; ClientTop: float; ClientW: float; ClientH: float }
+
 type SubModel = 
     { Root: TreeNode
       ConfirmingId: System.Guid option
       DraggingId: System.Guid option
-      DropTargetId: System.Guid option }
+      DropTargetId: System.Guid option
+      SvgInfo: SvgInfo option
+      LastMoveMs: float option }
 
 type SubMsg =
     | ConfirmDelete of System.Guid
@@ -29,10 +39,11 @@ type SubMsg =
     | AddChild of System.Guid
     | UpdateName of System.Guid * string
     | UpdateWeight of System.Guid * string
-    | DragStart of System.Guid
-    | DragOver of System.Guid option
-    | DragEnd
-    | PerformMove
+    | PointerDown of MouseEventArgs
+    | PointerMove of MouseEventArgs
+    | PointerUp
+    | DragStartInternal of System.Guid * SvgInfo
+    | PointerUpInternal
 
 type svLn = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>""">
 
@@ -130,10 +141,30 @@ let rec layoutTree (node: TreeNode) (depth: int) (xOffset: float ref) : TreeNode
         let x = (firstX + lastX) / 2.0
         { node with X = x; Y = y; Children = laidOutChildren }
 
+// ---------- JS interop helpers ----------
+let getSvgInfo (js: IJSRuntime) =
+    async {
+        let! el = js.InvokeAsync<System.Text.Json.JsonElement>("getSvgInfo", [| box "tree-canvas-svg" |]).AsTask() |> Async.AwaitTask
+        return { 
+            ViewBoxX = el.GetProperty("viewBoxX").GetDouble()
+            ViewBoxY = el.GetProperty("viewBoxY").GetDouble()
+            ViewBoxW = el.GetProperty("viewBoxW").GetDouble()
+            ViewBoxH = el.GetProperty("viewBoxH").GetDouble()
+            ClientLeft = el.GetProperty("left").GetDouble()
+            ClientTop = el.GetProperty("top").GetDouble()
+            ClientW = el.GetProperty("width").GetDouble()
+            ClientH = el.GetProperty("height").GetDouble()
+        }
+    }
+
+let toSvgCoords (info: SvgInfo) (clientX: float) (clientY: float) =
+    { X = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
+      Y = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH }
+
 // --------------------
 // Update
 // --------------------
-let updateSub msg model =
+let updateSub (js: IJSRuntime) msg model =
     match msg with
     | ConfirmDelete id -> { model with ConfirmingId = Some id }, Cmd.none
     | CancelDelete -> { model with ConfirmingId = None }, Cmd.none
@@ -151,25 +182,54 @@ let updateSub msg model =
     | UpdateWeight (id, weight) ->
         let newRoot = updateNodeById id (fun n -> { n with Weight = weight }) model.Root
         { model with Root = newRoot }, Cmd.none
-    | DragStart id -> { model with DraggingId = Some id; DropTargetId = None }, Cmd.none
-    | DragOver id -> { model with DropTargetId = id }, Cmd.none
-    | DragEnd -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
-    | PerformMove ->
+    | PointerDown ev ->
+        model, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
+            let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
+            let rec findNode node =
+                if pt.X >= node.X - 30.0 && pt.X <= node.X + 30.0 &&
+                   pt.Y >= node.Y - 35.0 && pt.Y <= node.Y + 25.0 then Some node.Id
+                else node.Children |> List.tryPick findNode
+            let hitId = findNode model.Root
+            match hitId with
+            | Some id when id <> model.Root.Id -> DragStartInternal (id, info)
+            | _ -> PointerUpInternal
+        )
+    | PointerMove ev ->
+        match model.DraggingId, model.SvgInfo with
+        | Some _, Some info ->
+            let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
+            match model.LastMoveMs with
+            | Some last when nowMs - last < 16.0 -> model, Cmd.none
+            | _ ->
+                let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
+                let rec findNode node =
+                    if pt.X >= node.X - 30.0 && pt.X <= node.X + 30.0 &&
+                       pt.Y >= node.Y - 35.0 && pt.Y <= node.Y + 25.0 then Some node.Id
+                    else node.Children |> List.tryPick findNode
+                
+                let targetId = findNode model.Root
+                { model with DropTargetId = targetId; LastMoveMs = Some nowMs }, Cmd.none
+        | _ -> model, Cmd.none
+    | PointerUp ->
         match model.DraggingId, model.DropTargetId with
         | Some sourceId, Some targetId when sourceId <> targetId ->
             let sourceNode = findNodeById sourceId model.Root
             match sourceNode with
-            | None -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
+            | None -> { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
             | Some sn ->
-                if isDescendant targetId sn then { model with DraggingId = None; DropTargetId = None }, Cmd.none
+                if isDescendant targetId sn then { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
                 else
                     let (rootWithoutSource, extracted) = extractNode sourceId model.Root
                     match rootWithoutSource, extracted with
                     | Some rs, Some ex ->
                         let newRoot = insertBefore targetId ex rs
-                        { model with Root = layoutTree newRoot 0 (ref 50.0); DraggingId = None; DropTargetId = None }, Cmd.none
-                    | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
-        | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
+                        { model with Root = layoutTree newRoot 0 (ref 50.0); DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+                    | _ -> { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+        | _ -> { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+    | DragStartInternal (id, info) -> 
+        { model with DraggingId = Some id; SvgInfo = Some info; DropTargetId = None }, Cmd.none
+    | PointerUpInternal ->
+        { model with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
 
 // --------------------
 // View
@@ -189,61 +249,59 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
         ]
 
     div {
+        attr.``class`` outerClasses
         attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px; pointer-events:none;"
         
         div {
-            attr.``class`` outerClasses
-            attr.style "position:absolute; inset:0; pointer-events:auto;"
-            
-            on.pointerdown (fun _ -> if not isRoot then dispatch (DragStart node.Id))
-            on.pointerover (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch (DragOver (Some node.Id)))
-            on.pointerout (fun _ -> if not isRoot && model.DraggingId.IsSome && isDropTarget then dispatch (DragOver None))
-            on.pointerup (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch PerformMove)
-
-            div {
-                attr.``class`` "node-inner"
-                match isConfirmingThis with
-                | true -> 
-                    button {
-                        attr.``class`` "node-confirm-del"
-                        on.click (fun _ -> dispatch (DeleteNode node.Id))
-                        text "DELETE"
-                    }
-                    button {
-                        attr.``class`` "node-confirm-cancel"
-                        on.click (fun _ -> dispatch CancelDelete)
-                        text "CANCEL"
-                    }
-                | false ->
-                    concat {
-                        let isNotRoot = node.Id <> model.Root.Id
-                        match isNotRoot with
-                        | true -> 
-                            button { 
-                                attr.``class`` "nodebutton1"
-                                on.click (fun _ -> dispatch (ConfirmDelete node.Id))
-                                text "×" 
-                            }
-                        | false -> ()
-    
-                        input {
-                            attr.``class`` "nodename"
-                            attr.value node.Name
-                            on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
-                        }
-                        input {
-                            attr.``class`` "nodeweight"
-                            attr.value node.Weight
-                            on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
-                        }
-                        
+            attr.``class`` "node-inner"
+            attr.style "pointer-events:auto;" // Allow interaction with buttons/inputs
+            match isConfirmingThis with
+            | true -> 
+                button {
+                    attr.``class`` "node-confirm-del"
+                    "onpointerdown:stopPropagation" => true
+                    on.click (fun _ -> dispatch (DeleteNode node.Id))
+                    text "DELETE"
+                }
+                button {
+                    attr.``class`` "node-confirm-cancel"
+                    "onpointerdown:stopPropagation" => true
+                    on.click (fun _ -> dispatch CancelDelete)
+                    text "CANCEL"
+                }
+            | false ->
+                concat {
+                    let isNotRoot = node.Id <> model.Root.Id
+                    match isNotRoot with
+                    | true -> 
                         button { 
-                            attr.``class`` "nodebutton2"
-                            on.click (fun _ -> dispatch (AddChild node.Id))
-                            text "+" 
+                            attr.``class`` "nodebutton1"
+                            "onpointerdown:stopPropagation" => true
+                            on.click (fun _ -> dispatch (ConfirmDelete node.Id))
+                            text "×" 
                         }
+                    | false -> ()
+
+                    input {
+                        attr.``class`` "nodename"
+                        attr.value node.Name
+                        "onpointerdown:stopPropagation" => true
+                        on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
                     }
-            }
+                    input {
+                        attr.``class`` "nodeweight"
+                        attr.value node.Weight
+                        "onpointerdown:stopPropagation" => true
+                        on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
+                    }
+                    
+                    button { 
+                        attr.``class`` "nodebutton2"
+                        "onpointerdown:stopPropagation" => true
+                        on.click (fun _ -> dispatch (AddChild node.Id))
+                        text "+" 
+                    }
+                }
         }
     }
 
@@ -288,10 +346,15 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 
     div {
         attr.``class`` containerClasses
-        on.pointerup (fun _ -> if model.DraggingId.IsSome then dispatch DragEnd)
+        on.pointermove (fun ev -> dispatch (PointerMove ev))
+        on.pointerup (fun _ -> dispatch PointerUp)
+
         div {
+            attr.id "tree-canvas-svg"
             attr.``class`` "tree-canvas"
-            attr.style $"width:{canvasWidth}px; height:{max 150.0 canvasHeight}px;"
+            attr.style $"width:{canvasWidth}px; height:{max 150.0 canvasHeight}px; touch-action:none;"
+            on.pointerdown (fun ev -> dispatch (PointerDown ev))
+            
             svg {
                 attr.``class`` "tree-svg"
                 attr.style $"width:{canvasWidth}px; height:{canvasHeight}px;"
@@ -338,4 +401,4 @@ let initModel (inputString: string) : SubModel =
     let hasNodes = List.isEmpty treeResult
     match hasNodes with
     | true -> failwith "No valid nodes found."
-    | false -> { Root = layoutTree treeResult.Head 0 (ref 50.0); ConfirmingId = None; DraggingId = None; DropTargetId = None }
+    | false -> { Root = layoutTree treeResult.Head 0 (ref 50.0); ConfirmingId = None; DraggingId = None; DropTargetId = None; SvgInfo = None; LastMoveMs = None }
