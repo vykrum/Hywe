@@ -604,6 +604,7 @@ video.fullscreen-bg {
 
 .tree-canvas {
     position: relative;
+    touch-action: none;
 }
 
 .tree-svg {
