@@ -666,7 +666,6 @@ video.fullscreen-bg {
 }
 
 .node-outer.is-dragging {
-    opacity: 0.5;
     transform: scale(0.9);
 }
 
