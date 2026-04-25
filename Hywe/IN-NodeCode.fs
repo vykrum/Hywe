@@ -19,7 +19,9 @@ type TreeNode =
 
 type SubModel = 
     { Root: TreeNode
-      ConfirmingId: System.Guid option }
+      ConfirmingId: System.Guid option
+      DraggingId: System.Guid option
+      DropTargetId: System.Guid option }
 
 type SubMsg =
     | ConfirmDelete of System.Guid
@@ -28,6 +30,10 @@ type SubMsg =
     | AddChild of System.Guid
     | UpdateName of System.Guid * string
     | UpdateWeight of System.Guid * string
+    | DragStart of System.Guid
+    | DragOver of System.Guid option
+    | DragEnd
+    | PerformMove
 
 type svLn = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>""">
 
@@ -82,6 +88,31 @@ let rec updateNodeById id updateFn node =
     | true -> updateFn node
     | false -> { node with Children = node.Children |> List.map (updateNodeById id updateFn) }
 
+let rec extractNode (id: Guid) (node: TreeNode) : TreeNode option * TreeNode option =
+    if node.Id = id then (None, Some node)
+    else
+        let mutable extracted = None
+        let newChildren = 
+            node.Children |> List.choose (fun c ->
+                let (newNode, found) = extractNode id c
+                if found.IsSome then extracted <- found
+                newNode)
+        (Some { node with Children = newChildren }, extracted)
+
+let rec insertAfter (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
+    let rec insertInList list =
+        match list with
+        | [] -> []
+        | h :: t ->
+            if h.Id = targetId then h :: nodeToInsert :: t
+            else h :: insertInList t
+    
+    let hasTarget = node.Children |> List.exists (fun c -> c.Id = targetId)
+    if hasTarget then
+        { node with Children = insertInList node.Children }
+    else
+        { node with Children = node.Children |> List.map (insertAfter targetId nodeToInsert) }
+
 // --------------------
 // Layout
 // --------------------
@@ -121,69 +152,102 @@ let updateSub msg model =
     | UpdateWeight (id, weight) ->
         let newRoot = updateNodeById id (fun n -> { n with Weight = weight }) model.Root
         { model with Root = newRoot }, Cmd.none
+    | DragStart id -> { model with DraggingId = Some id; DropTargetId = None }, Cmd.none
+    | DragOver id -> { model with DropTargetId = id }, Cmd.none
+    | DragEnd -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
+    | PerformMove ->
+        match model.DraggingId, model.DropTargetId with
+        | Some sourceId, Some targetId when sourceId <> targetId ->
+            let sourceNode = findNodeById sourceId model.Root
+            match sourceNode with
+            | None -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
+            | Some sn ->
+                if isDescendant targetId sn then { model with DraggingId = None; DropTargetId = None }, Cmd.none
+                else
+                    let (rootWithoutSource, extracted) = extractNode sourceId model.Root
+                    match rootWithoutSource, extracted with
+                    | Some rs, Some ex ->
+                        let newRoot = insertAfter targetId ex rs
+                        { model with Root = layoutTree newRoot 0 (ref 50.0); DraggingId = None; DropTargetId = None }, Cmd.none
+                    | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
+        | _ -> { model with DraggingId = None; DropTargetId = None }, Cmd.none
 
 // --------------------
 // View
 // --------------------
-let renderNode (node: TreeNode) (model: SubModel) (isAffected: bool) (dispatch: SubMsg -> unit) =
+let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: bool) (dispatch: SubMsg -> unit) =
+    let isRoot = node.Id = model.Root.Id
     let isConfirmingThis = model.ConfirmingId = Some node.Id
+    let isDropTarget = model.DropTargetId = Some node.Id
     
-    // Combine CSS classes based on state
     let outerClasses = 
         String.concat " " [
             "node-outer"
-            if isAffected then "is-affected"
-            if isConfirmingThis then "is-confirming"
+            if isAffected && not isRoot then "is-affected"
+            if isConfirmingThis && not isRoot then "is-confirming"
+            if model.DraggingId = Some node.Id && not isRoot then "is-dragging"
+            if isDropTarget && not isRoot then "is-drop-target"
         ]
 
     div {
-        attr.``class`` outerClasses
-        attr.style $"left:{node.X - 30.0}px; top:{node.Y - 35.0}px;" // Position still dynamic
+        attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px; pointer-events:none;"
+        
         div {
-            attr.``class`` "node-inner"
-            match isConfirmingThis with
-            | true -> 
-                button {
-                    attr.``class`` "node-confirm-del"
-                    on.click (fun _ -> dispatch (DeleteNode node.Id))
-                    text "DELETE"
-                }
-                button {
-                    attr.``class`` "node-confirm-cancel"
-                    on.click (fun _ -> dispatch CancelDelete)
-                    text "CANCEL"
-                }
-            | false ->
-                concat {
-                    let isNotRoot = node.Id <> model.Root.Id
-                    match isNotRoot with
-                    | true -> 
-                        button { 
-                            attr.``class`` "nodebutton1"
-                            on.click (fun _ -> dispatch (ConfirmDelete node.Id))
-                            text "×" 
-                        }
-                    | false -> ()
+            attr.``class`` outerClasses
+            attr.style "position:absolute; inset:0; pointer-events:auto;"
+            
+            on.pointerdown (fun _ -> if not isRoot then dispatch (DragStart node.Id))
+            on.pointerover (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch (DragOver (Some node.Id)))
+            on.pointerout (fun _ -> if not isRoot && model.DraggingId.IsSome && isDropTarget then dispatch (DragOver None))
+            on.pointerup (fun _ -> if not isRoot && model.DraggingId.IsSome then dispatch PerformMove)
 
-                    input {
-                        attr.``class`` "nodename"
-                        attr.value node.Name
-                        on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
+            div {
+                attr.``class`` "node-inner"
+                match isConfirmingThis with
+                | true -> 
+                    button {
+                        attr.``class`` "node-confirm-del"
+                        on.click (fun _ -> dispatch (DeleteNode node.Id))
+                        text "DELETE"
                     }
-                    input {
-                        attr.``class`` "nodeweight"
-                        attr.value node.Weight
-                        on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
+                    button {
+                        attr.``class`` "node-confirm-cancel"
+                        on.click (fun _ -> dispatch CancelDelete)
+                        text "CANCEL"
                     }
-                    
-                    button { 
-                        attr.``class`` "nodebutton2"
-                        on.click (fun _ -> dispatch (AddChild node.Id))
-                        text "+" 
+                | false ->
+                    concat {
+                        let isNotRoot = node.Id <> model.Root.Id
+                        match isNotRoot with
+                        | true -> 
+                            button { 
+                                attr.``class`` "nodebutton1"
+                                on.click (fun _ -> dispatch (ConfirmDelete node.Id))
+                                text "×" 
+                            }
+                        | false -> ()
+    
+                        input {
+                            attr.``class`` "nodename"
+                            attr.value node.Name
+                            on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
+                        }
+                        input {
+                            attr.``class`` "nodeweight"
+                            attr.value node.Weight
+                            on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
+                        }
+                        
+                        button { 
+                            attr.``class`` "nodebutton2"
+                            on.click (fun _ -> dispatch (AddChild node.Id))
+                            text "+" 
+                        }
                     }
-                }
+            }
         }
     }
+
 
 let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =      
     let confirmingSubtree = model.ConfirmingId |> Option.bind (fun id -> findNodeById id model.Root)
@@ -210,8 +274,22 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let canvasWidth = maxX + 60.0
     let canvasHeight = maxY + 30.0
 
+    let rec renderAll (node: TreeNode) (prefix: string) : Node =
+        concat {
+            renderNode node prefix model (isAffected node.Id) dispatch
+            for i, child in node.Children |> List.indexed do
+                renderAll child $"{prefix}.{i + 1}"
+        }
+
+    let containerClasses = 
+        String.concat " " [
+            "tree-container"
+            if model.DraggingId.IsSome then "is-dragging-any"
+        ]
+
     div {
-        attr.``class`` "tree-container"
+        attr.``class`` containerClasses
+        on.pointerup (fun _ -> if model.DraggingId.IsSome then dispatch DragEnd)
         div {
             attr.``class`` "tree-canvas"
             attr.style $"width:{canvasWidth}px; height:{max 150.0 canvasHeight}px;"
@@ -220,8 +298,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 attr.style $"width:{canvasWidth}px; height:{canvasHeight}px;"
                 for line in lines do line
             }
-            for node in nodes do
-                renderNode node model (isAffected node.Id) dispatch
+            renderAll model.Root "1"
         }
     }
 
@@ -262,4 +339,4 @@ let initModel (inputString: string) : SubModel =
     let hasNodes = List.isEmpty treeResult
     match hasNodes with
     | true -> failwith "No valid nodes found."
-    | false -> { Root = layoutTree treeResult.Head 0 (ref 50.0); ConfirmingId = None }
+    | false -> { Root = layoutTree treeResult.Head 0 (ref 50.0); ConfirmingId = None; DraggingId = None; DropTargetId = None }
