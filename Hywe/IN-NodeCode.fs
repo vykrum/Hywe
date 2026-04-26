@@ -368,7 +368,8 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         div {
             attr.id "tree-canvas-svg"
             attr.``class`` "tree-canvas"
-            attr.style $"width:{canvasWidth}px; height:{max 150.0 canvasHeight}px; touch-action:none;"
+            let touchAction = if model.DraggingId.IsSome || model.PendingDragId.IsSome then "none" else "pan-x pan-y pinch-zoom"
+            attr.style $"width:{canvasWidth}px; height:{max 150.0 canvasHeight}px; touch-action:{touchAction};"
             on.pointerdown (fun ev -> dispatch (PointerDown ev))
             
             svg {
