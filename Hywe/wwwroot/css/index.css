@@ -587,14 +587,15 @@ video.fullscreen-bg {
 /* Container and SVG */
 .tree-container {
     width: 100%;
-    overflow-x: auto;
-    padding-top: 16px;
-    display: flex;
-    justify-content: center;
+    overflow: auto; /* Support both horizontal and vertical scrolling */
+    padding: 16px 0;
+    display: block; /* Flex center can cut off content on overflow */
+    text-align: center;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .tree-container.is-dragging-any input,
@@ -604,7 +605,9 @@ video.fullscreen-bg {
 
 .tree-canvas {
     position: relative;
-    touch-action: none;
+    display: inline-block;
+    text-align: left; /* Reset alignment for contents */
+    vertical-align: top;
 }
 
 .tree-svg {
