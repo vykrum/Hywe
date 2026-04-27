@@ -446,3 +446,29 @@ let cxlCnt
             )
         let finalX, finalY, _ = hxlCrd closestHxl
         (finalX, finalY)
+
+/// <summary> Functional Adjacency Matrix Calculation. </summary>
+let cxlAdj (cxls: Cxl[]) =
+    match cxls with
+    | [||] -> [||], [||]
+    | _ ->
+        let sqn = cxls.[0].Seqn
+        let elv = 0 
+        let coxelSets = cxls |> Array.map (fun c -> Hexel.hxlSet c.Hxls)
+        let allNeighbors = 
+            cxls |> Array.map (fun c ->
+                c.Hxls 
+                |> Array.collect (Hexel.adjacent sqn)
+                |> Array.map (fun h -> Hexel.AV(Hexel.hxlCrd h))
+                |> Array.distinct
+            )
+        let names = cxls |> Array.map (fun c -> prpVlu c.Name)
+        let matrix = 
+            allNeighbors |> Array.mapi (fun i neighbors ->
+                coxelSets |> Array.mapi (fun j set ->
+                    match i = j with
+                    | true -> false
+                    | false -> neighbors |> Array.exists (fun h -> set.Contains(h))
+                )
+            )
+        names, matrix
