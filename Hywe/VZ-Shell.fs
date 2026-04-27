@@ -1,6 +1,5 @@
 module Hywe.Shell
 
-open Bolero
 open Bolero.Html
 open ModelTypes
 
