@@ -15,6 +15,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
         let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
         match isStale with
         | true -> 
+            // Initialize progress tracking and trigger recursive generation
             let cts = new System.Threading.CancellationTokenSource()
             let model' = 
                 { model with 
@@ -23,31 +24,11 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                     IsCancelling = false 
                     CancelToken = Some cts
                     BatchPreview = None 
+                    BatchProgress = 0
+                    BatchAccumulator = []
                 }
 
-            model', Cmd.OfAsync.perform (fun (token: System.Threading.CancellationToken) ->
-                let rec compute (m: Model) i acc = async {
-                    match i >= 24 || token.IsCancellationRequested with 
-                    | true -> return acc
-                    | false ->
-                        let sqnStr = indexToSqn i
-                        let forcedStr = injectSqn m.SrcOfTrth sqnStr
-                        let cxls, _ = Parse.generateCxlLayout forcedStr None None None [||]
-                        let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                        
-                        let configData = 
-                            {| sqnName = sqnStr; w = d.w; h = d.h
-                               shapes = d.shapes |> Array.map (fun s -> 
-                                 {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                            |}
-                        
-                        do! Async.Sleep 5
-                        return! compute m (i + 1) (configData :: acc)
-                }
-                async {
-                    let! results = compute model 0 []
-                    return results |> List.toArray |> Array.rev
-                }) cts.Token SetBatchPreview
+            model', Cmd.ofMsg (GenerateNextBatchItem 0)
 
         | false -> 
             { model with ActivePanel = panel }, Cmd.none
@@ -152,28 +133,8 @@ let handleRecordToHynteract (model: Model) (js: IJSRuntime) : Model * Cmd<Messag
     }) () RecordResult
 
 let handleExportPdfRequested (model: Model) : Model * Cmd<Message> =
-    { model with IsHyweaving = true }, 
-    Cmd.OfAsync.perform (fun () ->
-        let rec computeBatch i acc = async {
-            match i >= 24 with
-            | true -> return acc
-            | false ->
-                let sqnStr = indexToSqn i
-                let forcedStr = injectSqn model.SrcOfTrth sqnStr
-                let cxls, _ = Parse.generateCxlLayout forcedStr None None None [||]
-                let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                let configData = 
-                    {| sqnName = sqnStr; w = d.w; h = d.h
-                       shapes = d.shapes |> Array.map (fun s -> 
-                        {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                    |}
-                do! Async.Sleep 5
-                return! computeBatch (i + 1) (configData :: acc)
-        }
-        async {
-            let! results = computeBatch 0 []
-            return results |> List.toArray |> Array.rev
-        }) () SetBatchPreview
+    { model with IsHyweaving = true; BatchProgress = 0; BatchAccumulator = [] }, 
+    Cmd.ofMsg (GenerateNextBatchItem 0)
 
 let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model * Cmd<Message> =
     match System.String.IsNullOrWhiteSpace content with
@@ -306,11 +267,13 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
             
             match model.IsHyweaving with
             | true ->
-                span { attr.``class`` "spinner" }
+                span { attr.key "hy-spinner"; attr.``class`` "spinner" }
                 span { 
+                    attr.key "hy-labels"
                     attr.``class`` "label-stack"
-                    span { attr.``class`` "weaving-label"; text " h y W E A V E i n g . . ." }
+                    span { attr.key "weaving-lbl"; attr.``class`` "weaving-label"; text " h y W E A V E i n g . . ." }
                     span { 
+                        attr.key "stop-lbl"
                         attr.``class`` "stop-label"
                         span { attr.style "color: #E67E22; font-weight: bold;white-space: pre"; text " S T O P " } 
                         text "h y W E A V E i n g" 
@@ -471,9 +434,27 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             (fun () -> dispatch (SetActivePanel LayoutPanel)) js
                     | None -> 
                         div { 
-                            attr.style "text-align:center; padding: 100px; color: #888; width: 100%;"
-                            span { attr.``class`` "spinner"; attr.style "display: block; margin: 0 auto 20px;" }
-                            text "Generating 24 variations..." 
+                            attr.style "text-align:center; padding: 100px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
+                            
+                            // Text Above - Multi-line, width constrained to match 4x6 grid (156px)
+                            div {
+                                attr.style "font-family: 'Inter', sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 25px; text-align: center; font-weight: 500; line-height: 1.3;"
+                                text "Generating Configurations"
+                            }
+
+                            span { attr.``class`` "spinner"; attr.style "display: block; margin-bottom: 40px;" }
+                            
+                            // Progress Grid (4x6) - Subtle gray theme with reduced opacity
+                            div {
+                                // 4 columns * 30px + 3 gaps * 12px = 120 + 36 = 156px
+                                attr.style "display: grid; grid-template-columns: repeat(4, 30px); grid-template-rows: repeat(6, 30px); gap: 12px; margin: 0 auto; justify-content: center; width: 156px;"
+                                for i in 0 .. 23 do
+                                    let isComplete = i < model.BatchProgress
+                                    div {
+                                        attr.style (sprintf "width: 30px; height: 30px; border: 2px solid #f5f5f5; border-radius: 6px; background: %s; transition: all 0.4s ease;" 
+                                            (if isComplete then "rgba(136, 136, 136, 0.3)" else "transparent"))
+                                    }
+                            }
                         }
             }
 

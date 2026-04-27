@@ -245,9 +245,12 @@ let applyReproportioning (boundaryArea: float) (totalNodeArea: float) (rawTree: 
     
     // 1. Determine Scaling Ratio
     let isUnbound = boundaryArea <= 0.0
+    // Provide 4% breathing room. Scaled nodes will target 96% of the available site area.
+    // This allows later nodes in the sequence to find available space despite geometric inefficiencies.
+    let reductionFactor = 0.96 
     let ratio = 
         if isUnbound || totalNodeArea <= 0.0 then 1.0 
-        else boundaryArea / totalNodeArea
+        else (boundaryArea / totalNodeArea) * reductionFactor
 
     // 2. Scale and Round each node
     rawTree |> Array.map (fun row ->
