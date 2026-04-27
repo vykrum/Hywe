@@ -513,14 +513,14 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
                             span { attr.``class`` "spinner"; attr.style "display: block; margin-bottom: 25px;" }
                             
-                            // Progress Grid (4x6) - Delicate dot grid
+                            // Progress Grid (4x6) - Delicate filleted squares
                             div {
-                                // 4 columns * 14px + 3 gaps * 18px = 56 + 54 = 110px
-                                attr.style "display: grid; grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(6, 14px); gap: 18px; margin: 0 auto; justify-content: center; width: 110px;"
+                                // 4 columns * 14px + 3 gaps * 14px = 56 + 42 = 98px
+                                attr.style "display: grid; grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(6, 14px); gap: 14px; margin: 0 auto; justify-content: center; width: 98px;"
                                 for i in 0 .. 23 do
                                     let isComplete = i < model.BatchProgress
                                     div {
-                                        attr.style (sprintf "width: 14px; height: 14px; border: 1px solid #e0e0e0; border-radius: 50%%; background: %s; transition: all 0.5s ease;" 
+                                        attr.style (sprintf "width: 14px; height: 14px; border: 1px solid #e0e0e0; border-radius: 3px; background: %s; transition: all 0.5s ease;" 
                                             (if isComplete then "rgba(136, 136, 136, 0.4)" else "transparent"))
                                     }
                             }
