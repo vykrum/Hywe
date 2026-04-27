@@ -4,12 +4,15 @@ open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Elmish
 open Bolero
+open Bolero.Html
 open Page
 open NodeCode
 open PolygonEditor
 open ModelTypes
 open ModelHelpers
 open Layout
+open Styles
+open Shell
 
 // Defaults / init 
 let initialTree = NodeCode.initModel beeyond
@@ -57,7 +60,15 @@ let initModel =
         }
         BatchProgress = 0
         BatchAccumulator = []
+        CurrentScreen = LoadingScreen
     }
+
+let updateMetadata (js: IJSRuntime) =
+    async {
+        do! js.InvokeVoidAsync("document.querySelector('meta[property=\"article:published_time\"]').setAttribute", "content", PUBLISHED_DATE).AsTask() |> Async.AwaitTask
+        do! js.InvokeVoidAsync("document.querySelector('meta[property=\"article:modified_time\"]').setAttribute", "content", MODIFIED_DATE).AsTask() |> Async.AwaitTask
+        return ()
+    } |> Async.StartImmediate
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
@@ -378,6 +389,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | StopAutoSimulation ->
         { model with Onboarding = { model.Onboarding with IsAutoSimulating = false } }, Cmd.none
 
+    | TransitionToIntro ->
+        { model with CurrentScreen = IntroScreen }, Cmd.none
+
+    | TransitionToMain ->
+        { model with CurrentScreen = MainScreen }, Cmd.none
+
 open Help
 
 type MyApp() =
@@ -388,12 +405,41 @@ type MyApp() =
 
     override this.Program =
         Program.mkProgram
-            (fun _ -> initModel, Cmd.none)
+            (fun _ -> initModel, Cmd.batch [
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> TransitionToIntro)
+                Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> SkipOnboarding) // SkipOnboarding is just a dummy msg to trigger the async
+            ])
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 
-                Html.div {
-                    view model dispatch this.JSRuntime
-                    if model.Onboarding.IsActive then
-                        Help.viewHelp model.Onboarding dispatch
+                concat {
+                    Styles.render()
+                    Shell.jsonLd
+                    Shell.siteHeader
+                    Shell.aboutSection
+                    div {
+                        attr.id "page-content"
+                        if model.CurrentScreen <> LoadingScreen then
+                            attr.``class`` "fade-container fade-in"
+                        else
+                            attr.``class`` "fade-container"
+                        
+                        Shell.introSplash model.CurrentScreen dispatch
+
+                        div {
+                            attr.id "main"
+                            if model.CurrentScreen = MainScreen then
+                                attr.``class`` "fade-in"
+                                attr.style "display: block; opacity: 1;"
+                            else
+                                attr.style "display: none; opacity: 0;"
+
+                            view model dispatch this.JSRuntime
+                            if model.Onboarding.IsActive then
+                                Help.viewHelp model.Onboarding dispatch
+                        }
+
+                        Shell.siteFooter model.CurrentScreen
+                    }
+                    Shell.loadingScreen model.CurrentScreen
                 }
             )
