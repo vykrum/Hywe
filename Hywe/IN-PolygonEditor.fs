@@ -32,6 +32,8 @@ type PolygonEditorModel =
         LastMoveMs: float option      // for simple throttling
         EntryPoint: Point
         DraggingEntry: bool
+        OuterPointsStr: string        // Cached for performance
+        IslandPointsStrs: string[]    // Cached for performance
     }
 
 type EditorState =
@@ -75,18 +77,17 @@ let distancePointToSegmentSq p a b =
 
 let isInsidePolygon (poly: Point[]) (pt: Point) =
     let n = poly.Length
-    [| 0 .. n - 1 |]
-    |> Array.fold (fun acc i ->
+    let mutable inside = false
+    let mutable j = n - 1
+    for i = 0 to n - 1 do
         let vi = poly.[i]
-        let vj = poly.[(i + n - 1) % n]
-        match (vi.Y > pt.Y) <> (vj.Y > pt.Y) with
-        | true ->
+        let vj = poly.[j]
+        if (vi.Y > pt.Y) <> (vj.Y > pt.Y) then
             let xIntersect = (vj.X - vi.X) * (pt.Y - vi.Y) / (vj.Y - vi.Y) + vi.X
-            match pt.X < xIntersect with
-            | true -> not acc
-            | false -> acc
-        | false -> acc
-    ) false
+            if pt.X < xIntersect then
+                inside <- not inside
+        j <- i
+    inside
 
 let isPolygonInside outer inner =
     inner |> Array.forall (isInsidePolygon outer)
@@ -139,18 +140,33 @@ let isEntryPointValid (outer: Point[]) (islands: Point[][]) (pt: Point) =
         let mutable close = false
         let n = poly.Length
         let mutable i = 0
+        let mutable j = n - 1
         while i < n && not close do
-            let a = poly.[i]
-            let b = poly.[(i+1) % n]
-            if distancePointToSegmentSq pt a b <= clearanceSq || distanceSq pt a <= clearanceSq then
+            let a = poly.[j]
+            let b = poly.[i]
+            if distancePointToSegmentSq pt a b <= clearanceSq then
                 close <- true
+            j <- i
             i <- i + 1
         close
 
-    isInsidePolygon outer pt &&
-    not (islands |> Array.exists (fun isl -> isInsidePolygon isl pt)) &&
-    not (tooClose outer) &&
-    not (islands |> Array.exists tooClose)
+    if not (isInsidePolygon outer pt) then false
+    else
+        let mutable inIsland = false
+        let mutable idx = 0
+        while idx < islands.Length && not inIsland do
+            if isInsidePolygon islands.[idx] pt then inIsland <- true
+            idx <- idx + 1
+        
+        if inIsland then false
+        elif tooClose outer then false
+        else
+            let mutable tooCloseToIsland = false
+            let mutable iidx = 0
+            while iidx < islands.Length && not tooCloseToIsland do
+                if tooClose islands.[iidx] then tooCloseToIsland <- true
+                iidx <- iidx + 1
+            not tooCloseToIsland
 
 let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
     let centroid = 
@@ -251,6 +267,14 @@ let clampPt (model: PolygonEditorModel) (pt: Point) =
 let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
     { model with Dragging = None; DragOffset = None }
 
+let polyToSvgPoints (poly: Point[]) =
+    poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
+
+let refreshCachedStrings (model: PolygonEditorModel) =
+    { model with
+        OuterPointsStr = polyToSvgPoints model.Outer
+        IslandPointsStrs = model.Islands |> Array.map polyToSvgPoints }
+
 // ---------- JS interop helpers ----------
 let getSvgInfo (js: IJSRuntime) =
     async {
@@ -341,6 +365,7 @@ let importPolygonStrings
                     Dragging = None
                     DragOffset = None
                     SvgInfo = None }
+                |> refreshCachedStrings
             )
         )
     )
@@ -377,7 +402,10 @@ let initModel =
         VertexRadius = initRadius
         EntryPoint = initEntry
         DraggingEntry = false
+        OuterPointsStr = ""
+        IslandPointsStrs = [||]
     }
+    |> refreshCachedStrings
 
 // ---------- Update ----------
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
@@ -409,7 +437,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             model.Islands
             |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX }))
         let updated = { model with LogicalWidth = safeW; Outer = newOuter; Islands = newIslands }
-        return updated
+        return updated |> refreshCachedStrings
         }
 
     | UpdateLogicalHeight newH -> async {
@@ -423,7 +451,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
             |> Array.map (Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
 
         let updated = { model with LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
-        return updated
+        return updated |> refreshCachedStrings
         }
 
     | PointerDown ev ->
@@ -528,12 +556,14 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                                            | true ->
                                                let isEntryValid = isEntryPointValid proposedModel.Outer proposedModel.Islands proposedModel.EntryPoint
                                            
-                                               match isEntryValid with
-                                               | true -> { proposedModel with LastMoveMs = Some nowMs }
-                                               | false -> 
-                                                    { proposedModel with 
-                                                        EntryPoint = closestValidEntryPoint proposedModel.Outer proposedModel.Islands
-                                                        LastMoveMs = Some nowMs }
+                                               let finalModel = 
+                                                   match isEntryValid with
+                                                   | true -> { proposedModel with LastMoveMs = Some nowMs }
+                                                   | false -> 
+                                                        { proposedModel with 
+                                                            EntryPoint = closestValidEntryPoint proposedModel.Outer proposedModel.Islands
+                                                            LastMoveMs = Some nowMs }
+                                               finalModel |> refreshCachedStrings
                                 }
                             | _ -> async { return model }
         }
@@ -671,11 +701,10 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                         let wouldEncloseEntry = isInsidePolygon island model.EntryPoint
 
                         if insideOuter && not insideAnyIsland && noIntersectsExisting && noSelfIntersect && not wouldEncloseEntry then
-                            let newModel = snapshot model
-                            updatedModel <- { newModel with Islands = Array.append [| island |] model.Islands }
+                            updatedModel <- { updatedModel with Islands = Array.append [| island |] model.Islands }
                         // else do nothing
 
-                return updatedModel
+                return updatedModel |> refreshCachedStrings
         }
 
     | RemoveVertex _ -> async { return model }
@@ -864,15 +893,15 @@ let polygonEditorSvg model dispatch =
             // Outer polygon
             bdrPgn()
                 .cs("outerPolygon")
-                .pt(model.Outer |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " ")
+                .pt(model.OuterPointsStr)
                 .sw(string bndStWdO)
                 .Elt()
 
             // Islands
-            for island in model.Islands do
+            for i = 0 to model.Islands.Length - 1 do
                 bdrPgn()
                     .cs("islandPolygon")
-                    .pt(island |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " ")
+                    .pt(model.IslandPointsStrs.[i])
                     .sw(string bndStWdI)
                     .Elt()
 
@@ -940,15 +969,15 @@ let polygonEditorSvg model dispatch =
                         .Elt()
 
             // --- Entry point ---
-            let entryIcon = [|-15.0,25.0;15.0,25.0;15.0,15.0;-5.0,15.0;-5.0,5.0;15.0,5.0;15.0,-5.0;-5.0,-5.0;-5.0,-15.0;15.0,-15.0;15.0,-25.0;-15.0,-25.0|]
-                            |> Array.map (fun (x, y) -> model.EntryPoint.X + (x * boundScale * 0.3),model.EntryPoint.Y + (y * boundScale * 0.3))
-                            |> Array.map (fun (x, y) -> sprintf "%f,%f" x y)
-                            |> String.concat " "
-            bdrPgn()
-                .cs("entryPoint")
-                .pt(entryIcon)
-                .sw("0")
-                .Elt()
+            let scale = boundScale * 0.3
+            elt "g" {
+                attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y scale)
+                bdrPgn()
+                    .cs("entryPoint")
+                    .pt("-15,25 15,25 15,15 -5,15 -5,5 15,5 15,-5 -5,-5 -5,-15 15,-15 15,-25 -15,-25")
+                    .sw("0")
+                    .Elt()
+            }
         }
 
 let view model dispatch (js: IJSRuntime) =
