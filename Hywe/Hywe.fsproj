@@ -12,6 +12,7 @@
 		<Compile Include="CR-Hexel.fs" />
 		<Compile Include="CR-Coxel.fs" />
 		<Compile Include="VZ-Geometry.fs" />
+		<Compile Include="VZ-Shaders.fs" />
 		<Compile Include="VZ-ThreeD.fs" />
 		<Compile Include="VZ-Analyze.fs" />
 		<Compile Include="VZ-Layout.fs" />

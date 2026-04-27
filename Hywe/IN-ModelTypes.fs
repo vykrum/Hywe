@@ -101,7 +101,7 @@ type Message =
     | RecordToHynteract
     | RecordResult of bool
     | StartVoiceCapture
-    | OnVoiceResult of string
+    | OnVoiceResult
     | NextOnboardingStep
     | PreviousOnboardingStep
     | SkipOnboarding

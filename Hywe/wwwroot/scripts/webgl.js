@@ -1,76 +1,3 @@
-// --- Global helpers ---
-// Reusable mat4 helpers
-window.mat4 = {
-    create: () => new Float32Array([
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    ]),
-    perspective: (out, fovy, aspect, near, far) => {
-        const f = 1 / Math.tan(fovy / 2);
-        out.fill(0);
-        out[0] = f / aspect; out[5] = f;
-        out[10] = (far + near) / (near - far); out[11] = -1;
-        out[14] = (2 * far * near) / (near - far);
-        return out;
-    },
-    lookAt: (out, eye, target, up) => {
-        let [ex, ey, ez] = eye, [tx, ty, tz] = target, [ux, uy, uz] = up;
-        let zx = ex - tx, zy = ey - ty, zz = ez - tz;
-        let len = Math.hypot(zx, zy, zz); zx /= len; zy /= len; zz /= len;
-        let xx = uy * zz - uz * zy, xy = uz * zx - ux * zz, xz = ux * zy - uy * zx;
-        len = Math.hypot(xx, xy, xz);
-        if (len === 0) { xx = 1; xy = 0; xz = 0; } else { xx /= len; xy /= len; xz /= len; }
-        let yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
-        out[0] = xx; out[1] = yx; out[2] = zx; out[3] = 0;
-        out[4] = xy; out[5] = yy; out[6] = zy; out[7] = 0;
-        out[8] = xz; out[9] = yz; out[10] = zz; out[11] = 0;
-        out[12] = -(xx * ex + xy * ey + xz * ez);
-        out[13] = -(yx * ex + yy * ey + yz * ez);
-        out[14] = -(zx * ex + zy * ey + zz * ez);
-        out[15] = 1;
-        return out;
-    }
-};
-
-// --- Global shader sources ---
-window.glShaders = {
-    vsSource: `
-        attribute vec3 a_position;
-        attribute vec3 a_color;
-        uniform mat4 u_projection;
-        uniform mat4 u_view;
-        varying vec3 v_color;
-        void main() {
-            gl_Position = u_projection * u_view * vec4(a_position, 1.0);
-            v_color = a_color;
-        }`,
-    fsSource: `
-        precision mediump float;
-        varying vec3 v_color;
-        uniform vec3 u_overrideColor;
-        void main() {
-            float alpha = 1.0;
-            if (u_overrideColor.r < 0.0)
-                gl_FragColor = vec4(v_color, alpha);
-            else
-                gl_FragColor = vec4(u_overrideColor, 1.0);
-        }`
-};
-
-// --- Compile shader helper ---
-function compileShader(gl, type, src) {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-        console.error(gl.getShaderInfoLog(sh));
-        return null;
-    }
-    return sh;
-}
-
 // --- Dispose old WebGL resources safely ---
 window.disposeWebGL = (canvasId) => {
     const canvas = document.getElementById(canvasId);
@@ -100,14 +27,23 @@ window.disposeWebGL = (canvasId) => {
         canvas._glState = null;
     }
 
-    // Do NOT force loseContext here
-    // Just clear references
     canvas._listenersAdded = false;
 };
 
+// --- Compile shader helper ---
+function compileShader(gl, type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(sh));
+        return null;
+    }
+    return sh;
+}
+
 // --- Initialize WebGL extruded polygons ---
-// --- Initialize WebGL extruded polygons ---
-window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolygons, centroids) => {
+window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource) => {
     window.disposeWebGL(canvasId);
 
     const canvas = document.getElementById(canvasId);
@@ -120,7 +56,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
         gl = canvas.getContext("webgl");
         if (!gl) {
             console.warn("WebGL context not available, retrying in 50ms...");
-            setTimeout(() => window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids), 50);
+            setTimeout(() => window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource), 50);
             return;
         }
         canvas._glContext = gl;
@@ -128,8 +64,8 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
 
     if (canvas._drawLoopId) cancelAnimationFrame(canvas._drawLoopId);
 
-    const vs = compileShader(gl, gl.VERTEX_SHADER, window.glShaders.vsSource);
-    const fs = compileShader(gl, gl.FRAGMENT_SHADER, window.glShaders.fsSource);
+    const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
     if (!vs || !fs) return;
 
     const prog = gl.createProgram();
@@ -349,7 +285,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
 
         canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); console.warn("WebGL context lost."); });
         canvas.addEventListener("webglcontextrestored", () => {
-            window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids);
+            window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource);
         });
         canvas._listenersAdded = true;
     }
@@ -381,6 +317,36 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
         }
         return out;
     }
+
+    // --- Helpers for Matrix operations ---
+    const mat4 = {
+        create: () => new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]),
+        perspective: (out, fovy, aspect, near, far) => {
+            const f = 1 / Math.tan(fovy / 2);
+            out.fill(0);
+            out[0] = f / aspect; out[5] = f;
+            out[10] = (far + near) / (near - far); out[11] = -1;
+            out[14] = (2 * far * near) / (near - far);
+            return out;
+        },
+        lookAt: (out, eye, target, up) => {
+            let [ex, ey, ez] = eye, [tx, ty, tz] = target, [ux, uy, uz] = up;
+            let zx = ex - tx, zy = ey - ty, zz = ez - tz;
+            let len = Math.hypot(zx, zy, zz); zx /= len; zy /= len; zz /= len;
+            let xx = uy * zz - uz * zy, xy = uz * zx - ux * zz, xz = ux * zy - uy * zx;
+            len = Math.hypot(xx, xy, xz);
+            if (len === 0) { xx = 1; xy = 0; xz = 0; } else { xx /= len; xy /= len; xz /= len; }
+            let yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+            out[0] = xx; out[1] = yx; out[2] = zx; out[3] = 0;
+            out[4] = xy; out[5] = yy; out[6] = zy; out[7] = 0;
+            out[8] = xz; out[9] = yz; out[10] = zz; out[11] = 0;
+            out[12] = -(xx * ex + xy * ey + xz * ez);
+            out[13] = -(yx * ex + yy * ey + yz * ez);
+            out[14] = -(zx * ex + zy * ey + zz * ez);
+            out[15] = 1;
+            return out;
+        }
+    };
 
     // --- Draw loop ---
     function draw() {
@@ -431,7 +397,6 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
                 
                 let bestPoint = topCenter; 
                 
-                // If the camera is below the top surface, the roof isn't clearly visible. Use the closest wall.
                 if (camZ <= height) {
                     if (walls && walls.length > 0) {
                         let minDist = Infinity;
@@ -451,11 +416,10 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
             let screenPts = dynamicAnchors.map((c, i) => {
                 let pt = transformPoint(vpMatrix, c);
                 let px = (pt.x + 1) / 2 * w;
-                let py = (-pt.y + 1) / 2 * h; // WebGL NDC y is up, screen y is down
+                let py = (-pt.y + 1) / 2 * h; 
                 return { i: i, x: px, y: py, z: pt.z, w_clip: pt.w };
             });
 
-            // Filter points behind camera OR off-screen entirely
             screenPts = screenPts.filter(p => 
                 p.w_clip > 0 && 
                 p.z >= -1.0 && p.z <= 1.0 &&
@@ -463,11 +427,8 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
                 p.y >= -40 && p.y <= h + 40
             );
             
-            // Sort points from front to back (closest to camera first)
             screenPts.sort((a, b) => a.z - b.z);
 
-            // Simple 2D Occlusion Culling
-            // If two labels overlap significantly, we hide the one that is further away
             const labelRadiusX = 25; 
             const labelRadiusY = 10; 
             for (let k = 0; k < screenPts.length; k++) {
@@ -478,14 +439,12 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
                     let next = screenPts[l];
                     if (next.hidden) continue;
 
-                    // Check overlap
                     if (Math.abs(curr.x - next.x) < labelRadiusX && Math.abs(curr.y - next.y) < labelRadiusY) {
-                        next.hidden = true; // 'next' is guaranteed to be further away because of the z-sort
+                        next.hidden = true; 
                     }
                 }
             }
 
-            // Apply to DOM
             for (let j = 0; j < modelCentroids.length; j++) {
                 let labelDiv = document.getElementById('mass-label-g-' + j);
                 if (!labelDiv) continue;
@@ -505,4 +464,3 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
 
     requestAnimationFrame(draw);
 };
-

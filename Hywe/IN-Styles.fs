@@ -906,6 +906,12 @@ video.fullscreen-bg {
     animation: mic-pulse 1.5s infinite ease-in-out;
 }
 
+@keyframes mic-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
 /* Submit Button styling */
 .record-submit-btn {
     padding: 0 20px;
