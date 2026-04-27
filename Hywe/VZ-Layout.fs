@@ -36,7 +36,8 @@ type svln = Template<
         x2 = "${x2}"
         y2 = "${y2}"
         stroke = "${cl}"
-        stroke-with = "2"
+        stroke-width = "1"
+        opacity = "0.5"
         >""">
 
 type crPh = Template<
@@ -548,22 +549,32 @@ let alternateConfigurations
                     svtx().xx(string labelX).yy(string labelY).nm($"{letter} [{cfg.sqnName}]").Elt()
                 }
 
-            // --- LEGEND ---
-            let legendStartY = (float rows * cellH) + 40.0
+            // --- SEPARATOR & CENTERED LEGEND ---
+            let legendStartY = (float rows * cellH) + 55.0
+            svln().x1("0").y1($"{legendStartY - 25.0}").x2($"{totalWidth}").y2($"{legendStartY - 25.0}").cl("#f0f0f0").Elt()
+
             for i in 0 .. uniqueShapes.Length - 1 do
                 let s = uniqueShapes.[i]
-                let currR = floor (float i / float legendItemsPerRow)
+                let currR = int (floor (float i / float legendItemsPerRow))
+                
+                // Calculate centering for this specific row
+                let itemsInThisRow = Math.Min(legendItemsPerRow, uniqueShapes.Length - (currR * legendItemsPerRow))
+                let rowWidth = float itemsInThisRow * (totalWidth / float legendItemsPerRow)
+                let rowStartX = (totalWidth - rowWidth) / 2.0
+                
                 let currC = float (i % legendItemsPerRow)
-                let lx = currC * (totalWidth / float legendItemsPerRow)
-                let ly = legendStartY + (currR * legendItemHeight)
+                let lx = rowStartX + (currC * (totalWidth / float legendItemsPerRow))
+                let ly = legendStartY + (float currR * legendItemHeight)
     
                 elt "g" {
                     "transform" => $"translate({lx+30.0}, {ly})"
-                    elt "rect" { "y" => -12.0; "width" => 14; "height" => 14; "fill" => s.color }
+                    elt "rect" { 
+                        "y" => -11.0; "width" => 12; "height" => 12; "fill" => s.color 
+                        "rx" => 2; "ry" => 2
+                    }
                     elt "text" { 
-                        "x" => 20.0 
-                        // Add explicit font-family here
-                        attr.style "font-family: Arial, Helvetica, sans-serif; font-size: 12px; fill: #333;"
+                        "x" => 18.0 
+                        attr.style "font-family: 'Inter', system-ui, sans-serif; font-size: 11px; fill: #666;"
                         text s.name 
                     }
                 }
