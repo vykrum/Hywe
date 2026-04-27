@@ -106,24 +106,6 @@ window.hywe = {
 // ------------------------------------
 //   FILE OPS & BROWSER STORAGE
 // ------------------------------------
-window.saveToBrowser = (key, data) => localStorage.setItem(key, data);
-window.loadFromBrowser = (key) => localStorage.getItem(key) || "";
-
-// Download .hyw file
-window.downloadHywFile = (filename, content) => {
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-
-    anchor.href = url;
-    anchor.download = filename;
-
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-
-    URL.revokeObjectURL(url);
-};
 
 // Import .hyw file
 window.readHywFile = (fileInputId) => {
@@ -146,35 +128,6 @@ window.clickElement = (id) => {
     if (el) el.click();
 };
 
-window.downloadSvgFile = (svgId, filename) => {
-    const svgEl = document.getElementById(svgId);
-    if (!svgEl) return;
-
-    const serializer = new XMLSerializer();
-    let source = serializer.serializeToString(svgEl);
-
-    // --- CLEANUP LOGIC ---
-    // Remove Bolero/Blazor specific event handlers that break XML parsers
-    source = source.replace(/\sonclick:[^=]+="[^"]*"/g, '');
-    source = source.replace(/\sonmouseover:[^=]+="[^"]*"/g, '');
-    source = source.replace(/\sonmouseout:[^=]+="[^"]*"/g, '');
-
-    // Add namespaces if missing
-    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
-
-    const svgData = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
-};
 
 // Record Descriptions to Hynteract 
 window.recordToHynteract = async (apiUri, payload) => {

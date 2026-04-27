@@ -9,6 +9,74 @@ open PolygonEditor
 open ModelTypes
 open Bolero.Html
 
+let startTranscription (js: IJSRuntime) (textAreaId: string) =
+    async {
+        do! js.InvokeVoidAsync("eval", sprintf """
+            (function() {
+                return new Promise((resolve) => {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    if (!SpeechRecognition) { 
+                        alert("Speech recognition is not supported."); 
+                        resolve(); 
+                        return; 
+                    }
+                    const recognition = new SpeechRecognition();
+                    const textArea = document.getElementById('%s');
+                    recognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            }
+                        }
+                        if (finalTranscript) {
+                            const currentVal = textArea.value.trim();
+                            textArea.value = currentVal ? `${currentVal} ${finalTranscript}` : finalTranscript;
+                            textArea.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    };
+                    recognition.onend = () => resolve();
+                    recognition.onerror = () => resolve();
+                    recognition.start();
+                });
+            })()
+        """ textAreaId).AsTask() |> Async.AwaitTask
+    }
+
+let downloadFile (js: IJSRuntime) (filename: string) (content: string) (contentType: string) =
+    async {
+        do! js.InvokeVoidAsync("eval", sprintf """
+            (function() {
+                const blob = new Blob([`%s`], { type: '%s' });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = '%s';
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+                URL.revokeObjectURL(url);
+            })()
+        """ content contentType filename).AsTask() |> Async.AwaitTask
+    }
+
+let downloadSvg (js: IJSRuntime) (svgId: string) (filename: string) =
+    async {
+        let! source = js.InvokeAsync<string>("eval", sprintf "document.getElementById('%s').outerHTML" svgId).AsTask() |> Async.AwaitTask
+        let clean = 
+            source
+                .Replace("onclick:", "")
+                .Replace("onmouseover:", "")
+                .Replace("onmouseout:", "")
+                .Replace(" xmlns=\"http://www.w3.org/2000/svg\"", "") // Prevent double xmlns
+                .Insert(4, " xmlns=\"http://www.w3.org/2000/svg\"") // Add it back cleanly
+        
+        let xmlHeader = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n"
+        let finalSvg = xmlHeader + clean
+        
+        do! downloadFile js filename finalSvg "image/svg+xml;charset=utf-8"
+    }
+
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
     match panel with
     | BatchPanel ->
@@ -345,8 +413,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     on.click (fun _ ->
                         let datePart = System.DateTime.Now.ToString("yyMMddmm")
                         let fileName = "HyweLayout_" + datePart + ".svg"
-                        js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName).AsTask()
-                        |> ignore
+                        async {
+                            do! downloadSvg js "layout-svg-output" fileName
+                        } |> Async.StartImmediate
                     )
                     text "Download SVG"
                 }

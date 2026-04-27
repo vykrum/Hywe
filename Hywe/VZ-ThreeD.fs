@@ -2,6 +2,46 @@ module ThreeD
 
 open Coxel
 open Microsoft.JSInterop
+open Shaders
+
+module Mat4 =
+    let create() = Array.zeroCreate<float> 16 |> fun a -> a.[0]<-1.0; a.[5]<-1.0; a.[10]<-1.0; a.[15]<-1.0; a
+    
+    let perspective (fovy: float) (aspect: float) (near: float) (far: float) =
+        let out = Array.zeroCreate<float> 16
+        let f = 1.0 / System.Math.Tan(fovy / 2.0)
+        out.[0] <- f / aspect
+        out.[5] <- f
+        out.[10] <- (far + near) / (near - far)
+        out.[11] <- -1.0
+        out.[14] <- (2.0 * far * near) / (near - far)
+        out
+        
+    let lookAt (eye: float[]) (target: float[]) (up: float[]) =
+        let out = Array.zeroCreate<float> 16
+        let ex, ey, ez = eye.[0], eye.[1], eye.[2]
+        let tx, ty, tz = target.[0], target.[1], target.[2]
+        let ux, uy, uz = up.[0], up.[1], up.[2]
+        
+        let mutable zx, zy, zz = ex - tx, ey - ty, ez - tz
+        let lenZ = System.Math.Sqrt(zx*zx + zy*zy + zz*zz)
+        zx <- zx / lenZ; zy <- zy / lenZ; zz <- zz / lenZ
+        
+        let mutable xx, xy, xz = uy * zz - uz * zy, uz * zx - ux * zz, ux * zy - uy * zx
+        let lenX = System.Math.Sqrt(xx*xx + xy*xy + xz*xz)
+        if lenX = 0.0 then xx <- 1.0; xy <- 0.0; xz <- 0.0
+        else xx <- xx / lenX; xy <- xy / lenX; xz <- xz / lenX
+        
+        let yx, yy, yz = zy * xz - zz * xy, zz * xx - zx * xz, zx * xy - zy * xx
+        
+        out.[0] <- xx; out.[1] <- yx; out.[2] <- zx; out.[3] <- 0.0
+        out.[4] <- xy; out.[5] <- yy; out.[6] <- zy; out.[7] <- 0.0
+        out.[8] <- xz; out.[9] <- yz; out.[10] <- zz; out.[11] <- 0.0
+        out.[12] <- -(xx * ex + xy * ey + xz * ez)
+        out.[13] <- -(yx * ex + yy * ey + yz * ez)
+        out.[14] <- -(zx * ex + zy * ey + zz * ez)
+        out.[15] <- 1.0
+        out
 
 /// Renders an extruded polygon on a canvas via JS WebGL
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.
@@ -165,6 +205,6 @@ let extrudePolygons
         let colorsJs = colorsFinal |> Array.map normalizeColor
         let meshes, edges, heights, centroids = buildMeshes 0 [] [] [] []
 
-        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges, centroids).AsTask()
+        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges, centroids, vsSource, fsSource).AsTask()
             |> Async.AwaitTask
     }

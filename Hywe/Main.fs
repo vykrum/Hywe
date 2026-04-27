@@ -315,10 +315,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsRecording = true }, 
         Cmd.OfAsync.perform (fun () -> 
             async {
-                do! js.InvokeVoidAsync("startTranscription").AsTask() |> Async.AwaitTask
+                do! ModelHelpers.startTranscription js "hynteract-desc-input"
                 return ()
-            }) () (fun _ -> OnVoiceResult model.UserDescription)
-    | OnVoiceResult text ->
+            }) () (fun _ -> OnVoiceResult)
+    | OnVoiceResult ->
         { model with IsRecording = false }, Cmd.none
 
     | NextOnboardingStep ->
