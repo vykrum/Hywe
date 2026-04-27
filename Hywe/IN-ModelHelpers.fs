@@ -503,25 +503,25 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             (fun () -> dispatch (SetActivePanel LayoutPanel)) js
                     | None -> 
                         div { 
-                            attr.style "text-align:center; padding: 100px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
+                            attr.style "text-align:center; padding: 40px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
                             
                             // Text Above - Multi-line, width constrained to match 4x6 grid (156px)
                             div {
-                                attr.style "font-family: 'Inter', sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 25px; text-align: center; font-weight: 500; line-height: 1.3;"
+                                attr.style "font-family: 'Inter', sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 15px; text-align: center; font-weight: 500; line-height: 1.3;"
                                 text "Generating Configurations"
                             }
 
-                            span { attr.``class`` "spinner"; attr.style "display: block; margin-bottom: 40px;" }
+                            span { attr.``class`` "spinner"; attr.style "display: block; margin-bottom: 25px;" }
                             
-                            // Progress Grid (4x6) - Subtle gray theme with reduced opacity
+                            // Progress Grid (4x6) - Delicate dot grid
                             div {
-                                // 4 columns * 30px + 3 gaps * 12px = 120 + 36 = 156px
-                                attr.style "display: grid; grid-template-columns: repeat(4, 30px); grid-template-rows: repeat(6, 30px); gap: 12px; margin: 0 auto; justify-content: center; width: 156px;"
+                                // 4 columns * 14px + 3 gaps * 18px = 56 + 54 = 110px
+                                attr.style "display: grid; grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(6, 14px); gap: 18px; margin: 0 auto; justify-content: center; width: 110px;"
                                 for i in 0 .. 23 do
                                     let isComplete = i < model.BatchProgress
                                     div {
-                                        attr.style (sprintf "width: 30px; height: 30px; border: 2px solid #f5f5f5; border-radius: 6px; background: %s; transition: all 0.4s ease;" 
-                                            (if isComplete then "rgba(136, 136, 136, 0.3)" else "transparent"))
+                                        attr.style (sprintf "width: 14px; height: 14px; border: 1px solid #e0e0e0; border-radius: 50%%; background: %s; transition: all 0.5s ease;" 
+                                            (if isComplete then "rgba(136, 136, 136, 0.4)" else "transparent"))
                                     }
                             }
                         }
