@@ -7,27 +7,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-function applyWillChange(el, property = 'opacity') {
-    if (!el) return;
-    el.style.willChange = property;
-}
-function clearWillChange(el) {
-    if (!el) return;
-    el.style.willChange = '';
-}
-function fadeWithWillChange(el, action) {
-    if (!el) return;
-
-    applyWillChange(el);
-
-    const handler = () => {
-        clearWillChange(el);
-        el.removeEventListener('transitionend', handler);
-    };
-
-    el.addEventListener('transitionend', handler);
-    action(); // perform the opacity change
-}
 
 // --- SVG Utilities ---
 window.getSvgInfo = function (svgId) {
@@ -96,12 +75,6 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
     return { x: svgP.x, y: svgP.y };
 };
 
-// Debug receiver
-window.hywe = {
-    receiveSvgData: function (data) {
-        console.log("[hywe] Received data from F#:", data);
-    }
-};
 
 // ------------------------------------
 //   FILE OPS & BROWSER STORAGE

@@ -43,7 +43,7 @@ function compileShader(gl, type, src) {
 }
 
 // --- Initialize WebGL extruded polygons ---
-window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource) => {
+window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource, externalProj) => {
     window.disposeWebGL(canvasId);
 
     const canvas = document.getElementById(canvasId);
@@ -56,7 +56,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
         gl = canvas.getContext("webgl");
         if (!gl) {
             console.warn("WebGL context not available, retrying in 50ms...");
-            setTimeout(() => window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource), 50);
+            setTimeout(() => window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource, externalProj), 50);
             return;
         }
         canvas._glContext = gl;
@@ -285,7 +285,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
 
         canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); console.warn("WebGL context lost."); });
         canvas.addEventListener("webglcontextrestored", () => {
-            window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource);
+            window.initWebGLExtrudedPolygons(canvasId, meshes, colors, heights, edgePolygons, centroids, vsSource, fsSource, externalProj);
         });
         canvas._listenersAdded = true;
     }
@@ -321,19 +321,11 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
     // --- Helpers for Matrix operations ---
     const mat4 = {
         create: () => new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]),
-        perspective: (out, fovy, aspect, near, far) => {
-            const f = 1 / Math.tan(fovy / 2);
-            out.fill(0);
-            out[0] = f / aspect; out[5] = f;
-            out[10] = (far + near) / (near - far); out[11] = -1;
-            out[14] = (2 * far * near) / (near - far);
-            return out;
-        },
         lookAt: (out, eye, target, up) => {
             let [ex, ey, ez] = eye, [tx, ty, tz] = target, [ux, uy, uz] = up;
             let zx = ex - tx, zy = ey - ty, zz = ez - tz;
             let len = Math.hypot(zx, zy, zz); zx /= len; zy /= len; zz /= len;
-            let xx = uy * zz - uz * zy, xy = uz * zx - ux * zz, xz = ux * zy - uy * zx;
+            let xx = uy * zz - uz * zy, xy = uz * zx - ux * zz, xz = ux * zy - uy * xz;
             len = Math.hypot(xx, xy, xz);
             if (len === 0) { xx = 1; xy = 0; xz = 0; } else { xx /= len; xy /= len; xz /= len; }
             let yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
@@ -359,8 +351,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, edgePolyg
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.useProgram(prog);
 
-        const proj = mat4.create();
-        mat4.perspective(proj, Math.PI / 4, w / h, 0.1, 100);
+        const proj = externalProj || new Float32Array([1.8,0,0,0,0,2.4,0,0,0,0,-1,-1,0,0,-0.2,0]);
         const camDist = zoom;
         const camX = camDist * Math.cos(ry) * Math.cos(rx);
         const camY = camDist * Math.sin(ry) * Math.cos(rx);
