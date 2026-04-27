@@ -52,7 +52,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
         | false -> 
             { model with ActivePanel = panel }, Cmd.none
 
-    | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel | TeachPanel ->
+    | BoundaryPanel | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel ->
         { model with ActivePanel = panel }, Cmd.none
 
 let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
@@ -348,7 +348,7 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
 
         tab "Boundary" iconBoundary BoundaryPanel
         tab "Layout"   iconLayout   LayoutPanel
-        tab "Table"    iconTable    TablePanel
+        tab "Analyze"    iconAnalyze    AnalyzePanel
         tab "3D"       icon3D       ViewPanel
         tab "Batch"    iconBatch    BatchPanel
         tab "Teach"    iconTeach    TeachPanel
@@ -389,7 +389,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
             }
         
-        | TablePanel ->
+        | AnalyzePanel ->
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
                 div {
@@ -398,7 +398,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Table.viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+                    Analyze.viewHyweAnalyze model.Sequence model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
                 }
             }
 

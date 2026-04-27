@@ -13,7 +13,7 @@
 		<Compile Include="CR-Coxel.fs" />
 		<Compile Include="VZ-Geometry.fs" />
 		<Compile Include="VZ-ThreeD.fs" />
-		<Compile Include="VZ-Table.fs" />
+		<Compile Include="VZ-Analyze.fs" />
 		<Compile Include="VZ-Layout.fs" />
 		<Compile Include="IN-PolygonEditor.fs" />
 		<Compile Include="IN-NodeCode.fs" />

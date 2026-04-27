@@ -544,7 +544,8 @@ let alternateConfigurations
                     // Permanent label below
                     let labelX = ox + (maxW * scale / 2.0)
                     let labelY = oy + (maxH * scale) + 12.0
-                    svtx().xx(string labelX).yy(string labelY).nm(cfg.sqnName).Elt()
+                    let letter = if i < labelPhrase.Length then string labelPhrase.[i] else ""
+                    svtx().xx(string labelX).yy(string labelY).nm($"{letter} [{cfg.sqnName}]").Elt()
                 }
 
             // --- LEGEND ---
