@@ -204,7 +204,11 @@ let extrudePolygons
         
         let colorsJs = colorsFinal |> Array.map normalizeColor
         let meshes, edges, heights, centroids = buildMeshes 0 [] [] [] []
+        
+        let projMatrix = Mat4.perspective (System.Math.PI / 4.0) (1.5) 0.1 100.0 // Aspect 3/2 matches container
 
-        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", canvasId, meshes, colorsJs, heights, edges, centroids, vsSource, fsSource).AsTask()
+        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", 
+                               canvasId, meshes, colorsJs, heights, edges, centroids, 
+                               vsSource, fsSource, projMatrix).AsTask()
             |> Async.AwaitTask
     }
