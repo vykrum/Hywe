@@ -7,6 +7,9 @@ open PolygonEditor
 
 let elv = 0
 
+let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
+let MODIFIED_DATE = "2025-11-08T00:00:00Z"
+
 type PolygonExportData = {
     OuterStr: string
     IslandsStr: string
@@ -29,6 +32,11 @@ type OnboardingState = {
     CurrentStep: OnboardingStep
     SeenSteps: Set<OnboardingStep>
 }
+
+type AppScreen =
+    | LoadingScreen
+    | IntroScreen
+    | MainScreen
 
 /// <summary> Central application state for the interface. </summary>
 type Model =
@@ -59,6 +67,7 @@ type Model =
         BatchProgress: int
         /// <summary> Temporary storage for configurations as they are generated recursively. </summary>
         BatchAccumulator: BatchConfgrtns list
+        CurrentScreen: AppScreen
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -99,6 +108,8 @@ type Message =
     | RestartOnboarding
     | StartAutoSimulation
     | StopAutoSimulation
+    | TransitionToIntro
+    | TransitionToMain
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
 let syncPolygonState (p: PolygonEditorModel) =

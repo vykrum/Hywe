@@ -1,3 +1,8 @@
+module Hywe.Styles
+
+open Bolero.Html
+
+let allCss = """
 html,
 body {
     width: 100%;
@@ -1328,3 +1333,29 @@ video.fullscreen-bg {
     to { width: 100%; }
 }
 
+/* Batch Panel Grid */
+.batch-progress-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 30px);
+    grid-template-rows: repeat(6, 12px);
+    gap: 12px;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.batch-box {
+    width: 30px;
+    height: 12px;
+    border: 1px solid #e0e0e0;
+    background-color: transparent;
+    transition: background-color 0.3s ease;
+}
+
+.batch-box.filled {
+    background-color: rgba(136, 136, 136, 0.3); /* Subtle gray fill matching app aesthetic */
+}
+
+"""
+
+let render () = 
+    style { text allCss }

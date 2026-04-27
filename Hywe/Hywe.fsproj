@@ -24,6 +24,8 @@
 		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="VZ-Help.fs" />
 		<Compile Include="IN-ModelHelpers.fs" />
+		<Compile Include="IN-Styles.fs" />
+		<Compile Include="VZ-Shell.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>
