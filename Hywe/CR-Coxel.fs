@@ -454,21 +454,34 @@ let cxlAdj (cxls: Cxl[]) =
     | _ ->
         let sqn = cxls.[0].Seqn
         let elv = 0 
-        let coxelSets = cxls |> Array.map (fun c -> Hexel.hxlSet c.Hxls)
-        let allNeighbors = 
+        
+        // Helper to get all hexels of a coxel as AV for consistent lookup
+        let getFullHxls (c: Cxl) = 
+            Array.append [|c.Base|] c.Hxls 
+            |> hxlUni 1
+
+        let coxelSets = cxls |> Array.map (fun c -> Hexel.hxlSet (getFullHxls c))
+        
+        // Collect all hexels immediately surrounding each room (the "halo")
+        let allHalos = 
             cxls |> Array.map (fun c ->
-                c.Hxls 
+                let roomHxls = getFullHxls c
+                roomHxls 
                 |> Array.collect (Hexel.adjacent sqn)
                 |> Array.map (fun h -> Hexel.AV(Hexel.hxlCrd h))
                 |> Array.distinct
+                |> Array.filter (fun h -> not (Array.contains h roomHxls))
             )
+
         let names = cxls |> Array.map (fun c -> prpVlu c.Name)
         let matrix = 
-            allNeighbors |> Array.mapi (fun i neighbors ->
-                coxelSets |> Array.mapi (fun j set ->
+            allHalos |> Array.mapi (fun i halo ->
+                coxelSets |> Array.mapi (fun j otherSet ->
                     match i = j with
                     | true -> false
-                    | false -> neighbors |> Array.exists (fun h -> set.Contains(h))
+                    | false -> 
+                        // If any hexel in room A's halo is part of room B, they are adjacent
+                        halo |> Array.exists (fun h -> otherSet.Contains(h))
                 )
             )
         names, matrix
