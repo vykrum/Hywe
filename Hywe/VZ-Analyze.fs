@@ -65,7 +65,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             attr.``style`` "width: 100%; box-sizing: border-box;"
             h3 { 
                 attr.``style`` "font-size: 14px; color: #444; margin-bottom: 20px; border-left: 4px solid #888; padding-left: 10px; font-family: sans-serif;"
-                text "SPATIAL ADJACENCY MATRIX" 
+                text "ADJACENCY MATRIX" 
                 span {
                     attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
                     text $"[{sqnName}]"

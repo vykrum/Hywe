@@ -403,6 +403,9 @@ type MyApp() =
     [<Inject>]
     member val JSRuntime: IJSRuntime = Unchecked.defaultof<_> with get, set
 
+    override this.OnInitialized() =
+        base.OnInitialized()
+
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [

@@ -14,11 +14,6 @@ let vsSource = """
 let fsSource = """
     precision mediump float;
     varying vec3 v_color;
-    uniform vec3 u_overrideColor;
     void main() {
-        float alpha = 1.0;
-        if (u_overrideColor.r < 0.0)
-            gl_FragColor = vec4(v_color, alpha);
-        else
-            gl_FragColor = vec4(u_overrideColor, 1.0);
+        gl_FragColor = vec4(v_color, 1.0);
     }"""

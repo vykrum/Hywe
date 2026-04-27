@@ -445,48 +445,25 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
                     canvas { 
                         attr.id "hywe-extruded-polygon"
-                        attr.style "width: 100%; height: 100%; display: block;" 
+                        attr.style "width: 100%; height: 100%; display: block; touch-action: none;" 
                     }
-                    
-                    svg {
-                        attr.id "webgl-labels-overlay"
-                        attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible;"
-                        
-                        for i, cxl in model.Derived.cxCxl1 |> Array.indexed do
-                            let name = Coxel.prpVlu cxl.Name
-                            let massColor = 
-                                match model.Derived.cxClr1 <> null && i < model.Derived.cxClr1.Length with 
-                                | true -> model.Derived.cxClr1.[i] 
-                                | false -> "#666666"
-                            let fw = match i = 0 with | true -> "700" | false -> "400"
-                            let clr = match i = 0 with | true -> "#333333" | false -> "#666666"
-                            let pId = sprintf "webgl-path-%d" i
-                            
-                            elt "g" {
-                                "id" => sprintf "mass-label-g-%d" i
-                                "display" => "none"
-                                
-                                elt "path" {
-                                    "id" => pId
-                                    "d" => "M -60 -5 Q 0 -25 60 -5"
-                                    "fill" => "transparent"
-                                }
-                                elt "text" {
-                                    "font-family" => "Verdana"; "font-size" => "10px"; "font-weight" => fw; "fill" => clr
-                                    elt "textPath" {
-                                        "href" => ("#" + pId)
-                                        "startOffset" => "50%"; "text-anchor" => "middle"
-                                        text name
-                                    }
-                                }
-                                elt "circle" {
-                                    "cx" => "0"; "cy" => "0"; "r" => "4"; "fill" => massColor; "stroke" => "#ffffff"; "stroke-width" => "1.5"
-                                }
-                            }
-                    }
-
                     async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
                     |> Async.StartImmediate
+                }
+                    
+                // Restored delicate 3D Legend
+                div {
+                    attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 15px 10px; width: 100%; border-top: 1px solid #f0f0f0; margin-top: 5px;"
+                    for i in 0 .. (min model.Derived.cxCxl1.Length model.Derived.cxClr1.Length - 1) do
+                        let name = Coxel.prpVlu model.Derived.cxCxl1.[i].Name
+                        let color = model.Derived.cxClr1.[i]
+                        div {
+                            attr.style "display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Inter', sans-serif; color: #666;"
+                            div {
+                                attr.style (sprintf "width: 12px; height: 12px; border-radius: 2px; background: %s;" color)
+                            }
+                            text name
+                        }
                 }
             }
 
