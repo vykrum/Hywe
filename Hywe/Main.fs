@@ -9,6 +9,7 @@ open NodeCode
 open PolygonEditor
 open ModelTypes
 open ModelHelpers
+open Layout
 
 // Defaults / init 
 let initialTree = NodeCode.initModel beeyond
@@ -54,6 +55,8 @@ let initModel =
             CurrentStep = Welcome
             SeenSteps = Set.empty
         }
+        BatchProgress = 0
+        BatchAccumulator = []
     }
 
 /// Update
@@ -222,7 +225,47 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             IsHyweaving = false 
             IsCancelling = false
             ActivePanel = BatchPanel 
+            BatchProgress = 24
         }, Cmd.none
+    | SetBatchProgress p ->
+        { model with BatchProgress = p }, Cmd.none
+    
+    // --- Recursive Batch Generation ---
+    // This pattern allows the UI to update after every single configuration is processed,
+    // providing real-time feedback via the progress grid.
+    | GenerateNextBatchItem i ->
+        // Terminate if we reached the target (24) or if the user cancelled
+        if i >= 24 || model.IsCancelling then
+            { model with IsHyweaving = false; IsCancelling = false }, 
+            Cmd.ofMsg (SetBatchPreview (model.BatchAccumulator |> List.toArray |> Array.rev))
+        else
+            let sqnStr = indexToSqn i
+            let forcedStr = injectSqn model.SrcOfTrth sqnStr
+            
+            // Perform the heavy geometric calculation in an async block
+            model, Cmd.OfAsync.perform (fun () -> async {
+                let cxls, _ = Parse.generateCxlLayout forcedStr None None None [||]
+                
+                // Extract static geometry for high-fidelity rendering in the batch preview
+                let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
+                    getStaticGeometry cxls (Page.deriveData forcedStr 0).cxClr1 0 10 
+                
+                let configData = 
+                    {| sqnName = sqnStr; w = d.w; h = d.h
+                       shapes = d.shapes |> Array.map (fun s -> 
+                         {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                    |}
+                
+                // Small sleep to ensure the UI has a chance to render the progress update
+                do! Async.Sleep 5
+                return configData
+            }) () AddBatchItem
+
+    | AddBatchItem res ->
+        let nextI = model.BatchProgress + 1
+        let nextAcc = res :: model.BatchAccumulator
+        // Update progress state and trigger next iteration
+        { model with BatchProgress = nextI; BatchAccumulator = nextAcc }, Cmd.ofMsg (GenerateNextBatchItem nextI)
     | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with

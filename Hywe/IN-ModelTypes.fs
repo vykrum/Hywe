@@ -55,6 +55,10 @@ type Model =
         IsRecording : bool
         PolygonExport: PolygonExportData
         Onboarding: OnboardingState
+        /// <summary> Number of variations successfully generated in the current batch. </summary>
+        BatchProgress: int
+        /// <summary> Temporary storage for configurations as they are generated recursively. </summary>
+        BatchAccumulator: BatchConfgrtns list
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -69,6 +73,11 @@ type Message =
     | PolygonEditorUpdated of PolygonEditorModel
     | SetActivePanel of ActivePanel
     | SetBatchPreview of BatchConfgrtns[]
+    | SetBatchProgress of int
+    /// <summary> Triggers the generation of the next configuration in a batch sequence. </summary>
+    | GenerateNextBatchItem of int
+    /// <summary> Adds a completed configuration to the accumulator and proceeds to the next item. </summary>
+    | AddBatchItem of BatchConfgrtns
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested

@@ -75,6 +75,10 @@ let distancePointToSegmentSq p a b =
             let proj = { X = a.X + t*vx; Y = a.Y + t*vy }
             distanceSq p proj
 
+/// <summary> 
+/// Ray-casting algorithm to determine if a point is inside a polygon.
+/// Optimized for performance by using manual loops to avoid array allocations and lambdas.
+/// </summary>
 let isInsidePolygon (poly: Point[]) (pt: Point) =
     let n = poly.Length
     let mutable inside = false
@@ -270,6 +274,7 @@ let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
 let polyToSvgPoints (poly: Point[]) =
     poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
 
+/// Refreshes cached strings to avoid expensive re-formatting during every frame
 let refreshCachedStrings (model: PolygonEditorModel) =
     { model with
         OuterPointsStr = polyToSvgPoints model.Outer
@@ -969,6 +974,9 @@ let polygonEditorSvg model dispatch =
                         .Elt()
 
             // --- Entry point ---
+            // Scaled down version of the entry icon.
+            // Using SVG transform (translate + scale) allows us to move the icon
+            // without recalculating its internal coordinates or constructing strings every frame.
             let scale = boundScale * 0.3
             elt "g" {
                 attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y scale)
