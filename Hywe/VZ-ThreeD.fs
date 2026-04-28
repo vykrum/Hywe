@@ -139,7 +139,8 @@ let extrudePolygons
 
     // 1. Helper: Point conversion
     let toPoly (x: Cxl) =
-        cxlPrm x elv
+        let (_, _, z) = Hexel.hxlCrd x.Base
+        cxlPrm x z
         |> Geometry.cleanPolygon x.Seqn
         |> fun pts -> 
             if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
@@ -160,29 +161,33 @@ let extrudePolygons
         | _ -> [| 0.8; 0.8; 0.8 |]
 
     // 3. Process initial data
-    let polygonsWithColor =
-        Array.zip colors (Array.map toPoly cxl)
-        |> Array.choose (function
-            | (clr, poly) when poly.Length >= 3 -> Some (poly, clr)
-            | _ -> None)
+    let processedData =
+        cxl 
+        |> Array.mapi (fun i c -> 
+            let poly = toPoly c
+            let clr = if i < colors.Length then colors.[i] else "rgba(200,200,200,1)"
+            (c, poly, clr))
+        |> Array.filter (fun (_, poly, _) -> poly.Length >= 3)
 
-    let (polygonsFinal: (float * float)[][]), (colorsFinal: string[]) =
-        match polygonsWithColor with
-        | [||] -> 
-            [| [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |] |],
-            [| "rgba(200,200,200,1)" |]
-        | items -> Array.unzip items
+    let polygonsFinal = processedData |> Array.map (fun (_, p, _) -> p)
+    let colorsFinal = processedData |> Array.map (fun (_, _, c) -> c)
+    let cxlsFinal = processedData |> Array.map (fun (c, _, _) -> c)
 
     // 4. Loop-free Mesh Assembler (Tail Recursive)
-    let rec buildMeshes i accMeshes accEdges accHeights accCentroids =
+    let rec buildMeshes i accMeshes accEdges accHeights accBaseHeights accCentroids =
         match i < polygonsFinal.Length with
         | false -> 
             (List.rev accMeshes |> List.toArray, 
              List.rev accEdges |> List.toArray, 
              List.rev accHeights |> List.toArray,
+             List.rev accBaseHeights |> List.toArray,
              List.rev accCentroids |> List.toArray)
         | true ->
-            let h = initHeight - float i * 0.01
+            let h = initHeight
+            let c = cxlsFinal.[i]
+            let (_, _, z) = Hexel.hxlCrd c.Base
+            let baseH = float z * h
+            
             let poly = polygonsFinal.[i]
             
             // Generate mesh and transform for WebGL (Flipping Y)
@@ -194,21 +199,21 @@ let extrudePolygons
             
             let cx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
             let cy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
-            let centroid = [| cx; -cy; h / 2.0 |]
+            let centroid = [| cx; -cy; baseH + h / 2.0 |]
             
-            buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (centroid :: accCentroids)
+            buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)
 
     // 5. Final Async Execution
     async {
         do! Async.Sleep 30
         
         let colorsJs = colorsFinal |> Array.map normalizeColor
-        let meshes, edges, heights, centroids = buildMeshes 0 [] [] [] []
+        let meshes, edges, heights, baseHeights, centroids = buildMeshes 0 [] [] [] [] []
         
         let projMatrix = Mat4.perspective (System.Math.PI / 4.0) (1.5) 0.1 100.0 // Aspect 3/2 matches container
 
         do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", 
-                               canvasId, meshes, colorsJs, heights, edges, centroids, 
-                               vsSource, fsSource, projMatrix).AsTask()
+                                canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
+                                vsSource, fsSource, projMatrix).AsTask()
             |> Async.AwaitTask
     }

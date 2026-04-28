@@ -182,6 +182,63 @@ let coxelChildren
     bsCx, finalCxc, chOc1
 ///
 
+/// <summary> Create the base/root coxel for a layout. </summary>
+let createBaseCoxel (sqn : Sqn) (elv : int) (bsAtr : string) (entryFallback : Hxl) (id : Prp) (ct : Prp) (lb : Prp) (occ : Hxl[]) (bsHxSetOverride : Cxl option) =
+    match bsHxSetOverride with
+    | Some parentCxl ->
+        // Retain label and size from lower level, but update Z to elv
+        let updatedHxls = 
+            parentCxl.Hxls 
+            |> Array.map (fun h -> 
+                let (x, y, _) = hxlCrd h
+                AV(x, y, elv))
+        
+        let baseHx = if Array.isEmpty updatedHxls then entryFallback else updatedHxls.[0]
+        
+        // Re-evaluate hexel status (AV/RV) based on current level's boundary/occupancy
+        // We ensure that the interior of the parent remains AV so it can be subdivided
+        let occSet = hxlSet occ
+        let hxlsWithStatus = 
+            updatedHxls 
+            |> Array.map (fun h -> 
+                if occSet.Contains(RV(hxlCrd h)) then RV(hxlCrd h)
+                else AV(hxlCrd h))
+
+        let rootCxl = {
+            Name = parentCxl.Name
+            Rfid = id 
+            Size = parentCxl.Size
+            Seqn = sqn
+            Base = if Array.isEmpty hxlsWithStatus then baseHx else hxlsWithStatus.[0]
+            Hxls = hxlsWithStatus
+        }
+        let updatedOcc = Array.append occ updatedHxls |> hxlUni 1
+        rootCxl, updatedOcc
+    | None ->
+        let bsHx = 
+            if bsAtr = "0" then entryFallback
+            else
+                let parts = bsAtr.Split ','
+                match parts with
+                | [| xStr; yStr |] ->
+                    match System.Int32.TryParse(xStr.Trim()), System.Int32.TryParse(yStr.Trim()) with
+                    | (true, x), (true, y) -> AV(x, y, elv)
+                    | _ -> entryFallback
+                | _ -> entryFallback
+        
+        let cti = match ct with | Count x when x > 0 -> Count (x - 1) | _ -> Count 0
+        let ac0 = coxel sqn elv [| bsHx, id, cti, lb |] occ
+        match Array.tryHead ac0 with
+        | None -> 
+            let emptyCxl = { Name = lb; Rfid = id; Size = ct; Seqn = sqn; Base = bsHx; Hxls = [||] }
+            emptyCxl, occ
+        | Some firstCxl ->
+            let refinedHxls = Array.except occ (Array.append [| firstCxl.Base |] firstCxl.Hxls)
+            let rootCxl = { firstCxl with Hxls = refinedHxls }
+            let updatedOcc = Array.concat [| occ; [|bsHx|]; refinedHxls |] |> hxlUni 1
+            rootCxl, updatedOcc
+///
+
 /// <summary> Count open/exposed Hexels. </summary>
 /// <param name="cxl"> A coxel. </param>
 /// <param name="sqn"> Sequence to follow. </param>

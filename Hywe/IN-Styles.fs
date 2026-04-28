@@ -2,7 +2,7 @@ module Hywe.Styles
 
 open Bolero.Html
 
-let allCss = """
+let baseStyles = """
 html,
 body {
     width: 100%;
@@ -18,7 +18,9 @@ body {
     -ms-user-select: none;
     user-select: none;
 }
+"""
 
+let headerStyles = """
 /* =====================
    SITE HEADER
    ===================== */
@@ -97,7 +99,9 @@ body {
     margin-bottom: 0.1em;
     line-height: 1;
 }
+"""
 
+let layoutStyles = """
 /* =====================
    FLEX & FADE CONTAINERS
    ===================== */
@@ -116,7 +120,9 @@ body {
 .fade-container.visible {
     opacity: 1;
 }
+"""
 
+let formStyles = """
 /* =====================
    FORM ELEMENTS
    ===================== */
@@ -202,9 +208,9 @@ input[type=number] {
     cursor: pointer;
     transform: translateY(-14px);
 }
+"""
 
-
-
+let editorStyles = """
 /* =====================
    SYNTAX INPUT
    ===================== */
@@ -251,7 +257,9 @@ input[type=number] {
     color: #000;
     font-weight: 500;
 }
+"""
 
+let animationStyles = """
 /* =====================
    SPINNER & VIDEO
    ===================== */
@@ -464,14 +472,16 @@ video.fullscreen-bg {
     opacity: 0.25;
     transition: opacity 0.8s ease;
 }
+"""
 
+let nodeStyles = """
 /* =====================
    NODE INPUTS
    ===================== */
 .nodename {
     width: 44px;
     font-size: 10px;
-    margin-top: 3px;
+    margin-top: 5px;
     color: #999;
     text-align: center;
     border: none;
@@ -593,7 +603,7 @@ video.fullscreen-bg {
 .tree-container {
     width: 100%;
     overflow: auto; /* Support both horizontal and vertical scrolling */
-    padding: 16px 0;
+    padding: 10px 0;
     display: block; /* Flex center can cut off content on overflow */
     text-align: center;
     -webkit-user-select: none;
@@ -673,6 +683,15 @@ video.fullscreen-bg {
     /* Slightly deeper tint for the source */
 }
 
+.node-outer.is-elevating .node-inner {
+    background-color: #ebf5fb;
+    /* Light blue tint for elevation preview */
+}
+
+.node-outer.is-elevating {
+    background-color: #3498db;
+}
+
 .node-outer.is-dragging {
     transform: scale(0.9);
 }
@@ -687,10 +706,134 @@ video.fullscreen-bg {
     background-color: #ebf5fb;
 }
 
-/* =====================
-   HYWEAVE Button
-   ===================== */
+/* Node Menu Styles */
+.node-menu-container {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+    z-index: 10;
+    font-size: 14px;
+    line-height: 1;
+    color: #5dade2;
+    background: none;
+    border: none;
+    padding: 2px;
+}
 
+.node-menu-container:hover {
+    color: #3498db;
+}
+
+.node-menu-popup {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 100;
+    width: 58px;
+    height: 64px;
+    padding: 0;
+}
+
+.node-menu-item {
+    padding: 4px 2px;
+    font-size: 8.5px;
+    font-weight: 600;
+    color: #444;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.2s;
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+}
+
+.node-menu-item:hover {
+    background: #f5f5f5;
+    color: #000;
+}
+
+.node-menu-item.disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.node-confirm-elevate {
+    color: #3498db;
+    font-weight: bold;
+    font-size: 10px;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+/* Halo Effect for Elevated Nodes */
+.node-outer.is-elevated {
+    background-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
+    border: 1px solid #3498db;
+}
+
+.node-outer.is-elevated .node-inner {
+    background-color: #ebf5fb;
+}
+
+/* Level Tabs UI */
+.level-controls-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 16px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    z-index: 1000;
+}
+
+.level-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 1px;
+    margin-right: 4px;
+}
+
+.level-tab {
+    padding: 2px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #bbb;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.level-tab.active {
+    color: #3498db;
+    font-weight: 800;
+}
+
+.level-tab:hover:not(.active) {
+    color: #000;
+    background: rgba(0,0,0,0.05);
+}
+"""
+
+let hyweaveStyles = """
 /* Layout Container remains full width and centered */
 .hyweave-container {
     width: 100%;
@@ -826,7 +969,9 @@ video.fullscreen-bg {
     padding: 0 8px;
     min-width: 32px;
 }
+"""
 
+let teachStyles = """
 /* =====================
    TEACH PANEL
    ===================== */
@@ -948,7 +1093,9 @@ video.fullscreen-bg {
         transform: scale(1);
     }
 }
+"""
 
+let footerStyles = """
 /* =====================
    FOOTER LICENSE
    ===================== */
@@ -1002,7 +1149,9 @@ video.fullscreen-bg {
     background: rgba(255, 255, 255, 0.97);
     border-color: rgba(0, 0, 0, 0.25);
 }
+"""
 
+let polygonEditorStyles = """
 /* =========================================
    POLYGON EDITOR
    ========================================= */
@@ -1188,6 +1337,9 @@ video.fullscreen-bg {
     white-space: nowrap;
     /* Prevents awkward wrapping */
 }
+"""
+
+let onboardingStyles = """
 /* =========================================
    ONBOARDING & TOOLTIPS
    ========================================= */
@@ -1338,7 +1490,9 @@ video.fullscreen-bg {
     from { width: 0%; }
     to { width: 100%; }
 }
+"""
 
+let batchStyles = """
 /* Batch Panel Grid */
 .batch-progress-grid {
     display: grid;
@@ -1360,8 +1514,22 @@ video.fullscreen-bg {
 .batch-box.filled {
     background-color: rgba(136, 136, 136, 0.3); /* Subtle gray fill matching app aesthetic */
 }
-
 """
+
+let allCss = 
+    baseStyles +
+    headerStyles +
+    layoutStyles +
+    formStyles +
+    editorStyles +
+    animationStyles +
+    nodeStyles +
+    hyweaveStyles +
+    teachStyles +
+    footerStyles +
+    polygonEditorStyles +
+    onboardingStyles +
+    batchStyles
 
 let render () = 
     style { text allCss }

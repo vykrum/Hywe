@@ -8,13 +8,15 @@ open PolygonEditor
 let elv = 0
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2025-11-08T00:00:00Z"
+let MODIFIED_DATE = "2026-04-27T00:00:00Z"
 
 type PolygonExportData = {
     OuterStr: string
     IslandsStr: string
     AbsStr: string
     EntryStr: string
+    Elevation: int
+    BaseStr: string
     Width: int
     Height: int
 }
@@ -42,6 +44,8 @@ type AppScreen =
 type Model =
     {
         Sequence: string
+        Elevation: int
+        BaseStr: string
         SrcOfTrth : string
         Tree : SubModel
         LastValidTree: SubModel
@@ -86,7 +90,7 @@ type Message =
     /// <summary> Triggers the generation of the next configuration in a batch sequence. </summary>
     | GenerateNextBatchItem of int
     /// <summary> Adds a completed configuration to the accumulator and proceeds to the next item. </summary>
-    | AddBatchItem of BatchConfgrtns
+    | AddBatchItem of BatchConfgrtns option
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
@@ -113,12 +117,11 @@ type Message =
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
 let syncPolygonState (p: PolygonEditorModel) =
-    let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
+    let outer, islands, absolute, entry, w, h, elv, baseS = PolygonEditor.exportPolygonStrings p
     
     let w', h', entry', outer', islands' =
         match p.UseBoundary with
         | false -> 0, 0, "0,0", "", ""
         | true  -> w, h, entry, outer, islands
         
-    { OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h' }
-
+    { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h' }
