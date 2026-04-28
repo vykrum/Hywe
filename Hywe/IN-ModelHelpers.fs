@@ -115,7 +115,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
                 with _ -> None
             |> Option.map (fun tree ->
                 let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                { Root = laidOut; ConfirmingId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
+                { Levels = Map.ofList [(0, laidOut)]; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
             )
 
         match maybeSubModel with
@@ -127,7 +127,6 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
-                    model.PolygonExport.EntryStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
@@ -149,7 +148,6 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
                 model.PolygonExport.Width
                 model.PolygonExport.Height
                 model.PolygonExport.AbsStr
-                model.PolygonExport.EntryStr
                 model.PolygonExport.OuterStr
                 model.PolygonExport.IslandsStr
 
@@ -176,7 +174,7 @@ let handleRecordToHynteract (model: Model) (js: IJSRuntime) : Model * Cmd<Messag
                     let key = sprintf "%A" sqnCase
                     let data = 
                         try 
-                            Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands [||]
+                            Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands model.PolygonExport.EntryStr [||]
                         with ex -> 
                             printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
                             "" 
@@ -216,7 +214,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
                 try 
                     let tree = CodeNode.parseOutput processed
                     let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                    { Root = laidOut; ConfirmingId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
+                    { Levels = Map.ofList [(0, laidOut)]; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
                 with _ -> model.Tree 
 
         let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -228,7 +226,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             SrcOfTrth = clean
             Tree = newTree
             LastValidTree = newTree
-            Derived = deriveData clean 0 
+            Derived = deriveData clean model.PolygonExport.EntryStr 0 
             PolygonEditor = newState 
             PolygonExport = newExport
             ParseError = false
@@ -303,11 +301,8 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
     | Interactive ->
         div {
             attr.id "hywe-input-interactive"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px;"
-            div {
-                attr.style "flex:1; overflow-y:hidden; display: flex; justify-content: center; width: 100%;"
-                viewTreeEditor model.Tree (TreeMsg >> dispatch)
-            }
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
+            viewTreeEditor model.Tree (TreeMsg >> dispatch)
         }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
@@ -406,7 +401,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-svg-container"
-                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10 (Some "layout-svg-output")
+                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl model.Tree.ActiveLevel model.Derived.cxClr1 10 (Some "layout-svg-output")
                 }
                 button {
                     attr.``class`` "layout-download-btn"
@@ -422,6 +417,19 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
         
         | AnalyzePanel ->
+            let elv = model.Tree.ActiveLevel
+            let filteredIdx = 
+                model.Derived.cxCxl1 
+                |> Array.indexed 
+                |> Array.filter (fun (_, c) -> 
+                    let (_, _, z) = Hexel.hxlCrd c.Base
+                    z = elv)
+                |> Array.map fst
+            
+            let fCxls = filteredIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
+            let fClrs = filteredIdx |> Array.map (fun i -> model.Derived.cxClr1.[i])
+            let fAvls = filteredIdx |> Array.map (fun i -> model.Derived.cxlAvl.[i])
+
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
                 div {
@@ -430,7 +438,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze model.Sequence model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
+                    Analyze.viewHyweAnalyze model.Sequence fCxls fClrs fAvls
                 }
             }
 

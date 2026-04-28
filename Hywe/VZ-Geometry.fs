@@ -318,3 +318,46 @@ let hxlPgn
             lastOpt <- Some (Array.last seg)
 
     acc.ToArray()
+
+/// <summary> Generates a set of reserved hexels representing the area outside a polygon and inside islands. </summary>
+let hxlBdrFill (sqn: Sqn) (elv: int) (outer: (float*float)[]) (islands: (float*float)[][]) =
+    if Array.isEmpty outer then [||] else
+    let minX, minY, maxX, maxY = bounds outer
+    let buffer = 10.0 // Reduced buffer for performance
+    
+    let res = System.Collections.Generic.List<Hxl>()
+    
+    let bMinX = int (Math.Floor(minX - buffer))
+    let bMaxX = int (Math.Ceiling(maxX + buffer))
+    let bMinY = int (Math.Floor(minY - buffer))
+    let bMaxY = int (Math.Ceiling(maxY + buffer))
+    
+    // Pre-calculate island bounds for faster skipping
+    let islandBounds = islands |> Array.map bounds
+
+    for x in bMinX .. bMaxX do
+        let px = float x
+        for y in bMinY .. bMaxY do
+            let py = float y
+            
+            // Fast bounding box check for the outer boundary
+            if px < minX || px > maxX || py < minY || py > maxY then
+                res.Add(RV(x, y, elv))
+            else
+                let inside = pointInPolygon (px, py) outer
+                if not inside then
+                    res.Add(RV(x, y, elv))
+                else
+                    // Check islands with pre-calculated bounds
+                    let mutable inIsland = false
+                    let mutable j = 0
+                    while j < islands.Length && not inIsland do
+                        let iminX, iminY, imaxX, imaxY = islandBounds.[j]
+                        if px >= iminX && px <= imaxX && py >= iminY && py <= imaxY then
+                            if pointInPolygon (px, py) islands.[j] then
+                                inIsland <- true
+                        j <- j + 1
+                    
+                    if inIsland then
+                        res.Add(RV(x, y, elv))
+    res.ToArray()

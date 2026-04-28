@@ -23,6 +23,8 @@ type PolygonEditorModel =
         PolygonEnabled: bool        
         LogicalWidth: float
         LogicalHeight: float
+        Elevation: int
+        BaseStr: string
         Outer: Point[]
         Islands: Point[][]
         VertexRadius: int
@@ -317,8 +319,8 @@ let ensureEntryWithin
     if isEntryPointValid outer islands entry then entry
     else closestValidEntryPoint outer islands
 
-/// Return (outer, islands, absolute, entry, width, height)
-let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int =
+/// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
+let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
     let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Round(p.X/ 10.0))) (int (System.Math.Round(p.Y/ 10.0)))
 
     let outer =
@@ -335,7 +337,7 @@ let exportPolygonStrings (model: PolygonEditorModel) : string * string * string 
     let absolute = if model.UseAbsolute then "1" else "0"
     let w = int (System.Math.Round(model.LogicalWidth/ 10.0))
     let h = int (System.Math.Round(model.LogicalHeight/ 10.0))
-    outer, islands, absolute, entry, w, h
+    outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
 // ---------- Import function ----------
 let importPolygonStrings
@@ -398,6 +400,8 @@ let initModel =
         PolygonEnabled = false        
         LogicalWidth = initWidth
         LogicalHeight = initHeight
+        Elevation = 0
+        BaseStr = ""
         Outer = initOuter
         Islands = initIslands
         Dragging = None

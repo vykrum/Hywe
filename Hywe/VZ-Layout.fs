@@ -207,114 +207,119 @@ let svgCoxels
     (clr : string[])
     (scl : int)
     (svgId : string option) = 
-
-    // Vertices
-    let sqn = cxl |> Array.map (fun x ->x.Seqn)
-    let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
-    let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
-
-    // Shift and Scale Vertices
-    let padd = float (5*scl)
-    let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a * float scl, b * float scl)x) crd
-    // --- Coordinate Transformation & Offsetting ---
-    // Calculate global shifts to normalize the layout within the SVG viewport
-    let minX1 = fst (Array.minBy fst (Array.concat crd1))
-    let maxX1 = fst (Array.maxBy fst (Array.concat crd1))
-    let minY1 = snd (Array.minBy snd (Array.concat crd1))
-    let maxY1 = snd (Array.maxBy snd (Array.concat crd1))
     
-    // Shift points into the positive coordinate space with padding
-    let shfX = (-1.0 * minX1) + padd
-    let shfY = (-1.0 * minY1) + padd
-    
-    // Transform all vertices (already calculated as midpoints in cxlPrm)
-    let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
-    
-    let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
-    let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
-    
-    // Labels
-    let lPs = Array.map(fun a -> 
-                                let x,y = cxlCnt a
-                                (float x * float scl) + shfX,(float y * float scl) + shfY) cxl
-    let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
+    match cxl with
+    | [||] -> div { attr.style "padding: 20px; color: #888; font-family: sans-serif;"; text "No layout generated for this level." }
+    | _ ->
+        // Vertices
+        let sqn = cxl |> Array.map (fun x ->x.Seqn)
+        let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
+        let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
 
-    let svg = 
-        svg {
-            "viewBox" => $"0 0 {wdt} {hgt}"
-            attr.``style`` (sprintf "display: block; width: 100%%; height: auto; max-width: %dpx;" wdt)
-            attr.id (svgId |> Option.defaultValue "")
-
-            let prp = Array.zip crd2 clr
-            for (xxyy, color) in prp do
-                let xy =
-                    xxyy
-                    |> Array.map (fun (x, y) -> [|x; y|])
-                    |> Array.concat
-                    |> Array.map string
-                    |> String.concat ","
-
-                plgn()
-                    .pt(xy)
-                    .cl(color)
-                    .op("0.75")
-                    .Elt()
-
-            // Boundary Outlines
-            for boundary in bdr do
-                let xy =
-                    boundary
-                    |> Array.map (fun (x, y) -> [| (float x * float scl) + shfX; (float y * float scl) + shfY |])
-                    |> Array.concat
-                    |> Array.map string
-                    |> String.concat ","
-
-                // Draw boundary outline in contrasting color
-                plgn()
-                    .pt(xy)
-                    .st("#000000")
-                    .cl("none")
-                    .sw("2")
-                    .op("0.1")
-                    .Elt()
-
-            let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
-            let prp1 = Array.zip crd2 clr
-            let prp2 = Array.zip lbl pth
-            let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
-
-            for i, (xxyy, label, color, path) in prp |> Array.indexed do
-                let x, y =
-                    match xxyy with
-                    | [||] -> -10.0, -10.0
-                    | _ -> snd label
-
-                let r = 10.0
-                crPh()
-                    .pathid(path)
-                    .sx($"{x}")
-                    .sy($"{y + r}")
-                    .r($"{r}")
-                    .ex($"{x}")
-                    .ey($"{y - r}")
-                    .Elt()
-
-                crTx()
-                    .nm(fst label)
-                    .pth(path)
-                    .fw(if i = 0 then "700" else "400")
-                    .fl(if i = 0 then "#333333" else "#666666")
-                    .td("none")
-                    .Elt()
-
-                crCl()
-                    .cx($"{x}")
-                    .cy($"{y}")
-                    .cl(color)
-                    .Elt()
+        // Shift and Scale Vertices
+        let padd = float (5*scl)
+        let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a * float scl, b * float scl)x) crd
+        // --- Coordinate Transformation & Offsetting ---
+        // Calculate global shifts to normalize the layout within the SVG viewport
+        let allPoints = Array.concat crd1
+        match allPoints with
+        | [||] -> div { attr.style "padding: 20px; color: #888; font-family: sans-serif;"; text "Base Unavailable" }
+        | _ ->
+            let minX1 = fst (Array.minBy fst allPoints)
+            let maxX1 = fst (Array.maxBy fst allPoints)
+            let minY1 = snd (Array.minBy snd allPoints)
+            let maxY1 = snd (Array.maxBy snd allPoints)
+            
+            // Shift points into the positive coordinate space with padding
+            let shfX = (-1.0 * minX1) + padd
+            let shfY = (-1.0 * minY1) + padd
         
-        }
-    svg
+            // Transform all vertices (already calculated as midpoints in cxlPrm)
+            let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
+            
+            let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
+            let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
+            
+            // Labels
+            let lPs = Array.map(fun a -> 
+                                        let x,y = cxlCnt a
+                                        (float x * float scl) + shfX,(float y * float scl) + shfY) cxl
+            let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
+
+            svg {
+                "viewBox" => $"0 0 {wdt} {hgt}"
+                attr.``style`` (sprintf "display: block; width: 100%%; height: auto; max-width: %dpx;" wdt)
+                attr.id (svgId |> Option.defaultValue "")
+
+                let prp = Array.zip crd2 clr
+                for (xxyy, color) in prp do
+                    let xy =
+                        xxyy
+                        |> Array.map (fun (x, y) -> [|x; y|])
+                        |> Array.concat
+                        |> Array.map string
+                        |> String.concat ","
+
+                    plgn()
+                        .pt(xy)
+                        .cl(color)
+                        .op("0.75")
+                        .Elt()
+
+                // Boundary Outlines
+                for boundary in bdr do
+                    let xy =
+                        boundary
+                        |> Array.map (fun (x, y) -> [| (float x * float scl) + shfX; (float y * float scl) + shfY |])
+                        |> Array.concat
+                        |> Array.map string
+                        |> String.concat ","
+
+                    // Draw boundary outline in contrasting color
+                    plgn()
+                        .pt(xy)
+                        .st("#000000")
+                        .cl("none")
+                        .sw("2")
+                        .op("0.1")
+                        .Elt()
+
+                let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
+                let prp1 = Array.zip crd2 clr
+                let prp2 = Array.zip lbl pth
+                let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+
+                for i, (xxyy, label, color, path) in prp |> Array.indexed do
+                    let x, y =
+                        match xxyy with
+                        | [||] -> -10.0, -10.0
+                        | _ -> snd label
+
+                    let r = 10.0
+                    crPh()
+                        .pathid(path)
+                        .sx($"{x}")
+                        .sy($"{y + r}")
+                        .r($"{r}")
+                        .ex($"{x}")
+                        .ey($"{y - r}")
+                        .Elt()
+
+                    crTx()
+                        .pth(path)
+                        .nm(label |> fst)
+                        .fw("normal")
+                        .fl("#333")
+                        .td("none")
+                        .Elt()
+
+                    crCl()
+                        .cx($"{x}")
+                        .cy($"{y}")
+                        .cl(color)
+                        .Elt()
+            
+            }
 ///
 
 // Batch Export Types
@@ -382,9 +387,9 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
                     let lx, ly = labelPosition pts
                     
                     {|
+                        color = colors.[i]
                         points = pts |> Array.collect (fun (px, py) -> [| px - minX; py - minY |])
                         name = prpVlu label.Name
-                        color = colors.[i]
                         lx = lx - minX
                         ly = ly - minY
                     |}

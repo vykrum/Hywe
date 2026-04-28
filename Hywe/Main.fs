@@ -25,18 +25,19 @@ let initialOutput = NodeCode.getOutput
                         initialPolygonExport.Width
                         initialPolygonExport.Height
                         initialPolygonExport.AbsStr
-                        initialPolygonExport.EntryStr
                         initialPolygonExport.OuterStr
                         initialPolygonExport.IslandsStr
 
 let initModel =
     {
         Sequence = initialSequence
+        Elevation = 0
+        BaseStr = ""
         SrcOfTrth = initialOutput
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
-        Derived = deriveData initialOutput 0
+        Derived = deriveData initialOutput initialPolygonExport.EntryStr 0
         NeedsHyweave = false
         IsHyweaving = false
         IsCancelling = false
@@ -84,7 +85,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
-                    model.PolygonExport.EntryStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
@@ -100,7 +100,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         modelWithNewSqn,
         Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete)
+                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
                     Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 5 }) () (fun _ -> RunHyweave)
                 ]
 
@@ -114,7 +114,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         NeedsHyweave = false}
         model2,
         Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete)
+                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
                     Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 50 }) () (fun _ -> RunHyweave)
                 ]
 
@@ -133,7 +133,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
-                    model.PolygonExport.EntryStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
@@ -148,13 +147,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let newExport = syncPolygonState finalPoly
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
-                    Derived = deriveData updatedSrcOfTrth elv
+                    Derived = Page.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel
                     PolygonEditor = newState 
                     PolygonExport = newExport }
             | Interactive ->
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
-                    Derived = deriveData updatedSrcOfTrth elv }
+                    Derived = Page.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel }
                 
         newModel,
         Cmd.OfAsync.perform
@@ -173,15 +172,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
         
             let newOutput = NodeCode.getOutput
-                                updatedTree
-                                model.Sequence
-                                model.PolygonExport.Width
-                                model.PolygonExport.Height
-                                model.PolygonExport.AbsStr
-                                model.PolygonExport.EntryStr
-                                model.PolygonExport.OuterStr
-                                model.PolygonExport.IslandsStr
-            
+                                 updatedTree
+                                 model.Sequence
+                                 model.PolygonExport.Width
+                                 model.PolygonExport.Height
+                                 model.PolygonExport.AbsStr
+                                 model.PolygonExport.OuterStr
+                                 model.PolygonExport.IslandsStr
+
             // Auto-dismiss onboarding on meaningful tree interaction
             let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
             let onboarding = 
@@ -189,12 +187,31 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     { model.Onboarding with IsActive = false; IsAutoSimulating = false }
                 else model.Onboarding
 
-            { model with 
-                Tree = updatedTree 
-                SrcOfTrth = newOutput 
-                NeedsHyweave = if isMoving then model.NeedsHyweave else true
-                Onboarding = onboarding }, 
-            Cmd.map TreeMsg treeCmd
+            let isLevelSwitch = match subMsg with NodeCode.SetLevel _ -> true | _ -> false
+            let isAction = match subMsg with NodeCode.ExecuteAction _ -> true | _ -> false
+
+            let modelWithTree = 
+                { model with 
+                    Tree = updatedTree 
+                    SrcOfTrth = newOutput 
+                    NeedsHyweave = if isMoving then model.NeedsHyweave else true
+                    Onboarding = onboarding }
+
+            let finalModel, finalCmd = 
+                if isLevelSwitch || isAction then
+                    let m = { modelWithTree with Derived = Page.deriveData newOutput model.PolygonExport.EntryStr updatedTree.ActiveLevel }
+                    if model.ActivePanel = BatchPanel then
+                        { m with 
+                            IsHyweaving = true
+                            BatchProgress = 0
+                            BatchAccumulator = []
+                            BatchPreview = None
+                        }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
+                    else
+                        m, Cmd.map TreeMsg treeCmd
+                else modelWithTree, Cmd.map TreeMsg treeCmd
+
+            finalModel, finalCmd
 
     | PolygonEditorMsg subMsg ->
         let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -255,26 +272,33 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             
             // Perform the heavy geometric calculation in an async block
             model, Cmd.OfAsync.perform (fun () -> async {
-                let cxls, _ = Parse.generateCxlLayout forcedStr None None None [||]
-                
-                // Extract static geometry for high-fidelity rendering in the batch preview
-                let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
-                    getStaticGeometry cxls (Page.deriveData forcedStr 0).cxClr1 0 10 
-                
-                let configData = 
-                    {| sqnName = sqnStr; w = d.w; h = d.h
-                       shapes = d.shapes |> Array.map (fun s -> 
-                         {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                    |}
-                
-                // Small sleep to ensure the UI has a chance to render the progress update
-                do! Async.Sleep 5
-                return configData
+                try
+                    let cxls, _ = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||]
+                    
+                    // Extract static geometry for high-fidelity rendering in the batch preview
+                    let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr model.Tree.ActiveLevel
+                    let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
+                        getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
+                    
+                    let configData : BatchConfgrtns = 
+                        {| sqnName = sqnStr
+                           shapes = d.shapes |> Array.map (fun s -> 
+                             {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                           w = d.w; h = d.h |}
+                    
+                    // Small sleep to ensure the UI has a chance to render the progress update
+                    do! Async.Sleep 5
+                    return Some configData
+                with ex -> 
+                    return None
             }) () AddBatchItem
 
     | AddBatchItem res ->
         let nextI = model.BatchProgress + 1
-        let nextAcc = res :: model.BatchAccumulator
+        let nextAcc = 
+            match res with
+            | Some r -> r :: model.BatchAccumulator
+            | None -> model.BatchAccumulator
         // Update progress state and trigger next iteration
         { model with BatchProgress = nextI; BatchAccumulator = nextAcc }, Cmd.ofMsg (GenerateNextBatchItem nextI)
     | TapBatchPreview i ->
@@ -375,7 +399,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SkipOnboarding ->
         { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }, 
-        Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete) // Just in case
+        Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction) // Just in case
 
     | RestartOnboarding ->
         { model with 
