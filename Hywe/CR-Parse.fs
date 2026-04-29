@@ -371,7 +371,14 @@ let generateCxlLayout
     result, Array.append [|bdOu|] bdIs, finalRatio
 
 /// <summary> Processes multiple levels separated by ';' in a Hywe string. </summary>
-let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) : Cxl[] * (float*float)[][] * float[] =
+let generateMultiLevelLayout 
+    (fullStr: string) 
+    (entryAtrFallback: string) 
+    (initialOcc: Hxl[])
+    (seqOverride: Sqn option)
+    (ouStrOverride: string option)
+    (ilStrOverride: string option) : Cxl[] * (float*float)[][] * float[] =
+    
     let cleanStr = fullStr.Replace("\n","").Replace("\t","")
     let levels = cleanStr.Split(';', StringSplitOptions.RemoveEmptyEntries)
     
@@ -382,8 +389,8 @@ let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initi
     
     let mutable rootW = None
     let mutable rootH = None
-    let mutable rootO = None
-    let mutable rootI = None
+    let mutable rootO = ouStrOverride
+    let mutable rootI = ilStrOverride
     
     for i, levelStr in levels |> Array.indexed do
         let cleanLvl = levelStr.Trim().Trim('|').Trim()
@@ -392,8 +399,8 @@ let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initi
         if i = 0 then
             rootW <- attrs |> Map.tryFind "W" |> Option.bind tryParseInt
             rootH <- attrs |> Map.tryFind "H" |> Option.bind tryParseInt
-            rootO <- attrs |> Map.tryFind "O"
-            rootI <- attrs |> Map.tryFind "I"
+            if rootO.IsNone then rootO <- attrs |> Map.tryFind "O"
+            if rootI.IsNone then rootI <- attrs |> Map.tryFind "I"
  
         let eStr = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
         
@@ -416,7 +423,7 @@ let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initi
                         z = i - 1)
                     |> Array.tryFind (fun c -> prpVlu c.Rfid = eStr)
                 
-            let cxls, bounds, ratio = generateCxlLayout cleanLvl entryAtrFallback None curW curH curO curI initialOcc bsHxOverride baseRatio (Some i)
+            let cxls, bounds, ratio = generateCxlLayout cleanLvl entryAtrFallback seqOverride curW curH curO curI initialOcc bsHxOverride baseRatio (Some i)
             
             if i = 0 then baseRatio <- Some ratio
             
@@ -436,7 +443,7 @@ let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initi
                 let lastBase = allElevations.[allElevations.Length - 1]
                 Array.append allElevations [| lastBase + 3.0 |]
         else allElevations
-
+    
     allCxls, allBoundaries, finalElevations
 
 /// <summary> Formats a layout into a Base36-encoded string representation. </summary>
@@ -447,9 +454,10 @@ let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (e
             match v = 0L with
             | true -> match acc = "" with | true -> "0" | false -> acc
             | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
-        convert (abs value) ""
+        let prefix = if value < 0L then "-" else ""
+        prefix + convert (abs value) ""
 
-    let finalBatch, _, _ = generateCxlLayout str enStr (Some seq) None None (Some ouStr) (Some ilStr) initialOcc None None None
+    let finalBatch, _, _ = generateMultiLevelLayout str enStr initialOcc (Some seq) (Some ouStr) (Some ilStr)
 
     finalBatch
     |> Array.map (fun cxl ->

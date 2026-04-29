@@ -985,6 +985,10 @@ let teachStyles = """
     align-items: center;
     gap: 24px;
     padding: 20px;
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 /* Textarea styling */
@@ -1008,14 +1012,110 @@ let teachStyles = """
     border-color: #ccc;
 }
 
+.teach-textarea.small {
+    height: 120px;
+    width: 100%;
+}
+
+/* Objective Fields */
+.teach-objective-section {
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.teach-select-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.teach-field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    color: #999;
+}
+
+.teach-option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+}
+
+.teach-option {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #eee;
+    background: #fff;
+    color: #666;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.teach-option:hover {
+    background: #f5f5f5;
+    border-color: #ddd;
+}
+
+.teach-option.active {
+    background: #363636;
+    color: #fff;
+    border-color: #363636;
+}
+
+.teach-custom-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.4rem;
+    padding: 6px 12px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #333;
+    outline: none;
+    background: #fdfdfd;
+    transition: all 0.2s ease;
+}
+
+.teach-custom-input:focus {
+    border-color: #363636;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.teach-row-tip {
+    width: 100%;
+    font-size: 0.75rem;
+    color: #888;
+    font-style: italic;
+    margin-top: 0.3rem;
+    text-align: center;
+    line-height: 1.3;
+    animation: tipFadeIn 0.2s ease-out;
+}
+
+@keyframes tipFadeIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Action Bar */
 .teach-action-bar {
     display: flex;
     width: 100%;
-    max-width: 800px;
-    justify-content: center;
+    max-width: 450px;
+    justify-content: space-between;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 /* Combined sizing for both buttons */

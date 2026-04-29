@@ -38,6 +38,14 @@ type OnboardingState = {
     SeenSteps: Set<OnboardingStep>
 }
 
+type TeachMetadata = {
+    Typology: string
+    Flow: string
+    Ambience: string
+    Complexity: string
+    Scale: string
+}
+
 type AppScreen =
     | LoadingScreen
     | IntroScreen
@@ -65,6 +73,8 @@ type Model =
         LastBatchSrc: string option
         SelectedPreviewIndex : int option
         UserDescription : string 
+        TeachMetadata: TeachMetadata
+        HoveredInfo: string option
         IsSavingToHynteract : bool
         ShowSuccessMessage : bool
         IsRecording : bool
@@ -106,6 +116,9 @@ type Message =
     | ImportRequested
     | FileImported of string
     | SetDescription of string
+    | SuggestDescription
+    | UpdateMetadata of (TeachMetadata -> TeachMetadata)
+    | SetHoveredInfo of string option
     | RecordToHynteract
     | RecordResult of bool
     | StartVoiceCapture

@@ -71,7 +71,7 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
 let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
     let bsOc = [||]
     let cxCxl1, cxOuIl, cxElv1 = 
-        try generateMultiLevelLayout stx enStr bsOc
+        try generateMultiLevelLayout stx enStr bsOc None None None
         with _ -> [||], [||], [| 0.0; 3.0 |]
     
     let fallbackSqn = Hexel.VRCCNE 

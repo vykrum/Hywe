@@ -178,9 +178,18 @@ let handleRecordToHynteract (model: Model) (js: IJSRuntime) : Model * Cmd<Messag
                 |> Map.ofArray
 
             let payload = {| 
-                instruction = currentSrc 
-                description = currentDesc 
-                configuration = configMap 
+                Definition = currentSrc 
+                Description = currentDesc 
+                Configuration = configMap 
+                Boundary = currentOuter
+                Islands = currentIslands
+                Metadata = {|
+                    Typology = model.TeachMetadata.Typology
+                    Flow = model.TeachMetadata.Flow
+                    Ambience = model.TeachMetadata.Ambience
+                    Complexity = model.TeachMetadata.Complexity
+                    Scale = model.TeachMetadata.Scale
+                |}
             |}
 
             let! success = 
@@ -524,14 +533,110 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
 
         | TeachPanel ->
+            let selectField (label: string) (current: string) (options: string list) (descriptions: Map<string, string>) updater =
+                let isPredefined = options |> List.contains current
+                let rowTips = descriptions |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+                
+                let currentTip = 
+                    match model.HoveredInfo with
+                    | Some (tip: string) when rowTips.Contains tip -> Some tip
+                    | Some (tip: string) when tip.Contains(label.ToLower()) -> Some tip // For "Other..." tips
+                    | _ -> 
+                        if isPredefined then descriptions |> Map.tryFind current
+                        else Some $"Custom {label.ToLower()} tag applied."
+
+                div {
+                    attr.``class`` "teach-select-row"
+                    span { attr.``class`` "teach-field-label"; text label }
+                    div {
+                        attr.``class`` "teach-option-group"
+                        for opt in options do
+                            button {
+                                attr.``class`` (if current = opt then "teach-option active" else "teach-option")
+                                on.mouseover (fun _ -> dispatch (SetHoveredInfo (descriptions |> Map.tryFind opt)))
+                                on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
+                                on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m opt)))
+                                text opt
+                            }
+                        button {
+                            attr.``class`` (if not isPredefined then "teach-option active" else "teach-option")
+                            on.mouseover (fun _ -> dispatch (SetHoveredInfo (Some $"Enter a custom {label.ToLower()} tag.")))
+                            on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
+                            on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m "")))
+                            text "Other..."
+                        }
+                    }
+                    
+                    match currentTip with
+                    | Some tip -> div { attr.``class`` "teach-row-tip"; text tip }
+                    | None -> ()
+
+                    if not isPredefined then
+                        input {
+                            attr.``class`` "teach-custom-input"
+                            attr.placeholder (sprintf "Enter custom %s..." (label.ToLower()))
+                            attr.value current
+                            on.input (fun e -> dispatch (UpdateMetadata (fun m -> updater m (unbox<string> e.Value))))
+                        }
+                }
+
+            let flowDescs = Map [
+                "Sequential", "A 'deep' flow where spaces lead into one another in a chain."
+                "Hub-Spoke", "A 'shallow' flow where most spaces branch directly from a single hub."
+                "Hierarchical", "A balanced tree where primary spaces lead to secondary clusters."
+                "Spine", "Organized along a primary corridor node that anchors all branches."
+                "Cluster", "Independent groups of spaces connected only at the highest level."
+            ]
+
+            let typoDescs = Map [
+                "Residential", "Homes, apartments, or private living quarters."
+                "Office", "Workspaces, studios, or corporate environments."
+                "Retail", "Shops, boutiques, or commercial display spaces."
+                "Clinic", "Healthcare, consulting, or wellness spaces."
+                "Studio", "Open creative spaces or specialized workshops."
+            ]
+
+            let ambiDescs = Map [
+                "Modern", "Balanced, functional, and contemporary arrangement."
+                "Cellular", "Highly partitioned with many private, enclosed spaces."
+                "Open", "Minimizes walls to maximize visual and spatial continuity."
+                "Minimal", "Stripped back to essential connections and clean flow."
+                "Luxurious", "Generous circulation, focal points, and grand proportions."
+            ]
+
+            let compDescs = Map [
+                "Simple", "Clear, direct relationships with few nodes."
+                "Medium", "Standard architectural complexity with nested zones."
+                "Complex", "Intricate multi-level or multi-wing arrangements."
+                "Expert", "Highly specialized or experimental spatial logic."
+            ]
+
+            let scaleDescs = Map [
+                "Building", "Multi-level structures or entire building envelopes."
+                "Layout", "Single-level spatial arrangements and room logic."
+                "Master Plan", "Multiple buildings or campus-level planning."
+                "Urban", "Large scale city blocks or neighborhood logic."
+            ]
+
             div {
                 attr.``class`` "teach-panel-container"
+                
                 div {
-                    attr.style "width: 100%; max-width: 800px;"
+                    attr.``class`` "teach-objective-section"
+                    
+                    selectField "Scale" model.TeachMetadata.Scale [ "Building"; "Layout"; "Master Plan"; "Urban" ] scaleDescs (fun m v -> { m with Scale = v })
+                    selectField "Typology" model.TeachMetadata.Typology [ "Residential"; "Office"; "Retail"; "Clinic"; "Studio" ] typoDescs (fun m v -> { m with Typology = v })
+                    selectField "Flow" model.TeachMetadata.Flow [ "Sequential"; "Hub-Spoke"; "Hierarchical"; "Spine"; "Cluster" ] flowDescs (fun m v -> { m with Flow = v })
+                    selectField "Ambience" model.TeachMetadata.Ambience [ "Modern"; "Cellular"; "Open"; "Minimal"; "Luxurious" ] ambiDescs (fun m v -> { m with Ambience = v })
+                    selectField "Complexity" model.TeachMetadata.Complexity [ "Simple"; "Medium"; "Complex"; "Expert" ] compDescs (fun m v -> { m with Complexity = v })
+                }
+
+                div {
+                    attr.style "width: 100%; margin-top: 1.5rem;"
                     textarea {
                         attr.id "hynteract-desc-input"
-                        attr.``class`` "teach-textarea"
-                        attr.placeholder "Help Build a Dataset for Learning Building Layouts\n\nDescribe the space flow: Identify the main spaces, note which spaces contain smaller sub-spaces, and explain how movement branches from one area to another. Include a brief note on the overall ambience or character of the spaces.\n\nExample: Entry opens into the Living Room (30) which acts as the main gathering space of the residence. From the Living, one side leads to the Kitchen (12), which further connects to a Utility (6). The other side leads to a Passage (8) that connects the bedrooms. Along this passage are three rooms: a Master Bedroom (18) with an attached Toilet (5), a Guest Room (14), and Children's Room (12). A Common Toilet (5) also opens from the passage. The arrangement keeps the living as the central space, with kitchen activities on one side and the bedrooms grouped together along the passage."
+                        attr.``class`` "teach-textarea small"
+                        attr.placeholder "Optional: Describe any unique spatial nuances..."
                         attr.value model.UserDescription
                         on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
                     }
@@ -540,22 +645,52 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.``class`` "teach-action-bar"
 
-                    button {
-                        attr.``class`` (match model.IsRecording with | true -> "mic-button recording" | false -> "mic-button")
-                        attr.title "Start Voice Capture"
-                        on.click (fun _ -> dispatch StartVoiceCapture)
-                        
-                        rawHtml """
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <line x1="12" y1="19" x2="12" y2="23"></line>
-                                <line x1="8" y1="23" x2="16" y2="23"></line>
-                            </svg>"""
+                    div {
+                        attr.style "display: flex; gap: 0.5rem;"
+                        button {
+                            attr.``class`` (match model.IsRecording with | true -> "mic-button recording" | false -> "mic-button")
+                            attr.title "Start Voice Capture"
+                            on.click (fun _ -> dispatch StartVoiceCapture)
+                            
+                            rawHtml """
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>"""
+                        }
+
+                        button {
+                            attr.``class`` "mic-button"
+                            attr.style "color: #3498db;"
+                            attr.title "Suggest Architectural Story"
+                            on.click (fun _ -> dispatch SuggestDescription)
+                            
+                            rawHtml """
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>"""
+                        }
+
+                        button {
+                            attr.``class`` "mic-button"
+                            attr.style "color: #e74c3c;"
+                            attr.title "Clear Description"
+                            on.click (fun _ -> dispatch (SetDescription ""))
+                            
+                            rawHtml """
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>"""
+                        }
                     }
 
                     button {
-                        let isBusy = model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription
+                        let isBusy = model.IsSavingToHynteract
     
                         attr.``class`` (
                             match isBusy with 
@@ -576,9 +711,12 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
                 match model.ShowSuccessMessage with
                 | true ->
-                    span { 
-                        attr.style "color: #27ae60; font-size: 0.85em; font-weight: 500;"
-                        text "? Spatial relationship successfully mapped to model." 
+                    div {
+                        attr.style "margin-top: 1rem; text-align: center;"
+                        span { 
+                            attr.style "color: #27ae60; font-size: 0.9em; font-weight: 600;"
+                            text "✓ Spatial intent successfully committed to dataset." 
+                        }
                     }
                 | false -> ()
             }
