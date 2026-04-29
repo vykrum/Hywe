@@ -472,14 +472,14 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                                 attr.``class`` "nodeweight"
                                 attr.style "color: #e67e22; border: none !important; width: 54px; margin: auto; cursor: pointer; padding: 0; background: none;"
                                 "onpointerdown:stopPropagation" => true
-                                on.click (fun _ -> dispatch (ExecuteAction (node.Id, Delete)))
+                                on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, Delete)))
                                 text "DELETE"
                             }
                             button {
                                 attr.``class`` "nodebutton2"
                                 attr.style "color: #999; font-size: 10px;"
                                 "onpointerdown:stopPropagation" => true
-                                on.click (fun _ -> dispatch CancelAction)
+                                on.pointerdown (fun _ -> dispatch CancelAction)
                                 text "↺"
                             }
                         }
@@ -489,7 +489,7 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                                 attr.``class`` "nodename"
                                 attr.style "color: #3498db; font-weight: bold; cursor: pointer; border: none !important; width: 54px; padding: 0; margin: auto 0 2px 0; background: none;"
                                 "onpointerdown:stopPropagation" => true
-                                on.click (fun _ -> dispatch (ExecuteAction (node.Id, Elevate)))
+                                on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, Elevate)))
                                 text "ELEVATE"
                             }
                             input {
@@ -504,7 +504,7 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                                 attr.``class`` "nodebutton2"
                                 attr.style "color: #999; font-size: 10px;"
                                 "onpointerdown:stopPropagation" => true
-                                on.click (fun _ -> dispatch CancelAction)
+                                on.pointerdown (fun _ -> dispatch CancelAction)
                                 text "↺"
                             }
                         }
@@ -541,7 +541,7 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                         button { 
                             attr.``class`` "nodebutton2"
                             "onpointerdown:stopPropagation" => true
-                            on.click (fun _ -> dispatch (AddChild node.Id))
+                            on.pointerdown (fun _ -> dispatch (AddChild node.Id))
                             text "+" 
                         }
                     }
@@ -549,14 +549,23 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
         }
 
         if isMenuOpen then
-            let hasElevatedDescendants = model.Levels.Keys |> Seq.exists (fun k -> k > model.ActiveLevel)
-            
+            let elevatedAnchorIds = 
+                model.LevelAnchors 
+                |> Map.filter (fun k _ -> k > model.ActiveLevel) 
+                |> Map.toSeq 
+                |> Seq.map snd 
+                |> Set.ofSeq
+
+            let nodeHasElevatedDescendant =
+                elevatedAnchorIds |> Set.contains node.Id ||
+                elevatedAnchorIds |> Seq.exists (fun anchorId -> isDescendant anchorId node)
+
             let canDelete = 
-                if isRoot then model.ActiveLevel > 0 && not hasElevatedDescendants
+                if isRoot then model.ActiveLevel > 0 && model.Levels.Keys |> Seq.forall (fun k -> k <= model.ActiveLevel)
                 else 
                     if node.Level > model.ActiveLevel then not node.Children.IsEmpty
-                    else true
-            
+                    else not nodeHasElevatedDescendant
+
             let canElevate = node.Level >= model.ActiveLevel
 
             div {
@@ -567,7 +576,9 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                 div {
                     attr.``class`` (if canDelete then "node-menu-item" else "node-menu-item disabled")
                     match canDelete with
-                    | true -> on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, Delete)))
+                    | true -> 
+                        "onpointerdown:stopPropagation" => true
+                        on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, Delete)))
                     | false -> attr.style ""
                     text "Delete"
                 }
@@ -575,7 +586,9 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                 div {
                     attr.``class`` (if canElevate then "node-menu-item" else "node-menu-item disabled")
                     match canElevate with
-                    | true -> on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, Elevate)))
+                    | true -> 
+                        "onpointerdown:stopPropagation" => true
+                        on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, Elevate)))
                     | false -> attr.style ""
                     text "Elevate"
                 }
