@@ -453,8 +453,26 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.id "hywe-extruded-polygon"
                         attr.style "width: 100%; height: 100%; display: block; touch-action: none;" 
                     }
-                    async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 }
+                    async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked }
                     |> Async.StartImmediate
+                }
+
+                div {
+                    attr.style "display: flex; gap: 15px; margin-top: 40px; align-items: center;"
+                    div {
+                        attr.``class`` ("view-lock-trigger" + (if model.ViewLocked then " locked" else ""))
+                        attr.style "position: relative; top: 1.125rem;"
+                        attr.title (if model.ViewLocked then "Unlock View" else "Lock View")
+                        on.click (fun _ -> dispatch ToggleViewLock)
+                        drawIconSized "1.5rem" (if model.ViewLocked then iconLocked else iconUnlocked)
+                    }
+                    button {
+                        attr.``class`` "layout-download-btn"
+                        attr.disabled (not model.ViewLocked)
+                        attr.title (if model.ViewLocked then "Download View as SVG" else "Lock view to enable SVG export")
+                        on.click (fun _ -> dispatch Download3DSvg)
+                        text "Download SVG"
+                    }
                 }
                     
                 // Restored delicate 3D Legend

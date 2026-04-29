@@ -11,8 +11,6 @@ open PolygonEditor
 open ModelTypes
 open ModelHelpers
 open Layout
-open Styles
-open Shell
 
 // Defaults / init 
 let initialTree = NodeCode.initModel beeyond
@@ -62,6 +60,7 @@ let initModel =
         BatchProgress = 0
         BatchAccumulator = []
         CurrentScreen = LoadingScreen
+        ViewLocked = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -350,6 +349,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | OnVoiceResult ->
         { model with IsRecording = false }, Cmd.none
 
+    | ToggleViewLock ->
+        { model with ViewLocked = not model.ViewLocked }, Cmd.none
+
+    | Download3DSvg ->
+        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+        let fileName = "Hywe3D_" + datePart + ".svg"
+        model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("export3DToSVG", "hywe-extruded-polygon", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
+
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none
         else
@@ -451,7 +458,8 @@ type MyApp() =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> TransitionToIntro)
-                Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp) // Just trigger the async
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> TransitionToMain)
+                Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
             ])
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 

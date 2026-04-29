@@ -62,6 +62,12 @@
             height: 100vh;
             object-fit: cover;
             z-index: 100;
+            transition: opacity 1.5s ease;
+            background-color: #d3d3d1;
+        }
+        .fullscreen-bg.fade-out {
+            opacity: 0;
+            pointer-events: none;
         }
         .intro-section {
             position: absolute;
@@ -130,7 +136,7 @@
         </header>
 
         <div id="loading-frame">
-            <video class="fullscreen-bg" autoplay muted loop poster="images/loader.jpeg">
+            <video class="fullscreen-bg" autoplay muted loop>
                 <source src="images/loader.webm" type="video/webm">
                 <source src="images/loader.mp4" type="video/mp4">
             </video>
@@ -138,7 +144,7 @@
                 Weave spatial configurations with<br><br>
                 <strong> H Y W E </strong><br><br>
                 An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design.<br><br>
-                Outline the intended flow between spaces to generate layouts where sequence and connectivity define the design.
+                Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections.
                 <div class="loadingText">Loading<span>...</span></div>
             </section>
         </div>

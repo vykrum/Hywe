@@ -289,7 +289,8 @@ video.fullscreen-bg {
     height: 100vh;
     object-fit: cover;
     z-index: 100;
-    pointer-events: none
+    pointer-events: none;
+    background-color: #d3d3d1;
 }
 
 /* =============================
@@ -297,7 +298,10 @@ video.fullscreen-bg {
    ============================= */
 #loading-frame {
     position: fixed;
-    inset: 0;
+    top: 37px;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 900;
     opacity: 1;
     transition: opacity 0.8s ease;
@@ -306,10 +310,10 @@ video.fullscreen-bg {
 
 #introduction {
     position: fixed;
-    top: 0;
+    top: 37px;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
     overflow-y: auto;
     background: transparent;
     z-index: 800;
@@ -1148,6 +1152,36 @@ let footerStyles = """
     color: #111;
     background: rgba(255, 255, 255, 0.97);
     border-color: rgba(0, 0, 0, 0.25);
+}
+
+.layout-download-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(200, 200, 200, 0.1);
+    color: #999;
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+.view-lock-trigger {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, transform 0.1s;
+    color: #999;
+}
+
+.view-lock-trigger:hover {
+    color: #333;
+    transform: scale(1.1);
+}
+
+.view-lock-trigger.locked {
+    color: #E67E22;
+}
+
+.view-lock-trigger.locked:hover {
+    color: #d35400;
 }
 """
 

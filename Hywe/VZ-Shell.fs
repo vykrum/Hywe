@@ -138,7 +138,6 @@ let loadingScreen (current: AppScreen) =
             attr.autoplay true
             attr.muted true
             attr.loop true
-            attr.poster "images/loader.jpeg"
             source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
             source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
         }
@@ -154,7 +153,7 @@ let loadingScreen (current: AppScreen) =
             text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
             br {}
             br {}
-            text "Outline the intended flow-based hierarchy to generate layouts where sequence and connectivity define the design."
+            text "Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections."
             div {
                 attr.``class`` "loadingText"
                 text "Loading"
@@ -196,7 +195,7 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
             br {}
             br {}
-            text "Outline the intended flow-based hierarchy to generate layouts where sequence and connectivity define the design."
+            text "Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections."
             div {
                 attr.``class`` ("tapText" + (if isVisible then " visible" else ""))
                 text "Tap to Continue"
