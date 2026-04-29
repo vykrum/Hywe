@@ -27,7 +27,6 @@ window.disposeWebGL = (canvasId) => {
         canvas._glState = null;
     }
 
-    canvas._listenersAdded = false;
 };
 
 // --- Compile shader helper ---
@@ -248,9 +247,13 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(edgeColors), gl.STATIC_DRAW);
 
     // --- Interaction & camera ---
-    let ry = 0, rx = Math.PI / 6, zoom = 3;
+    if (canvas._cam_rx === undefined) {
+        canvas._cam_ry = 0;
+        canvas._cam_rx = Math.PI / 6;
+        canvas._cam_zoom = 3;
+    }
     let dragging = false, lx = 0, ly = 0;
-    const init = { rx, ry, zoom };
+    const init = { rx: Math.PI / 6, ry: 0, zoom: 3 };
 
     if (!canvas._listenersAdded) {
         canvas.addEventListener("mousedown", e => { if (canvas._viewLocked) return; dragging = true; lx = e.clientX; ly = e.clientY; });
@@ -258,16 +261,18 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
         document.addEventListener("mousemove", e => {
             if (!dragging || canvas._viewLocked) return;
             const dx = e.clientX - lx, dy = e.clientY - ly;
-            ry -= dx * 0.01;
-            rx = Math.min(Math.max(rx + dy * 0.01, 0.01), Math.PI / 2 - 0.01);
+            canvas._cam_ry -= dx * 0.01;
+            canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + dy * 0.01, 0.01), Math.PI / 2 - 0.01);
             lx = e.clientX; ly = e.clientY;
         });
-        canvas.addEventListener("dblclick", () => { if (canvas._viewLocked) return; rx = init.rx; ry = init.ry; zoom = init.zoom; });
+        canvas.addEventListener("dblclick", () => { 
+            if (canvas._viewLocked) return; 
+            canvas._cam_rx = init.rx; canvas._cam_ry = init.ry; canvas._cam_zoom = init.zoom; 
+        });
         canvas.addEventListener("wheel", e => {
             if (canvas._viewLocked) return;
             e.preventDefault();
-            zoom += e.deltaY * 0.005;
-            zoom = Math.min(Math.max(zoom, 1.5), 10);
+            canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom + e.deltaY * 0.005, 1.5), 10);
         }, { passive: false });
 
         let prevDist = null;
@@ -287,14 +292,16 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
             if (e.touches.length === 1) {
                 const dx = e.touches[0].clientX - lx;
                 const dy = e.touches[0].clientY - ly;
-                ry -= dx * 0.01;
-                rx = Math.min(Math.max(rx + dy * 0.01, 0.01), Math.PI / 2 - 0.01);
+                canvas._cam_ry -= dx * 0.01;
+                canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + dy * 0.01, 0.01), Math.PI / 2 - 0.01);
                 lx = e.touches[0].clientX; ly = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 const dist = Math.hypot(dx, dy);
-                if (prevDist) { zoom *= prevDist / dist; zoom = Math.min(Math.max(zoom, 1.5), 10); }
+                if (prevDist) { 
+                    canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom * (prevDist / dist), 1.5), 10);
+                }
                 prevDist = dist;
             }
         }, { passive: false });
@@ -348,17 +355,22 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
         gl.useProgram(prog);
 
         const proj = externalProj ? new Float32Array(externalProj) : new Float32Array([1.8, 0, 0, 0, 0, 2.4, 0, 0, 0, 0, -1, -1, 0, 0, -0.2, 0]);
-        const camDist = zoom;
-        const camX = camDist * Math.cos(ry) * Math.cos(rx);
-        const camY = camDist * Math.sin(ry) * Math.cos(rx);
-        const camZ = camDist * Math.sin(rx);
+        const camDist = canvas._cam_zoom;
+        const camX = camDist * Math.cos(canvas._cam_ry) * Math.cos(canvas._cam_rx);
+        const camY = camDist * Math.sin(canvas._cam_ry) * Math.cos(canvas._cam_rx);
+        const camZ = camDist * Math.sin(canvas._cam_rx);
         const view = mat4.create();
         mat4.lookAt(view, [camX, camY, camZ], [0, 0, 0], [0, 0, 1]);
 
         if (uProj) gl.uniformMatrix4fv(uProj, false, proj);
         if (uView) gl.uniformMatrix4fv(uView, false, view);
 
-        canvas._camState = { rx, ry, zoom, view, proj, cx, cy, scaleXY, scaleZ };
+        canvas._camState = { 
+            rx: canvas._cam_rx, 
+            ry: canvas._cam_ry, 
+            zoom: canvas._cam_zoom, 
+            view, proj, cx, cy, scaleXY, scaleZ 
+        };
 
         // Draw faces
         if (aPos !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, faceBuf); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aPos); }

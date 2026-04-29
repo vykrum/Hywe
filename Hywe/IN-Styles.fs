@@ -289,7 +289,8 @@ video.fullscreen-bg {
     height: 100vh;
     object-fit: cover;
     z-index: 100;
-    pointer-events: none
+    pointer-events: none;
+    background-color: #d3d3d1;
 }
 
 /* =============================
@@ -297,7 +298,10 @@ video.fullscreen-bg {
    ============================= */
 #loading-frame {
     position: fixed;
-    inset: 0;
+    top: 37px;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 900;
     opacity: 1;
     transition: opacity 0.8s ease;
@@ -306,10 +310,10 @@ video.fullscreen-bg {
 
 #introduction {
     position: fixed;
-    top: 0;
+    top: 37px;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
     overflow-y: auto;
     background: transparent;
     z-index: 800;
