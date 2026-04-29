@@ -110,41 +110,53 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
 
     console.log("[WebGL] Normalized center:", cx, cy, "Scale:", scaleXY);
 
-    // --- Prepare face buffers (top + bottom) ---
+    // --- Prepare face buffers (top + bottom + ground) ---
     const faceVertices = [], faceColors = [];
+    
+    // Ground Shadow (Fits bounding box with margin)
+    const margin = 1.2;
+    const shadowColor = [0.95, 0.95, 0.95, 0.8]; // Very light gray
+    faceVertices.push(-margin, -margin, -0.01,  margin, -margin, -0.01,  margin, margin, -0.01);
+    faceVertices.push(-margin, -margin, -0.01,  margin, margin, -0.01, -margin, margin, -0.01);
+    for(let k=0; k<6; k++) faceColors.push(...shadowColor);
+
     meshes.forEach((tris, i) => {
         const baseColor = (colors && colors[i]) ? colors[i] : [0.8, 0.8, 0.8];
         const height = (heights?.[i] ?? 1.0) * scaleZ;
         const baseH = (baseHeights?.[i] ?? 0.0) * scaleZ;
 
         tris.forEach(tri => {
-            // Top face
+            // Top face (Upward normal)
             tri.forEach(([x, y]) => {
                 const nx = (x - cx) * scaleXY;
                 const ny = (y - cy) * scaleXY;
                 const nz = baseH + height;
-                const shade = 0.7 + 0.3 * Math.min(1, nz + 0.5);
+                const shade = 0.9; // Bright top
                 const col = baseColor.map(c => c * shade);
                 faceVertices.push(nx, ny, nz);
-                faceColors.push(...col);
+                faceColors.push(...col, 1.0);
             });
 
-            // Bottom face
+            // Bottom face (Downward normal)
             for (let j = tri.length - 1; j >= 0; j--) {
                 const [x, y] = tri[j];
                 const nx = (x - cx) * scaleXY;
                 const ny = (y - cy) * scaleXY;
                 const nz = baseH;
-                const shade = 0.5; // Darker bottom
+                const shade = 0.4; // Very dark bottom
                 const col = baseColor.map(c => c * shade);
                 faceVertices.push(nx, ny, nz);
-                faceColors.push(...col);
+                faceColors.push(...col, 1.0);
             }
         });
     });
 
-    // --- Prepare wall faces ---
     if (edgePolygons?.length) {
+        // Light direction for wall shading
+        const lightDir = [0.5, 0.3, 0.8];
+        const len = Math.sqrt(lightDir[0]*lightDir[0] + lightDir[1]*lightDir[1] + lightDir[2]*lightDir[2]);
+        const lx = lightDir[0]/len, ly = lightDir[1]/len, lz = lightDir[2]/len;
+
         edgePolygons.forEach((poly, i) => {
             const baseColor = (colors && colors[i]) ? colors[i] : [0.5, 0.5, 0.5];
             const height = (heights?.[i] ?? 1.0) * scaleZ;
@@ -159,15 +171,25 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
                 const nx2 = (x2 - cx) * scaleXY;
                 const ny2 = (y2 - cy) * scaleXY;
 
+                // Wall normal calculation
+                const dx = nx2 - nx1;
+                const dy = ny2 - ny1;
+                const wallLen = Math.sqrt(dx*dx + dy*dy);
+                const wnx = dy / wallLen;  // Outward normal X
+                const wny = -dx / wallLen; // Outward normal Y
+                
+                // Lambertian shading: Ambient (0.6) + Directional (0.4)
+                const dot = Math.max(0, wnx * lx + wny * ly);
+                const wallShade = 0.5 + 0.4 * dot;
+                const col = baseColor.map(c => c * wallShade);
+
                 const wallVerts = [
                     [nx1, ny1, baseH], [nx2, ny2, baseH + height], [nx1, ny1, baseH + height],
                     [nx1, ny1, baseH], [nx2, ny2, baseH], [nx2, ny2, baseH + height]
                 ];
                 wallVerts.forEach(([vx, vy, vz]) => {
                     faceVertices.push(vx, vy, vz);
-                    const shade = 0.7 + 0.3 * Math.min(1, vz + 0.5);
-                    const col = baseColor.map(c => c * shade);
-                    faceColors.push(...col);
+                    faceColors.push(...col, 1.0);
                 });
             }
         });
@@ -190,7 +212,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
     const edgeVertices = [], edgeColors = [];
     if (edgePolygons?.length) {
         edgePolygons.forEach((poly, i) => {
-            const edgeColor = [0.1, 0.1, 0.1]; // Dark edges for clarity
+            const edgeColor = [0.7, 0.7, 0.7, 1.0]; // Light grayish edge
             const height = (heights?.[i] ?? 1.0) * scaleZ;
             const baseH = (baseHeights?.[i] ?? 0.0) * scaleZ;
 
@@ -332,13 +354,13 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
 
         // Draw faces
         if (aPos !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, faceBuf); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aPos); }
-        if (aCol !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, colorBuf); gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aCol); }
+        if (aCol !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, colorBuf); gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aCol); }
         gl.drawArrays(gl.TRIANGLES, 0, faceVertices.length / 3);
 
         // Draw edges
         if (edgeVertices.length) {
             if (aPos !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, edgeBuf); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aPos); }
-            if (aCol !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, edgeColorBuf); gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aCol); }
+            if (aCol !== -1) { gl.bindBuffer(gl.ARRAY_BUFFER, edgeColorBuf); gl.vertexAttribPointer(aCol, 4, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(aCol); }
             gl.drawArrays(gl.LINES, 0, edgeVertices.length / 3);
         }
 
