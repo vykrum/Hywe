@@ -460,15 +460,21 @@ let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (e
     let finalBatch, _, _ = generateMultiLevelLayout str enStr initialOcc (Some seq) (Some ouStr) (Some ilStr)
 
     finalBatch
-    |> Array.map (fun cxl ->
-        cxl.Hxls 
-        |> Array.map (fun h ->
-            let (ax, ay, _) = hxlCrd h
-            toBase36 (int64 ax) + "." + toBase36 (int64 ay)
+    |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
+    |> Array.sortBy fst
+    |> Array.map (fun (_, levelCxls) ->
+        levelCxls
+        |> Array.map (fun cxl ->
+            cxl.Hxls 
+            |> Array.map (fun h ->
+                let (ax, ay, _) = hxlCrd h
+                toBase36 (int64 ax) + "." + toBase36 (int64 ay)
+            )
+            |> String.concat " "
         )
-        |> String.concat " "
+        |> String.concat ";"
     )
-    |> String.concat ";"
+    |> String.concat "|"
 
 // ==========================================================================================
 // SECTION: Dataset Generation Parsing
