@@ -47,6 +47,14 @@ let initModel =
         LastBatchSrc = None
         SelectedPreviewIndex = None
         UserDescription = ""
+        TeachMetadata = {
+            Typology = "Residential"
+            Flow = "Centralized"
+            Ambience = "Modern"
+            Complexity = "Medium"
+            Scale = "Building"
+        }
+        HoveredInfo = None
         IsSavingToHynteract = false
         ShowSuccessMessage = false
         IsRecording = false
@@ -69,6 +77,28 @@ let updateMetadata (js: IJSRuntime) =
         do! js.InvokeVoidAsync("document.querySelector('meta[property=\"article:modified_time\"]').setAttribute", "content", MODIFIED_DATE).AsTask() |> Async.AwaitTask
         return ()
     } |> Async.StartImmediate
+ 
+let generateSuggestion (model: Model) =
+    let tree = model.Tree
+    let meta = model.TeachMetadata
+    
+    let rec getTreeSummary (node: NodeCode.TreeNode) =
+        if node.Children.IsEmpty then ""
+        else
+            let childNames = node.Children |> List.map (fun c -> c.Name) |> String.concat ", "
+            let verb = if node.Children.Length > 1 then "branches into" else "leads to"
+            let current = sprintf "The %s %s %s." node.Name verb childNames
+            let children = node.Children |> List.map getTreeSummary |> String.concat " "
+            current + " " + children
+
+    let root = tree.Levels |> Map.tryFind 0
+    match root with
+    | Some r ->
+        let intro = sprintf "This is a %s %s project with a %s flow and %s ambience. " 
+                        (meta.Scale.ToLower()) (meta.Typology.ToLower()) (meta.Flow.ToLower()) (meta.Ambience.ToLower())
+        let body = getTreeSummary r
+        (intro + body).Trim()
+    | None -> "A conceptual architectural layout."
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
@@ -277,7 +307,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             // Perform the heavy geometric calculation in an async block
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let cxls, _, _ = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||]
+                    let cxls, _, _ = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
                     
                     // Extract static geometry for high-fidelity rendering in the batch preview
                     let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr model.Tree.ActiveLevel
@@ -330,6 +360,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
     | SetDescription d -> 
         { model with UserDescription = d }, Cmd.none
+    | SuggestDescription -> 
+        { model with UserDescription = generateSuggestion model }, Cmd.none
     | RecordResult success ->
         { model with 
             IsSavingToHynteract = false
@@ -339,6 +371,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         if success then 
             Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave)
         else Cmd.none
+    | UpdateMetadata f ->
+        { model with TeachMetadata = f model.TeachMetadata }, Cmd.none
+    | SetHoveredInfo info ->
+        { model with HoveredInfo = info }, Cmd.none
     | StartVoiceCapture -> 
         { model with IsRecording = true }, 
         Cmd.OfAsync.perform (fun () -> 
