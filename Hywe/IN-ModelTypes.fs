@@ -25,6 +25,9 @@ type OnboardingStep =
     | Welcome
     | BoundaryGuide
     | NodeGuide
+    | NodeMenuGuide
+    | ElevateGuide
+    | MoveNodeGuide
     | LayoutGuide
     | Finish
 
@@ -114,6 +117,7 @@ type Message =
     | StopAutoSimulation
     | TransitionToIntro
     | TransitionToMain
+    | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
 let syncPolygonState (p: PolygonEditorModel) =

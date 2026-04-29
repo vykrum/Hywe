@@ -73,7 +73,19 @@ let updateMetadata (js: IJSRuntime) =
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
+    let modelBefore = 
+        if model.Onboarding.IsActive then
+            match message with
+            | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp 
+            | TransitionToIntro | TransitionToMain -> model
+            | TreeMsg (NodeCode.PointerMove _) -> model
+            | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
+            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }
+        else model
+    
+    let model = modelBefore
     match message with
+    | NoOp -> model, Cmd.none
     | SetSqnIndex i ->
         let newSqn = indexToSqn i
         let updatedSrc = 
@@ -180,13 +192,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                  model.PolygonExport.OuterStr
                                  model.PolygonExport.IslandsStr
 
-            // Auto-dismiss onboarding on meaningful tree interaction
             let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
-            let onboarding = 
-                if model.Onboarding.IsActive && not isMoving then 
-                    { model.Onboarding with IsActive = false; IsAutoSimulating = false }
-                else model.Onboarding
-
             let isLevelSwitch = match subMsg with NodeCode.SetLevel _ -> true | _ -> false
             let isAction = match subMsg with NodeCode.ExecuteAction _ -> true | _ -> false
 
@@ -194,8 +200,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 { model with 
                     Tree = updatedTree 
                     SrcOfTrth = newOutput 
-                    NeedsHyweave = if isMoving then model.NeedsHyweave else true
-                    Onboarding = onboarding }
+                    NeedsHyweave = if isMoving then model.NeedsHyweave else true }
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -352,7 +357,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match model.Onboarding.CurrentStep with
             | Welcome -> BoundaryGuide
             | BoundaryGuide -> NodeGuide
-            | NodeGuide -> LayoutGuide
+            | NodeGuide -> NodeMenuGuide
+            | NodeMenuGuide -> ElevateGuide
+            | ElevateGuide -> MoveNodeGuide
+            | MoveNodeGuide -> LayoutGuide
             | LayoutGuide -> Finish
             | Finish -> Finish
 
@@ -361,6 +369,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match nextStep with
             | BoundaryGuide -> BoundaryPanel
             | NodeGuide -> LayoutPanel
+            | NodeMenuGuide -> LayoutPanel
+            | ElevateGuide -> LayoutPanel
+            | MoveNodeGuide -> LayoutPanel
             | LayoutGuide -> LayoutPanel
             | _ -> model.ActivePanel
 
@@ -382,13 +393,19 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | Welcome -> Welcome
             | BoundaryGuide -> Welcome
             | NodeGuide -> BoundaryGuide
-            | LayoutGuide -> NodeGuide
+            | NodeMenuGuide -> NodeGuide
+            | ElevateGuide -> NodeMenuGuide
+            | MoveNodeGuide -> ElevateGuide
+            | LayoutGuide -> MoveNodeGuide
             | Finish -> LayoutGuide
 
         let newActivePanel = 
             match prevStep with
             | BoundaryGuide -> BoundaryPanel
             | NodeGuide -> LayoutPanel
+            | NodeMenuGuide -> LayoutPanel
+            | ElevateGuide -> LayoutPanel
+            | MoveNodeGuide -> LayoutPanel
             | LayoutGuide -> LayoutPanel
             | _ -> LayoutPanel
 
@@ -434,7 +451,7 @@ type MyApp() =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> TransitionToIntro)
-                Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> SkipOnboarding) // SkipOnboarding is just a dummy msg to trigger the async
+                Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp) // Just trigger the async
             ])
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 

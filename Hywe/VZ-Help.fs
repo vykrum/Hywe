@@ -24,7 +24,22 @@ let getOnboardingStepData step =
           Position = "lower-left-slider" }
     | NodeGuide ->
         { Title = "Chart your Design Intent"
-          Content = "Change labels and sizes inline, click + to Add a Child Node and x to Delete a Node and all of its descendents"
+          Content = "Change labels and sizes inline, click + to Add a Child Node."
+          TargetId = "hywe-input-interactive"
+          Position = "top-left-header" }
+    | NodeMenuGuide ->
+        { Title = "Additional Options"
+          Content = "Click the hamburger menu on any node to reveal more actions like Delete or Elevate."
+          TargetId = "hywe-input-interactive"
+          Position = "top-left-header" }
+    | ElevateGuide ->
+        { Title = "Vertical Hierarchies"
+          Content = "Elevate a node to create a new level. Use LEVELS to switch between them and design layered stacks."
+          TargetId = "hywe-input-interactive"
+          Position = "top-left-header" }
+    | MoveNodeGuide ->
+        { Title = "Organize Hierarchy"
+          Content = "Drag and drop nodes to reorganize. Drop a node onto another to make it a sibling."
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | LayoutGuide ->
@@ -65,6 +80,9 @@ let viewHelp (state: OnboardingState) (dispatch: Message -> unit) =
         | Welcome -> "onboarding-step-Welcome"
         | BoundaryGuide -> "onboarding-step-BoundaryGuide"
         | NodeGuide -> "onboarding-step-NodeGuide"
+        | NodeMenuGuide -> "onboarding-step-NodeMenuGuide"
+        | ElevateGuide -> "onboarding-step-ElevateGuide"
+        | MoveNodeGuide -> "onboarding-step-MoveNodeGuide"
         | LayoutGuide -> "onboarding-step-LayoutGuide"
         | Finish -> "onboarding-step-Finish"
 
