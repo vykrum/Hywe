@@ -423,7 +423,21 @@ let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initi
             allCxls <- Array.append allCxls cxls
             allBoundaries <- Array.append allBoundaries bounds
         
-    allCxls, allBoundaries, allElevations
+    let finalElevations = 
+        if levels.Length > 0 then
+            let lastLvl = levels.[levels.Length - 1].Trim().Trim('|').Trim()
+            let lastAttrs = extractAttrsFromHyw lastLvl
+            match lastAttrs |> Map.tryFind "T" |> Option.bind tryParseFloat with
+            | Some t -> 
+                let lastBase = allElevations.[allElevations.Length - 1]
+                Array.append allElevations [| lastBase + t |]
+            | None -> 
+                // Fallback if T is missing (e.g. legacy files)
+                let lastBase = allElevations.[allElevations.Length - 1]
+                Array.append allElevations [| lastBase + 3.0 |]
+        else allElevations
+
+    allCxls, allBoundaries, finalElevations
 
 /// <summary> Formats a layout into a Base36-encoded string representation. </summary>
 let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (enStr: string) (initialOcc : Hxl[]) = 
