@@ -29,7 +29,7 @@ let getOnboardingStepData step =
           Position = "top-left-header" }
     | NodeMenuGuide ->
         { Title = "Additional Options"
-          Content = "Click the hamburger menu on any node to reveal more actions like Delete or Elevate."
+          Content = "Click the ☰ icon on any node to reveal more actions like Delete or Elevate."
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | ElevateGuide ->
@@ -39,7 +39,7 @@ let getOnboardingStepData step =
           Position = "top-left-header" }
     | MoveNodeGuide ->
         { Title = "Organize Hierarchy"
-          Content = "Drag and drop nodes to reorganize. Drop a node onto another to make it a sibling."
+          Content = "Drag and drop nodes to reorganize. Dropping a node onto another in a different branch makes it a sibling."
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | LayoutGuide ->
@@ -68,6 +68,7 @@ let renderFormattedContent (content: string) =
                     match c with
                     | '+' -> span { attr.``class`` "onb-green"; text "+" }
                     | 'x' | '×' when cleanWord.Length = 1 -> span { attr.``class`` "onb-orange"; text (string c) }
+                    | '☰' -> span { attr.``class`` "onb-blue"; text "☰" }
                     | 'E' when cleanWord = "Entry" -> strong { text "E" }
                     | _ -> text (string c)
             if i < words.Length - 1 then text " "

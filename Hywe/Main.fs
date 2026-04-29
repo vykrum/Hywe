@@ -355,23 +355,23 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         else
         let nextStep = 
             match model.Onboarding.CurrentStep with
-            | Welcome -> BoundaryGuide
-            | BoundaryGuide -> NodeGuide
+            | Welcome -> NodeGuide
             | NodeGuide -> NodeMenuGuide
             | NodeMenuGuide -> ElevateGuide
             | ElevateGuide -> MoveNodeGuide
-            | MoveNodeGuide -> LayoutGuide
+            | MoveNodeGuide -> BoundaryGuide
+            | BoundaryGuide -> LayoutGuide
             | LayoutGuide -> Finish
             | Finish -> Finish
 
         let isFinished = nextStep = Finish && model.Onboarding.CurrentStep = Finish
         let newActivePanel = 
             match nextStep with
-            | BoundaryGuide -> BoundaryPanel
             | NodeGuide -> LayoutPanel
             | NodeMenuGuide -> LayoutPanel
             | ElevateGuide -> LayoutPanel
             | MoveNodeGuide -> LayoutPanel
+            | BoundaryGuide -> BoundaryPanel
             | LayoutGuide -> LayoutPanel
             | _ -> model.ActivePanel
 
@@ -391,21 +391,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let prevStep = 
             match model.Onboarding.CurrentStep with
             | Welcome -> Welcome
-            | BoundaryGuide -> Welcome
-            | NodeGuide -> BoundaryGuide
+            | NodeGuide -> Welcome
             | NodeMenuGuide -> NodeGuide
             | ElevateGuide -> NodeMenuGuide
             | MoveNodeGuide -> ElevateGuide
-            | LayoutGuide -> MoveNodeGuide
+            | BoundaryGuide -> MoveNodeGuide
+            | LayoutGuide -> BoundaryGuide
             | Finish -> LayoutGuide
 
         let newActivePanel = 
             match prevStep with
-            | BoundaryGuide -> BoundaryPanel
             | NodeGuide -> LayoutPanel
             | NodeMenuGuide -> LayoutPanel
             | ElevateGuide -> LayoutPanel
             | MoveNodeGuide -> LayoutPanel
+            | BoundaryGuide -> BoundaryPanel
             | LayoutGuide -> LayoutPanel
             | _ -> LayoutPanel
 

@@ -709,12 +709,12 @@ let nodeStyles = """
 /* Node Menu Styles */
 .node-menu-container {
     position: absolute;
-    top: 0px;
+    top: 2px;
     left: 50%;
     transform: translateX(-50%);
     cursor: pointer;
     z-index: 10;
-    font-size: 14px;
+    font-size: 10px;
     line-height: 1;
     color: #5dade2;
     background: none;
@@ -1385,6 +1385,13 @@ let onboardingStyles = """
 }
 .onb-orange { 
     color: #e67e22; 
+    font-weight: 800; 
+    font-size: 0.85rem; 
+    padding: 0 1px;
+    line-height: 1;
+}
+.onb-blue { 
+    color: #2e86c1; 
     font-weight: 800; 
     font-size: 0.85rem; 
     padding: 0 1px;
