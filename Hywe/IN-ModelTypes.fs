@@ -75,6 +75,7 @@ type Model =
         /// <summary> Temporary storage for configurations as they are generated recursively. </summary>
         BatchAccumulator: BatchConfgrtns list
         CurrentScreen: AppScreen
+        ViewLocked: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -117,6 +118,8 @@ type Message =
     | StopAutoSimulation
     | TransitionToIntro
     | TransitionToMain
+    | ToggleViewLock
+    | Download3DSvg
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

@@ -154,7 +154,7 @@ let loadingScreen (current: AppScreen) =
             text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
             br {}
             br {}
-            text "Outline the intended flow-based hierarchy to generate layouts where sequence and connectivity define the design."
+            text "Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections."
             div {
                 attr.``class`` "loadingText"
                 text "Loading"

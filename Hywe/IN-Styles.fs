@@ -1149,6 +1149,36 @@ let footerStyles = """
     background: rgba(255, 255, 255, 0.97);
     border-color: rgba(0, 0, 0, 0.25);
 }
+
+.layout-download-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(200, 200, 200, 0.1);
+    color: #999;
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+.view-lock-trigger {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, transform 0.1s;
+    color: #999;
+}
+
+.view-lock-trigger:hover {
+    color: #333;
+    transform: scale(1.1);
+}
+
+.view-lock-trigger.locked {
+    color: #E67E22;
+}
+
+.view-lock-trigger.locked:hover {
+    color: #d35400;
+}
 """
 
 let polygonEditorStyles = """

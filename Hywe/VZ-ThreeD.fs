@@ -134,6 +134,7 @@ let extrudePolygons
     (cxl: Cxl[])
     (colors: string[])
     (levelElevations: float[])
+    (viewLocked: bool)
     : Async<unit> =
 
     // 1. Helper: Point conversion
@@ -225,6 +226,6 @@ let extrudePolygons
 
         do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", 
                                 canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
-                                vsSource, fsSource, projMatrix).AsTask()
+                                vsSource, fsSource, projMatrix, viewLocked).AsTask()
             |> Async.AwaitTask
     }
