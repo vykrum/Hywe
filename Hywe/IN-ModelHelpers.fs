@@ -111,11 +111,10 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
             model.SrcOfTrth
             |> CodeNode.preprocessCode
             |> fun processed ->
-                try Some (CodeNode.parseOutput processed)
+                try Some (NodeCode.buildTreeMap processed)
                 with _ -> None
-            |> Option.map (fun tree ->
-                let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                { Levels = Map.ofList [(0, laidOut)]; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
+            |> Option.map (fun (levelsMap, topExtrusion) ->
+                { Levels = levelsMap; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None; TopExtrusion = topExtrusion }
             )
 
         match maybeSubModel with
@@ -212,9 +211,8 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             |> CodeNode.preprocessCode 
             |> fun processed ->
                 try 
-                    let tree = CodeNode.parseOutput processed
-                    let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                    { Levels = Map.ofList [(0, laidOut)]; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None }
+                    let levelsMap, topExtrusion = NodeCode.buildTreeMap processed
+                    { Levels = levelsMap; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None; TopExtrusion = topExtrusion }
                 with _ -> model.Tree 
 
         let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -455,7 +453,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.id "hywe-extruded-polygon"
                         attr.style "width: 100%; height: 100%; display: block; touch-action: none;" 
                     }
-                    async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
+                    async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 }
                     |> Async.StartImmediate
                 }
                     

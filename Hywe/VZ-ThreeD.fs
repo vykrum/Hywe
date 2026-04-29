@@ -133,8 +133,7 @@ let extrudePolygons
     (canvasId: string)
     (cxl: Cxl[])
     (colors: string[])
-    (initHeight: float)
-    (elv: int)
+    (levelElevations: float[])
     : Async<unit> =
 
     // 1. Helper: Point conversion
@@ -173,6 +172,15 @@ let extrudePolygons
     let colorsFinal = processedData |> Array.map (fun (_, _, c) -> c)
     let cxlsFinal = processedData |> Array.map (fun (c, _, _) -> c)
 
+    // Calculate heights for each level
+    let diffs = 
+        if levelElevations.Length < 2 then [| 3.0 |]
+        else 
+            [| 0 .. levelElevations.Length - 2 |]
+            |> Array.map (fun i -> levelElevations.[i+1] - levelElevations.[i])
+    
+    let avgHeight = if Array.isEmpty diffs then 3.0 else Array.average diffs
+
     // 4. Loop-free Mesh Assembler (Tail Recursive)
     let rec buildMeshes i accMeshes accEdges accHeights accBaseHeights accCentroids =
         match i < polygonsFinal.Length with
@@ -183,10 +191,13 @@ let extrudePolygons
              List.rev accBaseHeights |> List.toArray,
              List.rev accCentroids |> List.toArray)
         | true ->
-            let h = initHeight
             let c = cxlsFinal.[i]
             let (_, _, z) = Hexel.hxlCrd c.Base
-            let baseH = float z * h
+            
+            let baseH = if z < levelElevations.Length then levelElevations.[z] else float z * avgHeight
+            let h = 
+                (if z < diffs.Length then diffs.[z]
+                 else avgHeight) - 0.05
             
             let poly = polygonsFinal.[i]
             

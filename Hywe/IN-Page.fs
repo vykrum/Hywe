@@ -29,6 +29,7 @@ type DerivedData = {
     cxlAvl: int[]
     cxClr1: string[]
     cxOuIl: (float*float)[][]
+    cxElv1: float[]
 }
 
 // Consistent Pastel Color
@@ -69,18 +70,21 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
 
 let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
     let bsOc = [||]
-    let cxCxl1, cxOuIl = generateMultiLevelLayout stx enStr bsOc
+    let cxCxl1, cxOuIl, cxElv1 = 
+        try generateMultiLevelLayout stx enStr bsOc
+        with _ -> [||], [||], [| 0.0; 3.0 |]
     
-    let fallbackSqn = Hexel.VRCCNE // Stable default if no coxels found
+    let fallbackSqn = Hexel.VRCCNE 
     let activeSqn = if Array.isEmpty cxCxl1 then fallbackSqn else (Array.head cxCxl1).Seqn
     
-    let cxlAvl = cxlExp cxCxl1 activeSqn elv
-    let cxClr1 = generatePastels "#888888" (Array.length cxCxl1) 0.85
+    let cxlAvl = if Array.isEmpty cxCxl1 then [||] else cxlExp cxCxl1 activeSqn elv
+    let cxClr1 = generatePastels "#888888" (max 1 (Array.length cxCxl1)) 0.85
     {
         cxCxl1 = cxCxl1
         cxlAvl = cxlAvl
         cxClr1 = cxClr1
         cxOuIl = cxOuIl
+        cxElv1 = cxElv1
     }
 ///
 

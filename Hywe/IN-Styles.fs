@@ -558,11 +558,11 @@ let nodeStyles = """
 .nodebutton1 {
     font-size: 10px;
     font-weight: bold;
-    width: 5px;
+    width: 100%;
     position: absolute;
     top: 2px;
-    left: 47.5%;
-    transform: translateX(-52.5%);
+    left: 0;
+    text-align: center;
     color: #E67E22;
     opacity: 0.75;
     -webkit-tap-highlight-color: transparent;
@@ -580,11 +580,11 @@ let nodeStyles = """
 .nodebutton2 {
     font-size: 10px;
     font-weight: bold;
-    width: 5px;
+    width: 100%;
     position: absolute;
     bottom: 2px;
-    left: 47.5%;
-    transform: translateX(-52.5%);
+    left: 0;
+    text-align: center;
     color: #2E86C1;
     opacity: 0.75;
     -webkit-tap-highlight-color: transparent;

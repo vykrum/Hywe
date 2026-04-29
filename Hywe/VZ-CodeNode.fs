@@ -47,17 +47,18 @@ let preprocessCode (code: string) : string =
         lines
         |> Array.map (fun line ->
             let parts = line.Split('/')
-            if parts.Length = 3 then
+            if parts.Length >= 3 then
                 let path = parts.[0]
                 let segments = path.Split('.')
                 let first = segments.[0]
+                let extra = if parts.Length > 3 then "/" + parts.[3] else ""
                 if intMap.ContainsKey(first) then
                     let newPath = 
                         if segments.Length > 1 then
                             String.Join(".", Array.append [| intMap.[first] |] segments.[1..])
                         else
                             intMap.[first]
-                    $"({newPath}/{parts.[1]}/{parts.[2]})"
+                    $"({newPath}/{parts.[1]}/{parts.[2]}{extra})"
                 else
                     $"({line})"
             else
@@ -74,24 +75,25 @@ let parseOutput (code: string) : TreeNode =
         |> Array.choose (fun item ->
             let trimmed = item.Trim('(', ')', ' ')
             let parts = trimmed.Split('/')
-            if parts.Length = 3 then
+            if parts.Length >= 3 then
                 let path = parts.[0]
                 if path.StartsWith("0") then
                     None
                 else
                     let weight = parts.[1]
                     let name = parts.[2]
-                    Some (path, weight, name)
+                    let extrusion = if parts.Length > 3 then match Double.TryParse parts.[3] with true, v -> v | _ -> 3.0 else 3.0
+                    Some (path, weight, name, extrusion)
             else
                 None
         )
 
-    if not (entries |> Array.exists (fun (path, _, _) -> path = "1")) then
+    if not (entries |> Array.exists (fun (path, _, _, _) -> path = "1")) then
         failwith "Invalid Hywe Syntax"
 
     let nodeMap =
         entries
-        |> Seq.map (fun (path, weight, name) ->
+        |> Seq.map (fun (path, weight, name, extrusion) ->
             path, {
                 Id = Guid.NewGuid()
                 Name = name
@@ -100,6 +102,7 @@ let parseOutput (code: string) : TreeNode =
                 Y = 0.0
                 Children = []
                 Level = 0
+                Extrusion = extrusion
             }
         )
         |> dict
@@ -107,11 +110,11 @@ let parseOutput (code: string) : TreeNode =
 
     let byDepth =
         entries
-        |> Array.groupBy (fun (path, _, _) -> path.Split('.').Length)
+        |> Array.groupBy (fun (path, _, _, _) -> path.Split('.').Length)
         |> Array.sortByDescending fst
 
     for (_, group) in byDepth do
-        for (path, _, _) in group do
+        for (path, _, _, _) in group do
             if path.Contains '.' then
                 let parentPath = path.Substring(0, path.LastIndexOf('.'))
                 if nodeMap.ContainsKey(parentPath) && nodeMap.ContainsKey(path) then

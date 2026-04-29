@@ -242,7 +242,8 @@ let generateCxlLayout
     (ilStrOverride: string option) 
     (initialOcc : Hxl[])
     (bsHxSetOverride: Cxl option)
-    (ratioOverride: float option) : Cxl[] * (float*float)[][] * float =
+    (ratioOverride: float option)
+    (elvOverride: int option) : Cxl[] * (float*float)[][] * float =
     
     let spcAt1, spcTree = spaceSeq str
     let seq = 
@@ -250,7 +251,16 @@ let generateCxlLayout
         | Some s -> s
         | None -> spcAt1 |> Map.tryFind "Q" |> Option.bind tryParseUnion<Sqn> |> Option.defaultValue VRCWEE
 
-    let elv = match spcAt1 |> Map.tryFind "L" with | Some a -> a |> int | None -> 0
+    let elv = 
+        match elvOverride with
+        | Some e -> e
+        | None ->
+            match spcAt1 |> Map.tryFind "L" with 
+            | Some a -> 
+                match Double.TryParse a with
+                | true, v -> int v
+                | _ -> 0
+            | None -> 0
 
     let bdWd = 
         match widthOverride with
@@ -361,12 +371,13 @@ let generateCxlLayout
     result, Array.append [|bdOu|] bdIs, finalRatio
 
 /// <summary> Processes multiple levels separated by ';' in a Hywe string. </summary>
-let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) : Cxl[] * (float*float)[][] =
+let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) : Cxl[] * (float*float)[][] * float[] =
     let cleanStr = fullStr.Replace("\n","").Replace("\t","")
     let levels = cleanStr.Split(';', StringSplitOptions.RemoveEmptyEntries)
     
     let mutable allCxls = [||]
     let mutable allBoundaries = [||]
+    let mutable allElevations = [||]
     let mutable baseRatio = None
     
     let mutable rootW = None
@@ -383,33 +394,36 @@ let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initi
             rootH <- attrs |> Map.tryFind "H" |> Option.bind tryParseInt
             rootO <- attrs |> Map.tryFind "O"
             rootI <- attrs |> Map.tryFind "I"
-
+ 
         let eStr = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
         
         let curW = attrs |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.orElse rootW
         let curH = attrs |> Map.tryFind "H" |> Option.bind tryParseInt |> Option.orElse rootH
         let curO = attrs |> Map.tryFind "O" |> Option.orElse rootO
         let curI = attrs |> Map.tryFind "I" |> Option.orElse rootI
+ 
+        let curElv = attrs |> Map.tryFind "L" |> Option.bind tryParseFloat |> Option.defaultValue 0.0
+        allElevations <- Array.append allElevations [| curElv |]
 
-        let curElv = attrs |> Map.tryFind "L" |> Option.bind tryParseInt |> Option.defaultValue 0
-
-        let bsHxOverride =
-            if i = 0 then None
-            else 
-                allCxls 
-                |> Array.filter (fun c -> 
-                    let (_, _, z) = Hexel.hxlCrd c.Base
-                    z = curElv - 1)
-                |> Array.tryFind (fun c -> prpVlu c.Rfid = eStr)
+        // Skip layout generation if this is likely a terminal elevation-only segment (no functional nodes)
+        if levelStr.Contains("1/") || levelStr.Contains("(1/") then
+            let bsHxOverride =
+                if i = 0 then None
+                else 
+                    allCxls 
+                    |> Array.filter (fun c -> 
+                        let (_, _, z) = Hexel.hxlCrd c.Base
+                        z = i - 1)
+                    |> Array.tryFind (fun c -> prpVlu c.Rfid = eStr)
+                
+            let cxls, bounds, ratio = generateCxlLayout cleanLvl entryAtrFallback None curW curH curO curI initialOcc bsHxOverride baseRatio (Some i)
             
-        let cxls, bounds, ratio = generateCxlLayout cleanLvl entryAtrFallback None curW curH curO curI initialOcc bsHxOverride baseRatio
+            if i = 0 then baseRatio <- Some ratio
+            
+            allCxls <- Array.append allCxls cxls
+            allBoundaries <- Array.append allBoundaries bounds
         
-        if i = 0 then baseRatio <- Some ratio
-        
-        allCxls <- Array.append allCxls cxls
-        allBoundaries <- Array.append allBoundaries bounds
-        
-    allCxls, allBoundaries
+    allCxls, allBoundaries, allElevations
 
 /// <summary> Formats a layout into a Base36-encoded string representation. </summary>
 let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (enStr: string) (initialOcc : Hxl[]) = 
@@ -421,7 +435,7 @@ let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (e
             | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
         convert (abs value) ""
 
-    let finalBatch, _, _ = generateCxlLayout str enStr (Some seq) None None (Some ouStr) (Some ilStr) initialOcc None None
+    let finalBatch, _, _ = generateCxlLayout str enStr (Some seq) None None (Some ouStr) (Some ilStr) initialOcc None None None
 
     finalBatch
     |> Array.map (fun cxl ->
@@ -490,7 +504,7 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
             match key with
             | "W" -> match tryParseFloat v with | Some num -> { m with LogicalWidth = num * 10.0 } | None -> m
             | "H" -> match tryParseFloat v with | Some num -> { m with LogicalHeight = num * 10.0 } | None -> m
-            | "L" -> match tryParseInt v with | Some num -> { m with Elevation = num } | None -> m
+            | "L" -> match tryParseFloat v with | Some num -> { m with Elevation = int num } | None -> m
             | "S" -> { m with BaseStr = v }
             | "X" -> { m with UseAbsolute = (v = "1") }
             | "E" -> match parseCoords v with | pts when pts.Length = 1 -> { m with EntryPoint = pts.[0] } | _ -> m
