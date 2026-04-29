@@ -129,6 +129,23 @@ let rec resetElevatedNodes targetLvl (node: TreeNode) =
     let newNode = if node.Level > targetLvl then { node with Level = targetLvl } else node
     { newNode with Children = newNode.Children |> List.map (resetElevatedNodes targetLvl) }
 
+let rec syncHierarchy (levels: Map<int, TreeNode>) (anchors: Map<int, Guid>) (lvl: int) =
+    match anchors |> Map.tryFind (lvl + 1) with
+    | Some anchorId ->
+        match levels |> Map.tryFind lvl with
+        | Some parentTree ->
+            match findNodeById anchorId parentTree with
+            | Some anchorNode ->
+                match levels |> Map.tryFind (lvl + 1) with
+                | Some childTree ->
+                    let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight }
+                    let nextLevels = levels |> Map.add (lvl + 1) updatedChildTree
+                    syncHierarchy nextLevels anchors (lvl + 1)
+                | None -> levels
+            | None -> levels
+        | None -> levels
+    | None -> levels
+
 let rec extractNode (id: Guid) (node: TreeNode) : TreeNode option * TreeNode option =
     if node.Id = id then (None, Some node)
     else
@@ -265,8 +282,19 @@ let updateSub (js: IJSRuntime) msg model =
                 let nextLvlForNode = model.ActiveLevel + 1
                 let newAnchors = model.LevelAnchors |> Map.add nextLvlForNode id
                 
-                // Create a fresh tree for the next level starting with this node (no children)
-                let freshRoot = { n with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0 }
+                // Create or update the tree for the next level, retaining children if it already exists
+                let freshRoot = 
+                    match model.Levels |> Map.tryFind nextLvlForNode with
+                    | Some existingRoot ->
+                        { existingRoot with 
+                            Id = n.Id
+                            Name = n.Name
+                            Weight = n.Weight
+                            Level = nextLvlForNode }
+                        |> fun r -> layoutTree r 0 (ref 50.0)
+                    | None ->
+                        { n with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0 }
+                
                 let newLevelsAfterAdd = model.Levels |> Map.add nextLvlForNode freshRoot
 
                 // Enforce single elevation: reset others
@@ -292,13 +320,15 @@ let updateSub (js: IJSRuntime) msg model =
     | UpdateName (id, name) ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         let newRoot = updateNodeById id (fun n -> { n with Name = name }) currentTree
-        let newLevels = model.Levels |> Map.add model.ActiveLevel newRoot
-        { model with Levels = newLevels }, Cmd.none
+        let nextLevels = model.Levels |> Map.add model.ActiveLevel newRoot
+        let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0 // Start sync from base level to ensure full propagation
+        { model with Levels = finalLevels }, Cmd.none
     | UpdateWeight (id, weight) ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         let newRoot = updateNodeById id (fun n -> { n with Weight = weight }) currentTree
-        let newLevels = model.Levels |> Map.add model.ActiveLevel newRoot
-        { model with Levels = newLevels }, Cmd.none
+        let nextLevels = model.Levels |> Map.add model.ActiveLevel newRoot
+        let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0 // Start sync from base level to ensure full propagation
+        { model with Levels = finalLevels }, Cmd.none
     | PointerDown ev ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         { model with PointerDownPos = None; PendingDragId = None }, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
@@ -433,7 +463,7 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                             "onpointerdown:stopPropagation" => true
                             on.pointerdown (fun _ -> dispatch (OpenMenu node.Id))
                             
-                            rawHtml """<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>"""
+                            text "☰"
                         }
 
                         let isAnchorForThisView = 

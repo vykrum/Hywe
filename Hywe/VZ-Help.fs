@@ -24,7 +24,22 @@ let getOnboardingStepData step =
           Position = "lower-left-slider" }
     | NodeGuide ->
         { Title = "Chart your Design Intent"
-          Content = "Change labels and sizes inline, click + to Add a Child Node and x to Delete a Node and all of its descendents"
+          Content = "Change labels and sizes inline, click + to Add a Child Node."
+          TargetId = "hywe-input-interactive"
+          Position = "top-left-header" }
+    | NodeMenuGuide ->
+        { Title = "Additional Options"
+          Content = "Click the ☰ icon on any node to reveal more actions like Delete or Elevate."
+          TargetId = "hywe-input-interactive"
+          Position = "top-left-header" }
+    | ElevateGuide ->
+        { Title = "Vertical Hierarchies"
+          Content = "Elevate a node to create a new level. Use LEVELS to switch between them and design layered stacks."
+          TargetId = "hywe-input-interactive"
+          Position = "top-left-header" }
+    | MoveNodeGuide ->
+        { Title = "Organize Hierarchy"
+          Content = "Drag and drop nodes to reorganize. Dropping a node onto another in a different branch makes it a sibling."
           TargetId = "hywe-input-interactive"
           Position = "top-left-header" }
     | LayoutGuide ->
@@ -53,6 +68,7 @@ let renderFormattedContent (content: string) =
                     match c with
                     | '+' -> span { attr.``class`` "onb-green"; text "+" }
                     | 'x' | '×' when cleanWord.Length = 1 -> span { attr.``class`` "onb-orange"; text (string c) }
+                    | '☰' -> span { attr.``class`` "onb-blue"; text "☰" }
                     | 'E' when cleanWord = "Entry" -> strong { text "E" }
                     | _ -> text (string c)
             if i < words.Length - 1 then text " "
@@ -65,6 +81,9 @@ let viewHelp (state: OnboardingState) (dispatch: Message -> unit) =
         | Welcome -> "onboarding-step-Welcome"
         | BoundaryGuide -> "onboarding-step-BoundaryGuide"
         | NodeGuide -> "onboarding-step-NodeGuide"
+        | NodeMenuGuide -> "onboarding-step-NodeMenuGuide"
+        | ElevateGuide -> "onboarding-step-ElevateGuide"
+        | MoveNodeGuide -> "onboarding-step-MoveNodeGuide"
         | LayoutGuide -> "onboarding-step-LayoutGuide"
         | Finish -> "onboarding-step-Finish"
 

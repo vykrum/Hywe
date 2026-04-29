@@ -196,13 +196,8 @@ let createBaseCoxel (sqn : Sqn) (elv : int) (bsAtr : string) (entryFallback : Hx
         let baseHx = if Array.isEmpty updatedHxls then entryFallback else updatedHxls.[0]
         
         // Re-evaluate hexel status (AV/RV) based on current level's boundary/occupancy
-        // We ensure that the interior of the parent remains AV so it can be subdivided
-        let occSet = hxlSet occ
-        let hxlsWithStatus = 
-            updatedHxls 
-            |> Array.map (fun h -> 
-                if occSet.Contains(RV(hxlCrd h)) then RV(hxlCrd h)
-                else AV(hxlCrd h))
+        // Using hxlChk ensures perimeter is AV and interior is RV
+        let hxlsWithStatus = hxlChk sqn elv occ updatedHxls
 
         let rootCxl = {
             Name = parentCxl.Name
