@@ -111,11 +111,8 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
             model.SrcOfTrth
             |> CodeNode.preprocessCode
             |> fun processed ->
-                try Some (NodeCode.buildTreeMap processed)
+                try Some (NodeCode.initModel processed)
                 with _ -> None
-            |> Option.map (fun (levelsMap, topExtrusion) ->
-                { Levels = levelsMap; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None; TopExtrusion = topExtrusion }
-            )
 
         match maybeSubModel with
         | Some subModel ->
@@ -210,9 +207,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             clean 
             |> CodeNode.preprocessCode 
             |> fun processed ->
-                try 
-                    let levelsMap, topExtrusion = NodeCode.buildTreeMap processed
-                    { Levels = levelsMap; ActiveLevel = 0; LevelAnchors = Map.empty; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None; DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None; LastMoveMs = None; TopExtrusion = topExtrusion }
+                try NodeCode.initModel processed
                 with _ -> model.Tree 
 
         let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m

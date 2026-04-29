@@ -794,7 +794,7 @@ let getOutput (model: SubModel) q w h x o i =
     
     String.concat " ; " segments
 
-let buildTreeMap (input: string) : Map<int, TreeNode> * float =
+let buildTreeMap (input: string) =
     let levels = input.Split(';', StringSplitOptions.RemoveEmptyEntries)
     
     let allParts = 
@@ -810,18 +810,18 @@ let buildTreeMap (input: string) : Map<int, TreeNode> * float =
             let tVal = match Double.TryParse tValStr with true, v -> v | _ -> 3.0
 
             let sVal = if isAttrs && firstBlock.Contains("S=") then Some (firstBlock.Split("S=").[1].Split("/").[0]) else None
-            
+            let eVal = if isAttrs && firstBlock.Contains("E=") then firstBlock.Split("E=").[1].Split("/").[0] else "0"
+
             let nodesStr = if isAttrs then clean.Split(')', 2) |> Array.last |> fun s -> s.Trim(',', ' ') else clean
             let nodes = nodesStr.Split("),", StringSplitOptions.RemoveEmptyEntries)
                         |> Array.map (fun s -> s.Trim([| '('; ')'; ' ' |]))
                         |> Array.filter (fun s -> not (s.StartsWith "0/") && not (String.IsNullOrWhiteSpace s))
             
-            (lVal, tVal, sVal, nodes)
+            (i, tVal, sVal, nodes, eVal)
         )
 
-    // Flat list of nodes with their level and parent
     let nodeData = 
-        allParts |> Array.collect (fun (lvl, t, s, nodes) ->
+        allParts |> Array.collect (fun (lvl, t, s, nodes, e) ->
             nodes |> Array.map (fun n ->
                 let bits = n.Split '/'
                 let path = bits.[0].Split('.') |> Array.map int |> Array.toList
@@ -832,14 +832,19 @@ let buildTreeMap (input: string) : Map<int, TreeNode> * float =
             )
         )
         |> Array.toList
-        |> List.distinctBy (fun (p, _, _, _, _) -> p) // Deduplicate nodes appearing across levels
+        |> List.distinctBy (fun (p, _, _, _, l) -> (p, l))
+
+    let guidMap = System.Collections.Generic.Dictionary<int * string, Guid>()
 
     let rec build (lvl: int) (prefix: int list) =
         nodeData 
         |> List.filter (fun (path, _, _, _, nLvl) -> 
             nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
         |> List.map (fun (path, weight, name, extrusion, lvl) -> 
-            { Id = Guid.NewGuid(); Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion })
+            let id = Guid.NewGuid()
+            let pathStr = String.Join(".", path)
+            guidMap.[(lvl, pathStr)] <- id
+            { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion })
 
     let levelsMap = 
         [0 .. (if nodeData.IsEmpty then 0 else nodeData |> List.map (fun (_,_,_,_,l) -> l) |> List.max)]
@@ -848,17 +853,26 @@ let buildTreeMap (input: string) : Map<int, TreeNode> * float =
             lvl, layoutTree root 0 (ref 50.0))
         |> Map.ofList
 
-    let topExtrusion = 
-        allParts |> Array.tryLast |> Option.map (fun (_, t, _, _) -> t) |> Option.defaultValue 3.0
+    let levelAnchors = 
+        allParts |> Array.choose (fun (lvl, _, _, _, eVal) ->
+            if lvl > 0 && eVal <> "0" then
+                match guidMap.TryGetValue((lvl - 1, eVal)) with
+                | true, guid -> Some (lvl, guid)
+                | _ -> None
+            else None
+        ) |> Map.ofArray
 
-    levelsMap, topExtrusion
+    let topExtrusion = 
+        allParts |> Array.tryLast |> Option.map (fun (_, t, _, _, _) -> t) |> Option.defaultValue 3.0
+
+    levelsMap, levelAnchors, topExtrusion
 
 let initModel (inputString: string) : SubModel =
-    let levelsMap, topExtrusion = buildTreeMap inputString
+    let levelsMap, levelAnchors, topExtrusion = buildTreeMap inputString
     
     { Levels = levelsMap
       ActiveLevel = 0
-      LevelAnchors = Map.empty
+      LevelAnchors = levelAnchors
       ConfirmingId = None
       ConfirmingAction = NoAction
       ActiveMenuId = None
