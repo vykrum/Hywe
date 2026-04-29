@@ -278,7 +278,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             // Perform the heavy geometric calculation in an async block
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let cxls, _ = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||]
+                    let cxls, _, _ = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||]
                     
                     // Extract static geometry for high-fidelity rendering in the batch preview
                     let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr model.Tree.ActiveLevel
