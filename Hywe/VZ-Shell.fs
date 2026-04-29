@@ -22,7 +22,7 @@ let jsonLd =
             "name": "Vikram Subbaiah",
             "url": "https://github.com/vykrum"
           },
-          "description": "Weave controlled spatial layouts through a logic-driven, F#-powered design tool for early-stage planning across all design scales.",
+          "description": "Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning across all design scales.",
           "inLanguage": "en",
           "keywords": [ "spatial", "design", "wasm", "fsharp"],
           "license": "https://github.com/vykrum/Hywe/blob/main/LICENSE",
@@ -78,15 +78,15 @@ let aboutSection =
 
             p {
                 strong { text "HYWE" }
-                text " ("; em { text "Hygrid Woven Ensemble" }; text ") is a design-driven computational approach to spatial planning."
+                text " ("; em { text "Hygrid Woven Ensemble" }; text ") is a design-driven approach to spatial planning powered by design computation."
             }
 
-            p { text "It is not a product — it’s a computational design philosophy rethinking how spatial configurations emerge. Developed from first principles with no reference to existing tools or paradigms, Hywe challenges the conventional evolution of space layout tools by treating diagrams not as endpoints, but as active generators of spatial logic." }
+            p { text "It is not a product — it’s a design computation philosophy rethinking how spatial configurations emerge. Developed from first principles with no reference to existing tools or paradigms, Hywe challenges the conventional evolution of space layout tools by treating diagrams not as endpoints, but as active generators of spatial logic." }
 
-            p { text "Unlike traditional space planning software aimed at production workflows, Hywe operates in the speculative domain of early-stage intent. It introduces the concept of the "; em { text "Hygrid" }; text "—a hybrid orthogonal-hexagonal grid system—enabling designers to compose unconventional spatial topologies through structured, procedural definitions rather than object-based manipulation." }
+            p { text "Unlike traditional space planning software aimed at production workflows, Hywe operates in the speculative domain of early-stage intent. It prioritizes **flow-based hierarchy and spatial topology** over simple wall-to-wall adjacency. By introducing the concept of the "; em { text "Hygrid" }; text "—a hybrid orthogonal-hexagonal grid system—it enables designers to compose unconventional spatial topologies through structured, procedural definitions rather than object-based manipulation." }
 
             h3 { text "Philosophy" }
-            p { text "Hywe is built around the belief that spatial reasoning can be computationally expressive without mimicking architectural software norms. The tool promotes a kind of design thinking where abstract intent—bubble-like in nature—drives layout formation through a logic-native syntax. Every part of its system, from geometry to interactivity, has been constructed from scratch to reflect this procedural paradigm." }
+            p { text "Hywe is built around the belief that spatial reasoning can be computationally expressive without mimicking architectural software norms. The tool promotes a kind of design thinking where **spatial topology**—bubble-like in its initial intent—drives layout formation through a logic-native syntax. Every part of its system, from geometry to interactivity, has been constructed from scratch to reflect this procedural paradigm of flow-based hierarchy." }
             p { text "At its core, Hywe questions the assumption that digital tools must imitate human drafting. Instead, it proposes that computation itself can embody design intent — not as a secondary automation layer, but as a generative framework for decision-making. This perspective encourages designers to think algorithmically, transforming intuition into structured, procedural relationships. In doing so, Hywe enables a dialogue between spatial logic and creative agency that is both analytical and expressive." }
             p { text "The name "; strong { text "Hywe" }; text " reflects its foundation: a "; em { text "Hygrid" }; text "-based system that weaves together spatial definitions into an "; em { text "ensemble" }; text "—a coherent, emergent structure shaped by procedural logic rather than visual convention." }
 
@@ -98,10 +98,10 @@ let aboutSection =
                 li { text "No dependency on visual precedents—entire computational stack developed independently." }
             }
 
-            h3 { text "Status" }
+            h3 { text "Current Phase" }
             p {
                 strong { text "Hywe" }
-                text " is an evolving research prototype exploring how spatial design can emerge from logic rather than representation. It is not inspired by, nor comparable to, existing design software—because it is not software in the traditional sense. It is a system, a hypothesis, and an ongoing experiment in the computational imagination of space."
+                text " is an active design sandbox exploring how spatial design can emerge from logic rather than representation. It is not inspired by, nor comparable to, existing design software—because it is not software in the traditional sense. It is a system, a hypothesis, and an ongoing experiment in the design computation of space."
             }
 
             h3 { text "Repository" }
@@ -122,7 +122,7 @@ let aboutSection =
                 text " is a deeply personal project—one shaped by a singular vision and the ambition to explore spatial reasoning beyond the boundaries of precedent or tradition. It does not seek to adapt to established workflows or validate itself against known practices. Instead, it charts its own course, grounded in a conviction that spatial design can emerge from new computational logics yet to be fully imagined."
             }
             p { text "There is no defined roadmap. Hywe evolves in response to the ideas it generates, not to predetermined milestones or deliverables. Its development resists conformity, and embraces uncertainty—as a space for discovering possibilities that structured agendas might never permit." }
-            p { text "The development of Hywe reflects an ongoing investigation into how computational thought reshapes creative processes. It invites collaboration, critique, and interpretation — encouraging others to explore the intersection of logic, geometry, and narrative within spatial design. While Hywe continues to evolve as a research prototype, its philosophy aims to influence how future design tools might embody reasoning rather than representation." }
+            p { text "The development of Hywe reflects an ongoing investigation into how design computation reshapes creative processes. It invites collaboration, critique, and interpretation — encouraging others to explore the intersection of logic, geometry, and narrative within spatial design. While Hywe continues to evolve as an active design sandbox, its goal is to provide a cohesive and implementable philosophy for future design tools." }
         }
     }
 
@@ -154,7 +154,7 @@ let loadingScreen (current: AppScreen) =
             text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
             br {}
             br {}
-            text "Outline the intended flow between spaces to generate layouts where sequence and connectivity define the design."
+            text "Outline the intended flow-based hierarchy to generate layouts where sequence and connectivity define the design."
             div {
                 attr.``class`` "loadingText"
                 text "Loading"
@@ -196,7 +196,7 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
             br {}
             br {}
-            text "Outline the intended flow between spaces to generate layouts where sequence and connectivity define the design."
+            text "Outline the intended flow-based hierarchy to generate layouts where sequence and connectivity define the design."
             div {
                 attr.``class`` ("tapText" + (if isVisible then " visible" else ""))
                 text "Tap to Continue"
