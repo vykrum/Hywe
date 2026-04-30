@@ -1,9 +1,9 @@
 module ModelTypes
 
-open Layout
-open Page
 open NodeCode
+open Page
 open PolygonEditor
+open Coxel
 
 let elv = 0
 
@@ -53,6 +53,10 @@ type AppScreen =
     | LoadingScreen
     | IntroScreen
     | MainScreen
+
+// Batch Export Types
+type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[] |}
 
 /// <summary> Central application state for the interface. </summary>
 type Model =
@@ -111,6 +115,11 @@ type Message =
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
+    | DownloadCsv
+    | DownloadDxf
+    | DownloadObj
+    | DownloadBatchDxf
+    | DownloadBatchObj
     | TapBatchPreview of int
     | CloseBatch
     | CancelBatch

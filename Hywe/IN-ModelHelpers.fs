@@ -47,172 +47,6 @@ let downloadSvg (js: IJSRuntime) (svgId: string) (filename: string) =
         do! downloadFile js filename finalSvg "image/svg+xml;charset=utf-8"
     }
 
-let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
-    match panel with
-    | BatchPanel ->
-        let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
-        match isStale with
-        | true -> 
-            // Initialize progress tracking and trigger recursive generation
-            let cts = new System.Threading.CancellationTokenSource()
-            let model' = 
-                { model with 
-                    ActivePanel = panel
-                    IsHyweaving = true
-                    IsCancelling = false 
-                    CancelToken = Some cts
-                    BatchPreview = None 
-                    BatchProgress = 0
-                    BatchAccumulator = []
-                }
-
-            model', Cmd.ofMsg (GenerateNextBatchItem 0)
-
-        | false -> 
-            { model with ActivePanel = panel }, Cmd.none
-
-    | BoundaryPanel | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel ->
-        { model with ActivePanel = panel }, Cmd.none
-
-let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
-    match model.EditorMode with
-    | Syntax ->
-        let maybeSubModel =
-            model.SrcOfTrth
-            |> CodeNode.preprocessCode
-            |> fun processed ->
-                try Some (NodeCode.initModel processed)
-                with _ -> None
-
-        match maybeSubModel with
-        | Some subModel ->
-            let newOutput =
-                NodeCode.getOutput
-                    subModel
-                    model.Sequence
-                    model.PolygonExport.Width
-                    model.PolygonExport.Height
-                    model.PolygonExport.AbsStr
-                    model.PolygonExport.OuterStr
-                    model.PolygonExport.IslandsStr
-
-            { model with
-                Tree = subModel
-                SrcOfTrth = newOutput
-                LastValidTree = subModel
-                EditorMode = Interactive
-                ParseError = false
-            }, Cmd.none
-        | None ->
-            { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
-
-    | Interactive ->
-        let newOutput =
-            NodeCode.getOutput
-                model.Tree
-                model.Sequence
-                model.PolygonExport.Width
-                model.PolygonExport.Height
-                model.PolygonExport.AbsStr
-                model.PolygonExport.OuterStr
-                model.PolygonExport.IslandsStr
-
-        { model with
-            SrcOfTrth = newOutput
-            LastValidTree = model.Tree
-            EditorMode = Syntax
-            ParseError = false
-        }, Cmd.none
-
-let handleRecordToHynteract (model: Model) (js: IJSRuntime) : Model * Cmd<Message> =
-    let currentSrc = model.SrcOfTrth
-    let currentDesc = model.UserDescription
-    let currentOuter = model.PolygonExport.OuterStr
-    let currentIslands = model.PolygonExport.IslandsStr
-
-    { model with IsSavingToHynteract = true },
-
-    Cmd.OfAsync.perform (fun () -> async {
-        try
-            let configMap = 
-                Hexel.sqnArray 
-                |> Array.map (fun sqnCase -> 
-                    let key = sprintf "%A" sqnCase
-                    let data = 
-                        try 
-                            Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands model.PolygonExport.EntryStr [||]
-                        with ex -> 
-                            printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
-                            "" 
-                    key, data)
-                |> Map.ofArray
-
-            let payload = {| 
-                Definition = currentSrc 
-                Description = currentDesc 
-                Configuration = configMap 
-                Boundary = currentOuter
-                Islands = currentIslands
-                Metadata = {|
-                    Scale = model.TeachMetadata.Scale
-                    Typology = model.TeachMetadata.Typology
-                    Flow = model.TeachMetadata.Flow
-                    Ambience = model.TeachMetadata.Ambience
-                    Stage = model.TeachMetadata.Stage
-                |}
-
-
-            |}
-
-            let! success = 
-                js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() 
-                |> Async.AwaitTask
-            
-            return success
-        
-        with ex -> 
-            printfn "Critical Recording Failure: %s" ex.Message
-            return false
-    }) () RecordResult
-
-let handleExportPdfRequested (model: Model) : Model * Cmd<Message> =
-    { model with IsHyweaving = true; BatchProgress = 0; BatchAccumulator = [] }, 
-    Cmd.ofMsg (GenerateNextBatchItem 0)
-
-let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model * Cmd<Message> =
-    match System.String.IsNullOrWhiteSpace content with
-    | true -> model, Cmd.none
-    | false ->
-        let clean = content.Trim()
-        let newTree = 
-            clean 
-            |> CodeNode.preprocessCode 
-            |> fun processed ->
-                try NodeCode.initModel processed
-                with _ -> model.Tree 
-
-        let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        let newState = Parse.importFromHyw clean inner
-        let finalPoly = match newState with FreshlyImported m | Stable m -> m
-        let newExport = syncPolygonState finalPoly
-
-        { model with 
-            SrcOfTrth = clean
-            Tree = newTree
-            LastValidTree = newTree
-            Derived = deriveData clean model.PolygonExport.EntryStr 0 
-            PolygonEditor = newState 
-            PolygonExport = newExport
-            ParseError = false
-            LastBatchSrc = None
-        }, 
-        Cmd.batch [
-            Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-            Cmd.OfTask.attempt (fun () -> task { 
-                do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
-            }) () (fun _ -> FinishHyweave)
-        ]
-
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     let nodeCodeButtonText =
@@ -377,16 +211,24 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.id "hywe-svg-container"
                     svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl model.Tree.ActiveLevel model.Derived.cxClr1 10 (Some "layout-svg-output")
                 }
-                button {
-                    attr.``class`` "layout-download-btn"
-                    on.click (fun _ ->
-                        let datePart = System.DateTime.Now.ToString("yyMMddmm")
-                        let fileName = "HyweLayout_" + datePart + ".svg"
-                        async {
-                            do! downloadSvg js "layout-svg-output" fileName
-                        } |> Async.StartImmediate
-                    )
-                    text "Download SVG"
+                div {
+                    attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
+                    button {
+                        attr.``class`` "layout-download-btn"
+                        on.pointerdown (fun _ ->
+                            let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                            let fileName = "HyweLayout_" + datePart + ".svg"
+                            async {
+                                do! downloadSvg js "layout-svg-output" fileName
+                            } |> Async.StartImmediate
+                        )
+                        text "SVG"
+                    }
+                    button {
+                        attr.``class`` "layout-download-btn"
+                        on.pointerdown (fun _ -> dispatch DownloadDxf)
+                        text "DXF"
+                    }
                 }
             }
         
@@ -412,7 +254,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze model.Sequence fCxls fClrs fAvls
+                    Analyze.viewHyweAnalyze dispatch model.Sequence fCxls fClrs fAvls
                 }
             }
 
@@ -436,18 +278,23 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.style "display: flex; gap: 15px; margin-top: 40px; align-items: center;"
                     div {
-                        attr.``class`` ("view-lock-trigger" + (if model.ViewLocked then " locked" else ""))
-                        attr.style "position: relative; top: 1.125rem;"
-                        attr.title (if model.ViewLocked then "Unlock View" else "Lock View")
-                        on.click (fun _ -> dispatch ToggleViewLock)
-                        drawIconSized "1.5rem" (if model.ViewLocked then iconLocked else iconUnlocked)
-                    }
-                    button {
-                        attr.``class`` "layout-download-btn"
-                        attr.disabled (not model.ViewLocked)
-                        attr.title (if model.ViewLocked then "Download View as SVG" else "Lock view to enable SVG export")
-                        on.click (fun _ -> dispatch Download3DSvg)
-                        text "Download SVG"
+                        attr.style "display: flex; gap: 8px; align-items: center;"
+                        button {
+                            attr.``class`` "layout-download-btn"
+                            attr.title "Download View as SVG"
+                            on.pointerdown (fun _ -> dispatch Download3DSvg)
+                            text "SVG"
+                        }
+                        button {
+                            attr.``class`` "layout-download-btn"
+                            on.pointerdown (fun _ -> dispatch DownloadDxf)
+                            text "DXF"
+                        }
+                        button {
+                            attr.``class`` "layout-download-btn"
+                            on.pointerdown (fun _ -> dispatch DownloadObj)
+                            text "OBJ"
+                        }
                     }
                 }
                     

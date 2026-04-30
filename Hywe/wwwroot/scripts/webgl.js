@@ -214,7 +214,7 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
     const edgeVertices = [], edgeColors = [];
     if (edgePolygons?.length) {
         edgePolygons.forEach((poly, i) => {
-            const edgeColor = [0.7, 0.7, 0.7, 1.0]; // Light grayish edge
+            const edgeColor = [0.4, 0.4, 0.4, 1.0]; // Professional medium gray edge
             const height = (heights?.[i] ?? 1.0) * scaleZ;
             const baseH = (baseHeights?.[i] ?? 0.0) * scaleZ;
 
@@ -256,9 +256,9 @@ window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeigh
     const init = { rx: Math.PI / 6, ry: 0, zoom: 3 };
 
     if (!canvas._listenersAdded) {
-        canvas.addEventListener("mousedown", e => { if (canvas._viewLocked) return; dragging = true; lx = e.clientX; ly = e.clientY; });
-        document.addEventListener("mouseup", () => dragging = false);
-        document.addEventListener("mousemove", e => {
+        canvas.addEventListener("pointerdown", e => { if (canvas._viewLocked) return; dragging = true; lx = e.clientX; ly = e.clientY; });
+        document.addEventListener("pointerup", () => dragging = false);
+        document.addEventListener("pointermove", e => {
             if (!dragging || canvas._viewLocked) return;
             const dx = e.clientX - lx, dy = e.clientY - ly;
             canvas._cam_ry -= dx * 0.01;

@@ -2,6 +2,7 @@ module Analyze
 
 open Coxel
 open Bolero.Html
+open ModelTypes
 
 // --- PROCESSING (UI HELPER) ---
 // Adjacency calculation is now in Coxel.cxlAdj
@@ -107,7 +108,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             }
         }
 
-let viewHyweAnalyze (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
+let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
     let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> (prpVlu c.Size |> int) * hxlAreaX)
     let totalAch = cxCxl1 |> Array.sumBy (fun c -> (Array.length c.Hxls) * hxlAreaX)
@@ -120,11 +121,14 @@ let viewHyweAnalyze (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: in
         div {
             attr.``style`` "flex: 1 1 450px; min-width: 300px;"
             h3 { 
-                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: sans-serif;"
+                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: sans-serif; display: flex; justify-content: space-between; align-items: center;"
                 text "AREA METRICS" 
-                span {
-                    attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
-                    text $"[{sqn}]"
+                div {
+                    attr.``style`` "display: flex; gap: 8px;"
+                    span {
+                        attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
+                        text $"[{sqn}]"
+                    }
                 }
             }
 
