@@ -24,6 +24,7 @@
 		<Compile Include="IN-Storage.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="VZ-Help.fs" />
+		<Compile Include="VZ-Teach.fs" />
 		<Compile Include="IN-ModelHelpers.fs" />
 		<Compile Include="IN-Styles.fs" />
 		<Compile Include="VZ-Shell.fs" />
