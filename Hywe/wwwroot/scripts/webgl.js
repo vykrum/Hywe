@@ -44,10 +44,15 @@ function compileShader(gl, type, src) {
 
 // --- Initialize WebGL extruded polygons ---
 window.initWebGLExtrudedPolygons = (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, vsSource, fsSource, externalProj, viewLocked) => {
-    window.disposeWebGL(canvasId);
-
     const canvas = document.getElementById(canvasId);
     if (!canvas) return console.error("Canvas not found:", canvasId);
+
+    // Cancel existing loop if any
+    if (canvas._drawLoopId) {
+        cancelAnimationFrame(canvas._drawLoopId);
+    }
+    
+    window.disposeWebGL(canvasId);
     
     canvas._viewLocked = !!viewLocked;
     canvas._geoData = { meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj };
@@ -494,4 +499,89 @@ window.export3DToSVG = (canvasId, filename) => {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+};
+
+window.captureCanvasSVG = (canvasId) => {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !canvas._camState || !canvas._geoData) return null;
+
+    const { view, proj, cx, cy, scaleXY, scaleZ } = canvas._camState;
+    const { meshes, colors, heights, baseHeights, edgePolygons } = canvas._geoData;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    function project(p) {
+        let x = p[0] * view[0] + p[1] * view[4] + p[2] * view[8] + view[12];
+        let y = p[0] * view[1] + p[1] * view[5] + p[2] * view[9] + view[13];
+        let z = p[0] * view[2] + p[1] * view[6] + p[2] * view[10] + view[14];
+        let mw = p[0] * view[3] + p[1] * view[7] + p[2] * view[11] + view[15];
+
+        let px = x * proj[0] + y * proj[4] + z * proj[8] + mw * proj[12];
+        let py = x * proj[1] + y * proj[5] + z * proj[9] + mw * proj[13];
+        let pz = x * proj[2] + y * proj[6] + z * proj[10] + mw * proj[14];
+        let pw = x * proj[3] + y * proj[7] + z * proj[11] + mw * proj[15];
+
+        return [(px / pw + 1) * w / 2, (1 - py / pw) * h / 2, pz / pw];
+    }
+
+    let elements = [];
+    meshes.forEach((tris, i) => {
+        const baseColor = colors[i] || [0.8, 0.8, 0.8];
+        const height = (heights[i] ?? 1.0) * scaleZ;
+        const baseH = (baseHeights[i] ?? 0.0) * scaleZ;
+
+        tris.forEach(tri => {
+            let topPts = tri.map(([vx, vy]) => project([(vx - cx) * scaleXY, (vy - cy) * scaleXY, baseH + height]));
+            let topZ = topPts.reduce((a, b) => a + b[2], 0) / 3;
+            let topCol = baseColor.map(c => Math.floor(c * 0.9 * 255));
+            elements.push({ z: topZ, type: 'poly', pts: topPts, fill: `rgb(${topCol.join(',')})` });
+
+            let botPts = tri.map(([vx, vy]) => project([(vx - cx) * scaleXY, (vy - cy) * scaleXY, baseH]));
+            let botZ = botPts.reduce((a, b) => a + b[2], 0) / 3;
+            let botCol = baseColor.map(c => Math.floor(c * 0.4 * 255));
+            elements.push({ z: botZ, type: 'poly', pts: botPts, fill: `rgb(${botCol.join(',')})` });
+        });
+    });
+
+    if (edgePolygons) {
+        const lightDir = [0.5, 0.3, 0.8];
+        const len = Math.hypot(...lightDir);
+        const lx = lightDir[0] / len, ly = lightDir[1] / len;
+        edgePolygons.forEach((poly, i) => {
+            const baseColor = colors[i] || [0.5, 0.5, 0.5];
+            const height = (heights[i] ?? 1.0) * scaleZ;
+            const baseH = (baseHeights[i] ?? 0.0) * scaleZ;
+            for (let j = 0; j < poly.length; j++) {
+                const [x1, y1] = poly[j];
+                const [x2, y2] = poly[(j + 1) % poly.length];
+                const nx1 = (x1 - cx) * scaleXY, ny1 = (y1 - cy) * scaleXY;
+                const nx2 = (x2 - cx) * scaleXY, ny2 = (y2 - cy) * scaleXY;
+                const dx = nx2 - nx1, dy = ny2 - ny1;
+                const wlen = Math.hypot(dx, dy);
+                const wnx = dy / wlen, wny = -dx / wlen;
+                const dot = Math.max(0, wnx * lx + wny * ly);
+                const shade = 0.5 + 0.4 * dot;
+                const col = baseColor.map(c => Math.floor(c * shade * 255));
+                let wallPts = [
+                    project([nx1, ny1, baseH]), project([nx2, ny2, baseH]),
+                    project([nx2, ny2, baseH + height]), project([nx1, ny1, baseH + height])
+                ];
+                let wallZ = wallPts.reduce((a, b) => a + b[2], 0) / 4;
+                elements.push({ z: wallZ, type: 'poly', pts: wallPts, fill: `rgb(${col.join(',')})` });
+            }
+        });
+    }
+
+    elements.sort((a, b) => b.z - a.z);
+
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">`;
+    svg += `<rect width="100%" height="100%" fill="#ffffff" />`; // Ensure white background
+    elements.forEach(el => {
+        if (el.type === 'poly') {
+            const d = el.pts.map(p => `${p[0]},${p[1]}`).join(' ');
+            svg += `<polygon points="${d}" fill="${el.fill}" stroke="${el.fill}" stroke-width="0.3" />`;
+        }
+    });
+    svg += `</svg>`;
+    return 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svg)));
 };

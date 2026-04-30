@@ -56,6 +56,20 @@ let initModel =
             Ambience = "Open"
             Stage = "Ideation"
         }
+        ReportOptions = {
+            ProjectTitle = "Spatial Design Exploration"
+            ProjectNumber = "HY-001"
+            Author = "Hywe Designer"
+            ClientName = "Creative Partner"
+            Description = "An automated architectural layout study derived from hierarchical spatial requirements, multi-level flow charts, and adjacency matrices."
+            IncludeCover = true
+            IncludeContents = true
+            LevelSections = Map.empty
+            Captured3DImage = None
+        }
+        Captured3DImage = None
+        ReportBatch = Map.empty
+        IsGeneratingReport = false
 
 
 
@@ -251,7 +265,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SetActivePanel _ | ToggleEditorMode | ExportPdfRequested 
     | FileImported _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
-    | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj as msg ->
+    | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj
+    | GenerateReport | ReportGenerated _ | UpdateReportOptions _ as msg ->
         match UpdateUI.update js msg model with
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
@@ -282,12 +297,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             // Perform the heavy geometric calculation in an async block
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let cxls, _, _ = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
+                    let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
                     
                     // Extract static geometry for high-fidelity rendering in the batch preview
                     let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr model.Tree.ActiveLevel
                     let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
                         getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
+                    
+                    let cxlAvl = if Array.isEmpty cxls then [||] else Coxel.cxlExp cxls (Array.head cxls).Seqn model.Tree.ActiveLevel
                     
                     let configData : BatchConfgrtns = 
                         {| sqnName = sqnStr
@@ -295,7 +312,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                              {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
                            w = d.w; h = d.h
                            cxCxl1 = cxls
-                           cxElv1 = derived.cxElv1 |}
+                           cxElv1 = cxElv1
+                           cxlAvl = cxlAvl
+                           cxOuIl = cxOuIl |}
                     
                     // Small sleep to ensure the UI has a chance to render the progress update
                     do! Async.Sleep 5
@@ -335,6 +354,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 do! js.InvokeVoidAsync("clickElement", "hyw-import-hidden").AsTask()
             }
         model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
+    | ViewCaptured dataUrl ->
+        { model with Captured3DImage = Some dataUrl }, Cmd.none
     | SetDescription _ | SuggestDescription | RecordResult _ | UpdateMetadata _ 
     | SetHoveredInfo _ | StartVoiceCapture | OnVoiceResult | RecordToHynteract as msg ->
         match UpdateTeach.update js msg model with

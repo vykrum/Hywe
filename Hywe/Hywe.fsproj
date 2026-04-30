@@ -18,8 +18,10 @@
 		<Compile Include="IN-Storage.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="UT-ExportFormats.fs" />
+		<Compile Include="UT-ReportGenerator.fs" />
 		<Compile Include="VZ-Table.fs" />
 		<Compile Include="VZ-Analyze.fs" />
+		<Compile Include="VZ-Report.fs" />
 		<Compile Include="VZ-Layout.fs" />
 		<Compile Include="VZ-Help.fs" />
 		<Compile Include="VZ-Teach.fs" />

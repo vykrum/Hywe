@@ -1680,6 +1680,243 @@ let batchStyles = """
 }
 """
 
+let reportPanelStyles = """
+/* =====================
+   REPORT PANEL
+   ===================== */
+.report-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 20px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13px;
+    color: #333;
+}
+
+.report-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.4rem;
+    width: 100%;
+    text-align: center;
+}
+
+.report-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.report-level-card {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 16px;
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.report-level-header {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #444;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.variation-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.variation-grid-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.report-mini-btn {
+    background: #eee;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 10px;
+    cursor: pointer;
+    color: #666;
+}
+
+.report-mini-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.var-chip {
+    padding: 4px 6px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.var-chip:hover {
+    border-color: #aaa;
+    background: #f0f0f0;
+}
+
+.var-chip.selected {
+    background: #363636;
+    color: white;
+    border-color: #363636;
+}
+
+.report-field label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    letter-spacing: 0.2px;
+}
+
+.report-field input,
+.report-field textarea {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #333;
+    background: #fafafa;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.report-field input:focus,
+.report-field textarea:focus {
+    border-color: #888;
+    background: #fff;
+}
+
+.report-toggle-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.report-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #555;
+    padding: 3px 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.report-toggle-row.level-header {
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    color: #999;
+    text-transform: uppercase;
+    margin-top: 8px;
+    padding-top: 4px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.report-toggle-row input[type=checkbox] {
+    accent-color: #666;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.report-toggle-row.sub-row {
+    padding-left: 20px;
+    color: #666;
+}
+
+.report-page-count {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.report-generate-btn {
+    width: 100%;
+    padding: 10px;
+    background: #363636;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-family: inherit;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+}
+
+.report-generate-btn:hover {
+    background: #555;
+}
+
+.report-generate-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.report-status {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin-top: 8px;
+    min-height: 16px;
+}
+
+.report-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ccc;
+    border-top-color: #555;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+"""
+
+let reportPrintStyles = """
+@media print {
+    @page { size: A3 landscape; margin: 15mm 20mm; }
+    .page { page-break-after: always; width: 390mm; height: 267mm; }
+    body  { font-family: 'Inter', system-ui, sans-serif; }
+}
+"""
+
+
 let allCss = 
     baseStyles +
     headerStyles +
@@ -1693,7 +1930,9 @@ let allCss =
     footerStyles +
     polygonEditorStyles +
     onboardingStyles +
-    batchStyles
+    batchStyles +
+    reportPanelStyles +
+    reportPrintStyles
 
 let render () = 
     style { text allCss }

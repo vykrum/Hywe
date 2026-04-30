@@ -45,15 +45,26 @@ module Mat4 =
 
 /// Renders an extruded polygon on a canvas via JS WebGL
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.
-let triangulatePolygon 
-    (points: (float * float)[]) 
-    : (float * float)[][] =
-    match points with
-    | null -> [||]
-    | p when p.Length < 3 -> [||]
-    | _ ->
+let triangulatePolygon (points: (float * float)[]) : (float * float)[][] =
+    if points = null || points.Length < 3 then [||]
+    else
+        let n = points.Length
+        let indices = Array.init n id
+        
         let cross (ax, ay) (bx, by) (cx, cy) =
             (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+
+        let area = 
+            let mutable a = 0.0
+            for i = 0 to n - 1 do
+                let (x1, y1) = points.[i]
+                let (x2, y2) = points.[(i + 1) % n]
+                a <- a + (x1 * y2 - x2 * y1)
+            a
+
+        let workingIndices = 
+            if area < 0.0 then indices |> Array.rev |> ResizeArray
+            else indices |> ResizeArray
 
         let pointInTriangle (ax, ay) (bx, by) (cx, cy) (px, py) =
             let c1 = cross (ax, ay) (bx, by) (px, py)
@@ -61,58 +72,39 @@ let triangulatePolygon
             let c3 = cross (cx, cy) (ax, ay) (px, py)
             (c1 >= 0.0 && c2 >= 0.0 && c3 >= 0.0) || (c1 <= 0.0 && c2 <= 0.0 && c3 <= 0.0)
 
-        let area = 
-            points 
-            |> Array.indexed 
-            |> Array.fold (fun acc (i, (x1, y1)) ->
-                let (x2, y2) = points.[(i + 1) % points.Length]
-                acc + (x1 * y2 - x2 * y1)) 0.0
-
-        let initialPts = 
-            match area < 0.0 with
-            | true -> points |> Array.rev |> Array.toList
-            | false -> points |> Array.toList
-
-        // The 'acc' must be a list of arrays (triangles)
-        let rec clip (remaining: (float * float) list) (acc: (float * float) array list) (attempts: int) =
-            match remaining with
-            // Case 1: Exactly 3 points left - this is the final triangle
-            | [p1; p2; p3] -> 
-                ([| p1; p2; p3 |] :: acc) |> List.rev |> List.toArray
+        let result = ResizeArray<(float * float)[]>()
+        let mutable attempts = 0
+        while workingIndices.Count > 3 && attempts < workingIndices.Count do
+            let i = 0
+            let prev = workingIndices.[(if i = 0 then workingIndices.Count - 1 else i - 1)]
+            let curr = workingIndices.[i]
+            let next = workingIndices.[(i + 1) % workingIndices.Count]
             
-            // Case 2: Safety exit to prevent infinite recursion on invalid polygons
-            | _ when attempts > remaining.Length -> 
-                acc |> List.rev |> List.toArray
+            let p1, p2, p3 = points.[prev], points.[curr], points.[next]
             
-            // Case 3: More than 3 points - try to find an ear
-            | _ ->
-                let n = remaining.Length
-                // We pick 3 consecutive points: the last one, the first, and the second
-                let prev = remaining.[n - 1]
-                let curr = remaining.[0]
-                let next = remaining.[1]
-                
-                let isEar = 
-                    match cross prev curr next > 0.0 with
-                    | false -> false
-                    | true ->
-                        remaining 
-                        |> List.exists (fun p -> 
-                            // A point is inside the triangle if it's not one of the vertices
-                            if p = prev || p = curr || p = next then false
-                            else pointInTriangle prev curr next p)
-                        |> not
-
-                match isEar with
-                | true ->
-                    // Remove 'curr' and add triangle to accumulator
-                    clip (remaining.Tail) ([| prev; curr; next |] :: acc) 0
-                | false ->
-                    // Rotate list: move head to tail and increment attempts
-                    let rotated = remaining.Tail @ [remaining.Head]
-                    clip rotated acc (attempts + 1)
-
-        clip initialPts [] 0
+            let mutable isEar = cross p1 p2 p3 > 0.0
+            if isEar then
+                for j = 0 to workingIndices.Count - 1 do
+                    let idx = workingIndices.[j]
+                    if idx <> prev && idx <> curr && idx <> next then
+                        if pointInTriangle p1 p2 p3 points.[idx] then
+                            isEar <- false
+            
+            if isEar then
+                result.Add([| p1; p2; p3 |])
+                workingIndices.RemoveAt(i)
+                attempts <- 0
+            else
+                // Rotate
+                let head = workingIndices.[0]
+                workingIndices.RemoveAt(0)
+                workingIndices.Add(head)
+                attempts <- attempts + 1
+        
+        if workingIndices.Count = 3 then
+            result.Add([| points.[workingIndices.[0]]; points.[workingIndices.[1]]; points.[workingIndices.[2]] |])
+        
+        result.ToArray()
 
 /// Extrudes a polygon
 let polygonMesh 
