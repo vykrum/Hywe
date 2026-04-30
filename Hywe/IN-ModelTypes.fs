@@ -39,12 +39,15 @@ type OnboardingState = {
 }
 
 type TeachMetadata = {
+    Scale: string
     Typology: string
     Flow: string
     Ambience: string
-    Complexity: string
-    Scale: string
+    Stage: string
 }
+
+
+
 
 type AppScreen =
     | LoadingScreen

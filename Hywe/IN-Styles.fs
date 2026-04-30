@@ -983,12 +983,33 @@ let teachStyles = """
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    gap: 1.5rem;
     padding: 20px;
     width: 100%;
-    max-width: 450px;
+    max-width: 800px;
     margin: 0 auto;
     box-sizing: border-box;
+}
+
+.teach-intro-section {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.teach-intro-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.4rem;
+}
+
+.teach-intro-text {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 /* Textarea styling */
@@ -1017,14 +1038,16 @@ let teachStyles = """
     width: 100%;
 }
 
+
 /* Objective Fields */
 .teach-objective-section {
     width: 100%;
-    max-width: 450px;
     display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
+    flex-flow: row wrap;
+    justify-content: center;
+    gap: 2rem 1.5rem;
 }
+
 
 .teach-select-row {
     display: flex;

@@ -1,5 +1,6 @@
 module Hywe.Main
 
+open System
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Elmish
@@ -11,6 +12,7 @@ open PolygonEditor
 open ModelTypes
 open ModelHelpers
 open Layout
+open Hywe
 
 // Defaults / init 
 let initialTree = NodeCode.initModel beeyond
@@ -48,12 +50,15 @@ let initModel =
         SelectedPreviewIndex = None
         UserDescription = ""
         TeachMetadata = {
+            Scale = "Layout"
             Typology = "Residential"
-            Flow = "Centralized"
-            Ambience = "Modern"
-            Complexity = "Medium"
-            Scale = "Building"
+            Flow = "Sequential"
+            Ambience = "Open"
+            Stage = "Ideation"
         }
+
+
+
         HoveredInfo = None
         IsSavingToHynteract = false
         ShowSuccessMessage = false
@@ -82,6 +87,9 @@ let generateSuggestion (model: Model) =
     let tree = model.Tree
     let meta = model.TeachMetadata
     
+    // Maps Level -> Parent Anchor Guid
+    let levelToAnchor = tree.LevelAnchors 
+
     let rec getTreeSummary (node: NodeCode.TreeNode) =
         if node.Children.IsEmpty then ""
         else
@@ -91,14 +99,31 @@ let generateSuggestion (model: Model) =
             let children = node.Children |> List.map getTreeSummary |> String.concat " "
             current + " " + children
 
-    let root = tree.Levels |> Map.tryFind 0
-    match root with
-    | Some r ->
-        let intro = sprintf "This is a %s %s project with a %s flow and %s ambience. " 
-                        (meta.Scale.ToLower()) (meta.Typology.ToLower()) (meta.Flow.ToLower()) (meta.Ambience.ToLower())
-        let body = getTreeSummary r
-        (intro + body).Trim()
-    | None -> "A conceptual architectural layout."
+    let describeLevel (level: int) (root: NodeCode.TreeNode) =
+        let header = 
+            if level = 0 then "\nBase Level: "
+            else 
+                match levelToAnchor |> Map.tryFind level with
+                | Some anchorId -> 
+                    sprintf "\nLevel %d (Elevated): " level
+                | None -> sprintf "\nLevel %d: " level
+        
+        let body = getTreeSummary root
+        if String.IsNullOrWhiteSpace body then header + sprintf "Starting from %s." root.Name
+        else header + body
+
+    let intro = sprintf "This is a %s stage %s %s project with a %s flow and %s ambience. " 
+                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) (meta.Flow.ToLower()) (meta.Ambience.ToLower())
+
+    let levelsContent = 
+        tree.Levels 
+        |> Map.toList 
+        |> List.sortBy fst
+        |> List.map (fun (lvl, root) -> describeLevel lvl root)
+        |> String.concat "\n"
+
+    (intro + "\n" + levelsContent).Trim()
+
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
@@ -379,7 +404,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsRecording = true }, 
         Cmd.OfAsync.perform (fun () -> 
             async {
-                do! ModelHelpers.startTranscription js "hynteract-desc-input"
+                do! Teach.startTranscription js "hynteract-desc-input"
                 return ()
             }) () (fun _ -> OnVoiceResult)
     | OnVoiceResult ->
