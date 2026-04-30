@@ -2,7 +2,7 @@ name: Update Sitemap
 
 on:
   push:
-    branches: [main]
+    branches: [updates]
 
 jobs:
   generate-sitemap:

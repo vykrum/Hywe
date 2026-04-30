@@ -1,117 +1,43 @@
-﻿module Hywe.Main
+module Hywe.Main
 
+open System
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Elmish
 open Bolero
 open Bolero.Html
-open Bridge
 open Page
 open NodeCode
 open PolygonEditor
-
-/// <summary> Central application state for the interface. </summary>
-type Model =
-    {
-        Sequence: string
-        SrcOfTrth : string
-        Tree : SubModel
-        LastValidTree: SubModel
-        ParseError: bool
-        Derived : DerivedData
-        NeedsHyweave: bool
-        IsHyweaving: bool
-        PolygonEditor: EditorState
-        ActivePanel: ActivePanel
-        EditorMode: EditorMode
-        BatchPreview: BatchConfgrtns[] option
-        IsCancelling: bool
-        CancelToken: System.Threading.CancellationTokenSource option
-        LastBatchSrc: string option
-        SelectedPreviewIndex : int option
-        UserDescription : string 
-        IsSavingToHynteract : bool
-        ShowSuccessMessage : bool
-        IsRecording : bool
-    }
-
-/// <summary> Messages representing all possible state changes in the main module. </summary>
-type Message =
-    | SetSqnIndex of int
-    | SetSrcOfTrth of string
-    | TreeMsg of SubMsg
-    | StartHyweave
-    | RunHyweave
-    | FinishHyweave
-    | PolygonEditorMsg of PolygonEditorMessage
-    | PolygonEditorUpdated of PolygonEditorModel
-    | SetActivePanel of ActivePanel
-    | SetBatchPreview of BatchConfgrtns[]
-    | ToggleEditorMode
-    | ToggleBoundary
-    | ExportPdfRequested
-    | TapBatchPreview of int
-    | CloseBatch
-    | CancelBatch
-    | BatchCancelled
-    | SaveRequested
-    | ImportRequested
-    | FileImported of string
-    | SetDescription of string
-    | RecordToHynteract
-    | RecordResult of bool
-    | StartVoiceCapture
-    | OnVoiceResult of string
-
-// Polygon export consumer
-let mutable private latestOuterStr   : string = ""
-let mutable private latestIslandsStr : string = ""
-let mutable private latestAbsStr     : string = "1"
-let mutable private latestEntryStr   : string = "0,0"
-let mutable private latestWidth      : int = 0
-let mutable private latestHeight     : int = 0
-let mutable private latestPublished  : bool = false
-
-/// <summary> Synchronizes the PolygonEditor state with the local export cache. </summary>
-let private syncPolygonState 
-    (p: PolygonEditorModel) =
-    let outer, islands, absolute, entry, w, h = PolygonEditor.exportPolygonStrings p
-    
-    let w', h', entry', outer', islands' =
-        match p.UseBoundary with
-        | false -> 0, 0, "0,0", "", ""
-        | true  -> w, h, entry, outer, islands
-        
-    latestOuterStr   <- outer'
-    latestIslandsStr <- islands'
-    latestAbsStr     <- absolute
-    latestEntryStr   <- entry'
-    latestWidth      <- w'
-    latestHeight     <- h'
-    latestPublished  <- true
+open ModelTypes
+open ModelHelpers
+open Layout
+open Hywe
 
 // Defaults / init 
-let elv = 0
 let initialTree = NodeCode.initModel beeyond
 let initialSequence = allSqns.[11]
+let initialPolygonExport = syncPolygonState PolygonEditor.initModel
+
 let initialOutput = NodeCode.getOutput
                         initialTree
                         initialSequence
-                        latestWidth
-                        latestHeight
-                        latestAbsStr
-                        latestEntryStr
-                        latestOuterStr
-                        latestIslandsStr
+                        initialPolygonExport.Width
+                        initialPolygonExport.Height
+                        initialPolygonExport.AbsStr
+                        initialPolygonExport.OuterStr
+                        initialPolygonExport.IslandsStr
 
 let initModel =
     {
         Sequence = initialSequence
+        Elevation = 0
+        BaseStr = ""
         SrcOfTrth = initialOutput
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
-        Derived = deriveData initialOutput 0
+        Derived = deriveData initialOutput initialPolygonExport.EntryStr 0
         NeedsHyweave = false
         IsHyweaving = false
         IsCancelling = false
@@ -123,14 +49,72 @@ let initModel =
         LastBatchSrc = None
         SelectedPreviewIndex = None
         UserDescription = ""
+        TeachMetadata = {
+            Scale = "Layout"
+            Typology = "Residential"
+            Flow = "Sequential"
+            Ambience = "Open"
+            Stage = "Ideation"
+        }
+        ReportOptions = {
+            ProjectTitle = "Spatial Design Exploration"
+            ProjectNumber = "HY-001"
+            Author = "Hywe Designer"
+            ClientName = "Creative Partner"
+            Description = "An automated architectural layout study derived from hierarchical spatial requirements, multi-level flow charts, and adjacency matrices."
+            IncludeCover = true
+            IncludeContents = true
+            LevelSections = Map.empty
+            Captured3DImage = None
+        }
+        Captured3DImage = None
+        ReportBatch = Map.empty
+        IsGeneratingReport = false
+
+
+
+        HoveredInfo = None
         IsSavingToHynteract = false
         ShowSuccessMessage = false
         IsRecording = false
+        PolygonExport = initialPolygonExport
+        Onboarding = {
+            IsActive = true
+            IsAutoSimulating = false
+            CurrentStep = Welcome
+            SeenSteps = Set.empty
+        }
+        BatchProgress = 0
+        BatchAccumulator = []
+        CurrentScreen = LoadingScreen
+        ViewLocked = false
     }
+
+let updateMetadata (js: IJSRuntime) =
+    async {
+        do! js.InvokeVoidAsync("document.querySelector('meta[property=\"article:published_time\"]').setAttribute", "content", PUBLISHED_DATE).AsTask() |> Async.AwaitTask
+        do! js.InvokeVoidAsync("document.querySelector('meta[property=\"article:modified_time\"]').setAttribute", "content", MODIFIED_DATE).AsTask() |> Async.AwaitTask
+        return ()
+    } |> Async.StartImmediate
+ 
+
+
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
+    let modelBefore = 
+        if model.Onboarding.IsActive then
+            match message with
+            | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp 
+            | TransitionToIntro | TransitionToMain -> model
+            | TreeMsg (NodeCode.PointerMove _) -> model
+            | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
+            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }
+        else model
+    
+    let model = modelBefore
     match message with
+    | NoOp -> model, Cmd.none
     | SetSqnIndex i ->
         let newSqn = indexToSqn i
         let updatedSrc = 
@@ -139,12 +123,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 NodeCode.getOutput 
                     model.Tree 
                     newSqn 
-                    latestWidth 
-                    latestHeight 
-                    latestAbsStr 
-                    latestEntryStr 
-                    latestOuterStr 
-                    latestIslandsStr
+                    model.PolygonExport.Width
+                    model.PolygonExport.Height
+                    model.PolygonExport.AbsStr
+                    model.PolygonExport.OuterStr
+                    model.PolygonExport.IslandsStr
             | Syntax -> 
                 injectSqn model.SrcOfTrth newSqn
 
@@ -158,7 +141,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         modelWithNewSqn,
         Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete)
+                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
                     Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 5 }) () (fun _ -> RunHyweave)
                 ]
 
@@ -172,7 +155,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         NeedsHyweave = false}
         model2,
         Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelDelete)
+                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
                     Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 50 }) () (fun _ -> RunHyweave)
                 ]
 
@@ -183,18 +166,16 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw model.SrcOfTrth inner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
-                syncPolygonState finalPoly
                 model.SrcOfTrth
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
                     model.Sequence
-                    latestWidth
-                    latestHeight
-                    latestAbsStr
-                    latestEntryStr
-                    latestOuterStr
-                    latestIslandsStr
+                    model.PolygonExport.Width
+                    model.PolygonExport.Height
+                    model.PolygonExport.AbsStr
+                    model.PolygonExport.OuterStr
+                    model.PolygonExport.IslandsStr
 
         Storage.autoSave js updatedSrcOfTrth |> ignore
 
@@ -203,14 +184,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | Syntax ->
                 let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 let newState = Parse.importFromHyw updatedSrcOfTrth inner
+                let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                let newExport = syncPolygonState finalPoly
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
-                    Derived = deriveData updatedSrcOfTrth elv
-                    PolygonEditor = newState }
+                    Derived = Page.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel
+                    PolygonEditor = newState 
+                    PolygonExport = newExport }
             | Interactive ->
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
-                    Derived = deriveData updatedSrcOfTrth elv }
+                    Derived = Page.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel }
                 
         newModel,
         Cmd.OfAsync.perform
@@ -226,22 +210,42 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | TreeMsg subMsg ->
-            let updatedTree, treeCmd = NodeCode.updateSub subMsg model.Tree 
+            let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
         
             let newOutput = NodeCode.getOutput
-                                updatedTree
-                                model.Sequence
-                                latestWidth
-                                latestHeight
-                                latestAbsStr
-                                latestEntryStr
-                                latestOuterStr
-                                latestIslandsStr
-            { model with 
-                Tree = updatedTree 
-                SrcOfTrth = newOutput 
-                NeedsHyweave = true }, 
-            Cmd.map TreeMsg treeCmd
+                                 updatedTree
+                                 model.Sequence
+                                 model.PolygonExport.Width
+                                 model.PolygonExport.Height
+                                 model.PolygonExport.AbsStr
+                                 model.PolygonExport.OuterStr
+                                 model.PolygonExport.IslandsStr
+
+            let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
+            let isLevelSwitch = match subMsg with NodeCode.SetLevel _ -> true | _ -> false
+            let isAction = match subMsg with NodeCode.ExecuteAction _ -> true | _ -> false
+
+            let modelWithTree = 
+                { model with 
+                    Tree = updatedTree 
+                    SrcOfTrth = newOutput 
+                    NeedsHyweave = if isMoving then model.NeedsHyweave else true }
+
+            let finalModel, finalCmd = 
+                if isLevelSwitch || isAction then
+                    let m = { modelWithTree with Derived = Page.deriveData newOutput model.PolygonExport.EntryStr updatedTree.ActiveLevel }
+                    if model.ActivePanel = BatchPanel then
+                        { m with 
+                            IsHyweaving = true
+                            BatchProgress = 0
+                            BatchAccumulator = []
+                            BatchPreview = None
+                        }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
+                    else
+                        m, Cmd.map TreeMsg treeCmd
+                else modelWithTree, Cmd.map TreeMsg treeCmd
+
+            finalModel, finalCmd
 
     | PolygonEditorMsg subMsg ->
         let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -252,138 +256,20 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonEditorUpdated
 
     | PolygonEditorUpdated newModel ->
-        syncPolygonState newModel
+        let newExport = syncPolygonState newModel
         { model with 
             PolygonEditor = Stable newModel
+            PolygonExport = newExport
             NeedsHyweave = true        },
             Cmd.none
 
-    | SetActivePanel panel ->
-        match panel with
-        | BatchPanel ->
-            let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
-            match isStale with
-            | true -> 
-                let cts = new System.Threading.CancellationTokenSource()
-                let model' = 
-                    { model with 
-                        ActivePanel = panel
-                        IsHyweaving = true
-                        IsCancelling = false 
-                        CancelToken = Some cts
-                        BatchPreview = None 
-                    }
-
-                model', Cmd.OfAsync.perform (fun (token: System.Threading.CancellationToken) ->
-                    // Type annotation (m: Model) helps the compiler find .SrcOfTrth
-                    let rec compute (m: Model) i acc = async {
-                        if i >= 24 || token.IsCancellationRequested then 
-                            return acc
-                        else
-                            let sqnStr = indexToSqn i
-                            let forcedStr = injectSqn m.SrcOfTrth sqnStr
-                            let cxls, _ = Parse.spaceCxl [||] forcedStr
-                            let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                        
-                            // We define configData inside the loop logic
-                            let configData = 
-                                {| sqnName = sqnStr; w = d.w; h = d.h
-                                   shapes = d.shapes |> Array.map (fun s -> 
-                                     {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                                |}
-                        
-                            do! Async.Sleep 5
-                            // Pass configData into the next recursive call
-                            return! compute m (i + 1) (configData :: acc)
-                    }
-                    async {
-                        let! results = compute model 0 []
-                        // CONVERSION: Model expects PreviewConfig[], so we convert List to Array
-                        return results |> List.toArray |> Array.rev
-                    }) cts.Token SetBatchPreview
-
-            | false -> 
-                { model with ActivePanel = panel }, Cmd.none
-
-        | BoundaryPanel | LayoutPanel | TablePanel | ViewPanel | TeachPanel ->
-            { model with ActivePanel = panel }, Cmd.none
-    
-    | CancelBatch ->
-        model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
-        { model with IsCancelling = true }, Cmd.none
-    
-    | BatchCancelled ->
-        { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
-
-    | ToggleEditorMode ->
-        match model.EditorMode with
-        | Syntax ->
-            let maybeSubModel =
-                model.SrcOfTrth
-                |> CodeNode.preprocessCode
-                |> fun processed ->
-                    try Some (CodeNode.parseOutput processed)
-                    with _ -> None
-                |> Option.map (fun tree ->
-                    let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                    { Root = laidOut; ConfirmingId = None }
-                )
-
-            match maybeSubModel with
-            | Some subModel ->
-                let newOutput =
-                    NodeCode.getOutput
-                        subModel
-                        model.Sequence
-                        latestWidth
-                        latestHeight
-                        latestAbsStr
-                        latestEntryStr
-                        latestOuterStr
-                        latestIslandsStr
-
-                { model with
-                    Tree = subModel
-                    SrcOfTrth = newOutput
-                    LastValidTree = subModel
-                    EditorMode = Interactive
-                    ParseError = false
-                }, Cmd.none
-            | None ->
-                { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
-
-        | Interactive ->
-            let newOutput =
-                NodeCode.getOutput
-                    model.Tree
-                    model.Sequence
-                    latestWidth
-                    latestHeight
-                    latestAbsStr
-                    latestEntryStr
-                    latestOuterStr
-                    latestIslandsStr
-
-            { model with
-                SrcOfTrth = newOutput
-                LastValidTree = model.Tree
-                EditorMode = Syntax
-                ParseError = false
-            }, Cmd.none
-
-    | ToggleBoundary ->
-        match model.ActivePanel with
-        | BoundaryPanel -> 
-            { model with ActivePanel = LayoutPanel }, Cmd.none
-        | _ -> 
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw model.SrcOfTrth inner
-            let finalPoly = match newState with FreshlyImported m | Stable m -> m
-            { model with 
-                ActivePanel = BoundaryPanel
-                PolygonEditor = newState 
-            }, Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-
+    | SetActivePanel _ | ToggleEditorMode | ExportPdfRequested 
+    | FileImported _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
+    | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj
+    | GenerateReport | ReportGenerated _ | UpdateReportOptions _ as msg ->
+        match UpdateUI.update js msg model with
+        | Some (newModel, cmd) -> newModel, cmd
+        | None -> model, Cmd.none
     | SetBatchPreview results ->
         { model with 
             BatchPreview = Some results
@@ -391,447 +277,178 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             IsHyweaving = false 
             IsCancelling = false
             ActivePanel = BatchPanel 
+            BatchProgress = 24
         }, Cmd.none
+    | SetBatchProgress p ->
+        { model with BatchProgress = p }, Cmd.none
+    
+    // --- Recursive Batch Generation ---
+    // This pattern allows the UI to update after every single configuration is processed,
+    // providing real-time feedback via the progress grid.
+    | GenerateNextBatchItem i ->
+        // Terminate if we reached the target (24) or if the user cancelled
+        if i >= 24 || model.IsCancelling then
+            { model with IsHyweaving = false; IsCancelling = false }, 
+            Cmd.ofMsg (SetBatchPreview (model.BatchAccumulator |> List.toArray |> Array.rev))
+        else
+            let sqnStr = indexToSqn i
+            let forcedStr = injectSqn model.SrcOfTrth sqnStr
+            
+            // Perform the heavy geometric calculation in an async block
+            model, Cmd.OfAsync.perform (fun () -> async {
+                try
+                    let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
+                    
+                    // Extract static geometry for high-fidelity rendering in the batch preview
+                    let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr model.Tree.ActiveLevel
+                    let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
+                        getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
+                    
+                    let cxlAvl = if Array.isEmpty cxls then [||] else Coxel.cxlExp cxls (Array.head cxls).Seqn model.Tree.ActiveLevel
+                    
+                    let configData : BatchConfgrtns = 
+                        {| sqnName = sqnStr
+                           shapes = d.shapes |> Array.map (fun s -> 
+                             {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                           w = d.w; h = d.h
+                           cxCxl1 = cxls
+                           cxElv1 = cxElv1
+                           cxlAvl = cxlAvl
+                           cxOuIl = cxOuIl |}
+                    
+                    // Small sleep to ensure the UI has a chance to render the progress update
+                    do! Async.Sleep 5
+                    return Some configData
+                with ex -> 
+                    return None
+            }) () AddBatchItem
 
+    | AddBatchItem res ->
+        let nextI = model.BatchProgress + 1
+        let nextAcc = 
+            match res with
+            | Some r -> r :: model.BatchAccumulator
+            | None -> model.BatchAccumulator
+        // Update progress state and trigger next iteration
+        { model with BatchProgress = nextI; BatchAccumulator = nextAcc }, Cmd.ofMsg (GenerateNextBatchItem nextI)
     | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with
             | Some current when current = i -> None
             | _ -> Some i
         { model with SelectedPreviewIndex = nextSelection }, Cmd.none
-
     | CloseBatch ->
         { model with ActivePanel = LayoutPanel; SelectedPreviewIndex = None }, Cmd.none
-
-    | ExportPdfRequested ->
-            { model with IsHyweaving = true }, 
-            Cmd.OfAsync.perform (fun () ->
-                let rec computeBatch i acc = async {
-                    match i >= 24 with
-                    | true -> return acc
-                    | false ->
-                        let sqnStr = indexToSqn i
-                        let forcedStr = injectSqn model.SrcOfTrth sqnStr
-                        let cxls, _ = Parse.spaceCxl [||] forcedStr
-                        let d = getStaticGeometry cxls (deriveData forcedStr 0).cxClr1 0 10 
-                        let configData = 
-                            {| sqnName = sqnStr; w = d.w; h = d.h
-                               shapes = d.shapes |> Array.map (fun s -> 
-                                {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                            |}
-                        do! Async.Sleep 5
-                        return! computeBatch (i + 1) (configData :: acc)
-                }
-                async {
-                    let! results = computeBatch 0 []
-                    return results |> List.toArray |> Array.rev
-                }) () SetBatchPreview
-
+    | CancelBatch ->
+        model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
+        { model with IsCancelling = true }, Cmd.none
+    | BatchCancelled ->
+        { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
     | SaveRequested ->
         Storage.saveFile js model.SrcOfTrth |> ignore
         Storage.autoSave js model.SrcOfTrth |> ignore
         model, Cmd.none
-
     | ImportRequested ->
         let doClick () =
             task {
                 do! js.InvokeVoidAsync("clickElement", "hyw-import-hidden").AsTask()
             }
         model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
+    | ViewCaptured dataUrl ->
+        { model with Captured3DImage = Some dataUrl }, Cmd.none
+    | SetDescription _ | SuggestDescription | RecordResult _ | UpdateMetadata _ 
+    | SetHoveredInfo _ | StartVoiceCapture | OnVoiceResult | RecordToHynteract as msg ->
+        match UpdateTeach.update js msg model with
+        | Some (newModel, cmd) -> newModel, cmd
+        | None -> model, Cmd.none
 
-    | FileImported content ->
-        match System.String.IsNullOrWhiteSpace content with
-        | true -> model, Cmd.none
-        | false ->
-            let clean = content.Trim()
-            let newTree = 
-                clean 
-                |> CodeNode.preprocessCode 
-                |> fun processed ->
-                    try 
-                        let tree = CodeNode.parseOutput processed
-                        let laidOut = NodeCode.layoutTree tree 0 (ref 50.0)
-                        { Root = laidOut; ConfirmingId = None }
-                    with _ -> model.Tree 
+    | NextOnboardingStep ->
+        if not model.Onboarding.IsActive then model, Cmd.none
+        else
+        let nextStep = 
+            match model.Onboarding.CurrentStep with
+            | Welcome -> NodeGuide
+            | NodeGuide -> NodeMenuGuide
+            | NodeMenuGuide -> ElevateGuide
+            | ElevateGuide -> MoveNodeGuide
+            | MoveNodeGuide -> BoundaryGuide
+            | BoundaryGuide -> LayoutGuide
+            | LayoutGuide -> Finish
+            | Finish -> Finish
 
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw clean inner
-            let finalPoly = match newState with FreshlyImported m | Stable m -> m
-            syncPolygonState finalPoly
+        let isFinished = nextStep = Finish && model.Onboarding.CurrentStep = Finish
+        let newActivePanel = 
+            match nextStep with
+            | NodeGuide -> LayoutPanel
+            | NodeMenuGuide -> LayoutPanel
+            | ElevateGuide -> LayoutPanel
+            | MoveNodeGuide -> LayoutPanel
+            | BoundaryGuide -> BoundaryPanel
+            | LayoutGuide -> LayoutPanel
+            | _ -> model.ActivePanel
 
-            { model with 
-                SrcOfTrth = clean
-                Tree = newTree
-                LastValidTree = newTree
-                Derived = deriveData clean elv 
-                PolygonEditor = newState 
-                ParseError = false
-                LastBatchSrc = None
-            }, 
-            Cmd.batch [
-                Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-                Cmd.OfTask.attempt (fun () -> task { 
-                    do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
-                }) () (fun _ -> FinishHyweave)
-            ]
+        let cmd = Cmd.none
 
-    | SetDescription d -> 
-        { model with UserDescription = d }, Cmd.none
-
-    | RecordToHynteract ->
-        let currentSrc = model.SrcOfTrth
-        let currentDesc = model.UserDescription
-        let currentOuter = latestOuterStr
-        let currentIslands = latestIslandsStr
-
-        { model with IsSavingToHynteract = true },
-    
-        Cmd.OfAsync.perform (fun () -> async {
-            try
-                // Iterate through the 24 orientations
-                let configMap = 
-                    Hexel.sqnArray 
-                    |> Array.map (fun sqnCase -> 
-                        let key = sprintf "%A" sqnCase
-                        let data = 
-                            try 
-                                // ADDED: [||] as the 5th argument for initialOcc
-                                Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands [||]
-                            with ex -> 
-                                printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
-                                "" 
-                        key, data)
-                    |> Map.ofArray
-
-                // Ensure the payload matches the Hynteract API schema
-                let payload = {| 
-                    instruction = currentSrc 
-                    description = currentDesc 
-                    configuration = configMap 
-                |}
-
-                // Async invocation of the JavaScript interop
-                let! success = 
-                    js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() 
-                    |> Async.AwaitTask
-                
-                return success
-            
-            with ex -> 
-                printfn "Critical Recording Failure: %s" ex.Message
-                return false
-        }) () RecordResult
-
-    | RecordResult success ->
         { model with 
-            IsSavingToHynteract = false
-            ShowSuccessMessage = success
-            UserDescription = if success then "" else model.UserDescription 
-        }, 
-        if success then 
-            Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave) // Using a dummy msg to trigger refresh
-        else Cmd.none
+            Onboarding = { model.Onboarding with 
+                            CurrentStep = nextStep
+                            IsActive = not isFinished
+                            SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
+            ActivePanel = newActivePanel
+        }, cmd
 
-    | StartVoiceCapture -> 
-        { model with IsRecording = true }, 
-        Cmd.OfAsync.perform (fun () -> 
-            async {
-                // 1. Trigger the JS transcription
-                do! js.InvokeVoidAsync("startTranscription").AsTask() |> Async.AwaitTask
-                // 2. We wait a moment for the JS 'onend' logic to finish if needed
-                // or just return to signal we are done.
-                return ()
-            }) () (fun _ -> OnVoiceResult model.UserDescription)
+    | PreviousOnboardingStep ->
+        if not model.Onboarding.IsActive then model, Cmd.none
+        else
+        let prevStep = 
+            match model.Onboarding.CurrentStep with
+            | Welcome -> Welcome
+            | NodeGuide -> Welcome
+            | NodeMenuGuide -> NodeGuide
+            | ElevateGuide -> NodeMenuGuide
+            | MoveNodeGuide -> ElevateGuide
+            | BoundaryGuide -> MoveNodeGuide
+            | LayoutGuide -> BoundaryGuide
+            | Finish -> LayoutGuide
 
-    | OnVoiceResult text ->
-        // This is the "Off Switch"
+        let newActivePanel = 
+            match prevStep with
+            | NodeGuide -> LayoutPanel
+            | NodeMenuGuide -> LayoutPanel
+            | ElevateGuide -> LayoutPanel
+            | MoveNodeGuide -> LayoutPanel
+            | BoundaryGuide -> BoundaryPanel
+            | LayoutGuide -> LayoutPanel
+            | _ -> LayoutPanel
+
         { model with 
-            IsRecording = false 
-            // Note: the text is already updated by the JS dispatching the 'input' event
+            Onboarding = { model.Onboarding with CurrentStep = prevStep }
+            ActivePanel = newActivePanel
         }, Cmd.none
 
-// View helpers
-let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
-    let nodeCodeButtonText =
-        match model.EditorMode with
-        | Syntax -> "Node"
-        | Interactive -> "Code"
+    | SkipOnboarding ->
+        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }, 
+        Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction) // Just in case
 
-    div {
-        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: flex-start; align-items: center;"
-        
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch SaveRequested)
-            text "Save"
-        }
+    | RestartOnboarding ->
+        { model with 
+            Onboarding = { IsActive = true; IsAutoSimulating = false; CurrentStep = Welcome; SeenSteps = Set.empty } 
+            ActivePanel = LayoutPanel
+        }, Cmd.none
 
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ImportRequested)
-            text "Load"
-        }
+    | StartAutoSimulation ->
+        model, Cmd.none
 
-        input {
-            attr.id "hyw-import-hidden"
-            attr.``type`` "file"
-            attr.style "display:none"
-            attr.accept ".hyw"
-            on.change (fun e ->
-                async {
-                    let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
-                    dispatch (FileImported content)
-                } |> Async.StartImmediate
-            )
-        }
-        
-        button {
-            attr.``class`` "hywe-toggle-btn"
-            on.click (fun _ -> dispatch ToggleEditorMode)
-            text nodeCodeButtonText
-        }
-    }
+    | StopAutoSimulation ->
+        { model with Onboarding = { model.Onboarding with IsAutoSimulating = false } }, Cmd.none
 
-let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
-    match model.EditorMode with
-    | Syntax ->
-        div {
-            attr.id "hywe-input-syntax"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
-            textarea {
-                attr.``class`` "hyweSyntax"
-                attr.key (model.SrcOfTrth.GetHashCode().ToString())
-                attr.value model.SrcOfTrth
-                on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
-            }
-        }
-    | Interactive ->
-        div {
-            attr.id "hywe-input-interactive"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px;"
-            div {
-                attr.style "flex:1; overflow-y:hidden; display: flex; justify-content: center; width: 100%;"
-                viewTreeEditor model.Tree (TreeMsg >> dispatch)
-            }
-        }
+    | TransitionToIntro ->
+        { model with CurrentScreen = IntroScreen }, Cmd.none
 
-let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
-    let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
-    
-    let buttonClass = 
-        match model.IsHyweaving with
-        | true -> "hyWeaveButton stop-state" 
-        | false -> 
-            match syntaxAltered with
-            | true -> "hyWeaveButton needs-update"
-            | false -> "hyWeaveButton"
+    | TransitionToMain ->
+        { model with CurrentScreen = MainScreen }, Cmd.none
 
-    div {
-        attr.``class`` "hyweave-container"
-        button {
-            attr.id "hywe-hyweave"
-            attr.``class`` buttonClass
-            attr.disabled model.IsCancelling 
-
-            on.click (fun _ -> 
-                match model.IsHyweaving with
-                | true -> dispatch CancelBatch
-                | false -> dispatch StartHyweave)
-            
-            match model.IsHyweaving with
-            | true ->
-                span { attr.``class`` "spinner" }
-                span { 
-                    attr.``class`` "label-stack"
-                    span { attr.``class`` "weaving-label"; text " h y W E A V E i n g . . ." }
-                    span { 
-                        attr.``class`` "stop-label"
-                        span { attr.style "color: #E67E22; font-weight: bold;white-space: pre"; text " S T O P " } 
-                        text "h y W E A V E i n g" 
-                    }
-                }
-            | false -> 
-                match syntaxAltered with
-                | true ->
-                    span { attr.``class`` "hyweave-prompt"; text "syntax altered" }
-                    span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
-                    span { attr.``class`` "hyweave-prompt"; text "to regenerate" }
-                | false -> 
-                    text "h y W E A V E"
-        }
-    }
-
-let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
-    div {
-        attr.``class`` "hywe-tab-strip"
-        
-        let tab title path panel =
-            let isActive = model.ActivePanel = panel
-            let activeClass = match isActive with true -> " active" | false -> ""
-
-            button {
-                attr.title title 
-                attr.``class`` ("hywe-tab-btn" + activeClass)
-                on.click (fun _ -> dispatch (SetActivePanel panel))
-                
-                // Show text if active, icon if inactive
-                match isActive with
-                | true -> text title
-                | false -> drawIcon path
-            }
-
-        tab "Boundary" iconBoundary BoundaryPanel
-        tab "Layout"   iconLayout   LayoutPanel
-        tab "Table"    iconTable    TablePanel
-        tab "3D"       icon3D       ViewPanel
-        tab "Batch"    iconBatch    BatchPanel
-        tab "Teach"    iconTeach    TeachPanel
-    }
-
-let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
-    div {
-        attr.style "padding: 10px; min-height: 400px;"
-        
-        match model.ActivePanel with
-        | BoundaryPanel ->
-            let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            div { 
-                attr.id "hywe-polygon-editor"
-                PolygonEditor.view currentInner (PolygonEditorMsg >> dispatch) js 
-            }
-
-        | LayoutPanel ->
-            div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
-                div {
-                    attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
-                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-                }
-                div {
-                    attr.id "hywe-svg-container"
-                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl elv model.Derived.cxClr1 10
-                }
-            }
-        
-        | TablePanel ->
-            div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
-                div {
-                    attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
-                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-                }
-                div {
-                    attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    viewHyweTable model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxlAvl
-                }
-            }
-
-        | ViewPanel ->
-            div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; overflow-x: hidden;"
-                div {
-                    attr.id "hywe-sequence-selector"; attr.style "padding: 8px 0;width: 100%; max-width: 100vw;"
-                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
-                }                
-                div {
-                    attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
-                    canvas { 
-                        attr.id "hywe-extruded-polygon"
-                        attr.style "width: 100%; height: 100%; display: block;" 
-                    }
-                    async { do! extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 3.0 0 } 
-                    |> Async.StartImmediate
-                }
-            }
-
-        | BatchPanel ->
-            div {
-                attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
-                cond model.BatchPreview <| function
-                    | Some results -> 
-                        alternateConfigurations 
-                            results 
-                            model.SelectedPreviewIndex 
-                            TapBatchPreview                   
-                            dispatch                   
-                            (fun () -> dispatch (SetActivePanel LayoutPanel)) js
-                    | None -> 
-                        div { 
-                            attr.style "text-align:center; padding: 100px; color: #888; width: 100%;"
-                            span { attr.``class`` "spinner"; attr.style "display: block; margin: 0 auto 20px;" }
-                            text "Generating 24 variations..." 
-                        }
-            }
-
-        | TeachPanel ->
-            div {
-                attr.``class`` "teach-panel-container"
-                div {
-                    attr.style "width: 100%; max-width: 800px;"
-                    textarea {
-                        attr.id "hynteract-desc-input"
-                        attr.``class`` "teach-textarea"
-                        attr.placeholder "Help Build a Dataset for Learning Building Layouts\n\nDescribe the space flow: Identify the main spaces, note which spaces contain smaller sub-spaces, and explain how movement branches from one area to another. Include a brief note on the overall ambience or character of the spaces.\n\nExample: Entry opens into the Living Room (30) which acts as the main gathering space of the residence. From the Living, one side leads to the Kitchen (12), which further connects to a Utility (6). The other side leads to a Passage (8) that connects the bedrooms. Along this passage are three rooms: a Master Bedroom (18) with an attached Toilet (5), a Guest Room (14), and Children's Room (12). A Common Toilet (5) also opens from the passage. The arrangement keeps the living as the central space, with kitchen activities on one side and the bedrooms grouped together along the passage."
-                        attr.value model.UserDescription
-                        on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
-                    }
-                }
-
-                div {
-                    attr.``class`` "teach-action-bar"
-
-                    button {
-                        attr.``class`` (match model.IsRecording with | true -> "mic-button recording" | false -> "mic-button")
-                        attr.title "Start Voice Capture"
-                        on.click (fun _ -> dispatch StartVoiceCapture)
-                        
-                        rawHtml """
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <line x1="12" y1="19" x2="12" y2="23"></line>
-                                <line x1="8" y1="23" x2="16" y2="23"></line>
-                            </svg>"""
-                    }
-
-                    button {
-                        let isBusy = model.IsSavingToHynteract || System.String.IsNullOrWhiteSpace model.UserDescription
-    
-                        attr.``class`` (
-                            match isBusy with 
-                            | true -> "record-submit-btn disabled" 
-                            | false -> "record-submit-btn active"
-                        )
-    
-                        let btnText = 
-                            match model.IsSavingToHynteract with 
-                            | true -> "Committing..." 
-                            | false -> "Commit to Dataset"
-    
-                        attr.disabled isBusy
-                        on.click (fun _ -> dispatch RecordToHynteract)
-                        text btnText
-                    }
-                }
-
-                match model.ShowSuccessMessage with
-                | true ->
-                    span { 
-                        attr.style "color: #27ae60; font-size: 0.85em; font-weight: 500;"
-                        text "✓ Spatial relationship successfully mapped to model." 
-                    }
-                | false -> ()
-            }
-    }
-
-let view model dispatch (js: IJSRuntime) =
-    concat {
-        viewNodeCodeButtons model dispatch js
-        viewEditorPanel model dispatch
-        viewHyweButton model dispatch
-        viewHyweTabs model dispatch 
-        viewHywePanels model dispatch js
-    }
+open Help
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
@@ -839,8 +456,47 @@ type MyApp() =
     [<Inject>]
     member val JSRuntime: IJSRuntime = Unchecked.defaultof<_> with get, set
 
+    override this.OnInitialized() =
+        base.OnInitialized()
+
     override this.Program =
         Program.mkProgram
-            (fun _ -> initModel, Cmd.none)
+            (fun _ -> initModel, Cmd.batch [
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> TransitionToIntro)
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> TransitionToMain)
+                Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
+            ])
             (fun msg model -> update this.JSRuntime msg model)
-            (fun model dispatch -> view model dispatch this.JSRuntime)
+            (fun model dispatch -> 
+                concat {
+                    Styles.render()
+                    Shell.jsonLd
+                    Shell.siteHeader
+                    Shell.aboutSection
+                    div {
+                        attr.id "page-content"
+                        if model.CurrentScreen <> LoadingScreen then
+                            attr.``class`` "fade-container fade-in"
+                        else
+                            attr.``class`` "fade-container"
+                        
+                        Shell.introSplash model.CurrentScreen dispatch
+
+                        div {
+                            attr.id "main"
+                            if model.CurrentScreen = MainScreen then
+                                attr.``class`` "fade-in"
+                                attr.style "display: block; opacity: 1;"
+                            else
+                                attr.style "display: none; opacity: 0;"
+
+                            view model dispatch this.JSRuntime
+                            if model.Onboarding.IsActive then
+                                Help.viewHelp model.Onboarding dispatch
+                        }
+
+                        Shell.siteFooter model.CurrentScreen
+                    }
+                    Shell.loadingScreen model.CurrentScreen
+                }
+            )

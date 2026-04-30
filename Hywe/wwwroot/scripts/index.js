@@ -1,4 +1,4 @@
-﻿// --- Service Worker Registration ---
+// --- Service Worker Registration ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
@@ -7,126 +7,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-function applyWillChange(el, property = 'opacity') {
-    if (!el) return;
-    el.style.willChange = property;
-}
-function clearWillChange(el) {
-    if (!el) return;
-    el.style.willChange = '';
-}
-function fadeWithWillChange(el, action) {
-    if (!el) return;
-
-    applyWillChange(el);
-
-    const handler = () => {
-        clearWillChange(el);
-        el.removeEventListener('transitionend', handler);
-    };
-
-    el.addEventListener('transitionend', handler);
-    action(); // perform the opacity change
-}
-
-// --- HYWE Metadata Centralization ---
-const PUBLISHED_DATE = "2022-08-15T00:00:00Z";
-const MODIFIED_DATE = "2025-11-08T00:00:00Z";
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    // Update meta tags
-    const metaPub = document.querySelector('meta[property="article:published_time"]');
-    const metaMod = document.querySelector('meta[property="article:modified_time"]');
-    if (metaPub) metaPub.setAttribute("content", PUBLISHED_DATE);
-    if (metaMod) metaMod.setAttribute("content", MODIFIED_DATE);
-
-    // Update JSON-LD
-    const ld = document.getElementById("hywe-schema");
-    if (ld) {
-        try {
-            const data = JSON.parse(ld.textContent);
-            data.datePublished = PUBLISHED_DATE;
-            data.dateModified = MODIFIED_DATE;
-            ld.textContent = JSON.stringify(data, null, 2);
-        } catch (err) {
-            console.warn("Could not parse HYWE JSON-LD:", err);
-        }
-    }
-
-    // --- Loading Animation Elements ---
-    const loader = document.getElementById('loading-frame');
-    const content = document.getElementById('page-content');
-    const intro = document.getElementById('introduction');
-    const tapMsg = document.querySelector('.tapText');
-    const mainDiv = document.getElementById('main');
-    const footer = document.getElementById('footer');
-
-    // Ensure starting opacity for fade targets
-    if (content) content.style.opacity = '0';
-    if (mainDiv) mainDiv.style.opacity = '0';
-    if (footer) footer.style.opacity = '0';
-
-    // ---------------------------------------------------
-    //  LOADER FADE OUT  + CONTENT FADE IN (with delay)
-    // ---------------------------------------------------
-
-    const LOADING_DURATION = 2000; // <-- increase for longer "Loading..."
-
-    if (loader) {
-        setTimeout(() => {
-            requestAnimationFrame(() => {
-                fadeWithWillChange(loader, () => {
-                    loader.style.transition = 'opacity 0.8s ease';
-                    loader.style.opacity = '0';    // fade out loader
-                });
-
-                if (content) {
-                    fadeWithWillChange(content, () => {
-                        content.classList.add('fade-in'); // fade in page content
-                    });
-                }
-
-                if (intro) intro.classList.add('ready');
-                if (tapMsg) tapMsg.classList.add('visible');
-            });
-        }, LOADING_DURATION);
-
-        loader.addEventListener('transitionend', (e) => {
-            if (e.propertyName === 'opacity') loader.style.display = 'none';
-        }, { once: true });
-    }
-
-
-    // ------------------------------------
-    //   MAIN SCREEN SHOW (Tap or Timeout)
-    // ------------------------------------
-    function showMain() {
-        if (!intro) return;
-
-        fadeWithWillChange(intro, () => {
-            intro.classList.add('fade-out');
-        });
-
-        intro.addEventListener('transitionend', () => {
-            intro.style.display = 'none';
-            mainDiv.style.display = 'block';
-            footer.style.display = 'flex';
-
-            requestAnimationFrame(() => {
-                fadeWithWillChange(mainDiv, () => { mainDiv.style.opacity = '1'; });
-                fadeWithWillChange(footer, () => { footer.style.opacity = '1'; });
-            });
-        }, { once: true });
-    }
-
-    if (intro) intro.addEventListener('click', showMain);
-
-    // Auto show after 10s
-    setTimeout(() => {
-        if (intro && intro.style.display !== 'none') showMain();
-    }, 10000);
-});
 
 // --- SVG Utilities ---
 window.getSvgInfo = function (svgId) {
@@ -195,35 +75,10 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
     return { x: svgP.x, y: svgP.y };
 };
 
-// Debug receiver
-window.hywe = {
-    receiveSvgData: function (data) {
-        console.log("[hywe] Received data from F#:", data);
-    }
-};
 
 // ------------------------------------
-//   MAIN SCREEN SHOW (Tap or Timeout)
+//   FILE OPS & BROWSER STORAGE
 // ------------------------------------
-// Local Persistence
-window.saveToBrowser = (key, data) => localStorage.setItem(key, data);
-window.loadFromBrowser = (key) => localStorage.getItem(key) || "";
-
-// Download .hyw file
-window.downloadHywFile = (filename, content) => {
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-
-    anchor.href = url;
-    anchor.download = filename;
-
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-
-    URL.revokeObjectURL(url);
-};
 
 // Import .hyw file
 window.readHywFile = (fileInputId) => {
@@ -241,37 +96,11 @@ window.readHywFile = (fileInputId) => {
     });
 };
 
-window.clickElement = (id) => document.getElementById(id).click();
-
-window.downloadSvgFile = (svgId, filename) => {
-    const svgEl = document.getElementById(svgId);
-    if (!svgEl) return;
-
-    const serializer = new XMLSerializer();
-    let source = serializer.serializeToString(svgEl);
-
-    // --- CLEANUP LOGIC ---
-    // Remove Bolero/Blazor specific event handlers that break XML parsers
-    source = source.replace(/\sonclick:[^=]+="[^"]*"/g, '');
-    source = source.replace(/\sonmouseover:[^=]+="[^"]*"/g, '');
-    source = source.replace(/\sonmouseout:[^=]+="[^"]*"/g, '');
-
-    // Add namespaces if missing
-    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
-
-    const svgData = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+window.clickElement = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.click();
 };
+
 
 // Record Descriptions to Hynteract 
 window.recordToHynteract = async (apiUri, payload) => {
@@ -291,3 +120,53 @@ window.recordToHynteract = async (apiUri, payload) => {
         return false;
     }
 };
+
+window.downloadFile = function (fileName, content, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 0);
+};
+
+window.openReport = function(html) {
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 600);
+};
+
+window.downloadReport = function(html, fileName) {
+    console.log("Hywe: Starting direct PDF export...");
+    const element = document.createElement('div');
+    element.innerHTML = html;
+    
+    const opt = {
+        margin:       0,
+        filename:     fileName,
+        image:        { type: 'jpeg', quality: 0.90 },
+        html2canvas:  { scale: 1, useCORS: true, logging: false, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape', compress: true },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        console.log("Hywe: PDF export complete.");
+    }).catch(err => {
+        console.error("Hywe: PDF export failed:", err);
+    });
+};
+
+window.captureCanvas = function(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+    return canvas.toDataURL('image/png');
+};

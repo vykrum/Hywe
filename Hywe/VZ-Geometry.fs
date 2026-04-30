@@ -1,136 +1,7 @@
-﻿module Geometry
+module Geometry
 
-open Hexel
 open System
-///
-
-/// <summary> Module shape in tessalated hexagonal grid. </summary>
-/// <typeparam name="Hxg"> Hexagon. </typeparam>
-/// <typeparam name="Sqr"> Square. </typeparam>
-/// <typeparam name="Arw"> Arrow. </typeparam>
-/// <typeparam name="Prl"> Parallelogram. </typeparam>
-type Shp = 
-    | Hxg | Sqr | Arw | Prl
-///
-
-/// <summary> The integer vertex coordinates for a given shape and orientation. </summary>
-/// <param name="sqn"> The grid sequence (Vertical or Horizontal). </param>
-/// <param name="shp"> The geometric shape type. </param>
-/// <param name="hxl"> The origin hexel for the shape. </param>
-/// <returns> An array of tuples containing the vertex index as a string and the x, y coordinates. </returns>
-let vertex
-    (sqn : Sqn)
-    (shp : Shp)
-    (hxl : Hxl) = 
-    let hxCr = 
-        match shp, sqn with 
-        | Hxg, Vertical   -> [| 0,0; 1, 1; 2, 0; 2,-1; 1,-2; 0,-1 |]
-        | Hxg, Horizontal -> [| 0,0; 1, 0; 2,-1; 1,-2; 0,-2;-1,-1 |]
-
-        | Sqr, Vertical   -> [| 0,0; 1, 0; 2, 0; 2,-2; 1,-2; 0,-2 |]
-        | Sqr, Horizontal -> [| 0,0; 2, 0; 2,-1; 2,-2; 0,-2; 0,-1 |]
-
-        | Arw, Vertical   -> [| 0,0; 1,-1; 2, 0; 2,-3; 1,-2; 0,-3 |]
-        | Arw, Horizontal -> [| 0,0; 3, 0; 2,-1; 3,-2; 0,-2; 1,-1 |]
-
-        | Prl, Vertical   -> [| 0,0; 1, 0; 2, 0; 1,-2; 0,-2;-1,-2 |]
-        | Prl, Horizontal -> [| 0,0; 2, 1; 2, 0; 2,-1; 0,-2; 0,-1 |]    
-    let x, y, _ = hxlCrd hxl 
-    hxCr |> Array.mapi (fun i (a, b) -> string i, a + x, b + y)
-///
-
-/// <summary> Ortogonal Hexel Sequence </summary>
-/// <param name="sqn"> Sequence to follow. </param>
-/// <param name="org"> Start Hexel. </param> 
-/// <param name="lgt"> Sequence Length. </param> 
-/// <param name="vrt"> Vertical or Horizontal Orientation. </param> 
-/// <param name="rev"> Positive or Negative Direction. </param> 
-/// <returns> Array of Sequential Reserved Hexels. </returns>
-let hxlOrt 
-    (sqn : Sqn) 
-    (org : Hxl) 
-    (lgt : int) 
-    (vrt : bool) 
-    (rev : bool) =
-    let hxx, hxy, hxz = org |> hxlVld sqn |> hxlCrd
-    let lgt = lgt + (lgt % 2)
-    let sgn = match rev with true -> -1 | false -> 1          
-    
-    match sqn, vrt with
-    | Vertical, true -> 
-        [| hxy .. 4*sgn .. (hxy+lgt+4)*sgn |]
-        |> Array.map (fun y -> [| EX(hxx, y, hxz); EX(hxx+1, y+2*sgn, hxz) |])
-        |> Array.concat |> Array.take ((lgt/2)+1)
-    | Vertical, false -> 
-        [| hxx .. 2*sgn .. (hxx+lgt+4)*sgn |]
-        |> Array.map (fun x -> EX(x, hxy, hxz)) |> Array.take ((lgt/2)+1)
-    | Horizontal, true -> 
-        [| hxy .. 2*sgn .. (hxy+lgt)*sgn |]
-        |> Array.map (fun y -> RV(hxx, y, hxz)) |> Array.take ((lgt/2)+1)
-    | Horizontal, false -> 
-        [| hxx .. 4*sgn .. (hxx+lgt)*sgn |] 
-        |> Array.map (fun x -> [| EX(x, hxy, hxz); EX(x+2*sgn, hxy+1, hxz) |])
-        |> Array.concat |> Array.take ((lgt/2)+1)
-///
-
-/// <summary> Offsets an array of hexels by a boundary distance based on relative direction. </summary>
-/// <param name="hxl"> Array of Hexels to offset. </param>
-/// <param name="rev"> Directional toggle for the offset. </param>
-/// <returns> A new array of offset Hexels. </returns>
-let hxlOff 
-    (hxl : Hxl[]) 
-    (rev : bool) =  
-    let neg = match rev with true -> -1 | false -> 1
-    let crd = Array.map hxlCrd hxl
-    let x1, y1, _ = Array.head crd
-    let x2, y2, _ = Array.get crd 1
-    
-    match (x1 = x2), (y1 = y2), (Math.Abs(x2 - x1) = 1) with
-    | true, _, _ -> 
-        crd |> Array.map (fun (x,y,z) -> EX(x + (2 * neg), y - 1, z))
-    | _, true, _ -> 
-        crd |> Array.map (fun (x,y,z) -> EX(x + 1, y + (2 * neg), z))
-    | _, _, true -> 
-        crd |> Array.map (fun (x,y,z) -> EX(x + (2 * neg), y, z))
-    | _          -> 
-        crd |> Array.map (fun (x,y,z) -> EX(x, y + (2 * neg), z))
-///
-
-/// <summary> Generates a hollow rectangular boundary of Hexels and identifies a base interior point. </summary>
-/// <param name="sqn"> Sequence to follow. </param>
-/// <param name="wdt"> Width of the rectangle. </param>
-/// <param name="hgt"> Height of the rectangle. </param>
-/// <param name="str"> Start index/anchor position selector (1-7). </param>
-/// <returns> A tuple of (Interior Base Hexel, Boundary Hexel Array). </returns>
-let hxlRct 
-    (sqn : Sqn) 
-    (wdt : int) 
-    (hgt : int) 
-    (str : int) =  
-    let sqnVal = match sqn with Horizontal -> HRCWNN | Vertical -> VRCWEE
-    let org = hxlVld sqnVal (AV(0,0,0))
-    let hrz1 = hxlOrt sqnVal org ((wdt + 1) * 2) false false
-    let vrt1 = hxlOrt sqnVal (Array.last hrz1) ((hgt + 1) * 2) true false
-    let hrz2 = hxlOrt sqnVal (Array.last vrt1) ((wdt + 1) * 2) false true
-    let vrt2 = hxlOrt sqnVal (Array.last hrz2) ((hgt + 1) * 2) true true
-
-    let bs1 = 
-        match str with 
-        | 1 -> Array.get hrz1 (hrz1.Length / 2)
-        | 2 -> vrt1.[1]
-        | 3 -> Array.get vrt1 (vrt1.Length / 2)
-        | 4 -> hrz2.[1]
-        | 5 -> Array.get hrz2 (hrz2.Length / 2)
-        | 6 -> vrt2.[1]
-        | 7 -> Array.get vrt2 (vrt2.Length / 2)
-        | _ -> hrz1.[1]
-
-    let rct = Array.concat [| hrz1; vrt1; hrz2; vrt2; 
-                              hxlOff hrz1 true; hxlOff vrt1 false; 
-                              hxlOff hrz2 false; hxlOff vrt2 true |] |> Array.distinct
-    let bas = AV(hxlCrd bs1) |> adjacent sqnVal |> hxlUni 3 |> Array.except rct |> Array.head
-    AV(hxlCrd bas), rct
-
+open Hexel
 ///
 
 /// <summary> Hexel Line </summary>
@@ -207,85 +78,62 @@ let hxlLin
     let result = div |> Array.map (fun (a,b) -> RV(a, b, sz))
     match result.Length with 0 -> [| stt; enn |] |> Array.distinct | _ -> result
 ///
-
 /// <summary> Removes aliasing/sawtooth artifacts from a sequence of hex coordinates. </summary>
 /// <param name="sqn"> The grid sequence orientation. </param>
 /// <param name="arr"> Array of (x, y) coordinates. </param>
 /// <returns> A cleaned array of (x, y) coordinates. </returns>
 let removeSawtooth 
     (sqn : Sqn) 
-    (arr : (int*int)[]) : (int*int)[] =
-    // --- Determine primary axis functions ---
+    (arr : (float*float)[]) : (float*float)[] =
+    if arr.Length = 0 then [||] else
     let (primary, secondary) = 
         match sqn with
         | Vertical   -> (snd, fst)
         | Horizontal -> (fst, snd)
 
-    // --- Split by Δ=2 along primary axis using Fold ---
-    let splitByDelta2 (points: (int*int)[]) =
-        match points.Length with
-        | 0 -> [||]
-        | _ -> 
-            let folder (acc: (int*int) list list) point =
-                match acc with
-                | [] -> [[point]]
-                | currentGroup :: rest ->
-                    match abs(primary point - primary (List.head currentGroup)) with
-                    | 2 -> (point :: currentGroup) :: rest
-                    | _ -> [point] :: currentGroup :: rest
+    let result = ResizeArray<float*float>()
+    
+    let mutable i = 0
+    let n = arr.Length
+    while i < n do
+        let mutable j = i
+        while j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) < 2.1 && abs(primary arr.[j+1] - primary arr.[j]) > 1.9 do
+            j <- j + 1
             
-            points 
-            |> Array.fold folder [] 
-            |> List.map (List.rev >> Array.ofList)
-            |> List.rev
-            |> Array.ofList
+        let groupLen = j - i + 1
+        if groupLen > 3 then
+            let mutable isOscillating = true
+            for k = i to j - 1 do
+                if abs(secondary arr.[k+1] - secondary arr.[k]) < 0.9 || abs(secondary arr.[k+1] - secondary arr.[k]) > 1.1 then
+                    isOscillating <- false
+            
+            if isOscillating then
+                let f = arr.[i]
+                let l = arr.[j]
+                let low = min (secondary f) (secondary l)
+                match sqn with
+                | Vertical   -> 
+                    result.Add((low, snd f))
+                    result.Add((low, snd l))
+                | Horizontal -> 
+                    result.Add((fst f, low))
+                    result.Add((fst l, low))
+            else
+                for k = i to j do
+                    result.Add(arr.[k])
+        else
+            for k = i to j do
+                result.Add(arr.[k])
+                
+        i <- j + 1
 
-    // --- Detect oscillation on secondary axis ---
-    let rec oscillates values =
-        match values with
-        | [||] | [|_|] | [|_;_|] -> false
-        | _ ->
-            let rec loop i =
-                match i >= values.Length - 2 with
-                | true -> true
-                | false ->
-                    match abs(values.[i+1] - values.[i]), 
-                          abs(values.[i+2] - values.[i+1]) with
-                    | 1, 1 -> loop (i+1)
-                    | _    -> false
-            loop 0
-
-    // --- Reduce oscillatory groups ---
-    let processOscillation (groups: (int*int)[][]) =
-        groups
-        |> Array.map (fun g ->
-            match g.Length <= 3 with
-            | true -> g
-            | false ->
-                let secValues = g |> Array.map secondary
-                match oscillates secValues with
-                | false -> g
-                | true ->
-                    let f, l = g.[0], g.[g.Length-1]
-                    let low = min (secondary f) (secondary l)
-                    // Reconstruction based on orientation
-                    match sqn with
-                    | Vertical   -> [| (low, snd f); (low, snd l) |]
-                    | Horizontal -> [| (fst f, low); (fst l, low) |]
-        )
-
-    // --- Pipeline ---
-    arr
-    |> splitByDelta2
-    |> processOscillation
-    |> Array.collect id
-///
+    result.ToArray()
 
 /// <summary> Calculates the signed area of a polygon using the Shoelace formula. </summary>
 /// <param name="poly"> Array of (x, y) coordinates defining the polygon. </param>
 /// <returns> The calculated area as a float. </returns>
 let polygonArea 
-    (poly: (int * int)[]) =
+    (poly: (float * float)[]) =
     match poly with
     | [||] | [|_|] | [|_; _|] -> 0.0
     | pts ->
@@ -296,7 +144,7 @@ let polygonArea
                 let (nx, ny) = pts.[(i + 1) % n]
                 (x * ny) - (nx * y))
             |> Array.sum
-        float area / 2.0
+        area / 2.0
 
 ///
 
@@ -305,8 +153,8 @@ let polygonArea
 /// <param name="holes"> Array of coordinate arrays defining interior holes. </param>
 /// <returns> The net area as a float. </returns>
 let polygonWithHolesArea 
-    (outer: (int * int)[]) 
-    (holes: (int * int)[][]) =
+    (outer: (float * float)[]) 
+    (holes: (float * float)[][]) =
 
     match outer, holes with
     | [||], _ -> 0.0
@@ -322,7 +170,7 @@ let polygonWithHolesArea
         outerArea - holesArea
 
 /// <summary> Ensures that a polygon vertex array is closed by appending the first vertex to the end if necessary. </summary>
-let ensureClosed (pts: (int*int)[]) =
+let ensureClosed (pts: (float*float)[]) =
     match pts with
     | [||] -> pts
     | _ ->
@@ -332,19 +180,18 @@ let ensureClosed (pts: (int*int)[]) =
         else Array.append pts [| first |]
 
 /// <summary> Removes consecutive duplicate points from a polygon vertex array. </summary>
-let dedupeSequential (pts: (int*int)[]) =
-    pts
-    |> Array.fold (fun acc p ->
-        match acc with
-        | [] -> [p]
-        | h::_ when h = p -> acc
-        | _ -> p :: acc
-    ) []
-    |> List.rev
-    |> Array.ofList
+let dedupeSequential (pts: (float*float)[]) =
+    if pts.Length = 0 then pts
+    else
+        let res = ResizeArray<float*float>(pts.Length)
+        res.Add(pts.[0])
+        for i = 1 to pts.Length - 1 do
+            if pts.[i] <> res.[res.Count - 1] then
+                res.Add(pts.[i])
+        res.ToArray()
 
 /// <summary> Normalizes the winding order of a polygon to be either clockwise or counterclockwise. </summary>
-let normalizeWinding (ccw: bool) (pts: (int*int)[]) =
+let normalizeWinding (ccw: bool) (pts: (float*float)[]) =
     let pts = ensureClosed pts |> dedupeSequential
     if pts.Length < 4 then pts
     else
@@ -355,27 +202,27 @@ let normalizeWinding (ccw: bool) (pts: (int*int)[]) =
         | _ -> pts
 
 /// <summary> Computes the bounding box of a set of points. </summary>
-let bounds (pts: (int*int)[]) =
+let bounds (pts: (float*float)[]) =
     let xs = pts |> Array.map fst
     let ys = pts |> Array.map snd
     Array.min xs, Array.min ys, Array.max xs, Array.max ys
 
 /// <summary> Computes the centroid (geometric center) of a set of points. </summary>
-let centroid (pts: (int*int)[]) =
+let centroid (pts: (float*float)[]) =
     let n = float pts.Length
-    let sx = pts |> Array.sumBy (fst >> float)
-    let sy = pts |> Array.sumBy (snd >> float)
+    let sx = pts |> Array.sumBy fst
+    let sy = pts |> Array.sumBy snd
     sx / n, sy / n
 
 /// <summary> Determines if a point is inside a polygon using the ray-casting algorithm. </summary>
-let pointInPolygon (px,py) (poly:(int*int)[]) =
+let pointInPolygon (px: float, py: float) (poly:(float*float)[]) =
     let rec loop i j inside =
         if i = poly.Length then inside else
         let xi, yi = poly.[i]
         let xj, yj = poly.[j]
         let intersect =
             ((yi > py) <> (yj > py)) &&
-            (px < (xj-xi) * (py-yi) / (yj-yi+1) + xi)
+            (px < (xj-xi) * (py-yi) / (yj-yi+0.0001) + xi)
         loop (i+1) i (if intersect then not inside else inside)
     loop 0 (poly.Length-1) false
 
@@ -388,39 +235,50 @@ let segmentsIntersect a b c d =
     ccw a c d <> ccw b c d && ccw a b c <> ccw a b d
 
 /// <summary> Determines if a polygon has self-intersecting edges. </summary>
-let hasSelfIntersections (pts:(int*int)[]) =
+let hasSelfIntersections (pts:(float*float)[]) =
     let p = ensureClosed pts
     let n = p.Length-1
-    seq {
-        for i in 0..n-2 do
-            for j in i+2..n-2 do
-                if i <> 0 || j <> n-2 then
-                    yield segmentsIntersect p.[i] p.[i+1] p.[j] p.[j+1]
-    } |> Seq.exists id
+    let mutable found = false
+    let mutable i = 0
+    while i <= n - 2 && not found do
+        let mutable j = i + 2
+        while j <= n - 2 && not found do
+            if i <> 0 || j <> n - 2 then
+                if segmentsIntersect p.[i] p.[i+1] p.[j] p.[j+1] then
+                    found <- true
+            j <- j + 1
+        i <- i + 1
+    found
 
 /// <summary> Determines if three points are collinear. </summary>
-let isCollinear (ax,ay) (bx,by) (cx,cy) =
-    (bx-ax)*(cy-ay) = (by-ay)*(cx-ax)
+let isCollinear (ax: float, ay: float) (bx: float, by: float) (cx: float, cy: float) =
+    abs((bx-ax)*(cy-ay) - (by-ay)*(cx-ax)) < 0.0001
 
-let removeCollinear (pts:(int*int)[]) =
+let removeCollinear (pts:(float*float)[]) =
     let p = ensureClosed pts
-    [|
-        for i in 1..p.Length-2 do
+    if p.Length < 3 then p
+    else
+        let res = ResizeArray<float*float>(p.Length)
+        res.Add(p.[0])
+        for i = 1 to p.Length - 2 do
             let a = p.[i-1]
             let b = p.[i]
             let c = p.[i+1]
-            if not (isCollinear a b c) then yield b
-    |]
-    |> fun mid -> Array.concat [| [|p.[0]|]; mid; [|p.[p.Length-1]|] |]
+            if not (isCollinear a b c) then 
+                res.Add(b)
+        res.Add(p.[p.Length-1])
+        res.ToArray()
 
 /// <summary> Cleans a polygon by deduplicating vertices, ensuring closure, removing collinear points, and eliminating sawtooth artifacts. </summary>
 let cleanPolygon sqn pts =
     pts
     |> dedupeSequential
+    |> removeSawtooth sqn
+    |> dedupeSequential
     |> ensureClosed
     |> removeCollinear
-    |> removeSawtooth sqn
     |> normalizeWinding true
+///
 
 /// <summary> Hexel Polygon </summary>
 /// <param name="sqn"> Sequence to follow. </param>
@@ -430,17 +288,17 @@ let cleanPolygon sqn pts =
 let hxlPgn 
     (sqn: Sqn) 
     (elv: int)
-    (vtx: (int * int)[]): Hxl[] =
+    (vtx: (float * float)[]): Hxl[] =
 
     if vtx.Length < 2 then [||] else
     let stx, sty = Array.head vtx
     let xx, yy, _ =
-        hxlLin sqn elv (RV(0,0,elv)) (RV(stx,sty,elv))
+        hxlLin sqn elv (RV(0,0,elv)) (RV(int (Math.Round stx), int (Math.Round sty), elv))
         |> Array.last
         |> hxlCrd
 
     // Replace start vertex with endpoint of (0,0) first vertex
-    let vt1 = Array.concat [| [|xx,yy|]; Array.tail vtx |]
+    let vt1 = Array.concat [| [|float xx, float yy|]; Array.tail vtx |]
 
     // Ensure closure
     let verts = cleanPolygon sqn vt1
@@ -450,13 +308,56 @@ let hxlPgn
     let mutable lastOpt : Hxl option = None
 
     for (x2, y2) in verts do
+        let ix, iy = int (Math.Round x2), int (Math.Round y2)
         match lastOpt with
         | None ->
-            lastOpt <- Some (RV(x2, y2, elv))
+            lastOpt <- Some (RV(ix, iy, elv))
         | Some last ->
-            let seg = hxlLin sqn elv last (RV(x2, y2, elv))
+            let seg = hxlLin sqn elv last (RV(ix, iy, elv))
             acc.AddRange(seg)
             lastOpt <- Some (Array.last seg)
 
     acc.ToArray()
-///
+
+/// <summary> Generates a set of reserved hexels representing the area outside a polygon and inside islands. </summary>
+let hxlBdrFill (sqn: Sqn) (elv: int) (outer: (float*float)[]) (islands: (float*float)[][]) =
+    if Array.isEmpty outer then [||] else
+    let minX, minY, maxX, maxY = bounds outer
+    let buffer = 10.0 // Reduced buffer for performance
+    
+    let res = System.Collections.Generic.List<Hxl>()
+    
+    let bMinX = int (Math.Floor(minX - buffer))
+    let bMaxX = int (Math.Ceiling(maxX + buffer))
+    let bMinY = int (Math.Floor(minY - buffer))
+    let bMaxY = int (Math.Ceiling(maxY + buffer))
+    
+    // Pre-calculate island bounds for faster skipping
+    let islandBounds = islands |> Array.map bounds
+
+    for x in bMinX .. bMaxX do
+        let px = float x
+        for y in bMinY .. bMaxY do
+            let py = float y
+            
+            // Fast bounding box check for the outer boundary
+            if px < minX || px > maxX || py < minY || py > maxY then
+                res.Add(RV(x, y, elv))
+            else
+                let inside = pointInPolygon (px, py) outer
+                if not inside then
+                    res.Add(RV(x, y, elv))
+                else
+                    // Check islands with pre-calculated bounds
+                    let mutable inIsland = false
+                    let mutable j = 0
+                    while j < islands.Length && not inIsland do
+                        let iminX, iminY, imaxX, imaxY = islandBounds.[j]
+                        if px >= iminX && px <= imaxX && py >= iminY && py <= imaxY then
+                            if pointInPolygon (px, py) islands.[j] then
+                                inIsland <- true
+                        j <- j + 1
+                    
+                    if inIsland then
+                        res.Add(RV(x, y, elv))
+    res.ToArray()

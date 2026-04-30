@@ -1,22 +1,19 @@
-﻿module Parse
+module Parse
 
 open Hexel
 open Coxel
 open Geometry
 open PolygonEditor
 open System
-open System.Text
 open Microsoft.FSharp.Reflection
 
-// Sample Space Program Input Format
-let spaceStr =
-     "(1/15/Foyer),(2/20/Living),(3/20/Dining),
-    (4/20/Staircase),(1.1/10/Study),(3.1/15/Bed-1),
-    (3.2/15/Bed-2),(3.3/15/Bed-3),(3.4/15/Kitchen),
-    (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
-    (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
-///
+// ==========================================================================================
+// SECTION: Basic Parsing Utilities
+// ==========================================================================================
 
+/// <summary> Parses a string into a discriminated union case. </summary>
+/// <param name="s"> The string to parse. </param>
+/// <returns> The union case or None. </returns>
 let tryParseUnion<'T> (s: string) : 'T option =
     if not (FSharpType.IsUnion typeof<'T>) then None
     else
@@ -24,130 +21,28 @@ let tryParseUnion<'T> (s: string) : 'T option =
         |> Array.tryFind (fun c -> c.Name = s)
         |> Option.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> 'T)
 
+/// <summary> Parses a string into a float safely. </summary>
+/// <param name="s"> The string to parse. </param>
+/// <returns> The parsed float or None. </returns>
 let tryParseFloat (s: string) =
     match Double.TryParse s with
     | true, v -> Some v
     | _ -> None
 
+/// <summary> Parses a string into an integer safely. </summary>
+/// <param name="s"> The string to parse. </param>
+/// <returns> The parsed integer or None. </returns>
 let tryParseInt (s: string) =
     match Int32.TryParse s with
     | true, v -> Some v
     | _ -> None
 
-let getAttr key f fallback (m: Map<string,string>) =
-    m
-    |> Map.tryFind key
-    |> Option.bind (fun v -> try Some (f v) with _ -> None)
-    |> Option.defaultValue fallback
-///
+// ==========================================================================================
+// SECTION: Geometry & Polygon Parsing
+// ==========================================================================================
 
-/// <summary> Categorize constituent Hexels within a Coxel. 
-///</summary>
-/// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
-/// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
-/// <summary>
-/// Categorize constituent Hexels within a Coxel
-/// </summary>
-let spaceSeq 
-    (spaceStr:string) = 
-    // Each hexel is 4sq units in area
-    let hxlAreaX = 4
-    let splitTopLevel (s: string) : string[] =
-        let rec loop (acc: string list) (curr: string) (depth: int) (chars: char list) =
-            match chars with
-            | [] -> List.rev (curr :: acc)
-            | c::cs ->
-                match c with
-                | '(' -> loop acc (curr + string c) (depth + 1) cs
-                | ')' -> loop acc (curr + string c) (depth - 1) cs
-                | ',' when depth = 0 -> loop (curr :: acc) "" depth cs
-                | _ -> loop acc (curr + string c) depth cs
-        loop [] "" 0 (Seq.toList s) |> List.toArray
-
-    let spcMp1 = ((spaceStr.Replace ("\n",""))
-                    .Replace("\t","")
-                    .Replace(" ",""))
-                    |> splitTopLevel
-                    |> Array.Parallel.map(fun x -> x.Remove(0,1)) 
-                    |> Array.Parallel.map(fun x -> x.Remove(x.Length-1,1))
-                    |> Array.Parallel.map (fun x -> x.Split "/")
-    
-    let spcMp2 = match ((spcMp1 |> Array.head |> Array.head) = "0") with
-                    | true -> spcMp1
-                    | false -> Array.append [|[|"0";"Q=22"|]|] spcMp1
-    
-    let spcAt1 = spcMp2 
-                |> Array.head 
-                |> Array.tail
-                |> Array.Parallel.map (fun x -> x.Split("="))
-                |> Array.Parallel.map (fun x -> x[0],x[1])
-                |> Map.ofArray
-
-    let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1])
-    let spcMp3 = spcMp2 |> Array.tail
-    let spcMp4 = Array.map2 (fun x y -> Array.set x 1 y) spcMp3 spcCt1
-    let spcMp5 = Array.append [|spcMp2 |> Array.head|] spcMp3
-    let spcMp6 = spcMp5 
-                |> Array.tail
-                |> Array.Parallel.map (fun x -> (x[0],((int x[1])/hxlAreaX,x[2]))) 
-                |> Array.sortBy (fun (x,_) -> x)
-                |> Map.ofArray
-
-    let spcKy01 = 
-        spcMp6 
-        |> Map.keys 
-        |> Array.ofSeq 
-        |> Array.groupBy(fun x 
-                            -> match (x.Length <= 1) with 
-                                |true -> "0"
-                                |false -> x.Substring (0, x.LastIndexOf(".")))
-    let spcKy02 = 
-        spcKy01 
-        |> Array.head 
-        |> snd 
-        |> Array.windowed 2 
-        |> Array.Parallel.map(fun x -> x[0],[|x[1]|])
-    
-    let spcKy03 = 
-        spcKy01 
-        |> Array.tail 
-        |> Array.partition (fun (x,_) -> x.Length = 1)
-    
-    let spcKy04 = 
-        (Array.append spcKy02 (fst spcKy03)) 
-        |> Array.groupBy (fun (x,_) -> x)
-        |> Array.Parallel.map (fun x -> snd x)
-        |> Array.Parallel.map (fun x 
-                                -> (Array.Parallel.map(fun (y,z)
-                                                        -> Array.append[|y|] z))x)
-        |> Array.Parallel.map (fun x -> Array.concat x)
-        |> Array.Parallel.map (fun x -> Array.distinct x)
-        |> Array.Parallel.map (fun x -> Array.sort x)
-    
-    let spcKy05 = 
-        (snd spcKy03)
-        |> Array.Parallel.map (fun (x,y) 
-                                -> Array.append [|x|] y)
-        |> Array.append spcKy04
-        |> Array.sortBy (fun x -> Array.head x)
-    let spcKy06 = 
-        let a = match (Array.isEmpty spcKy05) with 
-                |  true -> [|[|"1"|]|]
-                | false -> spcKy05
-        a
-        |> Array.Parallel.map(fun x 
-                                    -> (Array.Parallel.map (fun y 
-                                                                -> y, spcMp6 
-                                                                |> Map.find y))x)
-    let spcKey =
-        spcKy06
-        |> Array.Parallel.map (fun z 
-                                -> (Array.Parallel.map (fun (x,y) 
-                                                            -> x, max hxlAreaX (fst y), snd y))z)
-    spcAt1,spcKey
-///
-
-/// Parses "0,0,10,0-2,2,4,4" into float segments
+/// <summary> Parses a comma-separated string of coordinates into a float array of points. </summary>
+/// <param name="s"> The coordinate string (e.g., "0,0,10,0"). </param>
 let parsePolygon (s: string) : (float * float)[] =
     s.Split(',', StringSplitOptions.RemoveEmptyEntries)
     |> Array.choose (fun x ->
@@ -163,9 +58,9 @@ let parsePolygon (s: string) : (float * float)[] =
                 | [| a; b |] -> Some (a, b)
                 | _ -> None)
         | _ -> 
-            // better to fail loudly during dev
             [||]
 
+/// <summary> Parses a hyphen-separated string of polygons (islands). </summary>
 let parsePolyIslands (s: string) : (float * float)[][] =
     match String.IsNullOrWhiteSpace s with
     | true -> [||]
@@ -173,302 +68,28 @@ let parsePolyIslands (s: string) : (float * float)[][] =
         s.Split('-', StringSplitOptions.RemoveEmptyEntries)
         |> Array.map parsePolygon
 
+/// <summary> Converts float tuples to Point records with scaling. </summary>
 let polyToPoints scale (seg: (float*float)[]) =
     seg |> Array.map (fun (x,y) -> { Point.X = x * scale; Y = y * scale })
 
+/// <summary> Parses coordinates from a string and converts them to scaled Points. </summary>
 let parseCoords value =
     parsePolygon value
     |> polyToPoints 10.0
 
+/// <summary> Parses multiple island polygons from a string and converts them to scaled Points. </summary>
 let parseIslands value =
     parsePolyIslands value
     |> Array.map (polyToPoints 10.0)
-///
 
-/// Area Logic
-let getNtArea (bdOu: (int*int)[]) (bdIs: (int*int)[][]) = 
-    polygonWithHolesArea bdOu bdIs
+// ==========================================================================================
+// SECTION: Main Hywe Syntax Parsing
+// ==========================================================================================
 
-/// Tree Mapping (Dataset Generation Version)
-let getTree01 (ntArea: float) (cxlCnt: float) (spcTree: (string * int * string) array array) =
-    let bdPr = if cxlCnt > 0.0 then (ntArea / cxlCnt) / 4.0 else 1.0
-    spcTree |> Array.map (fun row -> 
-        row |> Array.map (fun (id, cnt, lb) -> 
-            (Refid id, Count (int (float cnt * bdPr)), Label lb)))
-
-/// Recursive Generation (Dataset Generation Version)
-let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc: Cxl[]) =
-    match Array.tryHead tre with 
-    | None -> acc
-    | Some currentBatch ->
-        let newOcc = Array.append occ (Array.concat (acc |> Array.map (fun x -> x.Hxls)))
-        let nextTre = Array.tail tre
-        
-        // Use the triple pattern to find the hostId
-        let hostId = currentBatch |> Array.head |> fun (id, _, _) -> id
-        let bsCx = acc |> Array.find (fun x -> x.Rfid = hostId)
-        
-        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x)) = x)
-        let cnt = (Array.length currentBatch) - 1
-        let chBs = if (Array.length chHx) >= cnt then 
-                       let divs = (Array.length chHx) / cnt 
-                       Array.chunkBySize divs chHx |> Array.map Array.head |> Array.take cnt
-                   else Array.append chHx (Array.replicate (cnt - Array.length chHx) (identity elv))
-        
-        let cxc1 = coxel seq elv (Array.map2 (fun a (_, c, d) -> a, hostId, c, d) chBs (Array.tail currentBatch)) newOcc
-        let chOc1 = hxlUni 2 (Array.append newOcc (Array.concat (cxc1 |> Array.map (fun x -> x.Hxls))))
-        let cxc2 = cxc1 |> Array.map (fun x -> { x with Hxls = hxlChk seq elv chOc1 x.Hxls; Base = hxlChk seq elv chOc1 [|x.Base|] |> Array.head })
-        
-        cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
-///
-
-let hxlAreaFactor = 4.0
-
-/// Consolidates all reproportioning logic into one call.
-let applyReproportioning (attributes: Map<string, string>) (ntArea: float) (rawTree: (string * int * string)[][]) =
-    let hxlAreaFactor = 4.0
-    
-    // 1. Calculate requested totals
-    let flatTree = rawTree |> Array.concat
-    let totalRequested = flatTree |> Array.sumBy (fun (_, cnt, _) -> cnt) |> float
-    
-    // 2. Identify Unbound State
-    // If area is 0 or Outer attribute is missing, we are unbound.
-    let isUnbound = ntArea <= 0.0 || not (attributes.ContainsKey "O")
-
-    // 3. Determine Scaling Ratio
-    let ratio = 
-        if isUnbound then 1.0
-        else
-            match attributes |> Map.tryFind "X" with
-            | Some "0" -> if totalRequested > 0.0 then (ntArea / totalRequested) / hxlAreaFactor else 1.0
-            | Some a -> match Double.TryParse a with | true, v -> v | _ -> 1.0
-            | None -> 1.0
-
-    // 4. Target hexel count
-    let targetTotal = 
-        if isUnbound then int totalRequested 
-        else int (ntArea / hxlAreaFactor)
-        
-    // 5. Calculate floors and remainders
-    let initialData = 
-        flatTree |> Array.map (fun (id, cnt, lb) ->
-            let ideal = float cnt * ratio
-            // Ensure every space has at least 1 hexel if it was requested
-            let flr = if cnt > 0 then max 1 (int (floor ideal)) else 0
-            {| Id = id; Label = lb; Ideal = ideal; Floor = flr; Remainder = ideal - float flr |})
-
-    // 6. Distribute difference (The Largest Remainder Method)
-    let currentSum = initialData |> Array.sumBy (fun x -> x.Floor)
-    let diff = targetTotal - currentSum
-
-    let distributedCounts =
-        if diff > 0 && not isUnbound then
-            let bonusIndices = 
-                initialData 
-                |> Array.mapi (fun i x -> i, x.Remainder)
-                |> Array.sortByDescending snd
-                |> Array.truncate diff
-                |> Array.map fst |> Set.ofArray
-            initialData |> Array.mapi (fun i x -> if bonusIndices.Contains i then x.Floor + 1 else x.Floor)
-        else
-            initialData |> Array.map (fun x -> x.Floor)
-
-    // 7. Reconstruct the nested array structure (Fixes the 'int' compatibility error)
-    let mutable pointer = 0
-    rawTree |> Array.map (fun row ->
-        row |> Array.map (fun (id, _, lb) ->
-            let finalCount = distributedCounts.[pointer]
-            pointer <- pointer + 1
-            Refid id, Count finalCount, Label lb))
-///
-
-/// <summary> Generate coxels based on string data. </summary>
-/// <param name="seq"> Sequence. </param>
-/// <param name="bas"> Base hexel. </param>
-/// <param name="occ"> Unavailable hexels. </param>
-/// <returns> Coxel array </returns>    
-let spaceCxl
-    (occ : Hxl[])
-    (str : string) = 
-    
-    // Get Attributes and Tree
-    let spcAt1, spcTree = spaceSeq str
-
-    // Attribute Q for Sequence
-    let seq =
-        spcAt1
-        |> Map.tryFind "Q"
-        |> Option.bind tryParseUnion<Sqn>
-        |> Option.defaultValue VRCWEE
-
-    // Attribute L for Elevation
-    let elv = match spcAt1 |> Map.tryFind "L" with 
-                | Some a -> a |> int
-                | None -> 0
-
-
-    // Attribute W for Width
-    let bdWd = match spcAt1 |> Map.tryFind "W" with 
-                | Some a -> match a |> int > 0 with
-                            | true -> a |> int
-                            | false -> 0
-                | None -> 0
-
-    // Attribute H for Height
-    let bdHt = match spcAt1 |> Map.tryFind "H" with 
-                | Some a -> match bdWd > 0 with 
-                            | true -> a |> int
-                            | false -> bdWd
-                | None -> 0
-
-    // Attribute O for Outer Boundary Vertices
-    let bdOu =
-        match spcAt1 |> Map.tryFind "O" with 
-        | Some a ->
-            parsePolygon a |> Array.map (fun (x,y) -> int x, int y)
-        | None ->
-            match bdWd > 0 with 
-            | true -> 
-                let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
-                parsePolygon a |> Array.map (fun (x,y) -> int x, int y)
-            | false -> [||]
-
-    // Attribute I for Island Boundary Vertices
-    let bdIs =
-        match Array.isEmpty bdOu with
-        | true -> [||] // No boundary, no islands
-        | false ->
-            match spcAt1 |> Map.tryFind "I" with 
-            | Some a ->
-                parsePolyIslands a
-                |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y))
-            | None -> [||]
-
-    // Attribute E for Entry Hexel
-    let bsHx =
-        match spcAt1 |> Map.tryFind "E" with
-        | Some a ->
-            let parts = a.Split ',' |> Array.choose (fun s ->
-                match System.Int32.TryParse(s.Trim()) with
-                | true, v -> Some v
-                | _ -> None
-            )
-            match parts with
-            | [| x; y |] -> hxlLin seq elv (identity elv) (AV(x, y, elv))
-                            |> hxlUni 1
-                            |> Array.last
-            | _ -> identity elv
-        | None ->
-            // Use an AV base when width is zero so adjacency/increment works.
-            match bdWd = 0 with
-            | true -> AV(0, 0, elv)
-            | false ->  hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv))
-                        |> hxlUni 1
-                        |> Array.last
-
-    // Site Net Area
-    let ntArea = polygonWithHolesArea bdOu bdIs
-
-    // Outer Hexels 
-    let ouHx = match bdWd = 0 with 
-                | true -> [||]
-                | false -> hxlPgn seq elv bdOu 
-
-    // Island Hexels
-    let ilHx = match bdWd = 0 with 
-                | true -> [||]
-                | false -> bdIs |> Array.map (fun x -> hxlPgn seq elv x )
-        
-    let occ = Array.concat [|occ;ouHx;Array.concat ilHx|]
-
-    // Parse Space String
-    let tree01 = applyReproportioning spcAt1 ntArea spcTree
-
-    // Flatten and guard against empty parse results
-    let flatEntries = tree01 |> Array.concat
-
-    let result =
-        match Array.tryHead flatEntries with
-        | None ->
-            [||]
-        | Some (id, ct, lb) ->
-            let cti =
-                match ct with
-                | Count x when x > 0 -> Count (x - 1)
-                | _ -> Count 0
-            let ac0 =
-                match cti with
-                | Count a when a < 1 -> coxel seq elv ([| bsHx, (tree01 |> Array.concat |> Array.head |> fun (id,_,_) -> id), cti, (tree01 |> Array.concat |> Array.head |> fun (_,_,lb) -> lb) |]) occ
-                | _ -> coxel seq elv ([| bsHx, (tree01 |> Array.concat |> Array.head |> fun (id,_,_) -> id), cti, (tree01 |> Array.concat |> Array.head |> fun (_,_,lb) -> lb) |]) occ
-            let ac1 = [| { ac0[0] with Hxls = Array.except occ (Array.append [| ac0[0].Base |] ac0[0].Hxls) } |]
-            let oc1 = Array.concat [| occ; [| bsHx |]; (Array.head ac1).Hxls |]
-
-            let cxlCxl 
-                (seq : Sqn)
-                (tre : (Prp*Prp*Prp)[])
-                (occ : Hxl[])
-                (acc : Cxl[]) = 
-                let bsCx = 
-                            acc 
-                            |> Array.Parallel.map(fun x -> x.Rfid,x) 
-                            |> Map.ofArray
-                            |> Map.find (tre |> Array.Parallel.map (fun (a,_,_) -> a) |> Array.head)
-                                
-                // Available Hexels
-                let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
-                // Required host Hexel count
-                let cnt = (Array.length tre) - 1
-                // Seperated host hexels
-                let chBs = match (Array.length chHx) >= cnt with 
-                            | true -> 
-                                        let divs =  ((Array.length chHx) / cnt)
-                                        let chnk = Array.chunkBySize divs chHx
-                                        let fsHx = chnk |> Array.Parallel.map (fun x -> Array.head x)
-                                        Array.take cnt fsHx
-                            | false -> Array.append 
-                                        chHx 
-                                        (Array.replicate (cnt - (Array.length chHx)) (identity elv))
-                let chPr = Array.tail tre
-                let cxc1 = coxel 
-                            seq
-                            elv
-                            (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
-                            occ
-                // Reassigning Hexel types
-                let chHx1 = Array.Parallel.map (fun x -> x.Hxls) cxc1
-                let chOc1 = hxlUni 2 (Array.append occ (Array.concat chHx1))
-                let chHx2 = Array.Parallel.map (fun x -> hxlChk seq elv chOc1 x) chHx1
-                let chHx3 = hxlChk seq elv chOc1 (Array.map (fun x -> x.Base) cxc1)
-                let cxc2 = Array.map3 (fun x y z -> {x with Cxl.Hxls = y; Cxl.Base = z}) cxc1 chHx2 chHx3
-                cxc2
-                
-            let rec cxCxCx
-                (seq : Sqn)
-                (tre : (Prp*Prp*Prp)[][])
-                (occ : Hxl[])
-                (acc : Cxl[]) =
-                    
-                let a = match Array.tryHead tre with 
-                            | Some a 
-                                -> 
-                                    let occ = Array.append occ (Array.concat (Array.Parallel.map(fun x -> x.Hxls)acc))
-                                    let tre = Array.tail tre
-                                    let acc = Array.append 
-                                                acc 
-                                                (cxlCxl seq a occ acc)
-                                    cxCxCx seq tre occ acc
-                            | None -> acc
-                a
-
-            match (Array.length (Array.concat tree01) < 2) with 
-            | true -> ac1
-            | false -> cxCxCx seq tree01 oc1 ac1
-
-    result,Array.append [|bdOu|] bdIs
-
+/// <summary> Extracts key-value attributes from a Hywe string segment (e.g., "(W=100/B=200)"). </summary>
 let private extractAttrsFromHyw (text: string) =
-    let m = System.Text.RegularExpressions.Regex.Match(text, @"\(([^)]*)\)")
+    let cleanText = text.Trim().Trim('|').Trim()
+    let m = System.Text.RegularExpressions.Regex.Match(cleanText, @"\(([^)]*)\)")
     match m.Success with
     | false -> Map.empty
     | true ->
@@ -479,159 +100,445 @@ let private extractAttrsFromHyw (text: string) =
             | _ -> None)
         |> Map.ofArray
 
-/// Parses the .hyw content and returns an updated PolygonEditorModel
-let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
+/// <summary> Parses a single level hywe string into attributes and a structured tree. </summary>
+/// <param name="spaceStr"> Properly formatted string (RefId/Count/Label). </param>
+/// <returns> A tuple of parsed attributes and space tree definitions. </returns>
+let spaceSeq (spaceStr: string) = 
+    let splitTopLevel (s: string) : string[] =
+        let rec loop (acc: string list) (curr: string) (depth: int) (chars: char list) =
+            match chars with
+            | [] -> List.rev (curr :: acc)
+            | c::cs ->
+                match c with
+                | '(' -> loop acc (curr + string c) (depth + 1) cs
+                | ')' -> loop acc (curr + string c) (depth - 1) cs
+                | ',' when depth = 0 -> loop (curr :: acc) "" depth cs
+                | _ -> loop acc (curr + string c) depth cs
+        loop [] "" 0 (Seq.toList s) |> List.toArray
 
-    let attrs = extractAttrsFromHyw content
+    let cleanStr = spaceStr.Replace("\n","").Replace("\t","").Replace(" ","")
 
-    let baseModel = 
-        { current with 
-            Islands = [||]
-            UseBoundary = true
-            PolygonEnabled = true }
+    let spcMp1 = 
+        cleanStr
+        |> splitTopLevel
+        |> Array.choose (fun x -> 
+            if String.IsNullOrWhiteSpace x then None
+            else 
+                let trimmed = x.Trim('(', ')')
+                if String.IsNullOrWhiteSpace trimmed then None
+                else Some (trimmed.Split '/'))
+    
+    if Array.isEmpty spcMp1 then Map.empty, [||]
+    else
+        let spcMp2 = match (spcMp1 |> Array.head |> Array.head) = "0" with
+                        | true -> spcMp1
+                        | false -> Array.append [|[|"0";"Q=VRCWEE"|]|] spcMp1
+        
+        let spcAt1 = spcMp2 
+                    |> Array.head 
+                    |> Array.tail
+                    |> Array.map (fun (x: string) -> x.Split("="))
+                    |> Array.choose (fun (x: string[]) -> if x.Length = 2 then Some (x.[0], x.[1]) else None)
+                    |> Map.ofArray
 
-    let finalModel =
-        attrs
-        |> Map.fold (fun m key v ->
-            match key with
-            | "W" ->
-                match tryParseFloat v with
-                | Some num -> { m with LogicalWidth = num * 10.0 }
-                | None -> m
+        let spcMp6 = spcMp2 
+                    |> Array.tail
+                    |> Array.map (fun (x: string[]) -> (x.[0], (float x.[1], x.[2]))) 
+                    |> Array.sortBy (fun (x,_) -> x)
+                    |> Map.ofArray
 
-            | "H" ->
-                match tryParseFloat v with
-                | Some num -> { m with LogicalHeight = num * 10.0 }
-                | None -> m
+        let spcKy01 = 
+            spcMp6 
+            |> Map.keys 
+            |> Array.ofSeq 
+            |> Array.groupBy(fun x 
+                                -> match (x.Length <= 1) with 
+                                    |true -> "0"
+                                    |false -> x.Substring (0, x.LastIndexOf(".")))
+        let spcKy02 = 
+            match (spcKy01 |> Array.tryFind (fun (k,_) -> k = "0")) with
+            | Some (_, v) when v.Length >= 2 -> 
+                v |> Array.windowed 2 |> Array.map(fun (x: string[]) -> x.[0], [|x.[1]|])
+            | _ -> [||]
+        
+        let spcKy03 = 
+            spcKy01 
+            |> Array.filter (fun (k,_) -> k <> "0")
+            |> Array.partition (fun (x,_) -> x.Length = 1)
+        
+        let spcKy04 = 
+            (Array.append spcKy02 (fst spcKy03)) 
+            |> Array.groupBy (fun (x,_) -> x)
+            |> Array.map (fun x -> snd x)
+            |> Array.map (fun (x: (string * string array) array)
+                                    -> (Array.map(fun (y,z)
+                                                            -> Array.append[|y|] z))x)
+            |> Array.map (fun (x: string array array) -> Array.concat x)
+            |> Array.map (fun (x: string array) -> Array.distinct x)
+            |> Array.map (fun (x: string array) -> Array.sort x)
+        
+        let spcKy05 = 
+            (snd spcKy03)
+            |> Array.map (fun (x, (y: string[])) 
+                                    -> Array.append [|x|] y)
+            |> Array.append spcKy04
+            |> Array.sortBy (fun (x: string[]) -> Array.head x)
+        let spcKy06 = 
+            let a = match (Array.isEmpty spcKy05) with 
+                    |  true -> [|[|"1"|]|]
+                    | false -> spcKy05
+            a
+            |> Array.map(fun (x: string[]) 
+                                        -> (Array.map (fun (y: string) 
+                                                                    -> y, spcMp6 
+                                                                    |> Map.find y))x)
+        let spcKey =
+            spcKy06
+            |> Array.map (fun (z: (string * (float * string)) array) 
+                                    -> (Array.map (fun (x,y) 
+                                                                -> x, fst y, snd y))z)
+        spcAt1,spcKey
 
-            | "O" ->
-                match parseCoords v with
-                | pts when pts.Length > 0 -> { m with Outer = pts }
-                | _ -> m
+// ==========================================================================================
+// SECTION: Layout Generation Engine
+// ==========================================================================================
 
-            | "I" ->
-                { m with Islands = parseIslands v }
+/// <summary> Consolidates all reproportioning logic into one call. Scales node areas to fit boundary. </summary>
+let applyReproportioning (boundaryArea: float) (totalNodeArea: float) (rawTree: (string * float * string)[][]) (ratioOverride: float option) =
+    let hxlAreaFactor = 4.0
+    let isUnbound = boundaryArea <= 0.0
+    let reductionFactor = 0.96 
+    let ratio = 
+        match ratioOverride with
+        | Some r -> 
+            if isUnbound || totalNodeArea <= 0.0 then r
+            else 
+                let localRatio = (boundaryArea / totalNodeArea) * reductionFactor
+                min r localRatio
+        | None ->
+            if isUnbound || totalNodeArea <= 0.0 then 1.0 
+            else (boundaryArea / totalNodeArea) * reductionFactor
 
-            | "A" ->
-                { m with UseAbsolute = (v = "1") }
+    let tree = 
+        rawTree |> Array.map (fun row ->
+            row |> Array.map (fun (id, area, lb) ->
+                let idealCount = (area * ratio) / hxlAreaFactor
+                let finalCount = 
+                    if area > 0.0 then max 1 (int (Math.Round(idealCount)))
+                    else 0
+                (Refid id, Count finalCount, Label lb)
+            )
+        )
+    tree, ratio
 
-            | "E" ->
-                match parseCoords v with
-                | [| pt |] -> { m with EntryPoint = pt }
-                | _ -> m
+/// <summary> The primary layout generation function for Coxels. </summary>
+let generateCxlLayout 
+    (str: string) 
+    (entryAtrFallback: string)
+    (seqOverride: Sqn option) 
+    (widthOverride: int option)
+    (heightOverride: int option)
+    (ouStrOverride: string option) 
+    (ilStrOverride: string option) 
+    (initialOcc : Hxl[])
+    (bsHxSetOverride: Cxl option)
+    (ratioOverride: float option)
+    (elvOverride: int option) : Cxl[] * (float*float)[][] * float =
+    
+    let spcAt1, spcTree = spaceSeq str
+    let seq = 
+        match seqOverride with
+        | Some s -> s
+        | None -> spcAt1 |> Map.tryFind "Q" |> Option.bind tryParseUnion<Sqn> |> Option.defaultValue VRCWEE
 
-            | _ -> m
-        ) baseModel
+    let elv = 
+        match elvOverride with
+        | Some e -> e
+        | None ->
+            match spcAt1 |> Map.tryFind "L" with 
+            | Some a -> 
+                match Double.TryParse a with
+                | true, v -> int v
+                | _ -> 0
+            | None -> 0
 
-    FreshlyImported finalModel
+    let bdWd = 
+        match widthOverride with
+        | Some w -> w
+        | None ->
+            match spcAt1 |> Map.tryFind "W" with 
+            | Some (a: string) -> match int a > 0 with | true -> int a | false -> 0
+            | None -> 0
 
-let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (initialOcc : Hxl[]) = 
-    /// Helper to convert int64 to Base36 string
+    let bdHt = 
+        match heightOverride with
+        | Some h -> h
+        | None ->
+            match spcAt1 |> Map.tryFind "H" with 
+            | Some (a: string) -> int a
+            | None -> bdWd
+    
+    // Outer Boundary
+    let bdOu =
+        match ouStrOverride with
+        | Some ou when ou <> "" -> parsePolygon ou
+        | _ ->
+            match spcAt1 |> Map.tryFind "O" with 
+            | Some a when a <> "" -> parsePolygon a
+            | _ ->
+                match bsHxSetOverride with
+                | Some parent when bdWd > 0 -> 
+                    cxlPrm parent elv
+                    |> Geometry.cleanPolygon parent.Seqn
+                | _ ->
+                    match bdWd > 0 with 
+                    | true -> 
+                        let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
+                        parsePolygon a
+                    | false -> [||]
+
+    // Island Boundary
+    let bdIs =
+        match ilStrOverride with
+        | Some il when il <> "" -> parsePolyIslands il
+        | _ ->
+            match spcAt1 |> Map.tryFind "I" with 
+            | Some a -> parsePolyIslands a
+            | None -> [||]
+
+    // Entry Hexel / Base Shifting Logic
+    let entryAtr = spcAt1 |> Map.tryFind "E" |> Option.defaultValue "0"
+    
+    let entryFallback =
+        let fromEditor = 
+            let parts = entryAtrFallback.Split ','
+            match parts with
+            | [| xStr; yStr |] ->
+                match System.Int32.TryParse(xStr.Trim()), System.Int32.TryParse(yStr.Trim()) with
+                | (true, x), (true, y) -> Some (AV(x, y, elv))
+                | _ -> None
+            | _ -> None
+
+        match fromEditor with
+        | Some h -> h
+        | None ->
+            match bdWd = 0 with
+            | true -> identity elv
+            | false -> AV(bdWd/2+2, bdHt/2+2, elv)
+
+    let ntArea = polygonWithHolesArea bdOu bdIs
+    let bdrBlocked = Geometry.hxlBdrFill seq elv bdOu bdIs
+    let occ = 
+        let list = System.Collections.Generic.List<Hxl>(initialOcc.Length + bdrBlocked.Length)
+        list.AddRange(initialOcc)
+        list.AddRange(bdrBlocked)
+        list.ToArray() |> hxlUni 1
+
+    let totalRequested = 
+        spcTree 
+        |> Array.concat 
+        |> Array.distinctBy (fun (id, _, _) -> id) 
+        |> Array.sumBy (fun (_, a, _) -> a)
+    let tree01, finalRatio = applyReproportioning ntArea totalRequested spcTree ratioOverride
+    let flatEntries = tree01 |> Array.concat
+
+    let result =
+        match Array.tryHead flatEntries with
+        | None -> [||]
+        | Some (id, ct, lb) ->
+            let rec cxCxCx (tre : (Prp*Prp*Prp)[][]) (currentAcc: Cxl[]) (currentOcc: Hxl[]) =
+                match Array.tryHead tre with 
+                | Some a -> 
+                    let parentPrp = a |> Array.head |> fun (i,_,_) -> i
+                    match currentAcc |> Array.tryFindIndex (fun x -> x.Rfid = parentPrp) with
+                    | Some bsIdx ->
+                        let bsCx = currentAcc.[bsIdx]
+                        let updatedHost, newCxls, newOcc = coxelChildren seq elv bsCx a currentOcc
+                        let nextAcc = 
+                            let mappedAcc = currentAcc |> Array.mapi (fun i cx -> if i = bsIdx then updatedHost else cx)
+                            Array.append mappedAcc newCxls
+                        cxCxCx (Array.tail tre) nextAcc newOcc
+                    | None -> cxCxCx (Array.tail tre) currentAcc currentOcc
+                | None -> currentAcc
+
+            let rootCxl, initialGlobalOcc = Coxel.createBaseCoxel seq elv entryAtr entryFallback id ct lb occ bsHxSetOverride
+            let ac1 = [| rootCxl |]
+
+            match Array.length flatEntries < 2 with
+            | true -> ac1
+            | false -> cxCxCx tree01 ac1 initialGlobalOcc
+
+    result, Array.append [|bdOu|] bdIs, finalRatio
+
+/// <summary> Processes multiple levels separated by ';' in a Hywe string. </summary>
+let generateMultiLevelLayout 
+    (fullStr: string) 
+    (entryAtrFallback: string) 
+    (initialOcc: Hxl[])
+    (seqOverride: Sqn option)
+    (ouStrOverride: string option)
+    (ilStrOverride: string option) : Cxl[] * (float*float)[][] * float[] =
+    
+    let cleanStr = fullStr.Replace("\n","").Replace("\t","")
+    let levels = cleanStr.Split(';', StringSplitOptions.RemoveEmptyEntries)
+    
+    let mutable allCxls = [||]
+    let mutable allBoundaries = [||]
+    let mutable allElevations = [||]
+    let mutable baseRatio = None
+    
+    let mutable rootW = None
+    let mutable rootH = None
+    let mutable rootO = ouStrOverride
+    let mutable rootI = ilStrOverride
+    
+    for i, levelStr in levels |> Array.indexed do
+        let cleanLvl = levelStr.Trim().Trim('|').Trim()
+        let attrs = extractAttrsFromHyw cleanLvl
+        
+        if i = 0 then
+            rootW <- attrs |> Map.tryFind "W" |> Option.bind tryParseInt
+            rootH <- attrs |> Map.tryFind "H" |> Option.bind tryParseInt
+            if rootO.IsNone then rootO <- attrs |> Map.tryFind "O"
+            if rootI.IsNone then rootI <- attrs |> Map.tryFind "I"
+ 
+        let eStr = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
+        
+        let curW = attrs |> Map.tryFind "W" |> Option.bind tryParseInt |> Option.orElse rootW
+        let curH = attrs |> Map.tryFind "H" |> Option.bind tryParseInt |> Option.orElse rootH
+        let curO = attrs |> Map.tryFind "O" |> Option.orElse rootO
+        let curI = attrs |> Map.tryFind "I" |> Option.orElse rootI
+ 
+        let curElv = attrs |> Map.tryFind "L" |> Option.bind tryParseFloat |> Option.defaultValue 0.0
+        allElevations <- Array.append allElevations [| curElv |]
+
+        // Skip layout generation if this is likely a terminal elevation-only segment (no functional nodes)
+        if levelStr.Contains("1/") || levelStr.Contains("(1/") then
+            let bsHxOverride =
+                if i = 0 then None
+                else 
+                    allCxls 
+                    |> Array.filter (fun c -> 
+                        let (_, _, z) = Hexel.hxlCrd c.Base
+                        z = i - 1)
+                    |> Array.tryFind (fun c -> prpVlu c.Rfid = eStr)
+                
+            let cxls, bounds, ratio = generateCxlLayout cleanLvl entryAtrFallback seqOverride curW curH curO curI initialOcc bsHxOverride baseRatio (Some i)
+            
+            if i = 0 then baseRatio <- Some ratio
+            
+            allCxls <- Array.append allCxls cxls
+            allBoundaries <- Array.append allBoundaries bounds
+        
+    let finalElevations = 
+        if levels.Length > 0 then
+            let lastLvl = levels.[levels.Length - 1].Trim().Trim('|').Trim()
+            let lastAttrs = extractAttrsFromHyw lastLvl
+            match lastAttrs |> Map.tryFind "T" |> Option.bind tryParseFloat with
+            | Some t -> 
+                let lastBase = allElevations.[allElevations.Length - 1]
+                Array.append allElevations [| lastBase + t |]
+            | None -> 
+                // Fallback if T is missing (e.g. legacy files)
+                let lastBase = allElevations.[allElevations.Length - 1]
+                Array.append allElevations [| lastBase + 3.0 |]
+        else allElevations
+    
+    allCxls, allBoundaries, finalElevations
+
+/// <summary> Formats a layout into a Base36-encoded string representation. </summary>
+let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (enStr: string) (initialOcc : Hxl[]) = 
     let toBase36 (value: int64) =
         let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         let rec convert v acc =
             match v = 0L with
             | true -> match acc = "" with | true -> "0" | false -> acc
             | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
-        convert (abs value) ""
-    
-    // 1. Attribute Extraction (Fixing 'Option' to 'bool' issues)
-    let spcAt1, spcTree = spaceSeq str
-    let elv = match spcAt1 |> Map.tryFind "L" with | Some a -> a |> int | None -> 0
-    let bdWd = 
-        match spcAt1 |> Map.tryFind "W" with 
-        | Some a -> 
-            let v = a |> int
-            match v > 0 with | true -> v | false -> 0 
-        | None -> 0
-    let bdHt = 
-        match spcAt1 |> Map.tryFind "H" with 
-        | Some a -> 
-            match bdWd > 0 with | true -> a |> int | false -> bdWd 
-        | None -> bdWd
+        let prefix = if value < 0L then "-" else ""
+        prefix + convert (abs value) ""
 
-    // 2. Boundary Vertices
-    let bdOu =
-        match ouStr <> "" with 
-        | true -> parsePolygon ouStr |> Array.map (fun (x,y) -> int x, int y)
-        | false -> 
-            match bdWd = 0 with 
-            | true -> [||]
-            | false -> parsePolygon $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0" |> Array.map (fun (x,y) -> int x, int y)
+    let finalBatch, _, _ = generateMultiLevelLayout str enStr initialOcc (Some seq) (Some ouStr) (Some ilStr)
 
-    let bdIs = match ilStr <> "" with | true -> parsePolyIslands ilStr |> Array.map (fun seg -> seg |> Array.map (fun (x,y) -> int x, int y)) | false -> [||]
+    finalBatch
+    |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
+    |> Array.sortBy fst
+    |> Array.map (fun (_, levelCxls) ->
+        levelCxls
+        |> Array.map (fun cxl ->
+            cxl.Hxls 
+            |> Array.map (fun h ->
+                let (ax, ay, _) = hxlCrd h
+                toBase36 (int64 ax) + "." + toBase36 (int64 ay)
+            )
+            |> String.concat " "
+        )
+        |> String.concat ";"
+    )
+    |> String.concat "|"
 
-    // 3. Entry Hexel
-    let bsHx =
-        match spcAt1 |> Map.tryFind "E" with
-        | Some a ->
-            let parts = a.Split ',' |> Array.choose (fun s -> match System.Int32.TryParse(s.Trim()) with | true, v -> Some v | _ -> None)
-            match parts with | [| x; y |] -> hxlLin seq elv (identity elv) (AV(x, y, elv)) |> hxlUni 1 |> Array.last | _ -> identity elv
-        | None -> match bdWd = 0 with | true -> AV(0, 0, elv) | false -> hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv)) |> hxlUni 1 |> Array.last
-    
-    // 4. Scaling (Attribute X)
-    let ntArea = polygonWithHolesArea bdOu bdIs
+// ==========================================================================================
+// SECTION: Dataset Generation Parsing
+// ==========================================================================================
 
-    // 5. Build Occupancy
-    let ouHx = match bdWd = 0 with | true -> [||] | false -> hxlPgn seq elv bdOu 
-    let ilHx = match bdWd = 0 with | true -> [||] | false -> bdIs |> Array.collect (hxlPgn seq elv)
-    let occ = Array.concat [|initialOcc; ouHx; ilHx|]
+/// <summary> Mapping logic for dataset generation. Currently unused in main flow. </summary>
+let getTree01 (ntArea: float) (totalRequested: float) (spcTree: (string * float * string) array array) =
+    let ratio = match totalRequested > 0.0 with | true -> ntArea / totalRequested | false -> 1.0
+    spcTree |> Array.map (fun row -> 
+        row |> Array.map (fun (id, area, lb) -> 
+            (Refid id, Count (int (Math.Round((area * ratio) / 4.0))), Label lb)))
 
-    // 6. Tree Transformation
-    let tree01 = applyReproportioning spcAt1 ntArea spcTree
-    let flatEntries = tree01 |> Array.concat
-
-    // 7. Core Recursive Logic (Internal Helpers)
-    let cxlCxl (seq : Sqn) (tre : (Prp*Prp*Prp)[]) (occ : Hxl[]) (acc : Cxl[]) = 
-        let targetId = tre |> Array.map (fun (a,_,_) -> a) |> Array.head
-        let bsCx = acc |> Array.find (fun x -> x.Rfid = targetId)
-        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
-        let cnt = (Array.length tre) - 1
+/// <summary> Recursive Coxel generation logic for dataset generation. Currently unused in main flow. </summary>
+let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc: Cxl[]) =
+    match Array.tryHead tre with 
+    | None -> acc
+    | Some currentBatch ->
+        let newOcc = Array.append occ (Array.concat (acc |> Array.map (fun x -> x.Hxls)))
+        let nextTre = Array.tail tre
+        
+        let hostId = currentBatch |> Array.head |> fun (id, _, _) -> id
+        let bsCx = acc |> Array.find (fun x -> x.Rfid = hostId)
+        
+        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x)) = x)
+        let cnt = (Array.length currentBatch) - 1
         let chBs = 
             match (Array.length chHx) >= cnt with 
             | true -> 
-                let divs = match cnt > 0 with | true -> (Array.length chHx) / cnt | false -> 1
-                chHx |> Array.chunkBySize divs |> Array.map Array.head |> Array.take cnt
-            | false -> Array.append chHx (Array.replicate (max 0 (cnt - (Array.length chHx))) (identity elv))
+                let divs = (Array.length chHx) / cnt 
+                Array.chunkBySize divs chHx |> Array.map Array.head |> Array.take cnt
+            | false -> 
+                Array.append chHx (Array.replicate (cnt - Array.length chHx) (identity elv))
         
-        let cxc1 = coxel seq elv (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs (Array.tail tre)) occ
-        let chOc1 = hxlUni 2 (Array.append occ (cxc1 |> Array.collect (fun x -> x.Hxls)))
-        cxc1 |> Array.map (fun x -> 
-            let h2 = hxlChk seq elv chOc1 x.Hxls
-            let b2 = hxlChk seq elv chOc1 [|x.Base|] |> Array.tryHead |> Option.defaultValue x.Base
-            { x with Hxls = h2; Base = b2 })
+        let cxc1 = coxel seq elv (Array.map2 (fun a (_, c, d) -> a, hostId, c, d) chBs (Array.tail currentBatch)) newOcc
+        let chOc1 = hxlUni 2 (Array.append newOcc (Array.concat (cxc1 |> Array.map (fun x -> x.Hxls))))
+        let cxc2 = cxc1 |> Array.map (fun x -> { x with Hxls = hxlChk seq elv chOc1 x.Hxls; Base = hxlChk seq elv chOc1 [|x.Base|] |> Array.head })
         
-    let rec cxCxCx (seq : Sqn) (tre : (Prp*Prp*Prp)[][]) (occ : Hxl[]) (acc : Cxl[]) =
-        match Array.tryHead tre with 
-        | Some a -> 
-            let currentOcc = Array.append occ (acc |> Array.collect (fun x -> x.Hxls))
-            cxCxCx seq (Array.tail tre) currentOcc (Array.append acc (cxlCxl seq a currentOcc acc))
-        | None -> acc
+        cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
 
-    // 8. Execution and Serialization (Dataset Generation with ; delimiter)
-    let finalBatch = 
-        match Array.tryHead flatEntries with
-        | None -> [||]
-        | Some (id, ct, lb) ->
-            let rawVal = match ct with | Count x -> x | _ -> 0
-            let cti = match rawVal > 0 with | true -> Count (rawVal - 1) | false -> Count 0
-            let ac0 = coxel seq elv [| bsHx, id, cti, lb |] occ
-            
-            match Array.tryHead ac0 with
-            | None -> [||]
-            | Some firstCxl ->
-                let ac1 = [| { firstCxl with Hxls = Array.except occ (Array.append [| firstCxl.Base |] firstCxl.Hxls) } |]
-                let oc1 = Array.concat [| occ; [| bsHx |]; (Array.head ac1).Hxls |]
-                match (Array.length flatEntries < 2) with | true -> ac1 | false -> cxCxCx seq tree01 oc1 ac1
+// ==========================================================================================
+// SECTION: Editor Integration
+// ==========================================================================================
 
-    // StringBuilder for CSV-friendly coordinate blocks
-    let sb = System.Text.StringBuilder()
-    finalBatch |> Array.iteri (fun j cxl ->
-        match j > 0 with | true -> sb.Append(";") |> ignore | false -> ()
-        cxl.Hxls |> Array.iteri (fun k h ->
-            let (ax, ay, _) = hxlCrd h
-            match k > 0 with | true -> sb.Append(" ") |> ignore | false -> ()
-            sb.Append(toBase36 (int64 ax)).Append(".").Append(toBase36 (int64 ay)) |> ignore
-        )
-    )
-    sb.ToString()
+/// <summary> Parses .hyw content and updates a PolygonEditorModel. </summary>
+let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
+
+    let cleanStr = content.Replace("\n","").Replace("\t","")
+    let sortedLevels = 
+        cleanStr.Split(';', StringSplitOptions.RemoveEmptyEntries) |> Array.truncate 1
+    
+    let mutable finalState = current
+    for lvl in sortedLevels do
+        let attrs = extractAttrsFromHyw lvl
+        finalState <- attrs |> Map.fold (fun (m: PolygonEditorModel) key v ->
+            match key with
+            | "W" -> match tryParseFloat v with | Some num -> { m with LogicalWidth = num * 10.0 } | None -> m
+            | "H" -> match tryParseFloat v with | Some num -> { m with LogicalHeight = num * 10.0 } | None -> m
+            | "L" -> match tryParseFloat v with | Some num -> { m with Elevation = int num } | None -> m
+            | "S" -> { m with BaseStr = v }
+            | "X" -> { m with UseAbsolute = (v = "1") }
+            | "E" -> match parseCoords v with | pts when pts.Length = 1 -> { m with EntryPoint = pts.[0] } | _ -> m
+            | "O" -> match parseCoords v with | pts when pts.Length > 0 -> { m with Outer = pts } | _ -> m
+            | "I" -> { m with Islands = parseIslands v }
+            | _ -> m
+        ) finalState
+
+    FreshlyImported finalState
