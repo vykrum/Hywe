@@ -83,46 +83,7 @@ let updateMetadata (js: IJSRuntime) =
         return ()
     } |> Async.StartImmediate
  
-let generateSuggestion (model: Model) =
-    let tree = model.Tree
-    let meta = model.TeachMetadata
-    
-    // Maps Level -> Parent Anchor Guid
-    let levelToAnchor = tree.LevelAnchors 
 
-    let rec getTreeSummary (node: NodeCode.TreeNode) =
-        if node.Children.IsEmpty then ""
-        else
-            let childNames = node.Children |> List.map (fun c -> c.Name) |> String.concat ", "
-            let verb = if node.Children.Length > 1 then "branches into" else "leads to"
-            let current = sprintf "The %s %s %s." node.Name verb childNames
-            let children = node.Children |> List.map getTreeSummary |> String.concat " "
-            current + " " + children
-
-    let describeLevel (level: int) (root: NodeCode.TreeNode) =
-        let header = 
-            if level = 0 then "\nBase Level: "
-            else 
-                match levelToAnchor |> Map.tryFind level with
-                | Some anchorId -> 
-                    sprintf "\nLevel %d (Elevated): " level
-                | None -> sprintf "\nLevel %d: " level
-        
-        let body = getTreeSummary root
-        if String.IsNullOrWhiteSpace body then header + sprintf "Starting from %s." root.Name
-        else header + body
-
-    let intro = sprintf "This is a %s stage %s %s project with a %s flow and %s ambience. " 
-                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) (meta.Flow.ToLower()) (meta.Ambience.ToLower())
-
-    let levelsContent = 
-        tree.Levels 
-        |> Map.toList 
-        |> List.sortBy fst
-        |> List.map (fun (lvl, root) -> describeLevel lvl root)
-        |> String.concat "\n"
-
-    (intro + "\n" + levelsContent).Trim()
 
 
 /// Update
@@ -288,23 +249,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             NeedsHyweave = true        },
             Cmd.none
 
-    | SetActivePanel panel -> handleSetActivePanel model panel
-    | ToggleEditorMode -> handleToggleEditorMode model
-    | ExportPdfRequested -> handleExportPdfRequested model
-    | RecordToHynteract -> handleRecordToHynteract model js
-    | FileImported content -> handleFileImported model content js
-    | ToggleBoundary ->
-        match model.ActivePanel with
-        | BoundaryPanel -> 
-            { model with ActivePanel = LayoutPanel }, Cmd.none
-        | _ -> 
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw model.SrcOfTrth inner
-            let finalPoly = match newState with FreshlyImported m | Stable m -> m
-            { model with 
-                ActivePanel = BoundaryPanel
-                PolygonEditor = newState 
-            }, Cmd.ofMsg (PolygonEditorUpdated finalPoly)
+    | SetActivePanel _ | ToggleEditorMode | ExportPdfRequested 
+    | FileImported _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
+    | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj as msg ->
+        match UpdateUI.update js msg model with
+        | Some (newModel, cmd) -> newModel, cmd
+        | None -> model, Cmd.none
     | SetBatchPreview results ->
         { model with 
             BatchPreview = Some results
@@ -343,7 +293,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         {| sqnName = sqnStr
                            shapes = d.shapes |> Array.map (fun s -> 
                              {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                           w = d.w; h = d.h |}
+                           w = d.w; h = d.h
+                           cxCxl1 = cxls
+                           cxElv1 = derived.cxElv1 |}
                     
                     // Small sleep to ensure the UI has a chance to render the progress update
                     do! Async.Sleep 5
@@ -383,40 +335,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 do! js.InvokeVoidAsync("clickElement", "hyw-import-hidden").AsTask()
             }
         model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
-    | SetDescription d -> 
-        { model with UserDescription = d }, Cmd.none
-    | SuggestDescription -> 
-        { model with UserDescription = generateSuggestion model }, Cmd.none
-    | RecordResult success ->
-        { model with 
-            IsSavingToHynteract = false
-            ShowSuccessMessage = success
-            UserDescription = if success then "" else model.UserDescription 
-        }, 
-        if success then 
-            Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave)
-        else Cmd.none
-    | UpdateMetadata f ->
-        { model with TeachMetadata = f model.TeachMetadata }, Cmd.none
-    | SetHoveredInfo info ->
-        { model with HoveredInfo = info }, Cmd.none
-    | StartVoiceCapture -> 
-        { model with IsRecording = true }, 
-        Cmd.OfAsync.perform (fun () -> 
-            async {
-                do! Teach.startTranscription js "hynteract-desc-input"
-                return ()
-            }) () (fun _ -> OnVoiceResult)
-    | OnVoiceResult ->
-        { model with IsRecording = false }, Cmd.none
-
-    | ToggleViewLock ->
-        { model with ViewLocked = not model.ViewLocked }, Cmd.none
-
-    | Download3DSvg ->
-        let datePart = System.DateTime.Now.ToString("yyMMddmm")
-        let fileName = "Hywe3D_" + datePart + ".svg"
-        model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("export3DToSVG", "hywe-extruded-polygon", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
+    | SetDescription _ | SuggestDescription | RecordResult _ | UpdateMetadata _ 
+    | SetHoveredInfo _ | StartVoiceCapture | OnVoiceResult | RecordToHynteract as msg ->
+        match UpdateTeach.update js msg model with
+        | Some (newModel, cmd) -> newModel, cmd
+        | None -> model, Cmd.none
 
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none

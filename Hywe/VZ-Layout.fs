@@ -8,6 +8,7 @@ open Microsoft.JSInterop
 open System
 open System.Text
 open System.Text.Json
+open ModelTypes
 ///
 
 type hxgn = Template<
@@ -322,9 +323,7 @@ let svgCoxels
             }
 ///
 
-// Batch Export Types
-type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float |}
+// Batch types moved to ModelTypes
 
 /// Extracts high-fidelity coordinates for Geometry generation
 let getBtchCrds (cxl: Cxl[]) =
@@ -412,8 +411,8 @@ let getDatasetWithLabels (configs: BatchConfgrtns[]) : (string * float[])[][] =
 let alternateConfigurations 
     (configs: BatchConfgrtns[]) 
     (selectedIndex: int option) 
-    (onTap: int -> 'msg)
-    (dispatch: 'msg -> unit)
+    (onTap: int -> Message)
+    (dispatch: Message -> unit)
     (onClose: unit -> unit)
     (js: IJSRuntime): Node =
     
@@ -584,18 +583,25 @@ let alternateConfigurations
                     }
                 }
         }
-        // --- DOWNLOAD BUTTON ---
-        button {
-            attr.``class`` "layout-download-btn"
-            on.click (fun _ -> 
-                let datePart = System.DateTime.Now.ToString("yyMMddmm")
-                let fileName = "HywVariations_" + datePart + ".svg"
-        
-                // Call our new SVG downloader
-                js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() 
-                |> ignore
-            )
-            text "Download SVG"
+        // --- DOWNLOAD GROUP ---
+        div {
+            attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
+            button {
+                attr.``class`` "layout-download-btn"
+                on.pointerdown (fun _ -> 
+                    let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                    let fileName = "HywVariations_" + datePart + ".svg"
+                    js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() |> ignore
+                )
+                text "SVG"
+            }
+            button {
+                attr.``class`` "layout-download-btn"
+                on.pointerdown (fun _ -> 
+                    dispatch DownloadBatchDxf
+                )
+                text "DXF"
+            }
         }
     }
 
