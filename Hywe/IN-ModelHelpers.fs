@@ -55,7 +55,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         | Interactive -> "Code"
 
     div {
-        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: space-between; align-items: center;"
+        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: space-between; align-items: center; position: relative;"
         
         div {
             attr.style "display:flex; gap:4px; align-items: center;"
@@ -89,6 +89,29 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 attr.``class`` "hywe-toggle-btn"
                 on.click (fun _ -> dispatch ToggleEditorMode)
                 text nodeCodeButtonText
+            }
+        }
+        div {
+            attr.``class`` "preset-btn-stack"
+            
+            let isSimple = model.SelectedPreset = Some "Simple"
+            let isBranched = model.SelectedPreset = Some "Branched"
+            let isStacked = model.SelectedPreset = Some "Stacked"
+
+            button {
+                attr.``class`` (if isSimple then "preset-btn active" else "preset-btn")
+                on.click (fun _ -> dispatch (SelectPreset "Simple"))
+                text "Simple"
+            }
+            button {
+                attr.``class`` (if isBranched then "preset-btn active" else "preset-btn")
+                on.click (fun _ -> dispatch (SelectPreset "Branched"))
+                text "Branched"
+            }
+            button {
+                attr.``class`` (if isStacked then "preset-btn active" else "preset-btn")
+                on.click (fun _ -> dispatch (SelectPreset "Stacked"))
+                text "Stacked"
             }
         }
     }
@@ -315,8 +338,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     }
                 }
 
-                    
-                // Restored delicate 3D Legend
+              
                 div {
                     attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 15px 10px; width: 100%; border-top: 1px solid #f0f0f0; margin-top: 5px;"
                     for i in 0 .. (min model.Derived.cxCxl1.Length model.Derived.cxClr1.Length - 1) do

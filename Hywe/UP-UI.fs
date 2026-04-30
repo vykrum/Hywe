@@ -103,7 +103,6 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         let newState = Parse.importFromHyw clean inner
         let finalPoly = match newState with FreshlyImported m | Stable m -> m
         let newExport = syncPolygonState finalPoly
-
         { model with 
             SrcOfTrth = clean
             Tree = newTree
@@ -113,6 +112,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             PolygonExport = newExport
             ParseError = false
             LastBatchSrc = None
+            SelectedPreset = None
         }, 
         Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
@@ -125,7 +125,16 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     match msg with
     | SetActivePanel panel -> Some (handleSetActivePanel model panel)
     | ToggleEditorMode -> Some (handleToggleEditorMode model)
-    | ExportPdfRequested -> Some (handleExportPdfRequested model)
+    | SetSrcOfTrth src -> Some ({ model with SrcOfTrth = src; SelectedPreset = None }, Cmd.none)
+    | SelectPreset name ->
+        let content = 
+            match name with 
+            | "Simple" -> Page.beeyond 
+            | "Branched" -> Page.beedroom 
+            | "Stacked" -> Page.stackedTower 
+            | _ -> ""
+        let (nextModel, cmd) = handleFileImported model content js
+        Some ({ nextModel with SelectedPreset = Some name }, cmd)
     | FileImported content -> Some (handleFileImported model content js)
     | Message.ToggleBoundary ->
         match model.ActivePanel with

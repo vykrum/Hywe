@@ -160,7 +160,6 @@ let viewReport (model: Model) dispatch =
                     text "Please lock 3D view for inclusion in cover page"
             }
 
-        renderToggleRow "Contents Page" opts.IncludeContents (fun v -> updateOpts (fun o -> { o with IncludeContents = v }))
         
         forEach (Map.toList model.Tree.Levels |> List.sortBy fst) <| fun (level, _) ->
             let s = 

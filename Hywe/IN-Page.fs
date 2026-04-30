@@ -90,18 +90,17 @@ let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
 ///
 
 // Default Syntax
-let beeyond = $"| (1/{NodeCode.initWeight}/Dock),(1.1/{NodeCode.initWeight}/Logistics),(1.2/{NodeCode.initWeight}/Lab),"+
+let beeyond = $"| (0/X=1), (1/{NodeCode.initWeight}/Dock),(1.1/{NodeCode.initWeight}/Logistics),(1.2/{NodeCode.initWeight}/Lab),"+
               $"(1.3/{NodeCode.initWeight}/Habitation),(1.4/{NodeCode.initWeight}/Power) |"
 
-let beedroom = "| (0/W=15/H=15/E=5,5/X=1/Q=VRCWEE),"+
-                "(1/7/Foyer),(2/12/Living),(3/18/Dining),(1.1/12/Study),(2.1/12/Staircase),"+
-                "(3.1/15/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),"+
-                "(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/11/Closet-3),"+
-                "(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2) |"
+let beedroom = "| (0/Q=VRCWSW/L=0/W=40/H=40/X=0/E=0/O=0,0,40,0,40,40,0,40/I=/T=3), (1/7/Foyer), (1.1/12/Living), (1.1.1/18/Dining)," +
+                "(1.1.1.1/15/Kitchen), (1.1.1.1.1/6/Utility), (1.1.1.2/14/Bed-1), (1.1.1.2.1/8/Bath-1), (1.1.1.3/18/Bed-2)," +
+                " (1.1.1.3.1/10/Closet-2), (1.1.1.3.1.1/10/Bath-2), (1.1.1.4/18/Bed-3), (1.1.1.4.1/11/Closet-3), (1.1.1.4.2/10/Bath-3)," +
+                " (1.1.2/12/Staircase), (1.2/12/Study) |"
 
-let bedroom1 = "| (1/16/Entry),(1.1/40/Living),(1.1.1/25/Study)," +
-                "(1.1.1.1/10/Powder),(1.1.2/40/Dining),(1.1.2.1/20/Kitchen)," + 
-                "(1.1.2.1.1/10/Utility),(1.1.2.2/26/Bed),(1.1.2.2.1/12/Bath) |"
+let stackedTower = "| (0/Q=VRCCNE/L=0/W=30/H=30/X=1/E=0/O=/I=), (1/75/Lobby), (1.1/88/Retail), (1.2/54/Toilets), (1.3/67/Retail)," +
+                    "(1.4/94/Retail) | ; | (0/Q=VRCCNE/L=3/E=1), (1/75/Lobby), (1.1/43/Office), (1.2/123/Office), (1.2.1/34/Toilets)," + 
+                    "(1.3/52/Office) | ; | (0/Q=VRCCNE/L=6/E=1/T=5), (1/75/Lobby), (1.1/99/Suite) |"
 
 
 /// Sqn selection via slider

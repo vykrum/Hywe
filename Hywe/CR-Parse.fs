@@ -280,22 +280,25 @@ let generateCxlLayout
     
     // Outer Boundary
     let bdOu =
-        match ouStrOverride with
-        | Some ou when ou <> "" -> parsePolygon ou
-        | _ ->
-            match spcAt1 |> Map.tryFind "O" with 
-            | Some a when a <> "" -> parsePolygon a
+        let isAbs = spcAt1 |> Map.tryFind "X" |> Option.defaultValue "0" = "1"
+        if isAbs then [||]
+        else
+            match ouStrOverride with
+            | Some ou when ou <> "" -> parsePolygon ou
             | _ ->
-                match bsHxSetOverride with
-                | Some parent when bdWd > 0 -> 
-                    cxlPrm parent elv
-                    |> Geometry.cleanPolygon parent.Seqn
+                match spcAt1 |> Map.tryFind "O" with 
+                | Some a when a <> "" -> parsePolygon a
                 | _ ->
-                    match bdWd > 0 with 
-                    | true -> 
-                        let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
-                        parsePolygon a
-                    | false -> [||]
+                    match bsHxSetOverride with
+                    | Some parent when bdWd > 0 -> 
+                        cxlPrm parent elv
+                        |> Geometry.cleanPolygon parent.Seqn
+                    | _ ->
+                        match bdWd > 0 with 
+                        | true -> 
+                            let a = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
+                            parsePolygon a
+                        | false -> [||]
 
     // Island Boundary
     let bdIs =
@@ -413,7 +416,7 @@ let generateMultiLevelLayout
         allElevations <- Array.append allElevations [| curElv |]
 
         // Skip layout generation if this is likely a terminal elevation-only segment (no functional nodes)
-        if levelStr.Contains("1/") || levelStr.Contains("(1/") then
+        if System.Text.RegularExpressions.Regex.IsMatch(levelStr, @"\d+/") then
             let bsHxOverride =
                 if i = 0 then None
                 else 
@@ -540,5 +543,9 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
             | "I" -> { m with Islands = parseIslands v }
             | _ -> m
         ) finalState
-
-    FreshlyImported finalState
+    
+    let finalStateWithBoundary = 
+        { finalState with 
+            UseBoundary = not finalState.UseAbsolute
+            PolygonEnabled = not finalState.UseAbsolute }
+    FreshlyImported finalStateWithBoundary
