@@ -45,12 +45,10 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
                         addPage (Page.indexToSqn i) 2
     
     let revPages = pages |> List.rev
-    let actualEntries = revPages |> List.filter (fun e -> e.SectionTitle <> "Contents")
-    let shift = 0 // No contents shift
     
     revPages |> List.map (fun p -> 
-        if p.SectionTitle = "Cover Page" || p.SectionTitle = "Contents" then p
-        else { p with PageNumber = p.PageNumber + shift }
+        if p.SectionTitle = "Cover Page" then p
+        else { p with PageNumber = p.PageNumber }
     )
 
 let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (float*float)[][]) : string =
@@ -268,12 +266,7 @@ body { font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 0; backg
 .adjacency-matrix td { text-align: center; border: 1px solid #eee; padding: 0; aspect-ratio: 1/1; font-size: clamp(6px, 2cqw, 10px); }
 .adj-true { background: #ddd; color: #ddd; }
 .adj-false { background: #fff; color: #fff; }
-.toc-table { width: 100%%; max-width: 800px; border-collapse: collapse; font-size: 16px; margin: 40px auto; }
-.toc-table td { padding: 10px; border-bottom: 1px solid #f5f5f5; }
-.toc-table td:last-child { text-align: right; color: #888; }
 .toc-d0 { font-weight: 600; padding-top: 20px !important; border-bottom: 2px solid #eee !important; }
-.toc-d1 { padding-left: 20px !important; }
-.toc-d2 { padding-left: 40px !important; font-size: 14px; color: #555; border-bottom: none !important; }
 .batch-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; width: 100%%; flex: 1; min-height: 0; }
 .batch-cell { border: 1px solid #eee; display: flex; flex-direction: column; padding: 5px; box-sizing: border-box; }
 .batch-cell svg { flex: 1; min-height: 0; }
@@ -322,13 +315,6 @@ let tCover : Printf.StringFormat<string -> string -> string -> string -> string 
     </div>
 </div>%s</div>"""
 
-let tContents : Printf.StringFormat<string -> string> = """<div class="page"><div class="page-inner">
-    %s
-    <table class="toc-table">"""
-
-let tTocRow : Printf.StringFormat<int -> string -> int -> string> = """<tr><td class="toc-d%d">%s</td><td>%d</td></tr>"""
-
-let tEndContents : Printf.StringFormat<string -> string> = """</table>%s</div></div>"""
 
 let tFlowChart : Printf.StringFormat<string -> string -> string -> string> = """<div class="page"><div class="page-inner">
     %s

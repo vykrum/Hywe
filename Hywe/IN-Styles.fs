@@ -249,6 +249,47 @@ let editorStyles = """
     font-weight: 300;
 }
 
+.preset-btn-stack {
+    position: absolute;
+    top: 6px;
+    right: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+    z-index: 100;
+}
+
+.preset-btn {
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    background: #fff;
+    color: #999;
+    font-size: 0.7rem;
+    font-family: 'Optima', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.preset-btn:hover {
+    background: #f5f5f5;
+    border-color: #ddd;
+    color: #666;
+}
+
+.preset-btn.active {
+    background: #363636;
+    color: #fff;
+    border-color: #363636;
+}
+
 .hywe-toggle-btn:hover {
     color: #333;
 }
@@ -389,6 +430,27 @@ video.fullscreen-bg {
 .tapText:hover {
     opacity: 1;
     /* Optional for visual feedback */
+}
+
+.intro-preset-btn {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(54, 54, 54, 0.15);
+    border-radius: 4px;
+    padding: 6px 14px;
+    color: #363636;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 180px;
+    margin-top: 5px;
+}
+
+.intro-preset-btn:hover {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: #363636;
+    transform: translateY(-1px);
 }
 
 @media (max-width: 220px) {

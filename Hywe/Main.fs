@@ -63,13 +63,13 @@ let initModel =
             ClientName = "Creative Partner"
             Description = "An automated architectural layout study derived from hierarchical spatial requirements, multi-level flow charts, and adjacency matrices."
             IncludeCover = true
-            IncludeContents = true
             LevelSections = Map.empty
             Captured3DImage = None
         }
         Captured3DImage = None
         ReportBatch = Map.empty
         IsGeneratingReport = false
+        SelectedPreset = Some "Simple"
 
 
 
@@ -264,7 +264,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Cmd.none
 
     | SetActivePanel _ | ToggleEditorMode | ExportPdfRequested 
-    | FileImported _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
+    | FileImported _ | SelectPreset _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
     | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj
     | GenerateReport | ReportGenerated _ | UpdateReportOptions _ as msg ->
         match UpdateUI.update js msg model with

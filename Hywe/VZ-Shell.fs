@@ -196,8 +196,10 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             br {}
             br {}
             text "Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections."
+            
             div {
                 attr.``class`` ("tapText" + (if isVisible then " visible" else ""))
+                attr.style "margin-top: 16px;"
                 text "Tap to Continue"
                 span {}
             }

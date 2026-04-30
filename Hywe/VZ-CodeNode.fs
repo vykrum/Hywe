@@ -1,6 +1,7 @@
 module CodeNode
 
 open System
+open System.Text.RegularExpressions
 open Bolero
 open Bolero.Html
 open NodeCode
@@ -16,8 +17,9 @@ let preprocessCode (code: string) : string =
             let core = if isWrapped then trimmed.Trim('|').Trim() else trimmed
 
             let lines =
-                core.Split([|','|], StringSplitOptions.RemoveEmptyEntries)
-                |> Array.map (fun item -> item.Trim('(', ')', ' '))
+                Regex.Split(core, @"\),\s*")
+                |> Array.map (fun item -> item.Trim('(', ')', ' ', ','))
+                |> Array.filter (fun s -> not (String.IsNullOrWhiteSpace s))
 
             let topLevelInts =
                 lines
@@ -68,61 +70,75 @@ let preprocessCode (code: string) : string =
 
     String.Join(" ; ", processedLevels)
 
-// Parses the processed input into a tree structure
-let parseOutput (code: string) : TreeNode =
-    let entries =
-        code.Split([|','|], StringSplitOptions.RemoveEmptyEntries)
-        |> Array.choose (fun item ->
-            let trimmed = item.Trim('(', ')', ' ')
-            let parts = trimmed.Split('/')
-            if parts.Length >= 3 then
-                let path = parts.[0]
-                if path.StartsWith("0") then
-                    None
+// Parses the processed input into a tree structure for each level
+let parseOutput (code: string) : TreeNode list =
+    let levels = code.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
+    
+    levels |> Array.toList |> List.mapi (fun lvlIdx levelStr ->
+        let entries =
+            Regex.Split(levelStr, @"\),\s*")
+            |> Array.choose (fun item ->
+                let trimmed = item.Trim('(', ')', ' ', ',', '|')
+                if String.IsNullOrWhiteSpace trimmed then None else
+                let parts = trimmed.Split('/')
+                if parts.Length >= 3 then
+                    let path = parts.[0]
+                    if path.StartsWith("0") then
+                        None
+                    else
+                        let weight = parts.[1]
+                        let name = parts.[2]
+                        let extrusion = if parts.Length > 3 then match Double.TryParse parts.[3] with true, v -> v | _ -> 3.0 else 3.0
+                        Some (path, weight, name, extrusion)
                 else
-                    let weight = parts.[1]
-                    let name = parts.[2]
-                    let extrusion = if parts.Length > 3 then match Double.TryParse parts.[3] with true, v -> v | _ -> 3.0 else 3.0
-                    Some (path, weight, name, extrusion)
-            else
-                None
-        )
+                    None
+            )
 
-    if not (entries |> Array.exists (fun (path, _, _, _) -> path = "1")) then
-        failwith "Invalid Hywe Syntax"
-
-    let nodeMap =
-        entries
-        |> Seq.map (fun (path, weight, name, extrusion) ->
-            path, {
+        if not (entries |> Array.exists (fun (path, _, _, _) -> path = "1")) then
+            {
                 Id = Guid.NewGuid()
-                Name = name
-                Weight = weight
+                Name = sprintf "Level %d (No Root)" lvlIdx
+                Weight = "0"
                 X = 0.0
                 Y = 0.0
                 Children = []
-                Level = 0
-                Extrusion = extrusion
+                Level = lvlIdx
+                Extrusion = 3.0
             }
-        )
-        |> dict
-        |> System.Collections.Generic.Dictionary
+        else
+            let nodeMap =
+                entries
+                |> Seq.map (fun (path, weight, name, extrusion) ->
+                    path, {
+                        Id = Guid.NewGuid()
+                        Name = name
+                        Weight = weight
+                        X = 0.0
+                        Y = 0.0
+                        Children = []
+                        Level = lvlIdx
+                        Extrusion = extrusion
+                    }
+                )
+                |> dict
+                |> System.Collections.Generic.Dictionary
 
-    let byDepth =
-        entries
-        |> Array.groupBy (fun (path, _, _, _) -> path.Split('.').Length)
-        |> Array.sortByDescending fst
+            let byDepth =
+                entries
+                |> Array.groupBy (fun (path, _, _, _) -> path.Split('.').Length)
+                |> Array.sortByDescending fst
 
-    for (_, group) in byDepth do
-        for (path, _, _, _) in group do
-            if path.Contains '.' then
-                let parentPath = path.Substring(0, path.LastIndexOf('.'))
-                if nodeMap.ContainsKey(parentPath) && nodeMap.ContainsKey(path) then
-                    let parent = nodeMap.[parentPath]
-                    let child = nodeMap.[path]
-                    nodeMap.[parentPath] <- { parent with Children = parent.Children @ [child] }
+            for (_, group) in byDepth do
+                for (path, _, _, _) in group do
+                    if path.Contains '.' then
+                        let parentPath = path.Substring(0, path.LastIndexOf('.'))
+                        if nodeMap.ContainsKey(parentPath) && nodeMap.ContainsKey(path) then
+                            let parent = nodeMap.[parentPath]
+                            let child = nodeMap.[path]
+                            nodeMap.[parentPath] <- { parent with Children = parent.Children @ [child] }
 
-    nodeMap.["1"]
+            nodeMap.["1"]
+    )
 
 let computeCanvasBounds (nodes: TreeNode list) : float * float =
     let margin = 50.0
@@ -239,11 +255,19 @@ let viewTreeSvg (root: TreeNode) : Node =
 let viewCodeGraphFromString (code: string) : Node =
     try
         let processed = preprocessCode code
-        let root = parseOutput processed
+        let roots = parseOutput processed
         
         div {
             attr.style "margin-top: 20px; font-family: monospace; font-size: 14px; color: #444;"
-            viewTreeSvg root
+            forEach (roots |> List.indexed) <| fun (i, root) ->
+                div {
+                    attr.style "margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px;"
+                    div {
+                        attr.style "font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 5px; font-size: 12px;"
+                        text (sprintf "Architecture Level %d" i)
+                    }
+                    viewTreeSvg root
+                }
             $"Processed code: {processed}"
         }
     with ex ->

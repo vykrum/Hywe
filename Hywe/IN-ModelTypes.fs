@@ -73,7 +73,6 @@ type ReportOptions = {
     ClientName    : string
     Description   : string
     IncludeCover  : bool
-    IncludeContents: bool
     LevelSections : Map<int, LevelReportSections>
     Captured3DImage: string option
 }
@@ -117,6 +116,7 @@ type Model =
         ReportOptions: ReportOptions
         ReportBatch: Map<int, BatchConfgrtns[]>
         IsGeneratingReport: bool
+        SelectedPreset: string option
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -173,6 +173,7 @@ type Message =
     | GenerateReport
     | ReportGenerated of string
     | ViewCaptured of string
+    | SelectPreset of string
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
