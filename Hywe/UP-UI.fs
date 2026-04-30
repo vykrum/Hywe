@@ -30,7 +30,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
             model', Cmd.ofMsg (GenerateNextBatchItem 0)
         | false -> 
             { model with ActivePanel = panel }, Cmd.none
-    | BoundaryPanel | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel ->
+    | BoundaryPanel | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
         { model with ActivePanel = panel }, Cmd.none
 
 let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
@@ -138,7 +138,13 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let newM = { model with ActivePanel = BoundaryPanel; PolygonEditor = newState }
             Some (newM, Cmd.ofMsg (PolygonEditorUpdated finalPoly))
     | ToggleViewLock ->
-        Some ({ model with ViewLocked = not model.ViewLocked }, Cmd.none)
+        let isLocking = not model.ViewLocked
+        let newModel = { model with ViewLocked = isLocking; Captured3DImage = if isLocking then model.Captured3DImage else None }
+        let cmd = 
+            if isLocking then
+                Cmd.OfAsync.perform (fun () -> js.InvokeAsync<string>("captureCanvasSVG", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask) () ViewCaptured
+            else Cmd.none
+        Some (newModel, cmd)
     | Download3DSvg ->
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
         let fileName = "Hywe3D_" + datePart + ".svg"
@@ -172,4 +178,69 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let fileName = "Hywe_Batch_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         | None -> Some (model, Cmd.none)
+    | UpdateReportOptions updateFn ->
+        Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
+    | GenerateReport ->
+        let currentSrc =
+            match model.EditorMode with
+            | Interactive ->
+                NodeCode.getOutput
+                    model.Tree
+                    model.Sequence
+                    model.PolygonExport.Width
+                    model.PolygonExport.Height
+                    model.PolygonExport.AbsStr
+                    model.PolygonExport.OuterStr
+                    model.PolygonExport.IslandsStr
+            | Syntax -> model.SrcOfTrth
+            
+        Some ({ model with IsGeneratingReport = true; SrcOfTrth = currentSrc },
+              Cmd.OfAsync.perform (fun () -> async {
+                  do! Async.Sleep 50
+                  
+                  let mutable allBatches = Map.empty
+                  for level in model.Tree.Levels.Keys do
+                      do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Processing Level %d" level).AsTask() |> Async.AwaitTask
+                      let section = 
+                          match Map.tryFind level model.ReportOptions.LevelSections with
+                          | Some s -> s
+                          | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23] }
+                      
+                      let mutable levelBatches = []
+                      
+                      if section.BatchOverview || section.Variations then
+                          do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating 24 variations for level %d..." level).AsTask() |> Async.AwaitTask
+                          for i = 0 to 23 do
+                              let sqnStr = Page.indexToSqn i
+                              let forcedStr = NodeCode.injectSqn model.SrcOfTrth sqnStr
+                              try
+                                  let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
+                                  let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr level
+                                  let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
+                                      Layout.getStaticGeometry cxls derived.cxClr1 level 10 
+                                  
+                                  let cxlAvl = if Array.isEmpty cxls then [||] else Coxel.cxlExp cxls (Array.head cxls).Seqn level
+                                  
+                                  let configData : BatchConfgrtns = 
+                                      {| sqnName = sqnStr
+                                         shapes = d.shapes |> Array.map (fun s -> {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
+                                         w = d.w; h = d.h
+                                         cxCxl1 = cxls
+                                         cxElv1 = cxElv1
+                                         cxlAvl = cxlAvl
+                                         cxOuIl = cxOuIl |}
+                                  levelBatches <- configData :: levelBatches
+                              with _ -> ()
+                              
+                      allBatches <- Map.add level (levelBatches |> List.rev |> List.toArray) allBatches
+                      
+                  do! js.InvokeVoidAsync("console.log", "Hywe: Compiling final HTML report...").AsTask() |> Async.AwaitTask
+                  let opts = { model.ReportOptions with Captured3DImage = model.Captured3DImage }
+                  let html = Hywe.ReportGenerator.generateReportHtml opts model.Tree allBatches
+                  do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Report compiled. HTML size: %d bytes" html.Length).AsTask() |> Async.AwaitTask
+                  return html
+              }) () ReportGenerated)
+    | ReportGenerated html ->
+        Some ({ model with IsGeneratingReport = false },
+              Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("openReport", html).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | _ -> None

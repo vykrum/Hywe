@@ -182,11 +182,13 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
 
         tab "Boundary" iconBoundary BoundaryPanel
         tab "Layout"   iconLayout   LayoutPanel
-        tab "Analyze"    iconAnalyze    AnalyzePanel
+        tab "Analyze"  iconAnalyze  AnalyzePanel
         tab "3D"       icon3D       ViewPanel
         tab "Batch"    iconBatch    BatchPanel
         tab "Teach"    iconTeach    TeachPanel
+        tab "Report"   iconReport   ReportPanel
     }
+
 
 let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     div {
@@ -261,10 +263,27 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | ViewPanel ->
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; overflow-x: hidden;"
+                
                 div {
-                    attr.id "hywe-sequence-selector"; attr.style "padding: 8px 0;width: 100%; max-width: 100vw;"
+                    attr.id "hywe-sequence-selector"; attr.style "padding: 8px 0;width: 100%; max-width: 100vw; margin-top: 10px;"
                     sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
                 }                
+
+                // Lock button below slider, right-aligned
+                div {
+                    attr.style "width: 95%; display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 5px;"
+                    button {
+                        attr.``class`` (if model.ViewLocked then "layout-download-btn active" else "layout-download-btn")
+                        attr.title (if model.ViewLocked then "View Locked: Captured for cover" else "Lock 3D view for report cover")
+                        attr.style "display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 50%%;"
+                        on.pointerdown (fun _ -> dispatch ToggleViewLock)
+                        if model.ViewLocked then
+                            rawHtml """<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
+                        else
+                            rawHtml """<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+                    }
+                }
+
                 div {
                     attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
                     canvas { 
@@ -272,31 +291,30 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.style "width: 100%; height: 100%; display: block; touch-action: none;" 
                     }
                     async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked }
-                    |> Async.StartImmediate
+                    |> Async.Start
                 }
 
+                // Export buttons back to bottom
                 div {
-                    attr.style "display: flex; gap: 15px; margin-top: 40px; align-items: center;"
-                    div {
-                        attr.style "display: flex; gap: 8px; align-items: center;"
-                        button {
-                            attr.``class`` "layout-download-btn"
-                            attr.title "Download View as SVG"
-                            on.pointerdown (fun _ -> dispatch Download3DSvg)
-                            text "SVG"
-                        }
-                        button {
-                            attr.``class`` "layout-download-btn"
-                            on.pointerdown (fun _ -> dispatch DownloadDxf)
-                            text "DXF"
-                        }
-                        button {
-                            attr.``class`` "layout-download-btn"
-                            on.pointerdown (fun _ -> dispatch DownloadObj)
-                            text "OBJ"
-                        }
+                    attr.style "display: flex; gap: 10px; margin-top: 20px; align-items: center;"
+                    button {
+                        attr.``class`` "layout-download-btn"
+                        attr.title "Download View as SVG"
+                        on.pointerdown (fun _ -> dispatch Download3DSvg)
+                        text "SVG"
+                    }
+                    button {
+                        attr.``class`` "layout-download-btn"
+                        on.pointerdown (fun _ -> dispatch DownloadDxf)
+                        text "DXF"
+                    }
+                    button {
+                        attr.``class`` "layout-download-btn"
+                        on.pointerdown (fun _ -> dispatch DownloadObj)
+                        text "OBJ"
                     }
                 }
+
                     
                 // Restored delicate 3D Legend
                 div {
@@ -363,7 +381,11 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         }
                     }
             }
+            
+        | ReportPanel ->
+            Hywe.Report.viewReport model dispatch
     }
+
 
 let view model dispatch (js: IJSRuntime) =
     concat {

@@ -56,7 +56,27 @@ type AppScreen =
 
 // Batch Export Types
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[] |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (float*float)[][] |}
+
+// Report Types
+type LevelReportSections = {
+    FlowChart    : bool
+    BatchOverview: bool
+    Variations   : bool   // detailed section toggle
+    SelectedVariations: Set<int> // which of the 24 are included
+}
+
+type ReportOptions = {
+    ProjectTitle  : string
+    ProjectNumber : string
+    Author        : string
+    ClientName    : string
+    Description   : string
+    IncludeCover  : bool
+    IncludeContents: bool
+    LevelSections : Map<int, LevelReportSections>
+    Captured3DImage: string option
+}
 
 /// <summary> Central application state for the interface. </summary>
 type Model =
@@ -79,6 +99,7 @@ type Model =
         CancelToken: System.Threading.CancellationTokenSource option
         LastBatchSrc: string option
         SelectedPreviewIndex : int option
+        Captured3DImage: string option
         UserDescription : string 
         TeachMetadata: TeachMetadata
         HoveredInfo: string option
@@ -93,6 +114,9 @@ type Model =
         BatchAccumulator: BatchConfgrtns list
         CurrentScreen: AppScreen
         ViewLocked: bool
+        ReportOptions: ReportOptions
+        ReportBatch: Map<int, BatchConfgrtns[]>
+        IsGeneratingReport: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -145,6 +169,10 @@ type Message =
     | TransitionToMain
     | ToggleViewLock
     | Download3DSvg
+    | UpdateReportOptions of (ReportOptions -> ReportOptions)
+    | GenerateReport
+    | ReportGenerated of string
+    | ViewCaptured of string
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

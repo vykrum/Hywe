@@ -134,3 +134,39 @@ window.downloadFile = function (fileName, content, contentType) {
         URL.revokeObjectURL(url);
     }, 0);
 };
+
+window.openReport = function(html) {
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 600);
+};
+
+window.downloadReport = function(html, fileName) {
+    console.log("Hywe: Starting direct PDF export...");
+    const element = document.createElement('div');
+    element.innerHTML = html;
+    
+    const opt = {
+        margin:       0,
+        filename:     fileName,
+        image:        { type: 'jpeg', quality: 0.90 },
+        html2canvas:  { scale: 1, useCORS: true, logging: false, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape', compress: true },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        console.log("Hywe: PDF export complete.");
+    }).catch(err => {
+        console.error("Hywe: PDF export failed:", err);
+    });
+};
+
+window.captureCanvas = function(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+    return canvas.toDataURL('image/png');
+};
