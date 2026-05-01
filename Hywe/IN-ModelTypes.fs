@@ -5,6 +5,10 @@ open Page
 open PolygonEditor
 open Coxel
 
+type ConfirmAction =
+    | ResetWorkspace
+    | LoadPreset of name: string * label: string
+
 let elv = 0
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
@@ -125,7 +129,7 @@ type Model =
         EditsCount: int
         IsPresetsCollapsed: bool
         IsHelpCollapsed: bool
-        ShowResetConfirm: bool
+        PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
         RedoStack: UndoSnapshot list
     }
@@ -189,7 +193,7 @@ type Message =
     | SelectPreset of string
     | LoadBackup of string
     | HardReset
-    | ToggleResetConfirm of bool
+    | ToggleConfirm of ConfirmAction option
     | Undo
     | Redo
     | NoOp
@@ -200,7 +204,7 @@ let syncPolygonState (p: PolygonEditorModel) =
     
     let w', h', entry', outer', islands' =
         match p.UseBoundary with
-        | false -> 0, 0, "0,0", "", ""
+        | false -> w, h, "0,0", "", ""
         | true  -> w, h, entry, outer, islands
         
     { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h' }

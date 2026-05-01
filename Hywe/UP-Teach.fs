@@ -4,7 +4,6 @@ open System
 open Microsoft.JSInterop
 open Elmish
 open ModelTypes
-open Layout
 
 let generateSuggestion (model: Model) =
     let tree = model.Tree

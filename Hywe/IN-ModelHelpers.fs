@@ -12,6 +12,51 @@ open ModelTypes
 open Bolero.Html
 open Hywe
 
+let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
+    match model.PendingConfirm with
+    | None -> empty()
+    | Some action ->
+        let title, msg, confirmMsg, onConfirm =
+            match action with
+            | ConfirmAction.ResetWorkspace ->
+                "Reset Workspace", "Reset entire workspace? All unsaved changes will be lost.", "Reset", HardReset
+            | ConfirmAction.LoadPreset (name, label) ->
+                "Load Preset", (sprintf "Load %s preset? Current layout will be replaced." label), "Load", SelectPreset name
+
+        div {
+            attr.style "position: fixed; inset: 0; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;"
+            on.pointerdown (fun _ -> dispatch (ToggleConfirm None))
+            
+            div {
+                attr.style "background: #fff; border: 1px solid #eee; padding: 24px; border-radius: 8px; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px; text-align: center; pointer-events: auto;"
+                "onclick:stopPropagation" => true
+                
+                div {
+                    attr.style "font-weight: 600; font-size: 1.1rem; color: #333;"
+                    text title
+                }
+                div {
+                    attr.style "font-size: 0.9rem; color: #666; line-height: 1.4;"
+                    text msg
+                }
+                div {
+                    attr.style "display: flex; gap: 10px; margin-top: 8px;"
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-dark"
+                        attr.style "flex: 1;"
+                        on.pointerdown (fun _ -> dispatch onConfirm)
+                        text confirmMsg
+                    }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                        attr.style "flex: 1;"
+                        on.pointerdown (fun _ -> dispatch (ToggleConfirm None))
+                        text "Cancel"
+                    }
+                }
+            }
+        }
+
 let downloadFile (js: IJSRuntime) (filename: string) (content: string) (contentType: string) =
     async {
         do! js.InvokeVoidAsync("eval", sprintf """
@@ -90,38 +135,14 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
                     }
 
-                    div {
-                        attr.style "position: relative; display: inline-block; height: 20px;"
-                        button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                            attr.style "padding: 3px; color: #E67E22;"
-                            attr.title "Hard Reset"
-                            on.click (fun _ -> dispatch (ToggleResetConfirm (not model.ShowResetConfirm)))
-                            rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>"""
-                        }
-                        
-                        if model.ShowResetConfirm then
-                            div {
-                                attr.``class`` "reset-confirm-tooltip"
-                                span { text "Reset entire workspace?" }
-                                div {
-                                    attr.``class`` "reset-confirm-actions"
-                                    button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
-                                        attr.style "background: #E67E22; color: white; border: none; font-weight: 600;"
-                                        on.click (fun _ -> dispatch HardReset)
-                                        text "Reset"
-                                    }
-                                    button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
-                                        attr.style "background: #ddd; color: #333; border: none;"
-                                        on.click (fun _ -> dispatch (ToggleResetConfirm false))
-                                        text "Cancel"
-                                    }
-                                }
-                            }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.style "padding: 3px; color: #E67E22;"
+                        attr.title "Hard Reset"
+                        on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some ConfirmAction.ResetWorkspace)))
+                        rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>"""
                     }
-
+                    
                     let canUndo = model.UndoStack <> []
                     let canRedo = model.RedoStack <> []
 
@@ -169,25 +190,16 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     div {
                         attr.``class`` "preset-drawer-content"
                         
-                        let isSimple = model.SelectedPreset = Some "Simple"
-                        let isBranched = model.SelectedPreset = Some "Branched"
-                        let isStacked = model.SelectedPreset = Some "Stacked"
+                        let presetButton name label isSelected =
+                            button {
+                                attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
+                                on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
+                                text label
+                            }
 
-                        button {
-                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSimple then "hywe-btn-primary active" else "hywe-btn-ghost"))
-                            on.click (fun _ -> dispatch (SelectPreset "Simple"))
-                            text "Simple"
-                        }
-                        button {
-                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isBranched then "hywe-btn-primary active" else "hywe-btn-ghost"))
-                            on.click (fun _ -> dispatch (SelectPreset "Branched"))
-                            text "Branch"
-                        }
-                        button {
-                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isStacked then "hywe-btn-primary active" else "hywe-btn-ghost"))
-                            on.click (fun _ -> dispatch (SelectPreset "Stacked"))
-                            text "Stack"
-                        }
+                        presetButton "Simple" "Simple" (model.SelectedPreset = Some "Simple")
+                        presetButton "Branched" "Branch" (model.SelectedPreset = Some "Branched")
+                        presetButton "Stacked" "Stack" (model.SelectedPreset = Some "Stacked")
                     }
 
                     div {
@@ -197,6 +209,8 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     }
                 }
             }
+        else
+            empty()
     }
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
@@ -223,7 +237,7 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
     
     let buttonClass = 
-        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-primary hyWeaveButton"
+        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-dark hyWeaveButton"
         match model.IsHyweaving with
         | true -> baseClass + " stop-state" 
         | false -> 
@@ -323,7 +337,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                         on.pointerdown (fun _ ->
                             let datePart = System.DateTime.Now.ToString("yyMMddmm")
                             let fileName = "HyweLayout_" + datePart + ".svg"
@@ -334,7 +348,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         text "SVG"
                     }
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadDxf)
                         text "DXF"
                     }
@@ -368,6 +382,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
 
         | ViewPanel ->
+            let sideEffect = async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked } |> Async.StartImmediate
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; overflow-x: hidden;"
                 
@@ -395,8 +410,6 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.id "hywe-extruded-polygon"
                         attr.style "width: 100%; height: 100%; display: block; touch-action: none;" 
                     }
-                    async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked }
-                    |> Async.Start
                 }
 
                 // Export buttons
@@ -500,4 +513,5 @@ let view model dispatch (js: IJSRuntime) =
         viewHyweButton model dispatch
         viewHyweTabs model dispatch 
         viewHywePanels model dispatch js
+        viewConfirmOverlay model dispatch
     }
