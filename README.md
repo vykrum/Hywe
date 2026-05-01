@@ -64,7 +64,6 @@ At its core, Hywe challenges the assumption that digital tools must replicate co
 - Inline editing of space names and sizes  
 - Dynamic, logic-driven layout evolution in real time  
 - No backend required as all computation runs in-browser  
-- Supports nested and non-linear spatial constructs  
 
 ---
 
