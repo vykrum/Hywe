@@ -117,6 +117,9 @@ type Model =
         ReportBatch: Map<int, BatchConfgrtns[]>
         IsGeneratingReport: bool
         SelectedPreset: string option
+        EditsCount: int
+        IsPresetsCollapsed: bool
+        IsHelpCollapsed: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -163,6 +166,8 @@ type Message =
     | PreviousOnboardingStep
     | SkipOnboarding
     | RestartOnboarding
+    | TogglePresetsCollapse
+    | ToggleHelpCollapse
     | StartAutoSimulation
     | StopAutoSimulation
     | TransitionToIntro

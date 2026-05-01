@@ -802,12 +802,12 @@ let controlAndInstructions model dispatch =
             div {
                 attr.``class`` "toggle-group"
                 button {
-                    attr.``class`` (match model.UseBoundary with | false -> "toggle-btn active" | _ -> "toggle-btn")
+                    attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseBoundary with | false -> "hywe-btn-primary active toggle-btn" | _ -> "hywe-btn-ghost toggle-btn"))
                     on.click (fun _ -> dispatch (ToggleBoundary false))
                     text "Unbound"
                 }
                 button {
-                    attr.``class`` (match model.UseBoundary with | true -> "toggle-btn active" | _ -> "toggle-btn")
+                    attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseBoundary with | true -> "hywe-btn-primary active toggle-btn" | _ -> "hywe-btn-ghost toggle-btn"))
                     on.click (fun _ -> dispatch (ToggleBoundary true))
                     text "Boundary"
                 }
@@ -817,12 +817,12 @@ let controlAndInstructions model dispatch =
                 attr.``class`` "toggle-group"
                 attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
                 button {
-                    attr.``class`` (match model.UseAbsolute with | false -> "toggle-btn active" | _ -> "toggle-btn")
+                    attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseAbsolute with | false -> "hywe-btn-primary active toggle-btn" | _ -> "hywe-btn-ghost toggle-btn"))
                     on.click (fun _ -> dispatch (ToggleAbsolute false))
                     text "Relative"
                 }
                 button {
-                    attr.``class`` (match model.UseAbsolute with | true -> "toggle-btn active" | _ -> "toggle-btn")
+                    attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseAbsolute with | true -> "hywe-btn-primary active toggle-btn" | _ -> "hywe-btn-ghost toggle-btn"))
                     on.click (fun _ -> dispatch (ToggleAbsolute true))
                     text "Absolute"
                 }

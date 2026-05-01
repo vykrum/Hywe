@@ -88,6 +88,9 @@ let initModel =
         BatchAccumulator = []
         CurrentScreen = LoadingScreen
         ViewLocked = false
+        EditsCount = 0
+        IsPresetsCollapsed = false
+        IsHelpCollapsed = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -146,7 +149,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ]
 
     | SetSrcOfTrth value ->
-        { model with SrcOfTrth = value }, Cmd.none
+        let nextCount = model.EditsCount + 1
+        let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
+        { model with SrcOfTrth = value; EditsCount = nextCount; IsPresetsCollapsed = nextCollapse }, Cmd.none
 
     | StartHyweave ->
         let model2 = { model with 
@@ -225,11 +230,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let isLevelSwitch = match subMsg with NodeCode.SetLevel _ -> true | _ -> false
             let isAction = match subMsg with NodeCode.ExecuteAction _ -> true | _ -> false
 
+            let isIncrementalEdit = not (isMoving || isLevelSwitch)
+            let nextCount = if isIncrementalEdit then model.EditsCount + 1 else model.EditsCount
+            let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
+            
             let modelWithTree = 
                 { model with 
                     Tree = updatedTree 
                     SrcOfTrth = newOutput 
-                    NeedsHyweave = if isMoving then model.NeedsHyweave else true }
+                    NeedsHyweave = if isMoving then model.NeedsHyweave else true
+                    EditsCount = nextCount
+                    IsPresetsCollapsed = nextCollapse }
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -448,6 +459,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | TransitionToMain ->
         { model with CurrentScreen = MainScreen }, Cmd.none
 
+    | TogglePresetsCollapse ->
+        { model with IsPresetsCollapsed = not model.IsPresetsCollapsed }, Cmd.none
+
+    | ToggleHelpCollapse ->
+        { model with IsHelpCollapsed = not model.IsHelpCollapsed }, Cmd.none
+
 open Help
 
 type MyApp() =
@@ -492,7 +509,7 @@ type MyApp() =
 
                             view model dispatch this.JSRuntime
                             if model.Onboarding.IsActive then
-                                Help.viewHelp model.Onboarding dispatch
+                                Help.viewHelp model.Onboarding model.IsHelpCollapsed dispatch
                         }
 
                         Shell.siteFooter model.CurrentScreen

@@ -587,7 +587,7 @@ let alternateConfigurations
         div {
             attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
             button {
-                attr.``class`` "layout-download-btn"
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                 on.pointerdown (fun _ -> 
                     let datePart = System.DateTime.Now.ToString("yyMMddmm")
                     let fileName = "HywVariations_" + datePart + ".svg"
@@ -596,7 +596,7 @@ let alternateConfigurations
                 text "SVG"
             }
             button {
-                attr.``class`` "layout-download-btn"
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                 on.pointerdown (fun _ -> 
                     dispatch DownloadBatchDxf
                 )
