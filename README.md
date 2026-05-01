@@ -26,8 +26,12 @@ At its core, Hywe challenges the assumption that digital tools must replicate co
 
 ## The Workspace
 
-https://github.com/user-attachments/assets/7b559e9c-9a31-4734-8c71-8d219028c01e
-
+<p align="center">
+  <video width="100%" autoplay loop muted playsinline controls>
+    <source src="https://github.com/user-attachments/assets/7b559e9c-9a31-4734-8c71-8d219028c01e" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</p>
 
 
 ---
