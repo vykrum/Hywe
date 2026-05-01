@@ -89,6 +89,8 @@ let initModel =
         IsPresetsCollapsed = false
         IsHelpCollapsed = false
         ShowResetConfirm = false
+        UndoStack = []
+        RedoStack = []
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -101,6 +103,23 @@ let updateMetadata (js: IJSRuntime) =
 
 
 
+let maxUndoDepth = 50
+
+/// Captures the current undoable state and prepends it to the undo stack.
+let pushUndo (model: Model) : Model =
+    let snap = {
+        SrcOfTrth  = model.SrcOfTrth
+        Tree       = model.Tree
+        PolygonEditor = model.PolygonEditor
+        Sequence   = model.Sequence
+    }
+    match model.UndoStack with
+    // Optimized: Only compare the Source of Truth string for equality (very fast)
+    | top :: _ when top.SrcOfTrth = snap.SrcOfTrth -> model 
+    | _ ->
+        let newStack = snap :: model.UndoStack |> List.truncate maxUndoDepth
+        { model with UndoStack = newStack; RedoStack = [] }
+
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     let modelBefore = 
@@ -110,7 +129,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | TransitionToIntro | TransitionToMain 
             | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleResetConfirm _
-            | UpdateMetadata _ -> model
+            | UpdateMetadata _ | Undo | Redo -> model
             | TreeMsg (NodeCode.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
             | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }
@@ -120,6 +139,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     match message with
     | NoOp -> model, Cmd.none
     | SetSqnIndex i ->
+        let model = pushUndo model
         let newSqn = indexToSqn i
         let updatedSrc = 
             match model.EditorMode with
@@ -152,7 +172,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ]
 
     | SetSrcOfTrth value ->
-        let nextCount = model.EditsCount + 1
+        let m = pushUndo model
+        let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
         { model with SrcOfTrth = value; EditsCount = nextCount; IsPresetsCollapsed = nextCollapse }, Cmd.none
 
@@ -218,6 +239,17 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | TreeMsg subMsg ->
+            let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
+            let shouldPush = 
+                match subMsg with
+                | NodeCode.ExecuteAction _ | NodeCode.AddChild _ | NodeCode.UpdateName _ 
+                | NodeCode.UpdateWeight _ | NodeCode.UpdateExtrusion _ -> true
+                | NodeCode.PointerUp ->
+                    // Push only if a drag actually happened
+                    model.Tree.DraggingId.IsSome
+                | _ -> false
+
+            let model = if shouldPush then pushUndo model else model
             let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
         
             let newOutput = NodeCode.getOutput
@@ -229,7 +261,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                  model.PolygonExport.OuterStr
                                  model.PolygonExport.IslandsStr
 
-            let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
             let isLevelSwitch = match subMsg with NodeCode.SetLevel _ -> true | _ -> false
             let isAction = match subMsg with NodeCode.ExecuteAction _ -> true | _ -> false
 
@@ -273,6 +304,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonEditorUpdated
 
     | PolygonEditorUpdated newModel ->
+        let model = pushUndo model
         let newExport = syncPolygonState newModel
         let newOutput = NodeCode.getOutput
                              model.Tree
@@ -295,6 +327,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | FileImported _ | SelectPreset _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
     | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj
     | GenerateReport | ReportGenerated _ | UpdateReportOptions _ as msg ->
+        let model = 
+            match msg with
+            | FileImported _ | SelectPreset _ | ToggleBoundary | ToggleEditorMode -> pushUndo model
+            | _ -> model
         match UpdateUI.update js msg model with
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
@@ -422,6 +458,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | HardReset ->
         Storage.clearBackup js |> ignore
+        let model = pushUndo model
         let resetSyntax = Page.emptyState
         let resetTree = NodeCode.initModel resetSyntax
         let resetPoly = PolygonEditor.initModel
@@ -440,6 +477,44 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             SelectedPreset = None
             ShowResetConfirm = false
         }, Cmd.none
+
+    | Undo ->
+        match model.UndoStack with
+        | [] -> model, Cmd.none
+        | snap :: rest ->
+            let redoSnap = { SrcOfTrth = model.SrcOfTrth; Tree = model.Tree; PolygonEditor = model.PolygonEditor; Sequence = model.Sequence }
+            let finalPoly = match snap.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newExport = syncPolygonState finalPoly
+            let restored = { model with
+                                SrcOfTrth    = snap.SrcOfTrth
+                                Tree         = snap.Tree
+                                PolygonEditor = snap.PolygonEditor
+                                PolygonExport = newExport
+                                Sequence     = snap.Sequence
+                                Derived      = Page.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
+                                UndoStack    = rest
+                                RedoStack    = redoSnap :: model.RedoStack
+                                NeedsHyweave = true }
+            restored, Cmd.none
+
+    | Redo ->
+        match model.RedoStack with
+        | [] -> model, Cmd.none
+        | snap :: rest ->
+            let undoSnap = { SrcOfTrth = model.SrcOfTrth; Tree = model.Tree; PolygonEditor = model.PolygonEditor; Sequence = model.Sequence }
+            let finalPoly = match snap.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newExport = syncPolygonState finalPoly
+            let restored = { model with
+                                SrcOfTrth    = snap.SrcOfTrth
+                                Tree         = snap.Tree
+                                PolygonEditor = snap.PolygonEditor
+                                PolygonExport = newExport
+                                Sequence     = snap.Sequence
+                                Derived      = Page.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
+                                RedoStack    = rest
+                                UndoStack    = undoSnap :: model.UndoStack
+                                NeedsHyweave = true }
+            restored, Cmd.none
 
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none
@@ -541,8 +616,28 @@ open Help
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
 
+    let mutable _dotnetRef: DotNetObjectReference<MyApp> option = None
+
     [<Inject>]
     member val JSRuntime: IJSRuntime = Unchecked.defaultof<_> with get, set
+
+    [<JSInvokable>]
+    member this.HandleUndo() = this.Dispatch Undo
+
+    [<JSInvokable>]
+    member this.HandleRedo() = this.Dispatch Redo
+
+    override this.OnAfterRenderAsync(firstRender) =
+        let t = base.OnAfterRenderAsync(firstRender)
+        if firstRender then
+            let ref = DotNetObjectReference.Create(this)
+            _dotnetRef <- Some ref
+            this.JSRuntime.InvokeVoidAsync("registerUndoRedo", ref).AsTask() |> ignore
+        t
+
+    interface System.IDisposable with
+        member _.Dispose() =
+            _dotnetRef |> Option.iter (fun r -> r.Dispose())
 
     override this.OnInitialized() =
         base.OnInitialized()

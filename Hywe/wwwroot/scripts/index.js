@@ -169,4 +169,14 @@ window.captureCanvas = function(canvasId) {
     if (!canvas) return null;
     const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
     return canvas.toDataURL('image/png');
-};
+};
+// --- Undo / Redo keyboard shortcuts ---
+let _undoRedoDotNet = null;
+window.registerUndoRedo = function(dotnetRef) { _undoRedoDotNet = dotnetRef; };
+document.addEventListener('keydown', function(e) {
+    if (!_undoRedoDotNet) return;
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.ctrlKey && !e.shiftKey && e.key === 'z') { e.preventDefault(); _undoRedoDotNet.invokeMethodAsync('HandleUndo'); }
+    else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) { e.preventDefault(); _undoRedoDotNet.invokeMethodAsync('HandleRedo'); }
+});
