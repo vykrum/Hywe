@@ -105,6 +105,7 @@ let viewReport (model: Model) dispatch =
                 attr.``class`` "report-field"
                 elt "label" { text "Project Title" }
                 input {
+                    attr.``class`` "hywe-input"
                     attr.value opts.ProjectTitle
                     on.input (fun e -> updateOpts (fun o -> { o with ProjectTitle = e.Value :?> string }))
                 }
@@ -114,6 +115,7 @@ let viewReport (model: Model) dispatch =
                 attr.``class`` "report-field"
                 elt "label" { text "Project Number" }
                 input {
+                    attr.``class`` "hywe-input"
                     attr.value opts.ProjectNumber
                     on.input (fun e -> updateOpts (fun o -> { o with ProjectNumber = e.Value :?> string }))
                 }
@@ -123,6 +125,7 @@ let viewReport (model: Model) dispatch =
                 attr.``class`` "report-field"
                 elt "label" { text "Author" }
                 input {
+                    attr.``class`` "hywe-input"
                     attr.value opts.Author
                     on.input (fun e -> updateOpts (fun o -> { o with Author = e.Value :?> string }))
                 }
@@ -132,6 +135,7 @@ let viewReport (model: Model) dispatch =
                 attr.``class`` "report-field"
                 elt "label" { text "Client Name" }
                 input {
+                    attr.``class`` "hywe-input"
                     attr.value opts.ClientName
                     on.input (fun e -> updateOpts (fun o -> { o with ClientName = e.Value :?> string }))
                 }
@@ -141,6 +145,7 @@ let viewReport (model: Model) dispatch =
                 attr.``class`` "report-field"
                 elt "label" { text "Description" }
                 textarea {
+                    attr.``class`` "hywe-input"
                     attr.rows 3
                     attr.value opts.Description
                     on.input (fun e -> updateOpts (fun o -> { o with Description = e.Value :?> string }))

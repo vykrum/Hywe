@@ -46,9 +46,6 @@ type TeachMetadata = {
     Stage: string
 }
 
-
-
-
 type AppScreen =
     | LoadingScreen
     | IntroScreen
@@ -120,6 +117,7 @@ type Model =
         EditsCount: int
         IsPresetsCollapsed: bool
         IsHelpCollapsed: bool
+        ShowResetConfirm: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -179,6 +177,9 @@ type Message =
     | ReportGenerated of string
     | ViewCaptured of string
     | SelectPreset of string
+    | LoadBackup of string
+    | HardReset
+    | ToggleResetConfirm of bool
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

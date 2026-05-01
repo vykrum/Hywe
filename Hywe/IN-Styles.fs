@@ -8,7 +8,7 @@ body {
     width: 100%;
     height: 99%;
     margin: 0;
-    font-family: 'Optima', Candara, Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 14px;
     color: #333;
     -webkit-text-size-adjust: 100%;
@@ -28,7 +28,7 @@ body {
     justify-content: center;
     padding: 6px 14px;
     border-radius: 6px; /* Standard Fillet */
-    font-family: 'Optima', sans-serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
@@ -109,6 +109,12 @@ body {
     background: rgba(0, 0, 0, 0.04);
     color: #333;
 }
+
+.hard-reset-btn:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+    color: #333 !important;
+    transform: scale(1.1);
+}
 """
 
 let sharedStyles = """
@@ -129,24 +135,72 @@ let sharedStyles = """
     background: #fff;
     border: 1px solid #eee;
     border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 0.9rem;
-    font-family: inherit;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
     color: #333;
     outline: none;
     box-sizing: border-box;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .hywe-input:focus {
-    border-color: #ccc;
-    background: #fff;
+    border-color: #363636;
+}
+
+textarea.hywe-input {
+    min-height: 80px;
+    resize: vertical;
 }
 
 .hywe-textarea {
     min-height: 120px;
     resize: vertical;
     line-height: 1.5;
+}
+
+.reset-confirm-tooltip {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    background: #fff;
+    border: 1px solid #E67E22;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 20px rgba(230, 126, 34, 0.15);
+    z-index: 10006;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeInScale 0.2s ease-out;
+    will-change: transform, opacity;
+}
+
+.reset-confirm-tooltip span {
+    font-size: 0.85rem;
+    color: #333;
+    font-weight: 500;
+    text-align: center;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.reset-confirm-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.reset-confirm-actions button {
+    flex: 1;
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: translateX(-50%) scale(0.95) translateY(-5px); }
+    to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
 }
 """
 
@@ -158,7 +212,7 @@ let headerStyles = """
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    font-family: 'Optima', Candara, Calibri;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     position: relative;
     z-index: 1000;
     width: 100%;
@@ -371,49 +425,59 @@ let editorStyles = """
     font-weight: 300;
 }
 
-.preset-btn-stack {
-    position: absolute;
-    top: 48px;
-    left: 10px;
-    z-index: 1001;
+.preset-drawer {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    z-index: 1802;
+    display: flex;
+    align-items: stretch;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    will-change: transform;
+}
+
+.preset-drawer.collapsed {
+    transform: translateX(calc(-100% + 16px));
+}
+
+.preset-drawer-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 8px;
+    border: 1px solid #eee;
+    border-left: none;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+    gap: 6px;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.05);
 }
 
-.preset-btn-stack.collapsed {
-    transform: translateX(-100%) translateX(-20px); 
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Sliver Handles */
-.sliver-handle {
-    position: fixed;
-    left: 0;
+.preset-drawer-handle {
     width: 16px;
-    height: 80px;
-    background: transparent;
-    border: 1px solid rgba(54, 54, 54, 0.1);
+    background: #fff;
+    border: 1px solid #eee;
     border-left: none;
     border-radius: 0 4px 4px 0;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    z-index: 9999;
-    opacity: 0.6;
-    pointer-events: all;
+    cursor: pointer;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+    transition: background 0.2s ease;
 }
 
-.sliver-handle:hover {
-    width: 20px;
-    background: rgba(54, 54, 54, 0.05);
-    border-color: rgba(54, 54, 54, 0.3);
-    opacity: 1;
+.preset-drawer-handle:hover {
+    background: #fafafa;
+}
+
+.preset-drawer-handle span {
+    writing-mode: vertical-rl;
+    font-size: 8px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    transform: rotate(180deg);
 }
 
 
@@ -539,8 +603,9 @@ video.fullscreen-bg {
     z-index: 250;
     background: #d3d3d1;
     color: #363636;
-    font-family: 'Optima', Candara, Calibri;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     font-size: 16px;
+    font-weight: 300;
     line-height: 1.5;
     padding: 20px 30px;
     border-radius: 6px;
@@ -964,7 +1029,7 @@ let nodeStyles = """
     cursor: pointer;
     text-align: center;
     transition: background 0.2s;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     text-transform: uppercase;
 }
 
@@ -1219,30 +1284,7 @@ let teachStyles = """
     margin: 0 auto;
 }
 
-/* Textarea styling */
-.teach-textarea {
-    width: 100%;
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 20px;
-    font-size: 1rem;
-    line-height: 1.6;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.2s ease;
-    min-height: 120px;
-    resize: vertical;
-}
 
-.teach-textarea:focus {
-    border-color: #ccc;
-}
-
-.teach-textarea.small {
-    height: 120px;
-    width: 100%;
-}
 
 
 /* Objective Fields */
@@ -1821,7 +1863,7 @@ let reportPanelStyles = """
     max-width: 800px;
     margin: 0 auto;
     box-sizing: border-box;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     font-size: 13px;
     color: #333;
 }
@@ -1912,24 +1954,17 @@ let reportPanelStyles = """
     background: #fff;
     border: 1px solid #eee;
     border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 12px;
-    font-family: inherit;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
     color: #333;
     outline: none;
     box-sizing: border-box;
     transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.report-field input:focus,
-.report-field textarea:focus {
-    border-color: #ccc;
-}
 
-.report-field textarea {
-    min-height: 80px;
-    resize: vertical;
-}
 
 .report-toggle-tree {
     display: flex;
@@ -2010,7 +2045,7 @@ let reportPrintStyles = """
 @media print {
     @page { size: A3 landscape; margin: 15mm 20mm; }
     .page { page-break-after: always; width: 390mm; height: 267mm; }
-    body  { font-family: 'Inter', system-ui, sans-serif; }
+    body  { font-family: 'Outfit', system-ui, sans-serif; }
 }
 """
 

@@ -174,7 +174,7 @@ let view model dispatch =
 
             textarea {
                 attr.id "hynteract-desc-input"
-                attr.``class`` "teach-textarea small"
+                attr.``class`` "hywe-input"
                 attr.placeholder "Enter spatial narrative or unique design nuances..."
                 attr.value model.UserDescription
                 on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))

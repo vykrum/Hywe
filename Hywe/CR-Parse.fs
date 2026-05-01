@@ -544,8 +544,12 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
             | _ -> m
         ) finalState
     
+    let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
+    
     let finalStateWithBoundary = 
         { finalState with 
-            UseBoundary = not finalState.UseAbsolute
-            PolygonEnabled = not finalState.UseAbsolute }
+            LogicalWidth = if finalState.LogicalWidth <= 0.0 then 300.0 else finalState.LogicalWidth
+            LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
+            UseBoundary = not finalState.UseAbsolute && not isZeroBoundary
+            PolygonEnabled = not finalState.UseAbsolute && not isZeroBoundary }
     FreshlyImported finalStateWithBoundary

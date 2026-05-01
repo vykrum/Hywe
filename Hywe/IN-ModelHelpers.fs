@@ -12,7 +12,6 @@ open ModelTypes
 open Bolero.Html
 open Hywe
 
-
 let downloadFile (js: IJSRuntime) (filename: string) (content: string) (contentType: string) =
     async {
         do! js.InvokeVoidAsync("eval", sprintf """
@@ -49,90 +48,134 @@ let downloadSvg (js: IJSRuntime) (svgId: string) (filename: string) =
 
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
-    let nodeCodeButtonText =
-        match model.EditorMode with
-        | Syntax -> "Node"
-        | Interactive -> "Code"
+    concat {
+        let nodeCodeButtonText =
+            match model.EditorMode with
+            | Syntax -> "Node"
+            | Interactive -> "Code"
 
-    div {
-        attr.style "display:flex; width: 100%; gap:10px; padding: 0 10px; justify-content: space-between; align-items: center; position: relative;"
-        
         div {
-            attr.style "display:flex; gap:4px; align-items: center;"
-            button {
-                attr.id "hywe-save-btn"
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                attr.title "Save"
-                on.click (fun _ -> dispatch SaveRequested)
-                rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
-            }
-
-            button {
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                attr.title "Load"
-                on.click (fun _ -> dispatch ImportRequested)
-                rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
-            }
-
-            input {
-                attr.id "hyw-import-hidden"
-                attr.``type`` "file"
-                attr.style "display:none"
-                attr.accept ".hyw"
-                on.change (fun e ->
-                    async {
-                        let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
-                        dispatch (FileImported content)
-                    } |> Async.StartImmediate
-                )
-            }
+            attr.style "display:flex; width: 100%; gap:2px; padding: 0 4px; justify-content: space-between; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
             
-            button {
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                attr.title (match model.EditorMode with | Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
-                on.click (fun _ -> dispatch ToggleEditorMode)
-                match model.EditorMode with
-                | Syntax -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
-                | Interactive -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
+            div {
+                attr.style "display:flex; gap:0px; align-items: center;"
+                
+                div {
+                    attr.``class`` "node-code-toolbar"
+                    attr.style "pointer-events: auto;"
+                    
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.style "padding: 3px 10px;"
+                        attr.title (match model.EditorMode with | Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
+                        on.click (fun _ -> dispatch ToggleEditorMode)
+                        match model.EditorMode with
+                        | Syntax -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
+                        | Interactive -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
+                    }
+
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.style "padding: 3px 6px;"
+                        attr.title "Save"
+                        on.click (fun _ -> dispatch SaveRequested)
+                        rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
+                    }
+
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.style "padding: 3px 6px;"
+                        attr.title "Load"
+                        on.click (fun _ -> dispatch ImportRequested)
+                        rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
+                    }
+
+                    div {
+                        attr.style "position: relative; display: inline-block;"
+                        button {
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                            attr.style "padding: 3px 6px; color: #E67E22;"
+                            attr.title "Hard Reset"
+                            on.click (fun _ -> dispatch (ToggleResetConfirm (not model.ShowResetConfirm)))
+                            rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>"""
+                        }
+                        
+                        if model.ShowResetConfirm then
+                            div {
+                                attr.``class`` "reset-confirm-tooltip"
+                                span { text "Reset entire workspace?" }
+                                div {
+                                    attr.``class`` "reset-confirm-actions"
+                                    button {
+                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
+                                        attr.style "background: #E67E22; color: white; border: none; font-weight: 600;"
+                                        on.click (fun _ -> dispatch HardReset)
+                                        text "Confirm"
+                                    }
+                                    button {
+                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost"
+                                        attr.style "border: 1px solid #eee;"
+                                        on.click (fun _ -> dispatch (ToggleResetConfirm false))
+                                        text "Cancel"
+                                    }
+                                }
+                            }
+                    }
+
+                    input {
+                        attr.id "hyw-import-hidden"
+                        attr.``type`` "file"
+                        attr.style "display:none"
+                        attr.accept ".hyw"
+                        on.change (fun e ->
+                            async {
+                                let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
+                                dispatch (FileImported content)
+                            } |> Async.StartImmediate
+                        )
+                    }
+                }
             }
         }
         if model.EditorMode = Interactive then
             let isCollapsed = model.IsPresetsCollapsed
-            div {
-                if isCollapsed then
-                    div {
-                        attr.``class`` "sliver-handle"
-                        attr.style "top: 60px; z-index: 9999;"
-                        on.click (fun _ -> dispatch TogglePresetsCollapse)
-                        span { text "Presets" }
-                    }
+            concat {
+                div {
+                    attr.style (if isCollapsed then "display: none;" else "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
+                    on.click (fun _ -> dispatch TogglePresetsCollapse)
+                }
 
                 div {
-                    attr.``class`` (if isCollapsed then "preset-btn-stack collapsed" else "preset-btn-stack")
+                    attr.``class`` (if isCollapsed then "preset-drawer collapsed" else "preset-drawer")
                     
-                    span {
-                        attr.style "font-size: 8px; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-family: sans-serif; font-weight: 600; text-align: center; width: 100%; display: block;"
-                        text "Presets"
+                    div {
+                        attr.``class`` "preset-drawer-content"
+                        
+                        let isSimple = model.SelectedPreset = Some "Simple"
+                        let isBranched = model.SelectedPreset = Some "Branched"
+                        let isStacked = model.SelectedPreset = Some "Stacked"
+
+                        button {
+                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSimple then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                            on.click (fun _ -> dispatch (SelectPreset "Simple"))
+                            text "Simple"
+                        }
+                        button {
+                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isBranched then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                            on.click (fun _ -> dispatch (SelectPreset "Branched"))
+                            text "Branch"
+                        }
+                        button {
+                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isStacked then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                            on.click (fun _ -> dispatch (SelectPreset "Stacked"))
+                            text "Stack"
+                        }
                     }
 
-                    let isSimple = model.SelectedPreset = Some "Simple"
-                    let isBranched = model.SelectedPreset = Some "Branched"
-                    let isStacked = model.SelectedPreset = Some "Stacked"
-
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSimple then "hywe-btn-primary active" else "hywe-btn-ghost"))
-                        on.click (fun _ -> dispatch (SelectPreset "Simple"))
-                        text "Simple"
-                    }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isBranched then "hywe-btn-primary active" else "hywe-btn-ghost"))
-                        on.click (fun _ -> dispatch (SelectPreset "Branched"))
-                        text "Branch"
-                    }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isStacked then "hywe-btn-primary active" else "hywe-btn-ghost"))
-                        on.click (fun _ -> dispatch (SelectPreset "Stacked"))
-                        text "Stack"
+                    div {
+                        attr.``class`` "preset-drawer-handle"
+                        on.click (fun _ -> dispatch TogglePresetsCollapse)
+                        span { text "Presets" }
                     }
                 }
             }
@@ -366,7 +409,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         let name = Coxel.prpVlu model.Derived.cxCxl1.[i].Name
                         let color = model.Derived.cxClr1.[i]
                         div {
-                            attr.style "display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Inter', sans-serif; color: #666;"
+                            attr.style "display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Outfit', system-ui, sans-serif; color: #666;"
                             div {
                                 attr.style (sprintf "width: 12px; height: 12px; border-radius: 2px; background: %s;" color)
                             }
@@ -392,7 +435,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             
                             // Text Above - Multi-line, width constrained to match 4x6 grid (156px)
                             div {
-                                attr.style "font-family: 'Inter', sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 15px; text-align: center; font-weight: 500; line-height: 1.3;"
+                                attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 15px; text-align: center; font-weight: 500; line-height: 1.3;"
                                 text "Generating Configurations"
                             }
 
@@ -428,6 +471,8 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | ReportPanel ->
             Hywe.Report.viewReport model dispatch
     }
+
+
 
 
 let view model dispatch (js: IJSRuntime) =

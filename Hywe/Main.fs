@@ -70,9 +70,6 @@ let initModel =
         ReportBatch = Map.empty
         IsGeneratingReport = false
         SelectedPreset = Some "Simple"
-
-
-
         HoveredInfo = None
         IsSavingToHynteract = false
         ShowSuccessMessage = false
@@ -91,6 +88,7 @@ let initModel =
         EditsCount = 0
         IsPresetsCollapsed = false
         IsHelpCollapsed = false
+        ShowResetConfirm = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -109,7 +107,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         if model.Onboarding.IsActive then
             match message with
             | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp 
-            | TransitionToIntro | TransitionToMain -> model
+            | TransitionToIntro | TransitionToMain 
+            | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
+            | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleResetConfirm _
+            | UpdateMetadata _ -> model
             | TreeMsg (NodeCode.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
             | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }
@@ -141,6 +142,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 IsHyweaving = true 
                 SelectedPreviewIndex = None 
             }
+
+        Storage.autoSave js updatedSrc |> ignore
 
         modelWithNewSqn,
         Cmd.batch [
@@ -242,6 +245,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     EditsCount = nextCount
                     IsPresetsCollapsed = nextCollapse }
 
+            if isIncrementalEdit then
+                Storage.autoSave js newOutput |> ignore
+
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
                     let m = { modelWithTree with Derived = Page.deriveData newOutput model.PolygonExport.EntryStr updatedTree.ActiveLevel }
@@ -268,9 +274,20 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | PolygonEditorUpdated newModel ->
         let newExport = syncPolygonState newModel
+        let newOutput = NodeCode.getOutput
+                             model.Tree
+                             model.Sequence
+                             newExport.Width
+                             newExport.Height
+                             newExport.AbsStr
+                             newExport.OuterStr
+                             newExport.IslandsStr
+        Storage.autoSave js newOutput |> ignore
+
         { model with 
             PolygonEditor = Stable newModel
             PolygonExport = newExport
+            SrcOfTrth = newOutput
             NeedsHyweave = true        },
             Cmd.none
 
@@ -373,6 +390,57 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
 
+    | LoadBackup content ->
+        if String.IsNullOrWhiteSpace content then model, Cmd.none
+        else
+            // Extract Sequence (Q=...)
+            let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
+            let m = regex.Match(content)
+            let newSqn = if m.Success then m.Groups.[1].Value else model.Sequence
+            
+            // Restore Tree
+            let newTree = NodeCode.initModel content
+            
+            // Restore Polygon
+            let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newState = Parse.importFromHyw content currentInner
+            let finalPoly = match newState with Stable m | FreshlyImported m -> m
+            let newExport = syncPolygonState finalPoly
+            
+            let updatedModel = 
+                { model with 
+                    SrcOfTrth = content
+                    Tree = newTree
+                    LastValidTree = newTree
+                    PolygonEditor = newState
+                    PolygonExport = newExport
+                    Sequence = newSqn
+                    Derived = Page.deriveData content newExport.EntryStr newTree.ActiveLevel
+                    NeedsHyweave = true
+                }
+            updatedModel, Cmd.none
+
+    | HardReset ->
+        Storage.clearBackup js |> ignore
+        let resetSyntax = Page.emptyState
+        let resetTree = NodeCode.initModel resetSyntax
+        let resetPoly = PolygonEditor.initModel
+        let resetExport = syncPolygonState resetPoly
+        
+        { model with 
+            SrcOfTrth = resetSyntax
+            Tree = resetTree
+            LastValidTree = resetTree
+            PolygonEditor = Stable resetPoly
+            PolygonExport = resetExport
+            Sequence = allSqns.[11]
+            Derived = Page.deriveData resetSyntax resetExport.EntryStr 0
+            NeedsHyweave = true
+            EditsCount = 0
+            SelectedPreset = None
+            ShowResetConfirm = false
+        }, Cmd.none
+
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none
         else
@@ -465,6 +533,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | ToggleHelpCollapse ->
         { model with IsHelpCollapsed = not model.IsHelpCollapsed }, Cmd.none
 
+    | ToggleResetConfirm show ->
+        { model with ShowResetConfirm = show }, Cmd.none
+
 open Help
 
 type MyApp() =
@@ -479,6 +550,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
+                Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
@@ -509,7 +581,7 @@ type MyApp() =
 
                             view model dispatch this.JSRuntime
                             if model.Onboarding.IsActive then
-                                Help.viewHelp model.Onboarding model.IsHelpCollapsed dispatch
+                                Help.viewHelp model.Onboarding dispatch
                         }
 
                         Shell.siteFooter model.CurrentScreen

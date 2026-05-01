@@ -158,8 +158,8 @@ let renderFlowchartSvg (root: TreeNode) : string =
     for node in nodes do
         let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
         sprintf """<rect x="%f" y="%f" width="80" height="40" rx="8" ry="8" fill="white" stroke="#aaaaaa" stroke-width="1.5" />""" (node.X - 40.0) (node.Y - 20.0) |> sb.AppendLine |> ignore
-        sprintf """<text x="%f" y="%f" font-family="sans-serif" font-size="12px" text-anchor="middle" dominant-baseline="middle" fill="#333333">%s</text>""" node.X (node.Y - 5.0) safeName |> sb.AppendLine |> ignore
-        sprintf """<text x="%f" y="%f" font-family="sans-serif" font-size="10px" text-anchor="middle" dominant-baseline="middle" fill="#888888">%s</text>""" node.X (node.Y + 10.0) node.Weight |> sb.AppendLine |> ignore
+        sprintf """<text x="%f" y="%f" font-family="Outfit, system-ui, sans-serif" font-size="12px" text-anchor="middle" dominant-baseline="middle" fill="#333333">%s</text>""" node.X (node.Y - 5.0) safeName |> sb.AppendLine |> ignore
+        sprintf """<text x="%f" y="%f" font-family="Outfit, system-ui, sans-serif" font-size="10px" text-anchor="middle" dominant-baseline="middle" fill="#888888">%s</text>""" node.X (node.Y + 10.0) node.Weight |> sb.AppendLine |> ignore
 
     sb.AppendLine("</svg>") |> ignore
     sb.ToString()
@@ -235,9 +235,12 @@ let tBase : Printf.StringFormat<string -> string> = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <title>%s Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 @page { size: A3 landscape; margin: 0; }
-body { font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 0; background: #fff; color: #333; font-size: 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: 'Outfit', system-ui, sans-serif; margin: 0; padding: 0; background: #fff; color: #333; font-size: 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .page { width: 420mm; height: 297mm; page-break-after: always; position: relative; box-sizing: border-box; overflow: hidden; }
 .page-inner { padding: 8mm 15mm 15mm 15mm; height: 100%%; box-sizing: border-box; display: flex; flex-direction: column; }
 .cover-page { display: flex; flex-direction: row; }

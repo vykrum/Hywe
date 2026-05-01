@@ -74,7 +74,7 @@ let renderFormattedContent (content: string) =
             if i < words.Length - 1 then text " "
     }
 
-let viewHelp (state: OnboardingState) (isCollapsed: bool) (dispatch: Message -> unit) =
+let viewHelp (state: OnboardingState) (dispatch: Message -> unit) =
     let data = getOnboardingStepData state.CurrentStep
     let stepId = 
         match state.CurrentStep with
@@ -88,68 +88,51 @@ let viewHelp (state: OnboardingState) (isCollapsed: bool) (dispatch: Message -> 
         | Finish -> "onboarding-step-Finish"
 
     div {
-        if isCollapsed then
+        attr.``class`` "onboarding-overlay"
+        attr.style "z-index: 9999;"
+        
+        div {
+            attr.id stepId
+            attr.``class`` ("onboarding-tooltip " + data.Position)
+            
             div {
-                attr.``class`` "sliver-handle"
-                attr.style "top: 160px; z-index: 9999;" 
-                on.click (fun _ -> dispatch ToggleHelpCollapse)
-                span { text "Help" }
-            }
-        else
-            div {
-                attr.``class`` "onboarding-overlay"
-                attr.style "z-index: 9999;"
-                
+                attr.``class`` "tooltip-glass"
+
+                if not (System.String.IsNullOrWhiteSpace data.Title) then
+                    h4 {
+                        attr.style "margin: 0 0 4px 0; font-size: 0.75rem; font-weight: 700; color: #2E86C1; letter-spacing: -0.2px; text-align: center;"
+                        text data.Title
+                    }
+
+                p { 
+                    attr.style "margin: 0 0 8px 0; font-size: 0.7rem; line-height: 1.3; color: #555; text-align: center;"
+                    renderFormattedContent data.Content
+                }
+
                 div {
-                    attr.id stepId
-                    attr.``class`` ("onboarding-tooltip " + data.Position)
+                    attr.style "display: flex; justify-content: space-between; align-items: center; padding: 0 4px;"
                     
-                    div {
-                        attr.``class`` "tooltip-glass"
-                        
-                        div {
-                            attr.style "position: absolute; top: 4px; left: 4px; opacity: 0.3; cursor: pointer;"
-                            attr.title "Collapse Help"
-                            on.click (fun _ -> dispatch ToggleHelpCollapse)
-                            rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
-                        }
+                    button {
+                        attr.``class`` "onboarding-link"
+                        attr.style (if state.CurrentStep = Welcome then "opacity: 0; pointer-events: none;" else "font-weight: bold;")
+                        on.click (fun _ -> dispatch PreviousOnboardingStep)
+                        text "<"
+                    }
 
-                        if not (System.String.IsNullOrWhiteSpace data.Title) then
-                            h4 {
-                                attr.style "margin: 0 0 4px 0; font-size: 0.75rem; font-weight: 700; color: #2E86C1; letter-spacing: -0.2px; text-align: center;"
-                                text data.Title
-                            }
+                    button {
+                        attr.``class`` "onboarding-skip-link"
+                        attr.style "font-weight: bold; font-size: 0.8rem; color: #e67e22;"
+                        on.click (fun _ -> dispatch SkipOnboarding)
+                        text "x"
+                    }
 
-                        p { 
-                            attr.style "margin: 0 0 8px 0; font-size: 0.7rem; line-height: 1.3; color: #555; text-align: center;"
-                            renderFormattedContent data.Content
-                        }
-
-                        div {
-                            attr.style "display: flex; justify-content: space-between; align-items: center; padding: 0 4px;"
-                            
-                            button {
-                                attr.``class`` "onboarding-link"
-                                attr.style (if state.CurrentStep = Welcome then "opacity: 0; pointer-events: none;" else "font-weight: bold;")
-                                on.click (fun _ -> dispatch PreviousOnboardingStep)
-                                text "<"
-                            }
-
-                            button {
-                                attr.``class`` "onboarding-skip-link"
-                                attr.style "font-weight: bold; font-size: 0.8rem; color: #e67e22;"
-                                on.click (fun _ -> dispatch SkipOnboarding)
-                                text "x"
-                            }
-
-                            button {
-                                attr.``class`` "onboarding-link"
-                                attr.style "font-weight: bold;"
-                                on.click (fun _ -> dispatch NextOnboardingStep)
-                                text ">"
-                            }
-                        }
+                    button {
+                        attr.``class`` "onboarding-link"
+                        attr.style "font-weight: bold;"
+                        on.click (fun _ -> dispatch NextOnboardingStep)
+                        text ">"
                     }
                 }
             }
+        }
     }

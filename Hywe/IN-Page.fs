@@ -90,6 +90,8 @@ let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
 ///
 
 // Default Syntax
+let emptyState = "| (0/X=1), (1/75/Root) |"
+
 let beeyond = $"| (0/X=1), (1/{NodeCode.initWeight}/Dock),(1.1/{NodeCode.initWeight}/Logistics),(1.2/{NodeCode.initWeight}/Lab),"+
               $"(1.3/{NodeCode.initWeight}/Habitation),(1.4/{NodeCode.initWeight}/Power) |"
 

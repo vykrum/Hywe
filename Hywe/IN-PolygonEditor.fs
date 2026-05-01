@@ -715,9 +715,9 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
 
                 return updatedModel |> refreshCachedStrings
         }
-
+ 
     | RemoveVertex _ -> async { return model }
-
+ 
     | StartDragEntry ev ->
         async {
             match model.SvgInfo with

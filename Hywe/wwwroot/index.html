@@ -10,6 +10,11 @@
     <link rel="canonical" href="https://hywe.in/" />
     <meta name="author" content="Vikram Subbaiah" />
     
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
     <meta property="og:title" content="HYWE" />
     <meta property="og:description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
@@ -47,6 +52,12 @@
     <link rel="manifest" href="/images/site.webmanifest" />
     <style>
         /* Minimal critical CSS for the initial loading state */
+        body {
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-weight: 300;
+            margin: 0;
+            padding: 0;
+        }
         #loading-frame {
             position: fixed;
             top: 37px;
@@ -74,8 +85,9 @@
             z-index: 250;
             background: #d3d3d1;
             color: #363636;
-            font-family: 'Optima', Candara, Calibri, sans-serif;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
             font-size: 16px;
+            font-weight: 300;
             line-height: 1.5;
             padding: 20px 30px;
             border-radius: 6px;
@@ -96,7 +108,7 @@
             display: flex;
             flex-direction: row;
             align-items: flex-start;
-            font-family: 'Optima', Candara, Calibri;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
             position: relative;
             z-index: 1000;
             width: 100%;
