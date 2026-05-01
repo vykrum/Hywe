@@ -27,7 +27,7 @@ At its core, Hywe challenges the assumption that digital tools must replicate co
 ## The Workspace
 
 <p align="center">
-  <img src="Hywe/wwwroot/images/Hywe-Panels.gif" alt="Hywe Workspace Panels" />
+  <video src="Hywe/wwwroot/images/Hywe-Panels.mp4" width="100%" autoplay loop muted playsinline controls></video>
 </p>
 
 
