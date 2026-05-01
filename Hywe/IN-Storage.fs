@@ -7,6 +7,13 @@ open Microsoft.JSInterop
 let autoSave (js: IJSRuntime) (content: string) =
     js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content)
 
+let clearBackup (js: IJSRuntime) =
+    js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup")
+
+// Retrieve shadow save
+let getBackup (js: IJSRuntime) =
+    js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
+
 // Generates timestamped filename and triggers download
 let saveFile (js: IJSRuntime) (content: string) =
     let timestamp = DateTime.Now.ToString("yyMMddHHmm")

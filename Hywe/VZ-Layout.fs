@@ -64,7 +64,7 @@ type crTx = Template<
         fill="${fl}"
         text-decoration="${td}"
         font-size="10px"
-        font-family="Verdana"
+        font-family="Outfit, system-ui, sans-serif"
         text-anchor="middle"
         style="text-transform: lowercase">
         <textPath
@@ -81,7 +81,7 @@ type svtx = Template<
         y="${yy}"
         width = "50px"
         font-size = "10px"
-        font-family="Verdana"
+        font-family="Outfit, system-ui, sans-serif"
         text-anchor="middle"
         dominant-baseline="middle"
         fill = "#808080"
@@ -210,7 +210,7 @@ let svgCoxels
     (svgId : string option) = 
     
     match cxl with
-    | [||] -> div { attr.style "padding: 20px; color: #888; font-family: sans-serif;"; text "No layout generated for this level." }
+    | [||] -> div { attr.style "padding: 20px; color: #888; font-family: 'Outfit', system-ui, sans-serif;"; text "No layout generated for this level." }
     | _ ->
         // Vertices
         let sqn = cxl |> Array.map (fun x ->x.Seqn)
@@ -224,7 +224,7 @@ let svgCoxels
         // Calculate global shifts to normalize the layout within the SVG viewport
         let allPoints = Array.concat crd1
         match allPoints with
-        | [||] -> div { attr.style "padding: 20px; color: #888; font-family: sans-serif;"; text "Base Unavailable" }
+        | [||] -> div { attr.style "padding: 20px; color: #888; font-family: 'Outfit', system-ui, sans-serif;"; text "Base Unavailable" }
         | _ ->
             let minX1 = fst (Array.minBy fst allPoints)
             let maxX1 = fst (Array.maxBy fst allPoints)
@@ -481,7 +481,7 @@ let alternateConfigurations
                     "y" => (-headerHeight / 1.5)
     
                     // Correct way to pass the string as an Attr
-                    attr.style $"font-family: sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal; dominant-baseline: hanging;"
+                    attr.style $"font-family: 'Outfit', system-ui, sans-serif; font-size: 22px; fill: {borderColor}; text-anchor: middle; font-weight: normal; dominant-baseline: hanging;"
     
                     text (labelPhrase.[i].ToString())
                 }
@@ -527,7 +527,7 @@ let alternateConfigurations
                                         "font-weight" => if j = 0 then "700" else "400"
                                         "fill" => if j = 0 then "#333333" else "#666666"
                                         "font-size" => "10px"
-                                        "font-family" => "Verdana"
+                                        "font-family" => "Outfit, system-ui, sans-serif"
                                         "text-anchor" => "middle"
                                         attr.style "text-transform: lowercase; pointer-events: none;"
                                         elt "textPath" {
@@ -578,7 +578,7 @@ let alternateConfigurations
                     }
                     elt "text" { 
                         "x" => 18.0 
-                        attr.style "font-family: 'Inter', system-ui, sans-serif; font-size: 11px; fill: #666;"
+                        attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 11px; fill: #666;"
                         text s.name 
                     }
                 }

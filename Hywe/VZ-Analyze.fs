@@ -65,7 +65,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
         div {
             attr.``style`` "width: 100%; box-sizing: border-box;"
             h3 { 
-                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 20px; border-left: 4px solid #888; padding-left: 10px; font-family: sans-serif; display: flex; justify-content: space-between; align-items: center;"
+                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 20px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
                 text "ADJACENCY MATRIX" 
                 span {
                     attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
@@ -75,7 +75,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             div {
                 attr.``style`` "overflow-x: auto;"
                 table {
-                    attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: Verdana, sans-serif; opacity: 0.85;"
+                    attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
                     thead {
                         tr {
                             attr.``style`` "height: 32px;"
@@ -121,7 +121,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         div {
             attr.``style`` "flex: 1 1 450px; min-width: 300px;"
             h3 { 
-                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: sans-serif; display: flex; justify-content: space-between; align-items: center;"
+                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
                 text "AREA METRICS" 
                 div {
                     attr.``style`` "display: flex; gap: 8px;"
@@ -135,7 +135,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
             div {
                 attr.``style`` "overflow-x: auto;"
                 table {
-                    attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: Verdana, sans-serif; opacity: 0.85;"
+                    attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
                     thead {
                         tr {
                             attr.``style`` "height: 32px;"

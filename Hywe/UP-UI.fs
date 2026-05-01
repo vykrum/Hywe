@@ -103,6 +103,10 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         let newState = Parse.importFromHyw clean inner
         let finalPoly = match newState with FreshlyImported m | Stable m -> m
         let newExport = syncPolygonState finalPoly
+        let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
+        let m = regex.Match(clean)
+        let newSqn = if m.Success then m.Groups.[1].Value else model.Sequence
+
         { model with 
             SrcOfTrth = clean
             Tree = newTree
@@ -113,13 +117,15 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             ParseError = false
             LastBatchSrc = None
             SelectedPreset = None
+            Sequence = newSqn
             EditsCount = 0
         }, 
         Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
+            Cmd.ofMsg StartHyweave
             Cmd.OfTask.attempt (fun () -> task { 
                 do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
-            }) () (fun _ -> FinishHyweave)
+            }) () (fun _ -> NoOp)
         ]
 
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
