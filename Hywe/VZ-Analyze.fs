@@ -49,12 +49,12 @@ let renderAdjacencyCell isAdj color =
     match isAdj with
     | true -> 
         td {
-            attr.``style`` $"border: 1px solid #eee; padding: 8px; text-align: center; background: {color}; color: #2c3e50;"
+            attr.``style`` $"border: 1px solid #eee; padding: 8px; text-align: center; background: {color}; color: #646464;"
             text "✓"
         }
     | false ->
         td {
-            attr.``style`` "border: 1px solid #eee; padding: 8px; text-align: center; color: #ddd;"
+            attr.``style`` "border: 1px solid #eee; padding: 8px; text-align: center; color: #646464; opacity: 0.4;"
             text "✕"
         }
 

@@ -42,14 +42,14 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 8px;"
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
-                        attr.style "flex: 1; background: #333; color: white; border: none;"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-dark"
+                        attr.style "flex: 1;"
                         on.pointerdown (fun _ -> dispatch onConfirm)
                         text confirmMsg
                     }
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
-                        attr.style "flex: 1; background: #f5f5f5; color: #666; border: none;"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                        attr.style "flex: 1;"
                         on.pointerdown (fun _ -> dispatch (ToggleConfirm None))
                         text "Cancel"
                     }
@@ -192,7 +192,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         
                         let presetButton name label isSelected =
                             button {
-                                attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                                attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
                                 on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
                                 text label
                             }
@@ -237,7 +237,7 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
     
     let buttonClass = 
-        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-primary hyWeaveButton"
+        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-dark hyWeaveButton"
         match model.IsHyweaving with
         | true -> baseClass + " stop-state" 
         | false -> 
@@ -337,7 +337,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                         on.pointerdown (fun _ ->
                             let datePart = System.DateTime.Now.ToString("yyMMddmm")
                             let fileName = "HyweLayout_" + datePart + ".svg"
@@ -348,7 +348,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         text "SVG"
                     }
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadDxf)
                         text "DXF"
                     }

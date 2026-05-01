@@ -92,8 +92,8 @@ let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
 // Default Syntax
 let emptyState = "| (0/X=1), (1/75/Root) |"
 
-let beeyond = $"| (0/X=1), (1/{NodeCode.initWeight}/Dock),(1.1/{NodeCode.initWeight}/Logistics),(1.2/{NodeCode.initWeight}/Lab),"+
-              $"(1.3/{NodeCode.initWeight}/Habitation),(1.4/{NodeCode.initWeight}/Power) |"
+let beeyond = $"| (0/X=1), (1/105/Dock),(1.1/85/Logistics),(1.2/95/Lab),"+
+              $"(1.3/75/Habitation),(1.4/110/Power) |"
 
 let beedroom = "| (0/Q=VRCWSW/L=0/W=40/H=40/X=0/E=0/O=0,0,40,0,40,40,0,40/I=/T=3), (1/7/Foyer), (1.1/12/Living), (1.1.1/18/Dining)," +
                 "(1.1.1.1/15/Kitchen), (1.1.1.1.1/6/Utility), (1.1.1.2/14/Bed-1), (1.1.1.2.1/8/Bath-1), (1.1.1.3/18/Bed-2)," +

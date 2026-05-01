@@ -196,12 +196,12 @@ let viewReport (model: Model) dispatch =
                     div {
                         attr.``class`` "variation-grid-controls"
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost report-mini-btn"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
                             on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
                             text "All"
                         }
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost report-mini-btn"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
                             on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.empty } o.LevelSections }))
                             text "None"
                         }
@@ -232,7 +232,7 @@ let viewReport (model: Model) dispatch =
         }
         
         button {
-            attr.``class`` "hywe-btn hywe-btn-primary report-generate-btn"
+            attr.``class`` "hywe-btn hywe-btn-dark report-generate-btn"
             attr.disabled model.IsGeneratingReport
             on.click (fun _ -> dispatch GenerateReport)
             text (if model.IsGeneratingReport then "Generating..." else "Generate Report (PDF)")

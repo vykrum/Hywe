@@ -59,15 +59,22 @@ let private selectField (model: Model) dispatch (label: string) (current: string
         div {
             attr.``class`` "teach-option-group"
             for opt in options do
+                let activeClass = 
+                    if current = opt then "hywe-btn-gray active teach-option"
+                    else "hywe-btn-light teach-option"
                 button {
-                    attr.``class`` ("hywe-btn hywe-btn-sm " + (if current = opt then "hywe-btn-primary active teach-option" else "hywe-btn-ghost teach-option"))
+                    attr.``class`` ("hywe-btn hywe-btn-sm " + activeClass)
                     on.mouseover (fun _ -> dispatch (SetHoveredInfo (descriptions |> Map.tryFind opt)))
                     on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
                     on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m opt)))
                     text opt
                 }
+            
+            let otherActiveClass =
+                if not isPredefined then "hywe-btn-gray active teach-option"
+                else "hywe-btn-light teach-option"
             button {
-                attr.``class`` ("hywe-btn hywe-btn-sm " + (if not isPredefined then "hywe-btn-primary active teach-option" else "hywe-btn-ghost teach-option"))
+                attr.``class`` ("hywe-btn hywe-btn-sm " + otherActiveClass)
                 on.mouseover (fun _ -> dispatch (SetHoveredInfo (Some $"Enter a custom {label.ToLower()} tag.")))
                 on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
                 on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m "")))
@@ -156,7 +163,7 @@ let view model dispatch =
                 }
 
                 button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
                     attr.style "justify-self: center;"
                     attr.title "Generate Summary"
                     on.click (fun _ -> dispatch SuggestDescription)
@@ -197,7 +204,7 @@ let view model dispatch =
 
             button {
                 attr.``class`` (
-                    "hywe-btn hywe-btn-primary record-submit-btn" +
+                    "hywe-btn hywe-btn-dark record-submit-btn" +
                     (if isBusy || not hasSummary then " disabled" else " active")
                 )
                 attr.style (if not hasSummary then "opacity: 0.5; cursor: not-allowed;" else "")

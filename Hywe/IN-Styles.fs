@@ -77,13 +77,14 @@ body {
 }
 
 /* Variants */
-.hywe-btn-primary {
+.hywe-btn-dark {
     background-color: #555;
     color: #fff;
     border-color: #555;
 }
 
-.hywe-btn-primary:hover:not(:disabled) {
+.hywe-btn-dark:hover:not(:disabled),
+.hywe-btn-dark.active {
     background-color: #333;
     border-color: #333;
 }
@@ -97,6 +98,33 @@ body {
 .hywe-btn-ghost:hover:not(:disabled) {
     background: rgba(0, 0, 0, 0.04);
     color: #333;
+}
+
+.hywe-btn-gray {
+    background-color: #f2f2f2;
+    color: #444;
+    border-color: #e8e8e8;
+}
+
+.hywe-btn-gray:hover:not(:disabled),
+.hywe-btn-gray.active {
+    background-color: #e8e8e8;
+    border-color: #d8d8d8;
+    color: #111;
+}
+
+.hywe-btn-light {
+    background-color: #ffffff;
+    color: #444;
+    border-color: #eeeeee;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.hywe-btn-light:hover:not(:disabled),
+.hywe-btn-light.active {
+    background-color: #f8f8f8;
+    border-color: #e0e0e0;
+    color: #222;
 }
 
 .hywe-btn-flat {
@@ -1280,7 +1308,8 @@ let teachStyles = """
     font-size: 0.9rem;
     color: #666;
     line-height: 1.4;
-    max-width: 600px;
+    width: 100%;
+    max-width: 800px;
     margin: 0 auto;
 }
 
@@ -1291,9 +1320,8 @@ let teachStyles = """
 .teach-objective-section {
     width: 100%;
     display: flex;
-    flex-flow: row wrap;
-    justify-content: center;
-    gap: 2rem 1.5rem;
+    flex-direction: column;
+    gap: 1.2rem;
 }
 
 
@@ -1301,7 +1329,8 @@ let teachStyles = """
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    align-items: center;
+    align-items: flex-start;
+    width: 100%;
 }
 
 .teach-field-label {
@@ -1316,15 +1345,9 @@ let teachStyles = """
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
-.teach-option.active {
-    /* Modifier for active state when using .hywe-btn */
-    background: #363636;
-    color: #fff;
-    border-color: #363636;
-}
 
 .teach-custom-input {
     width: 100%;
@@ -1373,14 +1396,18 @@ let teachStyles = """
     margin-top: 10px;
 }
 
-/* Combined sizing for both buttons */
-.mic-button,
-.record-submit-btn {
+.mic-button {
     height: 42px;
-    /* Set a fixed height */
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+}
+
+.record-submit-btn {
+    width: 100%;
+    max-width: 800px;
+    margin-top: 10px;
     box-sizing: border-box;
 }
 
@@ -1419,8 +1446,7 @@ let teachStyles = """
 /* Submit Button styling */
 /* Submit Button specific overrides if any */
 .record-submit-btn {
-    padding: 0 20px;
-    height: 42px;
+    padding: 10px 20px;
 }
 
 @keyframes mic-pulse {
@@ -1936,9 +1962,9 @@ let reportPanelStyles = """
 }
 
 .var-chip.selected {
-    background: #363636;
-    color: white;
-    border-color: #363636;
+    background: #e8e8e8;
+    color: #111;
+    border-color: #d8d8d8;
 }
 
 .report-field label {

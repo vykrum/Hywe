@@ -73,6 +73,7 @@ let initWeight = 96
 let randomNames = ["<Hive>"; "<Cell>"; "<Comb>"; "<Hex>"; "<Core>"; "<Dock>"; "<Ring>"; "<Link>"; "<Arc>"; "<Mod>"; "<Buzz>"; "<Wax>"; "<Sting>"; "<Veil>"; "<Arch>"; "<Glow>"; "<Path>"; "<Air>"; "<Clad>"; "<Echo>"; "<Dawn>"; "<Brood>"; "<Guard>"; "<Swarm>"; "<Nect>"; "<Pupa>"; "<Drone>"; "<Queen>"; "<Field>"; "<Trail>"]
 let rng = System.Random()
 let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
+let getRandomWeight () = rng.Next(75, 151).ToString()
 
 let injectSqn (input: string) (newSqn: string) =
     let levels = input.Split(';', StringSplitOptions.RemoveEmptyEntries)
@@ -317,7 +318,7 @@ let updateSub (js: IJSRuntime) msg model =
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         let rec add node =
             if node.Id = parentId then
-                let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0 }
+                let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0 }
                 { node with Children = node.Children @ [newChild] }
             else
                 { node with Children = node.Children |> List.map add }
@@ -333,7 +334,11 @@ let updateSub (js: IJSRuntime) msg model =
         { model with Levels = finalLevels }, Cmd.none
     | UpdateWeight (id, weight) ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-        let newRoot = updateNodeById id (fun n -> { n with Weight = weight }) currentTree
+        let sanitizedWeight = 
+            match Double.TryParse weight with
+            | true, v -> (int (round v)).ToString()
+            | _ -> weight // Keep as is if it's not a number (might be a formula in some cases, but here we prefer integers)
+        let newRoot = updateNodeById id (fun n -> { n with Weight = sanitizedWeight }) currentTree
         let nextLevels = model.Levels |> Map.add model.ActiveLevel newRoot
         let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0 // Start sync from base level to ensure full propagation
         { model with Levels = finalLevels }, Cmd.none
@@ -849,7 +854,7 @@ let buildTreeMap (input: string) =
     let levelsMap = 
         [0 .. (if nodeData.IsEmpty then 0 else nodeData |> List.map (fun (_,_,_,_,l) -> l) |> List.max)]
         |> List.map (fun lvl -> 
-            let root = build lvl [] |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0 }
+            let root = build lvl [] |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0 }
             lvl, layoutTree root 0 (ref 50.0))
         |> Map.ofList
 
