@@ -24,7 +24,34 @@ At its core, Hywe challenges the assumption that digital tools must replicate co
 
 [Open Hywe in your browser — No installation or Sign-in required](https://vykrum.github.io/Hywe/)  
 
-![Hywe Demo](https://vykrum.github.io/Hywe/images/hywe-demo.gif)
+## The Workspace
+
+<!-- Launch Hero -->
+<p align="center">
+  <img src="Hywe/wwwroot/images/panel_launch.jpeg" width="100%" alt="Hywe Launch Screen" />
+</p>
+
+<!-- Primary Hero -->
+<p align="center">
+  <img src="Hywe/wwwroot/images/panel_layout.jpeg" width="100%" alt="Hywe Layout Engine" />
+</p>
+
+<!-- Secondary Panels -->
+<p align="center">
+  <img src="Hywe/wwwroot/images/panel_teach.jpeg" width="49%" alt="Teach Panel" />
+  <img src="Hywe/wwwroot/images/panel_report.jpeg" width="49%" alt="Report Panel" />
+</p>
+
+<!-- Tertiary Feature Panels -->
+<p align="center">
+  <img src="Hywe/wwwroot/images/panel_threeD.jpeg" width="32%" alt="3D View" />
+  <img src="Hywe/wwwroot/images/panel_analysis.jpeg" width="32%" alt="Spatial Analysis" />
+  <img src="Hywe/wwwroot/images/panel_batch.jpeg" width="32%" alt="Batch Generation" />
+</p>
+
+<p align="center">
+  <img src="Hywe/wwwroot/images/panel_boundary.jpeg" width="100%" alt="Boundary Editor" />
+</p>
 
 ---
 
