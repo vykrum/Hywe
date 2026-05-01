@@ -86,9 +86,9 @@ let initModel =
         CurrentScreen = LoadingScreen
         ViewLocked = false
         EditsCount = 0
-        IsPresetsCollapsed = false
+        IsPresetsCollapsed = true
         IsHelpCollapsed = false
-        ShowResetConfirm = false
+        PendingConfirm = None
         UndoStack = []
         RedoStack = []
     }
@@ -128,7 +128,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp 
             | TransitionToIntro | TransitionToMain 
             | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
-            | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleResetConfirm _
+            | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
             | UpdateMetadata _ | Undo | Redo -> model
             | TreeMsg (NodeCode.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
@@ -475,7 +475,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             NeedsHyweave = true
             EditsCount = 0
             SelectedPreset = None
-            ShowResetConfirm = false
+            PendingConfirm = None
         }, Cmd.none
 
     | Undo ->
@@ -608,8 +608,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | ToggleHelpCollapse ->
         { model with IsHelpCollapsed = not model.IsHelpCollapsed }, Cmd.none
 
-    | ToggleResetConfirm show ->
-        { model with ShowResetConfirm = show }, Cmd.none
+    | ToggleConfirm action ->
+        { model with PendingConfirm = action }, Cmd.none
 
 open Help
 

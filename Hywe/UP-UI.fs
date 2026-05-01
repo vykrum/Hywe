@@ -116,9 +116,9 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             PolygonExport = newExport
             ParseError = false
             LastBatchSrc = None
-            SelectedPreset = None
             Sequence = newSqn
             EditsCount = 0
+            PendingConfirm = None
         }, 
         Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)

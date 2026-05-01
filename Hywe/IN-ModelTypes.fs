@@ -5,6 +5,10 @@ open Page
 open PolygonEditor
 open Coxel
 
+type ConfirmAction =
+    | ResetWorkspace
+    | LoadPreset of name: string * label: string
+
 let elv = 0
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
@@ -125,7 +129,7 @@ type Model =
         EditsCount: int
         IsPresetsCollapsed: bool
         IsHelpCollapsed: bool
-        ShowResetConfirm: bool
+        PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
         RedoStack: UndoSnapshot list
     }
@@ -189,7 +193,7 @@ type Message =
     | SelectPreset of string
     | LoadBackup of string
     | HardReset
-    | ToggleResetConfirm of bool
+    | ToggleConfirm of ConfirmAction option
     | Undo
     | Redo
     | NoOp
