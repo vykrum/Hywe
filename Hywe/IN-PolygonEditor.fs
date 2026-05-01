@@ -220,6 +220,20 @@ let isConfigurationValid (outer: Point[]) (islands: Point[][]) =
     | true -> allIslandsValid && noIslandIntersections
     | false -> false
 
+// ---------- Initial Constants ----------
+let initBound = 300.0, 300.0
+let initWidth = fst initBound
+let initHeight = snd initBound
+let initEntry = { X = 150.0; Y = 50.0 }
+let initRadius = 6
+let minBound = 40.0
+let maxBound = 4000.0
+let initOuter = [| { X = 0.0; Y = 0.0 }
+                   { X = initWidth; Y = 0.0 }
+                   { X = initWidth; Y = initHeight }
+                   { X = 0.0; Y = initHeight } |]
+let initIslands = Array.empty
+
 // ---------- Import helpers ----------
 
 let parsePoint (s: string) : Result<Point, string> =
@@ -356,8 +370,8 @@ let importPolygonStrings
         |> Result.bind (fun islands ->
             parsePoint entryStr
             |> Result.map (fun entry ->
-                let width = float w * 10.0
-                let height = float h * 10.0
+                let width = if w <= 0 then initWidth else float w * 10.0
+                let height = if h <= 0 then initHeight else float h * 10.0
                 let fixedEntry = ensureEntryWithin outer islands entry
 
                 { model with
@@ -367,8 +381,8 @@ let importPolygonStrings
                     LogicalWidth = width
                     LogicalHeight = height
                     UseAbsolute = (absStr = "1")
-                    UseBoundary = true
-                    PolygonEnabled = true
+                    UseBoundary = not (absStr = "1")
+                    PolygonEnabled = not (absStr = "1")
                     Dragging = None
                     DragOffset = None
                     SvgInfo = None }
@@ -379,19 +393,6 @@ let importPolygonStrings
 
 
 // ---------- Initial Model ----------
-
-let initBound = 300.0, 300.0
-let initWidth = fst initBound
-let initHeight = snd initBound
-let initEntry = { X = 150.0; Y = 50.0 }
-let initRadius = 6
-let minBound = 40.0
-let maxBound = 4000.0
-let initOuter = [| { X = 0.0; Y = 0.0 }
-                   { X = initWidth; Y = 0.0 }
-                   { X = initWidth; Y = initHeight }
-                   { X = 0.0; Y = initHeight } |]
-let initIslands = Array.empty
 
 let initModel =
     {
@@ -437,9 +438,9 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                                         }
 
     | UpdateLogicalWidth newW -> async {
-        let safeW = max minBound newW
+        let safeW = if newW <= 0.0 then initWidth else max minBound newW
         let oldW = model.LogicalWidth
-        let scaleX = safeW / oldW
+        let scaleX = if oldW <= 0.0 then 1.0 else safeW / oldW
 
         let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX })
         let newIslands =
@@ -450,9 +451,9 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
         }
 
     | UpdateLogicalHeight newH -> async {
-        let safeH = max minBound newH
+        let safeH = if newH <= 0.0 then initHeight else max minBound newH
         let oldH = model.LogicalHeight
-        let scaleY = safeH / oldH
+        let scaleY = if oldH <= 0.0 then 1.0 else safeH / oldH
 
         let newOuter = model.Outer |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY })
         let newIslands =
