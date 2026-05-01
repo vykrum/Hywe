@@ -38,6 +38,14 @@ type OnboardingState = {
     SeenSteps: Set<OnboardingStep>
 }
 
+/// <summary> Minimal snapshot of undoable editor state. </summary>
+type UndoSnapshot = {
+    SrcOfTrth: string
+    Tree: SubModel
+    PolygonEditor: EditorState
+    Sequence: string
+}
+
 type TeachMetadata = {
     Scale: string
     Typology: string
@@ -118,6 +126,8 @@ type Model =
         IsPresetsCollapsed: bool
         IsHelpCollapsed: bool
         ShowResetConfirm: bool
+        UndoStack: UndoSnapshot list
+        RedoStack: UndoSnapshot list
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -180,6 +190,8 @@ type Message =
     | LoadBackup of string
     | HardReset
     | ToggleResetConfirm of bool
+    | Undo
+    | Redo
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

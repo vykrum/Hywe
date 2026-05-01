@@ -55,49 +55,49 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             | Interactive -> "Code"
 
         div {
-            attr.style "display:flex; width: 100%; gap:2px; padding: 0 4px; justify-content: space-between; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
+            attr.style "display:flex; width: 100%; gap:0px; padding: 0 4px; justify-content: flex-start; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
             
             div {
                 attr.style "display:flex; gap:0px; align-items: center;"
                 
                 div {
                     attr.``class`` "node-code-toolbar"
-                    attr.style "pointer-events: auto;"
+                    attr.style "display:flex; gap:0px; align-items: center; pointer-events: auto;"
                     
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 3px 10px;"
+                        attr.style "padding: 3px;"
                         attr.title (match model.EditorMode with | Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
                         on.click (fun _ -> dispatch ToggleEditorMode)
                         match model.EditorMode with
-                        | Syntax -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
-                        | Interactive -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
+                        | Syntax -> rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
+                        | Interactive -> rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
                     }
 
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 3px 6px;"
+                        attr.style "padding: 3px;"
                         attr.title "Save"
                         on.click (fun _ -> dispatch SaveRequested)
-                        rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
+                        rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
                     }
 
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 3px 6px;"
+                        attr.style "padding: 3px;"
                         attr.title "Load"
                         on.click (fun _ -> dispatch ImportRequested)
-                        rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
+                        rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
                     }
 
                     div {
-                        attr.style "position: relative; display: inline-block;"
+                        attr.style "position: relative; display: inline-block; height: 20px;"
                         button {
                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                            attr.style "padding: 3px 6px; color: #E67E22;"
+                            attr.style "padding: 3px; color: #E67E22;"
                             attr.title "Hard Reset"
                             on.click (fun _ -> dispatch (ToggleResetConfirm (not model.ShowResetConfirm)))
-                            rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>"""
+                            rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>"""
                         }
                         
                         if model.ShowResetConfirm then
@@ -110,16 +110,34 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
                                         attr.style "background: #E67E22; color: white; border: none; font-weight: 600;"
                                         on.click (fun _ -> dispatch HardReset)
-                                        text "Confirm"
+                                        text "Reset"
                                     }
                                     button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost"
-                                        attr.style "border: 1px solid #eee;"
+                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
+                                        attr.style "background: #ddd; color: #333; border: none;"
                                         on.click (fun _ -> dispatch (ToggleResetConfirm false))
                                         text "Cancel"
                                     }
                                 }
                             }
+                    }
+
+                    let canUndo = model.UndoStack <> []
+                    let canRedo = model.RedoStack <> []
+
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.style (sprintf "padding: 3px; opacity: %s;" (if canUndo then "1" else "0.3"))
+                        attr.title "Undo (Ctrl+Z)"
+                        on.click (fun _ -> dispatch (if canUndo then Undo else NoOp))
+                        rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M3 13C5 7 11 4 17 6a9 9 0 0 1 4 13"></path></svg>"""
+                    }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.style (sprintf "padding: 3px; opacity: %s;" (if canRedo then "1" else "0.3"))
+                        attr.title "Redo (Ctrl+Y)"
+                        on.click (fun _ -> dispatch (if canRedo then Redo else NoOp))
+                        rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"></path><path d="M21 13C19 7 13 4 7 6a9 9 0 0 0-4 13"></path></svg>"""
                     }
 
                     input {
