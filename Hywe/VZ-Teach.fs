@@ -60,14 +60,14 @@ let private selectField (model: Model) dispatch (label: string) (current: string
             attr.``class`` "teach-option-group"
             for opt in options do
                 button {
-                    attr.``class`` (if current = opt then "teach-option active" else "teach-option")
+                    attr.``class`` ("hywe-btn hywe-btn-sm " + (if current = opt then "hywe-btn-primary active teach-option" else "hywe-btn-ghost teach-option"))
                     on.mouseover (fun _ -> dispatch (SetHoveredInfo (descriptions |> Map.tryFind opt)))
                     on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
                     on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m opt)))
                     text opt
                 }
             button {
-                attr.``class`` (if not isPredefined then "teach-option active" else "teach-option")
+                attr.``class`` ("hywe-btn hywe-btn-sm " + (if not isPredefined then "hywe-btn-primary active teach-option" else "hywe-btn-ghost teach-option"))
                 on.mouseover (fun _ -> dispatch (SetHoveredInfo (Some $"Enter a custom {label.ToLower()} tag.")))
                 on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
                 on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m "")))
@@ -156,7 +156,8 @@ let view model dispatch =
                 }
 
                 button {
-                    attr.style "justify-self: center; background: transparent; border: 1.5px solid #7f8c8d; color: #7f8c8d; padding: 4px 18px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center;"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
+                    attr.style "justify-self: center;"
                     attr.title "Generate Summary"
                     on.click (fun _ -> dispatch SuggestDescription)
                     text "Generate Summary"
@@ -196,8 +197,8 @@ let view model dispatch =
 
             button {
                 attr.``class`` (
-                    if isBusy || not hasSummary then "record-submit-btn disabled" 
-                    else "record-submit-btn active"
+                    "hywe-btn hywe-btn-primary record-submit-btn" +
+                    (if isBusy || not hasSummary then " disabled" else " active")
                 )
                 attr.style (if not hasSummary then "opacity: 0.5; cursor: not-allowed;" else "")
                 attr.title (if not hasSummary then "Please generate or enter a summary first" else "Commit this intent to the dataset")

@@ -113,6 +113,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             ParseError = false
             LastBatchSrc = None
             SelectedPreset = None
+            EditsCount = 0
         }, 
         Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
@@ -134,7 +135,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             | "Stacked" -> Page.stackedTower 
             | _ -> ""
         let (nextModel, cmd) = handleFileImported model content js
-        Some ({ nextModel with SelectedPreset = Some name }, cmd)
+        Some ({ nextModel with SelectedPreset = Some name; EditsCount = 0 }, cmd)
     | FileImported content -> Some (handleFileImported model content js)
     | Message.ToggleBoundary ->
         match model.ActivePanel with

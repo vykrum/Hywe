@@ -61,15 +61,17 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             attr.style "display:flex; gap:4px; align-items: center;"
             button {
                 attr.id "hywe-save-btn"
-                attr.``class`` "hywe-toggle-btn"
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                attr.title "Save"
                 on.click (fun _ -> dispatch SaveRequested)
-                text "Save"
+                rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
             }
 
             button {
-                attr.``class`` "hywe-toggle-btn"
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                attr.title "Load"
                 on.click (fun _ -> dispatch ImportRequested)
-                text "Load"
+                rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
             }
 
             input {
@@ -86,34 +88,54 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             }
             
             button {
-                attr.``class`` "hywe-toggle-btn"
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                attr.title (match model.EditorMode with | Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
                 on.click (fun _ -> dispatch ToggleEditorMode)
-                text nodeCodeButtonText
+                match model.EditorMode with
+                | Syntax -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
+                | Interactive -> rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
             }
         }
-        div {
-            attr.``class`` "preset-btn-stack"
-            
-            let isSimple = model.SelectedPreset = Some "Simple"
-            let isBranched = model.SelectedPreset = Some "Branched"
-            let isStacked = model.SelectedPreset = Some "Stacked"
+        if model.EditorMode = Interactive then
+            let isCollapsed = model.IsPresetsCollapsed
+            div {
+                if isCollapsed then
+                    div {
+                        attr.``class`` "sliver-handle"
+                        attr.style "top: 60px; z-index: 9999;"
+                        on.click (fun _ -> dispatch TogglePresetsCollapse)
+                        span { text "Presets" }
+                    }
 
-            button {
-                attr.``class`` (if isSimple then "preset-btn active" else "preset-btn")
-                on.click (fun _ -> dispatch (SelectPreset "Simple"))
-                text "Simple"
+                div {
+                    attr.``class`` (if isCollapsed then "preset-btn-stack collapsed" else "preset-btn-stack")
+                    
+                    span {
+                        attr.style "font-size: 8px; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-family: sans-serif; font-weight: 600; text-align: center; width: 100%; display: block;"
+                        text "Presets"
+                    }
+
+                    let isSimple = model.SelectedPreset = Some "Simple"
+                    let isBranched = model.SelectedPreset = Some "Branched"
+                    let isStacked = model.SelectedPreset = Some "Stacked"
+
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSimple then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                        on.click (fun _ -> dispatch (SelectPreset "Simple"))
+                        text "Simple"
+                    }
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isBranched then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                        on.click (fun _ -> dispatch (SelectPreset "Branched"))
+                        text "Branch"
+                    }
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isStacked then "hywe-btn-primary active" else "hywe-btn-ghost"))
+                        on.click (fun _ -> dispatch (SelectPreset "Stacked"))
+                        text "Stack"
+                    }
+                }
             }
-            button {
-                attr.``class`` (if isBranched then "preset-btn active" else "preset-btn")
-                on.click (fun _ -> dispatch (SelectPreset "Branched"))
-                text "Branched"
-            }
-            button {
-                attr.``class`` (if isStacked then "preset-btn active" else "preset-btn")
-                on.click (fun _ -> dispatch (SelectPreset "Stacked"))
-                text "Stacked"
-            }
-        }
     }
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
@@ -140,12 +162,13 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
     
     let buttonClass = 
+        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-primary hyWeaveButton"
         match model.IsHyweaving with
-        | true -> "hyWeaveButton stop-state" 
+        | true -> baseClass + " stop-state" 
         | false -> 
             match syntaxAltered with
-            | true -> "hyWeaveButton needs-update"
-            | false -> "hyWeaveButton"
+            | true -> baseClass + " needs-update"
+            | false -> baseClass
 
     div {
         attr.``class`` "hyweave-container"
@@ -239,7 +262,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
                     button {
-                        attr.``class`` "layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         on.pointerdown (fun _ ->
                             let datePart = System.DateTime.Now.ToString("yyMMddmm")
                             let fileName = "HyweLayout_" + datePart + ".svg"
@@ -250,7 +273,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         text "SVG"
                     }
                     button {
-                        attr.``class`` "layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadDxf)
                         text "DXF"
                     }
@@ -285,30 +308,28 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
         | ViewPanel ->
             div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; overflow-x: hidden;"
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; overflow-x: hidden;"
                 
                 div {
-                    attr.id "hywe-sequence-selector"; attr.style "padding: 8px 0;width: 100%; max-width: 100vw; margin-top: 10px;"
+                    attr.id "hywe-sequence-selector"; attr.style "padding: 4px 0; width: 100%; max-width: 100vw; margin-top: 5px;"
                     sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
                 }                
 
-                // Lock button below slider, right-aligned
-                div {
-                    attr.style "width: 95%; display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 5px;"
-                    button {
-                        attr.``class`` (if model.ViewLocked then "layout-download-btn active" else "layout-download-btn")
-                        attr.title (if model.ViewLocked then "View Locked: Captured for cover" else "Lock 3D view for report cover")
-                        attr.style "display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 50%%;"
-                        on.pointerdown (fun _ -> dispatch ToggleViewLock)
-                        if model.ViewLocked then
-                            rawHtml """<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
-                        else
-                            rawHtml """<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
-                    }
-                }
-
                 div {
                     attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
+                    
+                    // Floating Lock button
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-flat layout-download-btn" + (if model.ViewLocked then " active" else ""))
+                        attr.title (if model.ViewLocked then "View Locked: Captured for cover" else "Lock 3D view for report cover")
+                        attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
+                        on.pointerdown (fun _ -> dispatch ToggleViewLock)
+                        if model.ViewLocked then
+                            rawHtml """<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#555" stroke-width="2.5" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
+                        else
+                            rawHtml """<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#888" stroke-width="2.5" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+                    }
+
                     canvas { 
                         attr.id "hywe-extruded-polygon"
                         attr.style "width: 100%; height: 100%; display: block; touch-action: none;" 
@@ -317,22 +338,22 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     |> Async.Start
                 }
 
-                // Export buttons back to bottom
+                // Export buttons
                 div {
-                    attr.style "display: flex; gap: 10px; margin-top: 20px; align-items: center;"
+                    attr.style "display: flex; gap: 8px; margin-top: 10px; align-items: center;"
                     button {
-                        attr.``class`` "layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         attr.title "Download View as SVG"
                         on.pointerdown (fun _ -> dispatch Download3DSvg)
                         text "SVG"
                     }
                     button {
-                        attr.``class`` "layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadDxf)
                         text "DXF"
                     }
                     button {
-                        attr.``class`` "layout-download-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadObj)
                         text "OBJ"
                     }

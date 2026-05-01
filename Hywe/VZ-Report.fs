@@ -70,7 +70,7 @@ let viewReport (model: Model) dispatch =
             
             if sections.Variations then
                 div {
-                    attr.style "display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding-left: 40px; margin-bottom: 10px;"
+                    attr.style "display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding-left: 40px; margin-bottom: 10px;"
                     forEach [0..23] <| fun i ->
                         let isSel = sections.SelectedVariations.Contains(i)
                         elt "label" {
@@ -95,58 +95,62 @@ let viewReport (model: Model) dispatch =
         
         div {
             attr.``class`` "report-section-title"
-            text "1. Cover Metadata"
+            text "1. Project Details"
         }
         
         div {
-            attr.``class`` "report-field"
-            elt "label" { text "Project Title" }
-            input {
-                attr.value opts.ProjectTitle
-                on.input (fun e -> updateOpts (fun o -> { o with ProjectTitle = e.Value :?> string }))
+            attr.style "width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 15px;"
+            
+            div {
+                attr.``class`` "report-field"
+                elt "label" { text "Project Title" }
+                input {
+                    attr.value opts.ProjectTitle
+                    on.input (fun e -> updateOpts (fun o -> { o with ProjectTitle = e.Value :?> string }))
+                }
             }
-        }
-        
-        div {
-            attr.``class`` "report-field"
-            elt "label" { text "Project Number" }
-            input {
-                attr.value opts.ProjectNumber
-                on.input (fun e -> updateOpts (fun o -> { o with ProjectNumber = e.Value :?> string }))
+            
+            div {
+                attr.``class`` "report-field"
+                elt "label" { text "Project Number" }
+                input {
+                    attr.value opts.ProjectNumber
+                    on.input (fun e -> updateOpts (fun o -> { o with ProjectNumber = e.Value :?> string }))
+                }
             }
-        }
-        
-        div {
-            attr.``class`` "report-field"
-            elt "label" { text "Author" }
-            input {
-                attr.value opts.Author
-                on.input (fun e -> updateOpts (fun o -> { o with Author = e.Value :?> string }))
+            
+            div {
+                attr.``class`` "report-field"
+                elt "label" { text "Author" }
+                input {
+                    attr.value opts.Author
+                    on.input (fun e -> updateOpts (fun o -> { o with Author = e.Value :?> string }))
+                }
             }
-        }
-        
-        div {
-            attr.``class`` "report-field"
-            elt "label" { text "Client Name" }
-            input {
-                attr.value opts.ClientName
-                on.input (fun e -> updateOpts (fun o -> { o with ClientName = e.Value :?> string }))
+            
+            div {
+                attr.``class`` "report-field"
+                elt "label" { text "Client Name" }
+                input {
+                    attr.value opts.ClientName
+                    on.input (fun e -> updateOpts (fun o -> { o with ClientName = e.Value :?> string }))
+                }
             }
-        }
-        
-        div {
-            attr.``class`` "report-field"
-            elt "label" { text "Description" }
-            textarea {
-                attr.rows 4
-                attr.value opts.Description
-                on.input (fun e -> updateOpts (fun o -> { o with Description = e.Value :?> string }))
+            
+            div {
+                attr.``class`` "report-field"
+                elt "label" { text "Description" }
+                textarea {
+                    attr.rows 3
+                    attr.value opts.Description
+                    on.input (fun e -> updateOpts (fun o -> { o with Description = e.Value :?> string }))
+                }
             }
         }
         
         div {
             attr.``class`` "report-section-title"
-            text "2. Sections & Content"
+            text "2. Project Content"
         }
         
         renderToggleRow "Cover Page" opts.IncludeCover (fun v -> updateOpts (fun o -> { o with IncludeCover = v }))
@@ -187,12 +191,12 @@ let viewReport (model: Model) dispatch =
                     div {
                         attr.``class`` "variation-grid-controls"
                         button {
-                            attr.``class`` "report-mini-btn"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost report-mini-btn"
                             on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
                             text "All"
                         }
                         button {
-                            attr.``class`` "report-mini-btn"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost report-mini-btn"
                             on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.empty } o.LevelSections }))
                             text "None"
                         }
@@ -223,7 +227,7 @@ let viewReport (model: Model) dispatch =
         }
         
         button {
-            attr.``class`` "report-generate-btn"
+            attr.``class`` "hywe-btn hywe-btn-primary report-generate-btn"
             attr.disabled model.IsGeneratingReport
             on.click (fun _ -> dispatch GenerateReport)
             text (if model.IsGeneratingReport then "Generating..." else "Generate Report (PDF)")

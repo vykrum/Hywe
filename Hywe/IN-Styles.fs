@@ -18,6 +18,136 @@ body {
     -ms-user-select: none;
     user-select: none;
 }
+
+/* =====================
+   UNIFIED BUTTON SYSTEM
+   ===================== */
+.hywe-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 6px; /* Standard Fillet */
+    font-family: 'Optima', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    outline: none;
+    white-space: nowrap;
+    text-decoration: none;
+    user-select: none;
+    gap: 8px;
+}
+
+.hywe-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Sizes */
+.hywe-btn-sm {
+    padding: 3px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hywe-btn-lg {
+    padding: 10px 20px;
+    font-size: 1rem;
+}
+
+/* Shapes */
+.hywe-btn-pill {
+    border-radius: 20px;
+}
+
+.hywe-btn-fillet {
+    border-radius: 4px;
+}
+
+.hywe-btn-circle {
+    border-radius: 50%;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+/* Variants */
+.hywe-btn-primary {
+    background-color: #555;
+    color: #fff;
+    border-color: #555;
+}
+
+.hywe-btn-primary:hover:not(:disabled) {
+    background-color: #333;
+    border-color: #333;
+}
+
+.hywe-btn-ghost {
+    background: transparent;
+    color: #888;
+    border-color: #eee;
+}
+
+.hywe-btn-ghost:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.04);
+    color: #333;
+}
+
+.hywe-btn-flat {
+    background: transparent;
+    border-color: transparent;
+    color: #888;
+}
+
+.hywe-btn-flat:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.04);
+    color: #333;
+}
+"""
+
+let sharedStyles = """
+/* =====================
+   UNIFIED COMPONENT SYSTEM
+   ===================== */
+.hywe-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.hywe-input {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #333;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.hywe-input:focus {
+    border-color: #ccc;
+    background: #fff;
+}
+
+.hywe-textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
 """
 
 let headerStyles = """
@@ -235,56 +365,71 @@ let editorStyles = """
    TOGGLE BUTTON
    ===================== */
 .hywe-toggle-btn {
-    background: none;
-    border: none;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    padding: 0;
-    margin-right: 5px;
     font-size: 12px;
     color: #888;
-    cursor: pointer;
     line-height: 1.2;
     font-weight: 300;
 }
 
 .preset-btn-stack {
     position: absolute;
-    top: 6px;
-    right: 25px;
+    top: 48px;
+    left: 10px;
+    z-index: 1001;
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    align-items: flex-end;
-    z-index: 100;
+    gap: 8px;
+    align-items: stretch;
+    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
 }
 
-.preset-btn {
-    padding: 3px 10px;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    background: #fff;
-    color: #999;
-    font-size: 0.7rem;
-    font-family: 'Optima', sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 700;
+.preset-btn-stack.collapsed {
+    transform: translateX(-100%) translateX(-20px); 
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Sliver Handles */
+.sliver-handle {
+    position: fixed;
+    left: 0;
+    width: 16px;
+    height: 80px;
+    background: transparent;
+    border: 1px solid rgba(54, 54, 54, 0.1);
+    border-left: none;
+    border-radius: 0 4px 4px 0;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s ease;
-    outline: none;
-    width: fit-content;
-    white-space: nowrap;
+    z-index: 9999;
+    opacity: 0.6;
+    pointer-events: all;
 }
 
-.preset-btn:hover {
-    background: #f5f5f5;
-    border-color: #ddd;
-    color: #666;
+.sliver-handle:hover {
+    width: 20px;
+    background: rgba(54, 54, 54, 0.05);
+    border-color: rgba(54, 54, 54, 0.3);
+    opacity: 1;
+}
+
+
+
+.sliver-handle span {
+    color: #555;
+    font-size: 8px;
+    font-weight: 700;
+    transform: rotate(-90deg);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .preset-btn.active {
+    /* Modifier for active state when using .hywe-btn */
     background: #363636;
     color: #fff;
     border-color: #363636;
@@ -914,7 +1059,7 @@ let hyweaveStyles = """
     width: 100%;
     height: 42px;
     border: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     color: white;
     cursor: pointer;
     display: flex;
@@ -1077,18 +1222,17 @@ let teachStyles = """
 /* Textarea styling */
 .teach-textarea {
     width: 100%;
-    height: 300px;
-    padding: 20px;
+    background: #fff;
     border: 1px solid #eee;
     border-radius: 8px;
+    padding: 20px;
     font-size: 1rem;
     line-height: 1.6;
-    resize: vertical;
-    box-sizing: border-box;
-    background: #fff;
-    color: #333;
     outline: none;
-    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+    min-height: 120px;
+    resize: vertical;
 }
 
 .teach-textarea:focus {
@@ -1133,24 +1277,8 @@ let teachStyles = """
     justify-content: center;
 }
 
-.teach-option {
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1px solid #eee;
-    background: #fff;
-    color: #666;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    outline: none;
-}
-
-.teach-option:hover {
-    background: #f5f5f5;
-    border-color: #ddd;
-}
-
 .teach-option.active {
+    /* Modifier for active state when using .hywe-btn */
     background: #363636;
     color: #fff;
     border-color: #363636;
@@ -1247,26 +1375,10 @@ let teachStyles = """
 }
 
 /* Submit Button styling */
+/* Submit Button specific overrides if any */
 .record-submit-btn {
     padding: 0 20px;
-    border-radius: 6px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    background-color: #333;
-    /* Darker theme for training tools */
-    color: white;
-    transition: background-color 0.2s ease;
-}
-
-.record-submit-btn.active:hover {
-    background-color: #111;
-}
-
-.record-submit-btn.disabled {
-    background-color: #f5f5f5;
-    color: #bbb;
-    cursor: not-allowed;
+    height: 42px;
 }
 
 @keyframes mic-pulse {
@@ -1312,39 +1424,10 @@ let footerStyles = """
 }
 
 /* Download button anchored to the footer flow */
-.layout-download-btn {
-    display: inline-block;
-    margin-top: 35px;
-    /* Increased distance from SVG */
-    margin-bottom: 5px;
-    left: auto;
-    transform: none;
-    z-index: 500;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
-    padding: 5px 18px;
-    font-size: 11px;
-    color: #666;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-    pointer-events: auto;
-}
-
-.layout-download-btn:hover {
-    color: #111;
-    background: rgba(255, 255, 255, 0.97);
-    border-color: rgba(0, 0, 0, 0.25);
-}
-
-.layout-download-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background: rgba(200, 200, 200, 0.1);
-    color: #999;
-    border-color: rgba(0, 0, 0, 0.05);
+.layout-download-btn.active {
+    border-color: #333;
+    color: #333;
+    background: #f0f0f0;
 }
 
 .view-lock-trigger {
@@ -1491,33 +1574,11 @@ let polygonEditorStyles = """
 
 .toggle-group {
     display: inline-flex;
-    border-radius: 3px;
-    overflow: hidden;
-    border: 1px solid #d1d1d1;
+    gap: 8px;
 }
 
 .toggle-btn {
-    padding: 3px 6px;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    border: none;
-    background: #f0f0f0;
-    color: #888;
-    cursor: pointer;
     min-width: 65px;
-    transition: all 0.1s ease;
-    outline: none;
-}
-
-.toggle-btn.active {
-    background: #333333;
-    color: white;
-}
-
-.toggle-btn:hover:not(.active) {
-    background: #CDDFE1;
-    color: #555;
 }
 
 /* Column 2: Dimensions */
@@ -1673,8 +1734,12 @@ let onboardingStyles = """
 }
 
 
-/* Help Button Trigger */
-.help-trigger-btn {
+/* Help Sliver */
+
+
+.onboarding-tooltip.collapsed {
+    display: none;
+}
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -1775,16 +1840,13 @@ let reportPanelStyles = """
     flex-direction: column;
     gap: 6px;
     width: 100%;
-    max-width: 600px;
+    max-width: 800px;
 }
 
 .report-level-card {
-    background: #f9f9f9;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 16px;
+    padding: 20px 0;
     width: 100%;
-    max-width: 600px;
+    max-width: 800px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1801,7 +1863,7 @@ let reportPanelStyles = """
 
 .variation-selection-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
     padding-top: 8px;
 }
@@ -1812,20 +1874,7 @@ let reportPanelStyles = """
     margin-bottom: 4px;
 }
 
-.report-mini-btn {
-    background: #eee;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 10px;
-    cursor: pointer;
-    color: #666;
-}
-
-.report-mini-btn:hover {
-    background: #e0e0e0;
-    color: #333;
-}
+/* report-mini-btn now uses .hywe-btn-sm .hywe-btn-secondary */
 
 .var-chip {
     padding: 4px 6px;
@@ -1859,22 +1908,27 @@ let reportPanelStyles = """
 
 .report-field input,
 .report-field textarea {
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    padding: 6px 8px;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 8px 10px;
     font-size: 12px;
     font-family: inherit;
     color: #333;
-    background: #fafafa;
-    resize: vertical;
     outline: none;
-    transition: border-color 0.15s;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .report-field input:focus,
 .report-field textarea:focus {
-    border-color: #888;
-    background: #fff;
+    border-color: #ccc;
+}
+
+.report-field textarea {
+    min-height: 80px;
+    resize: vertical;
 }
 
 .report-toggle-tree {
@@ -1927,26 +1981,8 @@ let reportPanelStyles = """
 
 .report-generate-btn {
     width: 100%;
-    padding: 10px;
-    background: #363636;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    font-size: 13px;
-    font-family: inherit;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 4px;
-}
-
-.report-generate-btn:hover {
-    background: #555;
-}
-
-.report-generate-btn:disabled {
-    background: #ccc;
-    cursor: not-allowed;
+    max-width: 800px;
+    margin-top: 10px;
 }
 
 .report-status {
@@ -1981,6 +2017,7 @@ let reportPrintStyles = """
 
 let allCss = 
     baseStyles +
+    sharedStyles +
     headerStyles +
     layoutStyles +
     formStyles +
