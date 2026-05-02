@@ -132,7 +132,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | UpdateMetadata _ | Undo | Redo -> model
             | TreeMsg (NodeCode.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
-            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }
+            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = false }
         else model
     
     let model = modelBefore
@@ -549,6 +549,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                             IsActive = not isFinished
                             SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
             ActivePanel = newActivePanel
+            IsPresetsCollapsed = if isFinished then false else model.IsPresetsCollapsed
         }, cmd
 
     | PreviousOnboardingStep ->
@@ -581,7 +582,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | SkipOnboarding ->
-        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false } }, 
+        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = false }, 
         Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction) // Just in case
 
     | RestartOnboarding ->
