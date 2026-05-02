@@ -190,7 +190,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) : string =
         </thead>
         <tbody>""") |> ignore
         
-    let hxlAreaX = 4
+    let hxlAreaX = 1
     for i = 0 to cxls.Length - 1 do
         let cxl = cxls[i]
         let avl = if i < cxlAvl.Length then cxlAvl[i] else 0

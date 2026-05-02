@@ -5,35 +5,94 @@ open Hexel
 open System.Text
 open Page
 
-// --- CSV Export ---
-let generateCsv (cxls: Cxl[]) (sqnName: string) =
-    let sb = StringBuilder()
-    sb.AppendLine("ID,Name,Required Size,Achieved Size,Target Met") |> ignore
-    
-    // Note: Assuming area multiplier is 4 per hexel
-    let hxlAreaX = 4
-    for cxl in cxls do
-        let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
-        let achSz = (Array.length cxl.Hxls) * hxlAreaX
-        let id = prpVlu cxl.Rfid
-        let name = prpVlu cxl.Name
-        let targetMet = if achSz >= reqSz then "Yes" else "No"
-        sb.AppendLine(sprintf "%s,%s,%d,%d,%s" id name reqSz achSz targetMet) |> ignore
-        
-    sb.AppendLine() |> ignore
-    
-    // Adjacency Matrix
-    let names, matrix = Coxel.cxlAdj cxls
-    sb.AppendLine("Adjacency Matrix") |> ignore
-    let header = "Room," + String.concat "," names
-    sb.AppendLine(header) |> ignore
-    
-    for i = 0 to matrix.Length - 1 do
-        let row = matrix.[i]
-        let rowStr = names.[i] + "," + String.concat "," (row |> Array.map (fun adj -> if adj then "1" else "0"))
-        sb.AppendLine(rowStr) |> ignore
+// --- COORDINATE HELPERS ---
 
+let getCxlCoordsString (cxl: Cxl) =
+    Array.append [|cxl.Base|] cxl.Hxls 
+    |> Array.map (fun h -> 
+        let (x, y, _) = hxlCrd h
+        sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
+    |> String.concat " "
+
+let getBaseCoordString (cxl: Cxl) =
+    let (x, y, _) = hxlCrd cxl.Base
+    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y))
+
+// --- CSV EXPORTS ---
+
+let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
+    let sb = StringBuilder()
+    sb.AppendLine("Orientation,Level,CoxelID,CoxelName,BaseCoordinate,Coordinates") |> ignore
+    for (sqn, elv, cxls) in data do
+        for cxl in cxls do
+            let id = prpVlu cxl.Rfid
+            let name = prpVlu cxl.Name
+            let baseCoord = getBaseCoordString cxl
+            let hxlsCoords = 
+                cxl.Hxls 
+                |> Array.map (fun h -> 
+                    let (x, y, _) = hxlCrd h
+                    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
+                |> String.concat " "
+            sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord hxlsCoords) |> ignore
     sb.ToString()
+
+let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
+    let sb = StringBuilder()
+    let hxlAreaX = 1
+    sb.AppendLine("Orientation,Level,CoxelID,CoxelName,Required,Achieved,TargetMet") |> ignore
+    for (sqn, elv, cxls) in data do
+        for cxl in cxls do
+            let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
+            let achSz = (Array.length cxl.Hxls) * hxlAreaX
+            let id = prpVlu cxl.Rfid
+            let name = prpVlu cxl.Name
+            let targetMet = if achSz >= reqSz then "Yes" else "No"
+            sb.AppendLine(sprintf "%s,%d,%s,%s,%d,%d,%s" sqn elv id name reqSz achSz targetMet) |> ignore
+    sb.ToString()
+
+let generateAdjacencyCsv (data: (string * int * Cxl[])[]) =
+    let sb = StringBuilder()
+    for (sqn, elv, cxls) in data do
+        if not (Array.isEmpty cxls) then
+            sb.AppendLine(sprintf "--- %s | Level %d ---" sqn elv) |> ignore
+            let names, matrix = Coxel.cxlAdj cxls
+            let header = "Room," + String.concat "," names
+            sb.AppendLine(header) |> ignore
+            for i = 0 to matrix.Length - 1 do
+                let row = matrix.[i]
+                let rowStr = names.[i] + "," + String.concat "," (row |> Array.map (fun adj -> if adj then "1" else "0"))
+                sb.AppendLine(rowStr) |> ignore
+            sb.AppendLine() |> ignore
+    sb.ToString()
+
+// --- HYNTERACT & DATASET GENERATION ---
+
+let generateHynteractPayload (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (enStr: string) (initialOcc : Hxl[]) = 
+    let finalBatch, _, _ = Parse.generateMultiLevelLayout str enStr initialOcc (Some seq) (Some ouStr) (Some ilStr)
+
+    finalBatch
+    |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
+    |> Array.sortBy fst
+    |> Array.map (fun (_, levelCxls) ->
+        levelCxls
+        |> Array.map getCxlCoordsString
+        |> String.concat ";"
+    )
+    |> String.concat "|"
+
+let generateDataset (fullStr: string) (ouStr: string) (ilStr: string) (enStr: string) =
+    Hexel.sqnArray 
+    |> Array.collect (fun sqn ->
+        let sqnName = sprintf "%A" sqn
+        let forcedStr = NodeCode.injectSqn fullStr sqnName
+        try
+            let cxls, _, _ = Parse.generateMultiLevelLayout forcedStr enStr [||] (Some sqn) (Some ouStr) (Some ilStr)
+            cxls 
+            |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z)
+            |> Array.map (fun (z, lvlCxls) -> (sqnName, z, lvlCxls))
+        with _ -> [||]
+    )
 
 // --- DXF Export (2D Layout) ---
 let generateDxf (cxls: Cxl[]) (offsetX: float) (offsetY: float) =

@@ -8,6 +8,7 @@ open Page
 open PolygonEditor
 open Storage
 open ExportFormats
+open Hexel
 open System
 
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
@@ -100,7 +101,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
                 with _ -> model.Tree 
 
         let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        let newState = Parse.importFromHyw clean inner
+        let newState = Storage.importFromHyw clean inner
         let finalPoly = match newState with FreshlyImported m | Stable m -> m
         let newExport = syncPolygonState finalPoly
         let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
@@ -148,9 +149,15 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         | BoundaryPanel -> 
             Some ({ model with ActivePanel = LayoutPanel }, Cmd.none)
         | _ -> 
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw model.SrcOfTrth inner
-            let finalPoly = match newState with FreshlyImported m | Stable m -> m
+            let inner = 
+                match model.PolygonEditor with 
+                | Stable m -> m
+                | FreshlyImported m -> m
+            let newState = Storage.importFromHyw model.SrcOfTrth inner
+            let finalPoly = 
+                match newState with 
+                | FreshlyImported m -> m
+                | Stable m -> m
             let newM = { model with ActivePanel = BoundaryPanel; PolygonEditor = newState }
             Some (newM, Cmd.ofMsg (PolygonEditorUpdated finalPoly))
     | ToggleViewLock ->
@@ -165,10 +172,57 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
         let fileName = "Hywe3D_" + datePart + ".svg"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("export3DToSVG", "hywe-extruded-polygon", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-    | DownloadCsv ->
-        let csv = ExportFormats.generateCsv model.Derived.cxCxl1 model.Sequence
-        let fileName = "Hywe_Analysis_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+    | DownloadCoordCsv ->
+        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = model.Tree.ActiveLevel)
+        let csv = ExportFormats.generateCoordinatesCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
+        let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    | DownloadMetricsCsv ->
+        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = model.Tree.ActiveLevel)
+        let csv = ExportFormats.generateAreaMetricsCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
+        let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    | DownloadAdjCsv ->
+        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = model.Tree.ActiveLevel)
+        let csv = ExportFormats.generateAdjacencyCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
+        let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    | DownloadBatchCoordCsv ->
+        match model.BatchPreview with
+        | Some results ->
+            let batchData = results |> Array.collect (fun r -> 
+                r.cxCxl1 
+                |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z) 
+                |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
+            )
+            let csv = ExportFormats.generateCoordinatesCsv batchData
+            let fileName = "Hywe_Batch_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
+    | DownloadBatchMetricsCsv ->
+        match model.BatchPreview with
+        | Some results ->
+            let batchData = results |> Array.collect (fun r -> 
+                r.cxCxl1 
+                |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z) 
+                |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
+            )
+            let csv = ExportFormats.generateAreaMetricsCsv batchData
+            let fileName = "Hywe_Batch_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
+    | DownloadBatchAdjCsv ->
+        match model.BatchPreview with
+        | Some results ->
+            let batchData = results |> Array.collect (fun r -> 
+                r.cxCxl1 
+                |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z) 
+                |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
+            )
+            let csv = ExportFormats.generateAdjacencyCsv batchData
+            let fileName = "Hywe_Batch_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
     | DownloadDxf ->
         let dxf = ExportFormats.generateDxf model.Derived.cxCxl1 0.0 0.0
         let fileName = "Hywe_Layout_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"

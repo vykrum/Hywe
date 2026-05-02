@@ -87,7 +87,7 @@ let parseIslands value =
 // ==========================================================================================
 
 /// <summary> Extracts key-value attributes from a Hywe string segment (e.g., "(W=100/B=200)"). </summary>
-let private extractAttrsFromHyw (text: string) =
+let extractAttrsFromHyw (text: string) =
     let cleanText = text.Trim().Trim('|').Trim()
     let m = System.Text.RegularExpressions.Regex.Match(cleanText, @"\(([^)]*)\)")
     match m.Success with
@@ -205,7 +205,7 @@ let spaceSeq (spaceStr: string) =
 
 /// <summary> Consolidates all reproportioning logic into one call. Scales node areas to fit boundary. </summary>
 let applyReproportioning (boundaryArea: float) (totalNodeArea: float) (rawTree: (string * float * string)[][]) (ratioOverride: float option) =
-    let hxlAreaFactor = 4.0
+    let hxlAreaFactor = 1.0
     let isUnbound = boundaryArea <= 0.0
     let reductionFactor = 0.96 
     let ratio = 
@@ -449,107 +449,3 @@ let generateMultiLevelLayout
     
     allCxls, allBoundaries, finalElevations
 
-/// <summary> Formats a layout into a Base36-encoded string representation. </summary>
-let generateCxlArray (str: string) (seq: Sqn) (ouStr: string) (ilStr: string) (enStr: string) (initialOcc : Hxl[]) = 
-    let toBase36 (value: int64) =
-        let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        let rec convert v acc =
-            match v = 0L with
-            | true -> match acc = "" with | true -> "0" | false -> acc
-            | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
-        let prefix = if value < 0L then "-" else ""
-        prefix + convert (abs value) ""
-
-    let finalBatch, _, _ = generateMultiLevelLayout str enStr initialOcc (Some seq) (Some ouStr) (Some ilStr)
-
-    finalBatch
-    |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
-    |> Array.sortBy fst
-    |> Array.map (fun (_, levelCxls) ->
-        levelCxls
-        |> Array.map (fun cxl ->
-            cxl.Hxls 
-            |> Array.map (fun h ->
-                let (ax, ay, _) = hxlCrd h
-                toBase36 (int64 ax) + "." + toBase36 (int64 ay)
-            )
-            |> String.concat " "
-        )
-        |> String.concat ";"
-    )
-    |> String.concat "|"
-
-// ==========================================================================================
-// SECTION: Dataset Generation Parsing
-// ==========================================================================================
-
-/// <summary> Mapping logic for dataset generation. Currently unused in main flow. </summary>
-let getTree01 (ntArea: float) (totalRequested: float) (spcTree: (string * float * string) array array) =
-    let ratio = match totalRequested > 0.0 with | true -> ntArea / totalRequested | false -> 1.0
-    spcTree |> Array.map (fun row -> 
-        row |> Array.map (fun (id, area, lb) -> 
-            (Refid id, Count (int (Math.Round((area * ratio) / 4.0))), Label lb)))
-
-/// <summary> Recursive Coxel generation logic for dataset generation. Currently unused in main flow. </summary>
-let rec cxCxCx (seq: Sqn) (elv: int) (tre: (Prp*Prp*Prp)[][]) (occ: Hxl[]) (acc: Cxl[]) =
-    match Array.tryHead tre with 
-    | None -> acc
-    | Some currentBatch ->
-        let newOcc = Array.append occ (Array.concat (acc |> Array.map (fun x -> x.Hxls)))
-        let nextTre = Array.tail tre
-        
-        let hostId = currentBatch |> Array.head |> fun (id, _, _) -> id
-        let bsCx = acc |> Array.find (fun x -> x.Rfid = hostId)
-        
-        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x)) = x)
-        let cnt = (Array.length currentBatch) - 1
-        let chBs = 
-            match (Array.length chHx) >= cnt with 
-            | true -> 
-                let divs = (Array.length chHx) / cnt 
-                Array.chunkBySize divs chHx |> Array.map Array.head |> Array.take cnt
-            | false -> 
-                Array.append chHx (Array.replicate (cnt - Array.length chHx) (identity elv))
-        
-        let cxc1 = coxel seq elv (Array.map2 (fun a (_, c, d) -> a, hostId, c, d) chBs (Array.tail currentBatch)) newOcc
-        let chOc1 = hxlUni 2 (Array.append newOcc (Array.concat (cxc1 |> Array.map (fun x -> x.Hxls))))
-        let cxc2 = cxc1 |> Array.map (fun x -> { x with Hxls = hxlChk seq elv chOc1 x.Hxls; Base = hxlChk seq elv chOc1 [|x.Base|] |> Array.head })
-        
-        cxCxCx seq elv nextTre newOcc (Array.append acc cxc2)
-
-// ==========================================================================================
-// SECTION: Editor Integration
-// ==========================================================================================
-
-/// <summary> Parses .hyw content and updates a PolygonEditorModel. </summary>
-let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
-
-    let cleanStr = content.Replace("\n","").Replace("\t","")
-    let sortedLevels = 
-        cleanStr.Split(';', StringSplitOptions.RemoveEmptyEntries) |> Array.truncate 1
-    
-    let mutable finalState = current
-    for lvl in sortedLevels do
-        let attrs = extractAttrsFromHyw lvl
-        finalState <- attrs |> Map.fold (fun (m: PolygonEditorModel) key v ->
-            match key with
-            | "W" -> match tryParseFloat v with | Some num -> { m with LogicalWidth = num * 10.0 } | None -> m
-            | "H" -> match tryParseFloat v with | Some num -> { m with LogicalHeight = num * 10.0 } | None -> m
-            | "L" -> match tryParseFloat v with | Some num -> { m with Elevation = int num } | None -> m
-            | "S" -> { m with BaseStr = v }
-            | "X" -> { m with UseAbsolute = (v = "1") }
-            | "E" -> match parseCoords v with | pts when pts.Length = 1 -> { m with EntryPoint = pts.[0] } | _ -> m
-            | "O" -> match parseCoords v with | pts when pts.Length > 0 -> { m with Outer = pts } | _ -> m
-            | "I" -> { m with Islands = parseIslands v }
-            | _ -> m
-        ) finalState
-    
-    let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
-    
-    let finalStateWithBoundary = 
-        { finalState with 
-            LogicalWidth = if finalState.LogicalWidth <= 0.0 then 300.0 else finalState.LogicalWidth
-            LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
-            UseBoundary = not finalState.UseAbsolute && not isZeroBoundary
-            PolygonEnabled = not finalState.UseAbsolute && not isZeroBoundary }
-    FreshlyImported finalStateWithBoundary

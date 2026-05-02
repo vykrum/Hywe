@@ -155,7 +155,12 @@ type Message =
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
-    | DownloadCsv
+    | DownloadCoordCsv
+    | DownloadMetricsCsv
+    | DownloadAdjCsv
+    | DownloadBatchCoordCsv
+    | DownloadBatchMetricsCsv
+    | DownloadBatchAdjCsv
     | DownloadDxf
     | DownloadObj
     | DownloadBatchDxf
