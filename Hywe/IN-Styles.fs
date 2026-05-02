@@ -502,7 +502,7 @@ let editorStyles = """
     writing-mode: vertical-rl;
     font-size: 8px;
     font-weight: 600;
-    color: #999;
+    color: #666;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     transform: rotate(180deg);
