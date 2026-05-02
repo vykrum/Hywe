@@ -5,14 +5,23 @@ open Microsoft.JSInterop
 
 // Shadow save for browser refresh persistence
 let autoSave (js: IJSRuntime) (content: string) =
-    js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content)
+    js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
+    js.InvokeVoidAsync("hyweSaveToUrl", content) |> ignore
 
 let clearBackup (js: IJSRuntime) =
-    js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup")
+    js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
+    js.InvokeVoidAsync("eval", "window.history.replaceState(null, '', ' ');") |> ignore
 
-// Retrieve shadow save
+// Retrieve shadow save (prioritizes URL Hash over LocalStorage)
 let getBackup (js: IJSRuntime) =
-    js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
+    async {
+        let! urlHash = js.InvokeAsync<string>("hyweLoadFromUrl").AsTask() |> Async.AwaitTask
+        if not (String.IsNullOrEmpty urlHash) then
+            return urlHash
+        else
+            let! local = js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
+            return local
+    }
 
 // Generates timestamped filename and triggers download
 let saveFile (js: IJSRuntime) (content: string) =
