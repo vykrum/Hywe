@@ -220,7 +220,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                       let section = 
                           match Map.tryFind level model.ReportOptions.LevelSections with
                           | Some s -> s
-                          | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23] }
+                          | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
                       
                       let mutable levelBatches = []
                       

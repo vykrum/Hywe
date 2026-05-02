@@ -454,7 +454,7 @@ let editorStyles = """
 }
 
 .preset-drawer {
-    position: fixed;
+    position: absolute;
     top: 80px;
     left: 0;
     z-index: 1802;
@@ -1912,12 +1912,12 @@ let reportPanelStyles = """
 }
 
 .report-level-card {
-    padding: 20px 0;
+    padding: 2px 0;
     width: 100%;
     max-width: 800px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
 }
 
 .report-level-header {
@@ -1925,8 +1925,8 @@ let reportPanelStyles = """
     font-size: 1rem;
     color: #444;
     border-bottom: 1px solid #e0e0e0;
-    padding-bottom: 8px;
-    margin-bottom: 4px;
+    padding-bottom: 4px;
+    margin-bottom: 0px;
 }
 
 .variation-selection-grid {

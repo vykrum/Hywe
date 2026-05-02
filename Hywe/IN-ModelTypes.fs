@@ -73,6 +73,7 @@ type LevelReportSections = {
     BatchOverview: bool
     Variations   : bool   // detailed section toggle
     SelectedVariations: Set<int> // which of the 24 are included
+    IsFilterExpanded: bool
 }
 
 type ReportOptions = {

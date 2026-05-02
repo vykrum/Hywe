@@ -29,7 +29,7 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
         let section = 
             match Map.tryFind level opts.LevelSections with
             | Some s -> s
-            | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23] }
+            | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             
         let hasAny = section.FlowChart || section.BatchOverview || section.Variations
         if hasAny then
@@ -42,7 +42,7 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
             if section.Variations then
                 for i = 0 to 23 do
                     if section.SelectedVariations.Contains(i) then
-                        addPage (Page.indexToSqn i) 2
+                        addPage (Page.labelPhrase.[i].ToString()) 2
     
     let revPages = pages |> List.rev
     
@@ -181,7 +181,7 @@ let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: f
         |> String.concat ""
     
     sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
-
+    
 let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) : string =
     let sb = StringBuilder()
     sb.AppendLine("""<table class="report-table">
@@ -192,8 +192,8 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) : string =
         
     let hxlAreaX = 4
     for i = 0 to cxls.Length - 1 do
-        let cxl = cxls.[i]
-        let avl = if i < cxlAvl.Length then cxlAvl.[i] else 0
+        let cxl = cxls[i]
+        let avl = if i < cxlAvl.Length then cxlAvl[i] else 0
         let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
         let achSz = (Array.length cxl.Hxls) * hxlAreaX
         let opnSz = avl * hxlAreaX
@@ -216,8 +216,8 @@ let renderAdjacencyMatrix (cxls: Cxl[]) : string =
     sb.AppendLine("</tr></thead><tbody>") |> ignore
     
     for i = 0 to matrix.Length - 1 do
-        let row = matrix.[i]
-        let safeName = names.[i].Replace("<", "&lt;").Replace(">", "&gt;")
+        let row = matrix[i]
+        let safeName = names[i].Replace("<", "&lt;").Replace(">", "&gt;")
         sb.Append(sprintf """<tr><th>%s</th>""" safeName) |> ignore
         for adj in row do
             let cell = if adj then "■" else ""
@@ -380,7 +380,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
         let section = 
             match Map.tryFind level opts.LevelSections with
             | Some s -> s
-            | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23] }
+            | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             
         let batchInfo = batches.[level]
 
@@ -401,8 +401,8 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                 sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — Level %d%s" level pageStr) opts.ProjectTitle) |> sb.AppendLine |> ignore
                 
                 for i = chunkStart to chunkEnd do
-                    let svg = renderFloorPlanSvg batchInfo.[i].shapes batchInfo.[i].cxOuIl
-                    sprintf tBatchCell svg batchInfo.[i].sqnName |> sb.AppendLine |> ignore
+                    let svg = renderFloorPlanSvg batchInfo[i].shapes batchInfo[i].cxOuIl
+                    sprintf tBatchCell svg (Page.labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
                 
                 let legend = if batchInfo.Length > 0 then renderLegend batchInfo.[0].shapes else ""
                 sprintf tBatchGrid2 legend (renderFooter()) |> sb.AppendLine |> ignore
@@ -410,7 +410,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
         if section.Variations then
             for i = 0 to Math.Min(23, batchInfo.Length - 1) do
                 if section.SelectedVariations.Contains(i) then
-                    let conf = batchInfo.[i]
+                    let conf = batchInfo[i]
                     let svg = renderFloorPlanSvg conf.shapes conf.cxOuIl
                     let legend = renderLegend conf.shapes
                     
@@ -423,7 +423,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                     let areaTable = renderAreaTable levelCxls conf.cxlAvl
                     let adjMatrix = renderAdjacencyMatrix levelCxls
                     
-                    sprintf tVariation (renderHeader (sprintf "%s — Level %d" conf.sqnName level) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
+                    sprintf tVariation (renderHeader (sprintf "%s — Level %d" (Page.labelPhrase.[i].ToString()) level) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
 
     sb.AppendLine("</body></html>") |> ignore
     sb.ToString()
