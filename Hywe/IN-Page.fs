@@ -93,9 +93,9 @@ let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
 let emptyState = "| (0/X=1), (1/75/Root) |"
 
 let beeyond = $"| (0/X=1), (1/105/Dock),(1.1/85/Logistics),(1.2/95/Lab),"+
-              $"(1.3/75/Habitation),(1.4/110/Power) |"
+              $"(1.3/65/Habitation),(1.4/75/Power) |"
 
-let beedroom = "| (0/Q=VRCWSW/L=0/W=40/H=40/X=0/E=0/O=0,0,40,0,40,40,0,40/I=/T=3), (1/7/Foyer), (1.1/12/Living), (1.1.1/18/Dining)," +
+let beedroom = "| (0/Q=VRCWSW/L=0/W=30/H=30/X=0/E=0/O=0,0,30,0,30,30,0,30/I=/T=3), (1/7/Foyer), (1.1/12/Living), (1.1.1/18/Dining)," +
                 "(1.1.1.1/15/Kitchen), (1.1.1.1.1/6/Utility), (1.1.1.2/14/Bed-1), (1.1.1.2.1/8/Bath-1), (1.1.1.3/18/Bed-2)," +
                 " (1.1.1.3.1/10/Closet-2), (1.1.1.3.1.1/10/Bath-2), (1.1.1.4/18/Bed-3), (1.1.1.4.1/11/Closet-3), (1.1.1.4.2/10/Bath-3)," +
                 " (1.1.2/12/Staircase), (1.2/12/Study) |"
@@ -113,13 +113,13 @@ let allSqns : string list = [
 let indexToSqn i = allSqns.[i]
 let sqnToIndex sqn = allSqns |> List.findIndex ((=) sqn)
 
+// Label string (24 characters)
+let labelPhrase = "alternATE◦CONFIGURATions"
+
 // Sequence Slider Component
 let sequenceSlider (selected: string) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
     let maxIndex = 23
-
-    // Label string (24 characters)
-    let labelPhrase = "alternATE◦CONFIGURATions"
 
     div {
         attr.``class`` "slider-wrapper"

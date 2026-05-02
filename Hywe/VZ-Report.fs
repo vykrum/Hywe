@@ -162,7 +162,10 @@ let viewReport (model: Model) dispatch =
         
         if opts.IncludeCover then
             div {
-                attr.style "font-size: 11px; color: #888; margin: -5px 0 10px 25px; font-style: italic;"
+                attr.style (
+                    let color = if model.ViewLocked then "#4caf50" else "#e65100"
+                    sprintf "font-size: 11px; color: %s; margin: -5px 0 10px 25px; font-style: italic;" color
+                )
                 if model.ViewLocked then 
                     text "(3D view locked: will be included in cover page)"
                 else 
@@ -174,7 +177,7 @@ let viewReport (model: Model) dispatch =
             let s = 
                 match Map.tryFind level opts.LevelSections with
                 | Some sections -> sections
-                | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23] }
+                | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             
             div {
                 attr.``class`` "report-level-card"
@@ -183,42 +186,68 @@ let viewReport (model: Model) dispatch =
                     text (sprintf "Level %d" level)
                 }
                 
-                renderToggleRow "Flow Chart" s.FlowChart (fun v -> 
-                    updateOpts (fun o -> { o with LevelSections = Map.add level { s with FlowChart = v } o.LevelSections }))
-                
-                renderToggleRow "Batch Overview (Grid)" s.BatchOverview (fun v -> 
-                    updateOpts (fun o -> { o with LevelSections = Map.add level { s with BatchOverview = v } o.LevelSections }))
-                
-                renderToggleRow "Individual Variations" s.Variations (fun v -> 
-                    updateOpts (fun o -> { o with LevelSections = Map.add level { s with Variations = v } o.LevelSections }))
-                
-                if s.Variations then
+                div {
+                    attr.style "display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 5px;"
+                    
                     div {
-                        attr.``class`` "variation-grid-controls"
+                        attr.style "display: flex; flex-direction: column;"
+                        renderToggleRow "Flow Chart" s.FlowChart (fun v -> 
+                            updateOpts (fun o -> { o with LevelSections = Map.add level { s with FlowChart = v } o.LevelSections }))
+                        
+                        renderToggleRow "Batch Overview (Grid)" s.BatchOverview (fun v -> 
+                            updateOpts (fun o -> { o with LevelSections = Map.add level { s with BatchOverview = v } o.LevelSections }))
+                    }
+                    
+                    div {
+                        attr.style "display: flex; flex-direction: column; align-items: flex-start; gap: 8px;"
+                        renderToggleRow "Individual Variations" s.Variations (fun v -> 
+                            updateOpts (fun o -> { o with LevelSections = Map.add level { s with Variations = v } o.LevelSections }))
+                        
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
-                            on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
-                            text "All"
-                        }
-                        button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
-                            on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.empty } o.LevelSections }))
-                            text "None"
+                            attr.disabled (not s.Variations)
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light"
+                            attr.style (
+                                if s.Variations then 
+                                    "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #666; background: transparent; border: 1px solid #ddd;"
+                                else 
+                                    "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #aaa; background: transparent; border: 1px solid #eee; cursor: not-allowed;"
+                            )
+                            on.click (fun _ -> if s.Variations then updateOpts (fun o -> { o with LevelSections = Map.add level { s with IsFilterExpanded = not s.IsFilterExpanded } o.LevelSections }))
+                            text (if s.Variations && s.IsFilterExpanded then "Hide filters" else "Filter variations")
                         }
                     }
-                    div {
-                        attr.``class`` "variation-selection-grid"
-                        forEach [0..23] <| fun i ->
-                            let isSelected = s.SelectedVariations.Contains(i)
+                }
+                
+                if s.Variations && s.IsFilterExpanded then
+                        concat {
                             div {
-                                attr.``class`` (if isSelected then "var-chip selected" else "var-chip")
-                                on.click (fun _ ->
-                                    let newSet = if isSelected then Set.remove i s.SelectedVariations else Set.add i s.SelectedVariations
-                                    updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = newSet } o.LevelSections }))
-                                text (Page.indexToSqn i)
+                                attr.``class`` "variation-grid-controls"
+                                button {
+                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
+                                    on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
+                                    text "All"
+                                }
+                                button {
+                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
+                                    on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.empty } o.LevelSections }))
+                                    text "None"
+                                }
                             }
-                    }
+                            div {
+                                attr.``class`` "variation-selection-grid"
+                                forEach [0..23] <| fun i ->
+                                    let isSelected = s.SelectedVariations.Contains(i)
+                                    div {
+                                        attr.``class`` (if isSelected then "var-chip selected" else "var-chip")
+                                        on.click (fun _ ->
+                                            let newSet = if isSelected then Set.remove i s.SelectedVariations else Set.add i s.SelectedVariations
+                                            updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = newSet } o.LevelSections }))
+                                        text (Page.labelPhrase.[i].ToString())
+                                    }
+                            }
+                        }
             }
+
             
         div {
             attr.``class`` "report-section-title"
