@@ -4,6 +4,7 @@ open System
 open Microsoft.JSInterop
 open Elmish
 open ModelTypes
+open ExportFormats
 
 let generateSuggestion (model: Model) =
     let tree = model.Tree
@@ -96,7 +97,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                             let key = sprintf "%A" sqnCase
                             let data = 
                                 try 
-                                    Parse.generateCxlArray currentSrc sqnCase currentOuter currentIslands model.PolygonExport.EntryStr [||]
+                                    ExportFormats.generateHynteractPayload currentSrc sqnCase currentOuter currentIslands model.PolygonExport.EntryStr [||]
                                 with ex -> 
                                     printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
                                     "" 

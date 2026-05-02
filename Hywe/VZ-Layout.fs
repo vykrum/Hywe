@@ -585,7 +585,7 @@ let alternateConfigurations
         }
         // --- DOWNLOAD GROUP ---
         div {
-            attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
+            attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 on.pointerdown (fun _ -> 
@@ -597,10 +597,27 @@ let alternateConfigurations
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.pointerdown (fun _ -> 
-                    dispatch DownloadBatchDxf
-                )
+                on.pointerdown (fun _ -> dispatch DownloadBatchDxf)
                 text "DXF"
+            }
+            div { attr.style "width: 1px; height: 20px; background: #eee; margin: 0 5px;" }
+            button {
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
+                attr.``style`` "font-size: 10px;"
+                on.pointerdown (fun _ -> dispatch DownloadBatchCoordCsv)
+                text "Batch Coords"
+            }
+            button {
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
+                attr.``style`` "font-size: 10px;"
+                on.pointerdown (fun _ -> dispatch DownloadBatchMetricsCsv)
+                text "Batch Metrics"
+            }
+            button {
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
+                attr.``style`` "font-size: 10px;"
+                on.pointerdown (fun _ -> dispatch DownloadBatchAdjCsv)
+                text "Batch Adj"
             }
         }
     }

@@ -124,7 +124,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                 attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
                 text "AREA METRICS" 
                 div {
-                    attr.``style`` "display: flex; gap: 8px;"
+                    attr.``style`` "display: flex; gap: 8px; align-items: center;"
                     span {
                         attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
                         text $"[{sqn}]"
@@ -172,5 +172,27 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         div {
             attr.``style`` "flex: 1 1 450px; min-width: 300px;"
             viewAdjacencyTable sqn adjNames cxClr1 adjMatrix
+        }
+        // --- DOWNLOAD GROUP ---
+        div {
+            attr.``style`` "width: 100%; display: flex; gap: 10px; margin-top: 20px; justify-content: center; align-items: center;"
+            button {
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                attr.``style`` "font-size: 10px; padding: 6px 12px;"
+                on.pointerdown (fun _ -> dispatch DownloadCoordCsv)
+                text "Coordinates CSV"
+            }
+            button {
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                attr.``style`` "font-size: 10px; padding: 6px 12px;"
+                on.pointerdown (fun _ -> dispatch DownloadMetricsCsv)
+                text "Area Metrics CSV"
+            }
+            button {
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                attr.``style`` "font-size: 10px; padding: 6px 12px;"
+                on.pointerdown (fun _ -> dispatch DownloadAdjCsv)
+                text "Adjacency CSV"
+            }
         }
     }

@@ -12,6 +12,7 @@ open PolygonEditor
 open ModelTypes
 open ModelHelpers
 open Layout
+open Storage
 open Hywe
 
 // Defaults / init 
@@ -193,7 +194,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match model.EditorMode with
             | Syntax ->
                 let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                let newState = Parse.importFromHyw model.SrcOfTrth inner
+                let newState = Storage.importFromHyw model.SrcOfTrth inner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
                 model.SrcOfTrth
             | Interactive ->
@@ -212,7 +213,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match model.EditorMode with
             | Syntax ->
                 let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                let newState = Parse.importFromHyw updatedSrcOfTrth inner
+                let newState = Storage.importFromHyw updatedSrcOfTrth inner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
                 let newExport = syncPolygonState finalPoly
                 { model with 
@@ -323,13 +324,20 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             NeedsHyweave = true        },
             Cmd.none
 
-    | SetActivePanel _ | ToggleEditorMode | ExportPdfRequested 
-    | FileImported _ | SelectPreset _ | ToggleBoundary | ToggleViewLock | Download3DSvg 
-    | DownloadCsv | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj
-    | GenerateReport | ReportGenerated _ | UpdateReportOptions _ as msg ->
+    | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv | DownloadBatchMetricsCsv | DownloadBatchAdjCsv as msg ->
         let model = 
             match msg with
-            | FileImported _ | SelectPreset _ | ToggleBoundary | ToggleEditorMode -> pushUndo model
+            | FileImported _ | SelectPreset _ -> pushUndo model
+            | _ -> model
+        match UpdateUI.update js msg model with
+        | Some (newModel, cmd) -> newModel, cmd
+        | None -> model, Cmd.none
+
+    | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DSvg 
+    | DownloadDxf | DownloadObj | DownloadBatchDxf | DownloadBatchObj | GenerateReport as msg ->
+        let model = 
+            match msg with
+            | ToggleBoundary | ToggleEditorMode -> pushUndo model
             | _ -> model
         match UpdateUI.update js msg model with
         | Some (newModel, cmd) -> newModel, cmd
@@ -439,7 +447,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             
             // Restore Polygon
             let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Parse.importFromHyw content currentInner
+            let newState = Storage.importFromHyw content currentInner
             let finalPoly = match newState with Stable m | FreshlyImported m -> m
             let newExport = syncPolygonState finalPoly
             
