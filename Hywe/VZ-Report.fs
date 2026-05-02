@@ -94,50 +94,71 @@ let viewReport (model: Model) dispatch =
         attr.``class`` "report-panel fade-in"
         
         div {
+            attr.``class`` "teach-intro-section"
+            h2 { attr.``class`` "teach-intro-title"; text "Report Generation" }
+            p { 
+                attr.``class`` "teach-intro-text"
+                text "Consolidates all generated configurations in a single compilation."
+            }
+        }
+        
+        div {
             attr.``class`` "report-section-title"
             text "1. Project Details"
         }
         
         div {
-            attr.style "width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 15px;"
+            attr.style "width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 8px;"
             
             div {
-                attr.``class`` "report-field"
-                elt "label" { text "Project Title" }
-                input {
-                    attr.``class`` "hywe-input"
-                    attr.value opts.ProjectTitle
-                    on.input (fun e -> updateOpts (fun o -> { o with ProjectTitle = e.Value :?> string }))
+                attr.style "display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"
+                
+                div {
+                    attr.style "display: flex; flex-direction: column; gap: 8px;"
+                    
+                    div {
+                        attr.``class`` "report-field"
+                        elt "label" { text "Project Title" }
+                        input {
+                            attr.``class`` "hywe-input"
+                            attr.value opts.ProjectTitle
+                            on.input (fun e -> updateOpts (fun o -> { o with ProjectTitle = e.Value :?> string }))
+                        }
+                    }
+                    
+                    div {
+                        attr.``class`` "report-field"
+                        elt "label" { text "Project Number" }
+                        input {
+                            attr.``class`` "hywe-input"
+                            attr.value opts.ProjectNumber
+                            on.input (fun e -> updateOpts (fun o -> { o with ProjectNumber = e.Value :?> string }))
+                        }
+                    }
                 }
-            }
-            
-            div {
-                attr.``class`` "report-field"
-                elt "label" { text "Project Number" }
-                input {
-                    attr.``class`` "hywe-input"
-                    attr.value opts.ProjectNumber
-                    on.input (fun e -> updateOpts (fun o -> { o with ProjectNumber = e.Value :?> string }))
-                }
-            }
-            
-            div {
-                attr.``class`` "report-field"
-                elt "label" { text "Author" }
-                input {
-                    attr.``class`` "hywe-input"
-                    attr.value opts.Author
-                    on.input (fun e -> updateOpts (fun o -> { o with Author = e.Value :?> string }))
-                }
-            }
-            
-            div {
-                attr.``class`` "report-field"
-                elt "label" { text "Client Name" }
-                input {
-                    attr.``class`` "hywe-input"
-                    attr.value opts.ClientName
-                    on.input (fun e -> updateOpts (fun o -> { o with ClientName = e.Value :?> string }))
+                
+                div {
+                    attr.style "display: flex; flex-direction: column; gap: 8px;"
+                    
+                    div {
+                        attr.``class`` "report-field"
+                        elt "label" { text "Author" }
+                        input {
+                            attr.``class`` "hywe-input"
+                            attr.value opts.Author
+                            on.input (fun e -> updateOpts (fun o -> { o with Author = e.Value :?> string }))
+                        }
+                    }
+                    
+                    div {
+                        attr.``class`` "report-field"
+                        elt "label" { text "Client Name" }
+                        input {
+                            attr.``class`` "hywe-input"
+                            attr.value opts.ClientName
+                            on.input (fun e -> updateOpts (fun o -> { o with ClientName = e.Value :?> string }))
+                        }
+                    }
                 }
             }
             
@@ -146,7 +167,7 @@ let viewReport (model: Model) dispatch =
                 elt "label" { text "Description" }
                 textarea {
                     attr.``class`` "hywe-input"
-                    attr.rows 3
+                    attr.rows 2
                     attr.value opts.Description
                     on.input (fun e -> updateOpts (fun o -> { o with Description = e.Value :?> string }))
                 }
@@ -154,6 +175,7 @@ let viewReport (model: Model) dispatch =
         }
         
         div {
+            attr.style "margin-top: 10px;"
             attr.``class`` "report-section-title"
             text "2. Project Content"
         }
@@ -248,8 +270,8 @@ let viewReport (model: Model) dispatch =
                         }
             }
 
-            
         div {
+            attr.style "margin-top: 10px;"
             attr.``class`` "report-section-title"
             text "3. Generate"
         }
