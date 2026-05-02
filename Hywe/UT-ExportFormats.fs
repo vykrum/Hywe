@@ -14,22 +14,32 @@ let getCxlCoordsString (cxl: Cxl) =
         sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
     |> String.concat " "
 
+let getBaseCoordString (cxl: Cxl) =
+    let (x, y, _) = hxlCrd cxl.Base
+    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y))
+
 // --- CSV EXPORTS ---
 
 let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
     let sb = StringBuilder()
-    sb.AppendLine("Orientation,Level,CoxelID,CoxelName,Coordinates") |> ignore
+    sb.AppendLine("Orientation,Level,CoxelID,CoxelName,BaseCoordinate,Coordinates") |> ignore
     for (sqn, elv, cxls) in data do
         for cxl in cxls do
             let id = prpVlu cxl.Rfid
             let name = prpVlu cxl.Name
-            let coords = getCxlCoordsString cxl
-            sb.AppendLine(sprintf "%s,%d,%s,%s,%s" sqn elv id name coords) |> ignore
+            let baseCoord = getBaseCoordString cxl
+            let hxlsCoords = 
+                cxl.Hxls 
+                |> Array.map (fun h -> 
+                    let (x, y, _) = hxlCrd h
+                    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
+                |> String.concat " "
+            sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord hxlsCoords) |> ignore
     sb.ToString()
 
 let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
     let sb = StringBuilder()
-    let hxlAreaX = 4
+    let hxlAreaX = 1
     sb.AppendLine("Orientation,Level,CoxelID,CoxelName,Required,Achieved,TargetMet") |> ignore
     for (sqn, elv, cxls) in data do
         for cxl in cxls do

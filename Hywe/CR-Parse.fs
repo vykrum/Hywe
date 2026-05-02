@@ -205,7 +205,7 @@ let spaceSeq (spaceStr: string) =
 
 /// <summary> Consolidates all reproportioning logic into one call. Scales node areas to fit boundary. </summary>
 let applyReproportioning (boundaryArea: float) (totalNodeArea: float) (rawTree: (string * float * string)[][]) (ratioOverride: float option) =
-    let hxlAreaFactor = 4.0
+    let hxlAreaFactor = 1.0
     let isUnbound = boundaryArea <= 0.0
     let reductionFactor = 0.96 
     let ratio = 

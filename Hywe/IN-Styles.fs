@@ -568,7 +568,7 @@ video.fullscreen-bg {
     object-fit: cover;
     z-index: 100;
     pointer-events: none;
-    background-color: #d3d3d1;
+    background-color: white;
 }
 
 /* =============================
@@ -724,6 +724,7 @@ video.fullscreen-bg {
     opacity: 0;
     display: none;
     transition: opacity 0.8s ease;
+    background-color: #ffffff;
 }
 
 @keyframes fadeIn {

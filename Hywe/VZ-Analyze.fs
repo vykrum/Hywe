@@ -10,7 +10,7 @@ open ModelTypes
 // --- INTERFACE ---
 
 let renderRow (cxl: Cxl) (clr: string) (avl: int) =
-    let hxlAreaX = 4
+    let hxlAreaX = 1
     let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
     let achSz = (Array.length cxl.Hxls)*hxlAreaX
     let achCl = match achSz < reqSz with | true -> "red" | false -> "#646464"
@@ -109,7 +109,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
         }
 
 let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
-    let hxlAreaX = 4
+    let hxlAreaX = 1
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> (prpVlu c.Size |> int) * hxlAreaX)
     let totalAch = cxCxl1 |> Array.sumBy (fun c -> (Array.length c.Hxls) * hxlAreaX)
     
