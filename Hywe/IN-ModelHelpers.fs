@@ -182,7 +182,6 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
                         attr.style "display: flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid rgba(0,0,0,0.1); background: transparent; box-shadow: none; opacity: 0.6; transition: opacity 0.2s ease;"
                         on.click (fun _ -> 
-                            js.InvokeVoidAsync("console.log", "Hywe: Install button clicked").AsTask() |> ignore
                             dispatch InstallRequested
                         )
                         

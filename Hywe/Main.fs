@@ -464,6 +464,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     Sequence = newSqn
                     Derived = Page.deriveData content newExport.EntryStr newTree.ActiveLevel
                     NeedsHyweave = true
+                    Onboarding = { model.Onboarding with IsActive = true }
+                    IsPresetsCollapsed = true
                 }
             updatedModel, Cmd.none
 
@@ -526,18 +528,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 UndoStack    = undoSnap :: model.UndoStack
                                 NeedsHyweave = true }
             restored, Cmd.none
-
-    | SetInstallPromptAvailable available ->
-        { model with InstallPromptAvailable = available }, Cmd.none
-
-    | InstallRequested ->
-        model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("triggerPwaInstall").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
-
-    | SetPrivacyAlert show ->
-        { model with ShowPrivacyAlert = show }, Cmd.none
-
-    | SetIsStandalone isS ->
-        { model with IsStandalone = isS }, Cmd.none
 
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none
@@ -620,6 +610,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | StopAutoSimulation ->
         { model with Onboarding = { model.Onboarding with IsAutoSimulating = false } }, Cmd.none
 
+    | SetInstallPromptAvailable available ->
+        { model with InstallPromptAvailable = available }, Cmd.none
+
+    | InstallRequested ->
+        model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("triggerPwaInstall").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
+
+    | SetPrivacyAlert show ->
+        { model with ShowPrivacyAlert = show }, Cmd.none
+
+    | SetIsStandalone isS ->
+        { model with IsStandalone = isS }, Cmd.none
+
     | TransitionToIntro ->
         { model with CurrentScreen = IntroScreen }, Cmd.none
 
@@ -680,13 +682,16 @@ type MyApp() =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
                 Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
-                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> TransitionToIntro)
-                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 8000 }) () (fun _ -> TransitionToMain)
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
             ])
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 
                 concat {
+                    if model.Onboarding.IsActive && model.CurrentScreen = MainScreen then
+                        Help.viewHelp model.Onboarding dispatch
+
                     Styles.render()
                     Shell.jsonLd
                     Shell.siteHeader
@@ -709,36 +714,34 @@ type MyApp() =
                                 attr.style "display: none; opacity: 0;"
 
                             view model dispatch this.JSRuntime
-                            if model.Onboarding.IsActive then
-                                Help.viewHelp model.Onboarding dispatch
                         }
 
                         if model.ShowPrivacyAlert && model.CurrentScreen = MainScreen then
                             div {
-                                attr.style "position: fixed; top: 75px; right: 10px; z-index: 5000; background: #363636; color: white; padding: 15px 20px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-size: 13px; max-width: 300px; display: flex; flex-direction: column; gap: 12px; border: 1px solid rgba(255,255,255,0.1); animation: slideIn 0.3s ease-out;"
+                                attr.style "position: fixed; top: 75px; right: 10px; z-index: 5000; background: #363636; color: white; padding: 15px 18px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-size: 13px; max-width: 220px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(255,255,255,0.1); animation: slideIn 0.3s ease-out;"
                                 div {
                                     attr.style "font-weight: 500; display: flex; align-items: center; gap: 8px;"
-                                    rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0ad4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="17.01"></line></svg>"""
-                                    text "Storage Persistence"
+                                    rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0ad4e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="17.01"></line></svg>"""
+                                    span { attr.style "font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;"; text "Persistence" }
                                 }
                                 div {
-                                    attr.style "opacity: 0.8; line-height: 1.4; font-size: 12px;"
-                                    text "Privacy browsers may clear your local data. Install HYWE as an app to ensure your workspace is always saved."
+                                    attr.style "opacity: 0.7; line-height: 1.4; font-size: 11px;"
+                                    text "Privacy browsers may clear local work. Install as an app to ensure data is saved."
                                 }
                                 div {
-                                    attr.style "display: flex; gap: 10px; margin-top: 5px;"
+                                    attr.style "display: flex; flex-direction: column; gap: 6px; margin-top: 4px;"
                                     if model.InstallPromptAvailable then
                                         button {
                                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                                            attr.style "flex: 1;"
+                                            attr.style "width: 100%; font-size: 10px; font-weight: 600;"
                                             on.click (fun _ -> dispatch InstallRequested)
-                                            text "Install Now"
+                                            text "INSTALL"
                                         }
                                     button {
                                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost"
-                                        attr.style "color: white; opacity: 0.6;"
+                                        attr.style "width: 100%; color: white; opacity: 0.5; font-size: 10px;"
                                         on.click (fun _ -> dispatch (SetPrivacyAlert false))
-                                        text "Dismiss"
+                                        text "DISMISS"
                                     }
                                 }
                             }

@@ -585,7 +585,7 @@ let alternateConfigurations
         }
         // --- DOWNLOAD GROUP ---
         div {
-            attr.style "display: flex; gap: 10px; margin-top: 15px; justify-content: center; align-items: center; flex-wrap: wrap; padding: 0 10px;"
+            attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 on.pointerdown (fun _ -> 
@@ -613,7 +613,7 @@ let alternateConfigurations
                 attr.``style`` "font-size: 10px;"
                 attr.title "Area Metrics"
                 on.pointerdown (fun _ -> dispatch DownloadBatchMetricsCsv)
-                text "Cnt"
+                text "ARE"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"

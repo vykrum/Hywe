@@ -181,12 +181,43 @@ document.addEventListener('keydown', function(e) {
     else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) { e.preventDefault(); _undoRedoDotNet.invokeMethodAsync('HandleRedo'); }
 });
 
+// --- URL-based Persistence Fallback ---
+window.hyweSaveToUrl = function(content) {
+    try {
+        const base64 = btoa(unescape(encodeURIComponent(content)));
+        window.history.replaceState(null, '', '#' + base64);
+    } catch(e) { console.warn("Hywe: URL save failed", e); }
+};
 
-// --- PWA Installation & Privacy Detection ---
-let deferredPrompt;
-window.registerPwaInstall = function (dotnetRef) {
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-        console.log("Hywe: Already running in standalone mode (Installed).");
+window.hyweLoadFromUrl = function() {
+    try {
+        if (window.location.hash.length > 1) {
+            const base64 = window.location.hash.substring(1);
+            return decodeURIComponent(escape(atob(base64)));
+        }
+    } catch(e) { console.warn("Hywe: URL load failed", e); }
+    return null;
+};
+
+// --- PWA & Privacy Detection ---
+let deferredPrompt = null;
+
+// Capture the install prompt as early as possible
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    console.log("Hywe: Install prompt captured (early).");
+});
+
+window.registerPwaInstall = function(dotnetRef) {
+    // If we stashed a prompt before F# was ready, notify it now
+    if (deferredPrompt) {
+        console.log("Hywe: Notifying F# of stashed install prompt.");
+        dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
+    }
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
         dotnetRef.invokeMethodAsync('SetIsStandalone', true);
         dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', false);
         dotnetRef.invokeMethodAsync('SetPrivacyAlert', false);
@@ -200,24 +231,19 @@ window.registerPwaInstall = function (dotnetRef) {
     async function checkPrivacy() {
         let isPrivacy = false;
         try {
+            const ua = navigator.userAgent.toLowerCase();
             if (navigator.brave && await navigator.brave.isBrave()) isPrivacy = true;
-            else if (navigator.userAgent.includes('DuckDuckGo')) isPrivacy = true;
-            // Heuristic for private mode or strict storage
+            else if (ua.includes('duckduckgo') || ua.includes('ddg')) isPrivacy = true;
+            
+            // Heuristic for private mode or strict storage (less than 120MB)
             if (navigator.storage && navigator.storage.estimate) {
                 const { quota } = await navigator.storage.estimate();
-                if (quota && quota < 10000000) isPrivacy = true; 
+                if (quota && quota < 120000000) isPrivacy = true; 
             }
         } catch(e) {}
         if (isPrivacy) dotnetRef.invokeMethodAsync('SetPrivacyAlert', true);
     }
     checkPrivacy();
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        console.log("Hywe: Install prompt available");
-        dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
-    });
 
     window.addEventListener('appinstalled', (evt) => {
         console.log("Hywe: App installed");

@@ -188,7 +188,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                 attr.``style`` "font-size: 10px; padding: 6px 12px;"
                 attr.title "Area Metrics"
                 on.pointerdown (fun _ -> dispatch DownloadMetricsCsv)
-                text "Cnt"
+                text "ARE"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
