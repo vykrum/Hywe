@@ -18,19 +18,19 @@ jobs:
 
       - name: Generate sitemap.xml
         run: |
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > sitemap.xml
-          echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> sitemap.xml
-          echo '  <url>' >> sitemap.xml
-          echo '    <loc>https://hywe.in/</loc>' >> sitemap.xml
-          echo "    <lastmod>${{ steps.date.outputs.date }}</lastmod>" >> sitemap.xml
-          echo '    <priority>1.0</priority>' >> sitemap.xml
-          echo '  </url>' >> sitemap.xml
-          echo '</urlset>' >> sitemap.xml
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > src/Hywe.Web/wwwroot/sitemap.xml
+          echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '  <url>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '    <loc>https://hywe.in/</loc>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo "    <lastmod>${{ steps.date.outputs.date }}</lastmod>" >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '    <priority>1.0</priority>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '  </url>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '</urlset>' >> src/Hywe.Web/wwwroot/sitemap.xml
 
       - name: Commit sitemap
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add sitemap.xml
+          git add src/Hywe.Web/wwwroot/sitemap.xml
           git commit -m "Update sitemap.xml [skip ci]" || echo "No changes to commit"
           git push

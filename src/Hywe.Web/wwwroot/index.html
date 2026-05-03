@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+    <!-- Begin: Metadata for SEO, Social Sharing, and Browsers -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Title and SEO -->
+    <title>HYWE – Hygrid Woven Ensemble</title>
+    <meta name="description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
+    <link rel="canonical" href="https://hywe.in/" />
+    <meta name="author" content="Vikram Subbaiah" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Open Graph (Facebook, LinkedIn, etc.) -->
+    <meta property="og:title" content="HYWE" />
+    <meta property="og:description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hywe.in/" />
+    <meta property="og:image" content="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" />
+    <meta property="og:image:width" content="1600" />
+    <meta property="og:image:height" content="400" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="HYWE" />
+    <meta name="twitter:description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
+    <meta name="twitter:image" content="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" />
+    <meta name="twitter:site" content="@_hywe_" />
+    
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "HYWE",
+          "url": "https://hywe.in",
+          "description": "Logic-driven spatial layout weaver."
+        }
+    </script>
+
+    <base href="/">
+    <!-- CSS is now handled natively in F# -->
+    
+    <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+    <link rel="shortcut icon" href="/images/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Hywe" />
+    <link rel="manifest" href="site.webmanifest" />
+    <script>
+        // Global stash for the install prompt to catch it as early as possible
+        window.hyweDeferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.hyweDeferredPrompt = e;
+            console.log("Hywe: Install prompt captured (head).");
+            // If the PWA bridge is already registered, notify it immediately
+            if (window.hywePwaDotNetRef) {
+                window.hywePwaDotNetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
+            }
+        });
+    </script>
+    <style>
+        /* Minimal critical CSS for the initial loading state */
+        body {
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-weight: 300;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+        #loading-frame {
+            position: fixed;
+            top: 37px;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 900;
+            background: white; 
+        }
+        .fullscreen-bg {
+            position: fixed;
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 100;
+            background-color: white;
+        }
+        .fullscreen-bg.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .intro-section {
+            position: absolute;
+            z-index: 250;
+            background: #d3d3d1;
+            color: #363636;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-size: 16px;
+            font-weight: 300;
+            line-height: 1.5;
+            padding: 20px 30px;
+            border-radius: 6px;
+            text-align: center;
+            top: 100px;
+            left: 130px;
+            width: 100%;
+            max-width: 220px;
+            box-sizing: border-box;
+        }
+        .loadingText {
+            font-size: 12px;
+            text-align: center;
+            margin-top: 6px;
+            color: #363636;
+        }
+        .site-header {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            position: relative;
+            z-index: 1000;
+            width: 100%;
+            height: 37px;
+            background: #363636;
+            padding: 5px 0 0 5px;
+            gap: 10px;
+            box-sizing: border-box;
+        }
+        .site-header .title {
+            color: white;
+            font-size: 20px;
+            font-weight: normal;
+            padding: 0 10px 7px 10px;
+            white-space: nowrap;
+        }
+        .site-header .logo-acronym {
+            opacity: 1;
+        }
+        @media (max-width: 220px) {
+            .intro-section { left: 0; right: 0; margin: 0 auto; max-width: calc(100% - 50px); }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app-root">
+        <!-- Static Placeholder while WASM loads -->
+        <header class="site-header">
+            <div>
+                <img src="https://hywe.in/images/icon-32x32.png" width="30" height="30" alt="HYWE logo">
+            </div>
+            <div class="title">H Y W E</div>
+            <div class="logo-acronym">
+                <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45" alt="HYWE acronym">
+            </div>
+        </header>
+
+        <div id="loading-frame">
+            <video class="fullscreen-bg" autoplay muted loop>
+                <source src="images/loader.webm" type="video/webm">
+                <source src="images/loader.mp4" type="video/mp4">
+            </video>
+            <section class="intro-section">
+                Weave spatial configurations with<br><br>
+                <strong> H Y W E </strong><br><br>
+                An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design.<br><br>
+                Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections.
+                <div class="loadingText">Loading<span>...</span></div>
+            </section>
+        </div>
+    </div>
+
+
+    <!--Scripts-->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+    <script src="_framework/blazor.webassembly.js" defer></script>
+    <script src="scripts/html2pdf.bundle.min.js"></script>
+    <script src="scripts/index.js" defer></script>
+    <script src="scripts/webgl.js" defer></script>
+</body>
+</html>
