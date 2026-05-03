@@ -200,12 +200,18 @@ let extrudePolygons
             // Generate mesh and transform for WebGL (Flipping Y)
             let mesh = 
                 polygonMesh poly 
-                |> Array.map (Array.map (fun (x, y) -> [| x; -y |]))
+                |> Array.map (Array.map (fun (x, y) -> 
+                    let (cx, cy) = Geometry.toCartesian c.Seqn (x, y)
+                    [| cx; -cy |]))
             
-            let edge = poly |> Array.map (fun (x, y) -> [| x; -y |])
+            let edge = 
+                poly |> Array.map (fun (x, y) -> 
+                    let (cx, cy) = Geometry.toCartesian c.Seqn (x, y)
+                    [| cx; -cy |])
             
-            let cx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
-            let cy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
+            let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
+            let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
+            let cx, cy = Geometry.toCartesian c.Seqn (rawCx, rawCy)
             let centroid = [| cx; -cy; baseH + h / 2.0 |]
             
             buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)

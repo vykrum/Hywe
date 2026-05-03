@@ -53,7 +53,11 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
 
 let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (float*float)[][]) (cxElv1: float[]) (elv: int) : DerivedData =
     let fallbackSqn = Hexel.VRCCNE 
-    let activeSqn = if Array.isEmpty cxCxl1 then fallbackSqn else (Array.head cxCxl1).Seqn
+    let activeSqn = 
+        cxCxl1 
+        |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
+        |> Option.map (fun c -> c.Seqn)
+        |> Option.defaultValue (if Array.isEmpty cxCxl1 then fallbackSqn else (Array.head cxCxl1).Seqn)
     
     let cxlAvl = if Array.isEmpty cxCxl1 then [||] else cxlExp cxCxl1 activeSqn elv
     let cxClr1 = generatePastels "#888888" (max 1 (Array.length cxCxl1)) 0.85

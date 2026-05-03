@@ -221,7 +221,12 @@ let svgCoxels
 
         // Shift and Scale Vertices
         let padd = float (5*scl)
-        let crd1 = Array.map (fun x -> Array.map(fun (a,b) -> a * float scl, b * float scl)x) crd
+        let crd1 = 
+            Array.map2 (fun s pts -> 
+                pts |> Array.map (fun p -> 
+                    let (cx, cy) = Geometry.toCartesian s p
+                    cx * float scl, cy * float scl)
+            ) sqn crd
         // --- Coordinate Transformation & Offsetting ---
         // Calculate global shifts to normalize the layout within the SVG viewport
         let allPoints = Array.concat crd1
@@ -245,8 +250,9 @@ let svgCoxels
             
             // Labels
             let lPs = Array.map(fun a -> 
-                                        let x,y = cxlCnt a
-                                        (float x * float scl) + shfX,(float y * float scl) + shfY) cxl
+                                        let gx, gy = cxlCnt a
+                                        let x, y = Geometry.toCartesian a.Seqn (float gx, float gy)
+                                        (x * float scl) + shfX, (y * float scl) + shfY) cxl
             let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
 
             svg {
@@ -273,7 +279,15 @@ let svgCoxels
                 for boundary in bdr do
                     let xy =
                         boundary
-                        |> Array.map (fun (x, y) -> [| (float x * float scl) + shfX; (float y * float scl) + shfY |])
+                        |> Array.map (fun (x, y) -> 
+                            let fallbackSqn = Hexel.VRCCNE 
+                            let activeSqn = 
+                                cxl 
+                                |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
+                                |> Option.map (fun c -> c.Seqn)
+                                |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
+                            let (cx, cy) = Geometry.toCartesian activeSqn (x, y)
+                            [| (cx * float scl) + shfX; (cy * float scl) + shfY |])
                         |> Array.concat
                         |> Array.map string
                         |> String.concat ","
@@ -357,7 +371,12 @@ let getBtchCrds (cxl: Cxl[]) =
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
     let sqn = cxl |> Array.map (fun x -> x.Seqn)
     let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
-    let coords = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
+    let coords = 
+        Array.map2 (fun s pts -> 
+            pts 
+            |> Geometry.removeSawtooth s
+            |> Array.map (Geometry.toCartesian s)
+        ) sqn cr1
     
     // Safety check for empty geometry to prevent crash in Array.minBy
     let flattened = Array.concat coords

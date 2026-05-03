@@ -52,7 +52,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
             let newOutput =
                 NodeCode.getOutput
                     subModel
-                    model.Sequence
+                    model.Sequences
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
@@ -73,7 +73,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
         let newOutput =
             NodeCode.getOutput
                 model.Tree
-                model.Sequence
+                model.Sequences
                 model.PolygonExport.Width
                 model.PolygonExport.Height
                 model.PolygonExport.AbsStr
@@ -108,8 +108,13 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         let finalPoly = match newState with FreshlyImported m | Stable m -> m
         let newExport = syncPolygonState finalPoly
         let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
-        let m = regex.Match(clean)
-        let newSqn = if m.Success then m.Groups.[1].Value else model.Sequence
+        let newSqns = 
+            clean.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
+            |> Array.mapi (fun i segment ->
+                let m = regex.Match(segment)
+                if m.Success then (i, m.Groups.[1].Value) else (i, (model.Sequences |> Map.tryFind i |> Option.defaultValue allSqns.[11]))
+            )
+            |> Map.ofArray
 
         { model with 
             SrcOfTrth = clean
@@ -120,7 +125,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             PolygonExport = newExport
             ParseError = false
             LastBatchSrc = None
-            Sequence = newSqn
+            Sequences = newSqns
             EditsCount = 0
             PendingConfirm = None
         }, 
@@ -186,16 +191,16 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let cxls = levelIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
         let b36s = levelIdx |> Array.map (fun i -> model.Derived.cxB36.[i])
         
-        let csv = ExportFormats.generateCoordinatesCsv [| (model.Sequence, level, cxls, b36s) |]
+        let csv = ExportFormats.generateCoordinatesCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), level, cxls, b36s) |]
         let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadMetricsCsv ->
         let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = model.Tree.ActiveLevel)
-        let csv = ExportFormats.generateAreaMetricsCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
+        let csv = ExportFormats.generateAreaMetricsCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), model.Tree.ActiveLevel, activeCxls) |]
         let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadAdjCsv ->
-        let csv = ExportFormats.generateAdjacencyCsv [| (model.Sequence, model.Tree.ActiveLevel, model.Derived.cxAdj1) |]
+        let csv = ExportFormats.generateAdjacencyCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), model.Tree.ActiveLevel, model.Derived.cxAdj1) |]
         let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadBatchCoordCsv ->
@@ -269,7 +274,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
-                    model.Sequence
+                    model.Sequences
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
@@ -296,7 +301,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                           for i = 0 to 23 do
                               let sqn = Hexel.sqnArray.[i]
                               let sqnStr = sprintf "%A" sqn
-                              let forcedStr = Parsing.injectSqn model.SrcOfTrth sqnStr
+                              let forcedStr = Parsing.injectSqn model.SrcOfTrth level sqnStr
                               try
                                   let cxls, cxOuIl, cxElv1 = Parsing.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
                                   let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 level

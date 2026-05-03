@@ -375,6 +375,11 @@ input[type=number] {
     opacity: 0.6;
 }
 
+.slider-label.inactive {
+    opacity: 0.15;
+    filter: grayscale(1);
+}
+
 .slider-track-container {
     position: relative;
     height: 10px;

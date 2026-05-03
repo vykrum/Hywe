@@ -5,6 +5,9 @@ module Geometry =
     open Hexel
     open Coxel
 
+    let toCartesian (sqn: Sqn) (x: float, y: float) =
+        (x, y)
+
     /// <summary> Hexel Line </summary>
     let hxlLin (sqn : Sqn) (elv : int) (stt : Hxl) (enn : Hxl) =
         let safeHxlCrd (hOpt: Hxl option) =

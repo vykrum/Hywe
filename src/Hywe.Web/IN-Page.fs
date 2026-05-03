@@ -53,22 +53,24 @@ let sqnToIndex sqn = allSqns |> List.findIndex ((=) sqn)
 let labelPhrase = "alternATE◦CONFIGURATions"
 
 // Sequence Slider Component
-let sequenceSlider (selected: string) (dispatch: int -> unit) =
+let sequenceSlider (selected: string) (minIdx: int) (maxIdx: int) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
-    let maxIndex = 23
-
+    
     div {
         attr.``class`` "slider-wrapper"
 
         // Labels
         div {
             yield attr.``class`` "slider-labels"
-            for i in 0 .. maxIndex -> 
+            for i in 0 .. 23 -> 
+                let inRange = i >= minIdx && i <= maxIdx
                 span {
                     attr.``class`` (
-                        match i = currentIndex with 
-                        | true -> "slider-label active"
-                        | false -> "slider-label"
+                        match i = currentIndex, inRange with 
+                        | true, true  -> "slider-label active"
+                        | true, false -> "slider-label active inactive"
+                        | false, true -> "slider-label"
+                        | false, false -> "slider-label inactive"
                     )
                     text (labelPhrase.[i].ToString())
                 }
@@ -81,14 +83,16 @@ let sequenceSlider (selected: string) (dispatch: int -> unit) =
                 attr.``type`` "range"
                 attr.``class`` "custom-slider"
                 attr.min "0"
-                attr.max (string maxIndex)
+                attr.max "23"
                 attr.step "1"
                 attr.value (string currentIndex)
                 on.input (fun ev ->
                     match ev.Value with
                     | :? string as s ->
                         match System.Int32.TryParse(s) with
-                        | true, i -> dispatch i
+                        | true, i -> 
+                            let clamped = max minIdx (min maxIdx i)
+                            dispatch clamped
                         | _ -> ()
                     | _ -> ()
                 )
