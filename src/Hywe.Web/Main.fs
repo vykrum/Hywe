@@ -10,6 +10,7 @@ open Page
 open NodeCode
 open PolygonEditor
 open ModelTypes
+open PageHelpers
 open ModelHelpers
 open Hywe
 open Hywe.Core
@@ -371,7 +372,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
+                    let cxls, cxOuIl, cxElv1 = Parsing.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
                     let cxls = cxls |> Array.map (fun (c: Cxl) -> c)
                     let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 model.Tree.ActiveLevel
                     let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 

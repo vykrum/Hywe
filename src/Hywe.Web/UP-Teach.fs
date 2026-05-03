@@ -8,7 +8,7 @@ open ModelTypes
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.ExportFormats
+open ExportFormats
 
 let generateSuggestion (model: Model) =
     let tree = model.Tree

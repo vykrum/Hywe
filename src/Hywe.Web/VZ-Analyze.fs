@@ -7,7 +7,7 @@ open ModelTypes
 open System
 open Page
 open Hywe.Core
-open Hywe.Core.PageHelpers
+open PageHelpers
 
 // --- PROCESSING (UI HELPER) ---
 // Adjacency calculation is now in Coxel.cxlAdj
