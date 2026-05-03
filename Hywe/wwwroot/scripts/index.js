@@ -200,18 +200,13 @@ window.hyweLoadFromUrl = function() {
 };
 
 // --- PWA & Privacy Detection ---
-let deferredPrompt = null;
-
-// Capture the install prompt as early as possible
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    console.log("Hywe: Install prompt captured (early).");
-});
+window.hywePwaDotNetRef = null;
 
 window.registerPwaInstall = function(dotnetRef) {
-    // If we stashed a prompt before F# was ready, notify it now
-    if (deferredPrompt) {
+    window.hywePwaDotNetRef = dotnetRef;
+    
+    // If we stashed a prompt in the head before F# was ready, notify it now
+    if (window.hyweDeferredPrompt) {
         console.log("Hywe: Notifying F# of stashed install prompt.");
         dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
     }
@@ -235,7 +230,6 @@ window.registerPwaInstall = function(dotnetRef) {
             if (navigator.brave && await navigator.brave.isBrave()) isPrivacy = true;
             else if (ua.includes('duckduckgo') || ua.includes('ddg')) isPrivacy = true;
             
-            // Heuristic for private mode or strict storage (less than 120MB)
             if (navigator.storage && navigator.storage.estimate) {
                 const { quota } = await navigator.storage.estimate();
                 if (quota && quota < 120000000) isPrivacy = true; 
@@ -249,14 +243,14 @@ window.registerPwaInstall = function(dotnetRef) {
         console.log("Hywe: App installed");
         dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', false);
         dotnetRef.invokeMethodAsync('SetPrivacyAlert', false);
-        deferredPrompt = null;
+        window.hyweDeferredPrompt = null;
     });
 };
 
 window.triggerPwaInstall = async function () {
-    if (!deferredPrompt) return false;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
+    if (!window.hyweDeferredPrompt) return false;
+    window.hyweDeferredPrompt.prompt();
+    const { outcome } = await window.hyweDeferredPrompt.userChoice;
+    window.hyweDeferredPrompt = null;
     return outcome === 'accepted';
 };

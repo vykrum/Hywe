@@ -50,6 +50,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Hywe" />
     <link rel="manifest" href="site.webmanifest" />
+    <script>
+        // Global stash for the install prompt to catch it as early as possible
+        window.hyweDeferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.hyweDeferredPrompt = e;
+            console.log("Hywe: Install prompt captured (head).");
+            // If the PWA bridge is already registered, notify it immediately
+            if (window.hywePwaDotNetRef) {
+                window.hywePwaDotNetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
+            }
+        });
+    </script>
     <style>
         /* Minimal critical CSS for the initial loading state */
         body {
