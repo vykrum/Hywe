@@ -92,9 +92,6 @@ let initModel =
         PendingConfirm = None
         UndoStack = []
         RedoStack = []
-        InstallPromptAvailable = false
-        ShowPrivacyAlert = false
-        IsStandalone = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -527,18 +524,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 NeedsHyweave = true }
             restored, Cmd.none
 
-    | SetInstallPromptAvailable available ->
-        { model with InstallPromptAvailable = available }, Cmd.none
-
-    | InstallRequested ->
-        model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("triggerPwaInstall").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
-
-    | SetPrivacyAlert show ->
-        { model with ShowPrivacyAlert = show }, Cmd.none
-
-    | SetIsStandalone isS ->
-        { model with IsStandalone = isS }, Cmd.none
-
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none
         else
@@ -651,22 +636,12 @@ type MyApp() =
     [<JSInvokable>]
     member this.HandleRedo() = this.Dispatch Redo
 
-    [<JSInvokable>]
-    member this.SetInstallPromptAvailable(available: bool) = this.Dispatch (SetInstallPromptAvailable available)
-
-    [<JSInvokable>]
-    member this.SetPrivacyAlert(show: bool) = this.Dispatch (SetPrivacyAlert show)
-
-    [<JSInvokable>]
-    member this.SetIsStandalone(isS: bool) = this.Dispatch (SetIsStandalone isS)
-
     override this.OnAfterRenderAsync(firstRender) =
         let t = base.OnAfterRenderAsync(firstRender)
         if firstRender then
             let ref = DotNetObjectReference.Create(this)
             _dotnetRef <- Some ref
             this.JSRuntime.InvokeVoidAsync("registerUndoRedo", ref).AsTask() |> ignore
-            this.JSRuntime.InvokeVoidAsync("registerPwaInstall", ref).AsTask() |> ignore
         t
 
     interface System.IDisposable with
@@ -712,36 +687,6 @@ type MyApp() =
                             if model.Onboarding.IsActive then
                                 Help.viewHelp model.Onboarding dispatch
                         }
-
-                        if model.ShowPrivacyAlert && model.CurrentScreen = MainScreen then
-                            div {
-                                attr.style "position: fixed; top: 75px; right: 10px; z-index: 5000; background: #363636; color: white; padding: 15px 20px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-size: 13px; max-width: 300px; display: flex; flex-direction: column; gap: 12px; border: 1px solid rgba(255,255,255,0.1); animation: slideIn 0.3s ease-out;"
-                                div {
-                                    attr.style "font-weight: 500; display: flex; align-items: center; gap: 8px;"
-                                    rawHtml """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0ad4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="17.01"></line></svg>"""
-                                    text "Storage Persistence"
-                                }
-                                div {
-                                    attr.style "opacity: 0.8; line-height: 1.4; font-size: 12px;"
-                                    text "Privacy browsers may clear your local data. Install HYWE as an app to ensure your workspace is always saved."
-                                }
-                                div {
-                                    attr.style "display: flex; gap: 10px; margin-top: 5px;"
-                                    if model.InstallPromptAvailable then
-                                        button {
-                                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                                            attr.style "flex: 1;"
-                                            on.click (fun _ -> dispatch InstallRequested)
-                                            text "Install Now"
-                                        }
-                                    button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost"
-                                        attr.style "color: white; opacity: 0.6;"
-                                        on.click (fun _ -> dispatch (SetPrivacyAlert false))
-                                        text "Dismiss"
-                                    }
-                                }
-                            }
 
                         Shell.siteFooter model.CurrentScreen
                     }
