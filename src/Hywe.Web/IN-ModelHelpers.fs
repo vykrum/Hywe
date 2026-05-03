@@ -11,6 +11,7 @@ open PolygonEditor
 open ModelTypes
 open Bolero.Html
 open Hywe
+open Hywe.Core
 
 let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
     match model.PendingConfirm with

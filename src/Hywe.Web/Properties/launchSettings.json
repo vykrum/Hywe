@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Hywe.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:51592;http://localhost:51593"
+    }
+  }
+}

@@ -3,16 +3,22 @@
 /// A hexel can have a maximum of six neighbouring/adjacent hexels.
 /// All neighbouring hexels share at least one common edge </summary>
 
-module Hexel
+module Hywe.Core.Hexel
+
+[<Struct>]
+type Point = { X: float; Y: float }
+
 
 /// <summary> Hexel types: Categorization based on location availabity. </summary>
+[<Struct>]
 type Hxl = 
-    | AV of int * int * int
-    | RV of int * int * int
-    | EX of int * int * int
+    | AV of x: int * y: int * z: int
+    | RV of x: int * y: int * z: int
+    | EX of x: int * y: int * z: int
 
 /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
 /// adjacent hexels and the position of the first of the six adjaent hexels. </summary>
+[<Struct>]
 type Sqn =  
     | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
@@ -61,11 +67,11 @@ let sqnArray = [|
 let identity (elv:int) = RV(0,0, elv)
 
 /// <summary> Extract coordinates from hexel. </summary>
-let hxlCrd (h: Hxl) =
+let inline hxlCrd (h: Hxl) =
     match h with
-    | AV(x,y,z) -> (x,y,z)
-    | RV(x,y,z) -> (x,y,z)
-    | EX(x,y,z) -> (x,y,z)
+    | AV(x,y,z) -> x,y,z
+    | RV(x,y,z) -> x,y,z
+    | EX(x,y,z) -> x,y,z
 
 /// <summary> Converts an integer to a Base36 string. </summary>
 let toBase36 (value: int64) =
@@ -252,7 +258,8 @@ let bndSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) =
             let hx2 = match opt with | false -> Array.tryHead hx1 | true -> Array.tryLast hx1
             let hx3 = match hx2 with | Some a -> [|a|] | None -> [||]
             arr sqn elv hxl (Array.append acc hx3) (cnt-1) opt
-    let hxl = hxo |> Array.sortByDescending (fun x -> available sqn elv x hxo)
+    let hxlOccSet = System.Collections.Generic.HashSet<Hxl>(hxo |> Array.map (fun x -> AV(hxlCrd x)))
+    let hxl = hxo |> Array.sortByDescending (fun x -> availableSet sqn elv x hxlOccSet)
     let a1 = match hxl with | [||] -> [||] | _ -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) true
     let ar1 = match (Array.length a1) = Array.length hxl with | true -> a1 | false -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) false
     let ar2 = match hxo with | [||] -> [||] | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with | true -> ar1 | false -> hxlUni 2 ar1
@@ -273,7 +280,8 @@ let cntSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) =
                 let e = d |> Array.filter (fun x -> Array.contains x hxl) |> Array.tryHead
                 let f = match e with | Some a -> [|a|] | None -> [||]
                 ctSq sqn hxl (Array.append acc f) (cnt-1)
-    let hxlSort = hxl |> Array.sortByDescending (fun x -> available sqn elv x hxl)
+    let hxlOccSet = System.Collections.Generic.HashSet<Hxl>(hxl)
+    let hxlSort = hxl |> Array.sortByDescending (fun x -> availableSet sqn elv x hxlOccSet)
     let cnt = Array.length(hxlSort)
     let arr =  match hxlSort with | [||] -> [||] | _ -> ctSq sqn hxlSort ([|Array.head hxlSort|]) cnt
     let ar1 = match cnt = Array.length(arr) with | true -> arr | false -> ctSq sqn (Array.rev hxlSort) ([|Array.last hxlSort|]) cnt

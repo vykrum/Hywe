@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="CR-Hexel.fs" />
+    <Compile Include="CR-Coxel.fs" />
+    <Compile Include="Geometry.fs" />
+    <Compile Include="CR-Parse.fs" />
+    <Compile Include="Models.fs" />
+    <Compile Include="Parsing.fs" />
+    <Compile Include="UT-ExportFormats.fs" />
+  </ItemGroup>
+</Project>

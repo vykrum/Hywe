@@ -11,9 +11,9 @@ open NodeCode
 open PolygonEditor
 open ModelTypes
 open ModelHelpers
-open Layout
-open Storage
 open Hywe
+open Hywe.Core
+open Hywe.Core.Coxel
 
 // Defaults / init 
 let initialTree = NodeCode.initModel beeyond
@@ -38,7 +38,7 @@ let initModel =
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
-        Derived = deriveData initialOutput initialPolygonExport.EntryStr 0
+        Derived = PageHelpers.deriveData initialOutput initialPolygonExport.EntryStr 0
         NeedsHyweave = false
         IsHyweaving = false
         IsCancelling = false
@@ -157,7 +157,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
-                injectSqn model.SrcOfTrth newSqn
+                Parsing.injectSqn model.SrcOfTrth newSqn
 
         let modelWithNewSqn = 
             { model with 
@@ -221,13 +221,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let newExport = syncPolygonState finalPoly
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
-                    Derived = Page.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel
+                    Derived = PageHelpers.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel
                     PolygonEditor = newState 
                     PolygonExport = newExport }
             | Interactive ->
                 { model with 
                     SrcOfTrth = updatedSrcOfTrth
-                    Derived = Page.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel }
+                    Derived = PageHelpers.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel }
                 
         newModel,
         Cmd.OfAsync.perform
@@ -285,7 +285,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
-                    let m = { modelWithTree with Derived = Page.deriveData newOutput model.PolygonExport.EntryStr updatedTree.ActiveLevel }
+                    let m = { modelWithTree with Derived = PageHelpers.deriveData newOutput model.PolygonExport.EntryStr updatedTree.ActiveLevel }
                     if model.ActivePanel = BatchPanel then
                         { m with 
                             IsHyweaving = true
@@ -361,23 +361,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     // This pattern allows the UI to update after every single configuration is processed,
     // providing real-time feedback via the progress grid.
     | GenerateNextBatchItem i ->
-        // Terminate if we reached the target (24) or if the user cancelled
         if i >= 24 || model.IsCancelling then
             { model with IsHyweaving = false; IsCancelling = false }, 
             Cmd.ofMsg (SetBatchPreview (model.BatchAccumulator |> List.toArray |> Array.rev))
         else
-            let sqnStr = indexToSqn i
-            let forcedStr = injectSqn model.SrcOfTrth sqnStr
+            let sqn = Hexel.sqnArray.[i]
+            let sqnStr = sprintf "%A" sqn
+            let forcedStr = Parsing.injectSqn model.SrcOfTrth sqnStr
             
-            // Perform the heavy geometric calculation in an async block
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
-                    
-                    // Extract static geometry for high-fidelity rendering in the batch preview
-                    let derived = Page.deriveDataFromLayout cxls cxOuIl cxElv1 model.Tree.ActiveLevel
+                    let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
+                    let cxls = cxls |> Array.map (fun (c: Cxl) -> c)
+                    let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 model.Tree.ActiveLevel
                     let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
-                        getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
+                        Layout.getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
                     
                     let configData : BatchConfgrtns = 
                         {| sqnName = sqnStr
@@ -391,7 +389,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                            cxAdj1 = derived.cxAdj1
                            cxB36 = derived.cxB36 |}
                     
-                    // Small sleep to ensure the UI has a chance to render the progress update
                     do! Async.Sleep 5
                     return Some configData
                 with ex -> 
@@ -462,7 +459,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     PolygonEditor = newState
                     PolygonExport = newExport
                     Sequence = newSqn
-                    Derived = Page.deriveData content newExport.EntryStr newTree.ActiveLevel
+                    Derived = PageHelpers.deriveData content newExport.EntryStr newTree.ActiveLevel
                     NeedsHyweave = true
                     Onboarding = { model.Onboarding with IsActive = true }
                     IsPresetsCollapsed = true
@@ -484,7 +481,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonEditor = Stable resetPoly
             PolygonExport = resetExport
             Sequence = allSqns.[11]
-            Derived = Page.deriveData resetSyntax resetExport.EntryStr 0
+            Derived = PageHelpers.deriveData resetSyntax resetExport.EntryStr 0
             NeedsHyweave = true
             EditsCount = 0
             SelectedPreset = None
@@ -504,7 +501,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 PolygonEditor = snap.PolygonEditor
                                 PolygonExport = newExport
                                 Sequence     = snap.Sequence
-                                Derived      = Page.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
+                                Derived      = PageHelpers.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
                                 UndoStack    = rest
                                 RedoStack    = redoSnap :: model.RedoStack
                                 NeedsHyweave = true }
@@ -523,7 +520,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 PolygonEditor = snap.PolygonEditor
                                 PolygonExport = newExport
                                 Sequence     = snap.Sequence
-                                Derived      = Page.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
+                                Derived      = PageHelpers.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
                                 RedoStack    = rest
                                 UndoStack    = undoSnap :: model.UndoStack
                                 NeedsHyweave = true }

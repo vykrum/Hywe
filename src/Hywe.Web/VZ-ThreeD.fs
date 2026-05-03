@@ -1,6 +1,9 @@
 module ThreeD
 
-open Coxel
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.Geometry
 open Microsoft.JSInterop
 open Shaders
 

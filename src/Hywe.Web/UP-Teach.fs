@@ -3,8 +3,12 @@ module Hywe.UpdateTeach
 open System
 open Microsoft.JSInterop
 open Elmish
+open PolygonEditor
 open ModelTypes
-open ExportFormats
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.ExportFormats
 
 let generateSuggestion (model: Model) =
     let tree = model.Tree

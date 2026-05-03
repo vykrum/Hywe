@@ -3,12 +3,14 @@ module Hywe.UpdateUI
 open Elmish
 open Microsoft.JSInterop
 open ModelTypes
-open Layout
 open Page
-open PolygonEditor
+open Layout
 open Storage
-open ExportFormats
-open Hexel
+open PolygonEditor
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.ExportFormats
 open System
 
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
@@ -113,7 +115,7 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             SrcOfTrth = clean
             Tree = newTree
             LastValidTree = newTree
-            Derived = Page.deriveData clean model.PolygonExport.EntryStr 0 
+            Derived = PageHelpers.deriveData clean model.PolygonExport.EntryStr model.Tree.ActiveLevel
             PolygonEditor = newState 
             PolygonExport = newExport
             ParseError = false
@@ -178,7 +180,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let levelIdx = 
             model.Derived.cxCxl1 
             |> Array.indexed 
-            |> Array.filter (fun (_, c) -> let (_, _, z) = hxlCrd c.Base in z = level)
+            |> Array.filter (fun (_, (c: Cxl)) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = level)
             |> Array.map fst
         
         let cxls = levelIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
@@ -188,7 +190,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadMetricsCsv ->
-        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = model.Tree.ActiveLevel)
+        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = model.Tree.ActiveLevel)
         let csv = ExportFormats.generateAreaMetricsCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
         let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
@@ -202,7 +204,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let batchData = results |> Array.collect (fun r -> 
                 r.cxCxl1 
                 |> Array.indexed
-                |> Array.groupBy (fun (_, c) -> let (_, _, z) = hxlCrd c.Base in z) 
+                |> Array.groupBy (fun (_, (c: Cxl)) -> let (_, _, z) = Hexel.hxlCrd c.Base in z) 
                 |> Array.map (fun (z, indexedCxls) -> 
                     let cxls = indexedCxls |> Array.map (snd)
                     let b36s = indexedCxls |> Array.map (fun (idx, _) -> r.cxB36.[idx])
@@ -217,7 +219,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         | Some results ->
             let batchData = results |> Array.collect (fun r -> 
                 r.cxCxl1 
-                |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z) 
+                |> Array.groupBy (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z) 
                 |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
             )
             let csv = ExportFormats.generateAreaMetricsCsv batchData
@@ -292,11 +294,12 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                       if section.BatchOverview || section.Variations then
                           do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating 24 variations for level %d..." level).AsTask() |> Async.AwaitTask
                           for i = 0 to 23 do
-                              let sqnStr = Page.indexToSqn i
-                              let forcedStr = NodeCode.injectSqn model.SrcOfTrth sqnStr
+                              let sqn = Hexel.sqnArray.[i]
+                              let sqnStr = sprintf "%A" sqn
+                              let forcedStr = Parsing.injectSqn model.SrcOfTrth sqnStr
                               try
-                                  let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
-                                  let derived = Page.deriveDataFromLayout cxls cxOuIl cxElv1 level
+                                  let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
+                                  let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 level
                                   let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
                                       Layout.getStaticGeometry cxls derived.cxClr1 level 10 
                                   

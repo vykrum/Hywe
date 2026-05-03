@@ -1,9 +1,9 @@
-module Parse
+module Hywe.Core.Parse
 
-open Hexel
-open Coxel
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
 open Geometry
-open PolygonEditor
+open Geometry
 open System
 open Microsoft.FSharp.Reflection
 
@@ -70,7 +70,7 @@ let parsePolyIslands (s: string) : (float * float)[][] =
 
 /// <summary> Converts float tuples to Point records with scaling. </summary>
 let polyToPoints scale (seg: (float*float)[]) =
-    seg |> Array.map (fun (x,y) -> { Point.X = x * scale; Y = y * scale })
+    seg |> Array.map (fun (x,y) -> { Hexel.Point.X = x * scale; Y = y * scale })
 
 /// <summary> Parses coordinates from a string and converts them to scaled Points. </summary>
 let parseCoords value =

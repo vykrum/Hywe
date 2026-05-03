@@ -1,8 +1,13 @@
 module Analyze
 
-open Coxel
+open Hywe.Core.Coxel
+open Bolero
 open Bolero.Html
 open ModelTypes
+open System
+open Page
+open Hywe.Core
+open Hywe.Core.PageHelpers
 
 // --- PROCESSING (UI HELPER) ---
 // Adjacency calculation is now in Coxel.cxlAdj

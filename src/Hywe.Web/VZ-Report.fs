@@ -4,6 +4,7 @@ open Bolero
 open Bolero.Html
 open ModelTypes
 open System
+open Hywe.Core
 
 let viewReport (model: Model) dispatch =
     let opts = model.ReportOptions
@@ -85,7 +86,7 @@ let viewReport (model: Model) dispatch =
                                     updateOpts (fun o -> { o with LevelSections = Map.add level s o.LevelSections })
                                 )
                             }
-                            text (Page.indexToSqn i)
+                            text (PageHelpers.indexToLabel i)
                         }
                 }
         }
@@ -264,7 +265,7 @@ let viewReport (model: Model) dispatch =
                                         on.click (fun _ ->
                                             let newSet = if isSelected then Set.remove i s.SelectedVariations else Set.add i s.SelectedVariations
                                             updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = newSet } o.LevelSections }))
-                                        text (Page.labelPhrase.[i].ToString())
+                                        text (PageHelpers.labelPhrase.[i].ToString())
                                     }
                             }
                         }
