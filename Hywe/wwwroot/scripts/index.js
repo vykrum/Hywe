@@ -181,23 +181,7 @@ document.addEventListener('keydown', function(e) {
     else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) { e.preventDefault(); _undoRedoDotNet.invokeMethodAsync('HandleRedo'); }
 });
 
-// --- URL-based Persistence Fallback ---
-window.hyweSaveToUrl = function(content) {
-    try {
-        const base64 = btoa(unescape(encodeURIComponent(content)));
-        window.history.replaceState(null, '', '#' + base64);
-    } catch(e) { console.warn("Hywe: URL save failed", e); }
-};
 
-window.hyweLoadFromUrl = function() {
-    try {
-        if (window.location.hash.length > 1) {
-            const base64 = window.location.hash.substring(1);
-            return decodeURIComponent(escape(atob(base64)));
-        }
-    } catch(e) { console.warn("Hywe: URL load failed", e); }
-    return null;
-};
 
 // --- PWA & Privacy Detection ---
 window.hywePwaDotNetRef = null;
