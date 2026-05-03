@@ -585,7 +585,7 @@ let alternateConfigurations
         }
         // --- DOWNLOAD GROUP ---
         div {
-            attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"
+            attr.style "display: flex; gap: 10px; margin-top: 15px; justify-content: center; align-items: center; flex-wrap: wrap; padding: 0 10px;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 on.pointerdown (fun _ -> 
@@ -604,20 +604,23 @@ let alternateConfigurations
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
+                attr.title "Coordinates"
                 on.pointerdown (fun _ -> dispatch DownloadBatchCoordCsv)
-                text "Batch Coords"
+                text "Crd"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
+                attr.title "Area Metrics"
                 on.pointerdown (fun _ -> dispatch DownloadBatchMetricsCsv)
-                text "Batch Metrics"
+                text "Cnt"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
+                attr.title "Adjacency Matrix"
                 on.pointerdown (fun _ -> dispatch DownloadBatchAdjCsv)
-                text "Batch Adj"
+                text "Adj"
             }
         }
     }

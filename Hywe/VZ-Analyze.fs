@@ -175,24 +175,27 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         }
         // --- DOWNLOAD GROUP ---
         div {
-            attr.``style`` "width: 100%; display: flex; gap: 10px; margin-top: 20px; justify-content: center; align-items: center;"
+            attr.``style`` "width: 100%; display: flex; gap: 10px; margin-top: 20px; justify-content: center; align-items: center; flex-wrap: wrap;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
                 attr.``style`` "font-size: 10px; padding: 6px 12px;"
+                attr.title "Coordinates"
                 on.pointerdown (fun _ -> dispatch DownloadCoordCsv)
-                text "Coordinates CSV"
+                text "Crd"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
                 attr.``style`` "font-size: 10px; padding: 6px 12px;"
+                attr.title "Area Metrics"
                 on.pointerdown (fun _ -> dispatch DownloadMetricsCsv)
-                text "Area Metrics CSV"
+                text "Cnt"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
                 attr.``style`` "font-size: 10px; padding: 6px 12px;"
+                attr.title "Adjacency Matrix"
                 on.pointerdown (fun _ -> dispatch DownloadAdjCsv)
-                text "Adjacency CSV"
+                text "Adj"
             }
         }
     }
