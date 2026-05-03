@@ -1,6 +1,6 @@
 module Table
 
-open Coxel
+open Hywe.Core.Coxel
 open Bolero.Html
 
 // Hywe Table

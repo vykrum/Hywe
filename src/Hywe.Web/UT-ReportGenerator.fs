@@ -2,9 +2,12 @@ module Hywe.ReportGenerator
 
 open System
 open System.Text
-open Coxel
-open Hexel
 open ModelTypes
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.Geometry
+open Hywe.Core.PageHelpers
 open NodeCode
 
 type PageEntry = {
@@ -415,8 +418,8 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                     let legend = renderLegend conf.shapes
                     
                     // Filter Coxels for this level specifically
-                    let levelCxls = 
-                        conf.cxCxl1 |> Array.filter (fun c -> 
+                    let levelCxls : Cxl[] = 
+                        conf.cxCxl1 |> Array.filter (fun (c: Cxl) -> 
                             let (_, _, z) = Hexel.hxlCrd c.Base
                             z = level)
                             

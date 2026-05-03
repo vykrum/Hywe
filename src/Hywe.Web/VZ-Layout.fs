@@ -2,13 +2,15 @@ module Layout
 
 open Bolero
 open Bolero.Html
-open Hexel
-open Coxel
 open Microsoft.JSInterop
 open System
 open System.Text
 open System.Text.Json
 open ModelTypes
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.Geometry
 ///
 
 type hxgn = Template<

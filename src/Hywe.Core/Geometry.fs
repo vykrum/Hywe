@@ -1,7 +1,8 @@
-module Geometry
+module Hywe.Core.Geometry
 
 open System
-open Hexel
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
 ///
 
 /// <summary> Hexel Line </summary>

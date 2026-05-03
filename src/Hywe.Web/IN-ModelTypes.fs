@@ -3,7 +3,9 @@ module ModelTypes
 open NodeCode
 open Page
 open PolygonEditor
-open Coxel
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
 
 type ConfirmAction =
     | ResetWorkspace

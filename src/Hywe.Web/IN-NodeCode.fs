@@ -6,11 +6,12 @@ open Bolero
 open Bolero.Html
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Web
+open Hywe.Core
+open Hywe.Core.Hexel
 
 // --------------------
 // Data Structures
 // --------------------
-type Point = { X: float; Y: float }
 
 type TreeNode =
     { Id: Guid
@@ -75,26 +76,6 @@ let rng = System.Random()
 let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
 let getRandomWeight () = rng.Next(75, 151).ToString()
 
-let injectSqn (input: string) (newSqn: string) =
-    let levels = input.Split(';', StringSplitOptions.RemoveEmptyEntries)
-    let pattern = "Q=[A-Z]+"
-    let replacement = "Q=" + newSqn
-    let regex = System.Text.RegularExpressions.Regex(pattern)
-    
-    levels 
-    |> Array.map (fun lvl ->
-        let trimmed = lvl.Trim()
-        let isMatch = regex.IsMatch(trimmed)
-        match isMatch with
-        | true  -> regex.Replace(trimmed, replacement)
-        | false -> 
-            // Inject Q into the first attribute group (0/...)
-            if trimmed.Contains("(0/") then
-                trimmed.Replace("(0/", $"(0/Q={newSqn}/")
-            else
-                trimmed + $"(0/Q={newSqn})"
-    )
-    |> String.concat " ; "
 
 let rec isDescendant (targetId: Guid) (potentialParent: TreeNode) : bool =
     potentialParent.Children |> List.exists (fun c -> c.Id = targetId || isDescendant targetId c)
@@ -210,7 +191,7 @@ let getSvgInfo (js: IJSRuntime) =
         }
     }
 
-let toSvgCoords (info: SvgInfo) (clientX: float) (clientY: float) =
+let toSvgCoords (info: SvgInfo) (clientX: float) (clientY: float) : Point =
     { X = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
       Y = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH }
 

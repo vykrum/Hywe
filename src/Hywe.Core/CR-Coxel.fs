@@ -1,6 +1,8 @@
-module Coxel
+module Hywe.Core.Coxel
 
+open Hywe.Core.Hexel
 open Hexel
+open System.Collections.Frozen
 ///
 
 /// <summary> Coxels are primarily a collections of unique hexels </summary>
@@ -254,13 +256,14 @@ let cxlExp
     (sqn : Sqn)
     (elv : int)= 
     let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> hxlUni 1 
+    let occSet = hxlSet occ
     let cxlAvl 
         (cx:Cxl)
         (sq:Sqn)
-        (oc:Hxl[]) =
+        (oc : System.Collections.Generic.HashSet<Hxl>) =
         let hx = cx.Hxls |> hxlUni 1 
-        hx |> Array.filter(fun x -> (available sq elv x oc)>0) |> Array.length
-    cxl |> Array.map (fun a -> cxlAvl a sqn occ)
+        hx |> Array.filter(fun x -> (availableSet sq elv x oc) > 0) |> Array.length
+    cxl |> Array.map (fun a -> cxlAvl a sqn occSet)
 ///
 
 /// <summary> Categorize constituent Hexels within a Coxel. </summary>
@@ -373,16 +376,14 @@ let cxlHxl
                 | true -> ar1
                 | false -> hxlUni 1 ar1
 
+    let allHxlsAV = cxl.Hxls |> hxlUni 1
+    let innerOccSet = hxlSet allHxlsAV
     let avrv = cxl.Hxls 
             |> Array.partition
                 (fun x -> x = AV(hxlCrd x))
     let rv01 = (snd avrv) 
             |> Array.partition
-                (fun x-> (available 
-                    cxl.Seqn
-                    elv
-                    (AV(hxlCrd x)) 
-                    (hxlUni 1 (cxl.Hxls))) < 1)
+                (fun x -> availableSet cxl.Seqn elv (AV(hxlCrd x)) innerOccSet < 1)
     let av01 = match (snd rv01) with 
                 | [||] -> avrv |> fst |> bndSqn cxl.Seqn elv
                 | _ -> avrv |> fst |> cntSqn cxl.Seqn elv
@@ -457,7 +458,7 @@ let cxlPrm
     // we calculate the midpoint between each interior hexel and its exterior neighbor.
     // This aligns the boundary exactly with the shared edges of the hex grid.
     let outside = hxlOfs cxl.Seqn elv cxl.Hxls
-    let insideSet = hxlSet cxl.Hxls
+    let insideSet = (hxlSet cxl.Hxls).ToFrozenSet()
     
     outside 
     |> Array.collect (fun hout ->
@@ -523,7 +524,7 @@ let cxlAdj (cxls: Cxl[]) =
             Array.append [|c.Base|] c.Hxls 
             |> hxlUni 1
 
-        let coxelSets = cxls |> Array.map (fun c -> Hexel.hxlSet (getFullHxls c))
+        let coxelSets = cxls |> Array.map (fun c -> (getFullHxls c).ToFrozenSet())
         
         // Collect all hexels immediately surrounding each room (the "halo")
         let allHalos = 

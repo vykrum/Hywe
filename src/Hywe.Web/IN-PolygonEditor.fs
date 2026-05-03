@@ -7,8 +7,11 @@ open Bolero.Html
 open System
 open Microsoft.AspNetCore.Components.Web
 
+open Hywe.Core
+open Hywe.Core.Hexel
+
 // ---------- Types ----------
-type Point = { X: float; Y: float }
+// Point is now unified with Hywe.Core.Hexel.Point
 type DragInfo = { PolyIndex: int; VertexIndex: int }
 
 type SvgInfo =

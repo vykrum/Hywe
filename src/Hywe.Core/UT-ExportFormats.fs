@@ -1,9 +1,9 @@
-module Hywe.ExportFormats
+module Hywe.Core.ExportFormats
 
 open Coxel
 open Hexel
 open System.Text
-open Page
+open Hywe.Core
 
 // --- COORDINATE HELPERS ---
 
@@ -71,7 +71,7 @@ let generateDataset (fullStr: string) (ouStr: string) (ilStr: string) (enStr: st
     Hexel.sqnArray 
     |> Array.collect (fun sqn ->
         let sqnName = sprintf "%A" sqn
-        let forcedStr = NodeCode.injectSqn fullStr sqnName
+        let forcedStr = Parsing.injectSqn fullStr sqnName
         try
             let cxls, _, _ = Parse.generateMultiLevelLayout forcedStr enStr [||] (Some sqn) (Some ouStr) (Some ilStr)
             cxls 
