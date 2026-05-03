@@ -707,7 +707,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
 // --------------------
 // Serialization & Initialization
 // --------------------
-let getOutput (model: SubModel) q w h x o i =
+let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
     let rec getNodesWithPrefix prefix node =
         seq {
             yield (node, prefix)
@@ -749,11 +749,12 @@ let getOutput (model: SubModel) q w h x o i =
                         let tVal = model.TopExtrusion
                         if tVal = floor tVal then $"T={int tVal}" else $"T={tVal}" 
                     else ""
+                let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
                 let attrs = 
                     if lvl = 0 then 
-                        $"0/Q={q}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/O={o}/I={i}/{tAttr}".TrimEnd('/')
+                        $"0/Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/O={o}/I={i}/{tAttr}".TrimEnd('/')
                     else
-                        $"0/Q={q}/L={lStr}/E={eVal}/{tAttr}".TrimEnd('/')
+                        $"0/Q={qVal}/L={lStr}/E={eVal}/{tAttr}".TrimEnd('/')
 
                 let body = lvlNodes |> List.map (fun (n, p) -> 
                     let extrStr = if n.Extrusion = 3.0 then "" else $"/{n.Extrusion}"

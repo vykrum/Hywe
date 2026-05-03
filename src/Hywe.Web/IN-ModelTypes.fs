@@ -61,7 +61,7 @@ type UndoSnapshot = {
     SrcOfTrth: string
     Tree: SubModel
     PolygonEditor: EditorState
-    Sequence: string
+    Sequences: Map<int, string>
 }
 
 type TeachMetadata = {
@@ -104,7 +104,7 @@ type ReportOptions = {
 /// <summary> Central application state for the interface. </summary>
 type Model =
     {
-        Sequence: string
+        Sequences: Map<int, string>
         Elevation: int
         BaseStr: string
         SrcOfTrth : string

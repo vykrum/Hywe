@@ -23,7 +23,7 @@ let initialPolygonExport = syncPolygonState PolygonEditor.initModel
 
 let initialOutput = NodeCode.getOutput
                         initialTree
-                        initialSequence
+                        (Map.ofList [0, initialSequence])
                         initialPolygonExport.Width
                         initialPolygonExport.Height
                         initialPolygonExport.AbsStr
@@ -32,7 +32,7 @@ let initialOutput = NodeCode.getOutput
 
 let initModel =
     {
-        Sequence = initialSequence
+        Sequences = Map.ofList [0, initialSequence]
         Elevation = 0
         BaseStr = ""
         SrcOfTrth = initialOutput
@@ -116,7 +116,7 @@ let pushUndo (model: Model) : Model =
         SrcOfTrth  = model.SrcOfTrth
         Tree       = model.Tree
         PolygonEditor = model.PolygonEditor
-        Sequence   = model.Sequence
+        Sequences   = model.Sequences
     }
     match model.UndoStack with
     // Optimized: Only compare the Source of Truth string for equality (very fast)
@@ -146,23 +146,41 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetSqnIndex i ->
         let model = pushUndo model
         let newSqn = indexToSqn i
+        let currentLevel = model.Tree.ActiveLevel
+
+        let newSqns = 
+            if currentLevel = 0 then
+                let treeMax = if model.Tree.Levels.IsEmpty then 0 else model.Tree.Levels.Keys |> Seq.max
+                let strMax = model.SrcOfTrth.Split(';', StringSplitOptions.None).Length - 1
+                let maxLvl = max treeMax strMax
+                (model.Sequences, [0..maxLvl]) ||> List.fold (fun m l -> Map.add l newSqn m)
+            else
+                model.Sequences |> Map.add currentLevel newSqn
+
         let updatedSrc = 
             match model.EditorMode with
             | Interactive -> 
                 NodeCode.getOutput 
                     model.Tree 
-                    newSqn 
+                    newSqns 
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
-                Parsing.injectSqn model.SrcOfTrth newSqn
+                if currentLevel = 0 then
+                    let levelsCount = model.SrcOfTrth.Split(';', StringSplitOptions.None).Length
+                    let mutable s = model.SrcOfTrth
+                    for l in 0 .. levelsCount - 1 do
+                        s <- Parsing.injectSqn s l newSqn
+                    s
+                else
+                    Parsing.injectSqn model.SrcOfTrth currentLevel newSqn
 
         let modelWithNewSqn = 
             { model with 
-                Sequence = newSqn
+                Sequences = newSqns
                 SrcOfTrth = updatedSrc
                 IsHyweaving = true 
                 SelectedPreviewIndex = None 
@@ -180,7 +198,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let m = pushUndo model
         let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
-        { model with SrcOfTrth = value; EditsCount = nextCount; IsPresetsCollapsed = nextCollapse }, Cmd.none
+        let newSqns = Parsing.extractSequences value
+        { m with 
+            SrcOfTrth = value
+            Sequences = newSqns
+            EditsCount = nextCount 
+            IsPresetsCollapsed = nextCollapse 
+        }, Cmd.none
 
     | StartHyweave ->
         let model2 = { model with 
@@ -204,7 +228,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
-                    model.Sequence
+                    model.Sequences
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
@@ -259,7 +283,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         
             let newOutput = NodeCode.getOutput
                                  updatedTree
-                                 model.Sequence
+                                 model.Sequences
                                  model.PolygonExport.Width
                                  model.PolygonExport.Height
                                  model.PolygonExport.AbsStr
@@ -313,7 +337,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newExport = syncPolygonState newModel
         let newOutput = NodeCode.getOutput
                              model.Tree
-                             model.Sequence
+                             model.Sequences
                              newExport.Width
                              newExport.Height
                              newExport.AbsStr
@@ -368,7 +392,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         else
             let sqn = Hexel.sqnArray.[i]
             let sqnStr = sprintf "%A" sqn
-            let forcedStr = Parsing.injectSqn model.SrcOfTrth sqnStr
+            let forcedStr = Parsing.injectSqn model.SrcOfTrth model.Tree.ActiveLevel sqnStr
             
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
@@ -438,10 +462,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | LoadBackup content ->
         if String.IsNullOrWhiteSpace content then model, Cmd.none
         else
-            // Extract Sequence (Q=...)
+            // Extract Sequences (Q=...)
             let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
-            let m = regex.Match(content)
-            let newSqn = if m.Success then m.Groups.[1].Value else model.Sequence
+            let newSqns = 
+                content.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
+                |> Array.mapi (fun i segment ->
+                    let m = regex.Match(segment)
+                    if m.Success then (i, m.Groups.[1].Value) else (i, (model.Sequences |> Map.tryFind i |> Option.defaultValue allSqns.[11]))
+                )
+                |> Map.ofArray
             
             // Restore Tree
             let newTree = NodeCode.initModel content
@@ -459,7 +488,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     LastValidTree = newTree
                     PolygonEditor = newState
                     PolygonExport = newExport
-                    Sequence = newSqn
+                    Sequences = newSqns
                     Derived = PageHelpers.deriveData content newExport.EntryStr newTree.ActiveLevel
                     NeedsHyweave = true
                     Onboarding = { model.Onboarding with IsActive = true }
@@ -481,7 +510,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             LastValidTree = resetTree
             PolygonEditor = Stable resetPoly
             PolygonExport = resetExport
-            Sequence = allSqns.[11]
+            Sequences = Map.ofList [0, allSqns.[11]]
             Derived = PageHelpers.deriveData resetSyntax resetExport.EntryStr 0
             NeedsHyweave = true
             EditsCount = 0
@@ -493,7 +522,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         match model.UndoStack with
         | [] -> model, Cmd.none
         | snap :: rest ->
-            let redoSnap = { SrcOfTrth = model.SrcOfTrth; Tree = model.Tree; PolygonEditor = model.PolygonEditor; Sequence = model.Sequence }
+            let redoSnap = { SrcOfTrth = model.SrcOfTrth; Tree = model.Tree; PolygonEditor = model.PolygonEditor; Sequences = model.Sequences }
             let finalPoly = match snap.PolygonEditor with Stable m | FreshlyImported m -> m
             let newExport = syncPolygonState finalPoly
             let restored = { model with
@@ -501,7 +530,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 Tree         = snap.Tree
                                 PolygonEditor = snap.PolygonEditor
                                 PolygonExport = newExport
-                                Sequence     = snap.Sequence
+                                Sequences     = snap.Sequences
                                 Derived      = PageHelpers.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
                                 UndoStack    = rest
                                 RedoStack    = redoSnap :: model.RedoStack
@@ -512,7 +541,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         match model.RedoStack with
         | [] -> model, Cmd.none
         | snap :: rest ->
-            let undoSnap = { SrcOfTrth = model.SrcOfTrth; Tree = model.Tree; PolygonEditor = model.PolygonEditor; Sequence = model.Sequence }
+            let undoSnap = { SrcOfTrth = model.SrcOfTrth; Tree = model.Tree; PolygonEditor = model.PolygonEditor; Sequences = model.Sequences }
             let finalPoly = match snap.PolygonEditor with Stable m | FreshlyImported m -> m
             let newExport = syncPolygonState finalPoly
             let restored = { model with
@@ -520,7 +549,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 Tree         = snap.Tree
                                 PolygonEditor = snap.PolygonEditor
                                 PolygonExport = newExport
-                                Sequence     = snap.Sequence
+                                Sequences     = snap.Sequences
                                 Derived      = PageHelpers.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
                                 RedoStack    = rest
                                 UndoStack    = undoSnap :: model.UndoStack

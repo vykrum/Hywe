@@ -146,7 +146,7 @@ let generateDataset (fullStr: string) (ouStr: string) (ilStr: string) (enStr: st
 
         let sqnName = sprintf "%A" sqn
 
-        let forcedStr = Parsing.injectSqn fullStr sqnName
+        let forcedStr = Parsing.injectSqn fullStr 0 sqnName
 
         try
 

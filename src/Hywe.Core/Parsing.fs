@@ -33,19 +33,23 @@ module Parsing =
         | _ -> None
 
     /// <summary> Injects or updates the sequence (Sqn) attribute in a Hywe string segment. </summary>
-    let injectSqn (input: string) (newSqn: string) =
-        let regex = Regex(@"\(([^)]*)\)")
-        let matches = regex.Matches(input)
-        if matches.Count = 0 then input
-        else
-            let firstMatch = matches.[0]
-            let attrs = firstMatch.Groups.[1].Value
-            let newAttrs = 
-                if attrs.Contains("Q=") then
-                    Regex.Replace(attrs, "Q=[^/)]*", "Q=" + newSqn)
-                else
-                    attrs + "/Q=" + newSqn
-            input.Remove(firstMatch.Index, firstMatch.Length).Insert(firstMatch.Index, "(" + newAttrs + ")")
+    let injectSqn (input: string) (lvl: int) (newSqn: string) =
+        let levels = input.Split(';', StringSplitOptions.None)
+        if lvl >= 0 && lvl < levels.Length then
+            let lvlStr = levels.[lvl]
+            let regex = Regex(@"\(([^)]*)\)")
+            let matches = regex.Matches(lvlStr)
+            if matches.Count > 0 then
+                let firstMatch = matches.[0]
+                let attrs = firstMatch.Groups.[1].Value
+                let newAttrs = 
+                    if attrs.Contains("Q=") then
+                        Regex.Replace(attrs, "Q=[^/)]*", "Q=" + newSqn)
+                    else
+                        attrs + "/Q=" + newSqn
+                levels.[lvl] <- lvlStr.Remove(firstMatch.Index, firstMatch.Length).Insert(firstMatch.Index, "(" + newAttrs + ")")
+            String.Join(";", levels)
+        else input
 
     // ==========================================================================================
     // SECTION: Geometry & Polygon Parsing
@@ -105,6 +109,19 @@ module Parsing =
                 | [| k; v |] -> Some (k.Trim(), v.Trim())
                 | _ -> None)
             |> Map.ofArray
+
+    /// <summary> Extracts the Q (Sequence) attribute from all levels in a Hywe string. </summary>
+    let extractSequences (input: string) : Map<int, string> =
+        input.Split(';', StringSplitOptions.RemoveEmptyEntries)
+        |> Array.mapi (fun i lvl ->
+            let clean = lvl.Trim().Trim('|').Trim()
+            let attrs = extractAttrsFromHyw clean
+            match attrs |> Map.tryFind "Q" with
+            | Some q -> Some (i, q)
+            | None -> None
+        )
+        |> Array.choose id
+        |> Map.ofArray
 
     /// <summary> Parses a single level hywe string into attributes and a structured tree. </summary>
     let spaceSeq (spaceStr: string) = 

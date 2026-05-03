@@ -331,6 +331,12 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
 
 
 let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
+    let baseSqn = model.Sequences |> Map.tryFind 0 |> Option.defaultValue allSqns.[11]
+    let currentSqn = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue baseSqn
+    let minIdx, maxIdx = 
+        if model.Tree.ActiveLevel = 0 then 0, 23
+        else if baseSqn.StartsWith "V" then 0, 11
+        else 12, 23
     div {
         attr.style "padding: 10px; min-height: 400px;"
         
@@ -347,7 +353,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
-                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                    sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
                 div {
                     attr.id "hywe-svg-container"
@@ -393,11 +399,11 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
-                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                    sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze dispatch model.Sequence fCxls fClrs fAvls fAdj
+                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls fAdj
                 }
             }
 
@@ -408,7 +414,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "padding: 4px 0; width: 100%; max-width: 100vw; margin-top: 5px;"
-                    sequenceSlider model.Sequence (fun i -> SetSqnIndex i |> dispatch)
+                    sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }                
 
                 div {
