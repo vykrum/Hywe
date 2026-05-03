@@ -27,12 +27,13 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                     BatchPreview = None 
                     BatchProgress = 0
                     BatchAccumulator = []
+                    IsPresetsCollapsed = true
                 }
             model', Cmd.ofMsg (GenerateNextBatchItem 0)
         | false -> 
-            { model with ActivePanel = panel }, Cmd.none
+            { model with ActivePanel = panel; IsPresetsCollapsed = true }, Cmd.none
     | BoundaryPanel | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
-        { model with ActivePanel = panel }, Cmd.none
+        { model with ActivePanel = panel; IsPresetsCollapsed = true }, Cmd.none
 
 let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
     match model.EditorMode with

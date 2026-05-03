@@ -604,20 +604,23 @@ let alternateConfigurations
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
+                attr.title "Coordinates"
                 on.pointerdown (fun _ -> dispatch DownloadBatchCoordCsv)
-                text "Batch Coords"
+                text "Crd"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
+                attr.title "Area Metrics"
                 on.pointerdown (fun _ -> dispatch DownloadBatchMetricsCsv)
-                text "Batch Metrics"
+                text "ARE"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
+                attr.title "Adjacency Matrix"
                 on.pointerdown (fun _ -> dispatch DownloadBatchAdjCsv)
-                text "Batch Adj"
+                text "Adj"
             }
         }
     }

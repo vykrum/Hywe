@@ -464,6 +464,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     Sequence = newSqn
                     Derived = Page.deriveData content newExport.EntryStr newTree.ActiveLevel
                     NeedsHyweave = true
+                    Onboarding = { model.Onboarding with IsActive = true }
+                    IsPresetsCollapsed = true
                 }
             updatedModel, Cmd.none
 
