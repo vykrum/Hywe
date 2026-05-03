@@ -174,8 +174,17 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe3D_" + datePart + ".svg"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("export3DToSVG", "hywe-extruded-polygon", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadCoordCsv ->
-        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = model.Tree.ActiveLevel)
-        let csv = ExportFormats.generateCoordinatesCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
+        let level = model.Tree.ActiveLevel
+        let levelIdx = 
+            model.Derived.cxCxl1 
+            |> Array.indexed 
+            |> Array.filter (fun (_, c) -> let (_, _, z) = hxlCrd c.Base in z = level)
+            |> Array.map fst
+        
+        let cxls = levelIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
+        let b36s = levelIdx |> Array.map (fun i -> model.Derived.cxB36.[i])
+        
+        let csv = ExportFormats.generateCoordinatesCsv [| (model.Sequence, level, cxls, b36s) |]
         let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadMetricsCsv ->
@@ -184,8 +193,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadAdjCsv ->
-        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = model.Tree.ActiveLevel)
-        let csv = ExportFormats.generateAdjacencyCsv [| (model.Sequence, model.Tree.ActiveLevel, activeCxls) |]
+        let csv = ExportFormats.generateAdjacencyCsv [| (model.Sequence, model.Tree.ActiveLevel, model.Derived.cxAdj1) |]
         let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadBatchCoordCsv ->
@@ -193,8 +201,12 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         | Some results ->
             let batchData = results |> Array.collect (fun r -> 
                 r.cxCxl1 
-                |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z) 
-                |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
+                |> Array.indexed
+                |> Array.groupBy (fun (_, c) -> let (_, _, z) = hxlCrd c.Base in z) 
+                |> Array.map (fun (z, indexedCxls) -> 
+                    let cxls = indexedCxls |> Array.map (snd)
+                    let b36s = indexedCxls |> Array.map (fun (idx, _) -> r.cxB36.[idx])
+                    (r.sqnName, z, cxls, b36s))
             )
             let csv = ExportFormats.generateCoordinatesCsv batchData
             let fileName = "Hywe_Batch_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
@@ -215,10 +227,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | DownloadBatchAdjCsv ->
         match model.BatchPreview with
         | Some results ->
-            let batchData = results |> Array.collect (fun r -> 
-                r.cxCxl1 
-                |> Array.groupBy (fun c -> let (_, _, z) = hxlCrd c.Base in z) 
-                |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
+            let batchData = results |> Array.map (fun r -> 
+                (r.sqnName, 0, r.cxAdj1) // Using 0 as a placeholder level for batch adjacency
             )
             let csv = ExportFormats.generateAdjacencyCsv batchData
             let fileName = "Hywe_Batch_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
@@ -286,11 +296,9 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                               let forcedStr = NodeCode.injectSqn model.SrcOfTrth sqnStr
                               try
                                   let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
-                                  let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr level
+                                  let derived = Page.deriveDataFromLayout cxls cxOuIl cxElv1 level
                                   let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
                                       Layout.getStaticGeometry cxls derived.cxClr1 level 10 
-                                  
-                                  let cxlAvl = if Array.isEmpty cxls then [||] else Coxel.cxlExp cxls (Array.head cxls).Seqn level
                                   
                                   let configData : BatchConfgrtns = 
                                       {| sqnName = sqnStr
@@ -298,8 +306,10 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                          w = d.w; h = d.h
                                          cxCxl1 = cxls
                                          cxElv1 = cxElv1
-                                         cxlAvl = cxlAvl
-                                         cxOuIl = cxOuIl |}
+                                         cxlAvl = derived.cxlAvl
+                                         cxOuIl = cxOuIl
+                                         cxAdj1 = derived.cxAdj1
+                                         cxB36 = derived.cxB36 |}
                                   levelBatches <- configData :: levelBatches
                               with _ -> ()
                               

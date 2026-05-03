@@ -375,11 +375,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] None None None
                     
                     // Extract static geometry for high-fidelity rendering in the batch preview
-                    let derived = Page.deriveData forcedStr model.PolygonExport.EntryStr model.Tree.ActiveLevel
+                    let derived = Page.deriveDataFromLayout cxls cxOuIl cxElv1 model.Tree.ActiveLevel
                     let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
                         getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
-                    
-                    let cxlAvl = if Array.isEmpty cxls then [||] else Coxel.cxlExp cxls (Array.head cxls).Seqn model.Tree.ActiveLevel
                     
                     let configData : BatchConfgrtns = 
                         {| sqnName = sqnStr
@@ -388,8 +386,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                            w = d.w; h = d.h
                            cxCxl1 = cxls
                            cxElv1 = cxElv1
-                           cxlAvl = cxlAvl
-                           cxOuIl = cxOuIl |}
+                           cxlAvl = derived.cxlAvl
+                           cxOuIl = cxOuIl
+                           cxAdj1 = derived.cxAdj1
+                           cxB36 = derived.cxB36 |}
                     
                     // Small sleep to ensure the UI has a chance to render the progress update
                     do! Async.Sleep 5
