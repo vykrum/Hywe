@@ -31,6 +31,8 @@ type DerivedData = {
     cxClr1: string[]
     cxOuIl: (float*float)[][]
     cxElv1: float[]
+    cxAdj1: string[] * bool[][]
+    cxB36: string[]
 }
 
 // Consistent Pastel Color
@@ -69,24 +71,32 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
             $"rgba({r}, {g}, {b}, {opacity})"
     )
 
-let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
-    let bsOc = [||]
-    let cxCxl1, cxOuIl, cxElv1 = 
-        try generateMultiLevelLayout stx enStr bsOc None None None
-        with _ -> [||], [||], [| 0.0; 3.0 |]
-    
+let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (float*float)[][]) (cxElv1: float[]) (elv: int) : DerivedData =
     let fallbackSqn = Hexel.VRCCNE 
     let activeSqn = if Array.isEmpty cxCxl1 then fallbackSqn else (Array.head cxCxl1).Seqn
     
     let cxlAvl = if Array.isEmpty cxCxl1 then [||] else cxlExp cxCxl1 activeSqn elv
     let cxClr1 = generatePastels "#888888" (max 1 (Array.length cxCxl1)) 0.85
+    let cxAdj1 = cxlAdj cxCxl1
+    let cxB36 = cxCxl1 |> Array.map getCxlCoordsString
+
     {
         cxCxl1 = cxCxl1
         cxlAvl = cxlAvl
         cxClr1 = cxClr1
         cxOuIl = cxOuIl
         cxElv1 = cxElv1
+        cxAdj1 = cxAdj1
+        cxB36 = cxB36
     }
+
+let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
+    let bsOc = [||]
+    let cxCxl1, cxOuIl, cxElv1 = 
+        try generateMultiLevelLayout stx enStr bsOc None None None
+        with _ -> [||], [||], [| 0.0; 3.0 |]
+    
+    deriveDataFromLayout cxCxl1 cxOuIl cxElv1 elv
 ///
 
 // Default Syntax

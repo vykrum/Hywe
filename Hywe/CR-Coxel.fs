@@ -39,6 +39,17 @@ type Cxl =
 let prpVlu = function 
     | Label s | Refid s -> s
     | Count i -> string i
+
+let getCxlCoordsString (cxl: Cxl) =
+    Array.append [|cxl.Base|] cxl.Hxls 
+    |> Array.map (fun h -> 
+        let (x, y, _) = hxlCrd h
+        sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
+    |> String.concat " "
+
+let getBaseCoordString (cxl: Cxl) =
+    let (x, y, _) = hxlCrd cxl.Base
+    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y))
 ///
 
 /// <summary> Creating an array of coxels. </summary>

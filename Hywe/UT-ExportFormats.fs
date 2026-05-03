@@ -7,34 +7,21 @@ open Page
 
 // --- COORDINATE HELPERS ---
 
-let getCxlCoordsString (cxl: Cxl) =
-    Array.append [|cxl.Base|] cxl.Hxls 
-    |> Array.map (fun h -> 
-        let (x, y, _) = hxlCrd h
-        sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
-    |> String.concat " "
-
-let getBaseCoordString (cxl: Cxl) =
-    let (x, y, _) = hxlCrd cxl.Base
-    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y))
+// Base36 helpers moved to Coxel module
 
 // --- CSV EXPORTS ---
 
-let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
+let generateCoordinatesCsv (data: (string * int * Cxl[] * string[])[]) =
     let sb = StringBuilder()
     sb.AppendLine("Orientation,Level,CoxelID,CoxelName,BaseCoordinate,Coordinates") |> ignore
-    for (sqn, elv, cxls) in data do
-        for cxl in cxls do
+    for (sqn, elv, cxls, b36s) in data do
+        for i = 0 to cxls.Length - 1 do
+            let cxl = cxls.[i]
             let id = prpVlu cxl.Rfid
             let name = prpVlu cxl.Name
             let baseCoord = getBaseCoordString cxl
-            let hxlsCoords = 
-                cxl.Hxls 
-                |> Array.map (fun h -> 
-                    let (x, y, _) = hxlCrd h
-                    sprintf "%s.%s" (toBase36 (int64 x)) (toBase36 (int64 y)))
-                |> String.concat " "
-            sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord hxlsCoords) |> ignore
+            let coords = b36s.[i]
+            sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord coords) |> ignore
     sb.ToString()
 
 let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
@@ -51,12 +38,11 @@ let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
             sb.AppendLine(sprintf "%s,%d,%s,%s,%d,%d,%s" sqn elv id name reqSz achSz targetMet) |> ignore
     sb.ToString()
 
-let generateAdjacencyCsv (data: (string * int * Cxl[])[]) =
+let generateAdjacencyCsv (data: (string * int * (string[] * bool[][]))[]) =
     let sb = StringBuilder()
-    for (sqn, elv, cxls) in data do
-        if not (Array.isEmpty cxls) then
+    for (sqn, elv, (names, matrix)) in data do
+        if not (Array.isEmpty names) then
             sb.AppendLine(sprintf "--- %s | Level %d ---" sqn elv) |> ignore
-            let names, matrix = Coxel.cxlAdj cxls
             let header = "Room," + String.concat "," names
             sb.AppendLine(header) |> ignore
             for i = 0 to matrix.Length - 1 do
