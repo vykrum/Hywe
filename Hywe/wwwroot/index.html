@@ -49,7 +49,7 @@
     <link rel="shortcut icon" href="/images/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Hywe" />
-    <link rel="manifest" href="/images/site.webmanifest" />
+    <link rel="manifest" href="site.webmanifest" />
     <style>
         /* Minimal critical CSS for the initial loading state */
         body {
@@ -164,7 +164,11 @@
 
 
     <!--Scripts-->
-    <script>navigator.serviceWorker.register('/service-worker.js?v=' + new Date().getTime())</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
     <script src="_framework/blazor.webassembly.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="scripts/index.js" defer></script>
