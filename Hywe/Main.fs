@@ -626,7 +626,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with CurrentScreen = IntroScreen }, Cmd.none
 
     | TransitionToMain ->
-        { model with CurrentScreen = MainScreen }, Cmd.none
+        { model with 
+            CurrentScreen = MainScreen
+            Onboarding = { model.Onboarding with IsActive = true }
+            IsPresetsCollapsed = true 
+        }, Cmd.none
 
     | TogglePresetsCollapse ->
         { model with IsPresetsCollapsed = not model.IsPresetsCollapsed }, Cmd.none
