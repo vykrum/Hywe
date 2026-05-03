@@ -36,17 +36,17 @@ let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) 
     
     let mutable finalState = current
     for lvl in sortedLevels do
-        let attrs = Parse.extractAttrsFromHyw lvl
+        let attrs = Parsing.extractAttrsFromHyw lvl
         finalState <- attrs |> Map.fold (fun (m: PolygonEditor.PolygonEditorModel) key v ->
             match key with
-            | "W" -> match Parse.tryParseFloat v with | Some num -> { m with LogicalWidth = num * 10.0 } | None -> m
-            | "H" -> match Parse.tryParseFloat v with | Some num -> { m with LogicalHeight = num * 10.0 } | None -> m
-            | "L" -> match Parse.tryParseFloat v with | Some num -> { m with Elevation = int num } | None -> m
+            | "W" -> match Parsing.tryParseFloat v with | Some num -> { m with LogicalWidth = num * 10.0 } | None -> m
+            | "H" -> match Parsing.tryParseFloat v with | Some num -> { m with LogicalHeight = num * 10.0 } | None -> m
+            | "L" -> match Parsing.tryParseFloat v with | Some num -> { m with Elevation = int num } | None -> m
             | "S" -> { m with BaseStr = v }
             | "X" -> { m with UseAbsolute = (v = "1") }
-            | "E" -> match Parse.parseCoords v with | pts when pts.Length = 1 -> { m with EntryPoint = pts.[0] } | _ -> m
-            | "O" -> match Parse.parseCoords v with | pts when pts.Length > 0 -> { m with Outer = pts } | _ -> m
-            | "I" -> { m with Islands = Parse.parseIslands v }
+            | "E" -> match Parsing.parseCoords v with | pts when pts.Length = 1 -> { m with EntryPoint = pts.[0] } | _ -> m
+            | "O" -> match Parsing.parseCoords v with | pts when pts.Length > 0 -> { m with Outer = pts } | _ -> m
+            | "I" -> { m with Islands = Parsing.parseIslands v }
             | _ -> m
         ) finalState
     

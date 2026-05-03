@@ -10,7 +10,7 @@ open PolygonEditor
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.ExportFormats
+open ExportFormats
 open System
 
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
@@ -298,7 +298,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                               let sqnStr = sprintf "%A" sqn
                               let forcedStr = Parsing.injectSqn model.SrcOfTrth sqnStr
                               try
-                                  let cxls, cxOuIl, cxElv1 = Parse.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
+                                  let cxls, cxOuIl, cxElv1 = Parsing.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
                                   let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 level
                                   let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
                                       Layout.getStaticGeometry cxls derived.cxClr1 level 10 

@@ -10,8 +10,12 @@ open NodeCode
 open PolygonEditor
 open ModelTypes
 open Bolero.Html
-open Hywe
 open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.Parsing
+
+open PageHelpers
 
 let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
     match model.PendingConfirm with
@@ -383,6 +387,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             let fCxls = filteredIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
             let fClrs = filteredIdx |> Array.map (fun i -> model.Derived.cxClr1.[i])
             let fAvls = filteredIdx |> Array.map (fun i -> model.Derived.cxlAvl.[i])
+            let fAdj  = cxlAdj fCxls
 
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
@@ -392,7 +397,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze dispatch model.Sequence fCxls fClrs fAvls model.Derived.cxAdj1
+                    Analyze.viewHyweAnalyze dispatch model.Sequence fCxls fClrs fAvls fAdj
                 }
             }
 

@@ -7,6 +7,18 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 
+open Hywe.Core.Coxel
+
+type DerivedData = {
+    cxCxl1: Cxl[]
+    cxlAvl: int[]
+    cxClr1: string[]
+    cxOuIl: (float*float)[][]
+    cxElv1: float[]
+    cxAdj1: string[] * bool[][]
+    cxB36: string[]
+}
+
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string

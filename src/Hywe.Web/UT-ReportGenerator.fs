@@ -7,7 +7,7 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Geometry
-open Hywe.Core.PageHelpers
+open PageHelpers
 open NodeCode
 
 type PageEntry = {
