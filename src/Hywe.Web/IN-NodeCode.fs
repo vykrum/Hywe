@@ -124,7 +124,7 @@ let rec syncHierarchy (levels: Map<int, TreeNode>) (anchors: Map<int, Guid>) (lv
             | Some anchorNode ->
                 match levels |> Map.tryFind (lvl + 1) with
                 | Some childTree ->
-                    let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight; Extrusion = anchorNode.Extrusion }
+                    let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight }
                     let nextLevels = levels |> Map.add (lvl + 1) updatedChildTree
                     syncHierarchy nextLevels anchors (lvl + 1)
                 | None -> levels
@@ -278,12 +278,10 @@ let updateSub (js: IJSRuntime) msg model =
                         { existingRoot with 
                             Id = n.Id
                             Name = n.Name
-                            Weight = n.Weight
-                            Level = nextLvlForNode
-                            Extrusion = n.Extrusion }
+                            Weight = n.Weight }
                         |> fun r -> layoutTree r 0 (ref 50.0)
                     | None ->
-                        { n with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0 }
+                        { n with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0 }
                 
                 let newLevelsAfterAdd = model.Levels |> Map.add nextLvlForNode freshRoot
 
@@ -325,27 +323,12 @@ let updateSub (js: IJSRuntime) msg model =
         { model with Levels = finalLevels }, Cmd.none
     | UpdateExtrusion (id, newVal) ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-        let isRoot = id = currentTree.Id
         let extrusion = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> currentTree.Extrusion // fallback to current extrusion if parse fails
         
         let updatedRoot = updateNodeById id (fun n -> { n with Extrusion = extrusion }) currentTree
         let nextLevels = model.Levels |> Map.add model.ActiveLevel updatedRoot
-        
-        // If it's the root and we have a parent level, sync back to the anchor in the parent
-        let finalLevelsBeforeForwardSync =
-            if isRoot && model.ActiveLevel > 0 then
-                match model.LevelAnchors |> Map.tryFind model.ActiveLevel with
-                | Some anchorId ->
-                    let parentLvl = model.ActiveLevel - 1
-                    match nextLevels |> Map.tryFind parentLvl with
-                    | Some pTree ->
-                        let updatedPTree = updateNodeById anchorId (fun n -> { n with Extrusion = extrusion }) pTree
-                        nextLevels |> Map.add parentLvl updatedPTree
-                    | None -> nextLevels
-                | None -> nextLevels
-            else nextLevels
 
-        let finalLevels = syncHierarchy finalLevelsBeforeForwardSync model.LevelAnchors 0
+        let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0
         { model with Levels = finalLevels }, Cmd.none
     | PointerDown ev ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
@@ -827,7 +810,15 @@ let buildTreeMap (input: string) =
         |> List.filter (fun (path, _, _, _, nLvl) -> 
             nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
         |> List.map (fun (path, weight, name, extrusion, lvl) -> 
-            let id = Guid.NewGuid()
+            let id = 
+                if lvl > 0 && prefix = [] then 
+                    let _, _, _, _, eVal = allParts.[lvl]
+                    if eVal <> "0" then
+                        match guidMap.TryGetValue((lvl - 1, eVal)) with
+                        | true, parentGuid -> parentGuid
+                        | _ -> Guid.NewGuid()
+                    else Guid.NewGuid()
+                else Guid.NewGuid()
             let pathStr = String.Join(".", path)
             guidMap.[(lvl, pathStr)] <- id
             { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion })
@@ -848,10 +839,21 @@ let buildTreeMap (input: string) =
             else None
         ) |> Map.ofArray
 
+    let levelsMapFinal =
+        levelsMap |> Map.map (fun lvl tree ->
+            let higherAnchors = levelAnchors |> Map.filter (fun k _ -> k > lvl)
+            let rec update n =
+                let nLvl =
+                    higherAnchors |> Map.tryPick (fun k v -> if v = n.Id then Some k else None)
+                    |> Option.defaultValue n.Level
+                { n with Level = nLvl; Children = n.Children |> List.map update }
+            update tree
+        )
+
     let topExtrusion = 
         allParts |> Array.tryLast |> Option.map (fun (_, t, _, _, _) -> t) |> Option.defaultValue 3.0
 
-    levelsMap, levelAnchors, topExtrusion
+    levelsMapFinal, levelAnchors, topExtrusion
 
 let initModel (inputString: string) : SubModel =
     let levelsMap, levelAnchors, topExtrusion = buildTreeMap inputString
