@@ -133,6 +133,9 @@ type Model =
         PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
         RedoStack: UndoSnapshot list
+        InstallPromptAvailable: bool
+        ShowPrivacyAlert: bool
+        IsStandalone: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -202,6 +205,10 @@ type Message =
     | ToggleConfirm of ConfirmAction option
     | Undo
     | Redo
+    | SetInstallPromptAvailable of bool
+    | InstallRequested
+    | SetPrivacyAlert of bool
+    | SetIsStandalone of bool
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

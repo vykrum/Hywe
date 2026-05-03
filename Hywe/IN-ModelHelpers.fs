@@ -175,6 +175,21 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     }
                 }
             }
+            if model.InstallPromptAvailable then
+                div {
+                    attr.style "position: fixed; top: 43px; right: 10px; z-index: 5001; pointer-events: auto; display: flex; align-items: center;"
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
+                        attr.style "display: flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid rgba(0,0,0,0.1); background: transparent; box-shadow: none; opacity: 0.6; transition: opacity 0.2s ease;"
+                        on.click (fun _ -> 
+                            js.InvokeVoidAsync("console.log", "Hywe: Install button clicked").AsTask() |> ignore
+                            dispatch InstallRequested
+                        )
+                        
+                        rawHtml """<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
+                        span { attr.style "font-size: 9px; font-weight: 400; color: #666;"; text "Install" }
+                    }
+                }
         }
         if model.EditorMode = Interactive then
             let isCollapsed = model.IsPresetsCollapsed
