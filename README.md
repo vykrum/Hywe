@@ -24,7 +24,9 @@ At its core, Hywe challenges the assumption that digital tools must replicate co
 
 [Open Hywe in your browser — No installation or Sign-in required](https://vykrum.github.io/Hywe/)  
 
-![Hywe Demo](https://vykrum.github.io/Hywe/images/hywe-demo.gif)
+## The Workspace
+
+https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 
 ---
 
@@ -37,7 +39,6 @@ At its core, Hywe challenges the assumption that digital tools must replicate co
 - Inline editing of space names and sizes  
 - Dynamic, logic-driven layout evolution in real time  
 - No backend required as all computation runs in-browser  
-- Supports nested and non-linear spatial constructs  
 
 ---
 
