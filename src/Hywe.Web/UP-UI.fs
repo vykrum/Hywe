@@ -132,9 +132,6 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
             Cmd.ofMsg StartHyweave
-            Cmd.OfTask.attempt (fun () -> task { 
-                do! js.InvokeVoidAsync("localStorageSet", "hywe_backup", clean).AsTask() 
-            }) () (fun _ -> NoOp)
         ]
 
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
