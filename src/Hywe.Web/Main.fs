@@ -462,39 +462,42 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | LoadBackup content ->
         if String.IsNullOrWhiteSpace content then model, Cmd.none
         else
-            // Extract Sequences (Q=...)
-            let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
-            let newSqns = 
-                content.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
-                |> Array.mapi (fun i segment ->
-                    let m = regex.Match(segment)
-                    if m.Success then (i, m.Groups.[1].Value) else (i, (model.Sequences |> Map.tryFind i |> Option.defaultValue allSqns.[11]))
-                )
-                |> Map.ofArray
-            
-            // Restore Tree
-            let newTree = NodeCode.initModel content
-            
-            // Restore Polygon
-            let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = Storage.importFromHyw content currentInner
-            let finalPoly = match newState with Stable m | FreshlyImported m -> m
-            let newExport = syncPolygonState finalPoly
-            
-            let updatedModel = 
-                { model with 
-                    SrcOfTrth = content
-                    Tree = newTree
-                    LastValidTree = newTree
-                    PolygonEditor = newState
-                    PolygonExport = newExport
-                    Sequences = newSqns
-                    Derived = PageHelpers.deriveData content newExport.EntryStr newTree.ActiveLevel
-                    NeedsHyweave = true
-                    Onboarding = { model.Onboarding with IsActive = true }
-                    IsPresetsCollapsed = true
-                }
-            updatedModel, Cmd.none
+            try
+                // Extract Sequences (Q=...)
+                let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
+                let newSqns = 
+                    content.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
+                    |> Array.mapi (fun i segment ->
+                        let m = regex.Match(segment)
+                        if m.Success then (i, m.Groups.[1].Value) else (i, (model.Sequences |> Map.tryFind i |> Option.defaultValue allSqns.[11])))
+                    |> Map.ofArray
+                
+                // Restore Tree
+                let newTree = NodeCode.initModel content
+                
+                // Restore Polygon
+                let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+                let newState = Storage.importFromHyw content currentInner
+                let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                let newExport = syncPolygonState finalPoly
+                
+                let updatedModel = 
+                    { model with 
+                        SrcOfTrth = content
+                        Tree = newTree
+                        LastValidTree = newTree
+                        PolygonEditor = newState
+                        PolygonExport = newExport
+                        Sequences = newSqns
+                        Derived = PageHelpers.deriveData content newExport.EntryStr newTree.ActiveLevel
+                        NeedsHyweave = true
+                        Onboarding = { model.Onboarding with IsActive = true }
+                        IsPresetsCollapsed = true
+                    }
+                updatedModel, Cmd.none
+            with _ ->
+                // If backup is malformed or incompatible, ignore it to prevent startup hang
+                model, Cmd.none
 
     | HardReset ->
         Storage.clearBackup js |> ignore
