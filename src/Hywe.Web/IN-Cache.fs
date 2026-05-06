@@ -1,5 +1,6 @@
 module Cache
 
+    open System
     open ModelTypes
     open Hywe.Core
     open Hywe.Core.Coxel
@@ -125,6 +126,6 @@ module Cache
         let sqnIdx = 
             sqns 
             |> Map.tryFind lvl 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> (sprintf "%A" x).Equals(s, StringComparison.OrdinalIgnoreCase))) 
             |> Option.defaultValue 11
         generateSingleConfig src Hexel.sqnArray.[sqnIdx] poly lvl |> toDerived

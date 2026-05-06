@@ -36,11 +36,11 @@ let initModel =
         Sequences = Map.ofList [0, initialSequence]
         Elevation = 0
         BaseStr = ""
-        SrcOfTrth = initialOutput
+        SrcOfTrth = beeyond
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
-        Derived = Cache.generateSingleConfig initialOutput (Hexel.sqnArray.[11]) initialPolygonExport 0 |> Cache.toDerived
+        Derived = Cache.deriveFromSource beeyond (Map.ofList [0, initialSequence]) initialPolygonExport 0
         LayoutCache = Map.empty
         NeedsHyweave = false
         IsHyweaving = false
@@ -512,9 +512,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Onboarding = { model.Onboarding with IsActive = true }
                         IsPresetsCollapsed = true
                     }
-                updatedModel, Cmd.none
+                
+                // Validate that the loaded state actually results in a layout
+                if Array.isEmpty updatedModel.Derived.cxCxl1 then
+                    model, Cmd.none // Fallback to init model
+                else
+                    updatedModel, Cmd.none
             with _ ->
-                // If backup is malformed or incompatible, ignore it to prevent startup hang
+                // If backup is malformed or incompatible, clear it and ignore it to prevent startup hang
+                Storage.clearBackup js |> ignore
                 model, Cmd.none
 
     | HardReset ->
@@ -731,7 +737,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                // Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
+                Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
