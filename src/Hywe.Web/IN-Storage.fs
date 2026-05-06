@@ -6,7 +6,8 @@ open Hywe.Core.Parse
 
 // Shadow save for browser refresh persistence
 let autoSave (js: IJSRuntime) (content: string) =
-    () // Persistence disabled per user request
+    if not (String.IsNullOrWhiteSpace content) then
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
 
 let clearBackup (js: IJSRuntime) =
     js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
@@ -14,7 +15,10 @@ let clearBackup (js: IJSRuntime) =
 // Retrieve shadow save from LocalStorage
 let getBackup (js: IJSRuntime) =
     async {
-        return "" // Persistence disabled per user request
+        try
+            let! content = js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
+            return if isNull content then "" else content
+        with _ -> return ""
     }
 
 // Generates timestamped filename and triggers download
