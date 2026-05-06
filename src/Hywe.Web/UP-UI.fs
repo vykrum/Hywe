@@ -9,7 +9,7 @@ open Storage
 open PolygonEditor
 open Hywe.Core
 open Hywe.Core.Parse
-open Hywe.Core.Levels
+open Hywe.Core.Zexel
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open ExportFormats

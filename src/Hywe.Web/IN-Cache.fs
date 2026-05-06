@@ -10,7 +10,7 @@ module Cache
     /// Computes the full layout data for all levels.
     /// </summary>
     let computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
-        Levels.generateMultiLevelLayout 
+        Zexel.generateMultiLevelLayout 
             src 
             polyExport.EntryStr 
             [||] 

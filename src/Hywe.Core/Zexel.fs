@@ -1,12 +1,13 @@
 namespace Hywe.Core
 
-module Levels =
+/// <summary> Z refers to the vertical/level dimension. Handles multi-level layout logic. </summary>
+module Zexel =
     open System
     open Hexel
     open Coxel
     open Geometry
     open Parse
-    open Layout
+    open Xyxel
 
     /// <summary> Internal state for multi-level construction. </summary>
     type BuildState = {
@@ -64,7 +65,27 @@ module Levels =
                     | Some (targetLvl, s) when targetLvl = i -> Some s
                     | _ -> None
 
-                let cxls, bounds, ratio = generateCxlLayout attrs tree entryAtrFallback curSeqOverride curW curH curO curI initialOcc bsHx state.Ratio (Some i)
+                let treeObj = LayoutTree.Create tree
+                let opts = {
+                    EntryFallback = entryAtrFallback
+                    InitialOcc = initialOcc
+                    Seq = curSeqOverride
+                    Width = curW
+                    Height = curH
+                    OuterStr = curO
+                    IslandsStr = curI
+                    ParentCxl = bsHx
+                    Ratio = state.Ratio
+                    Elevation = Some i
+                }
+
+                let ctx = prepareLayoutContext attrs (LayoutTree.Create tree) opts
+                let baseRes = generateBaseCxl ctx
+                
+                let cxls, bounds, ratio = 
+                    match baseRes with
+                    | Some (root, occ) -> generateCxlLayout ctx root occ
+                    | None -> [||], [||], 0.0
 
                 match i with
                 | 0 ->

@@ -3,7 +3,7 @@
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Layout
+open Hywe.Core.Xyxel
 
 let attrs = 
     Map.ofList [
@@ -16,8 +16,26 @@ let attrs =
 
 let tree = [| [| "R1", 900, "Main Room" |] |]
 
+let treeObj = LayoutTree.Create tree
+let opts = {
+    EntryFallback = "0,0"
+    InitialOcc = [||]
+    Seq = None
+    Width = None
+    Height = None
+    OuterStr = None
+    IslandsStr = None
+    ParentCxl = None
+    Ratio = None
+    Elevation = None
+}
+
+let ctx = prepareLayoutContext attrs (LayoutTree.Create tree) opts
+let baseRes = generateBaseCxl ctx
 let result, boundary, ratio = 
-    generateCxlLayout attrs tree "0,0" None None None None None [||] None None None
+    match baseRes with
+    | Some (root, occ) -> generateCxlLayout ctx root occ
+    | None -> [||], [||], 0.0
 
 let hxlAreaX = 1.0 / ratio
 

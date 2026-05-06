@@ -1,6 +1,7 @@
 namespace Hywe.Core
 
-module Layout =
+/// <summary> Xy refers to the XY plane of the layout. Handles core spatial distribution. </summary>
+module Xyxel =
     open System
     open Hexel
     open Coxel
@@ -12,12 +13,49 @@ module Layout =
         match Int32.TryParse s with
         | true, v -> Some v
         | _ -> None
+    
+    /// <summary> Represents the raw architectural tree with pre-calculated metrics to avoid redundant processing. </summary>
+    type LayoutTree = {
+        Raw: (string * int * string)[][]
+        TotalArea: int
+    }
+    with 
+        static member Create (raw: (string * int * string)[][]) =
+            { Raw = raw; TotalArea = raw |> Array.concat |> Array.distinctBy (fun (id, _, _) -> id) |> Array.sumBy (fun (_, a, _) -> a) }
+
+    /// <summary> Contextual parameters and overrides for layout generation. </summary>
+    type LayoutOptions = {
+        EntryFallback: string
+        InitialOcc: Hxl[]
+        Seq: Sqn option
+        Width: int option
+        Height: int option
+        OuterStr: string option
+        IslandsStr: string option
+        ParentCxl: Cxl option
+        Ratio: float option
+        Elevation: int option
+    }
+
+    /// <summary> Fully resolved layout context, ready for spatial execution. </summary>
+    type LayoutContext = {
+        Seq: Sqn
+        Elevation: int
+        Boundary: (int*int)[]
+        Islands: (int*int)[][]
+        EntryAtr: string
+        EntryFallback: Hxl
+        InitialOcc: Hxl[]
+        ScaledTree: (Prp * Prp * Prp)[][]
+        Ratio: float
+        Parent: Cxl option
+    }
 
     /// <summary> Scales node areas to fit boundary. Purely functional transformation. </summary>
-    let applyReproportioning (boundaryArea: int64) (totalNodeArea: int) (rawTree: (string * int * string)[][]) (ratioOverride: float option) =
+    let applyReproportioning (boundaryArea: int64) (tree: LayoutTree) (ratioOverride: float option) =
         let isUnbound = boundaryArea <= 0L
         
-        let totalRequestedArea = float totalNodeArea
+        let totalRequestedArea = float tree.TotalArea
 
         let ratio = 
             match ratioOverride with
@@ -28,7 +66,7 @@ module Layout =
                 | false -> (float boundaryArea / (totalRequestedArea * 4.0))
         
         let tree = 
-            rawTree |> Array.map (fun row ->
+            tree.Raw |> Array.map (fun row ->
                 row |> Array.map (fun (id, area, lb) ->
                     let finalCount = 
                         match area > 0 with
@@ -39,29 +77,28 @@ module Layout =
             )
         tree, ratio
 
-    /// <summary> Core layout construction for a single level. </summary>
-    let generateCxlLayout (attrs: Map<string, string>) (tree: (string * int * string)[][]) (entryAtrFallback: string) (seqOverride: Sqn option) (widthOverride: int option) (heightOverride: int option) (ouStrOverride: string option) (ilStrOverride: string option) (initialOcc : Hxl[]) (bsHxSetOverride: Cxl option) (ratioOverride: float option) (elvOverride: int option) : Cxl[] * (int*int)[][] * float =
-        
+    /// <summary> Resolves all attributes and performs scaling to prepare for layout. </summary>
+    let prepareLayoutContext (attrs: Map<string, string>) (tree: LayoutTree) (opts: LayoutOptions) =
         let seq = 
-            seqOverride 
+            opts.Seq 
             |> Option.orElse (attrs |> Map.tryFind "Q" |> Option.bind tryParseUnion<Sqn>)
             |> Option.defaultValue VRCWEE
     
-        let elv = elvOverride |> Option.defaultValue (attrs |> Map.tryFind "L" |> Option.bind (function Float v -> Some (int v) | _ -> None) |> Option.defaultValue 0)
-        let bdWd = widthOverride |> Option.orElse (attrs |> Map.tryFind "W" |> Option.bind (function Int v -> Some v | _ -> None) |> Option.filter (fun v -> v > 0)) |> Option.defaultValue 0
-        let bdHt = heightOverride |> Option.orElse (attrs |> Map.tryFind "H" |> Option.bind (function Int v -> Some v | _ -> None)) |> Option.defaultValue bdWd
+        let elv = opts.Elevation |> Option.defaultValue (attrs |> Map.tryFind "L" |> Option.bind (function Float v -> Some (int v) | _ -> None) |> Option.defaultValue 0)
+        let bdWd = opts.Width |> Option.orElse (attrs |> Map.tryFind "W" |> Option.bind (function Int v -> Some v | _ -> None) |> Option.filter (fun v -> v > 0)) |> Option.defaultValue 0
+        let bdHt = opts.Height |> Option.orElse (attrs |> Map.tryFind "H" |> Option.bind (function Int v -> Some v | _ -> None)) |> Option.defaultValue bdWd
         
         let bdOu =
             match attrs |> Map.tryFind "X" with
             | Some "1" -> [||]
             | _ ->
-                match ouStrOverride with
+                match opts.OuterStr with
                 | Some ou when ou <> "" -> parseCoords ou
                 | _ ->
                     match attrs |> Map.tryFind "O" with 
                     | Some a when a <> "" -> parseCoords a
                     | _ ->
-                        match bsHxSetOverride with
+                        match opts.ParentCxl with
                         | Some parent when bdWd > 0 -> cxlPrm parent elv |> Geometry.cleanPolygon parent.Seqn
                         | _ -> 
                             match bdWd > 0 with
@@ -69,7 +106,7 @@ module Layout =
                             | false -> [||]
     
         let bdIs =
-            match ilStrOverride with
+            match opts.IslandsStr with
             | Some il when il <> "" -> parseIslands il
             | _ -> 
                 match attrs |> Map.tryFind "I" with 
@@ -83,63 +120,86 @@ module Layout =
                 entryAtrRaw.Split ','
                 |> Array.map (fun s -> match System.Double.TryParse s with true, v -> string (int (Math.Round(v))) | _ -> s)
                 |> String.concat ","
-
+    
         let entryFallback =
-            match entryAtrFallback.Split ',' with
+            match opts.EntryFallback.Split ',' with
             | [| Int x; Int y |] -> AV(x, y, elv)
             | _ -> 
                 match bdWd with
                 | 0 -> identity elv
                 | _ -> AV(bdWd/2+2, bdHt/2+2, elv)
-    
+
+        let ntArea = polygonWithHolesArea bdOu bdIs
+        let scaledTree, finalRatio = applyReproportioning ntArea tree opts.Ratio
+
+        {
+            Seq = seq
+            Elevation = elv
+            Boundary = bdOu
+            Islands = bdIs
+            EntryAtr = entryAtr
+            EntryFallback = entryFallback
+            InitialOcc = opts.InitialOcc
+            ScaledTree = scaledTree
+            Ratio = finalRatio
+            Parent = opts.ParentCxl
+        }
+
+    /// <summary> Extracts the first node as the base coxel for layout. </summary>
+    let generateBaseCxl (ctx: LayoutContext) =
         let bndSet = 
-            let ntArea = Geometry.polygonWithHolesArea bdOu bdIs
+            let ntArea = Geometry.polygonWithHolesArea ctx.Boundary ctx.Islands
             if ntArea > 0L then 
-                let allVtx = Array.append bdOu (bdIs |> Array.collect id)
+                let allVtx = Array.append ctx.Boundary (ctx.Islands |> Array.collect id)
                 let minX = allVtx |> Array.minBy fst |> fst |> (fun x -> x - 2)
                 let maxX = allVtx |> Array.maxBy fst |> fst |> (fun x -> x + 2)
                 let minY = allVtx |> Array.minBy snd |> snd |> (fun y -> y - 2)
                 let maxY = allVtx |> Array.maxBy snd |> snd |> (fun y -> y + 2)
-
+    
                 let blocked = ResizeArray<Hxl>()
                 for x in minX .. maxX do
                     for y in minY .. maxY do
                         let pt = (x, y)
-                        let isOutside = not (Geometry.pointInPolygon pt bdOu)
-                        let isInsideIsland = bdIs |> Array.exists (Geometry.pointInPolygon pt)
+                        let isOutside = not (Geometry.pointInPolygon pt ctx.Boundary)
+                        let isInsideIsland = ctx.Islands |> Array.exists (Geometry.pointInPolygon pt)
                         if isOutside || isInsideIsland then
-                            blocked.Add(RV(x, y, elv))
+                            blocked.Add(RV(x, y, ctx.Elevation))
                 blocked.ToArray()
             else [||]
+    
+        let occ = Array.append ctx.InitialOcc bndSet |> hxlUni 1
+        let flatEntries = ctx.ScaledTree |> Array.concat
+    
+        match Array.tryHead flatEntries with
+        | None -> None
+        | Some (id, ct, lb) ->
+            let rootCxl, nextOcc = createBaseCoxel ctx.Seq ctx.Elevation ctx.EntryAtr ctx.EntryFallback id ct lb occ ctx.Parent
+            Some (rootCxl, nextOcc)
 
-        let ntArea = polygonWithHolesArea bdOu bdIs
-        let occ = Array.append initialOcc bndSet |> hxlUni 1
-    
-        let totalRequestedArea = tree |> Array.concat |> Array.distinctBy (fun (id, _, _) -> id) |> Array.sumBy (fun (_, a, _) -> a)
-        let scaledTree, finalRatio = applyReproportioning ntArea totalRequestedArea tree ratioOverride
-        let flatEntries = scaledTree |> Array.concat
-    
+    /// <summary> Core layout construction for a single level, starting from a pre-generated base coxel. </summary>
+    let generateCxlLayout (ctx: LayoutContext) (rootCxl: Cxl) (nextOcc: Hxl[]) : Cxl[] * (int*int)[][] * float =
+        let seq = rootCxl.Seqn
+        let _, _, elv = hxlCrd rootCxl.Base
+
+        let rec buildTree (tre : (Prp*Prp*Prp)[][]) acc occ =
+            match tre with 
+            | [||] -> acc
+            | _ ->
+                let group = Array.head tre
+                let parentId = group |> Array.head |> fun (i,_,_) -> i
+                match acc |> Array.tryFindIndex (fun x -> x.Rfid = parentId) with
+                | Some idx ->
+                    let host = acc.[idx]
+                    let updatedHost, newCxls, newOcc = coxelChildren seq elv host group occ
+                    let nextAcc = Array.append (acc |> Array.mapi (fun i cx -> match i = idx with true -> updatedHost | false -> cx)) newCxls
+                    buildTree (Array.tail tre) nextAcc newOcc
+                | None -> buildTree (Array.tail tre) acc occ
+
         let result =
-            match Array.tryHead flatEntries with
-            | None -> [||]
-            | Some (id, ct, lb) ->
-                let rec buildTree (tre : (Prp*Prp*Prp)[][]) acc occ =
-                    match tre with 
-                    | [||] -> acc
-                    | _ ->
-                        let group = Array.head tre
-                        let parentId = group |> Array.head |> fun (i,_,_) -> i
-                        match acc |> Array.tryFindIndex (fun x -> x.Rfid = parentId) with
-                        | Some idx ->
-                            let host = acc.[idx]
-                            let updatedHost, newCxls, newOcc = coxelChildren seq elv host group occ
-                            let nextAcc = Array.append (acc |> Array.mapi (fun i cx -> match i = idx with true -> updatedHost | false -> cx)) newCxls
-                            buildTree (Array.tail tre) nextAcc newOcc
-                        | None -> buildTree (Array.tail tre) acc occ
-    
-                let rootCxl, initialOcc = createBaseCoxel seq elv entryAtr entryFallback id ct lb occ bsHxSetOverride
-                match flatEntries.Length < 2 with
-                | true -> [| rootCxl |]
-                | false -> buildTree scaledTree [| rootCxl |] initialOcc
-    
-        result, Array.append [|bdOu|] bdIs, finalRatio
+            let flatCount = ctx.ScaledTree |> Array.concat |> Array.length
+            match flatCount < 2 with
+            | true -> [| rootCxl |]
+            | false -> buildTree ctx.ScaledTree [| rootCxl |] nextOcc
+
+        result, Array.append [|ctx.Boundary|] ctx.Islands, ctx.Ratio
+
