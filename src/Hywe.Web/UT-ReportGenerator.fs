@@ -103,67 +103,8 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) : stri
     %s
     </svg>""" (minX - pad) (minY - pad) w h polygons boundaries
 
-let rec flattenTree (node: TreeNode) : TreeNode list =
-    node :: (node.Children |> List.collect flattenTree)
-
-let rec layoutTree (node: TreeNode) (depth: int) (xRef: float ref) : TreeNode =
-    let horizontalSpacing = 100.0
-    let verticalSpacing = 70.0
-
-    let laidOutChildren =
-        node.Children
-        |> List.map (fun child -> layoutTree child (depth + 1) xRef)
-
-    let x =
-        if laidOutChildren.IsEmpty then
-            let x = xRef.Value
-            xRef.Value <- x + horizontalSpacing
-            x
-        else
-            laidOutChildren |> List.averageBy (fun n -> n.X)
-
-    {
-        node with
-            X = x
-            Y = float depth * verticalSpacing
-            Children = laidOutChildren
-    }
-
-let renderFlowchartSvg (root: TreeNode) : string =
-    let root = layoutTree root 0 (ref 100.0)
-    let nodes = flattenTree root
-
-    let margin = 60.0
-    let minX = nodes |> List.map (fun n -> n.X) |> List.min
-    let maxX = nodes |> List.map (fun n -> n.X) |> List.max
-    let minY = nodes |> List.map (fun n -> n.Y) |> List.min
-    let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
-
-    let vbX = minX - margin
-    let vbY = minY - margin
-    let vbW = maxX - minX + 2.0 * margin
-    let vbH = maxY - minY + 2.0 * margin
-    
-    let sb = StringBuilder()
-    sprintf """<svg viewBox="%f %f %f %f" xmlns="http://www.w3.org/2000/svg" width="100%%" height="100%%">""" vbX vbY vbW vbH |> sb.AppendLine |> ignore
-    
-    // Connections
-    let rec renderConnections (parent: TreeNode) =
-        for child in parent.Children do
-            sprintf """<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="#cccccc" stroke-width="2" />""" parent.X parent.Y child.X child.Y |> sb.AppendLine |> ignore
-            renderConnections child
-    
-    renderConnections root
-
-    // Nodes
-    for node in nodes do
-        let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
-        sprintf """<rect x="%f" y="%f" width="80" height="40" rx="8" ry="8" fill="white" stroke="#aaaaaa" stroke-width="1.5" />""" (node.X - 40.0) (node.Y - 20.0) |> sb.AppendLine |> ignore
-        sprintf """<text x="%f" y="%f" font-family="Outfit, system-ui, sans-serif" font-size="12px" text-anchor="middle" dominant-baseline="middle" fill="#333333">%s</text>""" node.X (node.Y - 5.0) safeName |> sb.AppendLine |> ignore
-        sprintf """<text x="%f" y="%f" font-family="Outfit, system-ui, sans-serif" font-size="10px" text-anchor="middle" dominant-baseline="middle" fill="#888888">%s</text>""" node.X (node.Y + 10.0) node.Weight |> sb.AppendLine |> ignore
-
-    sb.AppendLine("</svg>") |> ignore
-    sb.ToString()
+let renderFlowchartSvg (root: TreeNode) (colorMap: Map<string, string>) : string =
+    CodeNode.renderSvgToString root colorMap
 
 let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) : string =
     let uniqueRooms = 
@@ -387,7 +328,13 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
 
         if section.FlowChart then
             let root = tree.Levels.[level]
-            let svg = renderFlowchartSvg root
+            let colorMap = 
+                if batchInfo.Length > 0 then
+                    batchInfo.[0].shapes 
+                    |> Array.map (fun s -> s.name, s.color) 
+                    |> Map.ofArray
+                else Map.empty
+            let svg = renderFlowchartSvg root colorMap
             sprintf tFlowChart (renderHeader (sprintf "Flow Chart — Level %d" level) opts.ProjectTitle) svg (renderFooter()) |> sb.AppendLine |> ignore
 
         if section.BatchOverview && batchInfo.Length > 0 then
