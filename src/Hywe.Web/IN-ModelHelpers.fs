@@ -13,7 +13,7 @@ open Bolero.Html
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Parsing
+open Hywe.Core.Parse
 
 open PageHelpers
 
@@ -357,7 +357,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-svg-container"
-                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl model.Tree.ActiveLevel model.Derived.cxClr1 10 (Some "layout-svg-output")
+                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl model.Tree.ActiveLevel model.Derived.cxClr1 20 (Some "layout-svg-output")
                 }
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
@@ -403,7 +403,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls fAdj
+                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls fAdj (model.Derived.cxRto1 |> Array.tryItem elv |> Option.defaultValue 1.0)
                 }
             }
 

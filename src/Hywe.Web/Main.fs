@@ -10,11 +10,12 @@ open Page
 open NodeCode
 open PolygonEditor
 open ModelTypes
-open PageHelpers
 open ModelHelpers
 open Hywe
 open Hywe.Core
 open Hywe.Core.Coxel
+open Hywe.Core.Parse
+open Cache
 
 // Defaults / init 
 let initialTree = NodeCode.initModel beeyond
@@ -39,7 +40,8 @@ let initModel =
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
-        Derived = PageHelpers.deriveData initialOutput initialPolygonExport.EntryStr 0
+        Derived = Cache.generateSingleConfig initialOutput (Hexel.sqnArray.[11]) initialPolygonExport 0 |> Cache.toDerived
+        LayoutCache = Map.empty
         NeedsHyweave = false
         IsHyweaving = false
         IsCancelling = false
@@ -106,8 +108,6 @@ let updateMetadata (js: IJSRuntime) =
     } |> Async.StartImmediate
  
 
-
-
 let maxUndoDepth = 50
 
 /// Captures the current undoable state and prepends it to the undo stack.
@@ -137,7 +137,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | UpdateMetadata _ | Undo | Redo -> model
             | TreeMsg (NodeCode.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
-            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = false }
+            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }
         else model
     
     let model = modelBefore
@@ -170,35 +170,40 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.IslandsStr
             | Syntax -> 
                 if currentLevel = 0 then
-                    let levelsCount = model.SrcOfTrth.Split(';', StringSplitOptions.None).Length
+                    let levelsCount = splitIntoLevels model.SrcOfTrth |> Array.length
                     let mutable s = model.SrcOfTrth
                     for l in 0 .. levelsCount - 1 do
-                        s <- Parsing.injectSqn s l newSqn
+                        s <- injectSqn s l newSqn
                     s
                 else
-                    Parsing.injectSqn model.SrcOfTrth currentLevel newSqn
+                    injectSqn model.SrcOfTrth currentLevel newSqn
 
-        let modelWithNewSqn = 
+        Storage.autoSave js updatedSrc |> ignore
+
+        match Cache.get currentLevel i model.LayoutCache with
+        | Some config ->
+            { model with 
+                Sequences = newSqns
+                SrcOfTrth = updatedSrc
+                Derived = Cache.toDerived config
+                SelectedPreviewIndex = None 
+            }, Cmd.none
+        | None ->
             { model with 
                 Sequences = newSqns
                 SrcOfTrth = updatedSrc
                 IsHyweaving = true 
                 SelectedPreviewIndex = None 
-            }
-
-        Storage.autoSave js updatedSrc |> ignore
-
-        modelWithNewSqn,
-        Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
-                    Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 5 }) () (fun _ -> RunHyweave)
-                ]
+            }, Cmd.OfAsync.perform (fun () -> async {
+                let config = Cache.generateSingleConfig updatedSrc Hexel.sqnArray.[i] model.PolygonExport currentLevel
+                return currentLevel, i, config
+            }) () CacheResult
 
     | SetSrcOfTrth value ->
         let m = pushUndo model
         let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
-        let newSqns = Parsing.extractSequences value
+        let newSqns = extractSequences value
         { m with 
             SrcOfTrth = value
             Sequences = newSqns
@@ -207,10 +212,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | StartHyweave ->
+        let levels = model.Tree.Levels.Keys |> Seq.toList
+        let newCache = Cache.init levels
         let model2 = { model with 
                         ActivePanel = LayoutPanel
                         IsHyweaving = true
-                        NeedsHyweave = false}
+                        NeedsHyweave = false
+                        LayoutCache = newCache }
         model2,
         Cmd.batch [
                     Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
@@ -220,11 +228,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | RunHyweave ->
         let updatedSrcOfTrth =
             match model.EditorMode with
-            | Syntax ->
-                let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                let newState = Storage.importFromHyw model.SrcOfTrth inner
-                let finalPoly = match newState with Stable m | FreshlyImported m -> m
-                model.SrcOfTrth
+            | Syntax -> model.SrcOfTrth
             | Interactive ->
                 NodeCode.getOutput
                     model.Tree
@@ -237,29 +241,63 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         Storage.autoSave js updatedSrcOfTrth |> ignore
 
-        let newModel =
-            match model.EditorMode with
-            | Syntax ->
-                let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                let newState = Storage.importFromHyw updatedSrcOfTrth inner
-                let finalPoly = match newState with Stable m | FreshlyImported m -> m
-                let newExport = syncPolygonState finalPoly
-                { model with 
-                    SrcOfTrth = updatedSrcOfTrth
-                    Derived = PageHelpers.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel
-                    PolygonEditor = newState 
-                    PolygonExport = newExport }
-            | Interactive ->
-                { model with 
-                    SrcOfTrth = updatedSrcOfTrth
-                    Derived = PageHelpers.deriveData updatedSrcOfTrth model.PolygonExport.EntryStr model.Tree.ActiveLevel }
-                
-        newModel,
-        Cmd.OfAsync.perform
-            (fun () -> async {
-                do! Async.Sleep 100
-                return ()
-            }) () (fun _ -> FinishHyweave)
+        let currentLevel = model.Tree.ActiveLevel
+        let currentSqnIdx = 
+            model.Sequences 
+            |> Map.tryFind currentLevel 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+            |> Option.defaultValue 11
+        let currentSqn = Hexel.sqnArray.[currentSqnIdx]
+        
+        model, Cmd.OfAsync.perform (fun () -> async {
+            let mutable updatedCache = model.LayoutCache
+            
+            // 1. Handle current orientation (might be different from 11)
+            let fullDataCurrent = Cache.computeFullLayout updatedSrcOfTrth currentSqn model.PolygonExport currentLevel
+            for lvl in model.Tree.Levels.Keys do
+                let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl
+                updatedCache <- Cache.update lvl currentSqnIdx c updatedCache
+            
+            // 2. Handle orientation 11 (standard default) if current orientation is different
+            if currentSqnIdx <> 11 then
+                let fullData11 = Cache.computeFullLayout updatedSrcOfTrth Hexel.sqnArray.[11] model.PolygonExport 0
+                for lvl in model.Tree.Levels.Keys do
+                    let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl
+                    updatedCache <- Cache.update lvl 11 c updatedCache
+
+            return updatedSrcOfTrth, updatedCache
+        }) () HyweaveResult
+
+    | HyweaveResult (src, cache) ->
+        let currentLevel = model.Tree.ActiveLevel
+        let currentSqnIdx = 
+            model.Sequences 
+            |> Map.tryFind currentLevel 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+            |> Option.defaultValue 11
+        let activeConfig = Cache.get currentLevel currentSqnIdx cache |> Option.get
+        
+        { model with 
+            SrcOfTrth = src
+            LayoutCache = cache
+            Derived = Cache.toDerived activeConfig
+            IsHyweaving = false
+            NeedsHyweave = false
+        }, Cmd.none
+
+    | CacheResult (lvl, idx, data) ->
+        let newCache = Cache.update lvl idx data model.LayoutCache
+        let newModel = { model with LayoutCache = newCache }
+        if lvl = model.Tree.ActiveLevel then
+            let currentSqnIdx = 
+                model.Sequences 
+                |> Map.tryFind lvl 
+                |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+                |> Option.defaultValue 11
+            if idx = currentSqnIdx then
+                { newModel with Derived = Cache.toDerived data; IsHyweaving = false }, Cmd.none
+            else newModel, Cmd.none
+        else newModel, Cmd.none
 
     | FinishHyweave ->
             { model with 
@@ -310,7 +348,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
-                    let m = { modelWithTree with Derived = PageHelpers.deriveData newOutput model.PolygonExport.EntryStr updatedTree.ActiveLevel }
+                    let m = { modelWithTree with Derived = Cache.deriveFromSource newOutput model.Sequences model.PolygonExport updatedTree.ActiveLevel }
                     if model.ActivePanel = BatchPanel then
                         { m with 
                             IsHyweaving = true
@@ -383,51 +421,37 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with BatchProgress = p }, Cmd.none
     
     // --- Recursive Batch Generation ---
-    // This pattern allows the UI to update after every single configuration is processed,
-    // providing real-time feedback via the progress grid.
     | GenerateNextBatchItem i ->
         if i >= 24 || model.IsCancelling then
             { model with IsHyweaving = false; IsCancelling = false }, 
             Cmd.ofMsg (SetBatchPreview (model.BatchAccumulator |> List.toArray |> Array.rev))
         else
-            let sqn = Hexel.sqnArray.[i]
-            let sqnStr = sprintf "%A" sqn
-            let forcedStr = Parsing.injectSqn model.SrcOfTrth model.Tree.ActiveLevel sqnStr
-            
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let cxls, cxOuIl, cxElv1 = Parsing.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
-                    let cxls = cxls |> Array.map (fun (c: Cxl) -> c)
-                    let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 model.Tree.ActiveLevel
-                    let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
-                        Layout.getStaticGeometry cxls derived.cxClr1 model.Tree.ActiveLevel 10 
+                    let mutable currentCache = model.LayoutCache
+                    let sqn = Hexel.sqnArray.[i]
                     
-                    let configData : BatchConfgrtns = 
-                        {| sqnName = sqnStr
-                           shapes = d.shapes |> Array.map (fun s -> 
-                             {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                           w = d.w; h = d.h
-                           cxCxl1 = cxls
-                           cxElv1 = cxElv1
-                           cxlAvl = derived.cxlAvl
-                           cxOuIl = cxOuIl
-                           cxAdj1 = derived.cxAdj1
-                           cxB36 = derived.cxB36 |}
+                    // Compute full layout once for this orientation
+                    let fullData = Cache.computeFullLayout model.SrcOfTrth sqn model.PolygonExport 0
                     
+                    // Update cache for all levels
+                    for lvl in model.Tree.Levels.Keys do
+                        let config = Cache.fromFullLayout fullData sqn lvl
+                        currentCache <- Cache.update lvl i config currentCache
+                    
+                    let activeConfig = Cache.fromFullLayout fullData sqn model.Tree.ActiveLevel
                     do! Async.Sleep 5
-                    return Some configData
-                with ex -> 
-                    return None
+                    return Some activeConfig, currentCache
+                with _ -> return None, model.LayoutCache
             }) () AddBatchItem
 
-    | AddBatchItem res ->
+    | AddBatchItem (res, updatedCache) ->
         let nextI = model.BatchProgress + 1
         let nextAcc = 
             match res with
             | Some r -> r :: model.BatchAccumulator
             | None -> model.BatchAccumulator
-        // Update progress state and trigger next iteration
-        { model with BatchProgress = nextI; BatchAccumulator = nextAcc }, Cmd.ofMsg (GenerateNextBatchItem nextI)
+        { model with BatchProgress = nextI; BatchAccumulator = nextAcc; LayoutCache = updatedCache }, Cmd.ofMsg (GenerateNextBatchItem nextI)
     | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with
@@ -464,13 +488,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         else
             try
                 // Extract Sequences (Q=...)
-                let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
-                let newSqns = 
-                    content.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
-                    |> Array.mapi (fun i segment ->
-                        let m = regex.Match(segment)
-                        if m.Success then (i, m.Groups.[1].Value) else (i, (model.Sequences |> Map.tryFind i |> Option.defaultValue allSqns.[11])))
-                    |> Map.ofArray
+                let newSqns = extractSequences content
                 
                 // Restore Tree
                 let newTree = NodeCode.initModel content
@@ -489,7 +507,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         PolygonEditor = newState
                         PolygonExport = newExport
                         Sequences = newSqns
-                        Derived = PageHelpers.deriveData content newExport.EntryStr newTree.ActiveLevel
+                        Derived = Cache.deriveFromSource content newSqns newExport newTree.ActiveLevel
                         NeedsHyweave = true
                         Onboarding = { model.Onboarding with IsActive = true }
                         IsPresetsCollapsed = true
@@ -514,7 +532,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonEditor = Stable resetPoly
             PolygonExport = resetExport
             Sequences = Map.ofList [0, allSqns.[11]]
-            Derived = PageHelpers.deriveData resetSyntax resetExport.EntryStr 0
+            Derived = Cache.deriveFromSource resetSyntax (Map.ofList [0, allSqns.[11]]) resetExport 0
             NeedsHyweave = true
             EditsCount = 0
             SelectedPreset = None
@@ -534,7 +552,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 PolygonEditor = snap.PolygonEditor
                                 PolygonExport = newExport
                                 Sequences     = snap.Sequences
-                                Derived      = PageHelpers.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
+                                Derived      = Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
                                 UndoStack    = rest
                                 RedoStack    = redoSnap :: model.RedoStack
                                 NeedsHyweave = true }
@@ -553,7 +571,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 PolygonEditor = snap.PolygonEditor
                                 PolygonExport = newExport
                                 Sequences     = snap.Sequences
-                                Derived      = PageHelpers.deriveData snap.SrcOfTrth newExport.EntryStr snap.Tree.ActiveLevel
+                                Derived      = Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
                                 RedoStack    = rest
                                 UndoStack    = undoSnap :: model.UndoStack
                                 NeedsHyweave = true }
@@ -592,7 +610,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                             IsActive = not isFinished
                             SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
             ActivePanel = newActivePanel
-            IsPresetsCollapsed = if isFinished then false else model.IsPresetsCollapsed
+            IsPresetsCollapsed = if isFinished then true else model.IsPresetsCollapsed
         }, cmd
 
     | PreviousOnboardingStep ->
@@ -625,7 +643,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | SkipOnboarding ->
-        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = false }, 
+        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }, 
         Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction) // Just in case
 
     | RestartOnboarding ->
@@ -670,8 +688,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleConfirm action ->
         { model with PendingConfirm = action }, Cmd.none
-
-open Help
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()

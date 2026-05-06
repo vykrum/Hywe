@@ -1,25 +1,17 @@
 module Analyze
 
 open Hywe.Core.Coxel
-open Bolero
 open Bolero.Html
 open ModelTypes
-open System
-open Page
-open Hywe.Core
-open PageHelpers
-
-// --- PROCESSING (UI HELPER) ---
-// Adjacency calculation is now in Coxel.cxlAdj
 
 // --- INTERFACE ---
 
-let renderRow (cxl: Cxl) (clr: string) (avl: int) =
-    let hxlAreaX = 1
-    let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
-    let achSz = (Array.length cxl.Hxls)*hxlAreaX
-    let achCl = match achSz < reqSz with | true -> "red" | false -> "#646464"
-    let avlCl = match avl < 1 with | true -> "red" | false -> "#646464"
+let renderRow (cxl: Cxl) (clr: string) (avl: int) (ratio: float) =
+    let hxlAreaX = 1.0 / ratio
+    let reqSz = (prpVlu cxl.Size |> float)
+    let achSz = (float (Array.length cxl.Hxls)) * hxlAreaX
+    let achCl = match achSz < (reqSz * 0.99) with | true -> "red" | false -> "#646464"
+    let avlCl = match float avl * hxlAreaX < 0.1 with | true -> "red" | false -> "#646464"
 
     tr {
         attr.``style`` $"background-color:{clr}; height: 32px;"
@@ -36,17 +28,17 @@ let renderRow (cxl: Cxl) (clr: string) (avl: int) =
         td { 
             attr.width "15%"
             attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
-            text (string reqSz) 
+            text (sprintf "%.0f" reqSz) 
         }
         td { 
             attr.width "15%"
             attr.``style`` $"padding: 8px; text-align: center; color:{achCl}; border: 1px solid #eee;"
-            text (string achSz) 
+            text (sprintf "%.0f" achSz) 
         }
         td { 
             attr.width "15%"
             attr.``style`` $"padding: 8px; text-align: center; color:{avlCl}; border: 1px solid #eee;"
-            text (string (avl * hxlAreaX)) 
+            text (sprintf "%.0f" (float avl * hxlAreaX)) 
         }
     }
 
@@ -113,10 +105,10 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             }
         }
 
-let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) =
-    let hxlAreaX = 1
-    let totalReq = cxCxl1 |> Array.sumBy (fun c -> (prpVlu c.Size |> int) * hxlAreaX)
-    let totalAch = cxCxl1 |> Array.sumBy (fun c -> (Array.length c.Hxls) * hxlAreaX)
+let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) (ratio: float) =
+    let hxlAreaX = 1.0 / ratio
+    let totalReq = cxCxl1 |> Array.sumBy (fun c -> (prpVlu c.Size |> float))
+    let totalAch = cxCxl1 |> Array.sumBy (fun c -> (float (Array.length c.Hxls)) * hxlAreaX)
     
     let adjNames, adjMatrix = cxAdj1
 
@@ -153,7 +145,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                     }
                     tbody {
                         for i in 0 .. cxCxl1.Length - 1 do
-                            renderRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i]
+                            renderRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] ratio
                     }
                     tfoot {
                         tr {
@@ -161,11 +153,11 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                             td { attr.colspan 2; attr.``style`` "border: 1px solid #eee;" }
                             td { 
                                 attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
-                                text (string totalReq) 
+                                text (sprintf "%.0f" totalReq) 
                             }
                             td { 
                                 attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
-                                text (string totalAch) 
+                                text (sprintf "%.0f" totalAch) 
                             }
                             td { attr.``style`` "border: 1px solid #eee;" }
                         }

@@ -8,9 +8,12 @@ open Layout
 open Storage
 open PolygonEditor
 open Hywe.Core
+open Hywe.Core.Parse
+open Hywe.Core.Levels
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open ExportFormats
+open Cache
 open System
 
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
@@ -107,20 +110,13 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         let newState = Storage.importFromHyw clean inner
         let finalPoly = match newState with FreshlyImported m | Stable m -> m
         let newExport = syncPolygonState finalPoly
-        let regex = System.Text.RegularExpressions.Regex(@"Q=([A-Z]+)")
-        let newSqns = 
-            clean.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
-            |> Array.mapi (fun i segment ->
-                let m = regex.Match(segment)
-                if m.Success then (i, m.Groups.[1].Value) else (i, (model.Sequences |> Map.tryFind i |> Option.defaultValue allSqns.[11]))
-            )
-            |> Map.ofArray
+        let newSqns = extractSequences clean
 
         { model with 
             SrcOfTrth = clean
             Tree = newTree
             LastValidTree = newTree
-            Derived = PageHelpers.deriveData clean model.PolygonExport.EntryStr model.Tree.ActiveLevel
+            Derived = Cache.generateSingleConfig clean (Hexel.sqnArray.[11]) model.PolygonExport model.Tree.ActiveLevel |> Cache.toDerived
             PolygonEditor = newState 
             PolygonExport = newExport
             ParseError = false
@@ -201,8 +197,12 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadBatchCoordCsv ->
-        match model.BatchPreview with
-        | Some results ->
+        let results = 
+            match model.BatchPreview with
+            | Some r -> r
+            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+            
+        if results.Length > 0 then
             let batchData = results |> Array.collect (fun r -> 
                 r.cxCxl1 
                 |> Array.indexed
@@ -215,10 +215,14 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let csv = ExportFormats.generateCoordinatesCsv batchData
             let fileName = "Hywe_Batch_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+        else Some (model, Cmd.none)
     | DownloadBatchMetricsCsv ->
-        match model.BatchPreview with
-        | Some results ->
+        let results = 
+            match model.BatchPreview with
+            | Some r -> r
+            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+
+        if results.Length > 0 then
             let batchData = results |> Array.collect (fun r -> 
                 r.cxCxl1 
                 |> Array.groupBy (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z) 
@@ -227,17 +231,21 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let csv = ExportFormats.generateAreaMetricsCsv batchData
             let fileName = "Hywe_Batch_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+        else Some (model, Cmd.none)
     | DownloadBatchAdjCsv ->
-        match model.BatchPreview with
-        | Some results ->
+        let results = 
+            match model.BatchPreview with
+            | Some r -> r
+            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+
+        if results.Length > 0 then
             let batchData = results |> Array.map (fun r -> 
                 (r.sqnName, 0, r.cxAdj1) // Using 0 as a placeholder level for batch adjacency
             )
             let csv = ExportFormats.generateAdjacencyCsv batchData
             let fileName = "Hywe_Batch_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+        else Some (model, Cmd.none)
     | DownloadDxf ->
         let dxf = ExportFormats.generateDxf model.Derived.cxCxl1 0.0 0.0
         let fileName = "Hywe_Layout_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
@@ -248,21 +256,29 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadBatchDxf ->
-        match model.BatchPreview with
-        | Some results ->
+        let results = 
+            match model.BatchPreview with
+            | Some r -> r
+            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+
+        if results.Length > 0 then
             let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1)
             let dxf = ExportFormats.generateDxfBatch batchData
             let fileName = "Hywe_Batch_FloorPlates_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+        else Some (model, Cmd.none)
     | DownloadBatchObj ->
-        match model.BatchPreview with
-        | Some results ->
+        let results = 
+            match model.BatchPreview with
+            | Some r -> r
+            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+
+        if results.Length > 0 then
             let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1, r.cxElv1)
             let objStr = ExportFormats.generateObjBatch batchData
             let fileName = "Hywe_Batch_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+        else Some (model, Cmd.none)
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
     | GenerateReport ->
@@ -283,8 +299,9 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
               Cmd.OfAsync.perform (fun () -> async {
                   do! Async.Sleep 50
                   
+                  let mutable currentCache = model.LayoutCache
                   let mutable allBatches = Map.empty
-                  for level in model.Tree.Levels.Keys do
+                  for level in model.Tree.Levels.Keys |> Seq.toList |> List.sort do
                       do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Processing Level %d" level).AsTask() |> Async.AwaitTask
                       let section = 
                           match Map.tryFind level model.ReportOptions.LevelSections with
@@ -296,26 +313,20 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                       if section.BatchOverview || section.Variations then
                           do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating 24 variations for level %d..." level).AsTask() |> Async.AwaitTask
                           for i = 0 to 23 do
-                              let sqn = Hexel.sqnArray.[i]
-                              let sqnStr = sprintf "%A" sqn
-                              let forcedStr = Parsing.injectSqn model.SrcOfTrth level sqnStr
                               try
-                                  let cxls, cxOuIl, cxElv1 = Parsing.generateMultiLevelLayout forcedStr model.PolygonExport.EntryStr [||] (Some sqn) (Some model.PolygonExport.OuterStr) (Some model.PolygonExport.IslandsStr)
-                                  let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 level
-                                  let (d: {| shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]; w: float; h: float |}) = 
-                                      Layout.getStaticGeometry cxls derived.cxClr1 level 10 
-                                  
-                                  let configData : BatchConfgrtns = 
-                                      {| sqnName = sqnStr
-                                         shapes = d.shapes |> Array.map (fun s -> {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-                                         w = d.w; h = d.h
-                                         cxCxl1 = cxls
-                                         cxElv1 = cxElv1
-                                         cxlAvl = derived.cxlAvl
-                                         cxOuIl = cxOuIl
-                                         cxAdj1 = derived.cxAdj1
-                                         cxB36 = derived.cxB36 |}
-                                  levelBatches <- configData :: levelBatches
+                                  let config = 
+                                      match Cache.get level i currentCache with
+                                      | Some c -> c
+                                      | None -> 
+                                          // Compute full data once, and update cache for ALL levels
+                                          let fullData = Cache.computeFullLayout model.SrcOfTrth Hexel.sqnArray.[i] model.PolygonExport level
+                                          for l in model.Tree.Levels.Keys do
+                                              let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l
+                                              currentCache <- Cache.update l i cfg currentCache
+                                          
+                                          Cache.fromFullLayout fullData Hexel.sqnArray.[i] level
+
+                                  levelBatches <- config :: levelBatches
                               with _ -> ()
                               
                       allBatches <- Map.add level (levelBatches |> List.rev |> List.toArray) allBatches
@@ -324,9 +335,9 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                   let opts = { model.ReportOptions with Captured3DImage = model.Captured3DImage }
                   let html = Hywe.ReportGenerator.generateReportHtml opts model.Tree allBatches
                   do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Report compiled. HTML size: %d bytes" html.Length).AsTask() |> Async.AwaitTask
-                  return html
-              }) () ReportGenerated)
-    | ReportGenerated html ->
-        Some ({ model with IsGeneratingReport = false },
+                  return html, currentCache
+              }) () (fun (html, cache) -> ReportGenerated (html, cache)))
+    | ReportGenerated (html, cache) ->
+        Some ({ model with IsGeneratingReport = false; LayoutCache = cache },
               Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("openReport", html).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | _ -> None

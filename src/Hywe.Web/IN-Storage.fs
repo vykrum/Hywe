@@ -2,7 +2,7 @@ module Storage
 
 open System
 open Microsoft.JSInterop
-open Hywe.Core
+open Hywe.Core.Parse
 
 // Shadow save for browser refresh persistence
 let autoSave (js: IJSRuntime) (content: string) =
@@ -29,23 +29,30 @@ let importFile (js: IJSRuntime) (inputId: string) =
 
 /// <summary> Parses .hyw content and updates a PolygonEditorModel. </summary>
 let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) : PolygonEditor.EditorState =
-    let cleanStr = content.Replace("\n","").Replace("\t","")
-    let sortedLevels = 
-        cleanStr.Split(';', StringSplitOptions.RemoveEmptyEntries) |> Array.truncate 1
+    let sortedLevels = splitIntoLevels content |> Array.truncate 1
     
     let mutable finalState = current
     for lvl in sortedLevels do
-        let attrs = Parsing.extractAttrsFromHyw lvl
+        let attrs, _ = processLevel lvl
         finalState <- attrs |> Map.fold (fun (m: PolygonEditor.PolygonEditorModel) key v ->
             match key with
-            | "W" -> match Parsing.tryParseFloat v with | Some num -> { m with LogicalWidth = num * 10.0 } | None -> m
-            | "H" -> match Parsing.tryParseFloat v with | Some num -> { m with LogicalHeight = num * 10.0 } | None -> m
-            | "L" -> match Parsing.tryParseFloat v with | Some num -> { m with Elevation = int num } | None -> m
+            | "W" -> match v with | Float num -> { m with LogicalWidth = num * 10.0 } | _ -> m
+            | "H" -> match v with | Float num -> { m with LogicalHeight = num * 10.0 * 0.866 } | _ -> m
+            | "L" -> match v with | Float num -> { m with Elevation = int num } | _ -> m
             | "S" -> { m with BaseStr = v }
             | "X" -> { m with UseAbsolute = (v = "1") }
-            | "E" -> match Parsing.parseCoords v with | pts when pts.Length = 1 -> { m with EntryPoint = pts.[0] } | _ -> m
-            | "O" -> match Parsing.parseCoords v with | pts when pts.Length > 0 -> { m with Outer = pts } | _ -> m
-            | "I" -> { m with Islands = Parsing.parseIslands v }
+            | "E" -> 
+                match PolygonEditor.parsePoint v with 
+                | Ok pt -> { m with EntryPoint = pt } 
+                | _ -> m
+            | "O" -> 
+                match PolygonEditor.parsePoly v with 
+                | Ok pts -> { m with Outer = pts } 
+                | _ -> m
+            | "I" -> 
+                match PolygonEditor.parseIslands v with 
+                | Ok pts -> { m with Islands = pts } 
+                | _ -> m
             | _ -> m
         ) finalState
     
@@ -57,4 +64,6 @@ let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) 
             LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
             UseBoundary = not finalState.UseAbsolute && not isZeroBoundary
             PolygonEnabled = not finalState.UseAbsolute && not isZeroBoundary }
+        |> PolygonEditor.refreshCachedStrings
+
     PolygonEditor.FreshlyImported finalStateWithBoundary
