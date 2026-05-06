@@ -154,10 +154,6 @@ let parseOutput (code: string) : TreeNode list =
 // SVG Visualization
 // --------------------
 
-// --------------------
-// Tree Visualization Logic (Shared)
-// --------------------
-
 type VisualElement =
     | VLine of x1:float * y1:float * x2:float * y2:float * color:string
     | VPolygon of points:string * fill:string * stroke:string
@@ -167,11 +163,11 @@ let private flattenTree (node: TreeNode) : TreeNode list =
     let rec loop n = n :: (n.Children |> List.collect loop)
     loop node
 
-let private layoutTree (node: TreeNode) (depth: int) (xRef: float ref) : TreeNode =
-    let horizontalSpacing = 100.0
-    let verticalSpacing = 70.0
+let rec private layoutTreeViz (node: TreeNode) (depth: int) (xRef: float ref) : TreeNode =
+    let horizontalSpacing = 70.0
+    let verticalSpacing = 55.0 // 40 (height) + 15 (gap)
 
-    let laidOutChildren = node.Children |> List.map (fun child -> layoutTree child (depth + 1) xRef)
+    let laidOutChildren = node.Children |> List.map (fun child -> layoutTreeViz child (depth + 1) xRef)
 
     let x =
         if laidOutChildren.IsEmpty then
@@ -182,38 +178,48 @@ let private layoutTree (node: TreeNode) (depth: int) (xRef: float ref) : TreeNod
 
     { node with X = x; Y = float depth * verticalSpacing; Children = laidOutChildren }
 
-let private generateVisualElements (root: TreeNode) (colorMap: Map<string, string>) : VisualElement list * (float * float * float * float) =
-    let root = layoutTree root 0 (ref 100.0)
+let private calculateTreeBoundsWithNodes (root: TreeNode) =
+    let root = layoutTreeViz root 0 (ref 100.0)
     let nodes = flattenTree root
-
-    let margin = 100.0
+    let margin = 50.0
     let minX = nodes |> List.map (fun n -> n.X) |> List.min
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
     let minY = nodes |> List.map (fun n -> n.Y) |> List.min
     let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
-
     let contentW = maxX - minX + 2.0 * margin
     let contentH = maxY - minY + 2.0 * margin
-    
-    // Standard viewport for consistent scaling
-    let standardW = 1200.0
-    let standardH = 750.0
-    
-    let vbW = Math.Max(standardW, contentW)
-    let vbH = Math.Max(standardH, contentH)
-    
-    let offsetX = (vbW - contentW) / 2.0
-    let offsetY = (vbH - contentH) / 2.0
-    let vbX = minX - margin - offsetX
-    let vbY = minY - margin - offsetY
+    let vbX = minX - margin
+    let vbY = minY - margin
+    ((vbX, vbY, contentW, contentH), nodes)
 
-    let bounds = (vbX, vbY, vbW, vbH)
+let calculateTreeBounds (root: TreeNode) =
+    let root = layoutTreeViz root 0 (ref 100.0)
+    let nodes = flattenTree root
+    let margin = 50.0
+    let minX = nodes |> List.map (fun n -> n.X) |> List.min
+    let maxX = nodes |> List.map (fun n -> n.X) |> List.max
+    let minY = nodes |> List.map (fun n -> n.Y) |> List.min
+    let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
+    (maxX - minX + 2.0 * margin, maxY - minY + 2.0 * margin)
+
+let private generateVisualElements (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) : VisualElement list * (float * float * float * float) =
+    let (bounds, nodes) = calculateTreeBoundsWithNodes root
+    let (vbX, vbY, vbW, vbH) = bounds
+    
+    let finalW = forcedW |> Option.defaultValue vbW
+    let finalH = forcedH |> Option.defaultValue vbH
+    
+    let ox = (finalW - vbW) / 2.0
+    let oy = (finalH - vbH) / 2.0
+    
+    let finalBounds = (vbX - ox, vbY - oy, finalW, finalH)
     
     let elements = [
         // Render Connections
         for node in nodes do
             for child in node.Children do
-                yield VLine(node.X, node.Y, child.X, child.Y, "#ccc")
+                // End at the pointy top (cy - 20) of children and start at pointy bottom (cy + 20) of parent
+                yield VLine(node.X, node.Y + 20.0, child.X, child.Y - 20.0, "#ccc")
 
         // Render Nodes
         for node in nodes do
@@ -222,13 +228,10 @@ let private generateVisualElements (root: TreeNode) (colorMap: Map<string, strin
             
             // Highlight Elevated nodes (extrusion <> 3.0)
             let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
-            let stroke = 
-                if isElevated then "#4a90e2" // Highlight blue for elevated
-                elif fill = "white" then "#999" 
-                else "rgba(0,0,0,0.15)"
+            let stroke = "none"
             
-            // Draw Hexagon (width 70, height 40)
-            let w, h = 70.0, 40.0
+            // Draw Hexagon (width 50, height 40)
+            let w, h = 50.0, 40.0
             let cx, cy = node.X, node.Y
             let pts = sprintf "%f,%f %f,%f %f,%f %f,%f %f,%f %f,%f" 
                         cx (cy - h/2.0)
@@ -247,18 +250,18 @@ let private generateVisualElements (root: TreeNode) (colorMap: Map<string, strin
             yield VText(node.X, node.Y + 11.0, 9, "middle", weightColor, node.Weight)
     ]
     
-    elements, bounds
+    elements, finalBounds
 
 // --------------------
 // UI Rendering (Bolero)
 // --------------------
 
-type private svLin = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${st}" stroke-width="1.5" stroke-linecap="round" />""">
-type private svPol = Template<"""<polygon points="${pts}" fill="${fl}" stroke="${st}" stroke-width="1.5" />""">
+type private svLin = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${st}" stroke-width="0.8" stroke-linecap="round" />""">
+type private svPol = Template<"""<polygon points="${pts}" fill="${fl}" stroke="${st}" stroke-width="0" />""">
 type private svTxt = Template<"""<text x="${x}" y="${y}" font-size="${sz}" text-anchor="${ta}" font-family="'Outfit', sans-serif" dominant-baseline="middle" fill="${fl}">${nm}</text>""">
 
 let viewTreeSvg (root: TreeNode) (colorMap: Map<string, string>) : Node =
-    let elements, (vbX, vbY, vbW, vbH) = generateVisualElements root colorMap
+    let elements, (vbX, vbY, vbW, vbH) = generateVisualElements root colorMap None None
     
     svg {
         "viewBox" => sprintf "%f %f %f %f" vbX vbY vbW vbH
@@ -299,18 +302,19 @@ let viewCodeGraphFromString (code: string) : Node =
 // String Rendering (Report)
 // --------------------
 
-let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) : string =
-    let elements, (vbX, vbY, vbW, vbH) = generateVisualElements root colorMap
+let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) =
+    let elements, bounds = generateVisualElements root colorMap forcedW forcedH
+    let (vx, vy, vw, vh) = bounds
     let sb = System.Text.StringBuilder()
     
-    sprintf """<svg viewBox="%f %f %f %f" xmlns="http://www.w3.org/2000/svg" width="100%%" height="100%%" style="background: #fafafa; border-radius: 12px;">""" vbX vbY vbW vbH |> sb.AppendLine |> ignore
+    sprintf """<svg viewBox="%f %f %f %f" xmlns="http://www.w3.org/2000/svg" width="100%%" height="auto" style="background: #fafafa; border-radius: 12px; max-height: 100%%;">""" vx vy vw vh |> sb.AppendLine |> ignore
     
     for el in elements do
         match el with
         | VLine(x1, y1, x2, y2, st) ->
-            sprintf """<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="%s" stroke-width="1.5" stroke-linecap="round" />""" x1 y1 x2 y2 st |> sb.AppendLine |> ignore
+            sprintf """<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="%s" stroke-width="0.8" stroke-linecap="round" />""" x1 y1 x2 y2 st |> sb.AppendLine |> ignore
         | VPolygon(pts, fl, st) ->
-            sprintf """<polygon points="%s" fill="%s" stroke="%s" stroke-width="1.5" />""" pts fl st |> sb.AppendLine |> ignore
+            sprintf """<polygon points="%s" fill="%s" stroke="none" stroke-width="0" />""" pts fl |> sb.AppendLine |> ignore
         | VText(x, y, sz, ta, fl, nm) ->
             sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz ta fl nm |> sb.AppendLine |> ignore
             
