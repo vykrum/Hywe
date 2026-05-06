@@ -177,11 +177,22 @@ let svgToCartesian (sqn: Hexel.Sqn) (x: float, y: float) =
     match sqn with
     | Hexel.Vertical -> 
         let cartX = x + (0.5 * (y % 2.0))
-        let cartY = y * 0.866
+        let cartY = y * 1.0
         (cartX, cartY)
     | Hexel.Horizontal ->
-        let cartX = x * 0.866
+        let cartX = x * 1.0
         let cartY = y + (0.5 * (x % 2.0))
+        (cartX, cartY)
+
+let toCartesian (sqn: Hexel.Sqn) (x: int, y: int) =
+    match sqn with
+    | Hexel.Vertical -> 
+        let cartX = float x + (0.5 * float (y % 2))
+        let cartY = float y * 1.0
+        (cartX, cartY)
+    | Hexel.Horizontal ->
+        let cartX = float x * 1.0
+        let cartY = float y + (0.5 * float (x % 2))
         (cartX, cartY)
 
 let svgDedupeSequential (pts: (float * float)[]) =

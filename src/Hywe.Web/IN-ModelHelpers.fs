@@ -403,7 +403,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls fAdj (model.Derived.cxRto1 |> Array.tryItem elv |> Option.defaultValue 1.0)
+                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls fAdj (model.Derived.cxRto1 |> Array.tryItem elv |> Option.defaultValue 1.0) elv
                 }
             }
 

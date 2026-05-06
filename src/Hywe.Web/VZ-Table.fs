@@ -6,12 +6,12 @@ open Bolero.Html
 // Hywe Table
 let renderRow (cxl: Cxl) (clr: string) (avl: int) =
     // Area of each Hexel is 4 sq units
-    let hxlAreaX = 1
+    let hxlAreaX = 4
     // Required Size: (Node Size from reproportioning) * (Area Factor 4.0)
     let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
 
     // Achieved Size: (Count of generated hexels in Coxel) * (Area Factor 4.0)
-    let achSz = (Array.length cxl.Hxls)*hxlAreaX
+    let achSz = (Array.length cxl.Hxls) * hxlAreaX
     let opnSz = avl * hxlAreaX
     let achCl = if achSz < reqSz then "red" else "#646464"
     let avlCl = if avl < 1 then "red" else "#646464"
@@ -26,7 +26,7 @@ let renderRow (cxl: Cxl) (clr: string) (avl: int) =
     }
 
 let viewHyweTable (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) =
-    let hxlAreaX = 1
+    let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> (prpVlu c.Size |> int) * hxlAreaX)
     let totalAch = cxCxl1 |> Array.sumBy (fun c -> (Array.length c.Hxls) * hxlAreaX)
 

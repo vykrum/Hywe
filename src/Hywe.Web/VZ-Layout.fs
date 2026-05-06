@@ -121,9 +121,25 @@ let svgCoxels
                     let (cx, cy) = svgToCartesian s p
                     cx * float scl, cy * float scl)
             ) sqn crd
+
         // --- Coordinate Transformation & Offsetting ---
+        let fallbackSqn = Hexel.VRCCNE 
+        let activeSqn = 
+            cxl 
+            |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
+            |> Option.map (fun c -> c.Seqn)
+            |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
+
+        // Calculate scaled boundary points to include in bounds
+        let bdrPoints = 
+            bdr |> Array.collect (fun pts ->
+                pts |> Array.map (fun (x, y) -> 
+                    let (cx, cy) = toCartesian activeSqn (x, y)
+                    cx * float scl, cy * float scl)
+            )
+
         // Calculate global shifts to normalize the layout within the SVG viewport
-        let allPoints = Array.concat crd1
+        let allPoints = Array.concat [| Array.concat crd1; bdrPoints |]
         match allPoints with
         | [||] -> div { attr.style "padding: 20px; color: #888; font-family: 'Outfit', system-ui, sans-serif;"; text "Base Unavailable" }
         | _ ->
@@ -145,7 +161,7 @@ let svgCoxels
             // Labels
             let lPs = Array.map(fun a -> 
                                         let gx, gy = cxlCnt a
-                                        let x, y = Geometry.toCartesian a.Seqn (gx, gy)
+                                        let x, y = toCartesian a.Seqn (gx, gy)
                                         (x * float scl) + shfX, (y * float scl) + shfY) cxl
             let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
 
@@ -180,7 +196,7 @@ let svgCoxels
                                 |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
                                 |> Option.map (fun c -> c.Seqn)
                                 |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
-                            let (cx, cy) = Geometry.toCartesian activeSqn (x, y)
+                            let (cx, cy) = toCartesian activeSqn (x, y)
                             [| (cx * float scl) + shfX; (cy * float scl) + shfY |])
                         |> Array.concat
                         |> Array.map string

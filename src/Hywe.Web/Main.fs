@@ -148,14 +148,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newSqn = indexToSqn i
         let currentLevel = model.Tree.ActiveLevel
 
-        let newSqns = 
-            if currentLevel = 0 then
-                let treeMax = if model.Tree.Levels.IsEmpty then 0 else model.Tree.Levels.Keys |> Seq.max
-                let strMax = model.SrcOfTrth.Split(';', StringSplitOptions.None).Length - 1
-                let maxLvl = max treeMax strMax
-                (model.Sequences, [0..maxLvl]) ||> List.fold (fun m l -> Map.add l newSqn m)
-            else
-                model.Sequences |> Map.add currentLevel newSqn
+        let newSqns = model.Sequences |> Map.add currentLevel newSqn
 
         let updatedSrc = 
             match model.EditorMode with
@@ -169,14 +162,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
-                if currentLevel = 0 then
-                    let levelsCount = splitIntoLevels model.SrcOfTrth |> Array.length
-                    let mutable s = model.SrcOfTrth
-                    for l in 0 .. levelsCount - 1 do
-                        s <- injectSqn s l newSqn
-                    s
-                else
-                    injectSqn model.SrcOfTrth currentLevel newSqn
+                injectSqn model.SrcOfTrth currentLevel newSqn
 
         Storage.autoSave js updatedSrc |> ignore
 
@@ -319,9 +305,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let model = if shouldPush then pushUndo model else model
             let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
         
+            // Synchronize sequences map with all levels in the tree
+            let newSqns = 
+                (model.Sequences, updatedTree.Levels.Keys)
+                ||> Seq.fold (fun m lvl ->
+                    match Map.containsKey lvl m with
+                    | true -> m
+                    | false -> 
+                        // Inherit from parent (lvl-1) if possible, else default to 11 (VRCCNE)
+                        let parentSqn = m |> Map.tryFind (lvl - 1) |> Option.defaultValue "VRCCNE"
+                        Map.add lvl parentSqn m
+                )
+
             let newOutput = NodeCode.getOutput
                                  updatedTree
-                                 model.Sequences
+                                 newSqns
                                  model.PolygonExport.Width
                                  model.PolygonExport.Height
                                  model.PolygonExport.AbsStr
@@ -338,6 +336,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let modelWithTree = 
                 { model with 
                     Tree = updatedTree 
+                    Sequences = newSqns
                     SrcOfTrth = newOutput 
                     NeedsHyweave = if isMoving then model.NeedsHyweave else true
                     EditsCount = nextCount

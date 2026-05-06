@@ -40,8 +40,8 @@ let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) 
         let attrs, _ = processLevel lvl
         finalState <- attrs |> Map.fold (fun (m: PolygonEditor.PolygonEditorModel) key v ->
             match key with
-            | "W" -> match v with | Float num -> { m with LogicalWidth = num * 10.0 } | _ -> m
-            | "H" -> match v with | Float num -> { m with LogicalHeight = num * 10.0 * 0.866 } | _ -> m
+            | "W" -> match v with | Float num -> { m with LogicalWidth = (max 10.0 num) * 10.0 } | _ -> m
+            | "H" -> match v with | Float num -> { m with LogicalHeight = (max 10.0 num) * 10.0 } | _ -> m
             | "L" -> match v with | Float num -> { m with Elevation = int num } | _ -> m
             | "S" -> { m with BaseStr = v }
             | "X" -> { m with UseAbsolute = (v = "1") }
@@ -63,11 +63,13 @@ let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) 
     let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
     
     let finalStateWithBoundary = 
+        let isBoundary = not finalState.UseAbsolute && not isZeroBoundary
         { finalState with 
+            Outer = if Array.isEmpty finalState.Outer then PolygonEditor.initOuter else finalState.Outer
             LogicalWidth = if finalState.LogicalWidth <= 0.0 then 300.0 else finalState.LogicalWidth
             LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
-            UseBoundary = not finalState.UseAbsolute && not isZeroBoundary
-            PolygonEnabled = not finalState.UseAbsolute && not isZeroBoundary }
+            UseBoundary = isBoundary
+            PolygonEnabled = isBoundary }
         |> PolygonEditor.refreshCachedStrings
 
     PolygonEditor.FreshlyImported finalStateWithBoundary
