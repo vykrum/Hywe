@@ -73,7 +73,7 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     let polygons = 
         shapes |> Array.map (fun shp ->
             let pts = getPoints shp.points
-            sprintf """<polygon points="%s" fill="%s" stroke="#000" stroke-width="0.2" stroke-opacity="0.3" opacity="0.75" />""" pts shp.color
+            sprintf """<polygon points="%s" fill="%s" opacity="0.75" />""" pts shp.color
         ) |> String.concat ""
         
     let boundaries = 
@@ -87,7 +87,7 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
                     maxY <- max maxY fy
                     sprintf "%f,%f" fx fy
                 ) |> String.concat " "
-            sprintf """<polygon points="%s" fill="none" stroke="#000" stroke-width="0.5" opacity="0.1" />""" pts
+            sprintf """<polygon points="%s" fill="none" stroke="#000" stroke-width="0.1" opacity="0.1" />""" pts
         ) |> String.concat ""
         
     if shapes.Length = 0 && cxOuIl.Length = 0 then
