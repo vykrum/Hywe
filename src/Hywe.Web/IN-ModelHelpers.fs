@@ -120,7 +120,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         attr.title (match model.EditorMode with | Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
                         on.click (fun _ -> dispatch ToggleEditorMode)
                         match model.EditorMode with
-                        | Syntax -> rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
+                        | Syntax -> rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M 12 4 L 20 8 L 20 16 L 12 20 L 4 16 L 4 8 Z"></path></svg>"""
                         | Interactive -> rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
                     }
 
@@ -185,6 +185,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     attr.style "position: fixed; top: 43px; right: 10px; z-index: 5001; pointer-events: auto; display: flex; align-items: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
+                        attr.title "Install as an App"
                         attr.style "display: flex; align-items: center; gap: 2px; padding: 1px 4px; border: 1px solid rgba(0,0,0,0.1); background: transparent; box-shadow: none; opacity: 0.6; transition: opacity 0.2s ease;"
                         on.click (fun _ -> 
                             dispatch InstallRequested

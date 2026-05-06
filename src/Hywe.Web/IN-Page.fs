@@ -1,6 +1,12 @@
 module Page
 
+open System
 open Bolero.Html
+open Hywe.Core
+
+/// <summary> Helper to parse a sequence name string into a Sqn type. </summary>
+let parseSqn (name: string) =
+    Hexel.sqnArray |> Array.tryFind (fun x -> (sprintf "%A" x).Equals(name, StringComparison.OrdinalIgnoreCase))
 
 /// <summary> Specifies the currently visible configuration panel. </summary>
 type ActivePanel =

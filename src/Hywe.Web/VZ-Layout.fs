@@ -11,6 +11,7 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Graphics
+open Page
 
 /// Point-in-polygon
 let pointInPolygon 
@@ -357,15 +358,32 @@ let alternateConfigurations
     let svgPadding = 20.0 
     
     // 2. SCALE MATH
-    let getMax getter =
-        match Array.isEmpty configs with
-        | true -> 1.0
-        | false -> 
-            let m = configs |> Array.map getter |> Array.max
-            match m <= 0.0 with | true -> 1.0 | false -> m
+    let getBounds (c: BatchConfgrtns) =
+        let sqn = 
+            match Page.parseSqn c.sqnName with
+            | Some s -> s
+            | None -> Hexel.VRCCNE
+        
+        // Include both shape points and boundary points
+        let allPts = 
+            c.shapes |> Array.collect (fun s -> s.points |> Array.chunkBySize 2 |> Array.map (fun p -> p.[0], p.[1]))
+        
+        let bdrPts = 
+            c.cxOuIl |> Array.collect (fun poly -> 
+                poly |> Array.map (fun (x, y) -> svgToCartesian sqn (float x, float y)))
+        
+        let combined = Array.concat [| allPts; bdrPts |]
+        if combined.Length = 0 then 1.0, 1.0
+        else
+            let minX = combined |> Array.map fst |> Array.min
+            let maxX = combined |> Array.map fst |> Array.max
+            let minY = combined |> Array.map snd |> Array.min
+            let maxY = combined |> Array.map snd |> Array.max
+            maxX - minX, maxY - minY
 
-    let maxW = getMax (fun c -> c.w)
-    let maxH = getMax (fun c -> c.h)
+    let allBounds = configs |> Array.map getBounds
+    let maxW = if allBounds.Length > 0 then allBounds |> Array.map fst |> Array.max else 1.0
+    let maxH = if allBounds.Length > 0 then allBounds |> Array.map snd |> Array.max else 1.0
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
     // 3. LEGEND MATH
@@ -422,12 +440,22 @@ let alternateConfigurations
             // --- THE GRID ---
             for i in 0 .. (configs.Length - 1) do
                 let cfg = configs.[i]
+                let sqn = match Page.parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
                 let col, row = i % cols, i / cols
                 let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
                 let isSelected = selectedIndex = Some i
 
                 elt "g" {
+                    // 1. BOUNDARY
+                    for poly in cfg.cxOuIl do
+                        let xy = poly 
+                                 |> Array.map (fun (x,y) -> svgToCartesian sqn (float x, float y))
+                                 |> Array.map (fun (x,y) -> $"{ox + x * scale},{oy + y * scale}")
+                                 |> String.concat " "
+                        plgn().pt(xy).cl("none").st("#000000").sw("0.1").op("0.1").Elt()
+
+                    // 2. SHAPES
                     for j, s in cfg.shapes |> Array.indexed do
                         // Filter: Only show if polygon has points
                         if not (Array.isEmpty s.points) then
