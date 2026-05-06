@@ -298,10 +298,10 @@ module Coxel =
         {| Base = cxl.Base; Hxls = cxl.Hxls; Core = rv01 |> fst; Prph = pr02; Brdr = br01; Avbl = av01 |}  
 
     /// <summary> Coxel Offseted Boundary Wrap </summary>
-    let (|Collinear|Turning|) (p1: float * float, p2: float * float, p3: float * float) =
+    let (|Collinear|Turning|) (p1: int * int, p2: int * int, p3: int * int) =
         let (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3
         let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-        if System.Math.Abs(crossProduct) < 0.0001 then Collinear else Turning
+        if crossProduct = 0 then Collinear else Turning
 
     let cxlPrm (cxl : Cxl) (elv : int) =
         let rec clean points =
@@ -322,7 +322,7 @@ module Coxel =
             |> Array.choose (fun n -> 
                 let (ix, iy, _) = hxlCrd n
                 if insideSet.Contains(AV(ix, iy, elv)) then
-                    Some ( (float ox + float ix) / 2.0, (float oy + float iy) / 2.0 )
+                    Some ( (ox + ix) / 2, (oy + iy) / 2 )
                 else None)
         )
         |> Array.distinct

@@ -6,8 +6,6 @@ open Bolero
 open Bolero.Html
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Web
-open Hywe.Core
-open Hywe.Core.Hexel
 
 // --------------------
 // Data Structures
@@ -27,6 +25,9 @@ type SvgInfo =
     { ViewBoxX: float; ViewBoxY: float; ViewBoxW: float; ViewBoxH: float
       ClientLeft: float; ClientTop: float; ClientW: float; ClientH: float }
 
+/// Float-based point for SVG/UI coordinate mapping (presentation layer only).
+type SvgPoint = { SvgX: float; SvgY: float }
+
 type ConfirmAction = 
     | Delete 
     | Elevate 
@@ -43,7 +44,7 @@ type SubModel =
       PendingDragId: System.Guid option
       DropTargetId: System.Guid option
       SvgInfo: SvgInfo option
-      PointerDownPos: Point option
+      PointerDownPos: SvgPoint option
       LastMoveMs: float option
       TopExtrusion: float }
 
@@ -62,7 +63,7 @@ type SubMsg =
     | PointerDown of MouseEventArgs
     | PointerMove of MouseEventArgs
     | PointerUp
-    | DragStartInternal of System.Guid * SvgInfo * Point
+    | DragStartInternal of System.Guid * SvgInfo * SvgPoint
     | PointerUpInternal
 
 type svLn = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>""">
@@ -191,9 +192,9 @@ let getSvgInfo (js: IJSRuntime) =
         }
     }
 
-let toSvgCoords (info: SvgInfo) (clientX: float) (clientY: float) : Point =
-    { X = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
-      Y = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH }
+let toSvgCoords (info: SvgInfo) (clientX: float) (clientY: float) : SvgPoint =
+    { SvgX = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
+      SvgY = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH }
 
 // --------------------
 // Update
@@ -335,8 +336,8 @@ let updateSub (js: IJSRuntime) msg model =
         { model with PointerDownPos = None; PendingDragId = None }, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
             let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
             let rec findNode node =
-                if pt.X >= node.X - 30.0 && pt.X <= node.X + 30.0 &&
-                   pt.Y >= node.Y - 35.0 && pt.Y <= node.Y + 25.0 then Some node.Id
+                if pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
+                   pt.SvgY >= node.Y - 35.0 && pt.SvgY <= node.Y + 25.0 then Some node.Id
                 else node.Children |> List.tryPick findNode
             let hitId = findNode currentTree
             match hitId with
@@ -353,8 +354,8 @@ let updateSub (js: IJSRuntime) msg model =
                 let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
                 let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
                 let rec findNode node =
-                    if pt.X >= node.X - 30.0 && pt.X <= node.X + 30.0 &&
-                       pt.Y >= node.Y - 35.0 && pt.Y <= node.Y + 25.0 then Some node.Id
+                    if pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
+                       pt.SvgY >= node.Y - 35.0 && pt.SvgY <= node.Y + 25.0 then Some node.Id
                     else node.Children |> List.tryPick findNode
                 
                 let targetId = findNode currentTree
@@ -364,8 +365,8 @@ let updateSub (js: IJSRuntime) msg model =
                 match model.PendingDragId, model.PointerDownPos with
                 | Some pendingId, Some startPt ->
                     let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
-                    let dx = pt.X - startPt.X
-                    let dy = pt.Y - startPt.Y
+                    let dx = pt.SvgX - startPt.SvgX
+                    let dy = pt.SvgY - startPt.SvgY
                     let dist = sqrt (dx*dx + dy*dy)
                     if dist > 5.0 then
                         { model with DraggingId = Some pendingId; PendingDragId = None; LastMoveMs = Some nowMs }, Cmd.none
@@ -704,6 +705,8 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         }
     }
 
+open Hywe.Core.Parse
+
 // --------------------
 // Serialization & Initialization
 // --------------------
@@ -716,8 +719,6 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
         }
     
     let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
-    
-    // Calculate cumulative elevations
     let elevations = getElevations model
 
     let allLvlNodes = 
@@ -747,45 +748,40 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
                 let tAttr = 
                     if lvl = maxLevel then 
                         let tVal = model.TopExtrusion
-                        if tVal = floor tVal then $"T={int tVal}" else $"T={tVal}" 
+                        match tVal = floor tVal with true -> $"/T={int tVal}" | false -> $"/T={tVal}" 
                     else ""
                 let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
                 let attrs = 
-                    if lvl = 0 then 
-                        $"0/Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/O={o}/I={i}/{tAttr}".TrimEnd('/')
-                    else
-                        $"0/Q={qVal}/L={lStr}/E={eVal}/{tAttr}".TrimEnd('/')
+                    match lvl = 0 with
+                    | true -> $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/O={o}/I={i}{tAttr}"
+                    | false -> $"Q={qVal}/L={lStr}/E={eVal}{tAttr}"
 
                 let body = lvlNodes |> List.map (fun (n, p) -> 
-                    let extrStr = if n.Extrusion = 3.0 then "" else $"/{n.Extrusion}"
-                    $"({p}/{n.Weight}/{n.Name}{extrStr})") |> String.concat ", "
-                Some $"| ({attrs}), {body} |"
+                    let extrStr = match n.Extrusion = 3.0 with true -> "" | false -> $"/{n.Extrusion}"
+                    $"({p}/{n.Weight}/{n.Name}{extrStr})") |> String.concat ""
+                
+                let marker = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                Some $"{marker}({attrs}){body}"
         )
     
-    String.concat " ; " segments
+    String.concat "" segments
 
 let buildTreeMap (input: string) =
-    let levels = input.Split(';', StringSplitOptions.RemoveEmptyEntries)
+    let levels = splitIntoLevels input
     
     let allParts = 
-        levels |> Array.mapi (fun i lvl ->
-            let clean = lvl.Trim().Trim('|').Trim()
-            let firstBlock = clean.Split(')', 2) |> Array.head |> fun s -> s.Trim('(', ' ')
-            let isAttrs = firstBlock.StartsWith "0/"
+        levels |> Array.mapi (fun i levelData ->
+            let attrs, _ = processLevel levelData
             
-            let lValStr = if isAttrs && firstBlock.Contains("L=") then firstBlock.Split("L=").[1].Split("/").[0] else "0"
-            let lVal = match Double.TryParse lValStr with true, v -> int v | _ -> 0
-            
-            let tValStr = if isAttrs && firstBlock.Contains("T=") then firstBlock.Split("T=").[1].Split("/").[0] else "3.0"
-            let tVal = match Double.TryParse tValStr with true, v -> v | _ -> 3.0
+            let lVal = attrs |> Map.tryFind "L" |> Option.bind (function Float v -> Some (int v) | _ -> None) |> Option.defaultValue 0
+            let tVal = attrs |> Map.tryFind "T" |> Option.bind (function Float v -> Some v | _ -> None) |> Option.defaultValue 3.0
+            let sVal = attrs |> Map.tryFind "S"
+            let eVal = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
 
-            let sVal = if isAttrs && firstBlock.Contains("S=") then Some (firstBlock.Split("S=").[1].Split("/").[0]) else None
-            let eVal = if isAttrs && firstBlock.Contains("E=") then firstBlock.Split("E=").[1].Split("/").[0] else "0"
-
-            let nodesStr = if isAttrs then clean.Split(')', 2) |> Array.last |> fun s -> s.Trim(',', ' ') else clean
-            let nodes = nodesStr.Split("),", StringSplitOptions.RemoveEmptyEntries)
-                        |> Array.map (fun s -> s.Trim([| '('; ')'; ' ' |]))
-                        |> Array.filter (fun s -> not (s.StartsWith "0/") && not (String.IsNullOrWhiteSpace s))
+            let nodes = 
+                levelData.Blocks 
+                |> Array.skip 1 // skip attrs
+                |> Array.filter (fun s -> not (String.IsNullOrWhiteSpace s))
             
             (i, tVal, sVal, nodes, eVal)
         )
@@ -797,7 +793,10 @@ let buildTreeMap (input: string) =
                 let path = bits.[0].Split('.') |> Array.map int |> Array.toList
                 let weight = bits.[1]
                 let name = bits.[2]
-                let extrusion = if bits.Length > 3 then match Double.TryParse bits.[3] with true, v -> v | _ -> 3.0 else 3.0
+                let extrusion = 
+                    if bits.Length > 3 then 
+                        match bits.[3] with Float v -> v | _ -> 3.0 
+                    else 3.0
                 (path, weight, name, extrusion, lvl)
             )
         )
@@ -812,20 +811,22 @@ let buildTreeMap (input: string) =
             nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
         |> List.map (fun (path, weight, name, extrusion, lvl) -> 
             let id = 
-                if lvl > 0 && prefix = [] then 
+                match lvl > 0 && prefix = [] with
+                | true ->
                     let _, _, _, _, eVal = allParts.[lvl]
-                    if eVal <> "0" then
+                    match eVal <> "0" with
+                    | true ->
                         match guidMap.TryGetValue((lvl - 1, eVal)) with
                         | true, parentGuid -> parentGuid
                         | _ -> Guid.NewGuid()
-                    else Guid.NewGuid()
-                else Guid.NewGuid()
+                    | false -> Guid.NewGuid()
+                | false -> Guid.NewGuid()
             let pathStr = String.Join(".", path)
             guidMap.[(lvl, pathStr)] <- id
             { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion })
 
     let levelsMap = 
-        [0 .. (if nodeData.IsEmpty then 0 else nodeData |> List.map (fun (_,_,_,_,l) -> l) |> List.max)]
+        [0 .. (match nodeData.IsEmpty with true -> 0 | false -> nodeData |> List.map (fun (_,_,_,_,l) -> l) |> List.max)]
         |> List.map (fun lvl -> 
             let root = build lvl [] |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0 }
             lvl, layoutTree root 0 (ref 50.0))
@@ -833,11 +834,12 @@ let buildTreeMap (input: string) =
 
     let levelAnchors = 
         allParts |> Array.choose (fun (lvl, _, _, _, eVal) ->
-            if lvl > 0 && eVal <> "0" then
+            match lvl > 0 && eVal <> "0" with
+            | true ->
                 match guidMap.TryGetValue((lvl - 1, eVal)) with
                 | true, guid -> Some (lvl, guid)
                 | _ -> None
-            else None
+            | false -> None
         ) |> Map.ofArray
 
     let levelsMapFinal =
@@ -845,14 +847,14 @@ let buildTreeMap (input: string) =
             let higherAnchors = levelAnchors |> Map.filter (fun k _ -> k > lvl)
             let rec update n =
                 let nLvl =
-                    higherAnchors |> Map.tryPick (fun k v -> if v = n.Id then Some k else None)
+                    higherAnchors |> Map.tryPick (fun k v -> match v = n.Id with true -> Some k | false -> None)
                     |> Option.defaultValue n.Level
                 { n with Level = nLvl; Children = n.Children |> List.map update }
             update tree
         )
 
     let topExtrusion = 
-        allParts |> Array.tryLast |> Option.map (fun (_, t, _, _, _) -> t) |> Option.defaultValue 3.0
+        match Array.tryLast allParts with Some (_, t, _, _, _) -> t | None -> 3.0
 
     levelsMapFinal, levelAnchors, topExtrusion
 

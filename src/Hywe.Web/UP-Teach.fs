@@ -9,6 +9,7 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open ExportFormats
+open Cache
 
 let generateSuggestion (model: Model) =
     let tree = model.Tree
@@ -57,12 +58,13 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         Some ({ model with UserDescription = d }, Cmd.none)
     | SuggestDescription -> 
         Some ({ model with UserDescription = generateSuggestion model }, Cmd.none)
-    | RecordResult success ->
+    | RecordResult (success, cache) ->
         let newModel = 
             { model with 
                 IsSavingToHynteract = false
                 ShowSuccessMessage = success
                 UserDescription = if success then "" else model.UserDescription 
+                LayoutCache = cache
             }
         let cmd = 
             if success then 
@@ -95,13 +97,30 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let cmd = 
             Cmd.OfAsync.perform (fun () -> async {
                 try
+                    let mutable currentCache = model.LayoutCache
                     let configMap = 
                         Hexel.sqnArray 
-                        |> Array.map (fun sqnCase -> 
+                        |> Array.indexed
+                        |> Array.map (fun (i, sqnCase) -> 
                             let key = sprintf "%A" sqnCase
                             let data = 
                                 try 
-                                    ExportFormats.generateHynteractPayload currentSrc sqnCase currentOuter currentIslands model.PolygonExport.EntryStr [||]
+                                    // Try to pull from any level in the cache
+                                    let cached = 
+                                        model.Tree.Levels.Keys 
+                                        |> Seq.tryPick (fun lvl -> Cache.get lvl i currentCache)
+                                    
+                                    match cached with
+                                    | Some c -> 
+                                        ExportFormats.generateHynteractPayloadFromCxls c.cxCxl1
+                                    | None -> 
+                                        // Compute and UPDATE LOCAL CACHE for all levels
+                                        let fullData = Cache.computeFullLayout currentSrc sqnCase model.PolygonExport 0
+                                        for lvl in model.Tree.Levels.Keys do
+                                            let config = Cache.fromFullLayout fullData sqnCase lvl
+                                            currentCache <- Cache.update lvl i config currentCache
+                                        
+                                        ExportFormats.generateHynteractPayloadFromCxls (let cxls, _, _, _ = fullData in cxls)
                                 with ex -> 
                                     printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
                                     "" 
@@ -127,11 +146,11 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                         js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() 
                         |> Async.AwaitTask
                     
-                    return success
+                    return success, currentCache
                 
                 with ex -> 
                     printfn "Critical Recording Failure: %s" ex.Message
-                    return false
-            }) () RecordResult
+                    return false, model.LayoutCache
+            }) () (fun (res, cache) -> RecordResult (res, cache))
         Some (newModel, cmd)
     | _ -> None

@@ -10,113 +10,7 @@ open ModelTypes
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Geometry
-///
-
-type hxgn = Template<
-      """ <polygon 
-      points="${pt}" 
-      fill="${cl}"
-      stroke="${cl}"
-      transform="translate${tr}"
-      opacity = "0.75"
-      stroke-opacity="0.175"
-      >""">
-
-type plgn = Template<
-        """ <polygon 
-        points="${pt}" 
-        fill="${cl}"
-        stroke="${st}"
-        stroke-width="${sw}"
-        opacity = "${op}"
-        >""">
-
-type svln = Template<
-        """<line
-        x1 = "${x1}"
-        y1 = "${y1}"
-        x2 = "${x2}"
-        y2 = "${y2}"
-        stroke = "${cl}"
-        stroke-width = "1"
-        opacity = "0.5"
-        >""">
-
-type crPh = Template<
-            """<path
-            id = "${pathid}"
-            fill = "none"
-            d="M ${sx},${sy}
-           A ${r},${r} 0 1,1 ${ex},${ey}
-           A ${r},${r} 0 1,1 ${sx},${sy}"
-            >""">
-
-type crCl = Template<
-    """<circle
-        cx="${cx}" 
-        cy="${cy}" 
-        r="5" 
-        fill="${cl}" />""">
-
-type crTx = Template<
-    """<text
-        id="${pth}"
-        font-weight="${fw}"
-        fill="${fl}"
-        text-decoration="${td}"
-        font-size="10px"
-        font-family="Outfit, system-ui, sans-serif"
-        text-anchor="middle"
-        style="text-transform: lowercase">
-        <textPath
-            href="#${pth}"
-            letter-spacing="0.5px"
-            startOffset="50%">
-            ${nm}
-        </textPath>
-    </text>""">
-
-type svtx = Template<
-        """<text 
-        x="${xx}" 
-        y="${yy}"
-        width = "50px"
-        font-size = "10px"
-        font-family="Outfit, system-ui, sans-serif"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        fill = "#808080"
-        opacity = "1"
-        >${nm}</text> """>
-
-///
-
-/// Polygon centroid
-let polygonCentroid 
-    (poly: (float * float)[]) =
-    match poly with
-    | [||] -> 0.0, 0.0
-    | [| p |] -> p
-    | _ ->
-        let n = poly.Length
-        let (sx, sy, a) =
-            [| 0 .. n - 1 |]
-            |> Array.fold (fun (accSx, accSy, accA) i ->
-                let (x1, y1) = poly.[i]
-                let (x2, y2) = poly.[(i + 1) % n]
-                let cross = x1 * y2 - x2 * y1
-                (accSx + (x1 + x2) * cross,
-                 accSy + (y1 + y2) * cross,
-                 accA + cross)
-            ) (0.0, 0.0, 0.0)
-
-        if Math.Abs(a) < 0.001 then 
-            let avgX = poly |> Array.averageBy fst
-            let avgY = poly |> Array.averageBy snd
-            (avgX, avgY)
-        else 
-            (sx / (3.0 * a), sy / (3.0 * a))
+open Graphics
 
 /// Point-in-polygon
 let pointInPolygon 
@@ -205,7 +99,7 @@ let crd
 
 let svgCoxels
     (cxl : Cxl[])
-    (bdr : (float*float)[][])
+    (bdr : (int*int)[][])
     (elv : int)
     (clr : string[])
     (scl : int)
@@ -216,15 +110,15 @@ let svgCoxels
     | _ ->
         // Vertices
         let sqn = cxl |> Array.map (fun x ->x.Seqn)
-        let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
-        let crd = Array.map2 (fun a b -> Geometry.removeSawtooth a b) sqn cr1
+        let cr1 = cxl |> Array.map (fun x -> svgCxlPrm x elv) 
+        let crd = Array.map2 (fun a b -> svgCleanPolygon a b) sqn cr1
 
         // Shift and Scale Vertices
         let padd = float (5*scl)
         let crd1 = 
             Array.map2 (fun s pts -> 
                 pts |> Array.map (fun p -> 
-                    let (cx, cy) = Geometry.toCartesian s p
+                    let (cx, cy) = svgToCartesian s p
                     cx * float scl, cy * float scl)
             ) sqn crd
         // --- Coordinate Transformation & Offsetting ---
@@ -243,7 +137,7 @@ let svgCoxels
             let shfY = (-1.0 * minY1) + padd
         
             // Transform all vertices (already calculated as midpoints in cxlPrm)
-            let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) crd1
+            let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> float a+shfX, float b+shfY)x) crd1
             
             let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
             let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
@@ -251,13 +145,13 @@ let svgCoxels
             // Labels
             let lPs = Array.map(fun a -> 
                                         let gx, gy = cxlCnt a
-                                        let x, y = Geometry.toCartesian a.Seqn (float gx, float gy)
+                                        let x, y = Geometry.toCartesian a.Seqn (gx, gy)
                                         (x * float scl) + shfX, (y * float scl) + shfY) cxl
             let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
 
             svg {
                 "viewBox" => $"0 0 {wdt} {hgt}"
-                attr.``style`` (sprintf "display: block; width: 100%%; height: auto; max-width: %dpx;" wdt)
+                attr.``style`` "display: block; width: 100%; height: auto;"
                 attr.id (svgId |> Option.defaultValue "")
 
                 let prp = Array.zip crd2 clr
@@ -370,12 +264,14 @@ let getBtchCrds (cxl: Cxl[]) =
 /// Extracts high-fidelity coordinates for Geometry generation
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
     let sqn = cxl |> Array.map (fun x -> x.Seqn)
-    let cr1 = cxl |> Array.map (fun x -> cxlPrm x elv) 
+    let cr1 = cxl |> Array.map (fun x -> svgCxlPrm x elv) 
     let coords = 
         Array.map2 (fun s pts -> 
             pts 
-            |> Geometry.removeSawtooth s
-            |> Array.map (Geometry.toCartesian s)
+            |> svgCleanPolygon s
+            |> Array.map (fun p -> 
+                let (cx, cy) = svgToCartesian s p
+                cx * float scl, cy * float scl)
         ) sqn cr1
     
     // Safety check for empty geometry to prevent crash in Array.minBy
