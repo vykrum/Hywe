@@ -9,7 +9,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Include="VZ-Shaders.fs" />
+		<Compile Include="VZ-Graphics.fs" />
 		<Compile Include="VZ-ThreeD.fs" />
 		<Compile Include="IN-PolygonEditor.fs" />
 		<Compile Include="IN-NodeCode.fs" />
@@ -24,6 +24,7 @@
 		<Compile Include="VZ-Analyze.fs" />
 		<Compile Include="VZ-Report.fs" />
 		<Compile Include="VZ-Layout.fs" />
+		<Compile Include="IN-Cache.fs" />
 		<Compile Include="VZ-Help.fs" />
 		<Compile Include="VZ-Teach.fs" />
 		<Compile Include="UP-Teach.fs" />

@@ -8,6 +8,8 @@
     <Compile Include="Hexel.fs" />
     <Compile Include="Coxel.fs" />
     <Compile Include="Geometry.fs" />
-    <Compile Include="Parsing.fs" />
+    <Compile Include="Parse.fs" />
+    <Compile Include="Layout.fs" />
+    <Compile Include="Levels.fs" />
   </ItemGroup>
 </Project>

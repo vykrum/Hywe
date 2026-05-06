@@ -1,11 +1,9 @@
 module ThreeD
 
 open Hywe.Core
-open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Geometry
 open Microsoft.JSInterop
-open Shaders
+open Graphics
 
 module Mat4 =
     let create() = Array.zeroCreate<float> 16 |> fun a -> a.[0]<-1.0; a.[5]<-1.0; a.[10]<-1.0; a.[15]<-1.0; a
@@ -135,8 +133,9 @@ let extrudePolygons
     // 1. Helper: Point conversion
     let toPoly (x: Cxl) =
         let (_, _, z) = Hexel.hxlCrd x.Base
-        cxlPrm x z
-        |> Geometry.cleanPolygon x.Seqn
+        svgCxlPrm x z
+        |> svgCleanPolygon x.Seqn
+        |> Array.map (fun p -> svgToCartesian x.Seqn p)
         |> fun pts -> 
             if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
                 pts.[0 .. pts.Length - 2] 
@@ -201,17 +200,17 @@ let extrudePolygons
             let mesh = 
                 polygonMesh poly 
                 |> Array.map (Array.map (fun (x, y) -> 
-                    let (cx, cy) = Geometry.toCartesian c.Seqn (x, y)
+                    let (cx, cy) = Geometry.toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
                     [| cx; -cy |]))
             
             let edge = 
                 poly |> Array.map (fun (x, y) -> 
-                    let (cx, cy) = Geometry.toCartesian c.Seqn (x, y)
+                    let (cx, cy) = Geometry.toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
                     [| cx; -cy |])
             
             let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
             let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
-            let cx, cy = Geometry.toCartesian c.Seqn (rawCx, rawCy)
+            let cx, cy = Geometry.toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
             let centroid = [| cx; -cy; baseH + h / 2.0 |]
             
             buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)

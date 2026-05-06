@@ -3,18 +3,15 @@ module ModelTypes
 open NodeCode
 open Page
 open PolygonEditor
-open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Coxel
-
 open Hywe.Core.Coxel
 
 type DerivedData = {
     cxCxl1: Cxl[]
     cxlAvl: int[]
     cxClr1: string[]
-    cxOuIl: (float*float)[][]
+    cxOuIl: (int*int)[][]
     cxElv1: float[]
+    cxRto1: float[]
     cxAdj1: string[] * bool[][]
     cxB36: string[]
 }
@@ -26,7 +23,7 @@ type ConfirmAction =
 let elv = 0
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-04-27T00:00:00Z"
+let MODIFIED_DATE = "2026-05-07T00:00:00Z"
 
 type PolygonExportData = {
     OuterStr: string
@@ -79,7 +76,7 @@ type AppScreen =
 
 // Batch Export Types
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (float*float)[][]; cxAdj1: string[] * bool[][]; cxB36: string[] |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][]; cxB36: string[]; cxRto1: float[] |}
 
 // Report Types
 type LevelReportSections = {
@@ -101,6 +98,8 @@ type ReportOptions = {
     Captured3DImage: string option
 }
 
+type LayoutCache = Map<int, BatchConfgrtns option []>
+
 /// <summary> Central application state for the interface. </summary>
 type Model =
     {
@@ -112,6 +111,7 @@ type Model =
         LastValidTree: SubModel
         ParseError: bool
         Derived : DerivedData
+        LayoutCache : LayoutCache
         NeedsHyweave: bool
         IsHyweaving: bool
         PolygonEditor: EditorState
@@ -160,6 +160,8 @@ type Message =
     | StartHyweave
     | RunHyweave
     | FinishHyweave
+    | HyweaveResult of src: string * cache: LayoutCache
+    | CacheResult of lvl: int * sqnIdx: int * data: BatchConfgrtns
     | PolygonEditorMsg of PolygonEditorMessage
     | PolygonEditorUpdated of PolygonEditorModel
     | SetActivePanel of ActivePanel
@@ -168,7 +170,7 @@ type Message =
     /// <summary> Triggers the generation of the next configuration in a batch sequence. </summary>
     | GenerateNextBatchItem of int
     /// <summary> Adds a completed configuration to the accumulator and proceeds to the next item. </summary>
-    | AddBatchItem of BatchConfgrtns option
+    | AddBatchItem of BatchConfgrtns option * LayoutCache
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested
@@ -194,7 +196,7 @@ type Message =
     | UpdateMetadata of (TeachMetadata -> TeachMetadata)
     | SetHoveredInfo of string option
     | RecordToHynteract
-    | RecordResult of bool
+    | RecordResult of success: bool * cache: LayoutCache
     | StartVoiceCapture
     | OnVoiceResult
     | NextOnboardingStep
@@ -211,7 +213,7 @@ type Message =
     | Download3DSvg
     | UpdateReportOptions of (ReportOptions -> ReportOptions)
     | GenerateReport
-    | ReportGenerated of string
+    | ReportGenerated of html: string * cache: LayoutCache
     | ViewCaptured of string
     | SelectPreset of string
     | LoadBackup of string

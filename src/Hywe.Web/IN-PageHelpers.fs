@@ -4,7 +4,6 @@ open System
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Parsing
 open ModelTypes
 
 let labelPhrase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -51,7 +50,7 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
             $"rgba({r}, {g}, {b}, {opacity})"
     )
 
-let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (float*float)[][]) (cxElv1: float[]) (elv: int) : DerivedData =
+let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[]) (cxRto1: float[]) (elv: int) : DerivedData =
     let fallbackSqn = Hexel.VRCCNE 
     let activeSqn = 
         cxCxl1 
@@ -70,14 +69,9 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (float*float)[][]) (cxElv1: fl
         cxClr1 = cxClr1
         cxOuIl = cxOuIl
         cxElv1 = cxElv1
+        cxRto1 = cxRto1
         cxAdj1 = cxAdj1
         cxB36 = cxB36
     }
 
-let deriveData (stx: string) (enStr: string) (elv : int): DerivedData =
-    let bsOc = [||]
-    let cxCxl1, cxOuIl, cxElv1 = 
-        try Parsing.generateMultiLevelLayout stx enStr bsOc None None None
-        with _ -> [||], [||], [| 0.0; 3.0 |]
-    
-    deriveDataFromLayout cxCxl1 cxOuIl cxElv1 elv
+

@@ -4,10 +4,7 @@ open System
 open System.Text
 open ModelTypes
 open Hywe.Core
-open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Geometry
-open PageHelpers
 open NodeCode
 
 type PageEntry = {
@@ -40,7 +37,7 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
             if section.FlowChart then addPage "Flow Chart" 1
             if section.BatchOverview then 
                 addPage "Batch Overview" 1
-                let numPages = int (Math.Ceiling(24.0 / 8.0))
+                let numPages = int (System.Math.Ceiling(24.0 / 8.0))
                 if numPages > 1 then pageNum <- pageNum + (numPages - 1)
             if section.Variations then
                 for i = 0 to 23 do
@@ -54,7 +51,7 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
         else { p with PageNumber = p.PageNumber }
     )
 
-let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (float*float)[][]) : string =
+let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) : string =
     let sb = StringBuilder()
     let mutable minX = Double.MaxValue
     let mutable minY = Double.MaxValue
@@ -83,11 +80,12 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (float*float)[][]) : 
         cxOuIl |> Array.map (fun bdr ->
             let pts = 
                 bdr |> Array.map (fun (x,y) -> 
-                    minX <- min minX x
-                    minY <- min minY y
-                    maxX <- max maxX x
-                    maxY <- max maxY y
-                    sprintf "%f,%f" x y
+                    let fx, fy = float x, float y
+                    minX <- min minX fx
+                    minY <- min minY fy
+                    maxX <- max maxX fx
+                    maxY <- max maxY fy
+                    sprintf "%f,%f" fx fy
                 ) |> String.concat " "
             sprintf """<polygon points="%s" fill="none" stroke="#000" stroke-width="2" opacity="0.1" />""" pts
         ) |> String.concat ""

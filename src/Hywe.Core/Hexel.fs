@@ -4,7 +4,7 @@ module Hexel =
     open System
 
     [<Struct>]
-    type Point = { X: float; Y: float }
+    type Point = { X: int; Y: int }
 
     /// <summary> Hexel types: Categorization based on location availabity. </summary>
     [<Struct>]
