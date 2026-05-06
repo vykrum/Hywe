@@ -16,20 +16,16 @@ module Layout =
     /// <summary> Scales node areas to fit boundary. Purely functional transformation. </summary>
     let applyReproportioning (boundaryArea: int64) (totalNodeArea: int) (rawTree: (string * int * string)[][]) (ratioOverride: float option) =
         let isUnbound = boundaryArea <= 0L
-        let reductionFactor = 0.96 
         
-        let totalRequestedHexels = float totalNodeArea
+        let totalRequestedArea = float totalNodeArea
 
         let ratio = 
             match ratioOverride with
-            | Some r -> 
-                match isUnbound || totalRequestedHexels <= 0.0 with
-                | true -> r
-                | false -> min r ((float boundaryArea / totalRequestedHexels) * reductionFactor)
+            | Some r -> r
             | None ->
-                match isUnbound || totalRequestedHexels <= 0.0 with
-                | true -> 1.0 
-                | false -> (float boundaryArea / totalRequestedHexels) * reductionFactor
+                match isUnbound || totalRequestedArea <= 0.0 with
+                | true -> 0.25
+                | false -> (float boundaryArea / (totalRequestedArea * 4.0))
         
         let tree = 
             rawTree |> Array.map (fun row ->
@@ -119,8 +115,8 @@ module Layout =
         let ntArea = polygonWithHolesArea bdOu bdIs
         let occ = Array.append initialOcc bndSet |> hxlUni 1
     
-        let totalRequested = tree |> Array.concat |> Array.distinctBy (fun (id, _, _) -> id) |> Array.sumBy (fun (_, a, _) -> a)
-        let scaledTree, finalRatio = applyReproportioning ntArea totalRequested tree ratioOverride
+        let totalRequestedArea = tree |> Array.concat |> Array.distinctBy (fun (id, _, _) -> id) |> Array.sumBy (fun (_, a, _) -> a)
+        let scaledTree, finalRatio = applyReproportioning ntArea totalRequestedArea tree ratioOverride
         let flatEntries = scaledTree |> Array.concat
     
         let result =

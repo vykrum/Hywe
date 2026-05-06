@@ -145,7 +145,7 @@ let svgCoxels
             // Labels
             let lPs = Array.map(fun a -> 
                                         let gx, gy = cxlCnt a
-                                        let x, y = Geometry.toCartesian a.Seqn (gx, gy)
+                                        let x, y = toCartesian a.Seqn (gx, gy)
                                         (x * float scl) + shfX, (y * float scl) + shfY) cxl
             let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
 
@@ -180,7 +180,7 @@ let svgCoxels
                                 |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
                                 |> Option.map (fun c -> c.Seqn)
                                 |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
-                            let (cx, cy) = Geometry.toCartesian activeSqn (x, y)
+                            let (cx, cy) = toCartesian activeSqn (x, y)
                             [| (cx * float scl) + shfX; (cy * float scl) + shfY |])
                         |> Array.concat
                         |> Array.map string

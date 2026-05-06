@@ -200,17 +200,17 @@ let extrudePolygons
             let mesh = 
                 polygonMesh poly 
                 |> Array.map (Array.map (fun (x, y) -> 
-                    let (cx, cy) = Geometry.toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
                     [| cx; -cy |]))
             
             let edge = 
                 poly |> Array.map (fun (x, y) -> 
-                    let (cx, cy) = Geometry.toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
                     [| cx; -cy |])
             
             let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
             let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
-            let cx, cy = Geometry.toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
+            let cx, cy = toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
             let centroid = [| cx; -cy; baseH + h / 2.0 |]
             
             buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)

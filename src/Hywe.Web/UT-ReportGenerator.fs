@@ -73,7 +73,7 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     let polygons = 
         shapes |> Array.map (fun shp ->
             let pts = getPoints shp.points
-            sprintf """<polygon points="%s" fill="%s" opacity="0.75" />""" pts shp.color
+            sprintf """<polygon points="%s" fill="%s" stroke="#000" stroke-width="0.2" stroke-opacity="0.3" opacity="0.75" />""" pts shp.color
         ) |> String.concat ""
         
     let boundaries = 
@@ -87,7 +87,7 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
                     maxY <- max maxY fy
                     sprintf "%f,%f" fx fy
                 ) |> String.concat " "
-            sprintf """<polygon points="%s" fill="none" stroke="#000" stroke-width="2" opacity="0.1" />""" pts
+            sprintf """<polygon points="%s" fill="none" stroke="#000" stroke-width="0.5" opacity="0.1" />""" pts
         ) |> String.concat ""
         
     if shapes.Length = 0 && cxOuIl.Length = 0 then
@@ -132,7 +132,7 @@ let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: f
     
     sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
     
-let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) : string =
+let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) (elv: int) : string =
     let sb = StringBuilder()
     sb.AppendLine("""<table class="report-table">
         <thead>
@@ -140,11 +140,13 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
         </thead>
         <tbody>""") |> ignore
         
-    let hxlAreaX = 1
+    let hxlAreaX = 4
     for i = 0 to cxls.Length - 1 do
         let cxl = cxls[i]
         let avl = if i < cxlAvl.Length then cxlAvl[i] else 0
-        let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
+        let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
+        let count = if isRootLvl0 then (prpVlu cxl.Size |> float) + 1.0 else (prpVlu cxl.Size |> float)
+        let reqSz = int (count * float hxlAreaX)
         let achSz = (Array.length cxl.Hxls) * hxlAreaX
         let opnSz = avl * hxlAreaX
         let name = (prpVlu cxl.Name).Replace("<", "&lt;").Replace(">", "&gt;")
@@ -405,7 +407,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                         |> Array.map (fun s -> s.name, s.color) 
                         |> Map.ofArray
 
-                    let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap
+                    let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap level
                     let adjMatrix = renderAdjacencyMatrix levelCxls colorMap
                     
                     sprintf tVariation (renderHeader (sprintf "%s — Level %d" (Page.labelPhrase.[i].ToString()) level) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore

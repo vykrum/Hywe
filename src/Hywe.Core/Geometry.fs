@@ -5,17 +5,6 @@ module Geometry =
     open Hexel
     open Coxel
 
-    /// <summary> Converts hexel indices to Cartesian coordinates for visual rendering. </summary>
-    let toCartesian (sqn: Sqn) (x: int, y: int) =
-        match sqn with
-        | Vertical -> 
-            let cartX = float x + (0.5 * float (y % 2))
-            let cartY = float y * 0.866
-            (cartX, cartY)
-        | Horizontal ->
-            let cartX = float x * 0.866
-            let cartY = float y + (0.5 * float (x % 2))
-            (cartX, cartY)
 
     /// <summary> Hexel Line generation using integer grid math. </summary>
     let hxlLin (sqn : Sqn) (elv : int) (stt : Hxl) (enn : Hxl) =
@@ -57,8 +46,8 @@ module Geometry =
         let pty, flt =  
             let step p1 p2 d = match p1 <= p2 with true -> [|p1 .. d .. p2|] | false -> [|p1 .. -d .. p2|]
             match seqH with
-            | true -> step sx ex 2, step sy ey 1
-            | false -> step sy ey 2, step sx ex 1
+            | true -> step sy ey 2, step sx ex 1
+            | false -> step sx ex 2, step sy ey 1
                 
         let div = 
             match Array.length pty >= Array.length flt with  
@@ -66,15 +55,15 @@ module Geometry =
                 let cnk1 = splitOddChunks (Array.length flt) pty
                 Array.mapi (fun i a -> 
                     match seqH with
-                    | true -> cnk1.[i] |> Array.map (fun b -> (b, a))
-                    | false -> cnk1.[i] |> Array.map (fun b -> (a, b))
+                    | true -> cnk1.[i] |> Array.map (fun b -> (a, b))
+                    | false -> cnk1.[i] |> Array.map (fun b -> (b, a))
                 ) flt |> Array.map (bumpEveryOther seqH) |> Array.concat
             | false -> 
                 let cnk1 = splitOddChunks (Array.length pty) flt
                 Array.mapi (fun i a -> 
                     match seqH with
-                    | true -> cnk1.[i] |> Array.map (fun b -> (a, b))
-                    | false -> cnk1.[i] |> Array.map (fun b -> (b, a))
+                    | true -> cnk1.[i] |> Array.map (fun b -> (b, a))
+                    | false -> cnk1.[i] |> Array.map (fun b -> (a, b))
                 ) pty |> Array.map dropAlternate |> Array.concat
 
         let result = div |> Array.map (fun (a,b) -> RV(a, b, sz))
@@ -87,8 +76,8 @@ module Geometry =
         if arr.Length = 0 then [||] else
         let (primary, secondary) = 
             match sqn with
-            | Vertical   -> (snd, fst)
-            | Horizontal -> (fst, snd)
+            | Vertical   -> (fst, snd)
+            | Horizontal -> (snd, fst)
 
         let result = ResizeArray<int*int>()
         let mutable i = 0
@@ -229,21 +218,21 @@ module Geometry =
         | true -> [||]
         | false ->
             let stx, sty = Array.head vtx
-            let xx, yy, _ =
-                hxlLin sqn elv (RV(0,0,elv)) (RV(stx, sty, elv))
-                |> Array.last
-                |> hxlCrd
+            let snappedStart = hxlVld sqn (RV(stx, sty, elv))
+            let xx, yy, _ = hxlCrd snappedStart
+            
             let vt1 = Array.concat [| [|xx, yy|]; Array.tail vtx |]
             let verts = cleanPolygon sqn vt1
             
             verts |> Array.fold (fun (acc: ResizeArray<Hxl>, lastOpt) pt ->
                 let (ix, iy) = pt
+                let current = hxlVld sqn (RV(ix, iy, elv))
                 match lastOpt with
                 | None -> 
-                    acc.Add(RV(ix, iy, elv))
-                    (acc, Some (RV(ix, iy, elv)))
+                    acc.Add(current)
+                    (acc, Some current)
                 | Some last ->
-                    let seg = hxlLin sqn elv last (RV(ix, iy, elv))
+                    let seg = hxlLin sqn elv last current
                     acc.AddRange(seg)
                     (acc, Some (Array.last seg))
             ) (ResizeArray<Hxl>(), None) |> fst |> (fun ra -> ra.ToArray())

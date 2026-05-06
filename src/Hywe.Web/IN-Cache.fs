@@ -10,14 +10,11 @@ module Cache
     /// Computes the full layout data for all levels.
     /// </summary>
     let computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
-        let sqnStr = sprintf "%A" sqn
-        let forcedStr = injectSqn src elv sqnStr
-        
         Levels.generateMultiLevelLayout 
-            forcedStr 
+            src 
             polyExport.EntryStr 
             [||] 
-            (Some sqn) 
+            (Some (elv, sqn)) 
             (Some polyExport.OuterStr) 
             (Some polyExport.IslandsStr)
 

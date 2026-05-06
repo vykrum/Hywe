@@ -6,12 +6,14 @@ open ModelTypes
 
 // --- INTERFACE ---
 
-let renderRow (cxl: Cxl) (clr: string) (avl: int) (ratio: float) =
-    let hxlAreaX = 1.0 / ratio
-    let reqSz = (prpVlu cxl.Size |> float)
-    let achSz = (float (Array.length cxl.Hxls)) * hxlAreaX
+let renderRow (cxl: Cxl) (clr: string) (avl: int) (ratio: float) (elv: int) =
+    let hxlAreaX = 4
+    let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
+    let count = if isRootLvl0 then (prpVlu cxl.Size |> float) + 1.0 else (prpVlu cxl.Size |> float)
+    let reqSz = count * float hxlAreaX
+    let achSz = (float (Array.length cxl.Hxls)) * float hxlAreaX
     let achCl = match achSz < (reqSz * 0.99) with | true -> "red" | false -> "#646464"
-    let avlCl = match float avl * hxlAreaX < 0.1 with | true -> "red" | false -> "#646464"
+    let avlCl = match float avl * float hxlAreaX < 0.1 with | true -> "red" | false -> "#646464"
 
     tr {
         attr.``style`` $"background-color:{clr}; height: 32px;"
@@ -38,7 +40,7 @@ let renderRow (cxl: Cxl) (clr: string) (avl: int) (ratio: float) =
         td { 
             attr.width "15%"
             attr.``style`` $"padding: 8px; text-align: center; color:{avlCl}; border: 1px solid #eee;"
-            text (sprintf "%.0f" (float avl * hxlAreaX)) 
+            text (sprintf "%.0f" (float avl * float hxlAreaX)) 
         }
     }
 
@@ -105,10 +107,13 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             }
         }
 
-let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) (ratio: float) =
-    let hxlAreaX = 1.0 / ratio
-    let totalReq = cxCxl1 |> Array.sumBy (fun c -> (prpVlu c.Size |> float))
-    let totalAch = cxCxl1 |> Array.sumBy (fun c -> (float (Array.length c.Hxls)) * hxlAreaX)
+let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) =
+    let hxlAreaX = 4
+    let totalReq = cxCxl1 |> Array.sumBy (fun c -> 
+        let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
+        let count = if isRootLvl0 then (prpVlu c.Size |> float) + 1.0 else (prpVlu c.Size |> float)
+        count * float hxlAreaX)
+    let totalAch = cxCxl1 |> Array.sumBy (fun c -> (float (Array.length c.Hxls)) * float hxlAreaX)
     
     let adjNames, adjMatrix = cxAdj1
 
@@ -145,7 +150,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                     }
                     tbody {
                         for i in 0 .. cxCxl1.Length - 1 do
-                            renderRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] ratio
+                            renderRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] ratio elv
                     }
                     tfoot {
                         tr {

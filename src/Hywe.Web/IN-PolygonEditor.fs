@@ -221,12 +221,12 @@ let isConfigurationValid (outer: Point[]) (islands: Point[][]) =
     | false -> false
 
 // ---------- Initial Constants ----------
-let initBound = 300.0, 300.0 * 0.866
+let initBound = 300.0, 300.0
 let initWidth = fst initBound
 let initHeight = snd initBound
-let initEntry = { X = 150.0; Y = 50.0 * 0.866 }
+let initEntry = { X = 150.0; Y = 50.0 }
 let initRadius = 6
-let minBound = 40.0
+let minBound = 100.0
 let maxBound = 4000.0
 let initOuter = [| { X = 0.0; Y = 0.0 }
                    { X = initWidth; Y = 0.0 }
@@ -241,7 +241,7 @@ let parsePoint (s: string) : Result<Point, string> =
     | [| x; y |] ->
         match Double.TryParse x, Double.TryParse y with
         | (true, xv), (true, yv) ->
-            Ok { X = xv * 10.0; Y = yv * 10.0 * 0.866 }
+            Ok { X = xv * 10.0; Y = yv * 10.0 }
         | _ -> Error $"Invalid point: {s}"
     | _ -> Error $"Invalid point format: {s}"
 
@@ -335,7 +335,7 @@ let ensureEntryWithin
 
 /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
 let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
-    let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Round(p.X/ 10.0))) (int (System.Math.Round(p.Y/ (10.0 * 0.866))))
+    let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Round(p.X / 10.0))) (int (System.Math.Round(p.Y / 10.0)))
 
     let outer =
         model.Outer
@@ -349,8 +349,8 @@ let exportPolygonStrings (model: PolygonEditorModel) : string * string * string 
 
     let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
     let absolute = if model.UseAbsolute then "1" else "0"
-    let w = int (System.Math.Round(model.LogicalWidth/ 10.0))
-    let h = int (System.Math.Round(model.LogicalHeight/ (10.0 * 0.866)))
+    let w = int (System.Math.Round(model.LogicalWidth / 10.0))
+    let h = int (System.Math.Round(model.LogicalHeight / 10.0))
     outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
 // ---------- Import function ----------
@@ -370,8 +370,10 @@ let importPolygonStrings
         |> Result.bind (fun islands ->
             parsePoint entryStr
             |> Result.map (fun entry ->
-                let width = if w <= 0 then initWidth else float w * 10.0
-                let height = if h <= 0 then initHeight else float h * 10.0 * 0.866
+                let width = if w <= 0 then initWidth else float (max 10 w) * 10.0
+                let height = if h <= 0 then initHeight else float (max 10 h) * 10.0
+                
+                let outer = if Array.isEmpty outer then initOuter else outer
                 let fixedEntry = ensureEntryWithin outer islands entry
 
                 { model with
@@ -422,14 +424,16 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
     match msg with
     | ToggleBoundary isChecked ->
         async { 
+            let newOuter = if isChecked && model.Outer.Length < 3 then initOuter else model.Outer
             return
                 { model with
                     UseBoundary = isChecked
                     PolygonEnabled = isChecked
+                    Outer = newOuter
                     UseAbsolute = match isChecked with
                                   | true -> false
                                   | false -> true
-                }
+                } |> refreshCachedStrings
         }
 
     | ToggleAbsolute isChecked -> async{ 
@@ -438,7 +442,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
                                         }
 
     | UpdateLogicalWidth newW -> async {
-        let safeW = if newW <= 0.0 then initWidth else max minBound (newW * 10.0)
+        let safeW = if newW <= 0.0 then initWidth else max minBound ((max 10.0 newW) * 10.0)
         let oldW = model.LogicalWidth
         let scaleX = if oldW <= 0.0 then 1.0 else safeW / oldW
 
@@ -451,7 +455,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
         }
 
     | UpdateLogicalHeight newH -> async {
-        let safeH = if newH <= 0.0 then initHeight else max minBound (newH * 10.0 * 0.866)
+        let safeH = if newH <= 0.0 then initHeight else max minBound ((max 10.0 newH) * 10.0 * 0.866)
         let oldH = model.LogicalHeight
         let scaleY = if oldH <= 0.0 then 1.0 else safeH / oldH
 
@@ -782,7 +786,7 @@ let controlAndInstructions model dispatch =
             input {
                 attr.``class`` "boundaryInput"
                 attr.``type`` "number"
-                let factor = if isHeight then 10.0 * 0.866 else 10.0
+                let factor = 10.0
                 attr.value (string (System.Math.Round(value / factor)))
                 attr.disabled (not model.UseBoundary)
                 on.change (fun ev ->
@@ -921,7 +925,7 @@ let polygonEditorSvg model dispatch =
                 let pt = model.Outer.[i]
                 let id = sprintf "outerVertex-%d" i
                 let cartX = int (System.Math.Round( pt.X / 10.0))
-                let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / (10.0 * 0.866)))
+                let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / 10.0))
                 bdrCrl()
                     .cs("outerVertex")
                     .cx(sprintf "%.1f" pt.X)
@@ -953,7 +957,7 @@ let polygonEditorSvg model dispatch =
                     let pt = island.[vertexIdx]
                     let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
                     let cartX = int (System.Math.Round( pt.X / 10.0))
-                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / (10.0 * 0.866)))
+                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / 10.0))
 
                     bdrCrl()
                         .cs("islandVertex")
