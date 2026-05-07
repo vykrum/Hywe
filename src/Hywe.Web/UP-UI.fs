@@ -8,8 +8,8 @@ open Layout
 open Storage
 open PolygonEditor
 open Hywe.Core
-open Hywe.Core.Parse
-open Hywe.Core.Zexel
+open Hywe.Core.Paxel
+open Hywe.Core.Zaxel
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open ExportFormats

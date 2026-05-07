@@ -59,4 +59,4 @@ if result.Length > 0 then
     else
         printfn "RESULT: Achieved is EQUAL to Required"
 
-printfn "Boundary Area Check: %d" (Geometry.polygonArea boundary.[0])
+printfn "Boundary Area Check: %d" (Goxel.polygonArea boundary.[0])

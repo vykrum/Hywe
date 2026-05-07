@@ -4,13 +4,13 @@ module Cache
     open ModelTypes
     open Hywe.Core
     open Hywe.Core.Coxel
-    open Hywe.Core.Parse
+    open Hywe.Core.Paxel
     
     /// <summary>
     /// Computes the full layout data for all levels.
     /// </summary>
     let computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
-        Zexel.generateMultiLevelLayout 
+        Zaxel.generateMultiLevelLayout 
             src 
             polyExport.EntryStr 
             [||] 

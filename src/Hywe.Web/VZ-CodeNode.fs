@@ -3,7 +3,7 @@ module CodeNode
 open System
 open Bolero
 open Bolero.Html
-open Hywe.Core.Parse
+open Hywe.Core.Paxel
 open NodeCode
 
 // --------------------

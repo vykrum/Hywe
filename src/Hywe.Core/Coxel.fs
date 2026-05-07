@@ -1,5 +1,11 @@
 namespace Hywe.Core
 
+/// <summary> 
+/// Coxel (Collection of Hexels) 
+/// Defines the primary building blocks of the Hygrid Woven Ensemble. 
+/// Orchestrates spatial configurations as the second stage in the hierarchy: Hexel-Coxel-Xyxel-Zaxel.
+/// </summary>
+
 module Coxel =
     open Hexel
     open System.Collections.Frozen

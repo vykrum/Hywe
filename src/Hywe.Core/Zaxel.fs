@@ -1,12 +1,17 @@
 namespace Hywe.Core
 
-/// <summary> Z refers to the vertical/level dimension. Handles multi-level layout logic. </summary>
-module Zexel =
+/// <summary> 
+/// Zaxel (Z-Axis Layout Engine) 
+/// Orchestrates collections of Xyxels to manage multi-level spatial logic and elevation-based construction. 
+/// Completes the vertical assembly as the volumetric massing stage in the hierarchy: Hexel-Coxel-Xyxel-Zaxel.
+/// </summary>
+
+module Zaxel =
     open System
     open Hexel
     open Coxel
-    open Geometry
-    open Parse
+    open Goxel
+    open Paxel
     open Xyxel
 
     /// <summary> Internal state for multi-level construction. </summary>
