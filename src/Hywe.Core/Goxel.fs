@@ -1,6 +1,12 @@
 namespace Hywe.Core
 
-module Geometry =
+/// <summary> 
+/// Goxel (Geometry Engine) 
+/// Provides geometric primitives and utilities for Hygrid shapes. 
+/// Includes line generation, polygon cleaning, area calculations, and winding normalization.
+/// </summary>
+
+module Goxel =
     open System
     open Hexel
     open Coxel

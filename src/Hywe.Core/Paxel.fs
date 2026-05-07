@@ -1,6 +1,12 @@
 namespace Hywe.Core
 
-module Parse =
+/// <summary> 
+/// Paxel (Parsing Engine) 
+/// Translates domain-specific flow-based hierarchies into Hygrid architectural structures. 
+/// Powers the F#-driven design computation sandbox.
+/// </summary>
+
+module Paxel =
     open System
     open Microsoft.FSharp.Reflection
     open Hexel

@@ -2,7 +2,7 @@ module Storage
 
 open System
 open Microsoft.JSInterop
-open Hywe.Core.Parse
+open Hywe.Core.Paxel
 
 // Shadow save for browser refresh persistence
 let autoSave (js: IJSRuntime) (content: string) =

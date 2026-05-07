@@ -1,12 +1,17 @@
 namespace Hywe.Core
 
-/// <summary> Xy refers to the XY plane of the layout. Handles core spatial distribution. </summary>
+/// <summary> 
+/// Xyxel (XY Plane Layout Engine) 
+/// Orchestrates collections of Coxels to resolve spatial distribution and boundary logic. 
+/// Handles the horizontal "weaving" as the third stage in the hierarchy: Hexel-Coxel-Xyxel-Zaxel.
+/// </summary>
+
 module Xyxel =
     open System
     open Hexel
     open Coxel
-    open Geometry
-    open Parse
+    open Goxel
+    open Paxel
 
     /// <summary> Active pattern for safe integer parsing. </summary>
     let (|Int|_|) (s: string) =
@@ -99,7 +104,7 @@ module Xyxel =
                     | Some a when a <> "" -> parseCoords a
                     | _ ->
                         match opts.ParentCxl with
-                        | Some parent when bdWd > 0 -> cxlPrm parent elv |> Geometry.cleanPolygon parent.Seqn
+                        | Some parent when bdWd > 0 -> cxlPrm parent elv |> Goxel.cleanPolygon parent.Seqn
                         | _ -> 
                             match bdWd > 0 with
                             | true -> parseCoords $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
@@ -148,7 +153,7 @@ module Xyxel =
     /// <summary> Extracts the first node as the base coxel for layout. </summary>
     let generateBaseCxl (ctx: LayoutContext) =
         let bndSet = 
-            let ntArea = Geometry.polygonWithHolesArea ctx.Boundary ctx.Islands
+            let ntArea = Goxel.polygonWithHolesArea ctx.Boundary ctx.Islands
             if ntArea > 0L then 
                 let allVtx = Array.append ctx.Boundary (ctx.Islands |> Array.collect id)
                 let minX = allVtx |> Array.minBy fst |> fst |> (fun x -> x - 2)
@@ -160,8 +165,8 @@ module Xyxel =
                 for x in minX .. maxX do
                     for y in minY .. maxY do
                         let pt = (x, y)
-                        let isOutside = not (Geometry.pointInPolygon pt ctx.Boundary)
-                        let isInsideIsland = ctx.Islands |> Array.exists (Geometry.pointInPolygon pt)
+                        let isOutside = not (Goxel.pointInPolygon pt ctx.Boundary)
+                        let isInsideIsland = ctx.Islands |> Array.exists (Goxel.pointInPolygon pt)
                         if isOutside || isInsideIsland then
                             blocked.Add(RV(x, y, ctx.Elevation))
                 blocked.ToArray()

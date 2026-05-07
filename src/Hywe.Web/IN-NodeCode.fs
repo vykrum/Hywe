@@ -705,7 +705,7 @@ let viewTreeEditor (model: SubModel) (dispatch: SubMsg -> unit) : Node =
         }
     }
 
-open Hywe.Core.Parse
+open Hywe.Core.Paxel
 
 // --------------------
 // Serialization & Initialization

@@ -1,5 +1,11 @@
 namespace Hywe.Core
 
+/// <summary> 
+/// Hexel (Hygrid Engine) 
+/// Implements the base coordinate system and logic for the Hygrid Woven Ensemble. 
+/// Acts as the fundamental unit (Hexel) in the architectural hierarchy: Hexel-Coxel-Xyxel-Zaxel.
+/// </summary>
+
 module Hexel =
     open System
 

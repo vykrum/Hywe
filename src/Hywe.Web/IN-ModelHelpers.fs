@@ -13,7 +13,7 @@ open Bolero.Html
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Parse
+open Hywe.Core.Paxel
 
 open PageHelpers
 
