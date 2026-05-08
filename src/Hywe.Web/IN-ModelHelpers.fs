@@ -182,7 +182,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             }
             if model.InstallPromptAvailable then
                 div {
-                    attr.style "position: fixed; top: 43px; right: 10px; z-index: 5001; pointer-events: auto; display: flex; align-items: center;"
+                    attr.style "margin-left: auto; margin-right: 10px; pointer-events: auto; display: flex; align-items: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
                         attr.title "Install as an App"
@@ -250,7 +250,7 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
         div {
             attr.id "hywe-input-interactive"
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
-            viewTreeEditor model.Tree (TreeMsg >> dispatch)
+            viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
         }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =

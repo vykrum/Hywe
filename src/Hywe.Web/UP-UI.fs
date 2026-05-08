@@ -310,16 +310,17 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                       
                       let mutable levelBatches = []
                       
-                      if section.BatchOverview || section.Variations then
-                          do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating 24 variations for level %d..." level).AsTask() |> Async.AwaitTask
-                          for i = 0 to 23 do
+                      if section.BatchOverview || section.Variations || section.FlowChart then
+                          do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating layout data for level %d..." level).AsTask() |> Async.AwaitTask
+                          let range = if section.BatchOverview || section.Variations then [0..23] else [11] // Use index 11 as default for coloring
+                          for i in range do
                               try
                                   let config = 
                                       match Cache.get level i currentCache with
                                       | Some c -> c
                                       | None -> 
                                           // Compute full data once, and update cache for ALL levels
-                                          let fullData = Cache.computeFullLayout model.SrcOfTrth Hexel.sqnArray.[i] model.PolygonExport level
+                                          let fullData = Cache.computeFullLayout currentSrc Hexel.sqnArray.[i] model.PolygonExport level
                                           for l in model.Tree.Levels.Keys do
                                               let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l
                                               currentCache <- Cache.update l i cfg currentCache

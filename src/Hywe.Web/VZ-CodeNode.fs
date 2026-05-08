@@ -106,7 +106,7 @@ let parseOutput (code: string) : TreeNode list =
                     if path.StartsWith("0") then None
                     else
                         let weight = parts.[1]
-                        let name = parts.[2]
+                        let name = parts.[2].Trim()
                         let extrusion = 
                             if parts.Length > 3 then match parts.[3] with Float v -> v | _ -> 3.0 
                             else 3.0
@@ -202,7 +202,7 @@ let calculateTreeBounds (root: TreeNode) =
     let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
     (maxX - minX + 2.0 * margin, maxY - minY + 2.0 * margin)
 
-let private generateVisualElements (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) : VisualElement list * (float * float * float * float) =
+let private generateVisualElements (root: TreeNode) (colorList: string[]) (forcedW: float option) (forcedH: float option) : VisualElement list * (float * float * float * float) =
     let (bounds, nodes) = calculateTreeBoundsWithNodes root
     let (vbX, vbY, vbW, vbH) = bounds
     
@@ -222,9 +222,12 @@ let private generateVisualElements (root: TreeNode) (colorMap: Map<string, strin
                 yield VLine(node.X, node.Y + 20.0, child.X, child.Y - 20.0, "#ccc")
 
         // Render Nodes
-        for node in nodes do
+        for i, node in nodes |> List.indexed do
             let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
-            let fill = Map.tryFind node.Name colorMap |> Option.defaultValue "white"
+            let fill = 
+                if i < colorList.Length then colorList.[i]
+                else "white"
+
             
             // Highlight Elevated nodes (extrusion <> 3.0)
             let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
@@ -260,8 +263,9 @@ type private svLin = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2
 type private svPol = Template<"""<polygon points="${pts}" fill="${fl}" stroke="${st}" stroke-width="0" />""">
 type private svTxt = Template<"""<text x="${x}" y="${y}" font-size="${sz}" text-anchor="${ta}" font-family="'Outfit', sans-serif" dominant-baseline="middle" fill="${fl}">${nm}</text>""">
 
-let viewTreeSvg (root: TreeNode) (colorMap: Map<string, string>) : Node =
-    let elements, (vbX, vbY, vbW, vbH) = generateVisualElements root colorMap None None
+let viewTreeSvg (root: TreeNode) (colorList: string[]) : Node =
+    let elements, (vbX, vbY, vbW, vbH) = generateVisualElements root colorList None None
+
     
     svg {
         "viewBox" => sprintf "%f %f %f %f" vbX vbY vbW vbH
@@ -292,7 +296,8 @@ let viewCodeGraphFromString (code: string) : Node =
                         attr.style "font-weight: 600; color: #888; text-transform: uppercase; margin-bottom: 12px; font-size: 11px; letter-spacing: 0.5px;"
                         text (sprintf "Architecture Level %d" i)
                     }
-                    viewTreeSvg root Map.empty
+                    viewTreeSvg root [||]
+
                 }
         }
     with ex ->
@@ -302,8 +307,9 @@ let viewCodeGraphFromString (code: string) : Node =
 // String Rendering (Report)
 // --------------------
 
-let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) =
-    let elements, bounds = generateVisualElements root colorMap forcedW forcedH
+let renderSvgToString (root: TreeNode) (colorList: string[]) (forcedW: float option) (forcedH: float option) =
+    let elements, bounds = generateVisualElements root colorList forcedW forcedH
+
     let (vx, vy, vw, vh) = bounds
     let sb = System.Text.StringBuilder()
     

@@ -342,7 +342,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     EditsCount = nextCount
                     IsPresetsCollapsed = nextCollapse }
 
-            if isIncrementalEdit then
+            if isIncrementalEdit || (match subMsg with NodeCode.PointerUp -> true | _ -> false) then
                 Storage.autoSave js newOutput |> ignore
 
             let finalModel, finalCmd = 

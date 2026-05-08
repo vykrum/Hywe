@@ -208,39 +208,39 @@ fn vs_post(@builtin(vertex_index) vertexIndex: u32) -> PostVertexOutput {
 }
 
 @fragment
-fn fs_post(in: PostVertexOutput) -> @location(0) vec4<f32> {
-    let baseColor = textureSample(colorTex, samp, in.uv);
-    let texSize = vec2<f32>(textureDimensions(colorTex));
-    let pos = vec2<i32>(in.uv * texSize);
-    let centerDepth = textureLoad(depthTex, pos, 0);
+fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
+    let ipos = vec2<i32>(pos.xy);
+    let texSize = vec2<i32>(textureDimensions(colorTex));
+    
+    let baseColor = textureLoad(colorTex, ipos, 0);
+    let centerDepth = textureLoad(depthTex, ipos, 0);
 
-    if (centerDepth >= 0.9999) {
+    if (centerDepth >= 1.0) {
         return baseColor;
     }
 
     var occlusion = 0.0;
-    let radius = 2;
-    var samples = 0.0;
-
-    for (var y = -radius; y <= radius; y++) {
-        for (var x = -radius; x <= radius; x++) {
-            if (x == 0 && y == 0) { continue; }
-            let samplePos = pos + vec2<i32>(x, y);
-            let sampleDepth = textureLoad(depthTex, samplePos, 0);
-            
-            let depthDiff = centerDepth - sampleDepth;
-            // if sample is closer than center, it occludes slightly
-            if (depthDiff > 0.00005 && depthDiff < 0.02) {
-                occlusion += 1.0;
-            }
-            samples += 1.0;
+    let samples = 12;
+    let radius = 3.5;
+    
+    for (var i = 0; i < samples; i++) {
+        let angle = f32(i) * 6.28318 / f32(samples);
+        let offset = vec2<i32>(vec2<f32>(cos(angle), sin(angle)) * radius);
+        let samplePos = clamp(ipos + offset, vec2<i32>(0), texSize - vec2<i32>(1));
+        let sampleDepth = textureLoad(depthTex, samplePos, 0);
+        
+        let diff = centerDepth - sampleDepth;
+        if (diff > 0.0001 && diff < 0.05) {
+            occlusion += 1.0;
         }
     }
 
-    let ao = 1.0 - (occlusion / samples) * 0.75;
+    let ao = 1.0 - (occlusion / f32(samples)) * 0.75;
     return vec4<f32>(baseColor.rgb * ao, baseColor.a);
 }
 `;
+
+let _gpuCache = { adapter: null, device: null };
 
 window.disposeWebGPU = (canvasId) => {
     const canvas = document.getElementById(canvasId);
@@ -270,38 +270,35 @@ window.disposeWebGPU = (canvasId) => {
 
 window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked) => {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return console.error("Canvas not found:", canvasId);
+    if (!canvas) return;
 
-    // Cancel existing loop
-    if (canvas._drawLoopId) {
-        cancelAnimationFrame(canvas._drawLoopId);
-    }
-    window.disposeWebGPU(canvasId);
+    if (canvas._isInitializing) return;
+    canvas._isInitializing = true;
 
-    if (!navigator.gpu) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            canvas.width = canvas.clientWidth || 600;
-            canvas.height = canvas.clientHeight || 400;
-            ctx.fillStyle = "#f8f9fa";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#dc3545";
-            ctx.font = "16px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("WebGPU is not supported by your browser.", canvas.width / 2, canvas.height / 2 - 10);
-            ctx.fillStyle = "#6c757d";
-            ctx.font = "14px sans-serif";
-            ctx.fillText("Please upgrade to a modern browser (like Chrome or Edge) to view the 3D model.", canvas.width / 2, canvas.height / 2 + 15);
+    try {
+        if (canvas._drawLoopId) {
+            cancelAnimationFrame(canvas._drawLoopId);
         }
-        return;
-    }
+        window.disposeWebGPU(canvasId);
 
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-        console.error("Failed to get GPU adapter.");
-        return;
-    }
-    const device = await adapter.requestDevice();
+        if (!navigator.gpu) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                canvas.width = canvas.clientWidth || 600;
+                canvas.height = canvas.clientHeight || 400;
+                ctx.fillStyle = "#f8f9fa"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#dc3545"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
+                ctx.fillText("WebGPU not supported.", canvas.width / 2, canvas.height / 2);
+            }
+            return;
+        }
+
+        if (!_gpuCache.device) {
+            _gpuCache.adapter = await navigator.gpu.requestAdapter();
+            if (!_gpuCache.adapter) throw new Error("No GPU adapter found");
+            _gpuCache.device = await _gpuCache.adapter.requestDevice();
+        }
+        const device = _gpuCache.device;
 
     const context = canvas.getContext('webgpu');
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -312,7 +309,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     context.configure({
         device,
         format: presentationFormat,
-        alphaMode: 'premultiplied',
+        alphaMode: 'opaque',
     });
 
     canvas._viewLocked = !!viewLocked;
@@ -605,7 +602,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         triInputBuffer, wallInputBuffer, computeUniformBuffer, uniformBuffer,
         facePipeline, edgePipeline, bindGroup,
         postPipeline, postBindGroupLayout, linearSampler,
-        totalFaceVertices, totalEdgeVertices
+        totalFaceVertices, totalEdgeVertices,
+        lastW: 0, lastH: 0
     };
 
     // --- Interaction & camera ---
@@ -697,13 +695,15 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
 
     // --- Draw loop ---
     function draw() {
+        const state = canvas._wgpuState;
+        if (!state) return;
+
         const w = Math.max(1, canvas.clientWidth || canvas.width);
         const h = Math.max(1, canvas.clientHeight || canvas.height);
         
-        let state = canvas._wgpuState;
-        
-        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.msaaDepthTexture.width !== w || state.msaaDepthTexture.height !== h) { 
+        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.lastW !== w || state.lastH !== h) { 
             canvas.width = w; canvas.height = h; 
+            state.lastW = w; state.lastH = h;
             
             if (state.msaaDepthTexture) state.msaaDepthTexture.destroy();
             state.msaaDepthTexture = device.createTexture({
@@ -720,7 +720,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             if (state.resolvedColorTexture) state.resolvedColorTexture.destroy();
             state.resolvedColorTexture = device.createTexture({
                 size: [w, h], format: presentationFormat,
-                sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+                sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
             });
 
             state.postBindGroup = device.createBindGroup({
@@ -768,42 +768,103 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             passEncoder.setVertexBuffer(1, state.faceColBuffer);
             passEncoder.draw(state.totalFaceVertices);
         }
-        // Edge lines removed per request
-        // if (state.totalEdgeVertices > 0) {
-        //     passEncoder.setPipeline(state.edgePipeline);
-        //     passEncoder.setVertexBuffer(0, state.edgePosBuffer);
-        //     passEncoder.setVertexBuffer(1, state.edgeColBuffer);
-        //     passEncoder.draw(state.totalEdgeVertices);
-        // }
+        /* 
+        if (state.totalEdgeVertices > 0) {
+            passEncoder.setPipeline(state.edgePipeline);
+            passEncoder.setVertexBuffer(0, state.edgePosBuffer);
+            passEncoder.setVertexBuffer(1, state.edgeColBuffer);
+            passEncoder.draw(state.totalEdgeVertices);
+        }
+        */
         passEncoder.end();
 
         // 2. Post-Process (SSAO) Pass to Canvas
-        const postPassDescriptor = {
-            colorAttachments: [{
-                view: context.getCurrentTexture().createView(),
-                clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-                loadOp: 'clear', storeOp: 'store',
-            }]
-        };
-        const postPassEncoder = commandEncoder.beginRenderPass(postPassDescriptor);
-        postPassEncoder.setPipeline(state.postPipeline);
-        postPassEncoder.setBindGroup(0, state.postBindGroup);
-        postPassEncoder.draw(3);
-        postPassEncoder.end();
+        if (state.postBindGroup) {
+            const postPassDescriptor = {
+                colorAttachments: [{
+                    view: context.getCurrentTexture().createView(),
+                    clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
+                    loadOp: 'clear', storeOp: 'store',
+                }]
+            };
+            const postPassEncoder = commandEncoder.beginRenderPass(postPassDescriptor);
+            postPassEncoder.setPipeline(state.postPipeline);
+            postPassEncoder.setBindGroup(0, state.postBindGroup);
+            postPassEncoder.draw(3);
+            postPassEncoder.end();
+        }
 
         device.queue.submit([commandEncoder.finish()]);
 
         canvas._drawLoopId = requestAnimationFrame(draw);
     }
 
-    requestAnimationFrame(draw);
+        canvas._drawLoopId = requestAnimationFrame(draw);
+    } catch (err) {
+        console.error("WebGPU Init Error:", err);
+    } finally {
+        canvas._isInitializing = false;
+    }
 };
 
 // SVG Capture functionality stub
-window.export3DToSVG = (canvasId, filename) => {
-    console.warn("SVG export from WebGPU is not fully implemented in this prototype.");
+window.captureCanvasWebGPU = async (canvasId) => {
+    const canvas = document.getElementById(canvasId);
+    const state = canvas?._wgpuState;
+    if (!state) return null;
+
+    const { device, resolvedColorTexture } = state;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const bytesPerRow = Math.ceil((w * 4) / 256) * 256;
+    const bufferSize = bytesPerRow * h;
+    const readBuffer = device.createBuffer({
+        size: bufferSize,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+
+    const encoder = device.createCommandEncoder();
+    encoder.copyTextureToBuffer(
+        { texture: resolvedColorTexture },
+        { buffer: readBuffer, bytesPerRow },
+        [w, h]
+    );
+    device.queue.submit([encoder.finish()]);
+
+    await readBuffer.mapAsync(GPUMapMode.READ);
+    const arrayBuffer = readBuffer.getMappedRange();
+    const data = new Uint8ClampedArray(arrayBuffer);
+    
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = w;
+    tempCanvas.height = h;
+    const ctx = tempCanvas.getContext('2d');
+    const imageData = ctx.createImageData(w, h);
+    
+    for (let y = 0; y < h; y++) {
+        const srcOffset = y * bytesPerRow;
+        const dstOffset = y * w * 4;
+        imageData.data.set(data.subarray(srcOffset, srcOffset + w * 4), dstOffset);
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const dataUrl = tempCanvas.toDataURL('image/png');
+    
+    readBuffer.unmap();
+    readBuffer.destroy();
+    return dataUrl;
 };
-window.captureCanvasSVG = (canvasId) => {
-    console.warn("SVG capture from WebGPU is not fully implemented in this prototype.");
-    return null;
+
+window.captureCanvasSVG = async (canvasId) => {
+    return await window.captureCanvasWebGPU(canvasId);
+};
+
+window.export3DToSVG = (canvasId, filename) => {
+    window.captureCanvasWebGPU(canvasId).then(dataUrl => {
+        if (!dataUrl) return;
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = filename.replace(".svg", ".png");
+        a.click();
+    });
 };

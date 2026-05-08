@@ -44,10 +44,10 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 
 ## Tech Stack
 
-- **Language:** F#  
+- **Language:** [F#](https://fsharp.org/)  
 - **Frontend:** [Bolero](https://fsbolero.io/)  
-- **Rendering:** SVG (2D) + [WebGPU](https://gpuweb.github.io/gpuweb/) (3D)  
-- **Runtime:** WebAssembly  
+- **Rendering:** [SVG](https://www.w3.org/Graphics/SVG/) (2D) + [WebGPU](https://gpuweb.github.io/gpuweb/) (3D)  
+- **Runtime:** [WebAssembly](https://webassembly.org/)  
 
 ---
 
