@@ -342,7 +342,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     EditsCount = nextCount
                     IsPresetsCollapsed = nextCollapse }
 
-            if isIncrementalEdit then
+            if isIncrementalEdit || (match subMsg with NodeCode.PointerUp -> true | _ -> false) then
                 Storage.autoSave js newOutput |> ignore
 
             let finalModel, finalCmd = 
@@ -737,8 +737,8 @@ type MyApp() =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
                 Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
-                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
-                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 300 }) () (fun _ -> TransitionToIntro)
+                Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
             ])
             (fun msg model -> update this.JSRuntime msg model)

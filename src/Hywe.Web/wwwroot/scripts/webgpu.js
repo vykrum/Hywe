@@ -208,36 +208,31 @@ fn vs_post(@builtin(vertex_index) vertexIndex: u32) -> PostVertexOutput {
 }
 
 @fragment
-fn fs_post(in: PostVertexOutput) -> @location(0) vec4<f32> {
-    let baseColor = textureSample(colorTex, samp, in.uv);
-    let texSize = vec2<f32>(textureDimensions(colorTex));
-    let pos = vec2<i32>(in.uv * texSize);
-    let centerDepth = textureLoad(depthTex, pos, 0);
+fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
+    let ipos = vec2<i32>(pos.xy);
+    let baseColor = textureLoad(colorTex, ipos, 0);
+    let centerDepth = textureLoad(depthTex, ipos, 0);
 
-    if (centerDepth >= 0.9999) {
+    if (centerDepth >= 1.0) {
         return baseColor;
     }
 
     var occlusion = 0.0;
-    let radius = 2;
-    var samples = 0.0;
-
-    for (var y = -radius; y <= radius; y++) {
-        for (var x = -radius; x <= radius; x++) {
-            if (x == 0 && y == 0) { continue; }
-            let samplePos = pos + vec2<i32>(x, y);
-            let sampleDepth = textureLoad(depthTex, samplePos, 0);
-            
-            let depthDiff = centerDepth - sampleDepth;
-            // if sample is closer than center, it occludes slightly
-            if (depthDiff > 0.00005 && depthDiff < 0.02) {
-                occlusion += 1.0;
-            }
-            samples += 1.0;
+    let samples = 12;
+    let radius = 3.5;
+    
+    for (var i = 0; i < samples; i++) {
+        let angle = f32(i) * 6.28318 / f32(samples);
+        let offset = vec2<i32>(vec2<f32>(cos(angle), sin(angle)) * radius);
+        let sampleDepth = textureLoad(depthTex, ipos + offset, 0);
+        
+        let diff = centerDepth - sampleDepth;
+        if (diff > 0.0001 && diff < 0.05) {
+            occlusion += 1.0;
         }
     }
 
-    let ao = 1.0 - (occlusion / samples) * 0.75;
+    let ao = 1.0 - (occlusion / f32(samples)) * 0.45;
     return vec4<f32>(baseColor.rgb * ao, baseColor.a);
 }
 `;
@@ -312,7 +307,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     context.configure({
         device,
         format: presentationFormat,
-        alphaMode: 'premultiplied',
+        alphaMode: 'opaque',
     });
 
     canvas._viewLocked = !!viewLocked;
@@ -605,7 +600,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         triInputBuffer, wallInputBuffer, computeUniformBuffer, uniformBuffer,
         facePipeline, edgePipeline, bindGroup,
         postPipeline, postBindGroupLayout, linearSampler,
-        totalFaceVertices, totalEdgeVertices
+        totalFaceVertices, totalEdgeVertices,
+        lastW: 0, lastH: 0
     };
 
     // --- Interaction & camera ---
@@ -702,8 +698,9 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         
         let state = canvas._wgpuState;
         
-        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.msaaDepthTexture.width !== w || state.msaaDepthTexture.height !== h) { 
+        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.lastW !== w || state.lastH !== h) { 
             canvas.width = w; canvas.height = h; 
+            state.lastW = w; state.lastH = h;
             
             if (state.msaaDepthTexture) state.msaaDepthTexture.destroy();
             state.msaaDepthTexture = device.createTexture({
