@@ -185,6 +185,63 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 `;
 
+const postProcessWgsl = `
+@group(0) @binding(0) var colorTex: texture_2d<f32>;
+@group(0) @binding(1) var depthTex: texture_depth_multisampled_2d;
+@group(0) @binding(2) var samp: sampler;
+
+struct PostVertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+};
+
+@vertex
+fn vs_post(@builtin(vertex_index) vertexIndex: u32) -> PostVertexOutput {
+    var pos = array<vec2<f32>, 3>(
+        vec2<f32>(-1.0, -1.0), vec2<f32>(3.0, -1.0), vec2<f32>(-1.0, 3.0)
+    );
+    var out: PostVertexOutput;
+    out.position = vec4<f32>(pos[vertexIndex], 0.0, 1.0);
+    out.uv = pos[vertexIndex] * 0.5 + 0.5;
+    out.uv.y = 1.0 - out.uv.y;
+    return out;
+}
+
+@fragment
+fn fs_post(in: PostVertexOutput) -> @location(0) vec4<f32> {
+    let baseColor = textureSample(colorTex, samp, in.uv);
+    let texSize = vec2<f32>(textureDimensions(colorTex));
+    let pos = vec2<i32>(in.uv * texSize);
+    let centerDepth = textureLoad(depthTex, pos, 0);
+
+    if (centerDepth >= 0.9999) {
+        return baseColor;
+    }
+
+    var occlusion = 0.0;
+    let radius = 2;
+    var samples = 0.0;
+
+    for (var y = -radius; y <= radius; y++) {
+        for (var x = -radius; x <= radius; x++) {
+            if (x == 0 && y == 0) { continue; }
+            let samplePos = pos + vec2<i32>(x, y);
+            let sampleDepth = textureLoad(depthTex, samplePos, 0);
+            
+            let depthDiff = centerDepth - sampleDepth;
+            // if sample is closer than center, it occludes slightly
+            if (depthDiff > 0.00005 && depthDiff < 0.02) {
+                occlusion += 1.0;
+            }
+            samples += 1.0;
+        }
+    }
+
+    let ao = 1.0 - (occlusion / samples) * 0.75;
+    return vec4<f32>(baseColor.rgb * ao, baseColor.a);
+}
+`;
+
 window.disposeWebGPU = (canvasId) => {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !canvas._wgpuState) return;
@@ -203,7 +260,10 @@ window.disposeWebGPU = (canvasId) => {
     if (state.wallInputBuffer) state.wallInputBuffer.destroy();
     if (state.computeUniformBuffer) state.computeUniformBuffer.destroy();
     if (state.uniformBuffer) state.uniformBuffer.destroy();
-    if (state.depthTexture) state.depthTexture.destroy();
+    
+    if (state.msaaColorTexture) state.msaaColorTexture.destroy();
+    if (state.resolvedColorTexture) state.resolvedColorTexture.destroy();
+    if (state.msaaDepthTexture) state.msaaDepthTexture.destroy();
 
     canvas._wgpuState = null;
 };
@@ -469,30 +529,20 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             targets: [{
                 format: presentationFormat,
                 blend: {
-                    color: {
-                        srcFactor: 'src-alpha',
-                        dstFactor: 'one-minus-src-alpha',
-                        operation: 'add',
-                    },
-                    alpha: {
-                        srcFactor: 'one',
-                        dstFactor: 'one-minus-src-alpha',
-                        operation: 'add',
-                    },
+                    color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                    alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
                 }
             }]
         },
-        primitive: {
-            topology: 'triangle-list',
-            cullMode: 'none',
-        },
+        primitive: { topology: 'triangle-list', cullMode: 'none' },
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
-            format: 'depth24plus',
+            format: 'depth32float',
             depthBias: 2,
             depthBiasSlopeScale: 2.0,
         },
+        multisample: { count: 4 },
     });
 
     const edgePipeline = device.createRenderPipeline({
@@ -508,27 +558,41 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             targets: [{
                 format: presentationFormat,
                 blend: {
-                    color: {
-                        srcFactor: 'src-alpha',
-                        dstFactor: 'one-minus-src-alpha',
-                        operation: 'add',
-                    },
-                    alpha: {
-                        srcFactor: 'one',
-                        dstFactor: 'one-minus-src-alpha',
-                        operation: 'add',
-                    },
+                    color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                    alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
                 }
             }]
         },
-        primitive: {
-            topology: 'line-list',
-        },
+        primitive: { topology: 'line-list' },
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
-            format: 'depth24plus',
+            format: 'depth32float',
         },
+        multisample: { count: 4 },
+    });
+
+    // --- Post Process Pipeline (SSAO) ---
+    const postModule = device.createShaderModule({ code: postProcessWgsl });
+    const postBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: '2d' } },
+            { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth', viewDimension: '2d', multisampled: true } },
+            { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+        ]
+    });
+    const postPipeline = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [postBindGroupLayout] }),
+        vertex: { module: postModule, entryPoint: 'vs_post' },
+        fragment: {
+            module: postModule,
+            entryPoint: 'fs_post',
+            targets: [{ format: presentationFormat }]
+        },
+        primitive: { topology: 'triangle-list' }
+    });
+    const linearSampler = device.createSampler({
+        magFilter: 'linear', minFilter: 'linear',
     });
 
     canvas._wgpuState = {
@@ -536,6 +600,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         facePosBuffer, faceColBuffer, edgePosBuffer, edgeColBuffer, 
         triInputBuffer, wallInputBuffer, computeUniformBuffer, uniformBuffer,
         facePipeline, edgePipeline, bindGroup,
+        postPipeline, postBindGroupLayout, linearSampler,
         totalFaceVertices, totalEdgeVertices
     };
 
@@ -626,22 +691,42 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         }
     };
 
-    let depthTexture = null;
-
     // --- Draw loop ---
     function draw() {
         const w = Math.max(1, canvas.clientWidth || canvas.width);
         const h = Math.max(1, canvas.clientHeight || canvas.height);
         
-        if (canvas.width !== w || canvas.height !== h || !depthTexture || depthTexture.width !== w || depthTexture.height !== h) { 
+        let state = canvas._wgpuState;
+        
+        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.msaaDepthTexture.width !== w || state.msaaDepthTexture.height !== h) { 
             canvas.width = w; canvas.height = h; 
-            if (depthTexture) depthTexture.destroy();
-            depthTexture = device.createTexture({
-                size: [w, h],
-                format: 'depth24plus',
-                usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            
+            if (state.msaaDepthTexture) state.msaaDepthTexture.destroy();
+            state.msaaDepthTexture = device.createTexture({
+                size: [w, h], format: 'depth32float',
+                sampleCount: 4, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
             });
-            canvas._wgpuState.depthTexture = depthTexture;
+            
+            if (state.msaaColorTexture) state.msaaColorTexture.destroy();
+            state.msaaColorTexture = device.createTexture({
+                size: [w, h], format: presentationFormat,
+                sampleCount: 4, usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+            
+            if (state.resolvedColorTexture) state.resolvedColorTexture.destroy();
+            state.resolvedColorTexture = device.createTexture({
+                size: [w, h], format: presentationFormat,
+                sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            });
+
+            state.postBindGroup = device.createBindGroup({
+                layout: state.postBindGroupLayout,
+                entries: [
+                    { binding: 0, resource: state.resolvedColorTexture.createView() },
+                    { binding: 1, resource: state.msaaDepthTexture.createView() },
+                    { binding: 2, resource: state.linearSampler },
+                ]
+            });
         }
 
         const proj = externalProj ? new Float32Array(externalProj) : new Float32Array([1.8, 0, 0, 0, 0, 2.4, 0, 0, 0, 0, -1, -1, 0, 0, -0.2, 0]);
@@ -652,47 +737,55 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         const view = new Float32Array(16);
         mat4.lookAt(view, [camX, camY, camZ], [0, 0, 0], [0, 0, 1]);
 
-        device.queue.writeBuffer(uniformBuffer, 0, proj.buffer, proj.byteOffset, proj.byteLength);
-        device.queue.writeBuffer(uniformBuffer, 64, view.buffer, view.byteOffset, view.byteLength);
+        device.queue.writeBuffer(state.uniformBuffer, 0, proj.buffer, proj.byteOffset, proj.byteLength);
+        device.queue.writeBuffer(state.uniformBuffer, 64, view.buffer, view.byteOffset, view.byteLength);
 
         const commandEncoder = device.createCommandEncoder();
-        const textureView = context.getCurrentTexture().createView();
 
+        // 1. MSAA Main Render Pass
         const renderPassDescriptor = {
             colorAttachments: [{
-                view: textureView,
+                view: state.msaaColorTexture.createView(),
+                resolveTarget: state.resolvedColorTexture.createView(),
                 clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-                loadOp: 'clear',
-                storeOp: 'store',
+                loadOp: 'clear', storeOp: 'discard',
             }],
             depthStencilAttachment: {
-                view: depthTexture.createView(),
-                depthClearValue: 1.0,
-                depthLoadOp: 'clear',
-                depthStoreOp: 'store',
+                view: state.msaaDepthTexture.createView(),
+                depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store',
             },
         };
 
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        
-        passEncoder.setBindGroup(0, bindGroup);
-
-        if (canvas._wgpuState.totalFaceVertices > 0) {
-            passEncoder.setPipeline(facePipeline);
-            passEncoder.setVertexBuffer(0, canvas._wgpuState.facePosBuffer);
-            passEncoder.setVertexBuffer(1, canvas._wgpuState.faceColBuffer);
-            passEncoder.draw(canvas._wgpuState.totalFaceVertices);
+        passEncoder.setBindGroup(0, state.bindGroup);
+        if (state.totalFaceVertices > 0) {
+            passEncoder.setPipeline(state.facePipeline);
+            passEncoder.setVertexBuffer(0, state.facePosBuffer);
+            passEncoder.setVertexBuffer(1, state.faceColBuffer);
+            passEncoder.draw(state.totalFaceVertices);
         }
-
         // Edge lines removed per request
-        // if (canvas._wgpuState.totalEdgeVertices > 0) {
-        //     passEncoder.setPipeline(edgePipeline);
-        //     passEncoder.setVertexBuffer(0, canvas._wgpuState.edgePosBuffer);
-        //     passEncoder.setVertexBuffer(1, canvas._wgpuState.edgeColBuffer);
-        //     passEncoder.draw(canvas._wgpuState.totalEdgeVertices);
+        // if (state.totalEdgeVertices > 0) {
+        //     passEncoder.setPipeline(state.edgePipeline);
+        //     passEncoder.setVertexBuffer(0, state.edgePosBuffer);
+        //     passEncoder.setVertexBuffer(1, state.edgeColBuffer);
+        //     passEncoder.draw(state.totalEdgeVertices);
         // }
-
         passEncoder.end();
+
+        // 2. Post-Process (SSAO) Pass to Canvas
+        const postPassDescriptor = {
+            colorAttachments: [{
+                view: context.getCurrentTexture().createView(),
+                clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
+                loadOp: 'clear', storeOp: 'store',
+            }]
+        };
+        const postPassEncoder = commandEncoder.beginRenderPass(postPassDescriptor);
+        postPassEncoder.setPipeline(state.postPipeline);
+        postPassEncoder.setBindGroup(0, state.postBindGroup);
+        postPassEncoder.draw(3);
+        postPassEncoder.end();
 
         device.queue.submit([commandEncoder.finish()]);
 
@@ -702,7 +795,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     requestAnimationFrame(draw);
 };
 
-// SVG Capture functionality stub - keeping interface but WebGPU canvas needs special readback for exact SVG mapping
+// SVG Capture functionality stub
 window.export3DToSVG = (canvasId, filename) => {
     console.warn("SVG export from WebGPU is not fully implemented in this prototype.");
 };
