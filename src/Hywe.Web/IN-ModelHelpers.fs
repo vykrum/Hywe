@@ -411,7 +411,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | ViewPanel ->
             let sideEffect = async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked } |> Async.StartImmediate
             div {
-                attr.style "display: flex; flex-direction: column; gap: 10px; margin-top: 10px; align-items: center; background: #e5e5e5; border-radius: 8px; width: 100%; overflow-x: hidden;"
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; overflow-x: hidden;"
                 
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "padding: 4px 0; width: 100%; max-width: 100vw; margin-top: 5px;"
