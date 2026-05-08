@@ -134,7 +134,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 const nx = (x - cx) * scaleXY;
                 const ny = (y - cy) * scaleXY;
                 const nz = baseH + height;
-                const col = baseColor.map(c => c * 0.9);
+                const col = baseColor.map(c => c * 0.95);
                 faceVertices.push(nx, ny, nz);
                 faceColors.push(...col, 1.0);
             });
@@ -144,7 +144,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 const nx = (x - cx) * scaleXY;
                 const ny = (y - cy) * scaleXY;
                 const nz = baseH;
-                const col = baseColor.map(c => c * 0.4);
+                const col = baseColor.map(c => c * 0.85);
                 faceVertices.push(nx, ny, nz);
                 faceColors.push(...col, 1.0);
             }
@@ -175,7 +175,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 const wnx = dy / wallLen, wny = -dx / wallLen;
                 
                 const dot = Math.max(0, wnx * lx + wny * ly);
-                const wallShade = 0.5 + 0.4 * dot;
+                const wallShade = 0.7 + 0.25 * dot;
                 const col = baseColor.map(c => c * wallShade);
 
                 const wallVerts = [
