@@ -684,12 +684,13 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             passEncoder.draw(canvas._wgpuState.totalFaceVertices);
         }
 
-        if (canvas._wgpuState.totalEdgeVertices > 0) {
-            passEncoder.setPipeline(edgePipeline);
-            passEncoder.setVertexBuffer(0, canvas._wgpuState.edgePosBuffer);
-            passEncoder.setVertexBuffer(1, canvas._wgpuState.edgeColBuffer);
-            passEncoder.draw(canvas._wgpuState.totalEdgeVertices);
-        }
+        // Edge lines removed per request
+        // if (canvas._wgpuState.totalEdgeVertices > 0) {
+        //     passEncoder.setPipeline(edgePipeline);
+        //     passEncoder.setVertexBuffer(0, canvas._wgpuState.edgePosBuffer);
+        //     passEncoder.setVertexBuffer(1, canvas._wgpuState.edgeColBuffer);
+        //     passEncoder.draw(canvas._wgpuState.totalEdgeVertices);
+        // }
 
         passEncoder.end();
 
