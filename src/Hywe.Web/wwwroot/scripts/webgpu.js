@@ -720,7 +720,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             if (state.resolvedColorTexture) state.resolvedColorTexture.destroy();
             state.resolvedColorTexture = device.createTexture({
                 size: [w, h], format: presentationFormat,
-                sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+                sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
             });
 
             state.postBindGroup = device.createBindGroup({
@@ -808,10 +808,63 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
 };
 
 // SVG Capture functionality stub
-window.export3DToSVG = (canvasId, filename) => {
-    console.warn("SVG export from WebGPU is not fully implemented in this prototype.");
+window.captureCanvasWebGPU = async (canvasId) => {
+    const canvas = document.getElementById(canvasId);
+    const state = canvas?._wgpuState;
+    if (!state) return null;
+
+    const { device, resolvedColorTexture } = state;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const bytesPerRow = Math.ceil((w * 4) / 256) * 256;
+    const bufferSize = bytesPerRow * h;
+    const readBuffer = device.createBuffer({
+        size: bufferSize,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+
+    const encoder = device.createCommandEncoder();
+    encoder.copyTextureToBuffer(
+        { texture: resolvedColorTexture },
+        { buffer: readBuffer, bytesPerRow },
+        [w, h]
+    );
+    device.queue.submit([encoder.finish()]);
+
+    await readBuffer.mapAsync(GPUMapMode.READ);
+    const arrayBuffer = readBuffer.getMappedRange();
+    const data = new Uint8ClampedArray(arrayBuffer);
+    
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = w;
+    tempCanvas.height = h;
+    const ctx = tempCanvas.getContext('2d');
+    const imageData = ctx.createImageData(w, h);
+    
+    for (let y = 0; y < h; y++) {
+        const srcOffset = y * bytesPerRow;
+        const dstOffset = y * w * 4;
+        imageData.data.set(data.subarray(srcOffset, srcOffset + w * 4), dstOffset);
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const dataUrl = tempCanvas.toDataURL('image/png');
+    
+    readBuffer.unmap();
+    readBuffer.destroy();
+    return dataUrl;
 };
-window.captureCanvasSVG = (canvasId) => {
-    console.warn("SVG capture from WebGPU is not fully implemented in this prototype.");
-    return null;
+
+window.captureCanvasSVG = async (canvasId) => {
+    return await window.captureCanvasWebGPU(canvasId);
+};
+
+window.export3DToSVG = (canvasId, filename) => {
+    window.captureCanvasWebGPU(canvasId).then(dataUrl => {
+        if (!dataUrl) return;
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = filename.replace(".svg", ".png");
+        a.click();
+    });
 };
