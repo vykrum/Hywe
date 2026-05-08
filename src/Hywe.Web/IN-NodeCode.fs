@@ -439,8 +439,8 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                     |> Option.orElse (colorMap |> Map.tryFind (node.Name.Trim().ToLower()))
                     |> Option.defaultValue "white"
                 
-                if nodeColor <> "white" then
-                    attr.style (sprintf "background-color: %s !important;" nodeColor)
+                let nodeStyle = if nodeColor <> "white" then sprintf "background-color: %s !important;" nodeColor else ""
+                attr.style nodeStyle
 
                 match isConfirmingThis with
                 | true -> 
