@@ -240,6 +240,8 @@ fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
 }
 `;
 
+let _gpuCache = { adapter: null, device: null };
+
 window.disposeWebGPU = (canvasId) => {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !canvas._wgpuState) return;
@@ -268,38 +270,35 @@ window.disposeWebGPU = (canvasId) => {
 
 window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked) => {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return console.error("Canvas not found:", canvasId);
+    if (!canvas) return;
 
-    // Cancel existing loop
-    if (canvas._drawLoopId) {
-        cancelAnimationFrame(canvas._drawLoopId);
-    }
-    window.disposeWebGPU(canvasId);
+    if (canvas._isInitializing) return;
+    canvas._isInitializing = true;
 
-    if (!navigator.gpu) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            canvas.width = canvas.clientWidth || 600;
-            canvas.height = canvas.clientHeight || 400;
-            ctx.fillStyle = "#f8f9fa";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#dc3545";
-            ctx.font = "16px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("WebGPU is not supported by your browser.", canvas.width / 2, canvas.height / 2 - 10);
-            ctx.fillStyle = "#6c757d";
-            ctx.font = "14px sans-serif";
-            ctx.fillText("Please upgrade to a modern browser (like Chrome or Edge) to view the 3D model.", canvas.width / 2, canvas.height / 2 + 15);
+    try {
+        if (canvas._drawLoopId) {
+            cancelAnimationFrame(canvas._drawLoopId);
         }
-        return;
-    }
+        window.disposeWebGPU(canvasId);
 
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-        console.error("Failed to get GPU adapter.");
-        return;
-    }
-    const device = await adapter.requestDevice();
+        if (!navigator.gpu) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                canvas.width = canvas.clientWidth || 600;
+                canvas.height = canvas.clientHeight || 400;
+                ctx.fillStyle = "#f8f9fa"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#dc3545"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
+                ctx.fillText("WebGPU not supported.", canvas.width / 2, canvas.height / 2);
+            }
+            return;
+        }
+
+        if (!_gpuCache.device) {
+            _gpuCache.adapter = await navigator.gpu.requestAdapter();
+            if (!_gpuCache.adapter) throw new Error("No GPU adapter found");
+            _gpuCache.device = await _gpuCache.adapter.requestDevice();
+        }
+        const device = _gpuCache.device;
 
     const context = canvas.getContext('webgpu');
     const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -798,7 +797,12 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         canvas._drawLoopId = requestAnimationFrame(draw);
     }
 
-    requestAnimationFrame(draw);
+        canvas._drawLoopId = requestAnimationFrame(draw);
+    } catch (err) {
+        console.error("WebGPU Init Error:", err);
+    } finally {
+        canvas._isInitializing = false;
+    }
 };
 
 // SVG Capture functionality stub

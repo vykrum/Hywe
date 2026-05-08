@@ -241,8 +241,9 @@ let extrudePolygons
         
         let projMatrix = Mat4.perspective (System.Math.PI / 4.0) (1.5) 0.1 100.0 // Aspect 3/2 matches container
 
-        do! js.InvokeVoidAsync("initWebGPUExtrudedPolygons", 
-                                canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
-                                projMatrix, viewLocked).AsTask()
-            |> Async.AwaitTask
+        if not Array.isEmpty meshes then
+            do! js.InvokeVoidAsync("initWebGPUExtrudedPolygons", 
+                                    canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
+                                    projMatrix, viewLocked).AsTask()
+                |> Async.AwaitTask
     }
