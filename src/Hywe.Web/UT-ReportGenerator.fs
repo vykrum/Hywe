@@ -365,7 +365,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
             let colorMap = 
                 if batchInfo.Length > 0 then
                     batchInfo.[0].shapes 
-                    |> Array.map (fun s -> s.name, s.color) 
+                    |> Array.collect (fun s -> [| s.name.Trim(), s.color; s.name.Trim().ToLower(), s.color |]) 
                     |> Map.ofArray
                 else Map.empty
             let svg = renderFlowchartSvg root colorMap flowChartMaxW flowChartMaxH

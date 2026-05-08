@@ -106,7 +106,7 @@ let parseOutput (code: string) : TreeNode list =
                     if path.StartsWith("0") then None
                     else
                         let weight = parts.[1]
-                        let name = parts.[2]
+                        let name = parts.[2].Trim()
                         let extrusion = 
                             if parts.Length > 3 then match parts.[3] with Float v -> v | _ -> 3.0 
                             else 3.0
@@ -224,7 +224,11 @@ let private generateVisualElements (root: TreeNode) (colorMap: Map<string, strin
         // Render Nodes
         for node in nodes do
             let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
-            let fill = Map.tryFind node.Name colorMap |> Option.defaultValue "white"
+            let fill = 
+                colorMap 
+                |> Map.tryFind (node.Name.Trim()) 
+                |> Option.orElse (colorMap |> Map.tryFind (node.Name.Trim().ToLower()))
+                |> Option.defaultValue "white"
             
             // Highlight Elevated nodes (extrusion <> 3.0)
             let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
