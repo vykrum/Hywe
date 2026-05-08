@@ -35,7 +35,7 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **Topology-first** spatial flow editor  
 - **Flow-based hierarchy** visualization  
 - 2D layouts visualized with **SVG**  
-- 3D extrusions rendered using **WebGL**  
+- 3D extrusions rendered using **WebGPU**  
 - Inline editing of space names and sizes  
 - Dynamic, logic-driven layout evolution in real time  
 - No backend required as all computation runs in-browser  
@@ -45,8 +45,8 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 ## Tech Stack
 
 - **Language:** F#  
-- **Frontend:** Bolero (Blazor for F#)  
-- **Rendering:** SVG (2D) + WebGL (3D)  
+- **Frontend:** [Bolero](https://fsbolero.io/)  
+- **Rendering:** SVG (2D) + [WebGPU](https://gpuweb.github.io/gpuweb/) (3D)  
 - **Runtime:** WebAssembly  
 
 ---
