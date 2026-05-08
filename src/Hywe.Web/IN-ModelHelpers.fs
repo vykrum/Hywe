@@ -250,7 +250,7 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
         div {
             attr.id "hywe-input-interactive"
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
-            viewTreeEditor model.Tree Map.empty (TreeMsg >> dispatch)
+            viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
         }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =

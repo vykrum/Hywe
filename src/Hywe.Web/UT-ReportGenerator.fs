@@ -111,8 +111,9 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     </g>
     </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 polygons boundaries
 
-let renderFlowchartSvg (root: TreeNode) (colorMap: Map<string, string>) (maxW: float option) (maxH: float option) : string =
-    CodeNode.renderSvgToString root colorMap maxW maxH
+let renderFlowchartSvg (root: TreeNode) (colorList: string[]) (maxW: float option) (maxH: float option) : string =
+    CodeNode.renderSvgToString root colorList maxW maxH
+
 
 let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) : string =
     let uniqueRooms = 
@@ -362,13 +363,12 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
 
         if section.FlowChart then
             let root = tree.Levels.[level]
-            let colorMap = 
+            let colors = 
                 if batchInfo.Length > 0 then
-                    batchInfo.[0].shapes 
-                    |> Array.collect (fun s -> [| s.name.Trim(), s.color; s.name.Trim().ToLower(), s.color |]) 
-                    |> Map.ofArray
-                else Map.empty
-            let svg = renderFlowchartSvg root colorMap flowChartMaxW flowChartMaxH
+                    batchInfo.[0].shapes |> Array.map (fun s -> s.color)
+                else [||]
+            let svg = renderFlowchartSvg root colors flowChartMaxW flowChartMaxH
+
             sprintf tFlowChart (renderHeader (sprintf "Flow Chart — Level %d" level) opts.ProjectTitle) svg (renderFooter()) |> sb.AppendLine |> ignore
 
         if section.BatchOverview && batchInfo.Length > 0 then

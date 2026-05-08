@@ -402,7 +402,7 @@ let updateSub (js: IJSRuntime) msg model =
 // --------------------
 // View
 // --------------------
-let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: bool) (colorMap: Map<string, string>) (dispatch: SubMsg -> unit) =
+let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: bool) (colorList: string[]) (allNodes: TreeNode list) (dispatch: SubMsg -> unit) =
     let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
     let isRoot = node.Id = currentTree.Id
     let isConfirmingThis = model.ConfirmingId = Some node.Id
@@ -433,14 +433,15 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
             
             div {
                 attr.``class`` "node-inner"
+                
+                let nodeIndex = allNodes |> List.tryFindIndex (fun n -> n.Id = node.Id) |> Option.defaultValue -1
                 let nodeColor = 
-                    colorMap 
-                    |> Map.tryFind (node.Name.Trim()) 
-                    |> Option.orElse (colorMap |> Map.tryFind (node.Name.Trim().ToLower()))
-                    |> Option.defaultValue "white"
+                    if nodeIndex >= 0 && nodeIndex < colorList.Length then colorList.[nodeIndex]
+                    else "white"
                 
                 let nodeStyle = if nodeColor <> "white" then sprintf "background-color: %s !important;" nodeColor else ""
                 attr.style nodeStyle
+
 
                 match isConfirmingThis with
                 | true -> 
@@ -600,7 +601,8 @@ let getElevations (model: SubModel) =
         yield lastL + model.TopExtrusion
     |]
 
-let viewTreeEditor (model: SubModel) (colorMap: Map<string, string>) (dispatch: SubMsg -> unit) : Node =      
+let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> unit) : Node =      
+
     let currentLvlRoot = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
     let displayTree = currentLvlRoot
     let laidOutDisplayTree = displayTree // Already laid out in update
@@ -629,12 +631,13 @@ let viewTreeEditor (model: SubModel) (colorMap: Map<string, string>) (dispatch: 
     let canvasWidth = maxX + 60.0
     let canvasHeight = maxY + 30.0
 
-    let rec renderAll (node: TreeNode) (prefix: string) (colorMap: Map<string, string>) : Node =
+    let rec renderAll (node: TreeNode) (prefix: string) (colorList: string[]) (allNodes: TreeNode list) : Node =
         concat {
-            renderNode node prefix model (isAffected node.Id) colorMap dispatch
+            renderNode node prefix model (isAffected node.Id) colorList allNodes dispatch
             for i, child in node.Children |> List.indexed do
-                renderAll child $"{prefix}.{i + 1}" colorMap
+                renderAll child $"{prefix}.{i + 1}" colorList allNodes
         }
+
 
     let allNodes = flattenTree currentLvlRoot
     let elevations = getElevations model
@@ -709,7 +712,8 @@ let viewTreeEditor (model: SubModel) (colorMap: Map<string, string>) (dispatch: 
                     attr.style $"width:{canvasWidth}px; height:{canvasHeight}px;"
                     for line in lines do line
                 }
-                renderAll laidOutDisplayTree "1" colorMap
+                renderAll laidOutDisplayTree "1" colorList nodes
+
             }
         }
     }
