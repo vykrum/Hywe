@@ -483,7 +483,7 @@ window.export3DToSVG = (canvasId, filename) => {
     elements.sort((a, b) => b.z - a.z);
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
-    svg += `<rect width="100%" height="100%" fill="#f9f9f9" />`;
+    svg += `<rect width="100%" height="100%" fill="#d3d3d1" />`;
     elements.forEach(el => {
         if (el.type === 'poly') {
             const d = el.pts.map(p => `${p[0]},${p[1]}`).join(' ');
