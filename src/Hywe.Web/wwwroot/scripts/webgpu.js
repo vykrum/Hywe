@@ -326,6 +326,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             depthWriteEnabled: true,
             depthCompare: 'less',
             format: 'depth24plus',
+            depthBias: 2,
+            depthBiasSlopeScale: 2.0,
         },
     });
 
