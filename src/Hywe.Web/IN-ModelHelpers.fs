@@ -250,7 +250,15 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
         div {
             attr.id "hywe-input-interactive"
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
-            viewTreeEditor model.Tree (TreeMsg >> dispatch)
+            let colorMap = 
+                if model.Derived.cxCxl1.Length > 0 then
+                    Array.zip model.Derived.cxCxl1 model.Derived.cxClr1
+                    |> Array.collect (fun (c, clr) -> 
+                        let name = Coxel.prpVlu c.Name
+                        [| name.Trim(), clr; name.Trim().ToLower(), clr |])
+                    |> Map.ofArray
+                else Map.empty
+            viewTreeEditor model.Tree colorMap (TreeMsg >> dispatch)
         }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
