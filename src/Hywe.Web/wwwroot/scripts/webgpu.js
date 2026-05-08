@@ -348,7 +348,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     meshes.forEach((tris, i) => {
         const c = (colors && colors[i]) ? colors[i] : [0.8, 0.8, 0.8];
         // Subtract the offset so it never exceeds the intended extrusion height
-        const microOffset = ((i * 137) % 100) * 0.002;
+        // % 100 yields 0-99. 99 * 0.00002 = 0.00198 max offset.
+        const microOffset = ((i * 137) % 100) * 0.00002;
         const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
         const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
         for (let j=0; j<tris.length; j++) {
@@ -365,7 +366,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     if (edgePolygons) {
         edgePolygons.forEach((poly, i) => {
             const c = (colors && colors[i]) ? colors[i] : [0.5, 0.5, 0.5];
-            const microOffset = ((i * 137) % 100) * 0.002;
+            const microOffset = ((i * 137) % 100) * 0.00002;
             const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
             const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
             for (let j=0; j<poly.length; j++) {
