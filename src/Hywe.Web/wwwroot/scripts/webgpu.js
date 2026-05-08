@@ -235,7 +235,7 @@ fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
         }
     }
 
-    let ao = 1.0 - (occlusion / f32(samples)) * 0.45;
+    let ao = 1.0 - (occlusion / f32(samples)) * 0.75;
     return vec4<f32>(baseColor.rgb * ao, baseColor.a);
 }
 `;
@@ -768,12 +768,14 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             passEncoder.setVertexBuffer(1, state.faceColBuffer);
             passEncoder.draw(state.totalFaceVertices);
         }
+        /* 
         if (state.totalEdgeVertices > 0) {
             passEncoder.setPipeline(state.edgePipeline);
             passEncoder.setVertexBuffer(0, state.edgePosBuffer);
             passEncoder.setVertexBuffer(1, state.edgeColBuffer);
             passEncoder.draw(state.totalEdgeVertices);
         }
+        */
         passEncoder.end();
 
         // 2. Post-Process (SSAO) Pass to Canvas
