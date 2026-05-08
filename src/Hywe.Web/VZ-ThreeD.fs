@@ -44,8 +44,11 @@ module Mat4 =
         out.[15] <- 1.0
         out
 
-/// Renders an extruded polygon on a canvas via JS WebGL
+/// <summary>
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.
+/// </summary>
+/// <param name="points">The 2D points forming the polygon boundary.</param>
+/// <returns>An array of triangles (each defined by 3 points).</returns>
 let triangulatePolygon (points: (float * float)[]) : (float * float)[][] =
     if points = null || points.Length < 3 then [||]
     else
@@ -107,7 +110,11 @@ let triangulatePolygon (points: (float * float)[]) : (float * float)[][] =
         
         result.ToArray()
 
-/// Extrudes a polygon
+/// <summary>
+/// Triangulates a polygon, providing fallback coordinates for invalid input.
+/// </summary>
+/// <param name="poly2D">The polygon coordinates.</param>
+/// <returns>A triangulated mesh.</returns>
 let polygonMesh 
     (poly2D: (float * float)[]) 
     : (float * float)[][] =
@@ -121,6 +128,16 @@ let polygonMesh
     | [||] -> [||]
     | tris -> tris
 
+/// <summary>
+/// Prepares coxel layout geometry and dispatches it to the WebGPU rendering pipeline.
+/// Transforms 2D architectural coordinates into 3D extruded meshes with precise level elevations.
+/// </summary>
+/// <param name="js">The JavaScript runtime instance.</param>
+/// <param name="canvasId">The target HTML canvas ID.</param>
+/// <param name="cxl">Array of coxels to render.</param>
+/// <param name="colors">Array of corresponding color assignments.</param>
+/// <param name="levelElevations">The base Z-elevations for each architectural level.</param>
+/// <param name="viewLocked">Determines if the camera is locked or interactive.</param>
 let extrudePolygons
     (js: IJSRuntime)
     (canvasId: string)
@@ -200,17 +217,17 @@ let extrudePolygons
             let mesh = 
                 polygonMesh poly 
                 |> Array.map (Array.map (fun (x, y) -> 
-                    let (cx, cy) = Geometry.toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
                     [| cx; -cy |]))
             
             let edge = 
                 poly |> Array.map (fun (x, y) -> 
-                    let (cx, cy) = Geometry.toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
                     [| cx; -cy |])
             
             let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
             let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
-            let cx, cy = Geometry.toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
+            let cx, cy = toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
             let centroid = [| cx; -cy; baseH + h / 2.0 |]
             
             buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)
@@ -224,8 +241,8 @@ let extrudePolygons
         
         let projMatrix = Mat4.perspective (System.Math.PI / 4.0) (1.5) 0.1 100.0 // Aspect 3/2 matches container
 
-        do! js.InvokeVoidAsync("initWebGLExtrudedPolygons", 
+        do! js.InvokeVoidAsync("initWebGPUExtrudedPolygons", 
                                 canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
-                                vsSource, fsSource, projMatrix, viewLocked).AsTask()
+                                projMatrix, viewLocked).AsTask()
             |> Async.AwaitTask
     }

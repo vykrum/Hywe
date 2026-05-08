@@ -7,9 +7,9 @@
   <ItemGroup>
     <Compile Include="Hexel.fs" />
     <Compile Include="Coxel.fs" />
-    <Compile Include="Geometry.fs" />
-    <Compile Include="Parse.fs" />
-    <Compile Include="Layout.fs" />
-    <Compile Include="Levels.fs" />
+    <Compile Include="Goxel.fs" />
+    <Compile Include="Paxel.fs" />
+    <Compile Include="Xyxel.fs" />
+    <Compile Include="Zaxel.fs" />
   </ItemGroup>
 </Project>

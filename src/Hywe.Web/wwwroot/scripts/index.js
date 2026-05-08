@@ -167,8 +167,12 @@ window.downloadReport = function(html, fileName) {
 window.captureCanvas = function(canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
-    const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
-    return canvas.toDataURL('image/png');
+    try {
+        return canvas.toDataURL('image/png');
+    } catch(e) {
+        console.warn("captureCanvas: toDataURL failed on WebGPU canvas.", e);
+        return null;
+    }
 };
 // --- Undo / Redo keyboard shortcuts ---
 let _undoRedoDotNet = null;

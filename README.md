@@ -45,8 +45,8 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 ## Tech Stack
 
 - **Language:** F#  
-- **Frontend:** Bolero (Blazor for F#)  
-- **Rendering:** SVG (2D) + WebGL (3D)  
+- **Frontend:** Bolero 
+- **Rendering:** SVG (2D) + WebGPU (3D)  
 - **Runtime:** WebAssembly  
 
 ---

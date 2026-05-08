@@ -1,5 +1,11 @@
 namespace Hywe.Core
 
+/// <summary> 
+/// Hexel (Hygrid Engine) 
+/// Implements the base coordinate system and logic for the Hygrid Woven Ensemble. 
+/// Acts as the fundamental unit (Hexel) in the architectural hierarchy: Hexel-Coxel-Xyxel-Zaxel.
+/// </summary>
+
 module Hexel =
     open System
 
@@ -121,10 +127,8 @@ module Hexel =
 
     /// <summary> Adjacent Hexels. </summary>
     let adjacent (sqn : Sqn) (hxo : Hxl) =
-        match hxo with 
-        | AV (x,y,z) -> Array.map (fun (a,b) -> AV(x+a, y+b,z))(sequence sqn)
-        | RV (x,y,z) -> [|RV(x,y,z)|]
-        | EX (x,y,z) -> [|EX(x,y,z)|]
+        let x, y, z = hxlCrd hxo
+        sequence sqn |> Array.map (fun (a, b) -> AV(x + a, y + b, z))
 
     /// <summary> Increment Hexel. </summary>
     let increment (sqn : Sqn) (elv : int) (hxo : Hxl * int) (occ : Hxl[]) = 

@@ -1,12 +1,18 @@
 namespace Hywe.Core
 
-module Levels =
+/// <summary> 
+/// Zaxel (Z-Axis Layout Engine) 
+/// Orchestrates collections of Xyxels to manage multi-level spatial logic and elevation-based construction. 
+/// Completes the vertical assembly as the volumetric massing stage in the hierarchy: Hexel-Coxel-Xyxel-Zaxel.
+/// </summary>
+
+module Zaxel =
     open System
     open Hexel
     open Coxel
-    open Geometry
-    open Parse
-    open Layout
+    open Goxel
+    open Paxel
+    open Xyxel
 
     /// <summary> Internal state for multi-level construction. </summary>
     type BuildState = {
@@ -22,7 +28,7 @@ module Levels =
     }
 
     /// <summary> Recursively processes all levels using a purely functional state-carrying approach. </summary>
-    let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) (seqOverride: Sqn option) (ouStrOverride: string option) (ilStrOverride: string option) =
+    let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) (seqOverride: (int * Sqn) option) (ouStrOverride: string option) (ilStrOverride: string option) =
         let levels = splitIntoLevels fullStr
         
         let initialState = {
@@ -59,7 +65,32 @@ module Levels =
                         |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = i - 1) 
                         |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId)
 
-                let cxls, bounds, ratio = generateCxlLayout attrs tree entryAtrFallback seqOverride curW curH curO curI initialOcc bsHx state.Ratio (Some i)
+                let curSeqOverride = 
+                    match seqOverride with
+                    | Some (targetLvl, s) when targetLvl = i -> Some s
+                    | _ -> None
+
+                let treeObj = LayoutTree.Create tree
+                let opts = {
+                    EntryFallback = entryAtrFallback
+                    InitialOcc = initialOcc
+                    Seq = curSeqOverride
+                    Width = curW
+                    Height = curH
+                    OuterStr = curO
+                    IslandsStr = curI
+                    ParentCxl = bsHx
+                    Ratio = state.Ratio
+                    Elevation = Some i
+                }
+
+                let ctx = prepareLayoutContext attrs (LayoutTree.Create tree) opts
+                let baseRes = generateBaseCxl ctx
+                
+                let cxls, bounds, ratio = 
+                    match baseRes with
+                    | Some (root, occ) -> generateCxlLayout ctx root occ
+                    | None -> [||], [||], 0.0
 
                 match i with
                 | 0 ->

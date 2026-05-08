@@ -1,6 +1,12 @@
 module Page
 
+open System
 open Bolero.Html
+open Hywe.Core
+
+/// <summary> Helper to parse a sequence name string into a Sqn type. </summary>
+let parseSqn (name: string) =
+    Hexel.sqnArray |> Array.tryFind (fun x -> (sprintf "%A" x).Equals(name, StringComparison.OrdinalIgnoreCase))
 
 /// <summary> Specifies the currently visible configuration panel. </summary>
 type ActivePanel =
@@ -76,13 +82,22 @@ let sequenceSlider (selected: string) (minIdx: int) (maxIdx: int) (dispatch: int
         // Slider track
         div {
             attr.``class`` "slider-track-container"
+            
+            // Precise math to align slider thumb (14px wide) with label centers (16px labels, space-between)
+            // C_i = 8px + i * (100% - 16px) / 23
+            // Slider thumb center at value v (range m to M) in element width W' is T/2 + (v-m)/(M-m) * (W'-T)
+            // Setting global positions to match labels:
+            let leftCalc = $"calc(1px + ({minIdx}.0 / 23.0) * (100%% - 16px))"
+            let widthCalc = $"calc(14px + (({maxIdx}.0 - {minIdx}.0) / 23.0) * (100%% - 16px))"
+            
             input {
                 attr.``type`` "range"
                 attr.``class`` "custom-slider"
-                attr.min "0"
-                attr.max "23"
+                attr.min (string minIdx)
+                attr.max (string maxIdx)
                 attr.step "1"
                 attr.value (string currentIndex)
+                attr.style $"left: {leftCalc}; width: {widthCalc}; position: absolute;"
                 on.input (fun ev ->
                     match ev.Value with
                     | :? string as s ->
@@ -94,6 +109,24 @@ let sequenceSlider (selected: string) (minIdx: int) (maxIdx: int) (dispatch: int
                     | _ -> ()
                 )
             }
+
+            // Inactive area masks to disallow direct selection/clicks on deactivated fields
+            let totalSteps = 23.0
+            if minIdx > 0 then
+                let leftWidth = (float minIdx / totalSteps) * 100.0
+                div {
+                    attr.style $"position: absolute; left: 0; top: 0; bottom: 0; width: {leftWidth}%%; z-index: 5; cursor: default;"
+                    "onpointerdown:stopPropagation" => true
+                    "onclick:stopPropagation" => true
+                }
+            if maxIdx < 23 then
+                let rightOffset = (float (maxIdx + 1) / totalSteps) * 100.0
+                let rightWidth = 100.0 - rightOffset
+                div {
+                    attr.style $"position: absolute; left: {rightOffset}%%; top: 0; bottom: 0; width: {rightWidth}%%; z-index: 5; cursor: default;"
+                    "onpointerdown:stopPropagation" => true
+                    "onclick:stopPropagation" => true
+                }
         }
     }
 

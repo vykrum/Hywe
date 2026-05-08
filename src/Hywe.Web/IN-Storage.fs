@@ -2,11 +2,12 @@ module Storage
 
 open System
 open Microsoft.JSInterop
-open Hywe.Core.Parse
+open Hywe.Core.Paxel
 
 // Shadow save for browser refresh persistence
 let autoSave (js: IJSRuntime) (content: string) =
-    () // Persistence disabled per user request
+    if not (String.IsNullOrWhiteSpace content) then
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
 
 let clearBackup (js: IJSRuntime) =
     js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
@@ -14,7 +15,10 @@ let clearBackup (js: IJSRuntime) =
 // Retrieve shadow save from LocalStorage
 let getBackup (js: IJSRuntime) =
     async {
-        return "" // Persistence disabled per user request
+        try
+            let! content = js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
+            return if isNull content then "" else content
+        with _ -> return ""
     }
 
 // Generates timestamped filename and triggers download
@@ -36,8 +40,8 @@ let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) 
         let attrs, _ = processLevel lvl
         finalState <- attrs |> Map.fold (fun (m: PolygonEditor.PolygonEditorModel) key v ->
             match key with
-            | "W" -> match v with | Float num -> { m with LogicalWidth = num * 10.0 } | _ -> m
-            | "H" -> match v with | Float num -> { m with LogicalHeight = num * 10.0 * 0.866 } | _ -> m
+            | "W" -> match v with | Float num -> { m with LogicalWidth = (max 10.0 num) * 10.0 } | _ -> m
+            | "H" -> match v with | Float num -> { m with LogicalHeight = (max 10.0 num) * 10.0 } | _ -> m
             | "L" -> match v with | Float num -> { m with Elevation = int num } | _ -> m
             | "S" -> { m with BaseStr = v }
             | "X" -> { m with UseAbsolute = (v = "1") }
@@ -59,11 +63,13 @@ let importFromHyw (content: string) (current: PolygonEditor.PolygonEditorModel) 
     let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
     
     let finalStateWithBoundary = 
+        let isBoundary = not finalState.UseAbsolute && not isZeroBoundary
         { finalState with 
+            Outer = if Array.isEmpty finalState.Outer then PolygonEditor.initOuter else finalState.Outer
             LogicalWidth = if finalState.LogicalWidth <= 0.0 then 300.0 else finalState.LogicalWidth
             LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
-            UseBoundary = not finalState.UseAbsolute && not isZeroBoundary
-            PolygonEnabled = not finalState.UseAbsolute && not isZeroBoundary }
+            UseBoundary = isBoundary
+            PolygonEnabled = isBoundary }
         |> PolygonEditor.refreshCachedStrings
 
     PolygonEditor.FreshlyImported finalStateWithBoundary

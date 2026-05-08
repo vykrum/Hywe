@@ -1,22 +1,20 @@
 module Cache
 
+    open System
     open ModelTypes
     open Hywe.Core
     open Hywe.Core.Coxel
-    open Hywe.Core.Parse
+    open Hywe.Core.Paxel
     
     /// <summary>
     /// Computes the full layout data for all levels.
     /// </summary>
     let computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
-        let sqnStr = sprintf "%A" sqn
-        let forcedStr = injectSqn src elv sqnStr
-        
-        Levels.generateMultiLevelLayout 
-            forcedStr 
+        Zaxel.generateMultiLevelLayout 
+            src 
             polyExport.EntryStr 
             [||] 
-            (Some sqn) 
+            (Some (elv, sqn)) 
             (Some polyExport.OuterStr) 
             (Some polyExport.IslandsStr)
 
@@ -125,6 +123,6 @@ module Cache
         let sqnIdx = 
             sqns 
             |> Map.tryFind lvl 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> (sprintf "%A" x).Equals(s, StringComparison.OrdinalIgnoreCase))) 
             |> Option.defaultValue 11
         generateSingleConfig src Hexel.sqnArray.[sqnIdx] poly lvl |> toDerived

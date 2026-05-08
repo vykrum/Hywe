@@ -14,7 +14,7 @@ open ModelHelpers
 open Hywe
 open Hywe.Core
 open Hywe.Core.Coxel
-open Hywe.Core.Parse
+open Hywe.Core.Paxel
 open Cache
 
 // Defaults / init 
@@ -36,11 +36,11 @@ let initModel =
         Sequences = Map.ofList [0, initialSequence]
         Elevation = 0
         BaseStr = ""
-        SrcOfTrth = initialOutput
+        SrcOfTrth = beeyond
         Tree = initialTree
         ParseError = false
         LastValidTree = initialTree
-        Derived = Cache.generateSingleConfig initialOutput (Hexel.sqnArray.[11]) initialPolygonExport 0 |> Cache.toDerived
+        Derived = Cache.deriveFromSource beeyond (Map.ofList [0, initialSequence]) initialPolygonExport 0
         LayoutCache = Map.empty
         NeedsHyweave = false
         IsHyweaving = false
@@ -148,14 +148,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newSqn = indexToSqn i
         let currentLevel = model.Tree.ActiveLevel
 
-        let newSqns = 
-            if currentLevel = 0 then
-                let treeMax = if model.Tree.Levels.IsEmpty then 0 else model.Tree.Levels.Keys |> Seq.max
-                let strMax = model.SrcOfTrth.Split(';', StringSplitOptions.None).Length - 1
-                let maxLvl = max treeMax strMax
-                (model.Sequences, [0..maxLvl]) ||> List.fold (fun m l -> Map.add l newSqn m)
-            else
-                model.Sequences |> Map.add currentLevel newSqn
+        let newSqns = model.Sequences |> Map.add currentLevel newSqn
 
         let updatedSrc = 
             match model.EditorMode with
@@ -169,14 +162,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
-                if currentLevel = 0 then
-                    let levelsCount = splitIntoLevels model.SrcOfTrth |> Array.length
-                    let mutable s = model.SrcOfTrth
-                    for l in 0 .. levelsCount - 1 do
-                        s <- injectSqn s l newSqn
-                    s
-                else
-                    injectSqn model.SrcOfTrth currentLevel newSqn
+                injectSqn model.SrcOfTrth currentLevel newSqn
 
         Storage.autoSave js updatedSrc |> ignore
 
@@ -319,9 +305,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let model = if shouldPush then pushUndo model else model
             let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
         
+            // Synchronize sequences map with all levels in the tree
+            let newSqns = 
+                (model.Sequences, updatedTree.Levels.Keys)
+                ||> Seq.fold (fun m lvl ->
+                    match Map.containsKey lvl m with
+                    | true -> m
+                    | false -> 
+                        // Inherit from parent (lvl-1) if possible, else default to 11 (VRCCNE)
+                        let parentSqn = m |> Map.tryFind (lvl - 1) |> Option.defaultValue "VRCCNE"
+                        Map.add lvl parentSqn m
+                )
+
             let newOutput = NodeCode.getOutput
                                  updatedTree
-                                 model.Sequences
+                                 newSqns
                                  model.PolygonExport.Width
                                  model.PolygonExport.Height
                                  model.PolygonExport.AbsStr
@@ -338,6 +336,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let modelWithTree = 
                 { model with 
                     Tree = updatedTree 
+                    Sequences = newSqns
                     SrcOfTrth = newOutput 
                     NeedsHyweave = if isMoving then model.NeedsHyweave else true
                     EditsCount = nextCount
@@ -512,9 +511,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Onboarding = { model.Onboarding with IsActive = true }
                         IsPresetsCollapsed = true
                     }
-                updatedModel, Cmd.none
+                
+                // Validate that the loaded state actually results in a layout
+                if Array.isEmpty updatedModel.Derived.cxCxl1 then
+                    model, Cmd.none // Fallback to init model
+                else
+                    updatedModel, Cmd.none
             with _ ->
-                // If backup is malformed or incompatible, ignore it to prevent startup hang
+                // If backup is malformed or incompatible, clear it and ignore it to prevent startup hang
+                Storage.clearBackup js |> ignore
                 model, Cmd.none
 
     | HardReset ->
@@ -731,7 +736,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                // Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
+                Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)

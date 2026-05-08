@@ -4,23 +4,6 @@ open Bolero
 open System.Collections.Frozen
 open Hywe.Core
 
-let vsSource = """
-    attribute vec3 a_position;
-    attribute vec4 a_color;
-    uniform mat4 u_projection;
-    uniform mat4 u_view;
-    varying vec4 v_color;
-    void main() {
-        gl_Position = u_projection * u_view * vec4(a_position, 1.0);
-        v_color = a_color;
-    }"""
-
-let fsSource = """
-    precision mediump float;
-    varying vec4 v_color;
-    void main() {
-        gl_FragColor = v_color;
-    }"""
 
 type hxgn = Template<
       """ <polygon 
@@ -138,50 +121,72 @@ let svgRemoveSawtooth (sqn : Hexel.Sqn) (arr : (float*float)[]) : (float*float)[
         | Hexel.Vertical   -> (snd, fst)
         | Hexel.Horizontal -> (fst, snd)
 
-    let result = ResizeArray<float*float>()
-    let mutable i = 0
-    let n = arr.Length
-    while i < n do
-        let mutable j = i
-        while j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) < 2.1 && abs(primary arr.[j+1] - primary arr.[j]) > 1.9 do
-            j <- j + 1
+    let splitByDelta2 (points: (float*float)[]) =
+        match points.Length with
+        | 0 -> [||]
+        | _ -> 
+            let folder (acc: (float*float) list list) point =
+                match acc with
+                | [] -> [[point]]
+                | currentGroup :: rest ->
+                    let prev = List.head currentGroup
+                    match abs(primary point - primary prev) with
+                    | d when abs(d - 2.0) < 0.1 -> (point :: currentGroup) :: rest
+                    | _ -> [point] :: currentGroup :: rest
             
-        let groupLen = j - i + 1
-        if groupLen > 3 then
-            let mutable isOscillating = true
-            for k = i to j - 1 do
-                if abs(secondary arr.[k+1] - secondary arr.[k]) < 0.9 || abs(secondary arr.[k+1] - secondary arr.[k]) > 1.1 then
-                    isOscillating <- false
-            
-            if isOscillating then
-                let f = arr.[i]
-                let l = arr.[j]
+            points 
+            |> Array.fold folder [] 
+            |> List.map (List.rev >> Array.ofList)
+            |> List.rev
+            |> Array.ofList
+
+    let oscillates (values: float[]) =
+        if values.Length < 3 then false
+        else
+            let rec loop i =
+                if i >= values.Length - 2 then true
+                else
+                    let d1 = abs(values.[i+1] - values.[i])
+                    let d2 = abs(values.[i+2] - values.[i+1])
+                    if abs(d1 - 1.0) < 0.1 && abs(d2 - 1.0) < 0.1 then loop (i+1)
+                    else false
+            loop 0
+
+    let groups = splitByDelta2 arr
+    groups
+    |> Array.collect (fun g ->
+        if g.Length <= 3 then g
+        else
+            let secValues = g |> Array.map secondary
+            if oscillates secValues then
+                let f, l = g.[0], g.[g.Length-1]
                 let low = min (secondary f) (secondary l)
                 match sqn with
-                | Hexel.Vertical   -> 
-                    result.Add((low, snd f))
-                    result.Add((low, snd l))
-                | Hexel.Horizontal -> 
-                    result.Add((fst f, low))
-                    result.Add((fst l, low))
-            else
-                for k = i to j do
-                    result.Add(arr.[k])
-        else
-            for k = i to j do
-                result.Add(arr.[k])
-        i <- j + 1
-    result.ToArray()
+                | Hexel.Vertical   -> [| (low, snd f); (low, snd l) |]
+                | Hexel.Horizontal -> [| (fst f, low); (fst l, low) |]
+            else g
+    )
 
 let svgToCartesian (sqn: Hexel.Sqn) (x: float, y: float) =
     match sqn with
     | Hexel.Vertical -> 
         let cartX = x + (0.5 * (y % 2.0))
-        let cartY = y * 0.866
+        let cartY = y * 1.0
         (cartX, cartY)
     | Hexel.Horizontal ->
-        let cartX = x * 0.866
+        let cartX = x * 1.0
         let cartY = y + (0.5 * (x % 2.0))
+        (cartX, cartY)
+
+let toCartesian (sqn: Hexel.Sqn) (x: int, y: int) =
+    match sqn with
+    | Hexel.Vertical -> 
+        let cartX = float x + (0.5 * float (y % 2))
+        let cartY = float y * 1.0
+        (cartX, cartY)
+    | Hexel.Horizontal ->
+        let cartX = float x * 1.0
+        let cartY = float y + (0.5 * float (x % 2))
         (cartX, cartY)
 
 let svgDedupeSequential (pts: (float * float)[]) =
@@ -241,7 +246,7 @@ let svgRemoveHooks (pts: (float * float)[]) =
                             let v1x, v1y = (fst p1 - fst p2)/d12, (snd p1 - snd p2)/d12
                             let v2x, v2y = (fst p3 - fst p2)/d23, (snd p3 - snd p2)/d23
                             let dot = v1x * v2x + v1y * v2y
-                            if dot > 0.95 then
+                            if dot > 0.97 then
                                 hookFound <- true
                             else
                                 res.Add(p2)
