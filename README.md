@@ -36,9 +36,9 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **Flow-based hierarchy** visualization  
 - 2D layouts visualized with **SVG**  
 - 3D extrusions rendered using **WebGPU**  
-- Inline editing of space names and sizes  
-- Dynamic, logic-driven layout evolution in real time  
-- No backend required as all computation runs in-browser  
+- An interactive graphical input interface
+- Dynamic, multi-level layout generation
+- No backend as all computation runs in-browser  
 
 ---
 
