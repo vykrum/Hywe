@@ -347,10 +347,10 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     let tIdx = 0;
     meshes.forEach((tris, i) => {
         const c = (colors && colors[i]) ? colors[i] : [0.8, 0.8, 0.8];
-        // Increase the pseudo-random micro-offset to prevent Z-fighting at shallow camera angles
+        // Subtract the offset so it never exceeds the intended extrusion height
         const microOffset = ((i * 137) % 100) * 0.002;
-        const h = ((heights?.[i] ?? 1.0) + microOffset) * scaleZ;
-        const bh = ((baseHeights?.[i] ?? 0.0) + microOffset) * scaleZ;
+        const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
+        const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
         for (let j=0; j<tris.length; j++) {
             const tri = tris[j];
             triInputData[tIdx++] = tri[0][0]; triInputData[tIdx++] = tri[0][1];
@@ -366,8 +366,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         edgePolygons.forEach((poly, i) => {
             const c = (colors && colors[i]) ? colors[i] : [0.5, 0.5, 0.5];
             const microOffset = ((i * 137) % 100) * 0.002;
-            const h = ((heights?.[i] ?? 1.0) + microOffset) * scaleZ;
-            const bh = ((baseHeights?.[i] ?? 0.0) + microOffset) * scaleZ;
+            const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
+            const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
             for (let j=0; j<poly.length; j++) {
                 const p1 = poly[j];
                 const p2 = poly[(j+1)%poly.length];
