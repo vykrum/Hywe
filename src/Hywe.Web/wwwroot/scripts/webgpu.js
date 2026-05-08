@@ -210,6 +210,8 @@ fn vs_post(@builtin(vertex_index) vertexIndex: u32) -> PostVertexOutput {
 @fragment
 fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     let ipos = vec2<i32>(pos.xy);
+    let texSize = vec2<i32>(textureDimensions(colorTex));
+    
     let baseColor = textureLoad(colorTex, ipos, 0);
     let centerDepth = textureLoad(depthTex, ipos, 0);
 
@@ -224,7 +226,8 @@ fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     for (var i = 0; i < samples; i++) {
         let angle = f32(i) * 6.28318 / f32(samples);
         let offset = vec2<i32>(vec2<f32>(cos(angle), sin(angle)) * radius);
-        let sampleDepth = textureLoad(depthTex, ipos + offset, 0);
+        let samplePos = clamp(ipos + offset, vec2<i32>(0), texSize - vec2<i32>(1));
+        let sampleDepth = textureLoad(depthTex, samplePos, 0);
         
         let diff = centerDepth - sampleDepth;
         if (diff > 0.0001 && diff < 0.05) {
@@ -693,10 +696,11 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
 
     // --- Draw loop ---
     function draw() {
+        const state = canvas._wgpuState;
+        if (!state) return;
+
         const w = Math.max(1, canvas.clientWidth || canvas.width);
         const h = Math.max(1, canvas.clientHeight || canvas.height);
-        
-        let state = canvas._wgpuState;
         
         if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.lastW !== w || state.lastH !== h) { 
             canvas.width = w; canvas.height = h; 
@@ -765,28 +769,29 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             passEncoder.setVertexBuffer(1, state.faceColBuffer);
             passEncoder.draw(state.totalFaceVertices);
         }
-        // Edge lines removed per request
-        // if (state.totalEdgeVertices > 0) {
-        //     passEncoder.setPipeline(state.edgePipeline);
-        //     passEncoder.setVertexBuffer(0, state.edgePosBuffer);
-        //     passEncoder.setVertexBuffer(1, state.edgeColBuffer);
-        //     passEncoder.draw(state.totalEdgeVertices);
-        // }
+        if (state.totalEdgeVertices > 0) {
+            passEncoder.setPipeline(state.edgePipeline);
+            passEncoder.setVertexBuffer(0, state.edgePosBuffer);
+            passEncoder.setVertexBuffer(1, state.edgeColBuffer);
+            passEncoder.draw(state.totalEdgeVertices);
+        }
         passEncoder.end();
 
         // 2. Post-Process (SSAO) Pass to Canvas
-        const postPassDescriptor = {
-            colorAttachments: [{
-                view: context.getCurrentTexture().createView(),
-                clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-                loadOp: 'clear', storeOp: 'store',
-            }]
-        };
-        const postPassEncoder = commandEncoder.beginRenderPass(postPassDescriptor);
-        postPassEncoder.setPipeline(state.postPipeline);
-        postPassEncoder.setBindGroup(0, state.postBindGroup);
-        postPassEncoder.draw(3);
-        postPassEncoder.end();
+        if (state.postBindGroup) {
+            const postPassDescriptor = {
+                colorAttachments: [{
+                    view: context.getCurrentTexture().createView(),
+                    clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
+                    loadOp: 'clear', storeOp: 'store',
+                }]
+            };
+            const postPassEncoder = commandEncoder.beginRenderPass(postPassDescriptor);
+            postPassEncoder.setPipeline(state.postPipeline);
+            postPassEncoder.setBindGroup(0, state.postBindGroup);
+            postPassEncoder.draw(3);
+            postPassEncoder.end();
+        }
 
         device.queue.submit([commandEncoder.finish()]);
 
