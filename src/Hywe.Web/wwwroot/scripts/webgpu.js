@@ -347,8 +347,10 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     let tIdx = 0;
     meshes.forEach((tris, i) => {
         const c = (colors && colors[i]) ? colors[i] : [0.8, 0.8, 0.8];
-        const h = (heights?.[i] ?? 1.0) * scaleZ;
-        const bh = (baseHeights?.[i] ?? 0.0) * scaleZ;
+        // Add a pseudo-random micro-offset to prevent Z-fighting on overlapping coplanar faces
+        const microOffset = ((i * 137) % 100) * 0.0002;
+        const h = ((heights?.[i] ?? 1.0) + microOffset) * scaleZ;
+        const bh = ((baseHeights?.[i] ?? 0.0) + microOffset) * scaleZ;
         for (let j=0; j<tris.length; j++) {
             const tri = tris[j];
             triInputData[tIdx++] = tri[0][0]; triInputData[tIdx++] = tri[0][1];
@@ -363,8 +365,9 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     if (edgePolygons) {
         edgePolygons.forEach((poly, i) => {
             const c = (colors && colors[i]) ? colors[i] : [0.5, 0.5, 0.5];
-            const h = (heights?.[i] ?? 1.0) * scaleZ;
-            const bh = (baseHeights?.[i] ?? 0.0) * scaleZ;
+            const microOffset = ((i * 137) % 100) * 0.0002;
+            const h = ((heights?.[i] ?? 1.0) + microOffset) * scaleZ;
+            const bh = ((baseHeights?.[i] ?? 0.0) + microOffset) * scaleZ;
             for (let j=0; j<poly.length; j++) {
                 const p1 = poly[j];
                 const p2 = poly[(j+1)%poly.length];
