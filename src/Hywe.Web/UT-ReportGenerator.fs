@@ -139,7 +139,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
     let fontSize = if cxls.Length > 25 then "7.5px" else if cxls.Length > 15 then "8.5px" else "9.5px"
     sb.AppendLine(sprintf """<table class="report-table" style="font-size: %s;">
         <thead>
-            <tr><th>Room Name</th><th>Required</th><th>Achieved</th><th>Open</th></tr>
+            <tr><th></th><th>Required</th><th>Achieved</th><th>Open</th></tr>
         </thead>
         <tbody>""" fontSize) |> ignore
         
@@ -169,7 +169,7 @@ let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string
     let headerHeight = if names.Length > 20 then "40px" else "60px"
     sb.AppendLine(sprintf """<table class="report-table adjacency-matrix" style="font-size: %s;">
         <thead>
-            <tr style="height: %s;"><th>Room</th>""" fontSize headerHeight) |> ignore
+            <tr style="height: %s;"><th></th>""" fontSize headerHeight) |> ignore
     
     for name in names do
         let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
@@ -298,20 +298,20 @@ let tBatchGrid1 : Printf.StringFormat<string -> string> = """<div class="page"><
     <div class="content-area" style="flex-direction: column;">
         <div class="batch-grid">"""
 
-let tBatchCell : Printf.StringFormat<string -> string -> string> = """<div class="batch-cell">%s<div class="batch-label">%s</div></div>"""
+let tBatchCell : Printf.StringFormat<string -> string -> string> = """<div class="batch-cell" style="overflow: hidden; display: flex; flex-direction: column;">%s<div class="batch-label">%s</div></div>"""
 
 let tBatchGrid2 : Printf.StringFormat<string -> string -> string> = """</div>%s</div>%s</div></div>"""
 
 let tVariation : Printf.StringFormat<string -> string -> string -> string -> string -> string -> string> = """<div class="page"><div class="page-inner">
     %s
     <div class="content-area">
-        <div class="col-left" style="display: flex; flex-direction: column;">
+        <div class="col-left" style="display: flex; flex-direction: column; min-width: 0;">
             <div style="flex: 1; min-height: 0;">%s</div>
             %s
         </div>
-        <div class="col-right">
-            %s
-            %s
+        <div class="col-right" style="display: flex; flex-direction: column; gap: 15px; overflow: hidden;">
+            <div style="flex: 1.2; min-height: 0; overflow: auto;">%s</div>
+            <div style="flex: 1; min-height: 0; overflow: auto;">%s</div>
         </div>
     </div>
     %s
