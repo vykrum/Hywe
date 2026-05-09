@@ -65,9 +65,13 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             if (ctx) {
                 canvas.width = canvas.clientWidth || 600;
                 canvas.height = canvas.clientHeight || 400;
-                ctx.fillStyle = "#f8f9fa"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#dc3545"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
-                ctx.fillText("WebGPU not supported.", canvas.width / 2, canvas.height / 2);
+                ctx.fillStyle = "#fcfcfc"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#dc3545"; ctx.font = "bold 18px sans-serif";
+                ctx.fillText("WebGPU is not enabled in this browser", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#6c757d"; ctx.font = "14px sans-serif";
+                ctx.fillText("Please try a browser with active WebGPU support (Chromium 113+).", canvas.width / 2, canvas.height / 2 + 20);
+                ctx.fillText("You may also need to check your browser flags or hardware acceleration.", canvas.width / 2, canvas.height / 2 + 40);
             }
             return;
         }
