@@ -10,6 +10,7 @@
 
 	<ItemGroup>
 		<Compile Include="VZ-Graphics.fs" />
+		<Compile Include="VZ-Shaders.fs" />
 		<Compile Include="VZ-ThreeD.fs" />
 		<Compile Include="IN-PolygonEditor.fs" />
 		<Compile Include="IN-NodeCode.fs" />

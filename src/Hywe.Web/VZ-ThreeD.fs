@@ -146,94 +146,99 @@ let extrudePolygons
     (levelElevations: float[])
     (viewLocked: bool)
     : Async<unit> =
-
-    // 1. Helper: Point conversion
-    let toPoly (x: Cxl) =
-        let (_, _, z) = Hexel.hxlCrd x.Base
-        svgCxlPrm x z
-        |> svgCleanPolygon x.Seqn
-        |> Array.map (fun p -> svgToCartesian x.Seqn p)
-        |> fun pts -> 
-            if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
-                pts.[0 .. pts.Length - 2] 
-            else pts
-
-    // 2. Helper: Color normalization
-    let normalizeColor (rgba: string) =
-        let parts = 
-            rgba.Replace("rgba(", "").Replace(")", "").Split(',')
-            |> Array.choose (fun s -> 
-                match System.Double.TryParse(s.Trim()) with
-                | true, v -> Some v
-                | _ -> None)
-        match parts with
-        | [| r; g; b; _ |] 
-        | [| r; g; b |] -> [| r / 255.0; g / 255.0; b / 255.0 |]
-        | _ -> [| 0.8; 0.8; 0.8 |]
-
-    // 3. Process initial data
-    let processedData =
-        cxl 
-        |> Array.mapi (fun i c -> 
-            let poly = toPoly c
-            let clr = if i < colors.Length then colors.[i] else "rgba(200,200,200,1)"
-            (c, poly, clr))
-        |> Array.filter (fun (_, poly, _) -> poly.Length >= 3)
-
-    let polygonsFinal = processedData |> Array.map (fun (_, p, _) -> p)
-    let colorsFinal = processedData |> Array.map (fun (_, _, c) -> c)
-    let cxlsFinal = processedData |> Array.map (fun (c, _, _) -> c)
-
-    // Calculate heights for each level
-    let diffs = 
-        if levelElevations.Length < 2 then [| 3.0 |]
-        else 
-            [| 0 .. levelElevations.Length - 2 |]
-            |> Array.map (fun i -> levelElevations.[i+1] - levelElevations.[i])
-    
-    let avgHeight = if Array.isEmpty diffs then 3.0 else Array.average diffs
-
-    // 4. Loop-free Mesh Assembler (Tail Recursive)
-    let rec buildMeshes i accMeshes accEdges accHeights accBaseHeights accCentroids =
-        match i < polygonsFinal.Length with
-        | false -> 
-            (List.rev accMeshes |> List.toArray, 
-             List.rev accEdges |> List.toArray, 
-             List.rev accHeights |> List.toArray,
-             List.rev accBaseHeights |> List.toArray,
-             List.rev accCentroids |> List.toArray)
-        | true ->
-            let c = cxlsFinal.[i]
-            let (_, _, z) = Hexel.hxlCrd c.Base
-            
-            let baseH = if z < levelElevations.Length then levelElevations.[z] else float z * avgHeight
-            let h = 
-                (if z < diffs.Length then diffs.[z]
-                 else avgHeight) - 0.05
-            
-            let poly = polygonsFinal.[i]
-            
-            // Generate mesh and transform for WebGL (Flipping Y)
-            let mesh = 
-                polygonMesh poly 
-                |> Array.map (Array.map (fun (x, y) -> 
-                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
-                    [| cx; -cy |]))
-            
-            let edge = 
-                poly |> Array.map (fun (x, y) -> 
-                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
-                    [| cx; -cy |])
-            
-            let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
-            let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
-            let cx, cy = toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
-            let centroid = [| cx; -cy; baseH + h / 2.0 |]
-            
-            buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)
-
-    // 5. Final Async Execution
     async {
+        // Register shaders before initialization
+        do! js.InvokeVoidAsync("registerWebGPUShaders", 
+                                Hywe.Shaders.computeWgsl, 
+                                Hywe.Shaders.renderWgsl, 
+                                Hywe.Shaders.postProcessWgsl).AsTask()
+            |> Async.AwaitTask
+
+        // 1. Helper: Point conversion
+        let toPoly (x: Cxl) =
+            let (_, _, z) = Hexel.hxlCrd x.Base
+            svgCxlPrm x z
+            |> svgCleanPolygon x.Seqn
+            |> Array.map (fun p -> svgToCartesian x.Seqn p)
+            |> fun pts -> 
+                if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
+                    pts.[0 .. pts.Length - 2] 
+                else pts
+
+        // 2. Helper: Color normalization
+        let normalizeColor (rgba: string) =
+            let parts = 
+                rgba.Replace("rgba(", "").Replace(")", "").Split(',')
+                |> Array.choose (fun s -> 
+                    match System.Double.TryParse(s.Trim()) with
+                    | true, v -> Some v
+                    | _ -> None)
+            match parts with
+            | [| r; g; b; _ |] 
+            | [| r; g; b |] -> [| r / 255.0; g / 255.0; b / 255.0 |]
+            | _ -> [| 0.8; 0.8; 0.8 |]
+
+        // 3. Process initial data
+        let processedData =
+            cxl 
+            |> Array.mapi (fun i c -> 
+                let poly = toPoly c
+                let clr = if i < colors.Length then colors.[i] else "rgba(200,200,200,1)"
+                (c, poly, clr))
+            |> Array.filter (fun (_, poly, _) -> poly.Length >= 3)
+
+        let polygonsFinal = processedData |> Array.map (fun (_, p, _) -> p)
+        let colorsFinal = processedData |> Array.map (fun (_, _, c) -> c)
+        let cxlsFinal = processedData |> Array.map (fun (c, _, _) -> c)
+
+        // Calculate heights for each level
+        let diffs = 
+            if levelElevations.Length < 2 then [| 3.0 |]
+            else 
+                [| 0 .. levelElevations.Length - 2 |]
+                |> Array.map (fun i -> levelElevations.[i+1] - levelElevations.[i])
+        
+        let avgHeight = if Array.isEmpty diffs then 3.0 else Array.average diffs
+
+        // 4. Loop-free Mesh Assembler (Tail Recursive)
+        let rec buildMeshes i accMeshes accEdges accHeights accBaseHeights accCentroids =
+            match i < polygonsFinal.Length with
+            | false -> 
+                (List.rev accMeshes |> List.toArray, 
+                 List.rev accEdges |> List.toArray, 
+                 List.rev accHeights |> List.toArray,
+                 List.rev accBaseHeights |> List.toArray,
+                 List.rev accCentroids |> List.toArray)
+            | true ->
+                let c = cxlsFinal.[i]
+                let (_, _, z) = Hexel.hxlCrd c.Base
+                
+                let baseH = if z < levelElevations.Length then levelElevations.[z] else float z * avgHeight
+                let h = 
+                    (if z < diffs.Length then diffs.[z]
+                     else avgHeight) - 0.05
+                
+                let poly = polygonsFinal.[i]
+                
+                // Generate mesh and transform for WebGL (Flipping Y)
+                let mesh = 
+                    polygonMesh poly 
+                    |> Array.map (Array.map (fun (x, y) -> 
+                        let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                        [| cx; -cy |]))
+                
+                let edge = 
+                    poly |> Array.map (fun (x, y) -> 
+                        let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                        [| cx; -cy |])
+                
+                let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
+                let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
+                let cx, cy = toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
+                let centroid = [| cx; -cy; baseH + h / 2.0 |]
+                
+                buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)
+
         do! Async.Sleep 30
         
         let colorsJs = colorsFinal |> Array.map normalizeColor

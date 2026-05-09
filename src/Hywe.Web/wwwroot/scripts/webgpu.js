@@ -1,244 +1,11 @@
-// --- WebGPU implementation ---
-
-const computeWgsl = `
-struct Uniforms {
-    cx: f32,
-    cy: f32,
-    scaleXY: f32,
-    scaleZ: f32,
-    lx: f32,
-    ly: f32,
-    lz: f32,
-    numTris: u32,
-    numWalls: u32,
-    pad1: u32,
-    pad2: u32,
-    pad3: u32,
+// --- Global Shader Storage ---
+window._gpuShaders = window._gpuShaders || { compute: "", render: "", post: "" };
+window.registerWebGPUShaders = (c, r, p) => { 
+    console.log("WebGPU: Shaders registered.");
+    window._gpuShaders.compute = c; 
+    window._gpuShaders.render = r; 
+    window._gpuShaders.post = p; 
 };
-
-@group(0) @binding(0) var<uniform> uniforms: Uniforms;
-@group(0) @binding(1) var<storage, read> triInput: array<f32>;
-@group(0) @binding(2) var<storage, read> wallInput: array<f32>;
-@group(0) @binding(3) var<storage, read_write> facePosOut: array<f32>;
-@group(0) @binding(4) var<storage, read_write> faceColOut: array<f32>;
-@group(0) @binding(5) var<storage, read_write> edgePosOut: array<f32>;
-@group(0) @binding(6) var<storage, read_write> edgeColOut: array<f32>;
-
-@compute @workgroup_size(64)
-fn computeTris(@builtin(global_invocation_id) id: vec3<u32>) {
-    let idx = id.x;
-    if (idx >= uniforms.numTris) { return; }
-
-    let inOffset = idx * 11u;
-    let x1 = triInput[inOffset + 0u];
-    let y1 = triInput[inOffset + 1u];
-    let x2 = triInput[inOffset + 2u];
-    let y2 = triInput[inOffset + 3u];
-    let x3 = triInput[inOffset + 4u];
-    let y3 = triInput[inOffset + 5u];
-    let r = triInput[inOffset + 6u];
-    let g = triInput[inOffset + 7u];
-    let b = triInput[inOffset + 8u];
-    let baseH = triInput[inOffset + 9u];
-    let height = triInput[inOffset + 10u];
-
-    let nx1 = (x1 - uniforms.cx) * uniforms.scaleXY;
-    let ny1 = (y1 - uniforms.cy) * uniforms.scaleXY;
-    let nx2 = (x2 - uniforms.cx) * uniforms.scaleXY;
-    let ny2 = (y2 - uniforms.cy) * uniforms.scaleXY;
-    let nx3 = (x3 - uniforms.cx) * uniforms.scaleXY;
-    let ny3 = (y3 - uniforms.cy) * uniforms.scaleXY;
-    let nzTop = baseH + height;
-    let nzBot = baseH;
-
-    let outPosOffset = idx * 18u;
-    let outColOffset = idx * 24u;
-
-    facePosOut[outPosOffset + 0u] = nx1; facePosOut[outPosOffset + 1u] = ny1; facePosOut[outPosOffset + 2u] = nzTop;
-    facePosOut[outPosOffset + 3u] = nx2; facePosOut[outPosOffset + 4u] = ny2; facePosOut[outPosOffset + 5u] = nzTop;
-    facePosOut[outPosOffset + 6u] = nx3; facePosOut[outPosOffset + 7u] = ny3; facePosOut[outPosOffset + 8u] = nzTop;
-
-    facePosOut[outPosOffset + 9u]  = nx3; facePosOut[outPosOffset + 10u] = ny3; facePosOut[outPosOffset + 11u] = nzBot;
-    facePosOut[outPosOffset + 12u] = nx2; facePosOut[outPosOffset + 13u] = ny2; facePosOut[outPosOffset + 14u] = nzBot;
-    facePosOut[outPosOffset + 15u] = nx1; facePosOut[outPosOffset + 16u] = ny1; facePosOut[outPosOffset + 17u] = nzBot;
-
-    let topCol = vec3<f32>(r, g, b) * 0.95;
-    let botCol = vec3<f32>(r, g, b) * 0.85;
-
-    for (var i = 0u; i < 3u; i++) {
-        faceColOut[outColOffset + i*4u + 0u] = topCol.r;
-        faceColOut[outColOffset + i*4u + 1u] = topCol.g;
-        faceColOut[outColOffset + i*4u + 2u] = topCol.b;
-        faceColOut[outColOffset + i*4u + 3u] = 1.0;
-        
-        faceColOut[outColOffset + 12u + i*4u + 0u] = botCol.r;
-        faceColOut[outColOffset + 12u + i*4u + 1u] = botCol.g;
-        faceColOut[outColOffset + 12u + i*4u + 2u] = botCol.b;
-        faceColOut[outColOffset + 12u + i*4u + 3u] = 1.0;
-    }
-}
-
-@compute @workgroup_size(64)
-fn computeWalls(@builtin(global_invocation_id) id: vec3<u32>) {
-    let idx = id.x;
-    if (idx >= uniforms.numWalls) { return; }
-
-    let inOffset = idx * 9u;
-    let x1 = wallInput[inOffset + 0u];
-    let y1 = wallInput[inOffset + 1u];
-    let x2 = wallInput[inOffset + 2u];
-    let y2 = wallInput[inOffset + 3u];
-    let r = wallInput[inOffset + 4u];
-    let g = wallInput[inOffset + 5u];
-    let b = wallInput[inOffset + 6u];
-    let baseH = wallInput[inOffset + 7u];
-    let height = wallInput[inOffset + 8u];
-
-    let nx1 = (x1 - uniforms.cx) * uniforms.scaleXY;
-    let ny1 = (y1 - uniforms.cy) * uniforms.scaleXY;
-    let nx2 = (x2 - uniforms.cx) * uniforms.scaleXY;
-    let ny2 = (y2 - uniforms.cy) * uniforms.scaleXY;
-    let nzTop = baseH + height;
-    let nzBot = baseH;
-
-    let dx = nx2 - nx1;
-    let dy = ny2 - ny1;
-    let wallLen = sqrt(dx*dx + dy*dy);
-    let wnx = dy / wallLen;
-    let wny = -dx / wallLen;
-    let dotP = max(0.0, wnx * uniforms.lx + wny * uniforms.ly);
-    let wallShade = 0.7 + 0.25 * dotP;
-
-    let col = vec3<f32>(r, g, b) * wallShade;
-
-    let facePosOffset = (uniforms.numTris * 18u) + (idx * 18u);
-    let faceColOffset = (uniforms.numTris * 24u) + (idx * 24u);
-
-    facePosOut[facePosOffset + 0u] = nx1; facePosOut[facePosOffset + 1u] = ny1; facePosOut[facePosOffset + 2u] = nzBot;
-    facePosOut[facePosOffset + 3u] = nx2; facePosOut[facePosOffset + 4u] = ny2; facePosOut[facePosOffset + 5u] = nzTop;
-    facePosOut[facePosOffset + 6u] = nx1; facePosOut[facePosOffset + 7u] = ny1; facePosOut[facePosOffset + 8u] = nzTop;
-
-    facePosOut[facePosOffset + 9u]  = nx1; facePosOut[facePosOffset + 10u] = ny1; facePosOut[facePosOffset + 11u] = nzBot;
-    facePosOut[facePosOffset + 12u] = nx2; facePosOut[facePosOffset + 13u] = ny2; facePosOut[facePosOffset + 14u] = nzBot;
-    facePosOut[facePosOffset + 15u] = nx2; facePosOut[facePosOffset + 16u] = ny2; facePosOut[facePosOffset + 17u] = nzTop;
-
-    for (var i = 0u; i < 6u; i++) {
-        faceColOut[faceColOffset + i*4u + 0u] = col.r;
-        faceColOut[faceColOffset + i*4u + 1u] = col.g;
-        faceColOut[faceColOffset + i*4u + 2u] = col.b;
-        faceColOut[faceColOffset + i*4u + 3u] = 1.0;
-    }
-
-    let edgePosOffset = idx * 24u;
-    let edgeColOffset = idx * 32u;
-
-    edgePosOut[edgePosOffset + 0u] = nx1; edgePosOut[edgePosOffset + 1u] = ny1; edgePosOut[edgePosOffset + 2u] = nzTop;
-    edgePosOut[edgePosOffset + 3u] = nx2; edgePosOut[edgePosOffset + 4u] = ny2; edgePosOut[edgePosOffset + 5u] = nzTop;
-
-    edgePosOut[edgePosOffset + 6u] = nx1; edgePosOut[edgePosOffset + 7u] = ny1; edgePosOut[edgePosOffset + 8u] = nzBot;
-    edgePosOut[edgePosOffset + 9u] = nx2; edgePosOut[edgePosOffset + 10u] = ny2; edgePosOut[edgePosOffset + 11u] = nzBot;
-
-    edgePosOut[edgePosOffset + 12u] = nx1; edgePosOut[edgePosOffset + 13u] = ny1; edgePosOut[edgePosOffset + 14u] = nzBot;
-    edgePosOut[edgePosOffset + 15u] = nx1; edgePosOut[edgePosOffset + 16u] = ny1; edgePosOut[edgePosOffset + 17u] = nzTop;
-
-    edgePosOut[edgePosOffset + 18u] = nx2; edgePosOut[edgePosOffset + 19u] = ny2; edgePosOut[edgePosOffset + 20u] = nzBot;
-    edgePosOut[edgePosOffset + 21u] = nx2; edgePosOut[edgePosOffset + 22u] = ny2; edgePosOut[edgePosOffset + 23u] = nzTop;
-
-    for (var i = 0u; i < 8u; i++) {
-        edgeColOut[edgeColOffset + i*4u + 0u] = 0.4;
-        edgeColOut[edgeColOffset + i*4u + 1u] = 0.4;
-        edgeColOut[edgeColOffset + i*4u + 2u] = 0.4;
-        edgeColOut[edgeColOffset + i*4u + 3u] = 1.0;
-    }
-}
-`;
-
-const wgslShaders = `
-struct Uniforms {
-    projection: mat4x4<f32>,
-    view: mat4x4<f32>,
-};
-
-@group(0) @binding(0) var<uniform> uniforms: Uniforms;
-
-struct VertexInput {
-    @location(0) position: vec3<f32>,
-    @location(1) color: vec4<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) position: vec4<f32>,
-    @location(0) color: vec4<f32>,
-};
-
-@vertex
-fn vs_main(in: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.position = uniforms.projection * uniforms.view * vec4<f32>(in.position, 1.0);
-    out.color = in.color;
-    return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return in.color;
-}
-`;
-
-const postProcessWgsl = `
-@group(0) @binding(0) var colorTex: texture_2d<f32>;
-@group(0) @binding(1) var depthTex: texture_depth_multisampled_2d;
-@group(0) @binding(2) var samp: sampler;
-
-struct PostVertexOutput {
-    @builtin(position) position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-};
-
-@vertex
-fn vs_post(@builtin(vertex_index) vertexIndex: u32) -> PostVertexOutput {
-    var pos = array<vec2<f32>, 3>(
-        vec2<f32>(-1.0, -1.0), vec2<f32>(3.0, -1.0), vec2<f32>(-1.0, 3.0)
-    );
-    var out: PostVertexOutput;
-    out.position = vec4<f32>(pos[vertexIndex], 0.0, 1.0);
-    out.uv = pos[vertexIndex] * 0.5 + 0.5;
-    out.uv.y = 1.0 - out.uv.y;
-    return out;
-}
-
-@fragment
-fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
-    let ipos = vec2<i32>(pos.xy);
-    let texSize = vec2<i32>(textureDimensions(colorTex));
-    
-    let baseColor = textureLoad(colorTex, ipos, 0);
-    let centerDepth = textureLoad(depthTex, ipos, 0);
-
-    if (centerDepth >= 1.0) {
-        return baseColor;
-    }
-
-    var occlusion = 0.0;
-    let samples = 12;
-    let radius = 3.5;
-    
-    for (var i = 0; i < samples; i++) {
-        let angle = f32(i) * 6.28318 / f32(samples);
-        let offset = vec2<i32>(vec2<f32>(cos(angle), sin(angle)) * radius);
-        let samplePos = clamp(ipos + offset, vec2<i32>(0), texSize - vec2<i32>(1));
-        let sampleDepth = textureLoad(depthTex, samplePos, 0);
-        
-        let diff = centerDepth - sampleDepth;
-        if (diff > 0.0001 && diff < 0.05) {
-            occlusion += 1.0;
-        }
-    }
-
-    let ao = 1.0 - (occlusion / f32(samples)) * 0.75;
-    return vec4<f32>(baseColor.rgb * ao, baseColor.a);
-}
-`;
 
 let _gpuCache = { adapter: null, device: null };
 
@@ -269,6 +36,17 @@ window.disposeWebGPU = (canvasId) => {
 };
 
 window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked) => {
+    console.log("WebGPU: Initializing for", canvasId);
+    
+    const computeWgsl = window._gpuShaders.compute;
+    const wgslShaders = window._gpuShaders.render;
+    const postProcessWgsl = window._gpuShaders.post;
+
+    if (!computeWgsl || !wgslShaders) {
+        console.error("WebGPU: Shaders not registered yet!");
+        return;
+    }
+
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
@@ -282,6 +60,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         window.disposeWebGPU(canvasId);
 
         if (!navigator.gpu) {
+            console.error("WebGPU: Not supported by browser.");
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 canvas.width = canvas.clientWidth || 600;
@@ -315,10 +94,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     canvas._viewLocked = !!viewLocked;
     canvas._geoData = { meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj };
 
-    // --- Compute normalization ---
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
-
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     meshes.forEach(mesh => mesh.forEach(tri =>
         tri.forEach(([x, y]) => {
             minX = Math.min(minX, x); maxX = Math.max(maxX, x);
@@ -332,7 +108,6 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     const scaleXY = (maxDim > 0) ? 2 / maxDim : 1;
     const scaleZ = scaleXY;
 
-    // --- Compute Shader Data Preparation ---
     let numTris = 0;
     meshes.forEach(tris => numTris += tris.length);
     let numWalls = 0;
@@ -344,8 +119,6 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     let tIdx = 0;
     meshes.forEach((tris, i) => {
         const c = (colors && colors[i]) ? colors[i] : [0.8, 0.8, 0.8];
-        // Subtract the offset so it never exceeds the intended extrusion height
-        // % 100 yields 0-99. 99 * 0.00002 = 0.00198 max offset.
         const microOffset = ((i * 137) % 100) * 0.00002;
         const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
         const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
@@ -380,11 +153,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     const getStorageBuffer = (data, minSize) => {
         let size = data.byteLength;
         if (size === 0) size = minSize || 16;
-        size = Math.ceil(size / 4) * 4; // 4-byte aligned
-        const buf = device.createBuffer({
-            size,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        });
+        size = Math.ceil(size / 4) * 4; 
+        const buf = device.createBuffer({ size, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
         if (data.byteLength > 0) device.queue.writeBuffer(buf, 0, data);
         return buf;
     };
@@ -401,31 +171,16 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     cuF32[4] = lightDir[0]/lenL; cuF32[5] = lightDir[1]/lenL; cuF32[6] = lightDir[2]/lenL; 
     cuU32[7] = numTris; cuU32[8] = numWalls;
 
-    const computeUniformBuffer = device.createBuffer({
-        size: 48,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
+    const computeUniformBuffer = device.createBuffer({ size: 48, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     device.queue.writeBuffer(computeUniformBuffer, 0, computeUniformData);
 
     const totalFaceVertices = numTris * 6 + numWalls * 6;
-    const facePosBuffer = device.createBuffer({
-        size: Math.max(16, totalFaceVertices * 3 * 4),
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    });
-    const faceColBuffer = device.createBuffer({
-        size: Math.max(16, totalFaceVertices * 4 * 4),
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    });
+    const facePosBuffer = device.createBuffer({ size: Math.max(16, totalFaceVertices * 3 * 4), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE });
+    const faceColBuffer = device.createBuffer({ size: Math.max(16, totalFaceVertices * 4 * 4), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE });
 
     const totalEdgeVertices = numWalls * 8;
-    const edgePosBuffer = device.createBuffer({
-        size: Math.max(16, totalEdgeVertices * 3 * 4),
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    });
-    const edgeColBuffer = device.createBuffer({
-        size: Math.max(16, totalEdgeVertices * 4 * 4),
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    });
+    const edgePosBuffer = device.createBuffer({ size: Math.max(16, totalEdgeVertices * 3 * 4), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE });
+    const edgeColBuffer = device.createBuffer({ size: Math.max(16, totalEdgeVertices * 4 * 4), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE });
 
     const computeModule = device.createShaderModule({ code: computeWgsl });
     const computeBindGroupLayout = device.createBindGroupLayout({
@@ -457,7 +212,6 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         layout: device.createPipelineLayout({ bindGroupLayouts: [computeBindGroupLayout] }),
         compute: { module: computeModule, entryPoint: 'computeTris' },
     });
-
     const computePipelineWalls = device.createComputePipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [computeBindGroupLayout] }),
         compute: { module: computeModule, entryPoint: 'computeWalls' },
@@ -477,56 +231,26 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     computePass.end();
     device.queue.submit([computeEncoder.finish()]);
 
-    // --- Render Pipeline setup ---
     const shaderModule = device.createShaderModule({ code: wgslShaders });
-
-    const uniformBufferSize = 4 * 16 * 2; // 2 mat4x4
-    const uniformBuffer = device.createBuffer({
-        size: uniformBufferSize,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
+    const uniformBuffer = device.createBuffer({ size: 128, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     const bindGroupLayout = device.createBindGroupLayout({
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: "uniform" }
-        }]
+        entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "uniform" } }]
     });
-
     const bindGroup = device.createBindGroup({
         layout: bindGroupLayout,
-        entries: [{
-            binding: 0,
-            resource: { buffer: uniformBuffer }
-        }]
-    });
-
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [bindGroupLayout]
+        entries: [{ binding: 0, resource: { buffer: uniformBuffer } }]
     });
 
     const vertexBuffers = [
-        {
-            arrayStride: 3 * 4, // 3 floats, 4 bytes each
-            attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }]
-        },
-        {
-            arrayStride: 4 * 4, // 4 floats, 4 bytes each
-            attributes: [{ shaderLocation: 1, offset: 0, format: 'float32x4' }]
-        }
+        { arrayStride: 12, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] },
+        { arrayStride: 16, attributes: [{ shaderLocation: 1, offset: 0, format: 'float32x4' }] }
     ];
 
     const facePipeline = device.createRenderPipeline({
-        layout: pipelineLayout,
-        vertex: {
-            module: shaderModule,
-            entryPoint: 'vs_main',
-            buffers: vertexBuffers
-        },
+        layout: device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] }),
+        vertex: { module: shaderModule, entryPoint: 'vs_main', buffers: vertexBuffers },
         fragment: {
-            module: shaderModule,
-            entryPoint: 'fs_main',
+            module: shaderModule, entryPoint: 'fs_main',
             targets: [{
                 format: presentationFormat,
                 blend: {
@@ -535,27 +259,16 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 }
             }]
         },
-        primitive: { topology: 'triangle-list', cullMode: 'none' },
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: 'depth32float',
-            depthBias: 2,
-            depthBiasSlopeScale: 2.0,
-        },
+        primitive: { topology: 'triangle-list' },
+        depthStencil: { depthWriteEnabled: true, depthCompare: 'less', format: 'depth32float', depthBias: 2, depthBiasSlopeScale: 2.0 },
         multisample: { count: 4 },
     });
 
     const edgePipeline = device.createRenderPipeline({
-        layout: pipelineLayout,
-        vertex: {
-            module: shaderModule,
-            entryPoint: 'vs_main',
-            buffers: vertexBuffers
-        },
+        layout: device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] }),
+        vertex: { module: shaderModule, entryPoint: 'vs_main', buffers: vertexBuffers },
         fragment: {
-            module: shaderModule,
-            entryPoint: 'fs_main',
+            module: shaderModule, entryPoint: 'fs_main',
             targets: [{
                 format: presentationFormat,
                 blend: {
@@ -565,15 +278,10 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             }]
         },
         primitive: { topology: 'line-list' },
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: 'depth32float',
-        },
+        depthStencil: { depthWriteEnabled: true, depthCompare: 'less', format: 'depth32float' },
         multisample: { count: 4 },
     });
 
-    // --- Post Process Pipeline (SSAO) ---
     const postModule = device.createShaderModule({ code: postProcessWgsl });
     const postBindGroupLayout = device.createBindGroupLayout({
         entries: [
@@ -586,90 +294,35 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         layout: device.createPipelineLayout({ bindGroupLayouts: [postBindGroupLayout] }),
         vertex: { module: postModule, entryPoint: 'vs_post' },
         fragment: {
-            module: postModule,
-            entryPoint: 'fs_post',
+            module: postModule, entryPoint: 'fs_post',
             targets: [{ format: presentationFormat }]
         },
         primitive: { topology: 'triangle-list' }
     });
-    const linearSampler = device.createSampler({
-        magFilter: 'linear', minFilter: 'linear',
-    });
+    const linearSampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
 
     canvas._wgpuState = {
         device, context, presentationFormat,
         facePosBuffer, faceColBuffer, edgePosBuffer, edgeColBuffer, 
-        triInputBuffer, wallInputBuffer, computeUniformBuffer, uniformBuffer,
-        facePipeline, edgePipeline, bindGroup,
+        uniformBuffer, facePipeline, edgePipeline, bindGroup,
         postPipeline, postBindGroupLayout, linearSampler,
-        totalFaceVertices, totalEdgeVertices,
-        lastW: 0, lastH: 0
+        totalFaceVertices, totalEdgeVertices, lastW: 0, lastH: 0
     };
 
-    // --- Interaction & camera ---
     if (canvas._cam_rx === undefined) {
-        canvas._cam_ry = 0;
-        canvas._cam_rx = Math.PI / 6;
-        canvas._cam_zoom = 3;
+        canvas._cam_ry = 0; canvas._cam_rx = Math.PI / 6; canvas._cam_zoom = 3;
     }
     let dragging = false, lx = 0, ly = 0;
-    const init = { rx: Math.PI / 6, ry: 0, zoom: 3 };
-
     if (!canvas._listenersAdded) {
         canvas.addEventListener("pointerdown", e => { if (canvas._viewLocked) return; dragging = true; lx = e.clientX; ly = e.clientY; });
         document.addEventListener("pointerup", () => dragging = false);
         document.addEventListener("pointermove", e => {
             if (!dragging || canvas._viewLocked) return;
-            const dx = e.clientX - lx, dy = e.clientY - ly;
-            canvas._cam_ry -= dx * 0.01;
-            canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + dy * 0.01, 0.01), Math.PI / 2 - 0.01);
+            canvas._cam_ry -= (e.clientX - lx) * 0.01;
+            canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + (e.clientY - ly) * 0.01, 0.01), Math.PI/2 - 0.01);
             lx = e.clientX; ly = e.clientY;
         });
-        canvas.addEventListener("dblclick", () => { 
-            if (canvas._viewLocked) return; 
-            canvas._cam_rx = init.rx; canvas._cam_ry = init.ry; canvas._cam_zoom = init.zoom; 
-        });
-        canvas.addEventListener("wheel", e => {
-            if (canvas._viewLocked) return;
-            e.preventDefault();
-            canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom + e.deltaY * 0.005, 1.5), 10);
-        }, { passive: false });
-
-        let prevDist = null;
-        canvas.addEventListener("touchstart", e => {
-            if (canvas._viewLocked) return;
-            if (e.cancelable) e.preventDefault();
-            if (e.touches.length === 1) { lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
-            else if (e.touches.length === 2) {
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                prevDist = Math.hypot(dx, dy);
-            }
-        }, { passive: false });
-        canvas.addEventListener("touchmove", e => {
-            if (canvas._viewLocked) return;
-            if (e.cancelable) e.preventDefault();
-            if (e.touches.length === 1) {
-                const dx = e.touches[0].clientX - lx;
-                const dy = e.touches[0].clientY - ly;
-                canvas._cam_ry -= dx * 0.01;
-                canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + dy * 0.01, 0.01), Math.PI / 2 - 0.01);
-                lx = e.touches[0].clientX; ly = e.touches[0].clientY;
-            } else if (e.touches.length === 2) {
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                const dist = Math.hypot(dx, dy);
-                if (prevDist) { 
-                    canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom * (prevDist / dist), 1.5), 10);
-                }
-                prevDist = dist;
-            }
-        }, { passive: false });
-        canvas.addEventListener("touchend", (e) => {
-            if (e.cancelable) e.preventDefault();
-            prevDist = null;
-        }, { passive: false });
-
+        canvas.addEventListener("wheel", e => { if (!canvas._viewLocked) { e.preventDefault(); canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom + e.deltaY * 0.005, 1.5), 10); } }, { passive: false });
         canvas._listenersAdded = true;
     }
 
@@ -685,44 +338,26 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             out[0] = xx; out[1] = yx; out[2] = zx; out[3] = 0;
             out[4] = xy; out[5] = yy; out[6] = zy; out[7] = 0;
             out[8] = xz; out[9] = yz; out[10] = zz; out[11] = 0;
-            out[12] = -(xx * ex + xy * ey + xz * ez);
-            out[13] = -(yx * ex + yy * ey + yz * ez);
-            out[14] = -(zx * ex + zy * ey + zz * ez);
-            out[15] = 1;
+            out[12] = -(xx * ex + xy * ey + xz * ez); out[13] = -(yx * ex + yy * ey + yz * ez); out[14] = -(zx * ex + zy * ey + zz * ez); out[15] = 1;
             return out;
         }
     };
 
-    // --- Draw loop ---
     function draw() {
         const state = canvas._wgpuState;
         if (!state) return;
 
-        const w = Math.max(1, canvas.clientWidth || canvas.width);
-        const h = Math.max(1, canvas.clientHeight || canvas.height);
+        const w = Math.max(1, canvas.clientWidth);
+        const h = Math.max(1, canvas.clientHeight);
         
-        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture || state.lastW !== w || state.lastH !== h) { 
-            canvas.width = w; canvas.height = h; 
-            state.lastW = w; state.lastH = h;
-            
+        if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture) { 
+            canvas.width = w; canvas.height = h;
             if (state.msaaDepthTexture) state.msaaDepthTexture.destroy();
-            state.msaaDepthTexture = device.createTexture({
-                size: [w, h], format: 'depth32float',
-                sampleCount: 4, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-            });
-            
+            state.msaaDepthTexture = device.createTexture({ size: [w, h], format: 'depth32float', sampleCount: 4, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING });
             if (state.msaaColorTexture) state.msaaColorTexture.destroy();
-            state.msaaColorTexture = device.createTexture({
-                size: [w, h], format: presentationFormat,
-                sampleCount: 4, usage: GPUTextureUsage.RENDER_ATTACHMENT,
-            });
-            
+            state.msaaColorTexture = device.createTexture({ size: [w, h], format: presentationFormat, sampleCount: 4, usage: GPUTextureUsage.RENDER_ATTACHMENT });
             if (state.resolvedColorTexture) state.resolvedColorTexture.destroy();
-            state.resolvedColorTexture = device.createTexture({
-                size: [w, h], format: presentationFormat,
-                sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
-            });
-
+            state.resolvedColorTexture = device.createTexture({ size: [w, h], format: presentationFormat, sampleCount: 1, usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC });
             state.postBindGroup = device.createBindGroup({
                 layout: state.postBindGroupLayout,
                 entries: [
@@ -734,33 +369,20 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         }
 
         const proj = externalProj ? new Float32Array(externalProj) : new Float32Array([1.8, 0, 0, 0, 0, 2.4, 0, 0, 0, 0, -1, -1, 0, 0, -0.2, 0]);
-        const camDist = canvas._cam_zoom;
-        const camX = camDist * Math.cos(canvas._cam_ry) * Math.cos(canvas._cam_rx);
-        const camY = camDist * Math.sin(canvas._cam_ry) * Math.cos(canvas._cam_rx);
-        const camZ = camDist * Math.sin(canvas._cam_rx);
+        const camX = canvas._cam_zoom * Math.cos(canvas._cam_ry) * Math.cos(canvas._cam_rx);
+        const camY = canvas._cam_zoom * Math.sin(canvas._cam_ry) * Math.cos(canvas._cam_rx);
+        const camZ = canvas._cam_zoom * Math.sin(canvas._cam_rx);
         const view = new Float32Array(16);
         mat4.lookAt(view, [camX, camY, camZ], [0, 0, 0], [0, 0, 1]);
 
-        device.queue.writeBuffer(state.uniformBuffer, 0, proj.buffer, proj.byteOffset, proj.byteLength);
-        device.queue.writeBuffer(state.uniformBuffer, 64, view.buffer, view.byteOffset, view.byteLength);
+        device.queue.writeBuffer(state.uniformBuffer, 0, proj);
+        device.queue.writeBuffer(state.uniformBuffer, 64, view);
 
         const commandEncoder = device.createCommandEncoder();
-
-        // 1. MSAA Main Render Pass
-        const renderPassDescriptor = {
-            colorAttachments: [{
-                view: state.msaaColorTexture.createView(),
-                resolveTarget: state.resolvedColorTexture.createView(),
-                clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-                loadOp: 'clear', storeOp: 'discard',
-            }],
-            depthStencilAttachment: {
-                view: state.msaaDepthTexture.createView(),
-                depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store',
-            },
-        };
-
-        const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        const passEncoder = commandEncoder.beginRenderPass({
+            colorAttachments: [{ view: state.msaaColorTexture.createView(), resolveTarget: state.resolvedColorTexture.createView(), clearValue: { r: 1, g: 1, b: 1, a: 1 }, loadOp: 'clear', storeOp: 'discard' }],
+            depthStencilAttachment: { view: state.msaaDepthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' },
+        });
         passEncoder.setBindGroup(0, state.bindGroup);
         if (state.totalFaceVertices > 0) {
             passEncoder.setPipeline(state.facePipeline);
@@ -768,7 +390,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             passEncoder.setVertexBuffer(1, state.faceColBuffer);
             passEncoder.draw(state.totalFaceVertices);
         }
-        /* 
+        /*
         if (state.totalEdgeVertices > 0) {
             passEncoder.setPipeline(state.edgePipeline);
             passEncoder.setVertexBuffer(0, state.edgePosBuffer);
@@ -778,28 +400,19 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         */
         passEncoder.end();
 
-        // 2. Post-Process (SSAO) Pass to Canvas
-        if (state.postBindGroup) {
-            const postPassDescriptor = {
-                colorAttachments: [{
-                    view: context.getCurrentTexture().createView(),
-                    clearValue: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-                    loadOp: 'clear', storeOp: 'store',
-                }]
-            };
-            const postPassEncoder = commandEncoder.beginRenderPass(postPassDescriptor);
-            postPassEncoder.setPipeline(state.postPipeline);
-            postPassEncoder.setBindGroup(0, state.postBindGroup);
-            postPassEncoder.draw(3);
-            postPassEncoder.end();
-        }
+        const postEncoder = commandEncoder.beginRenderPass({
+            colorAttachments: [{ view: context.getCurrentTexture().createView(), clearValue: { r: 1, g: 1, b: 1, a: 1 }, loadOp: 'clear', storeOp: 'store' }]
+        });
+        postEncoder.setPipeline(state.postPipeline);
+        postEncoder.setBindGroup(0, state.postBindGroup);
+        postEncoder.draw(3);
+        postEncoder.end();
 
         device.queue.submit([commandEncoder.finish()]);
-
         canvas._drawLoopId = requestAnimationFrame(draw);
     }
+    draw();
 
-        canvas._drawLoopId = requestAnimationFrame(draw);
     } catch (err) {
         console.error("WebGPU Init Error:", err);
     } finally {
@@ -807,64 +420,27 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     }
 };
 
-// SVG Capture functionality stub
 window.captureCanvasWebGPU = async (canvasId) => {
     const canvas = document.getElementById(canvasId);
     const state = canvas?._wgpuState;
     if (!state) return null;
-
     const { device, resolvedColorTexture } = state;
-    const w = canvas.width;
-    const h = canvas.height;
-
+    const w = canvas.width, h = canvas.height;
     const bytesPerRow = Math.ceil((w * 4) / 256) * 256;
-    const bufferSize = bytesPerRow * h;
-    const readBuffer = device.createBuffer({
-        size: bufferSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-    });
-
+    const readBuffer = device.createBuffer({ size: bytesPerRow * h, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
     const encoder = device.createCommandEncoder();
-    encoder.copyTextureToBuffer(
-        { texture: resolvedColorTexture },
-        { buffer: readBuffer, bytesPerRow },
-        [w, h]
-    );
+    encoder.copyTextureToBuffer({ texture: resolvedColorTexture }, { buffer: readBuffer, bytesPerRow }, [w, h]);
     device.queue.submit([encoder.finish()]);
-
     await readBuffer.mapAsync(GPUMapMode.READ);
-    const arrayBuffer = readBuffer.getMappedRange();
-    const data = new Uint8ClampedArray(arrayBuffer);
-    
+    const data = new Uint8ClampedArray(readBuffer.getMappedRange());
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = w;
-    tempCanvas.height = h;
-    const ctx = tempCanvas.getContext('2d');
-    const imageData = ctx.createImageData(w, h);
-    
-    for (let y = 0; y < h; y++) {
-        const srcOffset = y * bytesPerRow;
-        const dstOffset = y * w * 4;
-        imageData.data.set(data.subarray(srcOffset, srcOffset + w * 4), dstOffset);
-    }
+    tempCanvas.width = w; tempCanvas.height = h;
+    const ctx = tempCanvas.getContext('2d'), imageData = ctx.createImageData(w, h);
+    for (let y = 0; y < h; y++) imageData.data.set(data.subarray(y * bytesPerRow, y * bytesPerRow + w * 4), y * w * 4);
     ctx.putImageData(imageData, 0, 0);
     const dataUrl = tempCanvas.toDataURL('image/png');
-    
-    readBuffer.unmap();
-    readBuffer.destroy();
+    readBuffer.unmap(); readBuffer.destroy();
     return dataUrl;
 };
-
-window.captureCanvasSVG = async (canvasId) => {
-    return await window.captureCanvasWebGPU(canvasId);
-};
-
-window.export3DToSVG = (canvasId, filename) => {
-    window.captureCanvasWebGPU(canvasId).then(dataUrl => {
-        if (!dataUrl) return;
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = filename.replace(".svg", ".png");
-        a.click();
-    });
-};
+window.captureCanvasSVG = window.captureCanvasWebGPU;
+window.export3DToSVG = (canvasId, filename) => { window.captureCanvasWebGPU(canvasId).then(d => { if (d) { const a = document.createElement("a"); a.href = d; a.download = filename.replace(".svg", ".png"); a.click(); } }); };
