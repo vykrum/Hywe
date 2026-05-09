@@ -118,8 +118,8 @@ let renderFlowchartSvg (root: TreeNode) (colorList: string[]) (maxW: float optio
 let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) : string =
     let uniqueRooms = 
         shapes 
-        |> Array.distinctBy (fun s -> s.color)
-        |> Array.sortBy (fun s -> s.name)
+        |> Array.distinctBy (fun s -> s.name.Trim(), s.color)
+        |> Array.sortBy (fun s -> s.name.Trim())
     
     let items = 
         uniqueRooms 
@@ -131,15 +131,17 @@ let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: f
             </div>""" s.color safeName)
         |> String.concat ""
     
-    sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
+    if uniqueRooms.Length = 0 then ""
+    else sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
     
 let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) (elv: int) : string =
     let sb = StringBuilder()
-    sb.AppendLine("""<table class="report-table">
+    let fontSize = if cxls.Length > 25 then "7.5px" else if cxls.Length > 15 then "8.5px" else "9.5px"
+    sb.AppendLine(sprintf """<table class="report-table" style="font-size: %s;">
         <thead>
             <tr><th>Room Name</th><th>Required</th><th>Achieved</th><th>Open</th></tr>
         </thead>
-        <tbody>""") |> ignore
+        <tbody>""" fontSize) |> ignore
         
     let hxlAreaX = 4
     for i = 0 to cxls.Length - 1 do
@@ -163,9 +165,11 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
 let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string =
     let names, matrix = Coxel.cxlAdj cxls
     let sb = StringBuilder()
-    sb.AppendLine("""<table class="report-table adjacency-matrix">
+    let fontSize = if names.Length > 25 then "6px" else if names.Length > 15 then "7.5px" else "9px"
+    let headerHeight = if names.Length > 20 then "40px" else "60px"
+    sb.AppendLine(sprintf """<table class="report-table adjacency-matrix" style="font-size: %s;">
         <thead>
-            <tr><th>Room</th>""") |> ignore
+            <tr style="height: %s;"><th>Room</th>""" fontSize headerHeight) |> ignore
     
     for name in names do
         let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
@@ -272,11 +276,11 @@ let tCover : Printf.StringFormat<string -> string -> string -> string -> string 
             </table>
         </div>
     </div>
-    <div class="cover-right" style="flex: 2; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 40px; background: #ffffff; position: relative;">
+    <div class="cover-right" style="flex: 2; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #ffffff; position: relative;">
         <div style="position: absolute; top: 10mm; right: 15mm;">
             <img src="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" style="width: 150px; height: auto;" />
         </div>
-        <img src="%s" style="max-width: 100%%; max-height: 100%%; object-fit: contain;" />
+        %s
     </div>
 </div>%s</div>"""
 
@@ -333,8 +337,11 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
         html
 
     if opts.IncludeCover then
-        let svgContent = (defaultArg opts.Captured3DImage "").Replace("%%", "%").Replace("%", "%%")
-        sprintf tCover opts.ProjectTitle opts.ProjectNumber opts.Description opts.Author opts.ClientName d svgContent (renderFooter()) |> sb.AppendLine |> ignore
+        let captureHtml = 
+            match opts.Captured3DImage with
+            | Some url -> sprintf """<img src="%s" style="width: 100%%; height: 100%%; object-fit: contain;" />""" url
+            | None -> ""
+        sprintf tCover opts.ProjectTitle opts.ProjectNumber opts.Description opts.Author opts.ClientName d captureHtml (renderFooter()) |> sb.AppendLine |> ignore
 
     // Table of Contents removed as requested
     
@@ -383,27 +390,54 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                 sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — Level %d%s" level pageStr) opts.ProjectTitle) |> sb.AppendLine |> ignore
                 
                 for i = chunkStart to chunkEnd do
-                    let svg = renderFloorPlanSvg batchInfo[i].shapes batchInfo[i].cxOuIl maxW maxH
+                    let conf = batchInfo[i]
+                    let levelCxlNames = 
+                        conf.cxCxl1 
+                        |> Array.filter (fun c -> 
+                            let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level)
+                            let (_, _, bz) = Hexel.hxlCrd c.Base
+                            hasHxls || bz = level)
+                        |> Array.map (fun c -> prpVlu c.Name)
+                        |> Set.ofArray
+                    
+                    let levelShapes = conf.shapes |> Array.filter (fun s -> levelCxlNames.Contains(s.name) && s.points.Length > 0)
+                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
                     sprintf tBatchCell svg (Page.labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
                 
-                let legend = if batchInfo.Length > 0 then renderLegend batchInfo.[0].shapes else ""
+                let allPageShapes = [| chunkStart .. chunkEnd |] |> Array.collect (fun idx -> batchInfo.[idx].shapes)
+                let legendNames = 
+                    [| chunkStart .. chunkEnd |] 
+                    |> Array.collect (fun idx -> batchInfo.[idx].cxCxl1)
+                    |> Array.filter (fun c -> 
+                        let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level)
+                        let (_, _, bz) = Hexel.hxlCrd c.Base
+                        hasHxls || bz = level)
+                    |> Array.map (fun c -> prpVlu c.Name)
+                    |> Set.ofArray
+                let levelShapes = allPageShapes |> Array.filter (fun s -> legendNames.Contains(s.name) && s.points.Length > 0)
+                let legend = if levelShapes.Length > 0 then renderLegend levelShapes else ""
                 sprintf tBatchGrid2 legend (renderFooter()) |> sb.AppendLine |> ignore
 
         if section.Variations then
             for i = 0 to Math.Min(23, batchInfo.Length - 1) do
                 if section.SelectedVariations.Contains(i) then
                     let conf = batchInfo[i]
-                    let svg = renderFloorPlanSvg conf.shapes conf.cxOuIl maxW maxH
-                    let legend = renderLegend conf.shapes
                     
                     // Filter Coxels for this level specifically
                     let levelCxls : Cxl[] = 
                         conf.cxCxl1 |> Array.filter (fun (c: Cxl) -> 
-                            let (_, _, z) = Hexel.hxlCrd c.Base
-                            z = level)
+                            let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level)
+                            let (_, _, bz) = Hexel.hxlCrd c.Base
+                            hasHxls || bz = level)
+
+                    let levelNames = levelCxls |> Array.map (fun c -> prpVlu c.Name) |> Set.ofArray
+                    let levelShapes = conf.shapes |> Array.filter (fun s -> levelNames.Contains(s.name) && s.points.Length > 0)
+                    
+                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
+                    let legend = renderLegend levelShapes
                             
                     let colorMap = 
-                        conf.shapes 
+                        levelShapes 
                         |> Array.map (fun s -> s.name, s.color) 
                         |> Map.ofArray
 
