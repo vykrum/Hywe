@@ -125,6 +125,16 @@ let pushUndo (model: Model) : Model =
         let newStack = snap :: model.UndoStack |> List.truncate maxUndoDepth
         { model with UndoStack = newStack; RedoStack = [] }
 
+/// Ensures all levels in the source string share the same category (VR/HR) as the target sequence.
+let ensureCategory (src: string) (targetIdx: int) =
+    let targetIsVR = targetIdx < 12
+    let targetSqnStr = allSqns.[targetIdx]
+    let sqns = extractSequences src
+    (src, sqns) ||> Map.fold (fun s lvl sqn ->
+        let isVR = sqnToIndex sqn < 12
+        if isVR <> targetIsVR then injectSqn s lvl targetSqnStr else s
+    )
+
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     let modelBefore = 
@@ -147,8 +157,20 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let model = pushUndo model
         let newSqn = indexToSqn i
         let currentLevel = model.Tree.ActiveLevel
+        let targetIsVR = i < 12
 
-        let newSqns = model.Sequences |> Map.add currentLevel newSqn
+        // Enforce category consistency: All levels must share the same category (VR or HR)
+        let newSqns = 
+            model.Sequences 
+            |> Map.map (fun lvl sqn ->
+                if lvl = currentLevel then newSqn
+                else
+                    let currentIsVR = sqnToIndex sqn < 12
+                    if currentIsVR <> targetIsVR then 
+                        // Mismatch! Force it to match the new category.
+                        newSqn
+                    else sqn
+            )
 
         let updatedSrc = 
             match model.EditorMode with
@@ -162,7 +184,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
-                injectSqn model.SrcOfTrth currentLevel newSqn
+                let mutable s = model.SrcOfTrth
+                // Inject changes for all levels that were updated
+                for KeyValue(lvl, sqn) in newSqns do
+                    let oldSqn = model.Sequences |> Map.tryFind lvl |> Option.defaultValue ""
+                    if sqn <> oldSqn then
+                        s <- injectSqn s lvl sqn
+                s
 
         Storage.autoSave js updatedSrc |> ignore
 
@@ -239,14 +267,16 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let mutable updatedCache = model.LayoutCache
             
             // 1. Handle current orientation (might be different from 11)
-            let fullDataCurrent = Cache.computeFullLayout updatedSrcOfTrth currentSqn model.PolygonExport currentLevel
+            let srcForCurrent = ensureCategory updatedSrcOfTrth currentSqnIdx
+            let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn model.PolygonExport currentLevel
             for lvl in model.Tree.Levels.Keys do
                 let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl
                 updatedCache <- Cache.update lvl currentSqnIdx c updatedCache
             
             // 2. Handle orientation 11 (standard default) if current orientation is different
             if currentSqnIdx <> 11 then
-                let fullData11 = Cache.computeFullLayout updatedSrcOfTrth Hexel.sqnArray.[11] model.PolygonExport 0
+                let srcFor11 = ensureCategory updatedSrcOfTrth 11
+                let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] model.PolygonExport 0
                 for lvl in model.Tree.Levels.Keys do
                     let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl
                     updatedCache <- Cache.update lvl 11 c updatedCache
@@ -430,8 +460,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     let mutable currentCache = model.LayoutCache
                     let sqn = Hexel.sqnArray.[i]
                     
+                    // Force all levels in the source to match the current batch orientation 'sqn'
+                    let srcForBatch = ensureCategory model.SrcOfTrth i
+
                     // Compute full layout once for this orientation
-                    let fullData = Cache.computeFullLayout model.SrcOfTrth sqn model.PolygonExport 0
+                    let fullData = Cache.computeFullLayout srcForBatch sqn model.PolygonExport 0
                     
                     // Update cache for all levels
                     for lvl in model.Tree.Levels.Keys do
