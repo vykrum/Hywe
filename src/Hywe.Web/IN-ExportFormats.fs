@@ -6,21 +6,33 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 ///
 
+// --- HELPERS ---
+let private getCxlCoordsStringDec (cxl: Cxl) =
+    Array.append [|cxl.Base|] cxl.Hxls 
+    |> Array.map (fun h -> 
+        let (x, y, _) = hxlCrd h
+        sprintf "%d.%d" x y)
+    |> String.concat " "
+
+let private getBaseCoordStringDec (cxl: Cxl) =
+    let (x, y, _) = hxlCrd cxl.Base
+    sprintf "%d.%d" x y
+
 // --- CSV EXPORTS ---
-let generateCoordinatesCsv (data: (string * int * Cxl[] * string[])[]) =
+let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
 
     let sb = StringBuilder()
 
     sb.AppendLine("Orientation,Level,CoxelID,CoxelName,BaseCoordinate,Coordinates") |> ignore
 
-    for (sqn, elv, cxls, b36s) in data do
+    for (sqn, elv, cxls) in data do
 
         for i = 0 to cxls.Length - 1 do
             let cxl = cxls.[i]
             let id = prpVlu cxl.Rfid
             let name = prpVlu cxl.Name
-            let baseCoord = getBaseCoordString cxl
-            let coords = b36s.[i]
+            let baseCoord = getBaseCoordStringDec cxl
+            let coords = getCxlCoordsStringDec cxl
             sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord coords) |> ignore
     sb.ToString()
 

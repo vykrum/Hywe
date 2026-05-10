@@ -98,6 +98,7 @@ let initModel =
         InstallPromptAvailable = false
         ShowPrivacyAlert = false
         IsStandalone = false
+        IsCoordsVisible = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -140,7 +141,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     let modelBefore = 
         if model.Onboarding.IsActive then
             match message with
-            | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp 
+            | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp | ToggleCoords
             | TransitionToIntro | TransitionToMain 
             | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
@@ -419,7 +420,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             NeedsHyweave = true        },
             Cmd.none
 
-    | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv | DownloadBatchMetricsCsv | DownloadBatchAdjCsv as msg ->
+    | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv | DownloadBatchMetricsCsv | DownloadBatchAdjCsv | ToggleCoords as msg ->
         let model = 
             match msg with
             | FileImported _ | SelectPreset _ -> pushUndo model

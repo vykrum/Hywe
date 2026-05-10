@@ -107,7 +107,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             }
         }
 
-let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) =
+let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) =
     let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> 
         let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
@@ -175,14 +175,50 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
             attr.``style`` "flex: 1 1 450px; min-width: 300px;"
             viewAdjacencyTable sqn adjNames cxClr1 adjMatrix
         }
+        // --- COORDINATES WINDOW ---
+        if isCoordsVisible then
+            div {
+                attr.``style`` "width: 100%; margin-top: 10px; background: #fdfdfd; border: 1px solid #eee; padding: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); border-radius: 4px;"
+                div {
+                    attr.``style`` "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"
+                    h4 { attr.``style`` "font-size: 11px; color: #888; margin: 0; letter-spacing: 1px;"; text "HEXEL COORDINATES (CSV)" }
+                    div {
+                        attr.``style`` "display: flex; gap: 10px;"
+                        button {
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                            attr.``style`` "font-size: 9px; padding: 4px 8px;"
+                            on.click (fun _ -> dispatch DownloadCoordCsv)
+                            text "Download CSV"
+                        }
+                        button {
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                            attr.``style`` "font-size: 9px; padding: 4px 8px;"
+                            on.click (fun _ -> dispatch ToggleCoords)
+                            text "Close"
+                        }
+                    }
+                }
+                div {
+                    attr.``style`` "max-height: 250px; overflow-y: auto; background: #fff; border: 1px solid #f5f5f5; padding: 10px;"
+                    pre {
+                        attr.``style`` "font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 10px; color: #444; margin: 0; white-space: pre-wrap; word-break: break-all;"
+                        text (ExportFormats.generateCoordinatesCsv [| (sqn, elv, cxCxl1) |])
+                    }
+                }
+            }
+
         // --- DOWNLOAD GROUP ---
         div {
             attr.``style`` "width: 100%; display: flex; gap: 10px; margin-top: 20px; justify-content: center; align-items: center; flex-wrap: wrap;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                attr.``style`` "font-size: 10px; padding: 6px 12px;"
-                attr.title "Coordinates"
-                on.pointerdown (fun _ -> dispatch DownloadCoordCsv)
+                let baseStyle = "font-size: 10px; padding: 6px 12px; transition: all 0.2s;"
+                if isCoordsVisible then 
+                    attr.``style`` (baseStyle + " background: #eee; color: #333;")
+                else 
+                    attr.``style`` baseStyle
+                attr.title "Toggle Coordinates View"
+                on.pointerdown (fun _ -> dispatch ToggleCoords)
                 text "Crd"
             }
             button {
