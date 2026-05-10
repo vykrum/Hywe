@@ -417,6 +417,7 @@ input[type=number] {
     background: transparent;
     cursor: pointer;
     margin-top: -24px;
+    box-shadow: none;
 }
 
 .custom-slider::-moz-range-thumb {
