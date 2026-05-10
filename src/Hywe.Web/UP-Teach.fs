@@ -8,7 +8,7 @@ open ModelTypes
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open ExportFormats
+open FileManager
 open Cache
 
 let generateSuggestion (model: Model) =
@@ -112,7 +112,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                     
                                     match cached with
                                     | Some c -> 
-                                        ExportFormats.generateHynteractPayloadFromCxls c.cxCxl1
+                                        FileManager.generateHynteractPayloadFromCxls c.cxCxl1
                                     | None -> 
                                         // Compute and UPDATE LOCAL CACHE for all levels
                                         let fullData = Cache.computeFullLayout currentSrc sqnCase model.PolygonExport 0
@@ -120,7 +120,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                             let config = Cache.fromFullLayout fullData sqnCase lvl
                                             currentCache <- Cache.update lvl i config currentCache
                                         
-                                        ExportFormats.generateHynteractPayloadFromCxls (let cxls, _, _, _ = fullData in cxls)
+                                        FileManager.generateHynteractPayloadFromCxls (let cxls, _, _, _ = fullData in cxls)
                                 with ex -> 
                                     printfn "Warning: Orientation %s failed Dataset Generation: %s" key ex.Message
                                     "" 

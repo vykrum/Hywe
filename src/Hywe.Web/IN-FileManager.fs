@@ -1,12 +1,88 @@
-module ExportFormats
+module FileManager
 
+open System
 open System.Text
+open Microsoft.JSInterop
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-///
+open Hywe.Core.Paxel
+open PolygonEditor
 
-// --- HELPERS ---
+// --- STORAGE & PERSISTENCE ---
+
+/// Shadow save for browser refresh persistence
+let autoSave (js: IJSRuntime) (content: string) =
+    if not (String.IsNullOrWhiteSpace content) then
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
+
+let clearBackup (js: IJSRuntime) =
+    js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
+
+/// Retrieve shadow save from LocalStorage
+let getBackup (js: IJSRuntime) =
+    async {
+        try
+            let! content = js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
+            return if isNull content then "" else content
+        with _ -> return ""
+    }
+
+/// Generates timestamped filename and triggers download
+let saveFile (js: IJSRuntime) (content: string) =
+    let timestamp = DateTime.Now.ToString("yyMMddHHmm")
+    let fileName = sprintf "%s.hyw" timestamp
+    js.InvokeVoidAsync("downloadFile", fileName, content, "application/octet-stream") |> ignore
+
+/// Traditional import
+let importFile (js: IJSRuntime) (inputId: string) =
+    js.InvokeAsync<string>("readHywFile", inputId)
+
+/// <summary> Parses .hyw content and updates a PolygonEditorModel. </summary>
+let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
+    let sortedLevels = splitIntoLevels content |> Array.truncate 1
+    
+    let mutable finalState = current
+    for lvl in sortedLevels do
+        let attrs, _ = processLevel lvl
+        finalState <- attrs |> Map.fold (fun (m: PolygonEditorModel) key v ->
+            match key with
+            | "W" -> match v with | Float num -> { m with LogicalWidth = (max 10.0 num) * 10.0 } | _ -> m
+            | "H" -> match v with | Float num -> { m with LogicalHeight = (max 10.0 num) * 10.0 } | _ -> m
+            | "L" -> match v with | Float num -> { m with Elevation = int num } | _ -> m
+            | "S" -> { m with BaseStr = v }
+            | "X" -> { m with UseAbsolute = (v = "1") }
+            | "E" -> 
+                match parsePoint v with 
+                | Ok pt -> { m with EntryPoint = pt } 
+                | _ -> m
+            | "O" -> 
+                match parsePoly v with 
+                | Ok pts -> { m with Outer = pts } 
+                | _ -> m
+            | "I" -> 
+                match parseIslands v with 
+                | Ok pts -> { m with Islands = pts } 
+                | _ -> m
+            | _ -> m
+        ) finalState
+    
+    let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
+    
+    let finalStateWithBoundary = 
+        let isBoundary = not finalState.UseAbsolute && not isZeroBoundary
+        { finalState with 
+            Outer = if Array.isEmpty finalState.Outer then initOuter else finalState.Outer
+            LogicalWidth = if finalState.LogicalWidth <= 0.0 then 300.0 else finalState.LogicalWidth
+            LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
+            UseBoundary = isBoundary
+            PolygonEnabled = isBoundary }
+        |> refreshCachedStrings
+
+    FreshlyImported finalStateWithBoundary
+
+// --- EXPORT FORMATS ---
+
 let private getCxlCoordsStringDec (cxl: Cxl) =
     Array.append [|cxl.Base|] cxl.Hxls 
     |> Array.map (fun h -> 
@@ -18,15 +94,11 @@ let private getBaseCoordStringDec (cxl: Cxl) =
     let (x, y, _) = hxlCrd cxl.Base
     sprintf "%d.%d" x y
 
-// --- CSV EXPORTS ---
+/// Generates a CSV of all Coxel coordinates
 let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
-
     let sb = StringBuilder()
-
     sb.AppendLine("Orientation,Level,CoxelID,CoxelName,BaseCoordinate,Coordinates") |> ignore
-
     for (sqn, elv, cxls) in data do
-
         for i = 0 to cxls.Length - 1 do
             let cxl = cxls.[i]
             let id = prpVlu cxl.Rfid
@@ -36,6 +108,7 @@ let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
             sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord coords) |> ignore
     sb.ToString()
 
+/// Generates a CSV of area metrics
 let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
     let sb = StringBuilder()
     let hxlAreaX = 1
@@ -50,8 +123,7 @@ let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
             sb.AppendLine(sprintf "%s,%d,%s,%s,%d,%d,%s" sqn elv id name reqSz achSz targetMet) |> ignore
     sb.ToString()
 
-
-
+/// Generates a CSV for adjacency matrices
 let generateAdjacencyCsv (data: (string * int * (string[] * bool[][]))[]) =
     let sb = StringBuilder()
     for (sqn, elv, (names, matrix)) in data do
@@ -66,7 +138,7 @@ let generateAdjacencyCsv (data: (string * int * (string[] * bool[][]))[]) =
             sb.AppendLine() |> ignore
     sb.ToString()
 
-// --- HYNTERACT & DATASET GENERATION ---
+/// Generates Hynteract payload
 let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
     cxls
     |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
@@ -78,187 +150,93 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
     )
     |> String.concat "|"
 
-
-
-// --- DXF Export (2D Layout) ---
-
+/// DXF Export (2D Layout)
 let generateDxf (cxls: Cxl[]) (offsetX: float) (offsetY: float) =
     let sb = StringBuilder()   
-    // Hex size and scale parameters (adjust if necessary)
-    let hexScale = 1.0 // Standardize to 1 unit per hex center distance
+    let hexScale = 1.0
     for cxl in cxls do
-
-        // Get the ordered polygon vertices for the coxel
         let prm = cxlPrm cxl 0
         if prm.Length > 2 then
             sb.AppendLine("0\nLWPOLYLINE") |> ignore
             sb.AppendLine("8\nRooms") |> ignore
-            sb.AppendLine("90\n" + string prm.Length) |> ignore // Number of vertices
-            sb.AppendLine("70\n1") |> ignore // Closed polygon flag           
+            sb.AppendLine("90\n" + string prm.Length) |> ignore
+            sb.AppendLine("70\n1") |> ignore           
             for (x, y) in prm do
-
-                // Convert hex grid coordinates to Cartesian coordinates
-
-                // Using standard flat-topped hex grid math
-
                 let q = float x
-
                 let r = float y
-
                 let cx = (hexScale * (1.5 * q)) + offsetX
-
                 let cy = (hexScale * (sqrt(3.0) / 2.0 * q + sqrt(3.0) * r)) + offsetY
-
-                
-
                 sb.AppendLine("10\n" + string cx) |> ignore
-
                 sb.AppendLine("20\n" + string cy) |> ignore
-
     sb.ToString()
-
-
 
 let generateDxfBatch (batch: Cxl[] list) =
-
     let sb = StringBuilder()
-
     sb.AppendLine("0\nSECTION\n2\nHEADER\n0\nENDSEC") |> ignore
-
     sb.AppendLine("0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n1") |> ignore
-
     sb.AppendLine("0\nLAYER\n2\nRooms\n70\n0\n62\n7\n0\nENDTAB\n0\nENDSEC") |> ignore
-
     sb.AppendLine("0\nSECTION\n2\nBLOCKS\n0\nENDSEC") |> ignore
-
     sb.AppendLine("0\nSECTION\n2\nENTITIES") |> ignore
-
     
-
     let cols = 4
-
     batch |> List.iteri (fun i cxls ->
-
         let r = i / cols
-
         let c = i % cols
-
-        let ox = float c * 100.0 // spacing
-
+        let ox = float c * 100.0
         let oy = float r * -100.0
-
         sb.Append(generateDxf cxls ox oy) |> ignore
-
     )
-
-
-
     sb.AppendLine("0\nENDSEC") |> ignore
-
     sb.AppendLine("0\nEOF") |> ignore
-
     sb.ToString()
 
-
-
-// --- OBJ Export (3D Geometry) ---
-
+/// OBJ Export (3D Geometry)
 let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: float) (vOffset: int ref) =
-
     let sb = StringBuilder()
-
     for cxl in cxls do
-
         let (_, _, zInt) = Hexel.hxlCrd cxl.Base
-
         let zBottom = if zInt < elevations.Length then elevations.[zInt] else float zInt * 3.0
-
         let zTop = if zInt + 1 < elevations.Length then elevations.[zInt + 1] else zBottom + 3.0
-
         
-
         let prm = cxlPrm cxl zInt
-
         let n = prm.Length
-
         if n > 2 then
-
             for (x, y) in prm do
-
                 sb.AppendLine(sprintf "v %f %f %f" (float x + offsetX) zBottom (float y + offsetY)) |> ignore
-
             for (x, y) in prm do
-
                 sb.AppendLine(sprintf "v %f %f %f" (float x + offsetX) zTop (float y + offsetY)) |> ignore
-
             
-
             for i = 0 to n - 1 do
-
                 let nextI = (i + 1) % n
-
                 let b1 = !vOffset + i
-
                 let b2 = !vOffset + nextI
-
                 let t1 = !vOffset + n + i
-
                 let t2 = !vOffset + n + nextI
-
                 sb.AppendLine(sprintf "f %d %d %d" b1 b2 t1) |> ignore
-
                 sb.AppendLine(sprintf "f %d %d %d" b2 t2 t1) |> ignore
-
             
-
             sb.Append("f ") |> ignore
-
             for i = 0 to n - 1 do sb.Append(sprintf "%d " (!vOffset + n + i)) |> ignore
-
             sb.AppendLine() |> ignore
-
             sb.Append("f ") |> ignore
-
             for i = n - 1 downto 0 do sb.Append(sprintf "%d " (!vOffset + i)) |> ignore
-
             sb.AppendLine() |> ignore
-
             
-
             vOffset := !vOffset + 2 * n
-
     sb.ToString()
-
-
 
 let generateObjBatch (batch: (Cxl[] * float[]) list) =
-
     let sb = StringBuilder()
-
     sb.AppendLine("# Hywe 3D Batch Export") |> ignore
-
     sb.AppendLine("g Batch") |> ignore
-
     
-
-    let mutable vOff = ref 1
-
+    let vOff = ref 1
     let cols = 4
-
     batch |> List.iteri (fun i (cxls, elvs) ->
-
         let r = i / cols
-
         let c = i % cols
-
         let ox = float c * 100.0
-
         let oy = float r * -100.0
-
         sb.Append(generateObj cxls elvs ox oy vOff) |> ignore
-
     )
-
     sb.ToString()
-
-

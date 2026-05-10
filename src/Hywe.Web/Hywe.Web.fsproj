@@ -16,9 +16,8 @@
 		<Compile Include="IN-NodeCode.fs" />
 		<Compile Include="VZ-CodeNode.fs" />
 		<Compile Include="IN-Page.fs" />
-		<Compile Include="IN-Storage.fs" />
+		<Compile Include="IN-FileManager.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
-		<Compile Include="IN-ExportFormats.fs" />
 		<Compile Include="UT-ReportGenerator.fs" />
 		<Compile Include="VZ-Table.fs" />
 		<Compile Include="VZ-Analyze.fs" />
