@@ -25,7 +25,6 @@
 		<Compile Include="IN-PageHelpers.fs" />
 		<Compile Include="VZ-Help.fs" />
 		<Compile Include="VZ-Teach.fs" />
-		<Compile Include="UP-Teach.fs" />
 		<Compile Include="IN-ModelHelpers.fs" />
 		<Compile Include="IN-Styles.fs" />
 		<Compile Include="VZ-Shell.fs" />
