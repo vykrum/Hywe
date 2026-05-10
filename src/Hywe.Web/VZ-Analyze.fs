@@ -202,7 +202,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                     attr.``style`` "max-height: 250px; overflow-y: auto; background: #fff; border: 1px solid #f5f5f5; padding: 10px;"
                     pre {
                         attr.``style`` "font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 10px; color: #444; margin: 0; white-space: pre-wrap; word-break: break-all;"
-                        text (ExportFormats.generateCoordinatesCsv [| (sqn, elv, cxCxl1) |])
+                        text (FileManager.generateCoordinatesCsv [| (sqn, elv, cxCxl1) |])
                     }
                 }
             }

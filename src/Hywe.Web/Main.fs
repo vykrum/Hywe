@@ -193,7 +193,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         s <- injectSqn s lvl sqn
                 s
 
-        Storage.autoSave js updatedSrc |> ignore
+        FileManager.autoSave js updatedSrc |> ignore
 
         match Cache.get currentLevel i model.LayoutCache with
         | Some config ->
@@ -254,7 +254,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
-        Storage.autoSave js updatedSrcOfTrth |> ignore
+        FileManager.autoSave js updatedSrcOfTrth |> ignore
 
         let currentLevel = model.Tree.ActiveLevel
         let currentSqnIdx = 
@@ -374,7 +374,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     IsPresetsCollapsed = nextCollapse }
 
             if isIncrementalEdit || (match subMsg with NodeCode.PointerUp -> true | _ -> false) then
-                Storage.autoSave js newOutput |> ignore
+                FileManager.autoSave js newOutput |> ignore
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -411,7 +411,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                              newExport.AbsStr
                              newExport.OuterStr
                              newExport.IslandsStr
-        Storage.autoSave js newOutput |> ignore
+        FileManager.autoSave js newOutput |> ignore
 
         { model with 
             PolygonEditor = Stable newModel
@@ -499,8 +499,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | BatchCancelled ->
         { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
     | SaveRequested ->
-        Storage.saveFile js model.SrcOfTrth |> ignore
-        Storage.autoSave js model.SrcOfTrth |> ignore
+        FileManager.saveFile js model.SrcOfTrth |> ignore
+        FileManager.autoSave js model.SrcOfTrth |> ignore
         model, Cmd.none
     | ImportRequested ->
         let doClick () =
@@ -528,7 +528,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 
                 // Restore Polygon
                 let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                let newState = Storage.importFromHyw content currentInner
+                let newState = FileManager.importFromHyw content currentInner
                 let finalPoly = match newState with Stable m | FreshlyImported m -> m
                 let newExport = syncPolygonState finalPoly
                 
@@ -553,11 +553,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     updatedModel, Cmd.none
             with _ ->
                 // If backup is malformed or incompatible, clear it and ignore it to prevent startup hang
-                Storage.clearBackup js |> ignore
+                FileManager.clearBackup js |> ignore
                 model, Cmd.none
 
     | HardReset ->
-        Storage.clearBackup js |> ignore
+        FileManager.clearBackup js |> ignore
         let model = pushUndo model
         let resetSyntax = Page.emptyState
         let resetTree = NodeCode.initModel resetSyntax
@@ -770,7 +770,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                Cmd.OfAsync.perform (fun () -> Storage.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
+                Cmd.OfAsync.perform (fun () -> FileManager.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
