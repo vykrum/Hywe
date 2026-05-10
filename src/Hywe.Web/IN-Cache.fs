@@ -24,7 +24,7 @@ module Cache
     let fromFullLayout (data: Cxl[] * (int * int)[][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) : BatchConfgrtns =
         let cxls, cxOuIl, cxElv1, cxRto1 = data
         let sqnStr = sprintf "%A" sqn
-        let derived = PageHelpers.deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv
+        let derived = deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv
         let d = Layout.getStaticGeometry cxls derived.cxClr1 elv 1
         
         {| sqnName = sqnStr
