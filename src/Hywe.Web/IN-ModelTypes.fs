@@ -150,6 +150,7 @@ type Model =
         InstallPromptAvailable: bool
         ShowPrivacyAlert: bool
         IsStandalone: bool
+        IsCoordsVisible: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -225,6 +226,7 @@ type Message =
     | InstallRequested
     | SetPrivacyAlert of bool
     | SetIsStandalone of bool
+    | ToggleCoords
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

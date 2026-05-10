@@ -7,7 +7,15 @@ window.registerWebGPUShaders = (c, r, p) => {
     window._gpuShaders.post = p; 
 };
 
-let _gpuCache = { adapter: null, device: null };
+let _gpuCache = { 
+    adapter: null, 
+    device: null,
+    lastCamera: {
+        ry: 0,
+        rx: Math.PI / 6,
+        zoom: 3
+    }
+};
 
 window.disposeWebGPU = (canvasId) => {
     const canvas = document.getElementById(canvasId);
@@ -85,6 +93,12 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             _gpuCache.adapter = await navigator.gpu.requestAdapter();
             if (!_gpuCache.adapter) throw new Error("No GPU adapter found");
             _gpuCache.device = await _gpuCache.adapter.requestDevice();
+            
+            _gpuCache.device.lost.then((info) => {
+                console.warn(`WebGPU device was lost: ${info.message}`);
+                _gpuCache.device = null;
+                _gpuCache.adapter = null;
+            });
         }
         const device = _gpuCache.device;
 
@@ -122,15 +136,14 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     let numWalls = 0;
     if (edgePolygons) edgePolygons.forEach(poly => numWalls += poly.length);
 
-    const triInputData = new Float32Array(numTris * 11);
-    const wallInputData = new Float32Array(numWalls * 9);
+    const triInputData = new Float32Array(numTris * 12);
+    const wallInputData = new Float32Array(numWalls * 12);
 
     let tIdx = 0;
     meshes.forEach((tris, i) => {
         const c = (colors && colors[i]) ? colors[i] : [0.8, 0.8, 0.8];
-        const microOffset = ((i * 137) % 100) * 0.00002;
-        const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
-        const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
+        const h = (heights?.[i] ?? 1.0) * scaleZ;
+        const bh = (baseHeights?.[i] ?? 0.0) * scaleZ;
         for (let j=0; j<tris.length; j++) {
             const tri = tris[j];
             triInputData[tIdx++] = tri[0][0]; triInputData[tIdx++] = tri[0][1];
@@ -138,6 +151,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             triInputData[tIdx++] = tri[2][0]; triInputData[tIdx++] = tri[2][1];
             triInputData[tIdx++] = c[0]; triInputData[tIdx++] = c[1]; triInputData[tIdx++] = c[2];
             triInputData[tIdx++] = bh; triInputData[tIdx++] = h;
+            tIdx++; // Padding to 12 floats
         }
     });
 
@@ -145,9 +159,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     if (edgePolygons) {
         edgePolygons.forEach((poly, i) => {
             const c = (colors && colors[i]) ? colors[i] : [0.5, 0.5, 0.5];
-            const microOffset = ((i * 137) % 100) * 0.00002;
-            const h = ((heights?.[i] ?? 1.0) - microOffset) * scaleZ;
-            const bh = ((baseHeights?.[i] ?? 0.0) - microOffset) * scaleZ;
+            const h = (heights?.[i] ?? 1.0) * scaleZ;
+            const bh = (baseHeights?.[i] ?? 0.0) * scaleZ;
             for (let j=0; j<poly.length; j++) {
                 const p1 = poly[j];
                 const p2 = poly[(j+1)%poly.length];
@@ -155,6 +168,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 wallInputData[wIdx++] = p2[0]; wallInputData[wIdx++] = p2[1];
                 wallInputData[wIdx++] = c[0]; wallInputData[wIdx++] = c[1]; wallInputData[wIdx++] = c[2];
                 wallInputData[wIdx++] = bh; wallInputData[wIdx++] = h;
+                wIdx += 3; // Padding to 12 floats
             }
         });
     }
@@ -319,7 +333,9 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     };
 
     if (canvas._cam_rx === undefined) {
-        canvas._cam_ry = 0; canvas._cam_rx = Math.PI / 6; canvas._cam_zoom = 3;
+        canvas._cam_ry = _gpuCache.lastCamera.ry; 
+        canvas._cam_rx = _gpuCache.lastCamera.rx; 
+        canvas._cam_zoom = _gpuCache.lastCamera.zoom;
     }
     let dragging = false, lx = 0, ly = 0;
     if (!canvas._listenersAdded) {
@@ -330,8 +346,16 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             canvas._cam_ry -= (e.clientX - lx) * 0.01;
             canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + (e.clientY - ly) * 0.01, 0.01), Math.PI/2 - 0.01);
             lx = e.clientX; ly = e.clientY;
+            _gpuCache.lastCamera.ry = canvas._cam_ry;
+            _gpuCache.lastCamera.rx = canvas._cam_rx;
         });
-        canvas.addEventListener("wheel", e => { if (!canvas._viewLocked) { e.preventDefault(); canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom + e.deltaY * 0.005, 1.5), 10); } }, { passive: false });
+        canvas.addEventListener("wheel", e => { 
+            if (!canvas._viewLocked) { 
+                e.preventDefault(); 
+                canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom + e.deltaY * 0.005, 1.5), 10); 
+                _gpuCache.lastCamera.zoom = canvas._cam_zoom;
+            } 
+        }, { passive: false });
         canvas._listenersAdded = true;
     }
 

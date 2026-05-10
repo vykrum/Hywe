@@ -182,9 +182,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             |> Array.map fst
         
         let cxls = levelIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
-        let b36s = levelIdx |> Array.map (fun i -> model.Derived.cxB36.[i])
         
-        let csv = ExportFormats.generateCoordinatesCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), level, cxls, b36s) |]
+        let csv = ExportFormats.generateCoordinatesCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), level, cxls) |]
         let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadMetricsCsv ->
@@ -209,8 +208,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                 |> Array.groupBy (fun (_, (c: Cxl)) -> let (_, _, z) = Hexel.hxlCrd c.Base in z) 
                 |> Array.map (fun (z, indexedCxls) -> 
                     let cxls = indexedCxls |> Array.map (snd)
-                    let b36s = indexedCxls |> Array.map (fun (idx, _) -> r.cxB36.[idx])
-                    (r.sqnName, z, cxls, b36s))
+                    (r.sqnName, z, cxls))
             )
             let csv = ExportFormats.generateCoordinatesCsv batchData
             let fileName = "Hywe_Batch_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
@@ -341,4 +339,5 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | ReportGenerated (html, cache) ->
         Some ({ model with IsGeneratingReport = false; LayoutCache = cache },
               Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("openReport", html).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    | ToggleCoords -> Some ({ model with IsCoordsVisible = not model.IsCoordsVisible }, Cmd.none)
     | _ -> None
