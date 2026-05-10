@@ -133,14 +133,16 @@ let loadingScreen (current: AppScreen) =
         attr.id "loading-frame"
         attr.style (if isHidden then "opacity: 0; pointer-events: none;" else "")
         
-        video {
-            attr.``class`` "fullscreen-bg"
-            attr.autoplay true
-            attr.muted true
-            attr.loop true
-            source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
-            source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
-        }
+        if not isHidden then
+            video {
+                attr.``class`` "fullscreen-bg"
+                attr.autoplay true
+                attr.muted true
+                attr.loop true
+                "playsinline" => "playsinline"
+                source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
+                source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
+            }
         section {
             attr.id "intro-load"
             attr.``class`` "intro-section"
@@ -174,15 +176,17 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             
         on.click (fun _ -> dispatch TransitionToMain)
 
-        video {
-            attr.id "intro-video"
-            attr.``class`` "fullscreen-bg"
-            attr.autoplay true
-            attr.muted true
-            attr.loop true
-            source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
-            source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
-        }
+        if not isMain then
+            video {
+                attr.id "intro-video"
+                attr.``class`` "fullscreen-bg"
+                attr.autoplay true
+                attr.muted true
+                attr.loop true
+                "playsinline" => "playsinline"
+                source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
+                source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
+            }
         section {
             attr.id "intro-main"
             attr.``class`` "intro-section"
