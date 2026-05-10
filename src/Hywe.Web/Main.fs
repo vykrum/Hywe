@@ -425,7 +425,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match msg with
             | FileImported _ | SelectPreset _ -> pushUndo model
             | _ -> model
-        match UpdateUI.update js msg model with
+        match PageHelpers.update js msg model with
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
 
@@ -435,7 +435,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match msg with
             | ToggleBoundary | ToggleEditorMode -> pushUndo model
             | _ -> model
-        match UpdateUI.update js msg model with
+        match PageHelpers.update js msg model with
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
     | SetBatchPreview results ->

@@ -86,7 +86,7 @@ let viewReport (model: Model) dispatch =
                                     updateOpts (fun o -> { o with LevelSections = Map.add level s o.LevelSections })
                                 )
                             }
-                            text (PageHelpers.indexToLabel i)
+                            text (indexToLabel i)
                         }
                 }
         }
@@ -265,7 +265,7 @@ let viewReport (model: Model) dispatch =
                                         on.click (fun _ ->
                                             let newSet = if isSelected then Set.remove i s.SelectedVariations else Set.add i s.SelectedVariations
                                             updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = newSet } o.LevelSections }))
-                                        text (PageHelpers.labelPhrase.[i].ToString())
+                                        text (labelPhrase.[i].ToString())
                                     }
                             }
                         }
