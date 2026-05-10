@@ -34,7 +34,7 @@ fn computeTris(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     if (idx >= uniforms.numTris) { return; }
 
-    let inOffset = idx * 11u;
+    let inOffset = idx * 12u;
     let x1 = triInput[inOffset + 0u];
     let y1 = triInput[inOffset + 1u];
     let x2 = triInput[inOffset + 2u];
@@ -88,7 +88,7 @@ fn computeWalls(@builtin(global_invocation_id) id: vec3<u32>) {
     let idx = id.x;
     if (idx >= uniforms.numWalls) { return; }
 
-    let inOffset = idx * 9u;
+    let inOffset = idx * 12u;
     let x1 = wallInput[inOffset + 0u];
     let y1 = wallInput[inOffset + 1u];
     let x2 = wallInput[inOffset + 2u];

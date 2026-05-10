@@ -122,8 +122,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     let numWalls = 0;
     if (edgePolygons) edgePolygons.forEach(poly => numWalls += poly.length);
 
-    const triInputData = new Float32Array(numTris * 11);
-    const wallInputData = new Float32Array(numWalls * 9);
+    const triInputData = new Float32Array(numTris * 12);
+    const wallInputData = new Float32Array(numWalls * 12);
 
     let tIdx = 0;
     meshes.forEach((tris, i) => {
@@ -138,6 +138,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             triInputData[tIdx++] = tri[2][0]; triInputData[tIdx++] = tri[2][1];
             triInputData[tIdx++] = c[0]; triInputData[tIdx++] = c[1]; triInputData[tIdx++] = c[2];
             triInputData[tIdx++] = bh; triInputData[tIdx++] = h;
+            tIdx++; // Padding to 12 floats
         }
     });
 
@@ -155,6 +156,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 wallInputData[wIdx++] = p2[0]; wallInputData[wIdx++] = p2[1];
                 wallInputData[wIdx++] = c[0]; wallInputData[wIdx++] = c[1]; wallInputData[wIdx++] = c[2];
                 wallInputData[wIdx++] = bh; wallInputData[wIdx++] = h;
+                wIdx += 3; // Padding to 12 floats
             }
         });
     }
