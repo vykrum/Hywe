@@ -19,7 +19,6 @@
 		<Compile Include="IN-FileManager.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="UT-ReportGenerator.fs" />
-		<Compile Include="VZ-Table.fs" />
 		<Compile Include="VZ-Analyze.fs" />
 		<Compile Include="VZ-Report.fs" />
 		<Compile Include="VZ-Layout.fs" />
