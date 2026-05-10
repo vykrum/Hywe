@@ -512,7 +512,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with Captured3DImage = Some dataUrl }, Cmd.none
     | SetDescription _ | SuggestDescription | RecordResult _ | UpdateMetadata _ 
     | SetHoveredInfo _ | StartVoiceCapture | OnVoiceResult | RecordToHynteract as msg ->
-        match UpdateTeach.update js msg model with
+        match Teach.update js msg model with
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
 
