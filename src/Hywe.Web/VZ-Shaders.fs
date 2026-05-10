@@ -53,8 +53,9 @@ fn computeTris(@builtin(global_invocation_id) id: vec3<u32>) {
     let ny2 = (y2 - uniforms.cy) * uniforms.scaleXY;
     let nx3 = (x3 - uniforms.cx) * uniforms.scaleXY;
     let ny3 = (y3 - uniforms.cy) * uniforms.scaleXY;
-    let nzTop = baseH + height;
-    let nzBot = baseH;
+    let tinySeparation = f32(idx % 137u) * 0.00001;
+    let nzTop = baseH + height - tinySeparation;
+    let nzBot = baseH - tinySeparation;
 
     let outPosOffset = idx * 18u;
     let outColOffset = idx * 24u;
@@ -103,8 +104,9 @@ fn computeWalls(@builtin(global_invocation_id) id: vec3<u32>) {
     let ny1 = (y1 - uniforms.cy) * uniforms.scaleXY;
     let nx2 = (x2 - uniforms.cx) * uniforms.scaleXY;
     let ny2 = (y2 - uniforms.cy) * uniforms.scaleXY;
-    let nzTop = baseH + height;
-    let nzBot = baseH;
+    let tinySeparation = f32((uniforms.numTris + idx) % 137u) * 0.00001;
+    let nzTop = baseH + height - tinySeparation;
+    let nzBot = baseH - tinySeparation;
 
     let dx = nx2 - nx1;
     let dy = ny2 - ny1;
@@ -225,11 +227,14 @@ fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     }
 
     var occlusion = 0.0;
-    let samples = 12;
-    let radius = 3.5;
+    let samples = 24;
+    let radius = 4.0;
     
+    let noise = fract(sin(dot(pos.xy, vec2<f32>(12.9898, 78.233))) * 43758.5453);
+    let randomAngle = noise * 6.28318;
+
     for (var i = 0; i < samples; i++) {
-        let angle = f32(i) * 6.28318 / f32(samples);
+        let angle = (f32(i) * 6.28318 / f32(samples)) + randomAngle;
         let offset = vec2<i32>(vec2<f32>(cos(angle), sin(angle)) * radius);
         let samplePos = clamp(ipos + offset, vec2<i32>(0), texSize - vec2<i32>(1));
         let sampleDepth = textureLoad(depthTex, samplePos, 0);
@@ -240,7 +245,7 @@ fn fs_post(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
         }
     }
 
-    let ao = 1.0 - (occlusion / f32(samples)) * 0.75;
+    let ao = 1.0 - (occlusion / f32(samples)) * 0.7;
     return vec4<f32>(baseColor.rgb * ao, baseColor.a);
 }
 """
