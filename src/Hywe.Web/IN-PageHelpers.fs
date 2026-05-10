@@ -326,7 +326,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                       
                   do! js.InvokeVoidAsync("console.log", "Hywe: Compiling final HTML report...").AsTask() |> Async.AwaitTask
                   let opts = { model.ReportOptions with Captured3DImage = model.Captured3DImage }
-                  let html = Hywe.ReportGenerator.generateReportHtml opts model.Tree allBatches
+                  let html = Hywe.Report.generateReportHtml opts model.Tree allBatches
                   do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Report compiled. HTML size: %d bytes" html.Length).AsTask() |> Async.AwaitTask
                   return html, currentCache
               }) () (fun (html, cache) -> ReportGenerated (html, cache)))
