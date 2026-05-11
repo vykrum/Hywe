@@ -14,7 +14,7 @@ open ModelHelpers
 open Hywe
 open Hywe.Core
 open Hywe.Core.Coxel
-open Hywe.Core.Paxel
+open Hywe.Core.Lexel
 open Cache
 
 // Defaults / init 
@@ -129,7 +129,7 @@ let pushUndo (model: Model) : Model =
 /// Ensures all levels in the source string share the same category (VR/HR) as the target sequence.
 let ensureCategory (src: string) (targetIdx: int) =
     let targetIsVR = targetIdx < 12
-    let targetSqnStr = allSqns.[targetIdx]
+    let targetSqnStr = sprintf "%A" allSqns.[targetIdx]
     let sqns = extractSequences src
     (src, sqns) ||> Map.fold (fun s lvl sqn ->
         let isVR = sqnToIndex sqn < 12

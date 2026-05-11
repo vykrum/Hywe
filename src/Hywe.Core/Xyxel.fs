@@ -8,16 +8,32 @@ namespace Hywe.Core
 
 module Xyxel =
     open System
+    open Microsoft.FSharp.Reflection
     open Hexel
     open Coxel
     open Goxel
-    open Paxel
+    open Lexel
 
     /// <summary> Active pattern for safe integer parsing. </summary>
     let (|Int|_|) (s: string) =
         match Int32.TryParse s with
         | true, v -> Some v
         | _ -> None
+
+    /// <summary> Active pattern for safe float parsing. </summary>
+    let (|Float|_|) (s: string) =
+        match Double.TryParse s with
+        | true, v -> Some v
+        | _ -> None
+
+    /// <summary> Parses a string into a discriminated union case safely. </summary>
+    let tryParseUnion<'T> (s: string) : 'T option =
+        match FSharpType.IsUnion typeof<'T> with
+        | false -> None
+        | true ->
+            FSharpType.GetUnionCases typeof<'T>
+            |> Array.tryFind (fun c -> c.Name.Equals(s, StringComparison.OrdinalIgnoreCase))
+            |> Option.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> 'T)
     
     /// <summary> Represents the raw architectural tree with pre-calculated metrics to avoid redundant processing. </summary>
     type LayoutTree = {

@@ -6,6 +6,7 @@ open Bolero
 open Bolero.Html
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Web
+open Hywe.Core.Lexel
 
 // --------------------
 // Data Structures
@@ -718,7 +719,7 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
         }
     }
 
-open Hywe.Core.Paxel
+open Hywe.Core.Lexel
 
 // --------------------
 // Serialization & Initialization
@@ -780,38 +781,23 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
     String.concat "" segments
 
 let buildTreeMap (input: string) =
-    let levels = splitIntoLevels input
+    let levels = processFullString input
     
     let allParts = 
-        levels |> Array.mapi (fun i levelData ->
-            let attrs, _ = processLevel levelData
-            
-            let lVal = attrs |> Map.tryFind "L" |> Option.bind (function Float v -> Some (int v) | _ -> None) |> Option.defaultValue 0
-            let tVal = attrs |> Map.tryFind "T" |> Option.bind (function Float v -> Some v | _ -> None) |> Option.defaultValue 3.0
-            let sVal = attrs |> Map.tryFind "S"
-            let eVal = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
-
-            let nodes = 
-                levelData.Blocks 
-                |> Array.skip 1 // skip attrs
-                |> Array.filter (fun s -> not (String.IsNullOrWhiteSpace s))
-            
+        levels |> List.toArray |> Array.mapi (fun i levelData ->
+            let attrs = levelData.Attributes
+            let tVal = attrs.Thickness
+            let sVal = Some attrs.Scale
+            let eVal = attrs.Entry
+            let nodes = levelData.Tree |> List.collect id
             (i, tVal, sVal, nodes, eVal)
         )
 
     let nodeData = 
         allParts |> Array.collect (fun (lvl, t, s, nodes, e) ->
-            nodes |> Array.map (fun n ->
-                let bits = n.Split '/'
-                let path = bits.[0].Split('.') |> Array.map int |> Array.toList
-                let weight = bits.[1]
-                let name = bits.[2]
-                let extrusion = 
-                    if bits.Length > 3 then 
-                        match bits.[3] with Float v -> v | _ -> 3.0 
-                    else 3.0
-                (path, weight, name, extrusion, lvl)
-            )
+            nodes |> List.map (fun n ->
+                (n.Id.Split('.') |> Array.map int |> Array.toList, string n.Area, n.Label, n.Extrusion |> Option.defaultValue 3.0, lvl)
+            ) |> List.toArray
         )
         |> Array.toList
         |> List.distinctBy (fun (p, _, _, _, l) -> (p, l))
@@ -858,7 +844,7 @@ let buildTreeMap (input: string) =
     let levelsMapFinal =
         levelsMap |> Map.map (fun lvl tree ->
             let higherAnchors = levelAnchors |> Map.filter (fun k _ -> k > lvl)
-            let rec update n =
+            let rec update (n: TreeNode) =
                 let nLvl =
                     higherAnchors |> Map.tryPick (fun k v -> match v = n.Id with true -> Some k | false -> None)
                     |> Option.defaultValue n.Level

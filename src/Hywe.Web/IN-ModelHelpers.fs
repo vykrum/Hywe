@@ -13,9 +13,12 @@ open Bolero.Html
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Paxel
+open Hywe.Core.Lexel
 
-open PageHelpers
+
+
+
+
 
 let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
     match model.PendingConfirm with

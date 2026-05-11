@@ -5,13 +5,12 @@ namespace Hywe.Core
 /// Orchestrates collections of Xyxels to manage multi-level spatial logic and elevation-based construction. 
 /// Completes the vertical assembly as the volumetric massing stage in the hierarchy: Hexel-Coxel-Xyxel-Zaxel.
 /// </summary>
-
 module Zaxel =
     open System
     open Hexel
     open Coxel
     open Goxel
-    open Paxel
+    open Lexel
     open Xyxel
 
     /// <summary> Internal state for multi-level construction. </summary>
@@ -29,7 +28,7 @@ module Zaxel =
 
     /// <summary> Recursively processes all levels using a purely functional state-carrying approach. </summary>
     let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) (seqOverride: (int * Sqn) option) (ouStrOverride: string option) (ilStrOverride: string option) =
-        let levels = splitIntoLevels fullStr
+        let parsedLevels = processFullString fullStr
         
         let initialState = {
             Cxls = [||]
@@ -44,22 +43,37 @@ module Zaxel =
         }
 
         let finalState = 
-            (initialState, Array.indexed levels) 
-            ||> Array.fold (fun state (i, levelData) ->
-                let attrs, tree = processLevel levelData
+            (initialState, Array.indexed (List.toArray parsedLevels)) 
+            ||> Array.fold (fun state (i, segment) ->
+                let attrs = segment.Attributes
+                let tree = segment.Tree
                 
-                let curW = attrs |> Map.tryFind "W" |> Option.bind (function Int v -> Some v | _ -> None) |> Option.filter (fun v -> v > 0) |> Option.orElse state.RootW
-                let curH = attrs |> Map.tryFind "H" |> Option.bind (function Int v -> Some v | _ -> None) |> Option.orElse state.RootH
-                let curO = ouStrOverride |> Option.orElse (attrs |> Map.tryFind "O") |> Option.orElse state.RootO
-                let curI = ilStrOverride |> Option.orElse (attrs |> Map.tryFind "I") |> Option.orElse state.RootI
-                let curElv = attrs |> Map.tryFind "L" |> Option.bind (function Float v -> Some v | _ -> None) |> Option.defaultValue (float i * 3.0) 
+                // Convert anonymous record attributes to Map for Xyxel compatibility
+                let attrMap = 
+                    Map.ofList [
+                        "Q", attrs.Sequence
+                        "L", string attrs.Level
+                        "X", string attrs.Scale
+                        "E", attrs.Entry
+                        "O", attrs.OuterBoundary
+                        "I", attrs.Islands
+                        "T", string attrs.Thickness
+                    ]
+                    |> (fun m -> match attrs.Width with Some w -> m |> Map.add "W" (string w) | _ -> m)
+                    |> (fun m -> match attrs.Height with Some h -> m |> Map.add "H" (string h) | _ -> m)
 
-                let eStr = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
+                let curW = attrs.Width |> Option.map int |> Option.filter (fun v -> v > 0) |> Option.orElse state.RootW
+                let curH = attrs.Height |> Option.map int |> Option.orElse state.RootH
+                let curO = ouStrOverride |> Option.orElse (if attrs.OuterBoundary <> "" then Some attrs.OuterBoundary else None) |> Option.orElse state.RootO
+                let curI = ilStrOverride |> Option.orElse (if attrs.Islands <> "" then Some attrs.Islands else None) |> Option.orElse state.RootI
+                let curElv = float attrs.Level
+
+                let eStr = attrs.Entry
                 let bsHx = 
                     match i with
                     | 0 -> None
                     | _ -> 
-                        let prevMarker = levels.[i-1].Marker
+                        let prevMarker = (List.toArray parsedLevels).[i-1].Marker
                         let targetId = if String.IsNullOrWhiteSpace prevMarker then eStr else sprintf "%s-%s" prevMarker eStr
                         state.Cxls 
                         |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = i - 1) 
@@ -70,7 +84,12 @@ module Zaxel =
                     | Some (targetLvl, s) when targetLvl = i -> Some s
                     | _ -> None
 
-                let treeObj = LayoutTree.Create tree
+                let rawTree = 
+                    tree 
+                    |> List.map (fun g -> g |> List.map (fun n -> (n.Id, n.Area, n.Label)) |> List.toArray)
+                    |> List.toArray
+
+                let treeObj = LayoutTree.Create rawTree
                 let opts = {
                     EntryFallback = entryAtrFallback
                     InitialOcc = initialOcc
@@ -84,7 +103,7 @@ module Zaxel =
                     Elevation = Some i
                 }
 
-                let ctx = prepareLayoutContext attrs (LayoutTree.Create tree) opts
+                let ctx = prepareLayoutContext attrMap treeObj opts
                 let baseRes = generateBaseCxl ctx
                 
                 let cxls, bounds, ratio = 
@@ -113,12 +132,10 @@ module Zaxel =
             )
 
         let finalElvs = 
-            match Array.tryLast levels with
-            | Some lastLvl ->
-                let attrs, _ = processLevel lastLvl
-                match attrs |> Map.tryFind "T" |> Option.bind (function Float v -> Some v | _ -> None) with
-                | Some t -> Array.append finalState.Elvs [| Array.last finalState.Elvs + t |]
-                | None -> Array.append finalState.Elvs [| Array.last finalState.Elvs + 3.0 |]
+            match List.tryLast parsedLevels with
+            | Some lastSegment ->
+                let attrs = lastSegment.Attributes
+                Array.append finalState.Elvs [| Array.last finalState.Elvs + attrs.Thickness |]
             | None -> finalState.Elvs
 
         finalState.Cxls, finalState.Bounds, finalElvs, finalState.Ratios
