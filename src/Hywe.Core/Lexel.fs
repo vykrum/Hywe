@@ -13,6 +13,7 @@ module Lexel =
     type LexelAttributes = {
         Sequence: string
         Level: int
+        Base: string
         Scale: float
         Entry: string
         OuterBoundary: string
@@ -27,9 +28,10 @@ module Lexel =
         Area: int
         Label: string 
         Extrusion: float option
+        Base: string option
     }
 
-    type LexelLevel = {
+    type LexelBlock = {
         Marker: string
         Attributes: LexelAttributes
         Tree: LexelNode list list // Grouped nodes
@@ -47,7 +49,7 @@ module Lexel =
 
     /// <summary> 
     /// Processes a Hywe attribute block into a structured record.
-    /// Handles Sequence (Q), Level (L), Scale (X), Entry (E), OuterBoundary (O), etc.
+    /// Handles Sequence (Q), Level (L), Base (B), Scale (X), Entry (E), OuterBoundary (O), etc.
     /// </summary>
     let parseAttributes (block: string) : LexelAttributes =
         let attrs = 
@@ -63,6 +65,7 @@ module Lexel =
         {
             Sequence = attrs |> Map.tryFind "Q" |> Option.defaultValue "VRCCNE"
             Level = getVal "L" (|Int|_|) 0
+            Base = attrs |> Map.tryFind "B" |> Option.defaultValue "0"
             Scale = getVal "X" (|Float|_|) 1.0
             Entry = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
             OuterBoundary = attrs |> Map.tryFind "O" |> Option.defaultValue ""
@@ -74,14 +77,27 @@ module Lexel =
 
     /// <summary> 
     /// Processes Hywe node blocks and organizes them into a hierarchical tree.
-    /// Handles (ID/Area/Label/Extrusion) format and dot-notation grouping.
+    /// Handles (ID/Area/Label/Extrusion/B=Base) format and dot-notation grouping.
     /// </summary>
     let parseNodes (blocks: string list) : LexelNode list list =
         let nodes = 
             blocks |> List.choose (fun b ->
-                match b.Trim('(', ')').Split('/') with
-                | [| id; Int area; label; Float extr |] -> Some { Id = id.Trim(); Area = area; Label = label.Trim(); Extrusion = Some extr }
-                | [| id; Int area; label |] -> Some { Id = id.Trim(); Area = area; Label = label.Trim(); Extrusion = None }
+                let bits = b.Trim('(', ')').Split('/')
+                match bits.Length with
+                | 3 -> 
+                    match bits.[1] with
+                    | Int area -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = None }
+                    | _ -> None
+                | 4 ->
+                    match bits.[1], bits.[3] with
+                    | Int area, Float extr -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = None }
+                    | Int area, s when s.StartsWith "B=" -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = Some (s.Substring(2)) }
+                    | _ -> None
+                | 5 ->
+                    match bits.[1], bits.[3], bits.[4] with
+                    | Int area, Float extr, s when s.StartsWith "B=" -> 
+                        Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = Some (s.Substring(2)) }
+                    | _ -> None
                 | _ -> None)
 
         let isChild (p: string) (c: string) = 
@@ -114,8 +130,9 @@ module Lexel =
 
     /// <summary> 
     /// Processes a multi-marker Hywe string, splitting it into individual segments and processing each.
+    /// Handles L# and N# markers.
     /// </summary>
-    let processFullString (input: string) : LexelLevel list =
+    let processFullString (input: string) : LexelBlock list =
         Regex.Matches(input.Trim(), @"([^()]*?)((?:\([^)]*\))+(?=(?:[^()]*\(|$)))")
         |> Seq.cast<Match>
         |> Seq.choose (fun m ->
@@ -135,9 +152,10 @@ module Lexel =
 
     /// <summary> 
     /// Injects or updates a specific level's sequence (Q=) within a full Hywe string.
+    /// Supports L# and N# markers.
     /// </summary>
     let injectSqn (input: string) (lvl: int) (sqn: string) : string =
-        let markers = Regex.Split(input, @"(?=L\d+)") |> Array.filter (not << String.IsNullOrWhiteSpace)
+        let markers = Regex.Split(input, @"(?=[LN]\d+)") |> Array.filter (not << String.IsNullOrWhiteSpace)
         if lvl >= 0 && lvl < markers.Length then
             let m = markers.[lvl]
             let newM = Regex.Replace(m, @"Q=[^/)]*", "Q=" + sqn)
