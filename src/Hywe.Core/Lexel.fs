@@ -2,7 +2,7 @@ namespace Hywe.Core
 
 /// <summary> 
 /// Lexel (Lexical Engine) 
-/// Highlights the lexical analysis and tokenization of Hywe syntax.
+/// Parses the lexical analysis and tokenization of Hywe syntax.
 /// </summary>
 
 module Lexel =
@@ -157,9 +157,13 @@ module Lexel =
     /// </summary>
     let injectSqn (input: string) (lvl: int) (sqn: string) : string =
         let markers = Regex.Split(input, @"(?=[LN]\d+)") |> Array.filter (not << String.IsNullOrWhiteSpace)
-        if lvl >= 0 && lvl < markers.Length then
-            let m = markers.[lvl]
-            let newM = Regex.Replace(m, @"Q=[^/)]*", "Q=" + sqn)
-            markers.[lvl] <- newM
-            String.Concat markers
-        else input
+        match lvl >= 0 && lvl < markers.Length with
+        | true ->
+            markers 
+            |> Array.mapi (fun i m ->
+                match i = lvl with
+                | true -> Regex.Replace(m, @"Q=[^/)]*", "Q=" + sqn)
+                | false -> m
+            )
+            |> String.concat ""
+        | false -> input

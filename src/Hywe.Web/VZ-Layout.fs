@@ -453,7 +453,7 @@ let alternateConfigurations
                                  |> Array.map (fun (x,y) -> svgToCartesian sqn (float x, float y))
                                  |> Array.map (fun (x,y) -> $"{ox + x * scale},{oy + y * scale}")
                                  |> String.concat " "
-                        plgn().pt(xy).cl("none").st("#000000").sw("0.1").op("0.1").Elt()
+                        plgn().pt(xy).cl("none").st("#000000").sw("0.5").op("0.3").Elt()
 
                     // 2. SHAPES
                     for j, s in cfg.shapes |> Array.indexed do

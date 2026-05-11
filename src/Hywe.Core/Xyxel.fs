@@ -14,18 +14,6 @@ module Xyxel =
     open Goxel
     open Lexel
 
-    /// <summary> Active pattern for safe integer parsing. </summary>
-    let (|Int|_|) (s: string) =
-        match Int32.TryParse s with
-        | true, v -> Some v
-        | _ -> None
-
-    /// <summary> Active pattern for safe float parsing. </summary>
-    let (|Float|_|) (s: string) =
-        match Double.TryParse s with
-        | true, v -> Some v
-        | _ -> None
-
     /// <summary> Parses a string into a discriminated union case safely. </summary>
     let tryParseUnion<'T> (s: string) : 'T option =
         match FSharpType.IsUnion typeof<'T> with
@@ -91,7 +79,7 @@ module Xyxel =
                 row |> Array.map (fun (id, area, lb) ->
                     let finalCount = 
                         match area > 0 with
-                        | true -> max 1 (int (System.Math.Round(float area * ratio)))
+                        | true -> max 1 (int (Math.Round(float area * ratio)))
                         | false -> 0
                     (Refid id, Count finalCount, Label lb)
                 )
@@ -136,10 +124,11 @@ module Xyxel =
     
         let entryAtrRaw = attrs |> Map.tryFind "E" |> Option.defaultValue "0"
         let entryAtr = 
-            if entryAtrRaw = "0" then "0"
-            else
+            match entryAtrRaw with
+            | "0" -> "0"
+            | _ ->
                 entryAtrRaw.Split ','
-                |> Array.map (fun s -> match System.Double.TryParse s with true, v -> string (int (Math.Round(v))) | _ -> s)
+                |> Array.map (fun s -> match Double.TryParse s with true, v -> string (int (Math.Round(v))) | _ -> s)
                 |> String.concat ","
     
         let entryFallback =
@@ -166,27 +155,64 @@ module Xyxel =
             Parent = opts.ParentCxl
         }
 
+    /// <summary> Calculates the ideal ratio for a given layout configuration without preparing the full context. </summary>
+    let calculateTargetRatio (attrs: Map<string, string>) (tree: LayoutTree) (opts: LayoutOptions) =
+        let bdWd = opts.Width |> Option.orElse (attrs |> Map.tryFind "W" |> Option.bind (function Int v -> Some v | _ -> None) |> Option.filter (fun v -> v > 0)) |> Option.defaultValue 0
+        let bdHt = opts.Height |> Option.orElse (attrs |> Map.tryFind "H" |> Option.bind (function Int v -> Some v | _ -> None)) |> Option.defaultValue bdWd
+        
+        let bdOu =
+            match attrs |> Map.tryFind "X" with
+            | Some "1" -> [||]
+            | _ ->
+                match opts.OuterStr with
+                | Some ou when ou <> "" -> parseCoords ou
+                | _ ->
+                    match attrs |> Map.tryFind "O" with 
+                    | Some a when a <> "" -> parseCoords a
+                    | _ ->
+                        match opts.ParentCxl with
+                        | Some parent when bdWd > 0 -> cxlPrm parent (opts.Elevation |> Option.defaultValue 0) |> Goxel.cleanPolygon parent.Seqn
+                        | _ -> 
+                            match bdWd > 0 with
+                            | true -> parseCoords $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
+                            | false -> [||]
+    
+        let bdIs =
+            match opts.IslandsStr with
+            | Some il when il <> "" -> parseIslands il
+            | _ -> 
+                match attrs |> Map.tryFind "I" with 
+                | Some a -> parseIslands a 
+                | None -> [||]
+        
+        let ntArea = polygonWithHolesArea bdOu bdIs
+        let _, ratio = applyReproportioning ntArea tree opts.Ratio
+        ratio
+
     /// <summary> Extracts the first node as the base coxel for layout. </summary>
     let generateBaseCxl (ctx: LayoutContext) =
         let bndSet = 
-            let ntArea = Goxel.polygonWithHolesArea ctx.Boundary ctx.Islands
-            if ntArea > 0L then 
+            match Goxel.polygonWithHolesArea ctx.Boundary ctx.Islands > 0L with
+            | true -> 
                 let allVtx = Array.append ctx.Boundary (ctx.Islands |> Array.collect id)
                 let minX = allVtx |> Array.minBy fst |> fst |> (fun x -> x - 2)
                 let maxX = allVtx |> Array.maxBy fst |> fst |> (fun x -> x + 2)
                 let minY = allVtx |> Array.minBy snd |> snd |> (fun y -> y - 2)
                 let maxY = allVtx |> Array.maxBy snd |> snd |> (fun y -> y + 2)
     
-                let blocked = ResizeArray<Hxl>()
-                for x in minX .. maxX do
-                    for y in minY .. maxY do
+                [| minX .. maxX |]
+                |> Array.collect (fun x ->
+                    [| minY .. maxY |]
+                    |> Array.choose (fun y ->
                         let pt = (x, y)
                         let isOutside = not (Goxel.pointInPolygon pt ctx.Boundary)
                         let isInsideIsland = ctx.Islands |> Array.exists (Goxel.pointInPolygon pt)
-                        if isOutside || isInsideIsland then
-                            blocked.Add(RV(x, y, ctx.Elevation))
-                blocked.ToArray()
-            else [||]
+                        match isOutside || isInsideIsland with
+                        | true -> Some (RV(x, y, ctx.Elevation))
+                        | false -> None
+                    )
+                )
+            | false -> [||]
     
         let occ = Array.append ctx.InitialOcc bndSet |> hxlUni 1
         let flatEntries = ctx.ScaledTree |> Array.concat
