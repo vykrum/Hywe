@@ -159,7 +159,8 @@ module Coxel =
                     let (x, y, _) = hxlCrd h
                     AV(x, y, elv))
             
-            let baseHx = if Array.isEmpty updatedHxls then entryFallback else updatedHxls.[0]
+            let (bx, by, _) = hxlCrd parentCxl.Base
+            let baseHx = AV(bx, by, elv)
             let hxlsWithStatus = hxlChk sqn elv occ updatedHxls
 
             let rootCxl = {
@@ -167,10 +168,10 @@ module Coxel =
                 Rfid = id 
                 Size = parentCxl.Size
                 Seqn = sqn
-                Base = if Array.isEmpty hxlsWithStatus then baseHx else hxlsWithStatus.[0]
+                Base = baseHx
                 Hxls = hxlsWithStatus
             }
-            let updatedOcc = Array.append occ updatedHxls |> hxlUni 1
+            let updatedOcc = Array.append occ (Array.append [|baseHx|] updatedHxls) |> hxlUni 1
             rootCxl, updatedOcc
         | None ->
             let bsHx = 

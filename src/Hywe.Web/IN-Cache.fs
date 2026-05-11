@@ -21,8 +21,9 @@ module Cache
     /// <summary>
     /// Extracts level-specific configuration from full layout data.
     /// </summary>
-    let fromFullLayout (data: Cxl[] * (int * int)[][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) : BatchConfgrtns =
-        let cxls, cxOuIl, cxElv1, cxRto1 = data
+    let fromFullLayout (data: Cxl[] * (int * int)[][][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) : BatchConfgrtns =
+        let cxls, allBounds, cxElv1, cxRto1 = data
+        let cxOuIl = if elv >= 0 && elv < allBounds.Length then allBounds.[elv] else [||]
         let sqnStr = sprintf "%A" sqn
         let derived = deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv
         let d = Layout.getStaticGeometry cxls derived.cxClr1 elv 1
