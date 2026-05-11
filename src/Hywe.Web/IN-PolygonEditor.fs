@@ -455,7 +455,7 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
         }
 
     | UpdateLogicalHeight newH -> async {
-        let safeH = if newH <= 0.0 then initHeight else max minBound ((max 10.0 newH) * 10.0 * 0.866)
+        let safeH = if newH <= 0.0 then initHeight else max minBound ((max 10.0 newH) * 10.0)
         let oldH = model.LogicalHeight
         let scaleY = if oldH <= 0.0 then 1.0 else safeH / oldH
 
