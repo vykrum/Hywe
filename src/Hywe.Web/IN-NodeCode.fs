@@ -767,9 +767,8 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
                     else ""
                 let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
                 let attrs = 
-                    match lvl = 0 with
-                    | true -> $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B=0/O={o}/I={i}{tAttr}"
-                    | false -> $"Q={qVal}/L={lStr}/E={eVal}/B={eVal}{tAttr}"
+                    let bVal = if lvl = 0 then "0" else eVal
+                    $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B={bVal}/O={o}/I={i}{tAttr}"
 
                 let body = lvlNodes |> List.map (fun (n, p) -> 
                     let extrStr = match n.Extrusion = 3.0 with true -> "" | false -> $"/{n.Extrusion}"
