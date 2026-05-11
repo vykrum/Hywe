@@ -2,7 +2,7 @@ namespace Hywe.Core
 
 /// <summary> 
 /// Lexel (Lexical Engine) 
-/// Highlights the lexical analysis and tokenization of Hywe syntax.
+/// Parses the lexical analysis and tokenization of Hywe syntax.
 /// </summary>
 
 module Lexel =
