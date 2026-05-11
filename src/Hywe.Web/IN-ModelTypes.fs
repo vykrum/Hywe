@@ -94,7 +94,15 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
         |> Option.defaultValue (if Array.isEmpty cxCxl1 then fallbackSqn else (Array.head cxCxl1).Seqn)
     
     let cxlAvl = if Array.isEmpty cxCxl1 then [||] else Hywe.Core.Coxel.cxlExp cxCxl1 activeSqn elv
-    let cxClr1 = generatePastels "#888888" (max 1 (Array.length cxCxl1)) 0.85
+    
+    // Deterministic coloring based on architectural ID (Rfid) to ensure consistency across levels
+    let uniqueRfids = cxCxl1 |> Array.map (fun c -> Hywe.Core.Coxel.prpVlu c.Rfid) |> Array.distinct
+    let colorMap = 
+        generatePastels "#888888" (max 1 (Array.length uniqueRfids)) 0.85
+        |> Array.zip uniqueRfids
+        |> Map.ofArray
+
+    let cxClr1 = cxCxl1 |> Array.map (fun c -> colorMap.[Hywe.Core.Coxel.prpVlu c.Rfid])
     let cxAdj1 = Hywe.Core.Coxel.cxlAdj cxCxl1
     let cxB36 = cxCxl1 |> Array.map Hywe.Core.Coxel.getCxlCoordsString
 
