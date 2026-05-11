@@ -164,8 +164,8 @@ let generateDxf (cxls: Cxl[]) (offsetX: float) (offsetY: float) =
             for (x, y) in prm do
                 let q = float x
                 let r = float y
-                let cx = (hexScale * (1.5 * q)) + offsetX
-                let cy = (hexScale * (sqrt(3.0) / 2.0 * q + sqrt(3.0) * r)) + offsetY
+                let cx = (hexScale * q) + offsetX
+                let cy = (hexScale * r) + offsetY
                 sb.AppendLine("10\n" + string cx) |> ignore
                 sb.AppendLine("20\n" + string cy) |> ignore
     sb.ToString()
