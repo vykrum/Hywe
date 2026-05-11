@@ -14,10 +14,10 @@
 		<Compile Include="VZ-ThreeD.fs" />
 		<Compile Include="IN-PolygonEditor.fs" />
 		<Compile Include="IN-NodeCode.fs" />
+		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="VZ-CodeNode.fs" />
 		<Compile Include="IN-Page.fs" />
 		<Compile Include="IN-FileManager.fs" />
-		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="VZ-Analyze.fs" />
 		<Compile Include="VZ-Report.fs" />
 		<Compile Include="VZ-Layout.fs" />

@@ -7,12 +7,13 @@ open ModelTypes
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Paxel
+open Hywe.Core.Lexel
 open Hywe.Core.Zaxel
 open PolygonEditor
 open Page
 open Layout
 open FileManager
+
 
 // --- Logic (formerly UP-UI.fs) ---
 

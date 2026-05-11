@@ -242,3 +242,39 @@ module Goxel =
                     acc.AddRange(seg)
                     (acc, Some (Array.last seg))
             ) (ResizeArray<Hxl>(), None) |> fst |> (fun ra -> ra.ToArray())
+
+    // --- Geometry Parsing ---
+
+    /// <summary> Parses a comma-separated string of coordinates into a float array of points. </summary>
+    let parsePolygon (s: string) : (float * float)[] =
+        s.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        |> Array.choose (fun x ->
+            match Double.TryParse(x.Trim()) with
+            | true, v -> Some v
+            | _ -> None)
+        |> fun nums ->
+            match nums.Length % 2 with
+            | 0 ->
+                nums
+                |> Array.chunkBySize 2
+                |> Array.choose (function
+                    | [| a; b |] -> Some (a, b)
+                    | _ -> None)
+            | _ -> [||]
+
+    /// <summary> Parses a hyphen-separated string of polygons (islands). </summary>
+    let parsePolyIslands (s: string) : (float * float)[][] =
+        match String.IsNullOrWhiteSpace s with
+        | true -> [||]
+        | false ->
+            s.Split('-', StringSplitOptions.RemoveEmptyEntries)
+            |> Array.map parsePolygon
+
+    let parseCoords value =
+        parsePolygon value
+        |> Array.map (fun (x, y) -> int (System.Math.Round(x)), int (System.Math.Round(y)))
+
+    /// <summary> Parses multiple island polygons from a string. </summary>
+    let parseIslands value =
+        parsePolyIslands value
+        |> Array.map (Array.map (fun (x, y) -> int (System.Math.Round(x)), int (System.Math.Round(y))))

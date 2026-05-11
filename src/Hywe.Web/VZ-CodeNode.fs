@@ -3,86 +3,44 @@ module CodeNode
 open System
 open Bolero
 open Bolero.Html
-open Hywe.Core.Paxel
+open Hywe.Core.Lexel
 open NodeCode
 
 // --------------------
 // Syntax Preprocessing
 // --------------------
 
-/// Helper to identify if a block is a configuration attribute or a node definition
-let private isAttrBlock (s: string) =
-    not (s.Contains "/") || s.Contains "="
-
 /// Standardizes Hywe syntax, ensuring markers, attributes and correctly formatted paths
 let preprocessCode (code: string) : string =
     if String.IsNullOrWhiteSpace code then "" else
     
-    let levels = splitIntoLevels code
-    if levels.Length = 0 then 
+    let levels = processFullString code
+    if levels.IsEmpty then 
         // Fallback for raw node list without parentheses
         if code.Contains "/" then $"L0(Q=VRCCNE/L=0/X=1)({code.Trim()})"
         else code
     else
         let processedLevels = 
-            levels |> Array.mapi (fun i levelData ->
+            levels |> List.mapi (fun i levelData ->
                 let marker = 
                     if String.IsNullOrWhiteSpace levelData.Marker then sprintf "L%d" i 
                     else levelData.Marker
                 
-                let blocks = levelData.Blocks |> Array.filter (fun b -> not (String.IsNullOrWhiteSpace b))
-                if blocks.Length = 0 then "" else
+                let attrs = levelData.Attributes
+                let attrStr = 
+                    let w = match attrs.Width with Some v -> $"/W={v}" | None -> ""
+                    let h = match attrs.Height with Some v -> $"/H={v}" | None -> ""
+                    $"Q={attrs.Sequence}/L={attrs.Level}/X={attrs.Scale}/E={attrs.Entry}/O={attrs.OuterBoundary}/I={attrs.Islands}/T={attrs.Thickness}{w}{h}"
                 
-                // Separate attributes from nodes
-                let attrBlock, nodeBlocks =
-                    if isAttrBlock blocks.[0] then blocks.[0], blocks.[1..]
-                    else "Q=VRCCNE/L=0/X=1", blocks // Default attributes
-                
-                // Remap legacy top-level integers (e.g., 2/ -> 1.0/) to standard paths if needed
-                let topLevelInts =
-                    nodeBlocks
-                    |> Array.choose (fun line ->
-                        let parts = line.Split('/')
-                        match parts.Length >= 3 with
-                        | true ->
-                            let path = parts.[0]
-                            let firstSeg = path.Split('.').[0]
-                            match Int32.TryParse firstSeg with
-                            | true, n when n > 1 -> Some n
-                            | _ -> None
-                        | false -> None
-                    )
-                    |> Set.ofArray
+                let nodes = 
+                    levelData.Tree 
+                    |> List.collect id 
+                    |> List.map (fun n -> 
+                        let extr = match n.Extrusion with Some v -> $"/{v}" | None -> ""
+                        $"({n.Id}/{n.Area}/{n.Label}{extr})")
+                    |> String.concat ""
 
-                let intMap =
-                    topLevelInts
-                    |> Seq.map (fun n -> 
-                        let mapped = String.Join(".", Array.create (n - 1) "0")
-                        (n.ToString(), match mapped = "" with true -> "1" | false -> "1." + mapped))
-                    |> dict
-
-                let updatedNodeStrings =
-                    nodeBlocks
-                    |> Array.map (fun line ->
-                        let parts = line.Split('/')
-                        match parts.Length >= 3 with
-                        | true ->
-                            let path = parts.[0]
-                            let segments = path.Split('.')
-                            let first = segments.[0]
-                            let extra = if parts.Length > 3 then "/" + parts.[3] else ""
-                            match intMap.ContainsKey(first) with
-                            | true ->
-                                let newPath = 
-                                    if segments.Length > 1 then String.Join(".", Array.append [| intMap.[first] |] segments.[1..])
-                                    else intMap.[first]
-                                $"({newPath}/{parts.[1]}/{parts.[2]}{extra})"
-                            | false -> $"({line})"
-                        | false -> $"({line})"
-                    )
-
-                let result = String.Join("", updatedNodeStrings)
-                $"{marker}({attrBlock}){result}"
+                $"{marker}({attrStr}){nodes}"
             )
 
         String.Join("", processedLevels)
@@ -93,61 +51,36 @@ let preprocessCode (code: string) : string =
 
 /// Parses the standardized syntax into hierarchical tree structures for visualization
 let parseOutput (code: string) : TreeNode list =
-    let levels = splitIntoLevels code
+    let levels = processFullString code
     
-    levels |> Array.toList |> List.mapi (fun lvlIdx levelData ->
-        let entries =
-            levelData.Blocks 
-            |> Array.filter (fun b -> not (isAttrBlock b))
-            |> Array.choose (fun item ->
-                let parts = item.Split('/')
-                if parts.Length >= 3 then
-                    let path = parts.[0]
-                    if path.StartsWith("0") then None
-                    else
-                        let weight = parts.[1]
-                        let name = parts.[2].Trim()
-                        let extrusion = 
-                            if parts.Length > 3 then match parts.[3] with Float v -> v | _ -> 3.0 
-                            else 3.0
-                        Some (path, weight, name, extrusion)
-                else None
-            )
-
+    levels |> List.mapi (fun lvlIdx levelData ->
+        let nodes = levelData.Tree |> List.collect id
+        
         // Find the root (path "1") or default to the first node
-        let rootEntry = 
-            entries |> Array.tryFind (fun (p, _, _, _) -> p = "1")
-            |> Option.orElse (entries |> Array.tryHead)
+        let rootNode = 
+            nodes |> List.tryFind (fun n -> n.Id = "1")
+            |> Option.orElse (nodes |> List.tryHead)
 
-        match rootEntry with
+        match rootNode with
         | None ->
             { Id = Guid.NewGuid(); Name = sprintf "Level %d" lvlIdx; Weight = "0"; X = 0.0; Y = 0.0; Children = []; Level = lvlIdx; Extrusion = 3.0 }
-        | Some (rootPath, _, _, _) ->
-            let nodeMap =
-                entries
-                |> Seq.map (fun (path, weight, name, extrusion) ->
-                    path, {
-                        Id = Guid.NewGuid(); Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = []; Level = lvlIdx; Extrusion = extrusion
-                    }
-                )
-                |> dict
-                |> System.Collections.Generic.Dictionary
-
-            let byDepth =
-                entries
-                |> Array.groupBy (fun (path, _, _, _) -> path.Split('.').Length)
-                |> Array.sortByDescending fst
-
-            for (_, group) in byDepth do
-                for (path, _, _, _) in group do
-                    if path.Contains "." then
-                        let parentPath = path.Substring(0, path.LastIndexOf('.'))
-                        if nodeMap.ContainsKey(parentPath) && nodeMap.ContainsKey(path) then
-                            let parent = nodeMap.[parentPath]
-                            let child = nodeMap.[path]
-                            nodeMap.[parentPath] <- { parent with Children = parent.Children @ [child] }
-
-            nodeMap.[rootPath]
+        | Some root ->
+            let rec build (n: LexelNode) =
+                let children = 
+                    nodes 
+                    |> List.filter (fun c -> c.Id.StartsWith(n.Id + ".") && not (c.Id.Substring(n.Id.Length + 1).Contains(".")))
+                    |> List.map build
+                { 
+                    Id = Guid.NewGuid()
+                    Name = n.Label
+                    Weight = string n.Area
+                    X = 0.0
+                    Y = 0.0
+                    Children = children
+                    Level = lvlIdx
+                    Extrusion = n.Extrusion |> Option.defaultValue 3.0
+                }
+            build root
     )
 
 // --------------------
@@ -182,10 +115,10 @@ let private calculateTreeBoundsWithNodes (root: TreeNode) =
     let root = layoutTreeViz root 0 (ref 100.0)
     let nodes = flattenTree root
     let margin = 50.0
-    let minX = nodes |> List.map (fun n -> n.X) |> List.min
-    let maxX = nodes |> List.map (fun n -> n.X) |> List.max
-    let minY = nodes |> List.map (fun n -> n.Y) |> List.min
-    let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
+    let minX = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.X) |> List.min
+    let maxX = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.X) |> List.max
+    let minY = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.Y) |> List.min
+    let maxY = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.Y) |> List.max
     let contentW = maxX - minX + 2.0 * margin
     let contentH = maxY - minY + 2.0 * margin
     let vbX = minX - margin
@@ -196,10 +129,10 @@ let calculateTreeBounds (root: TreeNode) =
     let root = layoutTreeViz root 0 (ref 100.0)
     let nodes = flattenTree root
     let margin = 50.0
-    let minX = nodes |> List.map (fun n -> n.X) |> List.min
-    let maxX = nodes |> List.map (fun n -> n.X) |> List.max
-    let minY = nodes |> List.map (fun n -> n.Y) |> List.min
-    let maxY = nodes |> List.map (fun n -> n.Y) |> List.max
+    let minX = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.X) |> List.min
+    let maxX = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.X) |> List.max
+    let minY = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.Y) |> List.min
+    let maxY = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.Y) |> List.max
     (maxX - minX + 2.0 * margin, maxY - minY + 2.0 * margin)
 
 let private generateVisualElements (root: TreeNode) (colorList: string[]) (forcedW: float option) (forcedH: float option) : VisualElement list * (float * float * float * float) =
@@ -326,4 +259,3 @@ let renderSvgToString (root: TreeNode) (colorList: string[]) (forcedW: float opt
             
     sb.AppendLine("</svg>") |> ignore
     sb.ToString()
-

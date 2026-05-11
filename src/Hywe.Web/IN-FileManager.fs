@@ -6,7 +6,7 @@ open Microsoft.JSInterop
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Core.Paxel
+open Hywe.Core.Lexel
 open PolygonEditor
 
 // --- STORAGE & PERSISTENCE ---
@@ -40,32 +40,37 @@ let importFile (js: IJSRuntime) (inputId: string) =
 
 /// <summary> Parses .hyw content and updates a PolygonEditorModel. </summary>
 let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
-    let sortedLevels = splitIntoLevels content |> Array.truncate 1
+    let parsed = processFullString content |> List.truncate 1
     
     let mutable finalState = current
-    for lvl in sortedLevels do
-        let attrs, _ = processLevel lvl
-        finalState <- attrs |> Map.fold (fun (m: PolygonEditorModel) key v ->
-            match key with
-            | "W" -> match v with | Float num -> { m with LogicalWidth = (max 10.0 num) * 10.0 } | _ -> m
-            | "H" -> match v with | Float num -> { m with LogicalHeight = (max 10.0 num) * 10.0 } | _ -> m
-            | "L" -> match v with | Float num -> { m with Elevation = int num } | _ -> m
-            | "S" -> { m with BaseStr = v }
-            | "X" -> { m with UseAbsolute = (v = "1") }
-            | "E" -> 
-                match parsePoint v with 
-                | Ok pt -> { m with EntryPoint = pt } 
-                | _ -> m
-            | "O" -> 
-                match parsePoly v with 
-                | Ok pts -> { m with Outer = pts } 
-                | _ -> m
-            | "I" -> 
-                match parseIslands v with 
-                | Ok pts -> { m with Islands = pts } 
-                | _ -> m
-            | _ -> m
-        ) finalState
+    match List.tryHead parsed with
+    | Some segment ->
+        let attrs = segment.Attributes
+        finalState <- 
+            { finalState with
+                LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * 10.0) |> Option.defaultValue finalState.LogicalWidth
+                LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * 10.0) |> Option.defaultValue finalState.LogicalHeight
+                Elevation = attrs.Level
+                BaseStr = "" // Not directly in attributes now, usually handled by nodes
+                UseAbsolute = (attrs.Scale = 1.0)
+                UseBoundary = (attrs.Scale <> 1.0)
+            }
+
+        // Handle Entry point
+        match parsePoint attrs.Entry with
+        | Ok pt -> finalState <- { finalState with EntryPoint = pt }
+        | _ -> ()
+
+        // Handle Outer boundary
+        match parsePoly attrs.OuterBoundary with
+        | Ok pts -> finalState <- { finalState with Outer = pts }
+        | _ -> ()
+
+        // Handle Islands
+        match parseIslands attrs.Islands with
+        | Ok pts -> finalState <- { finalState with Islands = pts }
+        | _ -> ()
+    | None -> ()
     
     let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
     
@@ -140,6 +145,13 @@ let generateAdjacencyCsv (data: (string * int * (string[] * bool[][]))[]) =
 
 /// Generates Hynteract payload
 let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
+    let getCxlCoordsString (cxl: Cxl) =
+        Array.append [|cxl.Base|] cxl.Hxls 
+        |> Array.map (fun h -> 
+            let (x, y, _) = hxlCrd h
+            sprintf "%d,%d" x y)
+        |> String.concat " "
+
     cxls
     |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
     |> Array.sortBy fst

@@ -1,10 +1,32 @@
 module ModelTypes
 
+
 open NodeCode
-open Page
+
 open PolygonEditor
 open Hywe.Core.Coxel
 open System
+
+
+
+/// <summary> Specifies the currently visible configuration panel. </summary>
+type ActivePanel =
+    | BoundaryPanel
+    | LayoutPanel
+    | AnalyzePanel
+    | ViewPanel
+    | BatchPanel
+    | TeachPanel
+    | ReportPanel
+
+/// <summary> Specifies the input methodology - flowchart or text </summary>
+type EditorMode =
+    | Interactive
+    | Syntax
+
+type EditorTab =
+    | Boundary
+    | Editor of isAdvanced: bool
 
 type DerivedData = {
     cxCxl1: Cxl[]
@@ -147,7 +169,7 @@ type AppScreen =
 
 // Batch Export Types
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][]; cxB36: string[]; cxRto1: float[] |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[] |}
 
 // Report Types
 type LevelReportSections = {

@@ -4,7 +4,7 @@ module Cache
     open ModelTypes
     open Hywe.Core
     open Hywe.Core.Coxel
-    open Hywe.Core.Paxel
+    open Hywe.Core.Lexel
     
     /// <summary>
     /// Computes the full layout data for all levels.

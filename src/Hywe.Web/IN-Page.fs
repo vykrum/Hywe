@@ -8,20 +8,7 @@ open Hywe.Core
 let parseSqn (name: string) =
     Hexel.sqnArray |> Array.tryFind (fun x -> (sprintf "%A" x).Equals(name, StringComparison.OrdinalIgnoreCase))
 
-/// <summary> Specifies the currently visible configuration panel. </summary>
-type ActivePanel =
-    | BoundaryPanel
-    | LayoutPanel
-    | AnalyzePanel
-    | ViewPanel
-    | BatchPanel
-    | TeachPanel
-    | ReportPanel
 
-/// <summary> Specifies the input methodology - flowchart or text </summary>
-type EditorMode =
-    | Interactive
-    | Syntax
 
 
 type EditorTab =
