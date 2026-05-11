@@ -160,7 +160,7 @@ module Xyxel =
             Islands = bdIs
             EntryAtr = entryAtr
             EntryFallback = entryFallback
-            InitialOcc = opts.InitialOcc
+            InitialOcc = opts.InitialOcc |> Array.map (fun h -> let (x, y, _) = hxlCrd h in AV(x, y, elv))
             ScaledTree = scaledTree
             Ratio = finalRatio
             Parent = opts.ParentCxl

@@ -16,7 +16,7 @@ module Zaxel =
     /// <summary> Internal state for multi-level construction. </summary>
     type BuildState = {
         Cxls: Cxl[]
-        Bounds: (int*int)[][]
+        Bounds: (int*int)[][][]
         Elvs: float[]
         Ratios: float[]
         Ratio: float option
@@ -115,7 +115,7 @@ module Zaxel =
                 | 0 ->
                     { state with 
                         Cxls = Array.append state.Cxls cxls
-                        Bounds = Array.append state.Bounds bounds
+                        Bounds = Array.append state.Bounds [| bounds |]
                         Elvs = Array.append state.Elvs [| curElv |]
                         Ratios = Array.append state.Ratios [| ratio |]
                         Ratio = Some ratio
@@ -126,7 +126,7 @@ module Zaxel =
                 | _ ->
                     { state with 
                         Cxls = Array.append state.Cxls cxls
-                        Bounds = Array.append state.Bounds bounds
+                        Bounds = Array.append state.Bounds [| bounds |]
                         Ratios = Array.append state.Ratios [| ratio |]
                         Elvs = Array.append state.Elvs [| curElv |] }
             )

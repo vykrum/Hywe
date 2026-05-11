@@ -2,8 +2,9 @@ namespace Hywe.Core
 
 /// <summary> 
 /// Lexel (Lexical Engine) 
-/// Highlights the lexical analysis and tokenization of Hywe strings.
+/// Highlights the lexical analysis and tokenization of Hywe syntax.
 /// </summary>
+
 module Lexel =
     open System
     open System.Text.RegularExpressions
