@@ -63,7 +63,7 @@ let parseOutput (code: string) : TreeNode list =
 
         match rootNode with
         | None ->
-            { Id = Guid.NewGuid(); Name = sprintf "Level %d" lvlIdx; Weight = "0"; X = 0.0; Y = 0.0; Children = []; Level = lvlIdx; Extrusion = 3.0 }
+            { Id = Guid.NewGuid(); Name = sprintf "Level %d" lvlIdx; Weight = "0"; X = 0.0; Y = 0.0; Children = []; Level = lvlIdx; Extrusion = 3.0; Base = None }
         | Some root ->
             let rec build (n: LexelNode) =
                 let children = 
@@ -79,6 +79,7 @@ let parseOutput (code: string) : TreeNode list =
                     Children = children
                     Level = lvlIdx
                     Extrusion = n.Extrusion |> Option.defaultValue 3.0
+                    Base = n.Base
                 }
             build root
     )

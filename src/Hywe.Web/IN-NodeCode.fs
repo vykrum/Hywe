@@ -20,7 +20,8 @@ type TreeNode =
       Y: float
       Children: TreeNode list
       Level: int
-      Extrusion: float }
+      Extrusion: float
+      Base: string option }
 
 type SvgInfo =
     { ViewBoxX: float; ViewBoxY: float; ViewBoxW: float; ViewBoxH: float
@@ -95,7 +96,7 @@ let rec addChildToNodeById (node: TreeNode) parentId =
     let found = node.Id = parentId
     match found with
     | true ->
-        let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = node.Level; Extrusion = 3.0 }
+        let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = node.Level; Extrusion = 3.0; Base = None }
         { node with Children = node.Children @ [newChild] }
     | false -> { node with Children = node.Children |> List.map (fun c -> addChildToNodeById c parentId) }
 
@@ -299,7 +300,7 @@ let updateSub (js: IJSRuntime) msg model =
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         let rec add node =
             if node.Id = parentId then
-                let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0 }
+                let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
                 { node with Children = node.Children @ [newChild] }
             else
                 { node with Children = node.Children |> List.map add }
@@ -767,12 +768,13 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
                 let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
                 let attrs = 
                     match lvl = 0 with
-                    | true -> $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/O={o}/I={i}{tAttr}"
-                    | false -> $"Q={qVal}/L={lStr}/E={eVal}{tAttr}"
+                    | true -> $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B=0/O={o}/I={i}{tAttr}"
+                    | false -> $"Q={qVal}/L={lStr}/E={eVal}/B={eVal}{tAttr}"
 
                 let body = lvlNodes |> List.map (fun (n, p) -> 
                     let extrStr = match n.Extrusion = 3.0 with true -> "" | false -> $"/{n.Extrusion}"
-                    $"({p}/{n.Weight}/{n.Name}{extrStr})") |> String.concat ""
+                    let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
+                    $"({p}/{n.Weight}/{n.Name}{extrStr}{baseStr})") |> String.concat ""
                 
                 let marker = if lvl = 0 then "L0" else sprintf "L%d" lvl
                 Some $"{marker}({attrs}){body}"
@@ -796,19 +798,19 @@ let buildTreeMap (input: string) =
     let nodeData = 
         allParts |> Array.collect (fun (lvl, t, s, nodes, e) ->
             nodes |> List.map (fun n ->
-                (n.Id.Split('.') |> Array.map int |> Array.toList, string n.Area, n.Label, n.Extrusion |> Option.defaultValue 3.0, lvl)
+                (n.Id.Split('.') |> Array.map int |> Array.toList, string n.Area, n.Label, n.Extrusion |> Option.defaultValue 3.0, lvl, n.Base)
             ) |> List.toArray
         )
         |> Array.toList
-        |> List.distinctBy (fun (p, _, _, _, l) -> (p, l))
+        |> List.distinctBy (fun (p, _, _, _, l, _) -> (p, l))
 
     let guidMap = System.Collections.Generic.Dictionary<int * string, Guid>()
 
     let rec build (lvl: int) (prefix: int list) =
         nodeData 
-        |> List.filter (fun (path, _, _, _, nLvl) -> 
+        |> List.filter (fun (path, _, _, _, nLvl, _) -> 
             nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
-        |> List.map (fun (path, weight, name, extrusion, lvl) -> 
+        |> List.map (fun (path, weight, name, extrusion, lvl, bVal) -> 
             let id = 
                 match lvl > 0 && prefix = [] with
                 | true ->
@@ -822,12 +824,12 @@ let buildTreeMap (input: string) =
                 | false -> Guid.NewGuid()
             let pathStr = String.Join(".", path)
             guidMap.[(lvl, pathStr)] <- id
-            { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion })
+            { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion; Base = bVal })
 
     let levelsMap = 
-        [0 .. (match nodeData.IsEmpty with true -> 0 | false -> nodeData |> List.map (fun (_,_,_,_,l) -> l) |> List.max)]
+        [0 .. (match nodeData.IsEmpty with true -> 0 | false -> nodeData |> List.map (fun (_,_,_,_,l,_) -> l) |> List.max)]
         |> List.map (fun lvl -> 
-            let root = build lvl [] |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0 }
+            let root = build lvl [] |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
             lvl, layoutTree root 0 (ref 50.0))
         |> Map.ofList
 

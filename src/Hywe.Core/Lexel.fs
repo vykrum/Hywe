@@ -28,6 +28,7 @@ module Lexel =
         Area: int
         Label: string 
         Extrusion: float option
+        Base: string option
     }
 
     type LexelBlock = {
@@ -76,14 +77,27 @@ module Lexel =
 
     /// <summary> 
     /// Processes Hywe node blocks and organizes them into a hierarchical tree.
-    /// Handles (ID/Area/Label/Extrusion) format and dot-notation grouping.
+    /// Handles (ID/Area/Label/Extrusion/B=Base) format and dot-notation grouping.
     /// </summary>
     let parseNodes (blocks: string list) : LexelNode list list =
         let nodes = 
             blocks |> List.choose (fun b ->
-                match b.Trim('(', ')').Split('/') with
-                | [| id; Int area; label; Float extr |] -> Some { Id = id.Trim(); Area = area; Label = label.Trim(); Extrusion = Some extr }
-                | [| id; Int area; label |] -> Some { Id = id.Trim(); Area = area; Label = label.Trim(); Extrusion = None }
+                let bits = b.Trim('(', ')').Split('/')
+                match bits.Length with
+                | 3 -> 
+                    match bits.[1] with
+                    | Int area -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = None }
+                    | _ -> None
+                | 4 ->
+                    match bits.[1], bits.[3] with
+                    | Int area, Float extr -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = None }
+                    | Int area, s when s.StartsWith "B=" -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = Some (s.Substring(2)) }
+                    | _ -> None
+                | 5 ->
+                    match bits.[1], bits.[3], bits.[4] with
+                    | Int area, Float extr, s when s.StartsWith "B=" -> 
+                        Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = Some (s.Substring(2)) }
+                    | _ -> None
                 | _ -> None)
 
         let isChild (p: string) (c: string) = 
