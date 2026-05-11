@@ -19,8 +19,9 @@ module Paxel =
 
     /// <summary> Parses a string into a discriminated union case safely. </summary>
     let tryParseUnion<'T> (s: string) : 'T option =
-        if not (FSharpType.IsUnion typeof<'T>) then None
-        else
+        match FSharpType.IsUnion typeof<'T> with
+        | false -> None
+        | true ->
             FSharpType.GetUnionCases typeof<'T>
             |> Array.tryFind (fun c -> c.Name.Equals(s, StringComparison.OrdinalIgnoreCase))
             |> Option.map (fun c -> FSharpValue.MakeUnion(c,[||]) :?> 'T)
@@ -39,31 +40,36 @@ module Paxel =
 
     /// <summary> Recursively splits a Hywe string into levels using markers between parentheses. </summary>
     let splitIntoLevels (input: string) : LevelData[] =
-        let rec loop marker blocks (remaining: string) =
+        let rec loop acc marker blocks (remaining: string) =
             match remaining with
             | "" -> 
                 match blocks with
-                | [] -> []
-                | _ -> [ { Marker = marker; Blocks = List.rev blocks |> List.toArray } ]
+                | [] -> List.rev acc |> List.toArray
+                | _ -> 
+                    let lastLevel = { Marker = marker; Blocks = List.rev blocks |> List.toArray }
+                    List.rev (lastLevel :: acc) |> List.toArray
             | s when s.StartsWith("(") ->
                 match s.IndexOf(')') with
-                | -1 -> [] 
+                | -1 -> [||] 
                 | idx ->
                     let content = s.Substring(1, idx - 1)
                     let rest = s.Substring(idx + 1).Trim()
-                    loop marker (content :: blocks) rest
+                    loop acc marker (content :: blocks) rest
             | s ->
                 match s.IndexOf('(') with
-                | -1 -> [] 
+                | -1 -> [||] 
                 | idx ->
                     let nextMarker = s.Substring(0, idx).Trim()
                     let rest = s.Substring(idx)
                     match blocks with
-                    | [] -> loop nextMarker [] rest 
-                    | _ -> { Marker = marker; Blocks = List.rev blocks |> List.toArray } :: loop nextMarker [] rest
+                    | [] -> loop acc nextMarker [] rest 
+                    | _ -> 
+                        let currentLevel = { Marker = marker; Blocks = List.rev blocks |> List.toArray }
+                        loop (currentLevel :: acc) nextMarker [] rest
 
-        if String.IsNullOrWhiteSpace input then [||]
-        else loop "" [] (input.Trim()) |> List.toArray
+        match String.IsNullOrWhiteSpace input with
+        | true -> [||]
+        | false -> loop [] "" [] (input.Trim())
 
     /// <summary> Parses attribute blocks into a Map. </summary>
     let parseAttrs (block: string) =
@@ -101,8 +107,9 @@ module Paxel =
 
     /// <summary> Parses a hyphen-separated string of polygons (islands). </summary>
     let parsePolyIslands (s: string) : (float * float)[][] =
-        if String.IsNullOrWhiteSpace s then [||]
-        else
+        match String.IsNullOrWhiteSpace s with
+        | true -> [||]
+        | false ->
             s.Split('-', StringSplitOptions.RemoveEmptyEntries)
             |> Array.map parsePolygon
 
@@ -138,9 +145,9 @@ module Paxel =
                 match children with
                 | [||] -> 
                     // Only include as a group if it's the root (path ends in 1 or marker-1)
-                    if id.EndsWith("1") && not (id.Contains(".")) then 
-                        Some [| (id, area, lb) |]
-                    else None
+                    match id.EndsWith("1") && not (id.Contains(".")) with
+                    | true -> Some [| (id, area, lb) |]
+                    | false -> None
                 | _ -> Some (Array.append [| (id, area, lb) |] children))
         
         groups |> Array.sortBy (fun group -> (Array.head group) |> fun (id, _, _) -> id)
@@ -156,8 +163,9 @@ module Paxel =
                 |> List.choose parseHierarchy 
                 |> List.map (fun (id, area, lb) -> 
                     let prefixedId = 
-                        if String.IsNullOrWhiteSpace level.Marker then id 
-                        else sprintf "%s-%s" level.Marker id
+                        match String.IsNullOrWhiteSpace level.Marker with
+                        | true -> id 
+                        | false -> sprintf "%s-%s" level.Marker id
                     (prefixedId, area, lb)
                 )
                 |> List.toArray
