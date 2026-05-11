@@ -89,9 +89,9 @@ let parseOutput (code: string) : TreeNode list =
 // --------------------
 
 type VisualElement =
-    | VLine of x1:float * y1:float * x2:float * y2:float * color:string
-    | VPolygon of points:string * fill:string * stroke:string
-    | VText of x:float * y:float * size:int * anchor:string * fill:string * text:string
+    | VLine of x1: float * y1: float * x2: float * y2: float * st: string
+    | VPolygon of pts: string * fl: string * st: string * sw: string
+    | VText of x: float * y: float * sz: int * ta: string * fl: string * nm: string
 
 let private flattenTree (node: TreeNode) : TreeNode list =
     let rec loop n = n :: (n.Children |> List.collect loop)
@@ -165,7 +165,10 @@ let private generateVisualElements (root: TreeNode) (colorList: string[]) (force
             
             // Highlight Elevated nodes (extrusion <> 3.0)
             let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
-            let stroke = "none"
+            let hasBase = node.Base.IsSome
+            
+            let stroke = if isElevated then "#4a90e2" else "none"
+            let strokeWidth = if isElevated then "2" else "0"
             
             // Draw Hexagon (width 50, height 40)
             let w, h = 50.0, 40.0
@@ -178,13 +181,18 @@ let private generateVisualElements (root: TreeNode) (colorList: string[]) (force
                         (cx - w/2.0) (cy + h/4.0)
                         (cx - w/2.0) (cy - h/4.0)
             
-            yield VPolygon(pts, fill, stroke)
+            // svPol template needs stroke-width
+            yield VPolygon(pts, fill, stroke, strokeWidth)
             
             let textFill = "#333"
             yield VText(node.X, node.Y - 6.0, 11, "middle", textFill, safeName)
             
             let weightColor = if isElevated then "#4a90e2" else "#888"
             yield VText(node.X, node.Y + 11.0, 9, "middle", weightColor, node.Weight)
+
+            if hasBase then
+                let baseLabel = sprintf "B:%s" node.Base.Value
+                yield VText(node.X + 22.0, node.Y - 18.0, 7, "start", "#27ae60", baseLabel)
     ]
     
     elements, finalBounds
@@ -194,7 +202,7 @@ let private generateVisualElements (root: TreeNode) (colorList: string[]) (force
 // --------------------
 
 type private svLin = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${st}" stroke-width="0.8" stroke-linecap="round" />""">
-type private svPol = Template<"""<polygon points="${pts}" fill="${fl}" stroke="${st}" stroke-width="0" />""">
+type private svPol = Template<"""<polygon points="${pts}" fill="${fl}" stroke="${st}" stroke-width="${sw}" />""">
 type private svTxt = Template<"""<text x="${x}" y="${y}" font-size="${sz}" text-anchor="${ta}" font-family="'Outfit', sans-serif" dominant-baseline="middle" fill="${fl}">${nm}</text>""">
 
 let viewTreeSvg (root: TreeNode) (colorList: string[]) : Node =
@@ -209,8 +217,8 @@ let viewTreeSvg (root: TreeNode) (colorList: string[]) : Node =
             match el with
             | VLine(x1, y1, x2, y2, st) -> 
                 svLin().x1(string x1).y1(string y1).x2(string x2).y2(string y2).st(st).Elt()
-            | VPolygon(pts, fill, stroke) -> 
-                svPol().pts(pts).fl(fill).st(stroke).Elt()
+            | VPolygon(pts, fill, stroke, sw) -> 
+                svPol().pts(pts).fl(fill).st(stroke).sw(sw).Elt()
             | VText(x, y, sz, ta, fl, nm) -> 
                 svTxt().x(string x).y(string y).sz(string sz).ta(ta).fl(fl).nm(nm).Elt()
     }
@@ -253,8 +261,8 @@ let renderSvgToString (root: TreeNode) (colorList: string[]) (forcedW: float opt
         match el with
         | VLine(x1, y1, x2, y2, st) ->
             sprintf """<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="%s" stroke-width="0.8" stroke-linecap="round" />""" x1 y1 x2 y2 st |> sb.AppendLine |> ignore
-        | VPolygon(pts, fl, st) ->
-            sprintf """<polygon points="%s" fill="%s" stroke="none" stroke-width="0" />""" pts fl |> sb.AppendLine |> ignore
+        | VPolygon(pts, fill, stroke, sw) -> 
+            sprintf """<polygon points="%s" fill="%s" stroke="%s" stroke-width="%s" />""" pts fill stroke sw |> sb.AppendLine |> ignore
         | VText(x, y, sz, ta, fl, nm) ->
             sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz ta fl nm |> sb.AppendLine |> ignore
             
