@@ -7,7 +7,7 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Page
-open NodeCode
+open Hywe.Node
 open PolygonEditor
 open ModelTypes
 open ModelHelpers
@@ -18,11 +18,11 @@ open Hywe.Core.Lexel
 open Cache
 
 // Defaults / init 
-let initialTree = NodeCode.initModel beeyond
+let initialTree = Serialization.initModel beeyond
 let initialSequence = allSqns.[11]
 let initialPolygonExport = syncPolygonState PolygonEditor.initModel
 
-let initialOutput = NodeCode.getOutput
+let initialOutput = Serialization.getOutput
                         initialTree
                         (Map.ofList [0, initialSequence])
                         initialPolygonExport.Width
@@ -146,7 +146,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
             | UpdateMetadata _ | Undo | Redo -> model
-            | TreeMsg (NodeCode.PointerMove _) -> model
+            | TreeMsg (SubMsg.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
             | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }
         else model
@@ -176,7 +176,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let updatedSrc = 
             match model.EditorMode with
             | Interactive -> 
-                NodeCode.getOutput 
+                Serialization.getOutput 
                     model.Tree 
                     newSqns 
                     model.PolygonExport.Width
@@ -236,7 +236,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         LayoutCache = newCache }
         model2,
         Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction)
+                    Cmd.map TreeMsg (Cmd.ofMsg CancelAction)
                     Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 50 }) () (fun _ -> RunHyweave)
                 ]
 
@@ -245,7 +245,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match model.EditorMode with
             | Syntax -> model.SrcOfTrth
             | Interactive ->
-                NodeCode.getOutput
+                Serialization.getOutput
                     model.Tree
                     model.Sequences
                     model.PolygonExport.Width
@@ -323,18 +323,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }, Cmd.none
 
     | TreeMsg subMsg ->
-            let isMoving = match subMsg with NodeCode.PointerMove _ -> true | _ -> false
+            let isMoving = match subMsg with SubMsg.PointerMove _ -> true | _ -> false
             let shouldPush = 
                 match subMsg with
-                | NodeCode.ExecuteAction _ | NodeCode.AddChild _ | NodeCode.UpdateName _ 
-                | NodeCode.UpdateWeight _ | NodeCode.UpdateExtrusion _ -> true
-                | NodeCode.PointerUp ->
+                | SubMsg.ExecuteAction _ | SubMsg.AddChild _ | SubMsg.UpdateName _ 
+                | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _ -> true
+                | SubMsg.PointerUp ->
                     // Push only if a drag actually happened
                     model.Tree.DraggingId.IsSome
                 | _ -> false
 
             let model = if shouldPush then pushUndo model else model
-            let updatedTree, treeCmd = NodeCode.updateSub js subMsg model.Tree 
+            let updatedTree, treeCmd = NodeTree.updateSub js subMsg model.Tree 
         
             // Synchronize sequences map with all levels in the tree
             let newSqns = 
@@ -348,7 +348,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Map.add lvl parentSqn m
                 )
 
-            let newOutput = NodeCode.getOutput
+            let newOutput = Serialization.getOutput
                                  updatedTree
                                  newSqns
                                  model.PolygonExport.Width
@@ -357,8 +357,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                  model.PolygonExport.OuterStr
                                  model.PolygonExport.IslandsStr
 
-            let isLevelSwitch = match subMsg with NodeCode.SetLevel _ -> true | _ -> false
-            let isAction = match subMsg with NodeCode.ExecuteAction _ -> true | _ -> false
+            let isLevelSwitch = match subMsg with SubMsg.SetLevel _ -> true | _ -> false
+            let isAction = match subMsg with SubMsg.ExecuteAction _ -> true | _ -> false
 
             let isIncrementalEdit = not (isMoving || isLevelSwitch)
             let nextCount = if isIncrementalEdit then model.EditsCount + 1 else model.EditsCount
@@ -373,7 +373,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     EditsCount = nextCount
                     IsPresetsCollapsed = nextCollapse }
 
-            if isIncrementalEdit || (match subMsg with NodeCode.PointerUp -> true | _ -> false) then
+            if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
                 FileManager.autoSave js newOutput |> ignore
 
             let finalModel, finalCmd = 
@@ -403,7 +403,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | PolygonEditorUpdated newModel ->
         let model = pushUndo model
         let newExport = syncPolygonState newModel
-        let newOutput = NodeCode.getOutput
+        let newOutput = Serialization.getOutput
                              model.Tree
                              model.Sequences
                              newExport.Width
@@ -524,7 +524,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let newSqns = extractSequences content
                 
                 // Restore Tree
-                let newTree = NodeCode.initModel content
+                let newTree = Serialization.initModel content
                 
                 // Restore Polygon
                 let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -560,7 +560,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         FileManager.clearBackup js |> ignore
         let model = pushUndo model
         let resetSyntax = Page.emptyState
-        let resetTree = NodeCode.initModel resetSyntax
+        let resetTree = Serialization.initModel resetSyntax
         let resetPoly = PolygonEditor.initModel
         let resetExport = syncPolygonState resetPoly
         
@@ -683,7 +683,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SkipOnboarding ->
         { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }, 
-        Cmd.map TreeMsg (Cmd.ofMsg NodeCode.CancelAction) // Just in case
+        Cmd.map TreeMsg (Cmd.ofMsg CancelAction) // Just in case
 
     | RestartOnboarding ->
         { model with 

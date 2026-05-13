@@ -10,6 +10,7 @@ open PolygonEditor
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
+open Hywe.Node
 open FileManager
 open Cache
 
@@ -56,7 +57,7 @@ let generateSuggestion (model: Model) =
     let meta = model.TeachMetadata
     let levelToAnchor = tree.LevelAnchors 
 
-    let rec getTreeSummary (node: NodeCode.TreeNode) =
+    let rec getTreeSummary (node: TreeNode) =
         if node.Children.IsEmpty then ""
         else
             let childNames = node.Children |> List.map (fun c -> c.Name) |> String.concat ", "
@@ -65,7 +66,7 @@ let generateSuggestion (model: Model) =
             let children = node.Children |> List.map getTreeSummary |> String.concat " "
             current + " " + children
 
-    let describeLevel (level: int) (root: NodeCode.TreeNode) =
+    let describeLevel (level: int) (root: TreeNode) =
         let header = 
             if level = 0 then "\nBase Level: "
             else 

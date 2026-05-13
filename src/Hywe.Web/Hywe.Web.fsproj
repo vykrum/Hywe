@@ -6,6 +6,7 @@
 	
 	<ItemGroup>
 		<ProjectReference Include="..\Hywe.Core\Hywe.Core.fsproj" />
+		<ProjectReference Include="..\Hywe.Tree\Hywe.Tree.fsproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -13,9 +14,8 @@
 		<Compile Include="VZ-Shaders.fs" />
 		<Compile Include="VZ-ThreeD.fs" />
 		<Compile Include="IN-PolygonEditor.fs" />
-		<Compile Include="IN-NodeCode.fs" />
+		<Compile Include="IN-NodeTree.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
-		<Compile Include="VZ-CodeNode.fs" />
 		<Compile Include="IN-Page.fs" />
 		<Compile Include="IN-FileManager.fs" />
 		<Compile Include="VZ-Analyze.fs" />
