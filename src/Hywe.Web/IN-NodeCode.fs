@@ -75,75 +75,75 @@ type svLn = Template<"""<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke
 // --------------------
 let initWeight = 96
 let randomNames = ["<Hive>"; "<Cell>"; "<Comb>"; "<Hex>"; "<Core>"; "<Dock>"; "<Ring>"; "<Link>"; "<Arc>"; "<Mod>"; "<Buzz>"; "<Wax>"; "<Sting>"; "<Veil>"; "<Arch>"; "<Glow>"; "<Path>"; "<Air>"; "<Clad>"; "<Echo>"; "<Dawn>"; "<Brood>"; "<Guard>"; "<Swarm>"; "<Nect>"; "<Pupa>"; "<Drone>"; "<Queen>"; "<Field>"; "<Trail>"]
-let rng = System.Random()
-let getRandomName () = randomNames.[rng.Next(randomNames.Length)]
-let getRandomWeight () = rng.Next(75, 151).ToString()
 
+let getRandomName () = 
+    let rng = System.Random()
+    randomNames.[rng.Next(randomNames.Length)]
 
-let rec isDescendant (targetId: Guid) (potentialParent: TreeNode) : bool =
-    potentialParent.Children |> List.exists (fun c -> c.Id = targetId || isDescendant targetId c)
+let getRandomWeight () = 
+    let rng = System.Random()
+    rng.Next(75, 151).ToString()
 
-let rec findNodeById (id: Guid) (node: TreeNode) : TreeNode option =
-    let found = node.Id = id
-    match found with
-    | true -> Some node
-    | false -> node.Children |> List.tryPick (findNodeById id)
 
 // --------------------
 // Tree Manipulation
 // --------------------
+let rec isDescendant (targetId: Guid) (potentialParent: TreeNode) : bool =
+    potentialParent.Children |> List.exists (fun c -> c.Id = targetId || isDescendant targetId c)
+
+let rec findNodeById (id: Guid) (node: TreeNode) : TreeNode option =
+    match node.Id = id with
+    | true -> Some node
+    | false -> node.Children |> List.tryPick (findNodeById id)
+
 let rec addChildToNodeById (node: TreeNode) parentId =
-    let found = node.Id = parentId
-    match found with
+    match node.Id = parentId with
     | true ->
         let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = node.Level; Extrusion = 3.0; Base = None }
         { node with Children = node.Children @ [newChild] }
     | false -> { node with Children = node.Children |> List.map (fun c -> addChildToNodeById c parentId) }
 
 let rec removeNodeById id (node: TreeNode) : TreeNode option =
-    let found = node.Id = id
-    match found with
+    match node.Id = id with
     | true -> None
     | false ->
         let newChildren = node.Children |> List.choose (removeNodeById id)
         Some { node with Children = newChildren }
 
 let rec updateNodeById id updateFn node =
-    let found = node.Id = id
-    match found with
+    match node.Id = id with
     | true -> updateFn node
     | false -> { node with Children = node.Children |> List.map (updateNodeById id updateFn) }
 
 let rec resetElevatedNodes targetLvl (node: TreeNode) =
-    let newNode = if node.Level > targetLvl then { node with Level = targetLvl } else node
+    let newNode = match node.Level > targetLvl with true -> { node with Level = targetLvl } | false -> node
     { newNode with Children = newNode.Children |> List.map (resetElevatedNodes targetLvl) }
 
 let rec syncHierarchy (levels: Map<int, TreeNode>) (anchors: Map<int, Guid>) (lvl: int) =
     match anchors |> Map.tryFind (lvl + 1) with
     | Some anchorId ->
-        match levels |> Map.tryFind lvl with
-        | Some parentTree ->
-            match findNodeById anchorId parentTree with
-            | Some anchorNode ->
-                match levels |> Map.tryFind (lvl + 1) with
-                | Some childTree ->
-                    let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight }
-                    let nextLevels = levels |> Map.add (lvl + 1) updatedChildTree
-                    syncHierarchy nextLevels anchors (lvl + 1)
-                | None -> levels
+        match levels |> Map.tryFind lvl |> Option.bind (findNodeById anchorId) with
+        | Some anchorNode ->
+            match levels |> Map.tryFind (lvl + 1) with
+            | Some childTree ->
+                let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight }
+                let nextLevels = levels |> Map.add (lvl + 1) updatedChildTree
+                syncHierarchy nextLevels anchors (lvl + 1)
             | None -> levels
         | None -> levels
     | None -> levels
 
 let rec extractNode (id: Guid) (node: TreeNode) : TreeNode option * TreeNode option =
-    if node.Id = id then (None, Some node)
-    else
-        let mutable extracted = None
-        let newChildren = 
-            node.Children |> List.choose (fun c ->
-                let (newNode, found) = extractNode id c
-                if found.IsSome then extracted <- found
-                newNode)
+    match node.Id = id with
+    | true -> (None, Some node)
+    | false ->
+        let newChildren, extracted = 
+            node.Children |> List.fold (fun (acc, found) c ->
+                let (newNode, maybeFound) = extractNode id c
+                let nextAcc = match newNode with Some n -> acc @ [n] | None -> acc
+                let nextFound = match maybeFound with Some _ -> maybeFound | None -> found
+                nextAcc, nextFound
+            ) ([], None)
         (Some { node with Children = newChildren }, extracted)
 
 let rec insertBefore (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
@@ -151,32 +151,36 @@ let rec insertBefore (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) 
         match list with
         | [] -> []
         | h :: t ->
-            if h.Id = targetId then nodeToInsert :: h :: t
-            else h :: insertInList t
+            match h.Id = targetId with
+            | true -> nodeToInsert :: h :: t
+            | false -> h :: insertInList t
     
-    let hasTarget = node.Children |> List.exists (fun c -> c.Id = targetId)
-    if hasTarget then
-        { node with Children = insertInList node.Children }
-    else
-        { node with Children = node.Children |> List.map (insertBefore targetId nodeToInsert) }
+    match node.Children |> List.exists (fun c -> c.Id = targetId) with
+    | true -> { node with Children = insertInList node.Children }
+    | false -> { node with Children = node.Children |> List.map (insertBefore targetId nodeToInsert) }
 
 // --------------------
 // Layout
 // --------------------
-let rec layoutTree (node: TreeNode) (depth: int) (xOffset: float ref) : TreeNode =
+// --------------------
+// Layout
+// --------------------
+let rec layoutTree (node: TreeNode) (depth: int) (xStart: float) : TreeNode * float =
     let y = float depth * 65.0 + 30.0
-    let hasNoChildren = List.isEmpty node.Children
-    match hasNoChildren with
+    match node.Children.IsEmpty with
     | true ->
-        let x = xOffset.Value
-        xOffset.Value <- x + 60.0
-        { node with X = x; Y = y }
+        let x = xStart
+        { node with X = x; Y = y }, x + 60.0
     | false ->
-        let laidOutChildren = node.Children |> List.map (fun c -> layoutTree c (depth + 1) xOffset)
+        let laidOutChildren, finalX = 
+            node.Children |> List.fold (fun (acc, currentX) child ->
+                let newNode, nextX = layoutTree child (depth + 1) currentX
+                acc @ [newNode], nextX
+            ) ([], xStart)
         let firstX = laidOutChildren.Head.X
         let lastX = (List.last laidOutChildren).X
         let x = (firstX + lastX) / 2.0
-        { node with X = x; Y = y; Children = laidOutChildren }
+        { node with X = x; Y = y; Children = laidOutChildren }, finalX
 
 // ---------- JS interop helpers ----------
 let getSvgInfo (js: IJSRuntime) =
@@ -201,148 +205,109 @@ let toSvgCoords (info: SvgInfo) (clientX: float) (clientY: float) : SvgPoint =
 // --------------------
 // Update
 // --------------------
-let updateSub (js: IJSRuntime) msg model =
-    match msg with
-    | OpenMenu id -> { model with ActiveMenuId = Some id; ConfirmingId = None }, Cmd.none
-    | CloseMenu -> { model with ActiveMenuId = None }, Cmd.none
-    | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveMenuId = None }, Cmd.none
-    | SetTopExtrusion newVal ->
-        let extr = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> model.TopExtrusion
-        { model with TopExtrusion = extr }, Cmd.none
-    | PrepareAction (id, action) -> 
-        { model with 
-            ConfirmingId = Some id
-            ConfirmingAction = action
-            ActiveMenuId = None }, Cmd.none
-    | CancelAction -> { model with ConfirmingId = None; ConfirmingAction = NoAction }, Cmd.none
-    | ExecuteAction (id, action) ->
-        match action with
-        | Delete ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-            if id = currentTree.Id then
-                // Rule: Base level root can never be deleted
-                if model.ActiveLevel = 0 then model, Cmd.none
-                else
-                    // Rule: Root cannot be deleted if any of its descendants have an elevate node
-                    let hasElevatedDescendants = model.Levels.Keys |> Seq.exists (fun k -> k > model.ActiveLevel)
-                    if hasElevatedDescendants then model, Cmd.none
-                    else
-                        // De-elevate: Switch back to parent level and reset the anchor
-                        let parentLvl = model.ActiveLevel - 1
-                        let anchorId = model.LevelAnchors |> Map.tryFind model.ActiveLevel
-                        match anchorId, model.Levels |> Map.tryFind parentLvl with
-                        | Some aId, Some pTree ->
-                            let updatedParentTree = updateNodeById aId (fun node -> { node with Level = parentLvl }) pTree
-                            let laidOutParent = layoutTree updatedParentTree 0 (ref 50.0)
-                            let newLevels = 
-                                model.Levels 
-                                |> Map.remove model.ActiveLevel 
-                                |> Map.add parentLvl laidOutParent
-                            let newAnchors = model.LevelAnchors |> Map.remove model.ActiveLevel
-                            { model with 
-                                Levels = newLevels
-                                LevelAnchors = newAnchors
-                                ActiveLevel = parentLvl
-                                ConfirmingId = None
-                                ConfirmingAction = NoAction
-                                ActiveMenuId = None }, Cmd.none
-                        | _ -> model, Cmd.none
-            else
-                // Normal node deletion or clearing descendants for elevated nodes
-                let nodeToDelete = findNodeById id currentTree
-                match nodeToDelete with
-                | Some n when n.Level > model.ActiveLevel ->
-                    // Elevated node: clear descendants instead of deleting
-                    let newRoot = updateNodeById id (fun node -> { node with Children = [] }) currentTree
-                    let laidOut = layoutTree newRoot 0 (ref 50.0)
+// --------------------
+// Update Handlers
+// --------------------
+let handleExecuteAction id action model =
+    let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+    match action with
+    | Delete ->
+        match id = currentTree.Id with
+        | true ->
+            match model.ActiveLevel = 0 with
+            | true -> model, Cmd.none // Rule: Base level root can never be deleted
+            | false ->
+                let hasElevatedDescendants = model.Levels.Keys |> Seq.exists (fun k -> k > model.ActiveLevel)
+                match hasElevatedDescendants with
+                | true -> model, Cmd.none
+                | false ->
+                    let parentLvl = model.ActiveLevel - 1
+                    let anchorId = model.LevelAnchors |> Map.tryFind model.ActiveLevel
+                    match anchorId, model.Levels |> Map.tryFind parentLvl with
+                    | Some aId, Some pTree ->
+                        let updatedParentTree = updateNodeById aId (fun node -> { node with Level = parentLvl }) pTree
+                        let laidOutParent = fst (layoutTree updatedParentTree 0 50.0)
+                        let newLevels = 
+                            model.Levels 
+                            |> Map.remove model.ActiveLevel 
+                            |> Map.add parentLvl laidOutParent
+                        let newAnchors = model.LevelAnchors |> Map.remove model.ActiveLevel
+                        { model with 
+                            Levels = newLevels
+                            LevelAnchors = newAnchors
+                            ActiveLevel = parentLvl
+                            ConfirmingId = None
+                            ConfirmingAction = NoAction
+                            ActiveMenuId = None }, Cmd.none
+                    | _ -> model, Cmd.none
+        | false ->
+            match findNodeById id currentTree with
+            | Some n when n.Level > model.ActiveLevel ->
+                let newRoot = updateNodeById id (fun node -> { node with Children = [] }) currentTree
+                let laidOut = fst (layoutTree newRoot 0 50.0)
+                let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
+                { model with Levels = newLevels; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None }, Cmd.none
+            | _ ->
+                match removeNodeById id currentTree with
+                | Some newRoot -> 
+                    let laidOut = fst (layoutTree newRoot 0 50.0)
                     let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
                     { model with Levels = newLevels; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None }, Cmd.none
-                | _ ->
-                    let rootResult = removeNodeById id currentTree
-                    match rootResult with
-                    | Some newRoot -> 
-                        let laidOut = layoutTree newRoot 0 (ref 50.0)
-                        let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
-                        { model with Levels = newLevels; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None }, Cmd.none
-                    | None -> model, Cmd.none
-        | Elevate ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-            let node = findNodeById id currentTree
-            match node with
-            | Some n ->
-                // Note: De-elevation is now handled via Delete Root, so this only handles Elevate
-                let nextLvlForNode = model.ActiveLevel + 1
-                let newAnchors = model.LevelAnchors |> Map.add nextLvlForNode id
-                
-                // Create or update the tree for the next level, retaining children if it already exists
-                let freshRoot = 
-                    match model.Levels |> Map.tryFind nextLvlForNode with
-                    | Some existingRoot ->
-                        { existingRoot with 
-                            Id = n.Id
-                            Name = n.Name
-                            Weight = n.Weight }
-                        |> fun r -> layoutTree r 0 (ref 50.0)
-                    | None ->
-                        { n with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0 }
-                
-                let newLevelsAfterAdd = model.Levels |> Map.add nextLvlForNode freshRoot
+                | None -> model, Cmd.none
+    | Elevate ->
+        match findNodeById id currentTree with
+        | Some n ->
+            let nextLvlForNode = model.ActiveLevel + 1
+            let newAnchors = model.LevelAnchors |> Map.add nextLvlForNode id
+            let freshRoot = 
+                match model.Levels |> Map.tryFind nextLvlForNode with
+                | Some existingRoot ->
+                    fst (layoutTree { existingRoot with Id = n.Id; Name = n.Name; Weight = n.Weight } 0 50.0)
+                | None ->
+                    { n with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0 }
+            
+            let treeWithResets = resetElevatedNodes model.ActiveLevel currentTree
+            let updatedCurrentTree = updateNodeById id (fun node -> { node with Level = nextLvlForNode }) treeWithResets
+            let finalLevels = 
+                model.Levels 
+                |> Map.add nextLvlForNode freshRoot
+                |> Map.add model.ActiveLevel updatedCurrentTree
+            
+            { model with Levels = finalLevels; LevelAnchors = newAnchors; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None }, Cmd.none
+        | None -> model, Cmd.none
+    | NoAction -> model, Cmd.none
 
-                // Enforce single elevation: reset others
-                let treeWithResets = resetElevatedNodes model.ActiveLevel currentTree
-                let updatedCurrentTree = updateNodeById id (fun node -> { node with Level = nextLvlForNode }) treeWithResets
-                let finalLevels = newLevelsAfterAdd |> Map.add model.ActiveLevel updatedCurrentTree
-                
-                { model with Levels = finalLevels; LevelAnchors = newAnchors; ConfirmingId = None; ConfirmingAction = NoAction; ActiveMenuId = None }, Cmd.none
-            | None -> model, Cmd.none
-        | NoAction -> model, Cmd.none
-    | AddChild parentId ->
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-        let rec add node =
-            if node.Id = parentId then
-                let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
-                { node with Children = node.Children @ [newChild] }
-            else
-                { node with Children = node.Children |> List.map add }
-        let newRoot = add currentTree
-        let laidOut = layoutTree newRoot 0 (ref 50.0)
-        let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
-        { model with Levels = newLevels }, Cmd.none
+let handleNodeUpdate msg model =
+    let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+    match msg with
     | UpdateName (id, name) ->
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         let newRoot = updateNodeById id (fun n -> { n with Name = name }) currentTree
-        let nextLevels = model.Levels |> Map.add model.ActiveLevel newRoot
-        let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0 // Start sync from base level to ensure full propagation
+        let finalLevels = syncHierarchy (model.Levels |> Map.add model.ActiveLevel newRoot) model.LevelAnchors 0
         { model with Levels = finalLevels }, Cmd.none
     | UpdateWeight (id, weight) ->
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-        let sanitizedWeight = 
-            match Double.TryParse weight with
-            | true, v -> (int (round v)).ToString()
-            | _ -> weight // Keep as is if it's not a number (might be a formula in some cases, but here we prefer integers)
+        let sanitizedWeight = match Double.TryParse weight with true, v -> (int (round v)).ToString() | _ -> weight
         let newRoot = updateNodeById id (fun n -> { n with Weight = sanitizedWeight }) currentTree
-        let nextLevels = model.Levels |> Map.add model.ActiveLevel newRoot
-        let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0 // Start sync from base level to ensure full propagation
+        let finalLevels = syncHierarchy (model.Levels |> Map.add model.ActiveLevel newRoot) model.LevelAnchors 0
         { model with Levels = finalLevels }, Cmd.none
     | UpdateExtrusion (id, newVal) ->
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-        let extrusion = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> currentTree.Extrusion // fallback to current extrusion if parse fails
-        
+        let extrusion = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> currentTree.Extrusion
         let updatedRoot = updateNodeById id (fun n -> { n with Extrusion = extrusion }) currentTree
-        let nextLevels = model.Levels |> Map.add model.ActiveLevel updatedRoot
-
-        let finalLevels = syncHierarchy nextLevels model.LevelAnchors 0
+        let finalLevels = syncHierarchy (model.Levels |> Map.add model.ActiveLevel updatedRoot) model.LevelAnchors 0
         { model with Levels = finalLevels }, Cmd.none
+    | _ -> model, Cmd.none
+
+let handlePointerEvent msg js model =
+    match msg with
     | PointerDown ev ->
         let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
         { model with PointerDownPos = None; PendingDragId = None }, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
             let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
             let rec findNode node =
-                if pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
-                   pt.SvgY >= node.Y - 35.0 && pt.SvgY <= node.Y + 25.0 then Some node.Id
-                else node.Children |> List.tryPick findNode
-            let hitId = findNode currentTree
-            match hitId with
+                match pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
+                      pt.SvgY >= node.Y - 35.0 && pt.SvgY <= node.Y + 25.0 with
+                | true -> Some node.Id
+                | false -> node.Children |> List.tryPick findNode
+            match findNode currentTree with
             | Some id when id <> currentTree.Id -> DragStartInternal (id, info, pt)
             | _ -> PointerUpInternal
         )
@@ -356,50 +321,65 @@ let updateSub (js: IJSRuntime) msg model =
                 let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
                 let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
                 let rec findNode node =
-                    if pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
-                       pt.SvgY >= node.Y - 35.0 && pt.SvgY <= node.Y + 25.0 then Some node.Id
-                    else node.Children |> List.tryPick findNode
-                
-                let targetId = findNode currentTree
-                { model with DropTargetId = targetId; LastMoveMs = Some nowMs }, Cmd.none
-
+                    match pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
+                          pt.SvgY >= node.Y - 35.0 && pt.SvgY <= node.Y + 25.0 with
+                    | true -> Some node.Id
+                    | false -> node.Children |> List.tryPick findNode
+                { model with DropTargetId = findNode currentTree; LastMoveMs = Some nowMs }, Cmd.none
             | None, Some info -> 
                 match model.PendingDragId, model.PointerDownPos with
                 | Some pendingId, Some startPt ->
                     let pt = toSvgCoords info (float ev.ClientX) (float ev.ClientY)
-                    let dx = pt.SvgX - startPt.SvgX
-                    let dy = pt.SvgY - startPt.SvgY
-                    let dist = sqrt (dx*dx + dy*dy)
-                    if dist > 5.0 then
-                        { model with DraggingId = Some pendingId; PendingDragId = None; LastMoveMs = Some nowMs }, Cmd.none
-                    else model, Cmd.none
+                    let dist = sqrt ((pt.SvgX - startPt.SvgX)**2.0 + (pt.SvgY - startPt.SvgY)**2.0)
+                    match dist > 5.0 with
+                    | true -> { model with DraggingId = Some pendingId; PendingDragId = None; LastMoveMs = Some nowMs }, Cmd.none
+                    | false -> model, Cmd.none
                 | _ -> model, Cmd.none
             | _ -> model, Cmd.none
-
     | PointerUp ->
         let m = { model with PendingDragId = None; PointerDownPos = None }
         let currentTree = m.Levels |> Map.tryFind m.ActiveLevel |> Option.defaultValue m.Levels.[0]
         match m.DraggingId, m.DropTargetId with
         | Some sourceId, Some targetId when sourceId <> targetId ->
-            let sourceNode = findNodeById sourceId currentTree
-            match sourceNode with
-            | None -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
-            | Some sn ->
-                if isDescendant targetId sn then { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
-                else
-                    let (rootWithoutSource, extracted) = extractNode sourceId currentTree
-                    match rootWithoutSource, extracted with
-                    | Some rs, Some ex ->
-                        let newRoot = insertBefore targetId ex rs
-                        let laidOut = layoutTree newRoot 0 (ref 50.0)
-                        let newLevels = m.Levels |> Map.add m.ActiveLevel laidOut
-                        { m with Levels = newLevels; DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
-                    | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+            match findNodeById sourceId currentTree with
+            | Some sn when not (isDescendant targetId sn) ->
+                let (rootWithoutSource, extracted) = extractNode sourceId currentTree
+                match rootWithoutSource, extracted with
+                | Some rs, Some ex ->
+                    let laidOut = fst (layoutTree (insertBefore targetId ex rs) 0 50.0)
+                    { m with Levels = m.Levels |> Map.add m.ActiveLevel laidOut; DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+                | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+            | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
         | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
     | DragStartInternal (id, info, pt) -> 
         { model with PendingDragId = Some id; SvgInfo = Some info; PointerDownPos = Some pt; DropTargetId = None }, Cmd.none
     | PointerUpInternal ->
         { model with DraggingId = None; PendingDragId = None; DropTargetId = None; SvgInfo = None; PointerDownPos = None }, Cmd.none
+    | _ -> model, Cmd.none
+
+// --------------------
+// Main Update
+// --------------------
+let updateSub (js: IJSRuntime) msg model =
+    match msg with
+    | OpenMenu id -> { model with ActiveMenuId = Some id; ConfirmingId = None }, Cmd.none
+    | CloseMenu -> { model with ActiveMenuId = None }, Cmd.none
+    | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveMenuId = None }, Cmd.none
+    | SetTopExtrusion newVal ->
+        let extr = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> model.TopExtrusion
+        { model with TopExtrusion = extr }, Cmd.none
+    | PrepareAction (id, action) -> 
+        { model with ConfirmingId = Some id; ConfirmingAction = action; ActiveMenuId = None }, Cmd.none
+    | CancelAction -> { model with ConfirmingId = None; ConfirmingAction = NoAction }, Cmd.none
+    | ExecuteAction (id, action) -> handleExecuteAction id action model
+    | AddChild parentId ->
+        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+        let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
+        let newRoot = updateNodeById parentId (fun n -> { n with Children = n.Children @ [newChild] }) currentTree
+        let laidOut = fst (layoutTree newRoot 0 50.0)
+        { model with Levels = model.Levels |> Map.add model.ActiveLevel laidOut }, Cmd.none
+    | UpdateName _ | UpdateWeight _ | UpdateExtrusion _ -> handleNodeUpdate msg model
+    | PointerDown _ | PointerMove _ | PointerUp | DragStartInternal _ | PointerUpInternal -> handlePointerEvent msg js model
 
 // --------------------
 // View
@@ -413,18 +393,20 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
     let hasHalo = node.Level > model.ActiveLevel
     
     let outerClasses = 
-        String.concat " " [
-            "node-outer"
-            if isAffected && model.ConfirmingAction = Delete && not isRoot then "is-affected"
-            if isConfirmingThis && not isRoot then 
+        [ "node-outer"
+          match isAffected && model.ConfirmingAction = Delete && not isRoot with true -> "is-affected" | false -> ""
+          match isConfirmingThis && not isRoot with
+          | true -> 
                 match model.ConfirmingAction with
                 | Delete -> "is-confirming"
                 | Elevate -> "is-elevating"
                 | NoAction -> ""
-            if model.DraggingId = Some node.Id && not isRoot then "is-dragging"
-            if isDropTarget && not isRoot then "is-drop-target"
-            if hasHalo then "is-elevated"
-        ]
+          | false -> ""
+          match model.DraggingId = Some node.Id && not isRoot with true -> "is-dragging" | false -> ""
+          match isDropTarget && not isRoot with true -> "is-drop-target" | false -> ""
+          match hasHalo with true -> "is-elevated" | false -> "" ]
+        |> List.filter (fun s -> s <> "")
+        |> String.concat " "
 
     div {
         attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px; pointer-events:none;"
@@ -438,10 +420,11 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                 
                 let nodeIndex = allNodes |> List.tryFindIndex (fun n -> n.Id = node.Id) |> Option.defaultValue -1
                 let nodeColor = 
-                    if nodeIndex >= 0 && nodeIndex < colorList.Length then colorList.[nodeIndex]
-                    else "white"
+                    match nodeIndex >= 0 && nodeIndex < colorList.Length with
+                    | true -> colorList.[nodeIndex]
+                    | false -> "white"
                 
-                let nodeStyle = if nodeColor <> "white" then sprintf "background-color: %s !important;" nodeColor else ""
+                let nodeStyle = match nodeColor <> "white" with true -> sprintf "background-color: %s !important;" nodeColor | false -> ""
                 attr.style nodeStyle
 
 
@@ -530,7 +513,8 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
             }
         }
 
-        if isMenuOpen then
+        match isMenuOpen with
+        | true ->
             let elevatedAnchorIds = 
                 model.LevelAnchors 
                 |> Map.filter (fun k _ -> k > model.ActiveLevel) 
@@ -543,10 +527,12 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                 elevatedAnchorIds |> Seq.exists (fun anchorId -> isDescendant anchorId node)
 
             let canDelete = 
-                if isRoot then model.ActiveLevel > 0 && model.Levels.Keys |> Seq.forall (fun k -> k <= model.ActiveLevel)
-                else 
-                    if node.Level > model.ActiveLevel then not node.Children.IsEmpty
-                    else not nodeHasElevatedDescendant
+                match isRoot with
+                | true -> model.ActiveLevel > 0 && model.Levels.Keys |> Seq.forall (fun k -> k <= model.ActiveLevel)
+                | false -> 
+                    match node.Level > model.ActiveLevel with
+                    | true -> not node.Children.IsEmpty
+                    | false -> not nodeHasElevatedDescendant
 
             let canElevate = node.Level >= model.ActiveLevel
 
@@ -555,53 +541,60 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
                 attr.style "pointer-events:auto;"
                 "onpointerdown:stopPropagation" => true
                 
-                div {
-                    attr.``class`` (if canDelete then "node-menu-item" else "node-menu-item disabled")
-                    match canDelete with
-                    | true -> 
+                match canDelete with
+                | true ->
+                    div {
+                        attr.``class`` "node-menu-item"
                         "onpointerdown:stopPropagation" => true
                         on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, Delete)))
-                    | false -> attr.style ""
-                    text "Delete"
-                }
+                        text "Delete"
+                    }
+                | false ->
+                    div {
+                        attr.``class`` "node-menu-item disabled"
+                        text "Delete"
+                    }
                 
-                div {
-                    attr.``class`` (if canElevate then "node-menu-item" else "node-menu-item disabled")
-                    match canElevate with
-                    | true -> 
+                match canElevate with
+                | true ->
+                    div {
+                        attr.``class`` "node-menu-item"
                         "onpointerdown:stopPropagation" => true
                         on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, Elevate)))
-                    | false -> attr.style ""
-                    text "Elevate"
-                }
+                        text "Elevate"
+                    }
+                | false ->
+                    div {
+                        attr.``class`` "node-menu-item disabled"
+                        text "Elevate"
+                    }
             }
+        | false -> empty()
     }
 
 
 let getElevations (model: SubModel) =
     let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
-    let mutable lastL = 0.0
-    [| 
-        yield 0.0
-        for l in 1 .. maxLevel do
+    let levels = [1 .. maxLevel]
+    
+    let baseElevations = 
+        levels |> List.scan (fun acc l ->
             let anchorId = model.LevelAnchors |> Map.tryFind l
             let prevRoot = model.Levels |> Map.tryFind (l-1)
             let extr = 
                 match anchorId, prevRoot with
                 | Some aid, Some root ->
-                    let rec find n =
-                        if n.Id = aid then Some n
-                        else n.Children |> List.tryPick find
-                    match find root with
-                    | Some n -> n.Extrusion
-                    | None -> 3.0
+                    findNodeById aid root |> Option.map (fun n -> n.Extrusion) |> Option.defaultValue 3.0
                 | _ -> 3.0
-            lastL <- lastL + extr
-            yield lastL
+            acc + extr
+        ) 0.0
+    
+    let topElevation = 
+        match baseElevations |> List.tryLast with
+        | Some lastL -> lastL + model.TopExtrusion
+        | None -> model.TopExtrusion
         
-        // Absolute top elevation
-        yield lastL + model.TopExtrusion
-    |]
+    Array.ofList (baseElevations @ [topElevation])
 
 let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> unit) : Node =      
 
@@ -643,15 +636,14 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
 
     let allNodes = flattenTree currentLvlRoot
     let elevations = getElevations model
-    let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
-    
+    let maxLevel = match model.Levels.IsEmpty with true -> 0 | false -> model.Levels.Keys |> Seq.max
     let containerClasses = 
-        String.concat " " [
-            "tree-container"
-            if model.DraggingId.IsSome then "is-dragging-any"
-        ]
+        [ "tree-container"
+          match model.DraggingId.IsSome with true -> "is-dragging-any" | false -> "" ]
+        |> List.filter (fun s -> s <> "")
+        |> String.concat " "
 
-    let touchAction = if model.DraggingId.IsSome || model.PendingDragId.IsSome then "none" else "pan-x pan-y pinch-zoom"
+    let touchAction = match model.DraggingId.IsSome || model.PendingDragId.IsSome with true -> "none" | false -> "pan-x pan-y pinch-zoom"
 
     concat {
         // Level Nav
@@ -659,18 +651,19 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
             attr.``class`` "level-controls-container"
             attr.style "width: fit-content; margin-bottom: 5px; z-index: 1000;"
             span { attr.``class`` "level-label"; text "LEVELS:" }
-            for i in 0 .. maxLevel do
-                let elv = if i < elevations.Length then elevations.[i] else 0.0
-                let elvStr = if elv = floor elv then string (int elv) else string elv
+            forEach (List.init (maxLevel + 1) id) (fun i ->
+                let elv = match i < elevations.Length with true -> elevations.[i] | false -> 0.0
+                let elvStr = match elv = floor elv with true -> string (int elv) | false -> string elv
                 button {
-                    attr.``class`` (if model.ActiveLevel = i then "level-tab active" else "level-tab")
+                    attr.``class`` (match model.ActiveLevel = i with true -> "level-tab active" | false -> "level-tab")
                     on.pointerdown (fun _ -> dispatch (SetLevel i))
                     text elvStr
                 }
+            )
             
             // Terminal Level Height Input (Absolute Elevation)
-            let topElv = if elevations.Length > 0 then elevations.[elevations.Length - 1] else model.TopExtrusion
-            let baseOfTop = if elevations.Length > 1 then elevations.[elevations.Length - 2] else 0.0
+            let topElv = match elevations.Length > 0 with true -> elevations.[elevations.Length - 1] | false -> model.TopExtrusion
+            let baseOfTop = match elevations.Length > 1 with true -> elevations.[elevations.Length - 2] | false -> 0.0
             
             div {
                 attr.style "display: inline-flex; align-items: center; margin-left: 4px;"
@@ -678,7 +671,7 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
                     attr.``type`` "text"
                     attr.``class`` "level-tab"
                     attr.style "width: 40px; text-align: center; outline: none; padding: 2px 0;"
-                    attr.value (if topElv = floor topElv then string (int topElv) else string topElv)
+                    attr.value (match topElv = floor topElv with true -> string (int topElv) | false -> string topElv)
                     on.input (fun ev -> 
                         let newVal = string ev.Value
                         match Double.TryParse newVal with
@@ -697,11 +690,13 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
             on.pointermove (fun ev -> dispatch (PointerMove ev))
             on.pointerup (fun _ -> dispatch PointerUp)
 
-            if model.ActiveMenuId.IsSome then
+            match model.ActiveMenuId.IsSome with
+            | true ->
                 div {
                     attr.style "position:fixed; inset:0; z-index:90; background:transparent;"
                     on.click (fun _ -> dispatch CloseMenu)
                 }
+            | false -> empty()
 
             div {
                 attr.id "tree-canvas-svg"
@@ -712,10 +707,9 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
                 svg {
                     attr.``class`` "tree-svg"
                     attr.style $"width:{canvasWidth}px; height:{canvasHeight}px;"
-                    for line in lines do line
+                    forEach lines (fun line -> line)
                 }
                 renderAll laidOutDisplayTree "1" colorList nodes
-
             }
         }
     }
@@ -729,8 +723,7 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
     let rec getNodesWithPrefix prefix node =
         seq {
             yield (node, prefix)
-            for i, child in node.Children |> List.indexed do
-                yield! getNodesWithPrefix $"{prefix}.{i + 1}" child
+            yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getNodesWithPrefix $"{prefix}.{i + 1}" child)
         }
     
     let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
@@ -744,13 +737,14 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
 
     let segments = 
         [0 .. maxLevel] |> List.choose (fun lvl ->
-            match allLvlNodes.[lvl] with
+            match allLvlNodes |> List.tryItem lvl |> Option.flatten with
             | None -> None
             | Some lvlNodes ->
                 let eVal = 
-                    if lvl = 0 then "0"
-                    else
-                        match model.LevelAnchors |> Map.tryFind lvl, allLvlNodes.[lvl - 1] with
+                    match lvl = 0 with
+                    | true -> "0"
+                    | false ->
+                        match model.LevelAnchors |> Map.tryFind lvl, allLvlNodes |> List.tryItem (lvl - 1) |> Option.flatten with
                         | Some anchorId, Some prevNodes ->
                             match prevNodes |> List.tryFind (fun (n, _) -> n.Id = anchorId) with
                             | Some (_, prefix) -> prefix
@@ -761,19 +755,23 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
                 let lStr = if currentL = floor currentL then string (int currentL) else string currentL
 
                 let tAttr = 
-                    if lvl = maxLevel then 
+                    match lvl = maxLevel with
+                    | true -> 
                         let tVal = model.TopExtrusion
                         match tVal = floor tVal with true -> $"/T={int tVal}" | false -> $"/T={tVal}" 
-                    else ""
+                    | false -> ""
+                
                 let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
-                let attrs = 
-                    let bVal = if lvl = 0 then "0" else eVal
-                    $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B={bVal}/O={o}/I={i}{tAttr}"
+                let bVal = if lvl = 0 then "0" else eVal
+                let attrs = $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B={bVal}/O={o}/I={i}{tAttr}"
 
-                let body = lvlNodes |> List.map (fun (n, p) -> 
-                    let extrStr = match n.Extrusion = 3.0 with true -> "" | false -> $"/{n.Extrusion}"
-                    let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
-                    $"({p}/{n.Weight}/{n.Name}{extrStr}{baseStr})") |> String.concat ""
+                let body = 
+                    lvlNodes 
+                    |> List.map (fun (n, p) -> 
+                        let extrStr = match n.Extrusion = 3.0 with true -> "" | false -> $"/{n.Extrusion}"
+                        let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
+                        $"({p}/{n.Weight}/{n.Name}{extrStr}{baseStr})") 
+                    |> String.concat ""
                 
                 let marker = if lvl = 0 then "L0" else sprintf "L%d" lvl
                 Some $"{marker}({attrs}){body}"
@@ -803,42 +801,56 @@ let buildTreeMap (input: string) =
         |> Array.toList
         |> List.distinctBy (fun (p, _, _, _, l, _) -> (p, l))
 
-    let guidMap = System.Collections.Generic.Dictionary<int * string, Guid>()
-
-    let rec build (lvl: int) (prefix: int list) =
-        nodeData 
-        |> List.filter (fun (path, _, _, _, nLvl, _) -> 
-            nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
-        |> List.map (fun (path, weight, name, extrusion, lvl, bVal) -> 
-            let id = 
+    let rec build (lvl: int) (prefix: int list) (currentGuidMap: Map<int * string, Guid>) =
+        let nodesToBuild = 
+            nodeData 
+            |> List.filter (fun (path, _, _, _, nLvl, _) -> 
+                nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
+        
+        nodesToBuild |> List.fold (fun (nodes, guidMap) (path, weight, name, extrusion, lvl, bVal) ->
+            let pathStr = String.Join(".", path)
+            let id, guidMapAfterId = 
                 match lvl > 0 && prefix = [] with
                 | true ->
                     let _, _, _, _, eVal = allParts.[lvl]
                     match eVal <> "0" with
                     | true ->
-                        match guidMap.TryGetValue((lvl - 1, eVal)) with
-                        | true, parentGuid -> parentGuid
-                        | _ -> Guid.NewGuid()
-                    | false -> Guid.NewGuid()
-                | false -> Guid.NewGuid()
-            let pathStr = String.Join(".", path)
-            guidMap.[(lvl, pathStr)] <- id
-            { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = build lvl path; Level = lvl; Extrusion = extrusion; Base = bVal })
+                        match guidMap |> Map.tryFind (lvl - 1, eVal) with
+                        | Some parentGuid -> parentGuid, guidMap
+                        | None -> 
+                            let g = Guid.NewGuid()
+                            g, guidMap |> Map.add (lvl, pathStr) g
+                    | false -> 
+                        let g = Guid.NewGuid()
+                        g, guidMap |> Map.add (lvl, pathStr) g
+                | false -> 
+                    let g = Guid.NewGuid()
+                    g, guidMap |> Map.add (lvl, pathStr) g
+            
+            let children, guidMapAfterChildren = build lvl path guidMapAfterId
+            let node = { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = children; Level = lvl; Extrusion = extrusion; Base = bVal }
+            nodes @ [node], guidMapAfterChildren
+        ) ([], currentGuidMap)
 
-    let levelsMap = 
-        [0 .. (match nodeData.IsEmpty with true -> 0 | false -> nodeData |> List.map (fun (_,_,_,_,l,_) -> l) |> List.max)]
-        |> List.map (fun lvl -> 
-            let root = build lvl [] |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
-            lvl, layoutTree root 0 (ref 50.0))
-        |> Map.ofList
+    let maxLvl = match nodeData.IsEmpty with true -> 0 | false -> nodeData |> List.map (fun (_,_,_,_,l,_) -> l) |> List.max
+    
+    let levelsList, finalGuidMap = 
+        [0 .. maxLvl] |> List.fold (fun (acc, currentGuidMap) lvl ->
+            let rootNodes, nextGuidMap = build lvl [] currentGuidMap
+            let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
+            let laidOut = fst (layoutTree root 0 50.0)
+            acc @ [lvl, laidOut], nextGuidMap
+        ) ([], Map.empty)
+
+    let levelsMap = Map.ofList levelsList
 
     let levelAnchors = 
         allParts |> Array.choose (fun (lvl, _, _, _, eVal) ->
             match lvl > 0 && eVal <> "0" with
             | true ->
-                match guidMap.TryGetValue((lvl - 1, eVal)) with
-                | true, guid -> Some (lvl, guid)
-                | _ -> None
+                match finalGuidMap |> Map.tryFind (lvl - 1, eVal) with
+                | Some guid -> Some (lvl, guid)
+                | None -> None
             | false -> None
         ) |> Map.ofArray
 
