@@ -9,6 +9,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Hywe.Core", "src\Hywe.Core\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Hywe.Web", "src\Hywe.Web\Hywe.Web.fsproj", "{D32CE0B9-D611-4BE0-9E93-B9D3F82CF50C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Hywe.Tree", "src\Hywe.Tree\Hywe.Tree.fsproj", "{F6D7710D-D117-4F29-B724-139544F7DFDB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{D32CE0B9-D611-4BE0-9E93-B9D3F82CF50C}.Release|x64.Build.0 = Release|Any CPU
 		{D32CE0B9-D611-4BE0-9E93-B9D3F82CF50C}.Release|x86.ActiveCfg = Release|Any CPU
 		{D32CE0B9-D611-4BE0-9E93-B9D3F82CF50C}.Release|x86.Build.0 = Release|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Debug|x64.Build.0 = Debug|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Debug|x86.Build.0 = Debug|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Release|x64.ActiveCfg = Release|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Release|x64.Build.0 = Release|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Release|x86.ActiveCfg = Release|Any CPU
+		{F6D7710D-D117-4F29-B724-139544F7DFDB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,6 +64,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{64A09847-BADE-4FA4-8198-CF50A5B0FA56} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{D32CE0B9-D611-4BE0-9E93-B9D3F82CF50C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{F6D7710D-D117-4F29-B724-139544F7DFDB} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ECB7909E-9351-40A3-B88F-E1F85CC10292}

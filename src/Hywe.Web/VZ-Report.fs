@@ -7,7 +7,7 @@ open System
 open System.Text
 open Hywe.Core
 open Hywe.Core.Coxel
-open NodeCode
+open Hywe.Node
 
 // --- DATA TYPES ---
 
@@ -111,7 +111,7 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 polygons boundaries
 
 let renderFlowchartSvg (root: TreeNode) (colorList: string[]) (maxW: float option) (maxH: float option) : string =
-    CodeNode.renderSvgToString root colorList maxW maxH
+    Visualization.renderSvgToString root colorList maxW maxH
 
 let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) : string =
     let uniqueRooms = 
@@ -344,7 +344,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
             )
         if allTrees.IsEmpty then None, None
         else
-            let bounds = allTrees |> List.map CodeNode.calculateTreeBounds
+            let bounds = allTrees |> List.map Visualization.calculateTreeBounds
             let mw = bounds |> List.map fst |> List.max
             let mh = bounds |> List.map snd |> List.max
             Some mw, Some mh

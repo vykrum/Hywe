@@ -1,7 +1,7 @@
 module ModelTypes
 
 
-open NodeCode
+open Hywe.Node
 
 open PolygonEditor
 open Hywe.Core.Coxel

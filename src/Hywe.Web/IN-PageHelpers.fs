@@ -13,6 +13,7 @@ open PolygonEditor
 open Page
 open Layout
 open FileManager
+open Hywe.Node
 
 
 // --- Logic (formerly UP-UI.fs) ---
@@ -46,15 +47,15 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
     | Syntax ->
         let maybeSubModel =
             model.SrcOfTrth
-            |> CodeNode.preprocessCode
+            |> Serialization.preprocessCode
             |> fun processed ->
-                try Some (NodeCode.initModel processed)
+                try Some (Serialization.initModel processed)
                 with _ -> None
 
         match maybeSubModel with
         | Some subModel ->
             let newOutput =
-                NodeCode.getOutput
+                Serialization.getOutput
                     subModel
                     model.Sequences
                     model.PolygonExport.Width
@@ -75,7 +76,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
 
     | Interactive ->
         let newOutput =
-            NodeCode.getOutput
+            Serialization.getOutput
                 model.Tree
                 model.Sequences
                 model.PolygonExport.Width
@@ -102,9 +103,9 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         let clean = content.Trim()
         let newTree = 
             clean 
-            |> CodeNode.preprocessCode 
+            |> Serialization.preprocessCode 
             |> fun processed ->
-                try NodeCode.initModel processed
+                try Serialization.initModel processed
                 with _ -> model.Tree 
 
         let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -278,7 +279,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let currentSrc =
             match model.EditorMode with
             | Interactive ->
-                NodeCode.getOutput
+                Serialization.getOutput
                     model.Tree
                     model.Sequences
                     model.PolygonExport.Width
