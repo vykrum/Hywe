@@ -38,7 +38,7 @@ The creator of Hywe is primarily a designer exploring the boundaries of design c
 1. Install the [.NET SDK](https://dotnet.microsoft.com/download).
 2. Clone the repo: `git clone https://github.com/vykrum/Hywe.git`
 3. Run the project: `dotnet watch run --project src/Hywe.Web`
-4. Access the app at `http://localhost:5000`.
+4. Access the app at `https://localhost:51592` (or `http://localhost:51593`). The ports are defined in `src/Hywe.Web/Properties/launchSettings.json`.
 
 ## Code of Conduct
 By contributing, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).

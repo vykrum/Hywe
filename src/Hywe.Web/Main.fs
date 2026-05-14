@@ -100,6 +100,7 @@ let initModel =
         ShowPrivacyAlert = false
         IsStandalone = false
         IsCoordsVisible = false
+        ShowLinkCopied = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -194,7 +195,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         s <- injectSqn s lvl sqn
                 s
 
-        Protocol.sync js updatedSrc
+        Protocol.sync js updatedSrc model.ActivePanel
 
         match Cache.get currentLevel i model.LayoutCache with
         | Some config ->
@@ -225,13 +226,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Sequences = newSqns
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
-        }, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("setUrlHash", value).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
+        }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js value m.ActivePanel }) () (fun _ -> NoOp)
 
     | StartHyweave ->
         let levels = model.Tree.Levels.Keys |> Seq.toList
         let newCache = Cache.init levels
         let model2 = { model with 
-                        ActivePanel = LayoutPanel
                         IsHyweaving = true
                         NeedsHyweave = false
                         LayoutCache = newCache }
@@ -255,7 +255,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
-        Protocol.sync js updatedSrcOfTrth
+        Protocol.sync js updatedSrcOfTrth model.ActivePanel
 
         let currentLevel = model.Tree.ActiveLevel
         let currentSqnIdx = 
@@ -375,7 +375,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     IsPresetsCollapsed = nextCollapse }
 
             if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
-                Protocol.sync js newOutput
+                Protocol.sync js newOutput model.ActivePanel
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -412,7 +412,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                              newExport.AbsStr
                              newExport.OuterStr
                              newExport.IslandsStr
-        Protocol.sync js newOutput
+        Protocol.sync js newOutput model.ActivePanel
 
         { model with 
             PolygonEditor = Stable newModel
@@ -427,7 +427,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | FileImported _ | SelectPreset _ -> pushUndo model
             | _ -> model
         match PageHelpers.update js msg model with
-        | Some (newModel, cmd) -> newModel, cmd
+        | Some (newModel, cmd) -> 
+            Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
+            newModel, cmd
         | None -> model, Cmd.none
 
     | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DSvg 
@@ -437,7 +439,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | ToggleBoundary | ToggleEditorMode -> pushUndo model
             | _ -> model
         match PageHelpers.update js msg model with
-        | Some (newModel, cmd) -> newModel, cmd
+        | Some (newModel, cmd) -> 
+            Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
+            newModel, cmd
         | None -> model, Cmd.none
     | SetBatchPreview results ->
         { model with 
@@ -501,7 +505,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
     | SaveRequested ->
         FileManager.saveFile js model.SrcOfTrth |> ignore
-        Protocol.sync js model.SrcOfTrth
+        Protocol.sync js model.SrcOfTrth model.ActivePanel
         model, Cmd.none
     | ImportRequested ->
         let doClick () =
@@ -517,8 +521,38 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
 
-    | LoadState (content, isFromUrl) ->
-        if String.IsNullOrWhiteSpace content then model, Cmd.none
+    | ShareLink ->
+        let p = 
+            match model.ActivePanel with
+            | BoundaryPanel -> "boundary"
+            | LayoutPanel -> "layout"
+            | AnalyzePanel -> "analyze"
+            | ViewPanel -> "3d"
+            | TeachPanel -> "teach"
+            | ReportPanel -> "report"
+            | BatchPanel -> "batch"
+        let fullUrl = sprintf "https://hywe.in/#%s|P=%s" model.SrcOfTrth p
+        { model with ShowLinkCopied = true }, 
+        Cmd.batch [
+            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("copyToClipboard", fullUrl).AsTask()) () (fun _ -> NoOp)
+            Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> HideLinkCopied)
+        ]
+
+    | HideLinkCopied ->
+        { model with ShowLinkCopied = false }, Cmd.none
+
+    | LoadState (content, panel, isFromUrl) ->
+        let resolvedPanel = panel |> Option.defaultValue model.ActivePanel
+        if isFromUrl then
+             async { do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Restoration successful. Panel: %A" panel).AsTask() |> Async.AwaitTask } |> Async.StartImmediate
+
+        let modelWithPanel = 
+            { model with 
+                ActivePanel = resolvedPanel
+                Onboarding = { model.Onboarding with IsActive = if isFromUrl then false else model.Onboarding.IsActive }
+            }
+
+        if String.IsNullOrWhiteSpace content then modelWithPanel, Cmd.none
         else
             try
                 // Extract Sequences (Q=...)
@@ -534,7 +568,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let newExport = syncPolygonState finalPoly
                 
                 let updatedModel = 
-                    { model with 
+                    { modelWithPanel with 
                         SrcOfTrth = content
                         Tree = newTree
                         LastValidTree = newTree
@@ -543,24 +577,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Sequences = newSqns
                         Derived = Cache.deriveFromSource content newSqns newExport newTree.ActiveLevel
                         NeedsHyweave = true
-                        Onboarding = { model.Onboarding with IsActive = true }
                         IsPresetsCollapsed = true
                     }
                 
-                // Validate that the loaded state actually results in a layout
-                if Array.isEmpty updatedModel.Derived.cxCxl1 then
-                    model, Cmd.none // Fallback to init model
+                // Validate that the loaded state actually results in a layout, 
+                // but allow deep links to bypass this check so they can set the panel even on empty projects.
+                if not isFromUrl && Array.isEmpty updatedModel.Derived.cxCxl1 then
+                    modelWithPanel, Cmd.none 
                 else
                     updatedModel, Cmd.none
             with _ ->
-                // Safeguard: Only clear the local backup if the source WAS the local backup.
-                // Never clear a user's backup because of a malformed shared URL.
-                if not isFromUrl then
-                    Protocol.purgeLocalBackup js
-                model, Cmd.none
+                modelWithPanel, Cmd.none
 
     | HardReset ->
         Protocol.purgeLocalBackup js
+        Protocol.sync js "" model.ActivePanel
         let model = pushUndo model
         let resetSyntax = Page.emptyState
         let resetTree = Serialization.initModel resetSyntax
@@ -718,7 +749,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | TransitionToMain ->
         { model with 
             CurrentScreen = MainScreen
-            Onboarding = { model.Onboarding with IsActive = true }
+            Onboarding = { model.Onboarding with IsActive = model.Onboarding.IsActive }
             IsPresetsCollapsed = true 
         }, Cmd.none
 
@@ -746,6 +777,11 @@ type MyApp() =
     member this.HandleRedo() = this.Dispatch Redo
 
     [<JSInvokable>]
+    member this.HandleHashChange(rawHash: string) =
+        let (content, panel, isFromUrl) = Protocol.resolveHashChange rawHash
+        this.Dispatch (LoadState (content, panel, isFromUrl))
+
+    [<JSInvokable>]
     member this.SetInstallPromptAvailable(available: bool) = this.Dispatch (SetInstallPromptAvailable available)
 
     [<JSInvokable>]
@@ -761,6 +797,7 @@ type MyApp() =
             _dotnetRef <- Some ref
             this.JSRuntime.InvokeVoidAsync("registerUndoRedo", ref).AsTask() |> ignore
             this.JSRuntime.InvokeVoidAsync("registerPwaInstall", ref).AsTask() |> ignore
+            this.JSRuntime.InvokeVoidAsync("registerHashChange", ref).AsTask() |> ignore
         t
 
     interface System.IDisposable with
@@ -773,10 +810,8 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                Cmd.OfAsync.perform (fun () -> Protocol.resolveStartupState this.JSRuntime) () (fun (res, isFromUrl) -> 
-                        if String.IsNullOrEmpty res then NoOp 
-                        else 
-                            LoadState (res, isFromUrl))
+                Cmd.OfAsync.perform (fun () -> Protocol.resolveStartupState this.JSRuntime) () (fun (res, panel, isFromUrl) -> 
+                        LoadState (res, panel, isFromUrl))
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)

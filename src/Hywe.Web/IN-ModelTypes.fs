@@ -252,6 +252,7 @@ type Model =
         ShowPrivacyAlert: bool
         IsStandalone: bool
         IsCoordsVisible: bool
+        ShowLinkCopied: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -318,7 +319,9 @@ type Message =
     | ReportGenerated of html: string * cache: LayoutCache
     | ViewCaptured of string
     | SelectPreset of string
-    | LoadState of content: string * isFromUrl: bool
+    | LoadState of content: string * panel: ActivePanel option * isFromUrl: bool
+    | ShareLink
+    | HideLinkCopied
     | HardReset
     | ToggleConfirm of ConfirmAction option
     | Undo
