@@ -107,7 +107,7 @@ Subbaiah, V. (2026). HYWE: Hygrid Woven Ensemble.
 Retrieved from https://github.com/vykrum/Hywe
 ```
 
-Or use the "Cite this repository" button in the GitHub sidebar (provided by the `CITATION.cff` file).
+Or use the "Cite this repository" button in the GitHub sidebar.
 
 ---
 
