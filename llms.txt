@@ -10,7 +10,7 @@ Hywe is an F#-driven, browser-native engine that uses procedural logic to transf
 - **Topology-First**: Focuses on spatial flow and connections rather than static geometry.
 - **Hybrid Rendering**: Real-time 2D visualization via SVG and 3D volumetric massing via WebGPU.
 - **Zero-Backend**: All computations, parsing, and rendering happen locally in the user's browser.
-- **Hywe Strings**: A custom compact string representation for spatial layouts (Lexel/Paxel modules).
+- **Hywe Strings**: A custom compact string representation for spatial layouts (Lexel module).
 
 ## Architecture for AI Agents
 - **Core Logic**: `Hywe.Tree` library (functional logic for hierarchical spatial structures).

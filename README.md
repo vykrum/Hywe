@@ -59,7 +59,7 @@ Hywe is a single-page application where the structure is defined by the **comput
 | Stage | Component | Logic | Output |
 | :--- | :--- | :--- | :--- |
 | **1. The Seed** | Hywe Syntax | Compact, text-based encoding of design intent. | `.hyw` String |
-| **2. Interpretation** | `Lexel` & `Paxel` | Functional parsing of hierarchical attributes. | `TreeNode` Hierarchy |
+| **2. Interpretation** | `Lexel` | Functional parsing of hierarchical attributes. | `TreeNode` Hierarchy |
 | **3. Orchestration** | `Hywe.Tree` | Centralized management of spatial relationships. | Logical Spine |
 | **4. Generation** | `Xyxel` & `Zaxel` | Recursive partitioning and volumetric massing. | Spatial Mesh / SVG |
 | **5. Projection** | SVG & WebGPU | High-performance 2D/3D visualization. | Interactive UI |
@@ -72,7 +72,7 @@ Hywe is built as a **strictly functional engine**. It treats spatial design as a
 
 ```mermaid
 graph TD
-    A[Hywe Syntax String] -- "Singular Source of Truth" --> B(Lexel & Paxel Parsing)
+    A[Hywe Syntax String] -- "Singular Source of Truth" --> B(Lexel Parsing)
     B --> C{TreeNode Hierarchy}
     C --> D[Xyxel: 2D Spatial Partitioning]
     C --> E[Zaxel: 3D Volumetric Massing]

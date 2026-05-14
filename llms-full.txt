@@ -6,7 +6,7 @@ This document provides deep technical context for AI agents working on the Hywe 
 
 ### 1. Hywe Syntax (The Singular Source of Truth)
 Everything in the Hywe ecosystem depends on the Syntax. It is the computational DNA that defines state, geometry, and hierarchy.
-- **Lexel/Paxel**: These modules handle the parsing of compact strings into the internal `TreeNode` representation.
+- **Lexel**: This module handles the parsing of compact strings into the internal `TreeNode` representation.
 - **Root Attributes**: 
     - `R`: Ratio (Spatial weight)
     - `B`: Boundary (Geometric constraint)
