@@ -534,7 +534,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let fullUrl = sprintf "https://hywe.in/#%s|P=%s" model.SrcOfTrth p
         { model with ShowLinkCopied = true }, 
         Cmd.batch [
-            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("shareUrl", "Hywe Design", "Check out this Hywe layout", fullUrl).AsTask()) () (fun _ -> NoOp)
+            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("shareUrl", "Hywe Design", "", fullUrl).AsTask()) () (fun _ -> NoOp)
             Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> HideLinkCopied)
         ]
 
