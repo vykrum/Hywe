@@ -140,9 +140,9 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | SelectPreset name ->
         let content = 
             match name with 
-            | "Simple" -> Page.beeyond 
-            | "Branched" -> Page.beedroom 
-            | "Stacked" -> Page.stackedTower 
+            | "Simple" -> beeyond 
+            | "Branched" -> beedroom 
+            | "Stacked" -> stacked 
             | _ -> ""
         let (nextModel, cmd) = handleFileImported model content js
         Some ({ nextModel with SelectedPreset = Some name; EditsCount = 0 }, cmd)

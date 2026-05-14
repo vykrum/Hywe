@@ -23,7 +23,6 @@
 		<Compile Include="VZ-Layout.fs" />
 		<Compile Include="IN-Cache.fs" />
 		<Compile Include="IN-PageHelpers.fs" />
-		<Compile Include="VZ-Help.fs" />
 		<Compile Include="VZ-Teach.fs" />
 		<Compile Include="IN-ModelHelpers.fs" />
 		<Compile Include="VZ-Styles.fs" />

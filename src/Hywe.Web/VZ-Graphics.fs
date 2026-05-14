@@ -3,17 +3,7 @@ module Graphics
 open Bolero
 open System.Collections.Frozen
 open Hywe.Core
-
-
-type hxgn = Template<
-      """ <polygon 
-      points="${pt}" 
-      fill="${cl}"
-      stroke="${cl}"
-      transform="translate${tr}"
-      opacity = "0.75"
-      stroke-opacity="0.175"
-      >""">
+open Bolero.Html
 
 type plgn = Template<
         """ <polygon 
@@ -97,7 +87,7 @@ let svgCxlPrm (cxl : Coxel.Cxl) (elv : int) =
         | _ -> points
 
     let outside = Hexel.hxlOfs cxl.Seqn elv cxl.Hxls
-    let insideSet = (Hexel.hxlSet cxl.Hxls).ToFrozenSet()
+    let insideSet = Hexel.hxlSet cxl.Hxls
     
     outside 
     |> Array.collect (fun hout ->

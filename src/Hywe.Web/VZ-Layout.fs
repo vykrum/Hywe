@@ -360,7 +360,7 @@ let alternateConfigurations
     // 2. SCALE MATH
     let getBounds (c: BatchConfgrtns) =
         let sqn = 
-            match Page.parseSqn c.sqnName with
+            match parseSqn c.sqnName with
             | Some s -> s
             | None -> Hexel.VRCCNE
         
@@ -440,7 +440,7 @@ let alternateConfigurations
             // --- THE GRID ---
             for i in 0 .. (configs.Length - 1) do
                 let cfg = configs.[i]
-                let sqn = match Page.parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
+                let sqn = match parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
                 let col, row = i % cols, i / cols
                 let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
