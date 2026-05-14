@@ -16,6 +16,7 @@ open Hywe.Core
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open Cache
+open FileManager
 
 // Defaults / init 
 let initialTree = Serialization.initModel beeyond
@@ -143,7 +144,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match message with
             | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp | ToggleCoords
             | TransitionToIntro | TransitionToMain 
-            | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
+            | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
             | UpdateMetadata _ | Undo | Redo -> model
             | TreeMsg (SubMsg.PointerMove _) -> model
@@ -193,8 +194,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         s <- injectSqn s lvl sqn
                 s
 
-        FileManager.autoSave js updatedSrc |> ignore
-        js.InvokeVoidAsync("setUrlHash", updatedSrc).AsTask() |> ignore
+        Protocol.sync js updatedSrc
 
         match Cache.get currentLevel i model.LayoutCache with
         | Some config ->
@@ -255,8 +255,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
-        FileManager.autoSave js updatedSrcOfTrth |> ignore
-        js.InvokeVoidAsync("setUrlHash", updatedSrcOfTrth).AsTask() |> ignore
+        Protocol.sync js updatedSrcOfTrth
 
         let currentLevel = model.Tree.ActiveLevel
         let currentSqnIdx = 
@@ -376,8 +375,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     IsPresetsCollapsed = nextCollapse }
 
             if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
-                FileManager.autoSave js newOutput |> ignore
-                js.InvokeVoidAsync("setUrlHash", newOutput).AsTask() |> ignore
+                Protocol.sync js newOutput
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -414,7 +412,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                              newExport.AbsStr
                              newExport.OuterStr
                              newExport.IslandsStr
-        FileManager.autoSave js newOutput |> ignore
+        Protocol.sync js newOutput
 
         { model with 
             PolygonEditor = Stable newModel
@@ -503,7 +501,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
     | SaveRequested ->
         FileManager.saveFile js model.SrcOfTrth |> ignore
-        FileManager.autoSave js model.SrcOfTrth |> ignore
+        Protocol.sync js model.SrcOfTrth
         model, Cmd.none
     | ImportRequested ->
         let doClick () =
@@ -558,11 +556,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 // Safeguard: Only clear the local backup if the source WAS the local backup.
                 // Never clear a user's backup because of a malformed shared URL.
                 if not isFromUrl then
-                    FileManager.clearBackup js |> ignore
+                    Protocol.purgeLocalBackup js
                 model, Cmd.none
 
     | HardReset ->
-        FileManager.clearBackup js |> ignore
+        Protocol.purgeLocalBackup js
         let model = pushUndo model
         let resetSyntax = Page.emptyState
         let resetTree = Serialization.initModel resetSyntax
@@ -775,17 +773,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                Cmd.OfAsync.perform (fun () -> 
-                    async {
-                        // 1. Try URL Hash
-                        let! urlHash = js.InvokeAsync<string>("getUrlHash").AsTask() |> Async.AwaitTask
-                        if not (String.IsNullOrWhiteSpace urlHash) then 
-                            return urlHash, true
-                        
-                        // 2. Fallback to Local Backup
-                        let! backup = FileManager.getBackup js
-                        return backup, false
-                    }) () (fun (res, isFromUrl) -> 
+                Cmd.OfAsync.perform (fun () -> Protocol.resolveStartupState this.JSRuntime) () (fun (res, isFromUrl) -> 
                         if String.IsNullOrEmpty res then NoOp 
                         else 
                             LoadState (res, isFromUrl))
@@ -800,9 +788,9 @@ type MyApp() =
                         Help.viewHelp model.Onboarding dispatch
 
                     Styles.render()
-                    Shell.jsonLd
-                    Shell.siteHeader
-                    Shell.aboutSection
+                    Index.jsonLd
+                    Index.siteHeader
+                    Index.aboutSection
                     div {
                         attr.id "page-content"
                         if model.CurrentScreen <> LoadingScreen then
@@ -810,7 +798,7 @@ type MyApp() =
                         else
                             attr.``class`` "fade-container"
                         
-                        Shell.introSplash model.CurrentScreen dispatch
+                        Index.introSplash model.CurrentScreen dispatch
 
                         div {
                             attr.id "main"
@@ -853,8 +841,8 @@ type MyApp() =
                                 }
                             }
 
-                        Shell.siteFooter model.CurrentScreen
+                        Index.siteFooter model.CurrentScreen
                     }
-                    Shell.loadingScreen model.CurrentScreen
+                    Index.loadingScreen model.CurrentScreen
                 }
             )

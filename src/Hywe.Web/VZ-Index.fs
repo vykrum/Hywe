@@ -1,4 +1,4 @@
-module Hywe.Shell
+module Hywe.Index
 
 open Bolero.Html
 open ModelTypes
@@ -22,13 +22,17 @@ let jsonLd =
             "name": "Vikram Subbaiah",
             "url": "https://github.com/vykrum"
           },
-          "description": "Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning across all design scales.",
+          "description": "Weave controlled spatial layouts through an approach powered by design computation. An Edge-native, WASM-driven sandbox for AEC design automation and synthetic dataset generation.",
           "inLanguage": "en",
-          "keywords": [ "spatial", "design", "wasm", "fsharp"],
+          "keywords": [ 
+            "spatial design", "design computation", "AEC interoperability", 
+            "generative design", "architectural dataset generation", 
+            "WebAssembly", "F#", "Edge-native WASM", "Open Syntax"
+          ],
           "license": "https://github.com/vykrum/Hywe/blob/main/LICENSE",
           "creativeWorkStatus": "InDevelopment",
           "isAccessibleForFree": true,
-          "browserRequirements": "Requires a modern browser with WebAssembly support. Recommended: latest versions of Chrome, Edge, Firefox, or Safari.",
+          "browserRequirements": "Requires a modern browser with WebAssembly support.",
           "operatingSystem": "All",
           "datePublished": "%s",
           "dateModified": "%s"
@@ -87,21 +91,21 @@ let aboutSection =
 
             h3 { text "Philosophy" }
             p { text "Hywe is built around the belief that spatial reasoning can be computationally expressive without mimicking architectural software norms. The tool promotes a kind of design thinking where **spatial topology**—bubble-like in its initial intent—drives layout formation through a logic-native syntax. Every part of its system, from geometry to interactivity, has been constructed from scratch to reflect this procedural paradigm of flow-based hierarchy." }
-            p { text "At its core, Hywe questions the assumption that digital tools must imitate human drafting. Instead, it proposes that computation itself can embody design intent — not as a secondary automation layer, but as a generative framework for decision-making. This perspective encourages designers to think algorithmically, transforming intuition into structured, procedural relationships. In doing so, Hywe enables a dialogue between spatial logic and creative agency that is both analytical and expressive." }
+            p { text "At its core, Hywe questions the assumption that digital tools must imitate human drafting. Instead, it proposes that computation itself can embody design intent — not as a secondary automation layer, but as a generative framework for decision-making. By framing its syntax as an **Open AEC Protocol**, Hywe enables a dialogue between spatial logic and creative agency that is both analytical and expressive." }
             p { text "The name "; strong { text "Hywe" }; text " reflects its foundation: a "; em { text "Hygrid" }; text "-based system that weaves together spatial definitions into an "; em { text "ensemble" }; text "—a coherent, emergent structure shaped by procedural logic rather than visual convention." }
 
             h3 { text "Technical Orientation" }
-            p { text "Hywe’s technical architecture merges abstract logic with visual immediacy. Its geometry engine is written entirely in F#, compiled to WebAssembly for speed and precision. The interface, built on Bolero, allows designers to visualize the dynamic evolution of spatial systems in real time. Each polygon, relationship, and constraint is computed natively in the browser, making the experience seamless and platform-independent." }
+            p { text "Hywe’s technical architecture merges abstract logic with visual immediacy. Its geometry engine is written entirely in F#, compiled to **Edge-native WebAssembly (WASM)** for maximum privacy and performance. This makes Hywe an ideal tool for **Synthetic Dataset Generation** and professional AEC research workflows." }
             ul {
                 li { text "Written in "; strong { text "F#" }; text " and compiled to "; strong { text ".NET WebAssembly (WASM)" }; text " via "; strong { text "Blazor" }; text "." }
-                li { text "Interactive SVG canvas with dynamic polygon editing and logic-driven layout operations." }
-                li { text "No dependency on visual precedents—entire computational stack developed independently." }
+                li { text "Stateless design engine supporting **Deep Linkability** via URL state serialization." }
+                li { text "Optimized for the generation of architectural layouts and topological datasets." }
             }
 
             h3 { text "Current Phase" }
             p {
                 strong { text "Hywe" }
-                text " is an active design sandbox exploring how spatial design can emerge from logic rather than representation. It is not inspired by, nor comparable to, existing design software—because it is not software in the traditional sense. It is a system, a hypothesis, and an ongoing experiment in the design computation of space."
+                text " is an active design sandbox exploring how spatial design can emerge from logic rather than representation. It serves as an open bridge for interoperability between design computation and generative design research."
             }
 
             h3 { text "Repository" }
