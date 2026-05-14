@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 Built from first principles in **F#** and compiled to **WebAssembly (WASM)**, Hywe enables architects to weave complex **multi-story programmatic stacking diagrams** and **vertical spatial hierarchies** directly in the browser with zero installation.
 
 > [!TIP]
-> You can access the **Hywe Syntax guide** directly within the app by using the **Node/Code toggle** in the workspace.
+> You can access the **Hywe Syntax** within the app by using the **Node/Code toggle** on the top-left menu in the workspace.
 
 ---
 
