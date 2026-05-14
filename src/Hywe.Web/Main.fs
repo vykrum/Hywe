@@ -534,7 +534,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let fullUrl = sprintf "https://hywe.in/#%s|P=%s" model.SrcOfTrth p
         { model with ShowLinkCopied = true }, 
         Cmd.batch [
-            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("copyToClipboard", fullUrl).AsTask()) () (fun _ -> NoOp)
+            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("shareUrl", "Hywe Design", "Check out this Hywe layout", fullUrl).AsTask()) () (fun _ -> NoOp)
             Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> HideLinkCopied)
         ]
 
@@ -593,7 +593,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         Protocol.purgeLocalBackup js
         Protocol.sync js "" model.ActivePanel
         let model = pushUndo model
-        let resetSyntax = Page.emptyState
+        let resetSyntax = start
         let resetTree = Serialization.initModel resetSyntax
         let resetPoly = PolygonEditor.initModel
         let resetExport = syncPolygonState resetPoly
@@ -820,10 +820,11 @@ type MyApp() =
             (fun model dispatch -> 
                 concat {
                     if model.Onboarding.IsActive && model.CurrentScreen = MainScreen then
-                        Help.viewHelp model.Onboarding dispatch
+                        Page.Help.viewHelp model.Onboarding dispatch
 
                     Styles.render()
                     Index.jsonLd
+                    Index.coreScript
                     Index.siteHeader
                     Index.aboutSection
                     div {

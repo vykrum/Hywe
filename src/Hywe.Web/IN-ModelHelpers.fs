@@ -6,6 +6,7 @@ open Elmish
 open Layout
 open Hywe
 open Page
+open Graphics
 open Hywe.Node
 open PolygonEditor
 open ModelTypes
@@ -14,11 +15,6 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
-
-
-
-
-
 
 let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
     match model.PendingConfirm with
@@ -30,6 +26,8 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 "Reset Workspace", "Reset entire workspace? All unsaved changes will be lost.", "Reset", HardReset
             | ConfirmAction.LoadPreset (name, label) ->
                 "Load Preset", (sprintf "Load %s preset? Current layout will be replaced." label), "Load", SelectPreset name
+            | ConfirmAction.SwitchTo tab ->
+                "Switch View", "Switch to this view?", "Switch", SetActivePanel (match tab with Boundary -> BoundaryPanel | _ -> LayoutPanel)
 
         div {
             attr.style "position: fixed; inset: 0; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;"
@@ -100,97 +98,103 @@ let downloadSvg (js: IJSRuntime) (svgId: string) (filename: string) =
     }
 
 // View helpers
+let private iconSwitchNode model = drawMenuIcon (match model.EditorMode with Syntax -> pathSwitchNode | Interactive -> pathSwitchCode)
+let private iconSave             = drawMenuIcon pathSave
+let private iconLoad             = drawMenuIcon pathLoad
+let private iconShare model      = drawMenuIcon pathShare
+let private iconReset            = drawMenuIcon pathReset
+let private iconUndo             = drawMenuIcon pathUndo
+let private iconRedo             = drawMenuIcon pathRedo
+
+let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node) (dispatch: Message -> unit) (cls: string) (style: string) =
+    match msg with
+    | Some m ->
+        button {
+            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-flat " + cls)
+            attr.style ("padding: 2px; " + style)
+            attr.title title
+            on.click (fun _ -> dispatch m)
+            icon
+        }
+    | None ->
+        button {
+            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-flat " + cls)
+            attr.style ("padding: 2px; " + style)
+            attr.title title
+            icon
+        }
+
+// View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     concat {
-        let nodeCodeButtonText =
-            match model.EditorMode with
-            | Syntax -> "Node"
-            | Interactive -> "Code"
-
         div {
             attr.style "display:flex; width: 100%; gap:0px; padding: 0 4px; justify-content: flex-start; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
             
             div {
-                attr.style "display:flex; gap:0px; align-items: center;"
+                attr.``class`` "node-code-toolbar"
+                attr.style "display:flex; gap:0px; align-items: center; pointer-events: auto;"
                 
-                div {
-                    attr.``class`` "node-code-toolbar"
-                    attr.style "display:flex; gap:0px; align-items: center; pointer-events: auto;"
-                    
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 2px;"
-                        attr.title (match model.EditorMode with | Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
-                        on.click (fun _ -> dispatch ToggleEditorMode)
-                        match model.EditorMode with
-                        | Syntax -> rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M 12 4 L 20 8 L 20 16 L 12 20 L 4 16 L 4 8 Z"></path></svg>"""
-                        | Interactive -> rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>"""
-                    }
+                // 1. Editor Toggle
+                toolbarBtn 
+                    (match model.EditorMode with Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
+                    (Some ToggleEditorMode)
+                    (iconSwitchNode model)
+                    dispatch "" ""
 
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 2px;"
-                        attr.title "Save"
-                        on.click (fun _ -> dispatch SaveRequested)
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>"""
-                    }
+                // 2. Save
+                toolbarBtn "Save" (Some SaveRequested) iconSave dispatch "" ""
 
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 2px;"
-                        attr.title "Load"
-                        on.click (fun _ -> dispatch ImportRequested)
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>"""
-                    }
+                // 3. Load
+                toolbarBtn "Load" (Some ImportRequested) iconLoad dispatch "" ""
 
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style (sprintf "padding: 2px; color: %s; transition: color 0.3s ease;" (if model.ShowLinkCopied then "#27ae60" else "currentColor"))
-                        attr.title (if model.ShowLinkCopied then "Link Copied!" else "Share Link")
-                        on.click (fun _ -> dispatch ShareLink)
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>"""
-                    }
+                // 4. Share
+                toolbarBtn 
+                    (if model.ShowLinkCopied then "Link Shared!" else "Share Link")
+                    (Some ShareLink)
+                    (iconShare model)
+                    dispatch
+                    "" (sprintf "color: %s;" (if model.ShowLinkCopied then "#27ae60" else "#555"))
 
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style "padding: 2px; color: #E67E22;"
-                        attr.title "Hard Reset"
-                        on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some ConfirmAction.ResetWorkspace)))
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>"""
-                    }
-                    
-                    let canUndo = model.UndoStack <> []
-                    let canRedo = model.RedoStack <> []
+                // 5. Reset
+                toolbarBtn 
+                    "Hard Reset" 
+                    (Some (ToggleConfirm (Some ConfirmAction.ResetWorkspace))) 
+                    iconReset 
+                    dispatch 
+                    "" ""
 
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style (sprintf "padding: 2px; opacity: %s;" (if canUndo then "1" else "0.3"))
-                        attr.title "Undo (Ctrl+Z)"
-                        on.click (fun _ -> dispatch (if canUndo then Undo else NoOp))
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M3 13C5 7 11 4 17 6a9 9 0 0 1 4 13"></path></svg>"""
-                    }
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                        attr.style (sprintf "padding: 2px; opacity: %s;" (if canRedo then "1" else "0.3"))
-                        attr.title "Redo (Ctrl+Y)"
-                        on.click (fun _ -> dispatch (if canRedo then Redo else NoOp))
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"></path><path d="M21 13C19 7 13 4 7 6a9 9 0 0 0-4 13"></path></svg>"""
-                    }
+                // 6. Undo/Redo
+                let canUndo = model.UndoStack <> []
+                let canRedo = model.RedoStack <> []
 
-                    input {
-                        attr.id "hyw-import-hidden"
-                        attr.``type`` "file"
-                        attr.style "display:none"
-                        attr.accept ".hyw"
-                        on.change (fun e ->
-                            async {
-                                let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
-                                dispatch (FileImported content)
-                            } |> Async.StartImmediate
-                        )
-                    }
+                toolbarBtn 
+                    "Undo (Ctrl+Z)" 
+                    (if canUndo then Some Undo else None) 
+                    iconUndo 
+                    dispatch 
+                    "" (sprintf "opacity: %s;" (if canUndo then "1" else "0.3"))
+
+                toolbarBtn 
+                    "Redo (Ctrl+Y)" 
+                    (if canRedo then Some Redo else None) 
+                    iconRedo 
+                    dispatch 
+                    "" (sprintf "opacity: %s;" (if canRedo then "1" else "0.3"))
+
+                input {
+                    attr.id "hyw-import-hidden"
+                    attr.``type`` "file"
+                    attr.style "display:none"
+                    attr.accept ".hyw"
+                    on.change (fun e ->
+                        async {
+                            let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
+                            dispatch (FileImported content)
+                        } |> Async.StartImmediate
+                    )
                 }
             }
+
             if model.InstallPromptAvailable then
                 div {
                     attr.style "margin-left: auto; margin-right: 10px; pointer-events: auto; display: flex; align-items: center;"
@@ -198,9 +202,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
                         attr.title "Install as an App"
                         attr.style "display: flex; align-items: center; gap: 2px; padding: 1px 4px; border: 1px solid rgba(0,0,0,0.1); background: transparent; box-shadow: none; opacity: 0.6; transition: opacity 0.2s ease;"
-                        on.click (fun _ -> 
-                            dispatch InstallRequested
-                        )
+                        on.click (fun _ -> dispatch InstallRequested)
                         
                         rawHtml """<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
                         span { attr.style "font-size: 8.5px; font-weight: 400; color: #666; letter-spacing: -0.3px;"; text "Install" }
@@ -332,13 +334,13 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
                 | false -> drawIcon path
             }
 
-        tab "Boundary" iconBoundary BoundaryPanel
-        tab "Layout"   iconLayout   LayoutPanel
-        tab "Analyze"  iconAnalyze  AnalyzePanel
-        tab "3D"       icon3D       ViewPanel
-        tab "Batch"    iconBatch    BatchPanel
-        tab "Teach"    iconTeach    TeachPanel
-        tab "Report"   iconReport   ReportPanel
+        tab "Boundary" pathBoundary BoundaryPanel
+        tab "Layout"   pathLayout   LayoutPanel
+        tab "Analyze"  pathAnalyze  AnalyzePanel
+        tab "3D"       path3D       ViewPanel
+        tab "Batch"    pathBatch    BatchPanel
+        tab "Teach"    pathTeach    TeachPanel
+        tab "Report"   pathReport   ReportPanel
     }
 
 
@@ -439,9 +441,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
                         on.pointerdown (fun _ -> dispatch ToggleViewLock)
                         if model.ViewLocked then
-                            rawHtml """<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#555" stroke-width="2.5" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
+                            drawMenuIcon pathLock
                         else
-                            rawHtml """<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#888" stroke-width="2.5" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+                            drawMenuIcon pathUnlock
                     }
 
                     canvas { 

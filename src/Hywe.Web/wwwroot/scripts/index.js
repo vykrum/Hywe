@@ -77,10 +77,9 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
 
 
 // ------------------------------------
-//   FILE OPS & BROWSER STORAGE
+//   HEAVY OPS (Keeping in file)
 // ------------------------------------
 
-// Import .hyw file
 window.readHywFile = (fileInputId) => {
     const input = document.getElementById(fileInputId);
     if (!input || !input.files.length) return Promise.resolve("");
@@ -96,13 +95,6 @@ window.readHywFile = (fileInputId) => {
     });
 };
 
-window.clickElement = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.click();
-};
-
-
-// Record Descriptions to Hynteract 
 window.recordToHynteract = async (apiUri, payload) => {
     try {
         const response = await fetch(apiUri, {
@@ -110,10 +102,7 @@ window.recordToHynteract = async (apiUri, payload) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        if (!response.ok) {
-            console.error("API Error:", await response.text());
-        }
+        if (!response.ok) console.error("API Error:", await response.text());
         return response.ok;
     } catch (e) {
         console.error("Network/Fetch Error:", e);
@@ -121,33 +110,10 @@ window.recordToHynteract = async (apiUri, payload) => {
     }
 };
 
-window.downloadFile = function (fileName, content, contentType) {
-    const blob = new Blob([content], { type: contentType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 0);
-};
-
-window.openReport = function(html) {
-    const w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 600);
-};
-
 window.downloadReport = function(html, fileName) {
     console.log("Hywe: Starting direct PDF export...");
     const element = document.createElement('div');
     element.innerHTML = html;
-    
     const opt = {
         margin:       0,
         filename:     fileName,
@@ -156,12 +122,7 @@ window.downloadReport = function(html, fileName) {
         jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape', compress: true },
         pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
     };
-
-    html2pdf().set(opt).from(element).save().then(() => {
-        console.log("Hywe: PDF export complete.");
-    }).catch(err => {
-        console.error("Hywe: PDF export failed:", err);
-    });
+    html2pdf().set(opt).from(element).save().catch(err => console.error("Hywe: PDF export failed:", err));
 };
 
 window.captureCanvas = function(canvasId) {
@@ -174,43 +135,24 @@ window.captureCanvas = function(canvasId) {
         return null;
     }
 };
-// --- Undo / Redo keyboard shortcuts ---
-let _undoRedoDotNet = null;
-window.registerUndoRedo = function(dotnetRef) { _undoRedoDotNet = dotnetRef; };
 
-// --- Hash Change (Share Link Navigation) ---
-let _hashChangeDotNet = null;
+// --- Registrations ---
+window.registerUndoRedo = function(dotnetRef) { window._undoRedoDotNet = dotnetRef; };
+
 window.registerHashChange = function(dotnetRef) {
-    _hashChangeDotNet = dotnetRef;
+    window._hashChangeDotNet = dotnetRef;
     window.addEventListener('hashchange', function() {
-        if (!_hashChangeDotNet) return;
+        if (!window._hashChangeDotNet) return;
         const hash = window.getUrlHash();
-        _hashChangeDotNet.invokeMethodAsync('HandleHashChange', hash);
+        window._hashChangeDotNet.invokeMethodAsync('HandleHashChange', hash);
     });
 };
-document.addEventListener('keydown', function(e) {
-    if (!_undoRedoDotNet) return;
-    const tag = e.target.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    if (e.ctrlKey && !e.shiftKey && e.key === 'z') { e.preventDefault(); _undoRedoDotNet.invokeMethodAsync('HandleUndo'); }
-    else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) { e.preventDefault(); _undoRedoDotNet.invokeMethodAsync('HandleRedo'); }
-});
-
-
 
 // --- PWA & Privacy Detection ---
-window.hywePwaDotNetRef = null;
-
 window.registerPwaInstall = function(dotnetRef) {
     window.hywePwaDotNetRef = dotnetRef;
-    
-    // If we stashed a prompt in the head before F# was ready, notify it now
-    if (window.hyweDeferredPrompt) {
-        console.log("Hywe: Notifying F# of stashed install prompt.");
-        dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
-    }
+    if (window.hyweDeferredPrompt) dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
 
-    // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
         dotnetRef.invokeMethodAsync('SetIsStandalone', true);
         dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', false);
@@ -219,16 +161,13 @@ window.registerPwaInstall = function(dotnetRef) {
     }
     
     dotnetRef.invokeMethodAsync('SetIsStandalone', false);
-    console.log("Hywe: Running in browser (Not Installed).");
 
-    // High-Privacy Browser Detection
     async function checkPrivacy() {
         let isPrivacy = false;
         try {
             const ua = navigator.userAgent.toLowerCase();
             if (navigator.brave && await navigator.brave.isBrave()) isPrivacy = true;
             else if (ua.includes('duckduckgo') || ua.includes('ddg')) isPrivacy = true;
-            
             if (navigator.storage && navigator.storage.estimate) {
                 const { quota } = await navigator.storage.estimate();
                 if (quota && quota < 120000000) isPrivacy = true; 
@@ -238,8 +177,7 @@ window.registerPwaInstall = function(dotnetRef) {
     }
     checkPrivacy();
 
-    window.addEventListener('appinstalled', (evt) => {
-        console.log("Hywe: App installed");
+    window.addEventListener('appinstalled', () => {
         dotnetRef.invokeMethodAsync('SetInstallPromptAvailable', false);
         dotnetRef.invokeMethodAsync('SetPrivacyAlert', false);
         window.hyweDeferredPrompt = null;
@@ -252,56 +190,4 @@ window.triggerPwaInstall = async function () {
     const { outcome } = await window.hyweDeferredPrompt.userChoice;
     window.hyweDeferredPrompt = null;
     return outcome === 'accepted';
-};
-
-// --- URL Hash Management (Deep Linkability) ---
-window.getUrlHash = function() {
-    let hash = "";
-    if (window.location.hash && window.location.hash.length > 1) {
-        hash = window.location.hash.substring(1);
-    } else {
-        const url = window.location.href;
-        const idx = url.indexOf('#');
-        if (idx !== -1) hash = url.substring(idx + 1);
-    }
-    
-    if (hash) {
-        try {
-            const decoded = decodeURIComponent(hash);
-            console.log("Hywe: URL hash found:", decoded.substring(0, 20) + "...");
-            return decoded;
-        } catch (e) {
-            console.log("Hywe: URL hash found (raw):", hash.substring(0, 20) + "...");
-            return hash;
-        }
-    }
-    return "";
-};
-
-window.setUrlHash = function(hash) {
-    if (hash) {
-        window.history.replaceState(null, null, "#" + encodeURIComponent(hash));
-    } else {
-        window.history.replaceState(null, null, window.location.pathname);
-    }
-};
-
-window.copyToClipboard = function(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
-    } else {
-        // Fallback
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            return Promise.resolve(successful);
-        } catch (err) {
-            document.body.removeChild(textArea);
-            return Promise.resolve(false);
-        }
-    }
 };

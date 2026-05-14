@@ -42,6 +42,102 @@ let jsonLd =
         """ PUBLISHED_DATE MODIFIED_DATE)
     }
 
+let coreScript =
+    script {
+        rawHtml """
+        window.getUrlHash = function() {
+            let hash = "";
+            if (window.location.hash && window.location.hash.length > 1) {
+                hash = window.location.hash.substring(1);
+            } else {
+                const url = window.location.href;
+                const idx = url.indexOf('#');
+                if (idx !== -1) hash = url.substring(idx + 1);
+            }
+            if (hash) {
+                try { return decodeURIComponent(hash); } catch (e) { return hash; }
+            }
+            return "";
+        };
+
+        window.setUrlHash = function(hash) {
+            if (hash) window.history.replaceState(null, null, "#" + encodeURIComponent(hash));
+            else window.history.replaceState(null, null, window.location.pathname);
+        };
+
+        window.copyToClipboard = function(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return Promise.resolve(successful);
+                } catch (err) {
+                    document.body.removeChild(textArea);
+                    return Promise.resolve(false);
+                }
+            }
+        };
+
+        window.shareUrl = async (title, text, url) => {
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title, text, url });
+                    return true;
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.error(e);
+                    return window.copyToClipboard(url);
+                }
+            }
+            return window.copyToClipboard(url);
+        };
+
+        window.clickElement = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.click();
+        };
+
+        window.downloadFile = function (fileName, content, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+        };
+
+        window.openReport = function(html) {
+            const w = window.open('', '_blank');
+            w.document.write(html);
+            w.document.close();
+            w.focus();
+            setTimeout(() => w.print(), 600);
+        };
+
+        // Keyboard Shortcuts Handler
+        document.addEventListener('keydown', function(e) {
+            if (!window._undoRedoDotNet) return;
+            const tag = e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+            if (e.ctrlKey && !e.shiftKey && e.key === 'z') { 
+                e.preventDefault(); window._undoRedoDotNet.invokeMethodAsync('HandleUndo'); 
+            } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) { 
+                e.preventDefault(); window._undoRedoDotNet.invokeMethodAsync('HandleRedo'); 
+            }
+        });
+        """
+    }
+
 /// The top navigation header with branding
 let siteHeader =
     header {

@@ -46,7 +46,7 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
             if section.Variations then
                 for i = 0 to 23 do
                     if section.SelectedVariations.Contains(i) then
-                        addPage (Page.labelPhrase.[i].ToString()) 2
+                        addPage (labelPhrase.[i].ToString()) 2
     
     let revPages = pages |> List.rev
     revPages |> List.map (fun p -> 
@@ -383,7 +383,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                         |> Array.map (fun c -> prpVlu c.Name) |> Set.ofArray
                     let levelShapes = conf.shapes |> Array.filter (fun s -> levelCxlNames.Contains(s.name) && s.points.Length > 0)
                     let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
-                    sprintf tBatchCell svg (Page.labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
+                    sprintf tBatchCell svg (labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
                 let allPageShapes = [| chunkStart .. chunkEnd |] |> Array.collect (fun idx -> batchInfo.[idx].shapes)
                 let legendNames = [| chunkStart .. chunkEnd |] |> Array.collect (fun idx -> batchInfo.[idx].cxCxl1) |> Array.filter (fun c -> let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level) in let (_, _, bz) = Hexel.hxlCrd c.Base in hasHxls || bz = level) |> Array.map (fun c -> prpVlu c.Name) |> Set.ofArray
                 let levelShapes = allPageShapes |> Array.filter (fun s -> legendNames.Contains(s.name) && s.points.Length > 0)
@@ -402,7 +402,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                     let colorMap = levelShapes |> Array.map (fun s -> s.name, s.color) |> Map.ofArray
                     let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap level
                     let adjMatrix = renderAdjacencyMatrix levelCxls colorMap
-                    sprintf tVariation (renderHeader (sprintf "%s — Level %d" (Page.labelPhrase.[i].ToString()) level) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
+                    sprintf tVariation (renderHeader (sprintf "%s — Level %d" (labelPhrase.[i].ToString()) level) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
 
     sb.AppendLine("</body></html>") |> ignore
     sb.ToString()
