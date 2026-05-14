@@ -22,12 +22,14 @@ let jsonLd =
             "name": "Vikram Subbaiah",
             "url": "https://github.com/vykrum"
           },
-          "description": "Weave controlled spatial layouts through an approach powered by design computation. An Edge-native, WASM-driven sandbox for AEC design automation and synthetic dataset generation.",
+          "description": "Hywe is a browser-based architectural tool to automate architectural programming and generate floor layouts based on flow of activity. A deterministic alternative to generative AI for floor plans.",
           "inLanguage": "en",
           "keywords": [ 
-            "spatial design", "design computation", "AEC interoperability", 
-            "generative design", "architectural dataset generation", 
-            "WebAssembly", "F#", "Edge-native WASM", "Open Syntax"
+            "How to automate architectural programming", "Software for spatial adjacency matrix to floor plan",
+            "Floor layout generation without adjacency matrix", "Floor layout generation based on flow of activity",
+            "Alternative to generative AI for floor layouts", "Browser based Programmatic stacking diagrams",
+            "Endogenous Space Planning", "Vertical Spatial Hierarchy", "rule-based spatial design",
+            "wasm architectural tool", "deterministic layout generation"
           ],
           "license": "https://github.com/vykrum/Hywe/blob/main/LICENSE",
           "creativeWorkStatus": "InDevelopment",
@@ -82,7 +84,7 @@ let aboutSection =
 
             p {
                 strong { text "HYWE" }
-                text " ("; em { text "Hygrid Woven Ensemble" }; text ") is a design-driven approach to spatial planning powered by design computation."
+                text " ("; em { text "Hygrid Woven Ensemble" }; text ") is a **Generative Design** engine that introduces **Endogenous Space Planning**—a distinctive approach to architectural layout automation powered by design computation."
             }
 
             p { text "It is not a product — it’s a design computation philosophy rethinking how spatial configurations emerge. Developed from first principles with no reference to existing tools or paradigms, Hywe challenges the conventional evolution of space layout tools by treating diagrams not as endpoints, but as active generators of spatial logic." }
@@ -95,11 +97,22 @@ let aboutSection =
             p { text "The name "; strong { text "Hywe" }; text " reflects its foundation: a "; em { text "Hygrid" }; text "-based system that weaves together spatial definitions into an "; em { text "ensemble" }; text "—a coherent, emergent structure shaped by procedural logic rather than visual convention." }
 
             h3 { text "Technical Orientation" }
-            p { text "Hywe’s technical architecture merges abstract logic with visual immediacy. Its geometry engine is written entirely in F#, compiled to **Edge-native WebAssembly (WASM)** for maximum privacy and performance. This makes Hywe an ideal tool for **Synthetic Dataset Generation** and professional AEC research workflows." }
+            p { text "Hywe’s technical architecture merges abstract logic with visual immediacy. Its geometry engine is written entirely in F#, compiled to **WASM (WebAssembly)** for high-performance, browser-based design. This makes Hywe a lightweight, zero-install solution for **early-stage programmatic layout** and **building massing program** analysis." }
             ul {
-                li { text "Written in "; strong { text "F#" }; text " and compiled to "; strong { text ".NET WebAssembly (WASM)" }; text " via "; strong { text "Blazor" }; text "." }
-                li { text "Stateless design engine supporting **Deep Linkability** via URL state serialization." }
-                li { text "Optimized for the generation of architectural layouts and topological datasets." }
+                li { text "Deterministic, **rule-based spatial design** without the unpredictability of AI." }
+                li { text "Automation tools for **spatial adjacency** and **bubble diagram** conversion." }
+                li { text "Native support for **Vertical Spatial Hierarchy** and multi-story programmatic stacking." }
+                li { text "Stateless engine supporting **Deep Linkability** via URL state serialization." }
+            }
+
+            h3 { text "Workflow Solutions" }
+            p { text "Hywe is designed to solve critical bottlenecks in architectural programming and spatial design:" }
+            ul {
+                li { text "How to **automate architectural programming** and adjacency requirements." }
+                li { text "**Software for spatial adjacency matrix to floor plan** conversion." }
+                li { text "Floor layout generation based on the **flow of activity** and people." }
+                li { text "A deterministic **alternative to generative AI** for floor layouts and plans." }
+                li { text "Creating **browser-based programmatic stacking diagrams** and building massing." }
             }
 
             h3 { text "Current Phase" }
