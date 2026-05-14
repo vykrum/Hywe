@@ -16,6 +16,7 @@ open Hywe.Core
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open Cache
+open FileManager
 
 // Defaults / init 
 let initialTree = Serialization.initModel beeyond
@@ -143,7 +144,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match message with
             | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp | ToggleCoords
             | TransitionToIntro | TransitionToMain 
-            | LoadBackup _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
+            | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
             | UpdateMetadata _ | Undo | Redo -> model
             | TreeMsg (SubMsg.PointerMove _) -> model
@@ -193,7 +194,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         s <- injectSqn s lvl sqn
                 s
 
-        FileManager.autoSave js updatedSrc |> ignore
+        Protocol.sync js updatedSrc
 
         match Cache.get currentLevel i model.LayoutCache with
         | Some config ->
@@ -224,7 +225,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Sequences = newSqns
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
-        }, Cmd.none
+        }, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("setUrlHash", value).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
 
     | StartHyweave ->
         let levels = model.Tree.Levels.Keys |> Seq.toList
@@ -254,7 +255,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
-        FileManager.autoSave js updatedSrcOfTrth |> ignore
+        Protocol.sync js updatedSrcOfTrth
 
         let currentLevel = model.Tree.ActiveLevel
         let currentSqnIdx = 
@@ -374,7 +375,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     IsPresetsCollapsed = nextCollapse }
 
             if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
-                FileManager.autoSave js newOutput |> ignore
+                Protocol.sync js newOutput
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -411,7 +412,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                              newExport.AbsStr
                              newExport.OuterStr
                              newExport.IslandsStr
-        FileManager.autoSave js newOutput |> ignore
+        Protocol.sync js newOutput
 
         { model with 
             PolygonEditor = Stable newModel
@@ -500,7 +501,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
     | SaveRequested ->
         FileManager.saveFile js model.SrcOfTrth |> ignore
-        FileManager.autoSave js model.SrcOfTrth |> ignore
+        Protocol.sync js model.SrcOfTrth
         model, Cmd.none
     | ImportRequested ->
         let doClick () =
@@ -516,7 +517,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
 
-    | LoadBackup content ->
+    | LoadState (content, isFromUrl) ->
         if String.IsNullOrWhiteSpace content then model, Cmd.none
         else
             try
@@ -552,12 +553,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 else
                     updatedModel, Cmd.none
             with _ ->
-                // If backup is malformed or incompatible, clear it and ignore it to prevent startup hang
-                FileManager.clearBackup js |> ignore
+                // Safeguard: Only clear the local backup if the source WAS the local backup.
+                // Never clear a user's backup because of a malformed shared URL.
+                if not isFromUrl then
+                    Protocol.purgeLocalBackup js
                 model, Cmd.none
 
     | HardReset ->
-        FileManager.clearBackup js |> ignore
+        Protocol.purgeLocalBackup js
         let model = pushUndo model
         let resetSyntax = Page.emptyState
         let resetTree = Serialization.initModel resetSyntax
@@ -770,7 +773,10 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                Cmd.OfAsync.perform (fun () -> FileManager.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
+                Cmd.OfAsync.perform (fun () -> Protocol.resolveStartupState this.JSRuntime) () (fun (res, isFromUrl) -> 
+                        if String.IsNullOrEmpty res then NoOp 
+                        else 
+                            LoadState (res, isFromUrl))
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
@@ -782,9 +788,9 @@ type MyApp() =
                         Help.viewHelp model.Onboarding dispatch
 
                     Styles.render()
-                    Shell.jsonLd
-                    Shell.siteHeader
-                    Shell.aboutSection
+                    Index.jsonLd
+                    Index.siteHeader
+                    Index.aboutSection
                     div {
                         attr.id "page-content"
                         if model.CurrentScreen <> LoadingScreen then
@@ -792,7 +798,7 @@ type MyApp() =
                         else
                             attr.``class`` "fade-container"
                         
-                        Shell.introSplash model.CurrentScreen dispatch
+                        Index.introSplash model.CurrentScreen dispatch
 
                         div {
                             attr.id "main"
@@ -835,8 +841,8 @@ type MyApp() =
                                 }
                             }
 
-                        Shell.siteFooter model.CurrentScreen
+                        Index.siteFooter model.CurrentScreen
                     }
-                    Shell.loadingScreen model.CurrentScreen
+                    Index.loadingScreen model.CurrentScreen
                 }
             )

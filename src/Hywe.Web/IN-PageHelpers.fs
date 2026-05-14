@@ -16,7 +16,7 @@ open FileManager
 open Hywe.Node
 
 
-// --- Logic (formerly UP-UI.fs) ---
+// --- Logic ---
 
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
     match panel with

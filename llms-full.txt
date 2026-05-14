@@ -1,0 +1,53 @@
+# HYWE Technical Reference (Full)
+
+This document provides deep technical context for AI agents working on the Hywe codebase.
+
+## Core Concepts
+
+### 1. Hywe Syntax (The Singular Source of Truth)
+Everything in the Hywe ecosystem depends on the Syntax. It is the computational DNA that defines state, geometry, and hierarchy.
+- **Lexel/Paxel**: These modules handle the parsing of compact strings into the internal `TreeNode` representation.
+- **Root Attributes**: 
+    - `R`: Ratio (Spatial weight)
+    - `B`: Boundary (Geometric constraint)
+    - `I`: Islands (Internal holes)
+    - `T`: Thickness (Vertical extrusion)
+- **Hierarchical Nodes**: Represented by a tree structure. Level 0 (L0) is the base, with subsequent levels (L1, L2, etc.) representing vertical or nested divisions.
+- **Documentation**: Detailed syntax rules are available in-app via the **Node/Code toggle**.
+- **Dataset Generation**: Optimized for generating synthetic architectural datasets.
+- **Extensibility**: The Hywe Syntax is a transparent, text-based protocol that allows for straightforward "bridge" development between Hywe and other AEC software.
+- **Deep Linkability**: Supports "stateless sharing" by serializing the entire design state into a URL fragment (hash). This enables instant peer-to-peer sharing without any server-side database.
+- **Programmatic Access**: The core engine is decoupled in the `Hywe.Tree` library, enabling it to be used as a headless design API in other .NET or Bolero-based projects.
+
+### 2. The Functional Pipeline
+1.  **Parsing (`Lexel.fs`)**: Converts a Hywe string into a `TreeNode` hierarchy.
+2.  **Analysis (`VZ-Analyze.fs`)**: Performs spatial calculations (min ratio, global scaling).
+3.  **2D Layout (`Xyxel.fs`)**: Generates 2D polygons based on the tree topology and ratio-based partitioning.
+4.  **3D Massing (`Zaxel.fs`)**: Extrudes 2D polygons into 3D volumes (Z-axis offsets, heights).
+5.  **Rendering (`VZ-ThreeD.fs`)**: Passes geometry buffers to WebGPU shaders (`VZ-Shaders.fs`).
+
+### 3. Spatial Logic
+- **Topology-First**: The system prioritizes the "flow" and "sequence" of spaces. If space A leads to space B, the geometry is generated to reflect this connection procedurally.
+- **Coxel Anchoring**: Hierarchical nesting where a "child" tree can be anchored to a specific "host" node in a "parent" tree.
+
+## Technical Stack Details
+- **F# / Bolero**: Uses Elmish architecture (Model-View-Update).
+- **WASM Runtime**: The entire F# project is compiled to WebAssembly bytecode. This enables:
+    - Near-native execution speed for geometric partitioning.
+    - Direct interaction with the WebGPU and SVG APIs.
+    - Significant memory safety and client-side isolation.
+- **Zero-Backend**: No server-side computation is required; the engine is self-contained.
+- **WebGPU**: Uses the modern `gpuweb` standard. Fallback to SVG for 2D previews.
+
+## Contributing Patterns
+- **Immutability**: Avoid `mutable` and `ResizeArray` where possible. Prefer `List` and `Map`.
+- **Active Patterns**: Extensively used for parsing attributes from Hywe strings.
+- **Two-Pass Generation**: Typically involves an analysis pass (to determine global constraints) followed by a generation pass.
+
+## Repository Structure
+- `src/Hywe.Tree`: Pure library for tree manipulation and geometric logic.
+- `src/Hywe.Web`: Bolero-based web application.
+    - `wwwroot/index.html`: SEO and entry point.
+    - `Main.fs`: Core Elmish loop.
+    - `VZ-*`: Visual/Rendering modules.
+    - `IN-*`: Internal/Logic modules.

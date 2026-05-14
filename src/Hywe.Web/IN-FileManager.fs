@@ -9,24 +9,7 @@ open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open PolygonEditor
 
-// --- STORAGE & PERSISTENCE ---
-
-/// Shadow save for browser refresh persistence
-let autoSave (js: IJSRuntime) (content: string) =
-    if not (String.IsNullOrWhiteSpace content) then
-        js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
-
-let clearBackup (js: IJSRuntime) =
-    js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
-
-/// Retrieve shadow save from LocalStorage
-let getBackup (js: IJSRuntime) =
-    async {
-        try
-            let! content = js.InvokeAsync<string>("localStorage.getItem", "hywe_backup").AsTask() |> Async.AwaitTask
-            return if isNull content then "" else content
-        with _ -> return ""
-    }
+// --- FILE IMPORT/EXPORT ---
 
 /// Generates timestamped filename and triggers download
 let saveFile (js: IJSRuntime) (content: string) =
@@ -252,3 +235,52 @@ let generateObjBatch (batch: (Cxl[] * float[]) list) =
         sb.Append(generateObj cxls elvs ox oy vOff) |> ignore
     )
     sb.ToString()
+
+
+// --- PROTOCOL (State Transfer & Persistence) ---
+
+module Protocol =
+    
+    /// Low-level JS interop for URL and LocalStorage
+    let private setUrlHash (js: IJSRuntime) (content: string) =
+        js.InvokeVoidAsync("setUrlHash", content) |> ignore
+
+    let private getUrlHash (js: IJSRuntime) =
+        js.InvokeAsync<string>("getUrlHash")
+
+    let private setBackup (js: IJSRuntime) (content: string) =
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
+
+    let private getBackup (js: IJSRuntime) =
+        js.InvokeAsync<string>("localStorage.getItem", "hywe_backup")
+
+    let private clearBackup (js: IJSRuntime) =
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
+
+    /// Synchronizes the current design state to both LocalStorage and the URL Hash.
+    let sync (js: IJSRuntime) (content: string) =
+        if not (String.IsNullOrWhiteSpace content) then
+            setBackup js content
+            setUrlHash js content
+
+    /// Orchestrates the startup state resolution.
+    let resolveStartupState (js: IJSRuntime) =
+        async {
+            try
+                // 1. Try URL Hash first
+                let! urlHash = (getUrlHash js).AsTask() |> Async.AwaitTask
+                if not (String.IsNullOrWhiteSpace urlHash) then 
+                    return urlHash, true // Source: URL
+                else
+                    // 2. Fallback to Local Backup
+                    let! backup = (getBackup js).AsTask() |> Async.AwaitTask
+                    if not (isNull backup) && not (String.IsNullOrWhiteSpace backup) then
+                        return backup, false // Source: Local
+                    else
+                        return "", false
+            with _ -> return "", false
+        }
+
+    /// Clears the local backup safely.
+    let purgeLocalBackup (js: IJSRuntime) =
+        clearBackup js
