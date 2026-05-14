@@ -84,7 +84,7 @@ Hywe is built as a **strictly functional engine**. It treats spatial design as a
 graph TD
     A[Hywe Syntax] -- "Singular Source of Truth" --> B(Lexel Parsing)
     B --> C{TreeNode Hierarchy}
-    C --> D[Xyxel: 2D Spatial Partitioning]
+    C --> D[Xyxel: 2D Spatial Configuration]
     C --> E[Zaxel: 3D Volumetric Massing]
     D --> F[SVG Rendering]
     E --> G[WebGPU Shader Pipeline]
