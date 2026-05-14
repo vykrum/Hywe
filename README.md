@@ -82,7 +82,7 @@ Hywe is built as a **strictly functional engine**. It treats spatial design as a
 
 ```mermaid
 graph TD
-    A[Hywe Syntax String] -- "Singular Source of Truth" --> B(Lexel Parsing)
+    A[Hywe Syntax] -- "Singular Source of Truth" --> B(Lexel Parsing)
     B --> C{TreeNode Hierarchy}
     C --> D[Xyxel: 2D Spatial Partitioning]
     C --> E[Zaxel: 3D Volumetric Massing]
