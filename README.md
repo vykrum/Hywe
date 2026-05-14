@@ -44,8 +44,9 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **Privacy-focused**: No backend; all computation runs in-browser via **WebAssembly**.
 - **Edge-First Architecture**: 
     - **Zero-Latency**: Instantaneous procedural feedback with no round-trips to a server.
-    - **Offline-Ready**: As a Progressive Web App (PWA) with a WASM core, Hywe is designed for reliable performance in any environment.
-    - **Secure**: Your design intent and data never leave your machine.
+    - **Offline-Ready**: As a Progressive Web App (PWA) **Hywe** (Hygrid Woven Ensemble) is an open-source, **browser-based architectural tool** designed to **automate architectural programming** and generate **floor layouts based on the flow of activity**. It serves as a deterministic, **rule-based alternative to generative AI** for early-stage floor layouts and spatial plans.
+
+Built from first principles in **F#** and compiled to **WebAssembly (WASM)**, Hywe enables architects to weave complex **multi-story programmatic stacking diagrams** and **vertical spatial hierarchies** directly in the browser with zero installation.
 
 > [!TIP]
 > You can access the **Hywe Syntax guide** directly within the app by using the **Node/Code toggle** in the workspace.
@@ -54,15 +55,24 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 
 ## Sitemap of Logic
 
-Hywe is a single-page application where the structure is defined by the **computational pipeline**, not the URL path.
+Hywe is structured as a computational pipeline that transforms designer intent into architectural form:
 
 | Stage | Component | Logic | Output |
 | :--- | :--- | :--- | :--- |
-| **1. The Seed** | Hywe Syntax | Compact, text-based encoding of design intent. | `.hyw` String |
-| **2. Interpretation** | `Lexel` | Functional parsing of hierarchical attributes. | `TreeNode` Hierarchy |
-| **3. Orchestration** | `Hywe.Tree` | Centralized management of spatial relationships. | Logical Spine |
-| **4. Generation** | `Xyxel` & `Zaxel` | Recursive partitioning and volumetric massing. | Spatial Mesh / SVG |
-| **5. Projection** | SVG & WebGPU | High-performance 2D/3D visualization. | Interactive UI |
+| **1. The Seed** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
+| **2. Interpretation** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
+| **3. Orchestration** | `Hywe.Tree` | Management of **Vertical Spatial Hierarchy**. | Logical Spine |
+| **4. Generation** | `Xyxel` & `Zaxel` | **Flow-based generative floor layouts**. | Spatial Mesh / SVG |
+| **5. Projection** | SVG & WebGPU | Real-time, **browser-based 3D massing**. | Interactive UI |
+
+## Targeted Use Cases
+
+Hywe is engineered to solve specific high-intent architectural bottlenecks:
+- **Automate Architectural Programming**: Instantly transform programmatic requirements and adjacency matrices into spatial configurations.
+- **Software for Spatial Adjacency**: A rule-based engine that converts **spatial adjacency matrices to floor plans** with mathematical precision.
+- **Alternative to Generative AI**: Provides a deterministic solution for designers who need control and logic over stochastic AI generation.
+- **Flow-Based Layout Generation**: Generate floor plans that emerge from the **flow of activity** rather than static boundaries.
+- **Programmatic Stacking Diagrams**: Handle **Vertical Spatial Hierarchy** and multi-level programmatic distribution in a zero-install, web environment.
 
 ---
 
