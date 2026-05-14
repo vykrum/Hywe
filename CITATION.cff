@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use Hywe in your design research or projects, please cite it as follows."
+authors:
+- family-names: "Subbaiah"
+  given-names: "Vikram"
+title: "HYWE: Hygrid Woven Ensemble"
+version: 1.0.0
+date-released: 2026-05-14
+url: "https://github.com/vykrum/Hywe"

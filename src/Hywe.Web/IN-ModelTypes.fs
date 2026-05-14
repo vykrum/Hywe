@@ -318,7 +318,7 @@ type Message =
     | ReportGenerated of html: string * cache: LayoutCache
     | ViewCaptured of string
     | SelectPreset of string
-    | LoadBackup of string
+    | LoadState of content: string * isFromUrl: bool
     | HardReset
     | ToggleConfirm of ConfirmAction option
     | Undo

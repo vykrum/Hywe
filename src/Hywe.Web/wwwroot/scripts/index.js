@@ -242,3 +242,16 @@ window.triggerPwaInstall = async function () {
     window.hyweDeferredPrompt = null;
     return outcome === 'accepted';
 };
+
+// --- URL Hash Management (Deep Linkability) ---
+window.getUrlHash = function() {
+    return window.location.hash ? decodeURIComponent(window.location.hash.substring(1)) : "";
+};
+
+window.setUrlHash = function(hash) {
+    if (hash) {
+        window.history.replaceState(null, null, "#" + encodeURIComponent(hash));
+    } else {
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+};

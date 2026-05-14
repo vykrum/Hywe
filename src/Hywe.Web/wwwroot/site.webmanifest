@@ -1,6 +1,12 @@
 {
   "name": "H Y W E",
   "short_name": "Hywe",
+  "description": "Logic-driven spatial layout weaver powered by design computation.",
+  "categories": [
+    "design",
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "images/web-app-manifest-192x192.png",

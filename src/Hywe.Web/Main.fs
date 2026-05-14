@@ -194,6 +194,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 s
 
         FileManager.autoSave js updatedSrc |> ignore
+        js.InvokeVoidAsync("setUrlHash", updatedSrc).AsTask() |> ignore
 
         match Cache.get currentLevel i model.LayoutCache with
         | Some config ->
@@ -224,7 +225,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Sequences = newSqns
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
-        }, Cmd.none
+        }, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("setUrlHash", value).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp)
 
     | StartHyweave ->
         let levels = model.Tree.Levels.Keys |> Seq.toList
@@ -255,6 +256,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.IslandsStr
 
         FileManager.autoSave js updatedSrcOfTrth |> ignore
+        js.InvokeVoidAsync("setUrlHash", updatedSrcOfTrth).AsTask() |> ignore
 
         let currentLevel = model.Tree.ActiveLevel
         let currentSqnIdx = 
@@ -375,6 +377,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
             if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
                 FileManager.autoSave js newOutput |> ignore
+                js.InvokeVoidAsync("setUrlHash", newOutput).AsTask() |> ignore
 
             let finalModel, finalCmd = 
                 if isLevelSwitch || isAction then
@@ -516,7 +519,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | Some (newModel, cmd) -> newModel, cmd
         | None -> model, Cmd.none
 
-    | LoadBackup content ->
+    | LoadState (content, isFromUrl) ->
         if String.IsNullOrWhiteSpace content then model, Cmd.none
         else
             try
@@ -552,8 +555,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 else
                     updatedModel, Cmd.none
             with _ ->
-                // If backup is malformed or incompatible, clear it and ignore it to prevent startup hang
-                FileManager.clearBackup js |> ignore
+                // Safeguard: Only clear the local backup if the source WAS the local backup.
+                // Never clear a user's backup because of a malformed shared URL.
+                if not isFromUrl then
+                    FileManager.clearBackup js |> ignore
                 model, Cmd.none
 
     | HardReset ->
@@ -770,7 +775,20 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                Cmd.OfAsync.perform (fun () -> FileManager.getBackup this.JSRuntime) () (fun res -> if String.IsNullOrEmpty res then NoOp else LoadBackup res)
+                Cmd.OfAsync.perform (fun () -> 
+                    async {
+                        // 1. Try URL Hash
+                        let! urlHash = js.InvokeAsync<string>("getUrlHash").AsTask() |> Async.AwaitTask
+                        if not (String.IsNullOrWhiteSpace urlHash) then 
+                            return urlHash, true
+                        
+                        // 2. Fallback to Local Backup
+                        let! backup = FileManager.getBackup js
+                        return backup, false
+                    }) () (fun (res, isFromUrl) -> 
+                        if String.IsNullOrEmpty res then NoOp 
+                        else 
+                            LoadState (res, isFromUrl))
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
