@@ -177,6 +177,17 @@ window.captureCanvas = function(canvasId) {
 // --- Undo / Redo keyboard shortcuts ---
 let _undoRedoDotNet = null;
 window.registerUndoRedo = function(dotnetRef) { _undoRedoDotNet = dotnetRef; };
+
+// --- Hash Change (Share Link Navigation) ---
+let _hashChangeDotNet = null;
+window.registerHashChange = function(dotnetRef) {
+    _hashChangeDotNet = dotnetRef;
+    window.addEventListener('hashchange', function() {
+        if (!_hashChangeDotNet) return;
+        const hash = window.getUrlHash();
+        _hashChangeDotNet.invokeMethodAsync('HandleHashChange', hash);
+    });
+};
 document.addEventListener('keydown', function(e) {
     if (!_undoRedoDotNet) return;
     const tag = e.target.tagName;
@@ -245,7 +256,26 @@ window.triggerPwaInstall = async function () {
 
 // --- URL Hash Management (Deep Linkability) ---
 window.getUrlHash = function() {
-    return window.location.hash ? decodeURIComponent(window.location.hash.substring(1)) : "";
+    let hash = "";
+    if (window.location.hash && window.location.hash.length > 1) {
+        hash = window.location.hash.substring(1);
+    } else {
+        const url = window.location.href;
+        const idx = url.indexOf('#');
+        if (idx !== -1) hash = url.substring(idx + 1);
+    }
+    
+    if (hash) {
+        try {
+            const decoded = decodeURIComponent(hash);
+            console.log("Hywe: URL hash found:", decoded.substring(0, 20) + "...");
+            return decoded;
+        } catch (e) {
+            console.log("Hywe: URL hash found (raw):", hash.substring(0, 20) + "...");
+            return hash;
+        }
+    }
+    return "";
 };
 
 window.setUrlHash = function(hash) {
@@ -253,5 +283,25 @@ window.setUrlHash = function(hash) {
         window.history.replaceState(null, null, "#" + encodeURIComponent(hash));
     } else {
         window.history.replaceState(null, null, window.location.pathname);
+    }
+};
+
+window.copyToClipboard = function(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+    } else {
+        // Fallback
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return Promise.resolve(successful);
+        } catch (err) {
+            document.body.removeChild(textArea);
+            return Promise.resolve(false);
+        }
     }
 };

@@ -8,6 +8,7 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open PolygonEditor
+open ModelTypes
 
 // --- FILE IMPORT/EXPORT ---
 
@@ -257,11 +258,58 @@ module Protocol =
     let private clearBackup (js: IJSRuntime) =
         js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
 
+    let panelToString = function
+        | BoundaryPanel -> "boundary"
+        | LayoutPanel -> "layout"
+        | AnalyzePanel -> "analyze"
+        | ViewPanel -> "3d"
+        | BatchPanel -> "batch"
+        | TeachPanel -> "teach"
+        | ReportPanel -> "report"
+
+    let stringToPanel (s: string) = 
+        match s.Trim().ToLower() with
+        | "boundary" -> Some BoundaryPanel
+        | "layout" -> Some LayoutPanel
+        | "analyze" -> Some AnalyzePanel
+        | "view" | "3d" -> Some ViewPanel
+        | "teach" -> Some TeachPanel
+        | "report" -> Some ReportPanel
+        | "batch" -> Some BatchPanel
+        | _ -> None
+
     /// Synchronizes the current design state to both LocalStorage and the URL Hash.
-    let sync (js: IJSRuntime) (content: string) =
+    let sync (js: IJSRuntime) (content: string) (panel: ActivePanel) =
         if not (String.IsNullOrWhiteSpace content) then
             setBackup js content
-            setUrlHash js content
+            let p = panelToString panel
+            let hash = sprintf "%s|P=%s" content p
+            setUrlHash js hash
+        else
+            setUrlHash js ""
+
+    /// Parses a raw hash string (already decoded) into (content, panel option, isFromUrl).
+    /// Used synchronously by HandleHashChange when the URL changes in an already-running app.
+    let resolveHashChange (rawHash: string) : string * ActivePanel option * bool =
+        if String.IsNullOrWhiteSpace rawHash then "", None, false
+        else
+            try
+                let upperHash = rawHash.ToUpperInvariant()
+                let pIdx = 
+                    let i1 = upperHash.LastIndexOf("|P=")
+                    if i1 <> -1 then i1 
+                    else 
+                        let i2 = upperHash.LastIndexOf("%7CP=")
+                        if i2 <> -1 then i2 else -1
+                if pIdx <> -1 then
+                    let delimLength = if upperHash.Substring(pIdx).StartsWith("|P=") then 3 else 5
+                    let c = rawHash.Substring(0, pIdx)
+                    let pName = rawHash.Substring(pIdx + delimLength)
+                    // console.log("Hywe: resolveHashChange", pIdx, delimLength, pName)
+                    c, stringToPanel pName, true
+                else
+                    rawHash, None, true
+            with _ -> rawHash, None, true
 
     /// Orchestrates the startup state resolution.
     let resolveStartupState (js: IJSRuntime) =
@@ -270,15 +318,31 @@ module Protocol =
                 // 1. Try URL Hash first
                 let! urlHash = (getUrlHash js).AsTask() |> Async.AwaitTask
                 if not (String.IsNullOrWhiteSpace urlHash) then 
-                    return urlHash, true // Source: URL
+                    // Case-insensitive search for |P= or %7CP=
+                    let upperHash = urlHash.ToUpperInvariant()
+                    let pIdx = 
+                        let i1 = upperHash.LastIndexOf("|P=")
+                        if i1 <> -1 then i1 
+                        else 
+                            let i2 = upperHash.LastIndexOf("%7CP=")
+                            if i2 <> -1 then i2 else -1
+                    
+                    if pIdx <> -1 then
+                        // Calculate content length (excluding the delimiter)
+                        let delimLength = if upperHash.Substring(pIdx).StartsWith("|P=") then 3 else 5
+                        let c = urlHash.Substring(0, pIdx)
+                        let pName = urlHash.Substring(pIdx + delimLength)
+                        return c, stringToPanel pName, true
+                    else
+                        return urlHash, None, true // Source: URL
                 else
                     // 2. Fallback to Local Backup
                     let! backup = (getBackup js).AsTask() |> Async.AwaitTask
                     if not (isNull backup) && not (String.IsNullOrWhiteSpace backup) then
-                        return backup, false // Source: Local
+                        return backup, None, false // Source: Local
                     else
-                        return "", false
-            with _ -> return "", false
+                        return "", None, false
+            with _ -> return "", None, false
         }
 
     /// Clears the local backup safely.
