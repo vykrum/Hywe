@@ -18,7 +18,7 @@ Hywe is founded on the idea that **spatial reasoning can be expressive and compu
 
 At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything, from geometry to hierarchy, depends on the integrity of the syntax.
 
-As a **bespoke, zero-dependency engine**, Hywe does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage, from topological partitioning to volumetric massing, has been built from first principles to ensure absolute determinism and spatial integrity.
+As a **bespoke, zero-dependency engine**, Hywe has been **developed independently from conventional architectural software paradigms**. It does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage, from topological partitioning to volumetric massing, has been built from first principles to ensure absolute determinism and spatial integrity.
 
 ---
 
