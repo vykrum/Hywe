@@ -70,7 +70,7 @@ Hywe is structured as a computational pipeline that transforms designer intent i
 ## Targeted Use Cases
 
 Hywe is engineered to solve specific high-intent architectural bottlenecks:
-- **Automate Architectural Programming**: Instantly transform programmatic requirements and hierarchical trees into complex spatial configurations.
+- **Automate Architectural Programming**: Quickly flesh out or configure programmatic requirements and hierarchical trees into complex spatial configurations.
 - **Deterministic Layouts**: A rule-based engine where **spatial adjacencies emerge as a consequence** of topological flow and programmatic hierarchy.
 - **Alternative to Generative AI**: Provides a deterministic solution for designers who need control and logic over stochastic AI generation.
 - **Flow-Based Layout Generation**: Generate floor plans that emerge from the **flow of activity** rather than static boundaries.
