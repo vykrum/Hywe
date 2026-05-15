@@ -14,11 +14,11 @@
 
 ## Philosophy
 
-Hywe is founded on the idea that **spatial reasoning can be expressive and computational without imitating architectural software norms**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. By prioritizing the "logic of movement" over simple wall-to-wall adjacency, Hywe uses a procedural approach to turn abstract intent into structured configurations. Every aspect of the system, from interactivity to structure, has been built from scratch to reflect this paradigm.
+Hywe is founded on the idea that **spatial reasoning can be expressive and computational without imitating architectural software norms**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. By prioritizing flow over adjacency, Hywe uses a procedural approach to turn abstract intent into structured configurations. Every aspect of the system, from interactivity to structure, has been built from scratch to reflect this paradigm.
 
-At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything,from geometry to hierarchy, depends on the integrity of the syntax.
+At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything, from geometry to hierarchy, depends on the integrity of the syntax.
 
-As a **bespoke, zero-dependency engine**, Hywe does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage, from topological partitioning to volumetric massing, is built from first principles to ensure absolute determinism and spatial integrity.
+As a **bespoke, zero-dependency engine**, Hywe does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage, from topological partitioning to volumetric massing, has been built from first principles to ensure absolute determinism and spatial integrity.
 
 ---
 
