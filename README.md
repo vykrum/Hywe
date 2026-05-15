@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 Built from first principles in **F#** and compiled to **WebAssembly (WASM)**, Hywe enables architects to weave complex **multi-story programmatic stacking diagrams** and **vertical spatial hierarchies** directly in the browser with zero installation.
 
 > [!TIP]
-> You can access the **Hywe Syntax guide** directly within the app by using the **Node/Code toggle** in the workspace.
+> You can access the **Hywe Syntax** within the app by using the **Node/Code toggle** on the top-left menu in the workspace.
 
 ---
 
@@ -85,27 +85,13 @@ Hywe is built as a **strictly functional engine**. It treats spatial design as a
 
 ```mermaid
 graph TD
-    A1[Interactive Node Tree Input] --> B[Hywe Syntax]
-    A2[Interactive Boundary Editor] --> B[Hywe Syntax]
-    B --> C(Lexel Parsing)
-    C --> D(Hexel: Fundamental Unit)
-    D --> E(Coxel: Hexel Cluster)
-    E --> F(Xyxel: Coxel Configuration)
-    F --> G(Zaxel: Xyxel Stacking)
-    
-    F --> F1[SVG Rendering]
-    G --> G1[WebGPU Massing]
-    
-    F --> H[Spatial Analysis]
-    F --> I[Batch Processing]
-    
-    F1 -.-> ReportLabel((PDF Report))
-    G1 -.-> ReportLabel
-    H -.-> ReportLabel
-    I -.-> ReportLabel
-    
-    I -.-> DatasetLabel((Hynteract: AI Dataset))
-    DesignIntent[Design Intent] --> DatasetLabel
+    A[Hywe Syntax String] -- "Singular Source of Truth" --> B(Lexel Parsing)
+    B --> C{TreeNode Hierarchy}
+    C --> D[Xyxel: 2D Spatial Partitioning]
+    C --> E[Zaxel: 3D Volumetric Massing]
+    D --> F[SVG Rendering]
+    E --> G[WebGPU Shader Pipeline]
+    F & G --> H((Interactive UI))
 ```
 
 - **Language:** [F#](https://fsharp.org/) (functional-first design)
