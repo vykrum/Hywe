@@ -14,7 +14,7 @@
 
 ## Philosophy
 
-Hywe is founded on the idea that **spatial reasoning can be expressive and computational without imitating architectural software norms**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. By prioritizing flow over adjacency, Hywe uses a procedural approach to turn abstract intent into structured configurations—functioning conceptually as a **computational 'bubble diagram'** where spatial adjacency is a direct consequence of defined connections and hierarchy.
+Hywe is founded on the idea that **spatial reasoning can be expressive and computational without imitating architectural software norms**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. By prioritizing flow over adjacency, Hywe uses a procedural approach to turn abstract intent into structured configurations, functioning conceptually as a **computational 'bubble diagram'** where spatial adjacency is a direct consequence of defined connections and hierarchy.
 
 At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything, from geometry to hierarchy, depends on the integrity of the syntax.
 
