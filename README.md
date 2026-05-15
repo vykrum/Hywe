@@ -73,7 +73,7 @@ Hywe is engineered to solve specific high-intent architectural bottlenecks:
 - **Automate Architectural Programming**: Rapidly synthesize programmatic requirements and hierarchical trees into structured spatial configurations.
 - **Deterministic Layouts**: A rule-based engine where **spatial adjacencies emerge as a consequence** of topological flow and programmatic hierarchy.
 - **Hybrid AI Approach**: Provides a **deterministic foundation** for layout generation, ensuring logical consistency while retaining the ability to leverage generative AI for creative exploration.
-- **Boundary Confinement**: Confine spatial configurations to arbitrary closed boundaries, from rectilinear sites to complex polygonal footprints.
+- **Boundary Confinement**: Confine spatial configurations to arbitrary closed boundaries, from rectilinear sites to complex polygonal footprints with islands.
 - **Programmatic Stacking Diagrams**: Handle **Vertical Spatial Hierarchy** and multi-level programmatic distribution in a zero-install, web environment.
 
 ---
