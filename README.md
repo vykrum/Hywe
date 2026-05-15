@@ -40,10 +40,10 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **3D extrusions** rendered using **WebGPU** for modern hardware acceleration.
 - **Generative Design**: Dynamic, multi-level layout generation via procedural logic.
 - **Geometry Logic**: Purely functional, **integer-based** spatial partitioning (no floating-point drift).
-- **Core Engine**: Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow over traditional vector-based CAD norms.
+- **Core Engine**: Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow.
 - **Data Fidelity**: Enables **bit-precise data generation**, ensuring perfect determinism for AI training and AEC interoperability.
 - **Dataset Generation**: Use the syntax-driven core to generate massive, procedurally varied architectural datasets.
-- **Extensibility**: Uses a transparent, text-based syntax designed to enable straightforward integration with other **AEC tools** and Common Data Environments (CDE).
+- **Extensibility**: Transparent, text-based syntax with native support for AEC-standard exports (**DXF**, **OBJ**, **CSV**) for integration with professional design workflows.
 - **API Potential**: The engine is built as a decoupled **WebAssembly core**, allowing for future integration as a programmatic design API for third-party web apps.
 - **Stateless Sharing**: Share entire 3D design states via simple URLs. No sign-in or database required; the Syntax is serialized directly into the URL hash.
 - **Zero-Installation**: Built from first principles in **F#** and compiled to **WebAssembly (WASM)** for zero-install, browser-native performance.
