@@ -58,20 +58,20 @@ Hywe is structured as a computational pipeline that transforms designer intent i
 
 | Stage | Component | Logic | Output |
 | :--- | :--- | :--- | :--- |
-| **1. Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints. | Design Intent |
-| **2. Encoding** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
-| **3. Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
-| **4. Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
-| **5. Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
-| **6. Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
-| **7. Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
-| **8. Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
+| **Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints. | Design Intent |
+| **Encoding** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
+| **Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
+| **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
+| **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
+| **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
+| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
+| **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
 ## Targeted Use Cases
 
 Hywe is engineered to solve specific high-intent architectural bottlenecks:
-- **Automate Architectural Programming**: Instantly transform programmatic requirements and adjacency matrices into spatial configurations.
-- **Software for Spatial Adjacency**: A rule-based engine that converts **spatial adjacency matrices to floor plans** with mathematical precision.
+- **Automate Architectural Programming**: Instantly transform programmatic requirements and hierarchical trees into complex spatial configurations.
+- **Deterministic Layouts**: A rule-based engine where **spatial adjacencies emerge as a consequence** of topological flow and programmatic hierarchy.
 - **Alternative to Generative AI**: Provides a deterministic solution for designers who need control and logic over stochastic AI generation.
 - **Flow-Based Layout Generation**: Generate floor plans that emerge from the **flow of activity** rather than static boundaries.
 - **Programmatic Stacking Diagrams**: Handle **Vertical Spatial Hierarchy** and multi-level programmatic distribution in a zero-install, web environment.
