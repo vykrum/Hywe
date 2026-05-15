@@ -59,11 +59,14 @@ Hywe is structured as a computational pipeline that transforms designer intent i
 
 | Stage | Component | Logic | Output |
 | :--- | :--- | :--- | :--- |
-| **1. The Seed** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
-| **2. Interpretation** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
-| **3. Orchestration** | `Hywe.Tree` | Management of **Vertical Spatial Hierarchy**. | Logical Spine |
-| **4. Generation** | `Xyxel` & `Zaxel` | **Flow-based generative floor layouts**. | Spatial Mesh / SVG |
-| **5. Projection** | SVG & WebGPU | Real-time, **browser-based 3D massing**. | Interactive UI |
+| **1. Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints. | Design Intent |
+| **2. Encoding** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
+| **3. Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
+| **4. Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
+| **5. Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
+| **6. Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
+| **7. Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
+| **8. Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
 ## Targeted Use Cases
 
@@ -82,19 +85,35 @@ Hywe is built as a **strictly functional engine**. It treats spatial design as a
 
 ```mermaid
 graph TD
-    A[Hywe Syntax] -- "Singular Source of Truth" --> B(Lexel Parsing)
-    B --> C{TreeNode Hierarchy}
-    C --> D[Xyxel: 2D Spatial Configuration]
-    C --> E[Zaxel: 3D Volumetric Massing]
-    D --> F[SVG Rendering]
-    E --> G[WebGPU Shader Pipeline]
-    F & G --> H((Interactive UI))
+    A1[Interactive Node Tree Input] --> B[Hywe Syntax]
+    A2[Interactive Boundary Editor] --> B[Hywe Syntax]
+    B --> C(Lexel Parsing)
+    C --> D(Hexel: Fundamental Unit)
+    D --> E(Coxel: Hexel Cluster)
+    E --> F(Xyxel: Coxel Configuration)
+    F --> G(Zaxel: Xyxel Stacking)
+    
+    F --> F1[SVG Rendering]
+    G --> G1[WebGPU Massing]
+    
+    F --> H[Spatial Analysis]
+    F --> I[Batch Processing]
+    
+    F1 -.-> ReportLabel((PDF Report))
+    G1 -.-> ReportLabel
+    H -.-> ReportLabel
+    I -.-> ReportLabel
+    
+    I -.-> DatasetLabel((Hynteract: AI Dataset))
+    DesignIntent[Design Intent] --> DatasetLabel
 ```
 
 - **Language:** [F#](https://fsharp.org/) (functional-first design)
 - **Frontend:** [Bolero](https://fsbolero.io/) (Blazor on WASM)
 - **3D Graphics:** [WebGPU](https://gpuweb.github.io/gpuweb/) (via custom shader pipeline)
-- **Geometry Logic:** Purely functional tree-based spatial partitioning.
+- **Geometry Logic:** Purely functional, **integer-based** spatial partitioning (no floating-point drift).
+- **Core Engine:** Built on **Boolean-driven topological logic**, prioritizing connectivity and flow over traditional vector-based CAD norms.
+- **Data Fidelity:** Enables **bit-precise data generation**, ensuring perfect determinism for AI training and AEC interoperability.
 
 ---
 
