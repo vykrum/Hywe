@@ -16,7 +16,9 @@
 
 Hywe is founded on the idea that **spatial reasoning can be expressive and computational without imitating architectural software norms**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. By prioritizing the "logic of movement" over simple wall-to-wall adjacency, Hywe uses a procedural approach to turn abstract intent into structured configurations. Every aspect of the system, from interactivity to structure, has been built from scratch to reflect this paradigm.
 
-At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything—from geometry to hierarchy—depends on the integrity of the string.
+At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything—from geometry to hierarchy—depends on the integrity of the syntax.
+
+As a **bespoke, zero-dependency engine**, Hywe does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage—from topological partitioning to volumetric massing—is built from first principles to ensure absolute determinism and spatial integrity.
 
 ---
 
@@ -37,19 +39,16 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **2D layouts** visualized with high-performance **SVG**.
 - **3D extrusions** rendered using **WebGPU** for modern hardware acceleration.
 - **Generative Design**: Dynamic, multi-level layout generation via procedural logic.
+- **Geometry Logic**: Purely functional, **integer-based** spatial partitioning (no floating-point drift).
+- **Core Engine**: Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow over traditional vector-based CAD norms.
+- **Data Fidelity**: Enables **bit-precise data generation**, ensuring perfect determinism for AI training and AEC interoperability.
 - **Dataset Generation**: Use the syntax-driven core to generate massive, procedurally varied architectural datasets.
 - **Extensibility**: Uses a transparent, text-based syntax designed to enable straightforward integration with other **AEC tools** and Common Data Environments (CDE).
 - **API Potential**: The engine is built as a decoupled **WebAssembly core**, allowing for future integration as a programmatic design API for third-party web apps.
 - **Stateless Sharing**: Share entire 3D design states via simple URLs. No sign-in or database required; the Syntax is serialized directly into the URL hash.
-- **Privacy-focused**: No backend; all computation runs in-browser via **WebAssembly**.
-- **Edge-First Architecture**: 
-    - **Zero-Latency**: Instantaneous procedural feedback with no round-trips to a server.
-    - **Offline-Ready**: As a Progressive Web App (PWA) **Hywe** (Hygrid Woven Ensemble) is an open-source, **browser-based architectural tool** designed to **automate architectural programming** and generate **floor layouts based on the flow of activity**. It serves as a deterministic, **rule-based alternative to generative AI** for early-stage floor layouts and spatial plans.
-
-Built from first principles in **F#** and compiled to **WebAssembly (WASM)**, Hywe enables architects to weave complex **multi-story programmatic stacking diagrams** and **vertical spatial hierarchies** directly in the browser with zero installation.
-
-> [!TIP]
-> You can access the **Hywe Syntax** within the app by using the **Node/Code toggle** on the top-left menu in the workspace.
+- **Zero-Installation**: Built from first principles in **F#** and compiled to **WebAssembly (WASM)** for zero-install, browser-native performance.
+- **Privacy-focused**: No backend; all computation runs client-side.
+- **Edge-First Architecture**: Progressive Web App (PWA) with zero round-trips to a server.
 
 ---
 
@@ -78,6 +77,12 @@ Hywe is engineered to solve specific high-intent architectural bottlenecks:
 - **Programmatic Stacking Diagrams**: Handle **Vertical Spatial Hierarchy** and multi-level programmatic distribution in a zero-install, web environment.
 
 ---
+
+## Technical Stack
+
+- **Language:** [F#](https://fsharp.org/) (functional-first design)
+- **Frontend:** [Bolero](https://fsbolero.io/) (Blazor on WASM)
+- **3D Graphics:** [WebGPU](https://gpuweb.github.io/gpuweb/) (via custom shader pipeline)
 
 ## Technical Architecture
 
