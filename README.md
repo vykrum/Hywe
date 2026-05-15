@@ -16,9 +16,9 @@
 
 Hywe is founded on the idea that **spatial reasoning can be expressive and computational without imitating architectural software norms**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. By prioritizing the "logic of movement" over simple wall-to-wall adjacency, Hywe uses a procedural approach to turn abstract intent into structured configurations. Every aspect of the system, from interactivity to structure, has been built from scratch to reflect this paradigm.
 
-At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything—from geometry to hierarchy—depends on the integrity of the syntax.
+At its core, **Hywe Syntax is the singular source of truth**. Every spatial configuration, volumetric massing, and topological relationship is a direct derivation of this syntax. In this ecosystem, design intent is encoded into a logic-driven language where everything,from geometry to hierarchy, depends on the integrity of the syntax.
 
-As a **bespoke, zero-dependency engine**, Hywe does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage—from topological partitioning to volumetric massing—is built from first principles to ensure absolute determinism and spatial integrity.
+As a **bespoke, zero-dependency engine**, Hywe does not rely on traditional vector-based geometry libraries, physics engines, or external solvers. Every computational stage, from topological partitioning to volumetric massing, is built from first principles to ensure absolute determinism and spatial integrity.
 
 ---
 
@@ -113,12 +113,6 @@ graph TD
     DesignIntent[Design Intent] --> DatasetLabel
 ```
 
-- **Language:** [F#](https://fsharp.org/) (functional-first design)
-- **Frontend:** [Bolero](https://fsbolero.io/) (Blazor on WASM)
-- **3D Graphics:** [WebGPU](https://gpuweb.github.io/gpuweb/)
-- **Geometry Logic:** Purely functional, **integer-based** spatial partitioning (no floating-point drift).
-- **Core Engine:** Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow.
-- **Data Fidelity:** Enables **bit-precise data generation**, ensuring perfect determinism for future AI training.
 
 ---
 
