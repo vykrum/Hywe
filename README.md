@@ -112,7 +112,7 @@ graph TD
 - **Frontend:** [Bolero](https://fsbolero.io/) (Blazor on WASM)
 - **3D Graphics:** [WebGPU](https://gpuweb.github.io/gpuweb/) (via custom shader pipeline)
 - **Geometry Logic:** Purely functional, **integer-based** spatial partitioning (no floating-point drift).
-- **Core Engine:** Built on **Boolean-driven topological logic**, prioritizing connectivity and flow over traditional vector-based CAD norms.
+- **Core Engine:** Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow over traditional vector-based CAD norms.
 - **Data Fidelity:** Enables **bit-precise data generation**, ensuring perfect determinism for AI training and AEC interoperability.
 
 ---
