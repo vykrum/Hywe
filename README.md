@@ -113,6 +113,12 @@ graph TD
     DesignIntent[Design Intent] --> DatasetLabel
 ```
 
+- **Language:** [F#](https://fsharp.org/) (functional-first design)
+- **Frontend:** [Bolero](https://fsbolero.io/) (Blazor on WASM)
+- **3D Graphics:** [WebGPU](https://gpuweb.github.io/gpuweb/)
+- **Geometry Logic:** Purely functional, **integer-based** spatial partitioning (no floating-point drift).
+- **Core Engine:** Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow.
+- **Data Fidelity:** Enables **bit-precise data generation**, ensuring perfect determinism for future AI training.
 
 ---
 
