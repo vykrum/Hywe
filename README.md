@@ -40,10 +40,10 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **3D extrusions** rendered using **WebGPU** for modern hardware acceleration.
 - **Generative Design**: Dynamic, multi-level layout generation via procedural logic.
 - **Geometry Logic**: Purely functional, **integer-based** spatial partitioning (no floating-point drift).
-- **Core Engine**: Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow over traditional vector-based CAD norms.
+- **Core Engine**: Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow.
 - **Data Fidelity**: Enables **bit-precise data generation**, ensuring perfect determinism for AI training and AEC interoperability.
 - **Dataset Generation**: Use the syntax-driven core to generate massive, procedurally varied architectural datasets.
-- **Extensibility**: Uses a transparent, text-based syntax designed to enable straightforward integration with other **AEC tools** and Common Data Environments (CDE).
+- **Extensibility**: Transparent, text-based syntax with native support for industry-standard geometry and data formats for seamless integration with professional design workflows.
 - **API Potential**: The engine is built as a decoupled **WebAssembly core**, allowing for future integration as a programmatic design API for third-party web apps.
 - **Stateless Sharing**: Share entire 3D design states via simple URLs. No sign-in or database required; the Syntax is serialized directly into the URL hash.
 - **Zero-Installation**: Built from first principles in **F#** and compiled to **WebAssembly (WASM)** for zero-install, browser-native performance.
@@ -58,22 +58,22 @@ Hywe is structured as a computational pipeline that transforms designer intent i
 
 | Stage | Component | Logic | Output |
 | :--- | :--- | :--- | :--- |
-| **1. Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints. | Design Intent |
-| **2. Encoding** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
-| **3. Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
-| **4. Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
-| **5. Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
-| **6. Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
-| **7. Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
-| **8. Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
+| **Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints. | Design Intent |
+| **Encoding** | Hywe Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
+| **Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
+| **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
+| **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
+| **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
+| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
+| **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
 ## Targeted Use Cases
 
 Hywe is engineered to solve specific high-intent architectural bottlenecks:
-- **Automate Architectural Programming**: Instantly transform programmatic requirements and adjacency matrices into spatial configurations.
-- **Software for Spatial Adjacency**: A rule-based engine that converts **spatial adjacency matrices to floor plans** with mathematical precision.
-- **Alternative to Generative AI**: Provides a deterministic solution for designers who need control and logic over stochastic AI generation.
-- **Flow-Based Layout Generation**: Generate floor plans that emerge from the **flow of activity** rather than static boundaries.
+- **Automate Architectural Programming**: Rapidly synthesize programmatic requirements and hierarchical trees into structured spatial configurations.
+- **Deterministic Layouts**: A rule-based engine where **spatial adjacencies emerge as a consequence** of topological flow and programmatic hierarchy.
+- **Hybrid AI Approach**: Provides a **deterministic foundation** for layout generation, ensuring logical consistency while retaining the ability to leverage generative AI for creative exploration.
+- **Boundary Confinement**: Confine spatial configurations to arbitrary closed boundaries, from rectilinear sites to complex polygonal footprints with islands.
 - **Programmatic Stacking Diagrams**: Handle **Vertical Spatial Hierarchy** and multi-level programmatic distribution in a zero-install, web environment.
 
 ---
