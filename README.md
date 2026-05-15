@@ -43,7 +43,7 @@ https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 - **Core Engine**: Built on **Boolean-driven topological logic**, prioritizing hierarchy, connectivity and flow.
 - **Data Fidelity**: Enables **bit-precise data generation**, ensuring perfect determinism for AI training and AEC interoperability.
 - **Dataset Generation**: Use the syntax-driven core to generate massive, procedurally varied architectural datasets.
-- **Extensibility**: Transparent, text-based syntax with native support for AEC-standard exports (**DXF**, **OBJ**, **CSV**) for integration with professional design workflows.
+- **Extensibility**: Transparent, text-based syntax with native support for industry-standard geometry and data formats for seamless integration with professional design workflows.
 - **API Potential**: The engine is built as a decoupled **WebAssembly core**, allowing for future integration as a programmatic design API for third-party web apps.
 - **Stateless Sharing**: Share entire 3D design states via simple URLs. No sign-in or database required; the Syntax is serialized directly into the URL hash.
 - **Zero-Installation**: Built from first principles in **F#** and compiled to **WebAssembly (WASM)** for zero-install, browser-native performance.
