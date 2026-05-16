@@ -1,10 +1,10 @@
 cff-version: 1.2.0
-message: "If you use Hywe in your design research or projects, please cite it as follows."
+message: "If you use HYWE in your design research or projects, please cite it as follows."
 authors:
 - family-names: "Subbaiah"
   given-names: "Vikram"
 title: "HYWE: Hygrid Woven Ensemble"
-abstract: "An endogenous space planning engine powered by design computation and Edge-native WebAssembly. Hywe weaves spatial configurations through a logic-native syntax."
+abstract: "An endogenous space planning engine powered by design computation and Edge-native WebAssembly. HYWE weaves spatial configurations through a logic-native syntax."
 url: "https://github.com/vykrum/Hywe"
 keywords:
   - "AEC Interoperability"
