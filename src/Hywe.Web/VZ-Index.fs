@@ -22,7 +22,7 @@ let jsonLd =
             "name": "Vikram Subbaiah",
             "url": "https://github.com/vykrum"
           },
-          "description": "Hywe is a browser-based architectural tool to automate architectural programming and generate floor layouts based on flow of activity. A deterministic alternative to generative AI for floor plans.",
+          "description": "HYWE is a browser-based architectural tool to automate architectural programming and generate floor layouts based on flow of activity. A deterministic alternative to generative AI for floor plans.",
           "inLanguage": "en",
           "keywords": [ 
             "How to automate architectural programming", "Software for spatial adjacency matrix to floor plan",
@@ -171,10 +171,10 @@ let aboutSection =
             attr.id "about-hywe"
             attr.``class`` "offscreen-hidden"
             
-            h2 { text "About Hywe" }
+            h2 { text "About HYWE" }
             p {
                 attr.style "font-style: italic; margin-top: -10px;"
-                text "Hywe — "
+                text "HYWE - "
                 strong { text "Hygrid Woven Ensemble" }
             }
 
@@ -183,17 +183,17 @@ let aboutSection =
                 text " ("; em { text "Hygrid Woven Ensemble" }; text ") is a **Generative Design** engine that introduces **Endogenous Space Planning**—a distinctive approach to architectural layout automation powered by design computation."
             }
 
-            p { text "It is not a product — it’s a design computation philosophy rethinking how spatial configurations emerge. Developed from first principles with no reference to existing tools or paradigms, Hywe challenges the conventional evolution of space layout tools by treating diagrams not as endpoints, but as active generators of spatial logic." }
+            p { text "HYWE is a design computation philosophy rethinking how spatial configurations emerge. Developed from first principles, it treats diagrams not as endpoints, but as active generators of spatial logic." }
 
-            p { text "Unlike traditional space planning software aimed at production workflows, Hywe operates in the speculative domain of early-stage intent. It prioritizes **flow-based hierarchy and spatial topology** over simple wall-to-wall adjacency. By introducing the concept of the "; em { text "Hygrid" }; text "—a hybrid orthogonal-hexagonal grid system—it enables designers to compose unconventional spatial topologies through structured, procedural definitions rather than object-based manipulation." }
+            p { text "HYWE operates in the speculative domain of early-stage intent, prioritizing **flow-based hierarchy and spatial topology** over simple wall-to-wall adjacency. By introducing the concept of the "; em { text "Hygrid" }; text "—a hybrid orthogonal-hexagonal grid system—it enables designers to compose unconventional spatial topologies through structured, procedural definitions rather than object-based manipulation." }
 
             h3 { text "Philosophy" }
-            p { text "Hywe is built around the belief that spatial reasoning can be computationally expressive without mimicking architectural software norms. The tool promotes a kind of design thinking where **spatial topology**—bubble-like in its initial intent—drives layout formation through a logic-native syntax. Every part of its system, from geometry to interactivity, has been constructed from scratch to reflect this procedural paradigm of flow-based hierarchy." }
-            p { text "At its core, Hywe questions the assumption that digital tools must imitate human drafting. Instead, it proposes that computation itself can embody design intent — not as a secondary automation layer, but as a generative framework for decision-making. By framing its syntax as an **Open AEC Protocol**, Hywe enables a dialogue between spatial logic and creative agency that is both analytical and expressive." }
-            p { text "The name "; strong { text "Hywe" }; text " reflects its foundation: a "; em { text "Hygrid" }; text "-based system that weaves together spatial definitions into an "; em { text "ensemble" }; text "—a coherent, emergent structure shaped by procedural logic rather than visual convention." }
+            p { text "HYWE is built around the belief that spatial reasoning can be computationally expressive as a procedural alternative to representational software norms. The tool promotes a kind of design thinking where **spatial topology**—bubble-like in its initial intent—drives layout formation through a logic-native syntax. Every part of its system, from geometry to interactivity, has been constructed from scratch to reflect this procedural paradigm of flow-based hierarchy." }
+            p { text "At its core, HYWE questions the assumption that digital tools must imitate human drafting. Instead, it proposes that computation itself can embody design intent — not as a secondary automation layer, but as a generative framework for decision-making. By framing its syntax as an **Open AEC Protocol**, HYWE enables a dialogue between spatial logic and creative agency that is both analytical and expressive." }
+            p { text "The name "; strong { text "HYWE" }; text " reflects its foundation: a "; em { text "Hygrid" }; text "-based system that weaves together spatial definitions into an "; em { text "ensemble" }; text "—a coherent, emergent structure shaped by procedural logic rather than visual convention." }
 
             h3 { text "Technical Orientation" }
-            p { text "Hywe’s technical architecture merges abstract logic with visual immediacy. Its geometry engine is written entirely in F#, compiled to **WASM (WebAssembly)** for high-performance, browser-based design. This makes Hywe a lightweight, zero-install solution for **early-stage programmatic layout** and **building massing program** analysis." }
+            p { text "HYWE’s technical architecture merges abstract logic with visual immediacy. Its geometry engine is written entirely in F#, compiled to **WASM (WebAssembly)** for high-performance, browser-based design. This makes HYWE a lightweight, zero-install solution for **early-stage programmatic layout** and **building massing program** analysis." }
             ul {
                 li { text "Deterministic, **rule-based spatial design** without the unpredictability of AI." }
                 li { text "Automation tools for **spatial adjacency** and **bubble diagram** conversion." }
@@ -202,18 +202,18 @@ let aboutSection =
             }
 
             h3 { text "Workflow Solutions" }
-            p { text "Hywe is designed to solve critical bottlenecks in architectural programming and spatial design:" }
+            p { text "HYWE is designed to solve critical bottlenecks in architectural programming and spatial design:" }
             ul {
                 li { text "How to **automate architectural programming** and adjacency requirements." }
                 li { text "**Software for spatial adjacency matrix to floor plan** conversion." }
                 li { text "Floor layout generation based on the **flow of activity** and people." }
-                li { text "A deterministic **alternative to generative AI** for floor layouts and plans." }
+                li { text "A deterministic **foundation for generative design** and floor layout exploration." }
                 li { text "Creating **browser-based programmatic stacking diagrams** and building massing." }
             }
 
             h3 { text "Current Phase" }
             p {
-                strong { text "Hywe" }
+                strong { text "HYWE" }
                 text " is an active design sandbox exploring how spatial design can emerge from logic rather than representation. It serves as an open bridge for interoperability between design computation and generative design research."
             }
 
@@ -231,11 +231,11 @@ let aboutSection =
 
             h3 { text "Direction" }
             p {
-                strong { text "Hywe" }
-                text " is a deeply personal project—one shaped by a singular vision and the ambition to explore spatial reasoning beyond the boundaries of precedent or tradition. It does not seek to adapt to established workflows or validate itself against known practices. Instead, it charts its own course, grounded in a conviction that spatial design can emerge from new computational logics yet to be fully imagined."
+                strong { text "HYWE" }
+                text " is a deeply personal project—one shaped by a singular vision and the ambition to explore spatial reasoning beyond the boundaries of convention. It charts its own course, grounded in a conviction that spatial design can emerge from new computational logics yet to be fully imagined."
             }
-            p { text "There is no defined roadmap. Hywe evolves in response to the ideas it generates, not to predetermined milestones or deliverables. Its development resists conformity, and embraces uncertainty—as a space for discovering possibilities that structured agendas might never permit." }
-            p { text "The development of Hywe reflects an ongoing investigation into how design computation reshapes creative processes. It invites collaboration, critique, and interpretation — encouraging others to explore the intersection of logic, geometry, and narrative within spatial design. While Hywe continues to evolve as an active design sandbox, its goal is to provide a cohesive and implementable philosophy for future design tools." }
+            p { text "There is no defined roadmap. HYWE evolves in response to the ideas it generates, not to predetermined milestones or deliverables. Its development resists conformity, and embraces uncertainty—as a space for discovering possibilities that structured agendas might never permit." }
+            p { text "The development of HYWE reflects an ongoing investigation into how design computation reshapes creative processes. It invites collaboration, critique, and interpretation — encouraging others to explore the intersection of logic, geometry, and narrative within spatial design. While HYWE continues to evolve as an active design sandbox, its goal is to provide a cohesive and implementable philosophy for future design tools." }
         }
     }
 
