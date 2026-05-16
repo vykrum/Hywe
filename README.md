@@ -81,11 +81,11 @@ HYWE is built as a **strictly functional engine**. It treats spatial design as a
 graph TD
     A1[Interactive Node Tree Input] --> B[HYWE Syntax]
     A2[Interactive Boundary Editor] --> B[HYWE Syntax]
-    B --> C(Lexel Parsing)
-    C --> D(Hexel: Fundamental Unit)
-    D --> E(Coxel: Hexel Cluster)
-    E --> F(Xyxel: Coxel Configuration)
-    F --> G(Zaxel: Xyxel Stacking)
+    B --> C(Lexel: Architectural Programming and Flow Parsing)
+    C --> D(Hexel: Atomic Spatial Primitive)
+    D --> E(Coxel: Simultaneously Evolving Hexels Clusters)
+    E --> F(Xyxel: Coxel Configuration and Planar Layout)
+    F --> G(Zaxel: Xyxel Stacking and Volumetric Massing)
     
     F --> F1[SVG Rendering]
     G --> G1[WebGPU Massing]
