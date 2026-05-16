@@ -1,11 +1,14 @@
 # HYWE Technical Reference (Full)
 
-This document provides deep technical context for AI agents working on the Hywe codebase.
+This document provides deep technical context for AI agents working on the HYWE codebase.
 
 ## Core Concepts
 
-### 1. Hywe Syntax (The Singular Source of Truth)
-Everything in the Hywe ecosystem depends on the Syntax. It is the computational DNA that defines state, geometry, and hierarchy.
+### 1. HYWE Syntax (The Singular Source of Truth)
+Everything in the HYWE ecosystem depends on the Syntax. HYWE stands for **Hygrid Woven Ensemble**:
+- **Hygrid**: A hybrid orthogonal-hexagonal grid system that enables unconventional spatial topologies.
+- **Woven Ensemble**: The process of weaving together abstract spatial definitions into a coherent, emergent structure.
+It is the computational DNA that defines state, geometry, and hierarchy.
 - **Lexel**: This module handles the parsing of compact strings into the internal `TreeNode` representation.
 - **Root Attributes**: 
     - `R`: Ratio (Spatial weight)
@@ -15,12 +18,12 @@ Everything in the Hywe ecosystem depends on the Syntax. It is the computational 
 - **Hierarchical Nodes**: Represented by a tree structure. Level 0 (L0) is the base, with subsequent levels (L1, L2, etc.) representing vertical or nested divisions.
 - **Documentation**: Detailed syntax rules are available in-app via the **Node/Code toggle**.
 - **Dataset Generation**: Optimized for generating synthetic architectural datasets.
-- **Extensibility**: The Hywe Syntax is a transparent, text-based protocol that allows for straightforward "bridge" development between Hywe and other AEC software.
+- **Extensibility**: The HYWE Syntax is a transparent, text-based protocol that allows for straightforward "bridge" development between HYWE and other AEC software.
 - **Deep Linkability**: Supports "stateless sharing" by serializing the entire design state into a URL fragment (hash). This enables instant peer-to-peer sharing without any server-side database.
 - **Programmatic Access**: The core engine is decoupled in the `Hywe.Tree` library, enabling it to be used as a headless design API in other .NET or Bolero-based projects.
 
 ### 2. The Functional Pipeline
-1.  **Parsing (`Lexel.fs`)**: Converts a Hywe string into a `TreeNode` hierarchy.
+1.  **Parsing (`Lexel.fs`)**: Converts a HYWE string into a `TreeNode` hierarchy.
 2.  **Analysis (`VZ-Analyze.fs`)**: Performs spatial calculations (min ratio, global scaling).
 3.  **2D Layout (`Xyxel.fs`)**: Generates 2D polygons based on the tree topology and ratio-based partitioning.
 4.  **3D Massing (`Zaxel.fs`)**: Extrudes 2D polygons into 3D volumes (Z-axis offsets, heights).
@@ -41,7 +44,7 @@ Everything in the Hywe ecosystem depends on the Syntax. It is the computational 
 
 ## Contributing Patterns
 - **Immutability**: Avoid `mutable` and `ResizeArray` where possible. Prefer `List` and `Map`.
-- **Active Patterns**: Extensively used for parsing attributes from Hywe strings.
+- **Active Patterns**: Extensively used for parsing attributes from HYWE strings.
 - **Two-Pass Generation**: Typically involves an analysis pass (to determine global constraints) followed by a generation pass.
 
 ## Repository Structure

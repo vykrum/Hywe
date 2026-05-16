@@ -3,14 +3,14 @@
 > Browser-based design sandbox for procedural spatial configurations and design computation.
 
 ## Technical Essence
-Hywe is an F#-driven, browser-native engine that uses procedural logic to transform "structured intent" into spatial topologies. It bypasses conventional architectural software norms, focusing instead on flow-based hierarchy and sequence-driven layout generation.
+HYWE (**Hy**grid **W**oven **E**nsemble) is an F#-driven, browser-native engine that uses procedural logic to transform "structured intent" into spatial topologies. It leverages a **Hygrid** (hybrid-grid) system to **weave** spatial definitions into a cohesive ensemble, focusing on flow-based hierarchy and sequence-driven layout generation.
 
 ## Key Features
 - **Procedural Engine**: Built from scratch in F# using Bolero (WASM).
 - **Topology-First**: Focuses on spatial flow and connections rather than static geometry.
 - **Hybrid Rendering**: Real-time 2D visualization via SVG and 3D volumetric massing via WebGPU.
 - **Zero-Backend**: All computations, parsing, and rendering happen locally in the user's browser.
-- **Hywe Strings**: A custom compact string representation for spatial layouts (Lexel module).
+- **HYWE Strings**: A custom compact string representation for spatial layouts (Lexel module).
 
 ## Architecture for AI Agents
 - **Core Logic**: `Hywe.Tree` library (functional logic for hierarchical spatial structures).
