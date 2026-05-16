@@ -75,7 +75,7 @@ HYWE is engineered to solve specific high-intent architectural bottlenecks:
 
 ## Technical Architecture
 
-HYWE is built as a **strictly functional engine**. It treats spatial design as a computational problem, where inputs are transformed through a series of geometric and topological "folds".
+HYWE is built as a **strictly functional engine**. It treats spatial design as a computational problem, where inputs are transformed through a series of deterministic geometric and topological transformations.
 
 ```mermaid
 graph TD
