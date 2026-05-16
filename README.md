@@ -111,7 +111,6 @@ We are building HYWE as an open ecosystem for **design computation**.
 
 - **Contribute**: See our [Contributing Guide](CONTRIBUTING.md) to get started.
 - **AI-Friendly**: Technical summary for AI agents available at [llms.txt](llms.txt).
-- **Roadmap**: Check out the [Issues](https://github.com/vykrum/Hywe/issues) for planned features like deep architectural nesting and enhanced WebGPU massing.
 
 ---
 
