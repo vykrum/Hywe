@@ -83,7 +83,7 @@ graph TD
     A2[Interactive Boundary Editor] --> B[HYWE Syntax]
     B --> C(Lexel: Architectural Programming and Flow Parsing)
     C --> D(Hexel: Atomic Spatial Primitive)
-    D --> E(Coxel: Simultaneously Evolving Hexels Clusters)
+    D --> E(Coxel: Simultaneously Evolving Hexel Clusters)
     E --> F(Xyxel: Coxel Configuration and Planar Layout)
     F --> G(Zaxel: Xyxel Stacking and Volumetric Massing)
     
