@@ -55,6 +55,9 @@ let initModel =
         SelectedPreviewIndex = None
         UserDescription = ""
         TeachMetadata = {
+            Author = ""
+            ProjectTitle = ""
+            SessionId = System.Guid.NewGuid().ToString()
             Scale = "Layout"
             Typology = "Residential"
             Flow = "Sequential"
@@ -131,7 +134,7 @@ let pushUndo (model: Model) : Model =
 /// Ensures all levels in the source string share the same category (VR/HR) as the target sequence.
 let ensureCategory (src: string) (targetIdx: int) =
     let targetIsVR = targetIdx < 12
-    let targetSqnStr = sprintf "%A" allSqns.[targetIdx]
+    let targetSqnStr = allSqns.[targetIdx]
     let sqns = extractSequences src
     (src, sqns) ||> Map.fold (fun s lvl sqn ->
         let isVR = sqnToIndex sqn < 12

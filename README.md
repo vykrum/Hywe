@@ -58,6 +58,12 @@ The spatial logic within HYWE incorporates **boundary confinement**, allowing co
 
 Within broader computational ecosystems, HYWE acts as a **deterministic foundation**. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation** via pipelines like [Hynteract](https://github.com/vykrum/Hynteract). This ensures bit-precise structural integrity when training or anchoring generative AI models.
 
+### Data Pipeline (Hynteract)
+
+To bridge HYWE's deterministic logic with machine learning workflows, the engine utilizes a serverless data pipeline called **Hynteract**. Instead of exporting heavy geometric files (like OBJ or IFC), HYWE encodes entire spatial flow hierarchies into a highly compressed **Base34** string representation known as `HYWE Syntax`. 
+
+Hynteract captures these text-based topological tokens, pairs them with natural language prompts, and structures them into highly efficient JSON Lines (`.jsonl`) datasets. Because HYWE can calculate vast permutations of valid layouts, this pipeline automates the batch processing of millions of topological states, routing them directly to Hugging Face to form the foundation for custom AI model training.
+
 ---
 
 ## Technical Stack

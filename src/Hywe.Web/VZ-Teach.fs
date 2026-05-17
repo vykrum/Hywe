@@ -145,7 +145,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                 with ex -> "" 
                             key, data)
                         |> Map.ofArray
-                    let payload = {| Definition = currentSrc; Description = currentDesc; Configuration = configMap; Boundary = currentOuter; Islands = currentIslands; Metadata = {| Scale = model.TeachMetadata.Scale; Typology = model.TeachMetadata.Typology; Flow = model.TeachMetadata.Flow; Ambience = model.TeachMetadata.Ambience; Stage = model.TeachMetadata.Stage |} |}
+                    let payload = {| Definition = currentSrc; Description = currentDesc; Configuration = configMap; Boundary = currentOuter; Islands = currentIslands; Metadata = {| Author = model.TeachMetadata.Author; ProjectTitle = model.TeachMetadata.ProjectTitle; SessionId = model.TeachMetadata.SessionId; Timestamp = DateTime.UtcNow.ToString("O"); Scale = model.TeachMetadata.Scale; Typology = model.TeachMetadata.Typology; Flow = model.TeachMetadata.Flow; Ambience = model.TeachMetadata.Ambience; Stage = model.TeachMetadata.Stage |} |}
                     let! success = js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
                     return success, currentCache
                 with ex -> return false, model.LayoutCache
@@ -212,6 +212,26 @@ let view model dispatch =
         }
         div {
             attr.``class`` "teach-objective-section"
+            div {
+                attr.``class`` "teach-select-row"
+                span { attr.``class`` "teach-field-label"; text "Author" }
+                input {
+                    attr.``class`` "teach-custom-input"
+                    attr.placeholder "Optional author name..."
+                    attr.value model.TeachMetadata.Author
+                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with Author = unbox<string> e.Value })))
+                }
+            }
+            div {
+                attr.``class`` "teach-select-row"
+                span { attr.``class`` "teach-field-label"; text "Project" }
+                input {
+                    attr.``class`` "teach-custom-input"
+                    attr.placeholder "Optional project title..."
+                    attr.value model.TeachMetadata.ProjectTitle
+                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with ProjectTitle = unbox<string> e.Value })))
+                }
+            }
             selectField model dispatch "Scale" model.TeachMetadata.Scale [ "Layout"; "Building"; "Masterplan" ] scaleDescs (fun m v -> { m with Scale = v })
             selectField model dispatch "Typology" model.TeachMetadata.Typology [ "Residential"; "Commercial"; "Institutional" ] typoDescs (fun m v -> { m with Typology = v })
             selectField model dispatch "Flow" model.TeachMetadata.Flow [ "Sequential"; "Radial"; "Hierarchical" ] flowDescs (fun m v -> { m with Flow = v })

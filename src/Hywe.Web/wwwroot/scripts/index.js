@@ -1,3 +1,4 @@
+// @ts-nocheck
 // --- Service Worker Registration ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -99,7 +100,10 @@ window.recordToHynteract = async (apiUri, payload) => {
     try {
         const response = await fetch(apiUri, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-Hywe-Key': 'hywe-hynteract' // IMPORTANT: Replace this with your actual key
+            },
             body: JSON.stringify(payload)
         });
         if (!response.ok) console.error("API Error:", await response.text());
