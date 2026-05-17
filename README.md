@@ -47,7 +47,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 | **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
 | **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
 | **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
-| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
+| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset ([Hynteract](https://github.com/vykrum/Hynteract)) |
 | **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
 ## Operational Domain
@@ -56,7 +56,7 @@ HYWE functions as a computational sandbox bridging abstract intent and physical 
 
 The spatial logic within HYWE incorporates **boundary confinement**, allowing configurations to organically adapt to irregular site boundaries and non-standard footprints. Furthermore, this topological reasoning extends vertically to resolve **programmatic stacking** and multi-level flow distribution across a building mass.
 
-Within broader computational ecosystems, HYWE acts as a **deterministic foundation**. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation**. This ensures bit-precise structural integrity when training or anchoring generative AI models.
+Within broader computational ecosystems, HYWE acts as a **deterministic foundation**. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation** via pipelines like [Hynteract](https://github.com/vykrum/Hynteract). This ensures bit-precise structural integrity when training or anchoring generative AI models.
 
 ---
 
