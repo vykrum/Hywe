@@ -11,7 +11,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Launch HYWE](https://vykrum.github.io/Hywe/)
+**[Launch HYWE]**(https://vykrum.github.io/Hywe/) 
+
 *Actively evolving. WebGPU recommended for best performance*
 
 ---
