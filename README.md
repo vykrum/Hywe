@@ -10,13 +10,17 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+*Project Status: HYWE is an actively evolving computational design engine.*
+
 ---
 
 ## Philosophy
 
-HYWE is founded on the idea that **spatial reasoning can be expressive and computational without imitating traditional architectural software**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that enables the composition of unconventional spatial topologies through procedural logic, functioning conceptually as a **computational 'bubble diagram'** where spatial adjacency is a direct consequence of defined connections and intent.
+HYWE explores spatial reasoning through a computational lens. It encourages a form of design thinking where **topology and flow-based hierarchy** guide the creation of layouts.
 
-As a **bespoke, zero-dependency engine**, HYWE operates on a logic where **HYWE Syntax is the singular source of truth**. The engine **weaves** abstract spatial definitions into a cohesive **Ensemble** - a coherent, emergent structure resolved through native **Boolean-driven topological logic** without dependence on external geometry kernels or optimization solvers. In this ecosystem, design intent is encoded into a logic-driven language where geometry depends entirely on the integrity of the syntax.
+At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
+
+As a zero-dependency engine, HYWE operates on a logic where **Syntax is the singular source of truth**. The engine weaves abstract spatial definitions into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
 
 ---
 
