@@ -2,7 +2,7 @@
 
 > Zero-dependency, browser-native computational engine for procedural spatial layout generation, architectural dataset curation, and deterministic topological modeling.
 
-This ecosystem bridges abstract architectural intent with bit-precise spatial configurations, acting as a deterministic foundation for machine learning pipelines in architectural design.
+HYWE and the HYWE Architectural Training Data repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for AI workflows. This ecosystem bridges abstract architectural intent with bit-precise spatial configurations, acting as a deterministic foundation for machine learning pipelines in architectural design.
 
 ---
 
@@ -23,7 +23,8 @@ The HYWE ecosystem consists of three distinct, non-overlapping components that f
 * **Access**: Open source; live design environment accessible at [hywe.in](https://hywe.in/).
 * **Local Reference**: [llms-full.txt](llms-full.txt) (Detailed engine architecture, module structure, and functional F# pipeline).
 
-### 2. Hynteract (Data Translation Pipeline)
+### 2. Hynteract (Ecosystem Data Layer)
+* **Definition**: Hynteract is the serverless architectural data ingestion and structuring layer of the HYWE ecosystem.
 * **Role**: Probabilistic and linguistic mapping. Serves as the pipeline integration layer that translates natural language prompts into structural spatial tokens.
 * **Stack**: Serverless JavaScript / Node.js API handlers deployed via Vercel.
 * **Privacy Status**: Private repository (`github.com/vykrum/Hynteract`). Accessible only to authorized system instances via secure API keys (`X-Hywe-Key`).
