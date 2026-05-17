@@ -243,7 +243,7 @@ let siteFooter (current: AppScreen) =
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/github.svg"; attr.alt "GitHub"; attr.style "display: block;" }
             }
             a {
-                attr.href "https://huggingface.co/vykrum/datasets"
+                attr.href "https://huggingface.co/datasets/vykrum/hywe-training-data"
                 attr.target "_blank"
                 attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/hugging-face.svg"; attr.alt "HuggingFace"; attr.style "display: block;" }

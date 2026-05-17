@@ -18,12 +18,17 @@ HYWE (**Hy**grid **W**oven **E**nsemble) is an F#-driven, browser-native engine 
 - **Parsing**: `Lexel` module handles string-to-model translation.
 - **Geometry**: `Xyxel` (2D layout) and `Zaxel` (3D extrusion) modules.
 - **Rendering**: `VZ-ThreeD` (WebGPU pipeline) and `VZ-Graphics` (SVG).
+- **Data Pipeline**: `Hynteract` (associated private serverless pipeline) collects HYWE Syntax and design intent, committing structured `.jsonl` records to the [HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data) dataset on Hugging Face.
 
 ## Primary URL
 https://hywe.in/
 
 ## Repository
 https://github.com/vykrum/Hywe
+
+## Data Pipeline
+- **Hynteract**: Private associated pipeline (not publicly available)
+- **Training Dataset**: https://huggingface.co/datasets/vykrum/hywe-training-data
 
 ## Full Reference
 [llms-full.txt](llms-full.txt)
