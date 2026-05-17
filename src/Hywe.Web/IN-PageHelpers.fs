@@ -314,7 +314,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                       | Some c -> c
                                       | None -> 
                                           // Compute full data once, and update cache for ALL levels
-                                          let fullData = Cache.computeFullLayout currentSrc Hexel.sqnArray.[i] model.PolygonExport level
+                                          let srcForBatch = ensureCategory currentSrc i
+                                          let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport level
                                           for l in model.Tree.Levels.Keys do
                                               let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l
                                               currentCache <- Cache.update l i cfg currentCache

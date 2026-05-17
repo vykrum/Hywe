@@ -390,7 +390,7 @@ let alternateConfigurations
     let uniqueShapes = 
         match configs.Length with
         | 0 -> [||]
-        | _ -> configs.[0].shapes |> Array.distinctBy (fun s -> s.name)
+        | _ -> configs.[0].shapes |> Array.filter (fun s -> not (Array.isEmpty s.points)) |> Array.distinctBy (fun s -> s.name)
 
     let legendItemsPerRow = 8 
     let legendItemHeight = 25.0

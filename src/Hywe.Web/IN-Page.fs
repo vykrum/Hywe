@@ -74,6 +74,14 @@ module Elements =
     let indexToSqn i = allSqns.[i]
     let sqnToIndex sqn = allSqns |> List.findIndex ((=) sqn)
 
+    /// Forces all levels in the source string to match the target sequence index.
+    let ensureCategory (src: string) (targetIdx: int) =
+        let targetSqnStr = allSqns.[targetIdx]
+        let sqns = Lexel.extractSequences src
+        (src, sqns) ||> Map.fold (fun s lvl _ ->
+            Lexel.injectSqn s lvl targetSqnStr
+        )
+
     // Label string (24 characters)
     let labelPhrase = "alternATE◦CONFIGURATions"
 

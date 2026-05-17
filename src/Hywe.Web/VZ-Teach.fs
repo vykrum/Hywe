@@ -13,6 +13,7 @@ open Hywe.Core.Coxel
 open Hywe.Node
 open FileManager
 open Cache
+open Page
 
 // --- UTILITIES & TRANSCRIPTION ---
 
@@ -137,7 +138,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                     match cached with
                                     | Some c -> FileManager.generateHynteractPayloadFromCxls c.cxCxl1
                                     | None -> 
-                                        let fullData = Cache.computeFullLayout currentSrc sqnCase model.PolygonExport 0
+                                        let srcForBatch = ensureCategory currentSrc i
+                                        let fullData = Cache.computeFullLayout srcForBatch sqnCase model.PolygonExport 0
                                         for lvl in model.Tree.Levels.Keys do
                                             let config = Cache.fromFullLayout fullData sqnCase lvl
                                             currentCache <- Cache.update lvl i config currentCache

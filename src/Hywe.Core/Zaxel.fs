@@ -69,7 +69,7 @@ module Zaxel =
                     match i with
                     | 0 -> None
                     | _ -> 
-                        let targetId = match String.IsNullOrWhiteSpace (List.toArray parsedLevels).[i-1].Marker with true -> attrs.Entry | false -> sprintf "%s-%s" (List.toArray parsedLevels).[i-1].Marker attrs.Entry
+                        let targetId = attrs.Entry
                         state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = i - 1) |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId)
 
                 let ctx = prepareLayoutContext attrMap treeObj { 
