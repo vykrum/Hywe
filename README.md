@@ -62,6 +62,9 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 
 HYWE and the HYWE Architectural Training Data repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for AI workflows.
 
+#### System Architecture Flow
+`Designer Intent` ➔ `HYWE Syntax` ➔ `Deterministic Topology` ➔ `Spatial Configuration` ➔ `Hynteract Structuring` ➔ `JSONL Dataset` ➔ `AI Training`
+
 Within broader computational ecosystems, HYWE acts as a **deterministic foundation** for machine learning workflows. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation** via **Hynteract** (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem). This ensures bit-precise structural integrity when training or anchoring generative AI models.
 
 Instead of exporting heavy geometric files (like OBJ or IFC), HYWE encodes entire spatial flow hierarchies known as `HYWE Syntax` into a highly compressed **Base34** string representation. Hynteract captures these text-based topological tokens, pairs them with natural language prompts, and structures them into highly efficient JSON Lines (`.jsonl`) datasets. Because HYWE can calculate multiple valid permutations of layouts for a given input, the Hynteract pipeline automates the batch processing of large volumes of topological states, routing them directly to the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)** dataset on Hugging Face that forms the foundation for custom AI model training.
