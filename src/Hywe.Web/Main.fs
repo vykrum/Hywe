@@ -823,10 +823,8 @@ type MyApp() =
                         Page.Help.viewHelp model.Onboarding dispatch
 
                     Styles.render()
-                    Index.jsonLd
                     Index.coreScript
                     Index.siteHeader
-                    Index.aboutSection
                     div {
                         attr.id "page-content"
                         if model.CurrentScreen <> LoadingScreen then

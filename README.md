@@ -22,25 +22,14 @@ As a **bespoke, zero-dependency engine**, HYWE operates on a logic where **HYWE 
 
 ## Access
 
-[Open HYWE in your browser — No installation or Sign-in required](https://vykrum.github.io/Hywe/)  
+[Launch HYWE in your browser](https://vykrum.github.io/Hywe/)  
+*(Requires a modern desktop browser with WebGPU enabled, such as Chrome or Edge)*
 
 ## The Workspace
 
 https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 
----
 
-## Features
-
-- **Topology & Flow**: Topology-first spatial flow editor with real-time mapping of structural relationships.
-- **Visual Performance**: High-performance 2D SVG layouts and 3D extrusions via **WebGPU** hardware acceleration.
-- **Generative Core**: Dynamic, multi-level layout generation via procedural logic for massive architectural dataset creation.
-- **Deterministic Logic**: Purely functional, **integer-based** spatial partitioning ensuring **bit-precise data generation** (no floating-point drift) for AI training and AEC interoperability.
-- **Extensibility**: Transparent, text-based syntax with native support for industry formats for seamless integration with professional design workflows. The core is decoupled as a pure **F#** library for programmatic API potential.
-- **Stateless Sharing**: Share entire 3D designs via simple URLs; the Syntax is serialized directly into the URL hash with no database required.
-- **Edge Architecture**: Built from first principles in **F#** and compiled to **WASM** for a zero-install, privacy-focused PWA with all computation running client-side (zero server round-trips).
-
----
 
 ## Sitemap of Logic
 
@@ -57,13 +46,13 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 | **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
 | **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
-## Targeted Use Cases
+## Operational Domain
 
-HYWE is engineered to solve specific high-intent architectural bottlenecks:
-- **Automate Architectural Programming**: Rapidly synthesize programmatic requirements and hierarchical trees into structured spatial configurations.
-- **Boundary Confinement**: Confine spatial configurations to arbitrary closed boundaries, from rectilinear sites to complex polygonal footprints with islands.
-- **Vertical Hierarchy**: Handle programmatic stacking diagrams and multi-level distribution in a zero-install web environment.
-- **Hybrid AI Foundation**: Provides a **deterministic foundation** for layout generation, ensuring logical consistency when leveraging generative AI for creative exploration.
+HYWE functions as a computational sandbox bridging abstract intent and physical constraint. The engine translates **architectural programming**, specifically hierarchical trees and flow sequences, directly into resolved topological configurations, where adjacency emerges as a structural consequence rather than a predetermined matrix input.
+
+The spatial logic within HYWE incorporates **boundary confinement**, allowing configurations to organically adapt to irregular site boundaries and non-standard footprints. Furthermore, this topological reasoning extends vertically to resolve **programmatic stacking** and multi-level flow distribution across a building mass.
+
+Within broader computational ecosystems, HYWE acts as a **deterministic foundation**. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation**. This ensures bit-precise structural integrity when training or anchoring generative AI models.
 
 ---
 
@@ -105,27 +94,14 @@ graph TD
 
 ---
 
-## Development & Community
+## Development
 
-We are building HYWE as an open ecosystem for **design computation**.
+HYWE is an open project exploring **design computation**. 
 
-- **Contribute**: See our [Contributing Guide](CONTRIBUTING.md) to get started.
-- **AI-Friendly**: Technical summary for AI agents available at [llms.txt](llms.txt).
-
----
-
-## Citation
-
-If you use HYWE in your research or professional projects, please cite it using the following metadata:
-
-```text
-Subbaiah, V. (2026). HYWE: Hygrid Woven Ensemble. 
-Retrieved from https://github.com/vykrum/Hywe
-```
-
-Or use the "Cite this repository" button in the GitHub sidebar.
+Those interested in extending the engine or exploring its procedural logic can refer to the [Contributing Guide](CONTRIBUTING.md). Additionally, a technical summary of the architecture is maintained at [llms.txt](llms.txt) for AI agents and automated analysis.
 
 ---
+
 
 ## License
 
