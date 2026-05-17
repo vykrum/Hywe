@@ -166,6 +166,9 @@ type UndoSnapshot = {
 }
 
 type TeachMetadata = {
+    Author: string
+    ProjectTitle: string
+    SessionId: string
     Scale: string
     Typology: string
     Flow: string
