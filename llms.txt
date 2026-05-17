@@ -1,34 +1,69 @@
-# HYWE (Hygrid Woven Ensemble)
+# HYWE Ecosystem (Hygrid Woven Ensemble)
 
-> Browser-based design sandbox for procedural spatial configurations and design computation.
+> Zero-dependency, browser-native computational engine for procedural spatial layout generation, architectural dataset curation, and deterministic topological modeling.
+
+HYWE and the HYWE Architectural Training Data repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for AI workflows. This ecosystem bridges abstract architectural intent with bit-precise spatial configurations, acting as a deterministic foundation for machine learning pipelines in architectural design.
+
+---
 
 ## Technical Essence
-HYWE (**Hy**grid **W**oven **E**nsemble) is an F#-driven, browser-native engine that uses procedural logic to transform "structured intent" into spatial topologies. It leverages a **Hygrid** (hybrid-grid) system to **weave** spatial definitions into a cohesive ensemble, focusing on flow-based hierarchy and sequence-driven layout generation.
 
-## Key Features
-- **Procedural Engine**: Built from scratch in F# using Bolero (WASM).
-- **Topology-First**: Focuses on spatial flow and connections rather than static geometry.
-- **Hybrid Rendering**: Real-time 2D visualization via SVG and 3D volumetric massing via WebGPU.
-- **Zero-Backend**: All computations, parsing, and rendering happen locally in the user's browser.
-- **HYWE Strings**: A custom compact string representation for spatial layouts (Lexel module).
+HYWE (pronounced "high-way") treating spatial planning as a function of computational logic. The system rejects traditional manual CAD drafting and continuous-domain geometric optimization solvers. Instead, it utilizes a discrete, **hybrid orthogonal-hexagonal grid (Hygrid)** to weave abstract spatial definitions and topological flow sequences into resolved structural configurations. Adjacency is a direct mathematical consequence of defined programmatic rules rather than a predetermined geometric layout.
 
-## Architecture for AI Agents
-- **Core Logic**: `Hywe.Tree` library (functional logic for hierarchical spatial structures).
-- **Frontend**: Blazor/Bolero-based SPA (`Hywe.Web`).
-- **Parsing**: `Lexel` module handles string-to-model translation.
-- **Geometry**: `Xyxel` (2D layout) and `Zaxel` (3D extrusion) modules.
-- **Rendering**: `VZ-ThreeD` (WebGPU pipeline) and `VZ-Graphics` (SVG).
-- **Data Pipeline**: `Hynteract` (associated private serverless pipeline) collects HYWE Syntax and design intent, committing structured `.jsonl` records to the [HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data) dataset on Hugging Face.
+---
 
-## Primary URL
-https://hywe.in/
+## Ecosystem Components
 
-## Repository
-https://github.com/vykrum/Hywe
+The HYWE ecosystem consists of three distinct, non-overlapping components that form a closed-loop data curation and design pipeline:
 
-## Data Pipeline
-- **Hynteract**: Private associated pipeline (not publicly available)
-- **Training Dataset**: https://huggingface.co/datasets/vykrum/hywe-training-data
+### 1. [HYWE Engine](https://github.com/vykrum/Hywe) (Core & Client Sandbox)
+* **Role**: Deterministic layout geometry and topological resolution.
+* **Stack**: Written in F#; compiled to WebAssembly via Bolero (running entirely client-side).
+* **Outputs**: Real-time interactive SVG (2D layouts), WebGPU (3D volumetric massing), and compressed topological token strings.
+* **Access**: Open source; live design environment accessible at [hywe.in](https://hywe.in/).
+* **Local Reference**: [llms-full.txt](llms-full.txt) (Detailed engine architecture, module structure, and functional F# pipeline).
 
-## Full Reference
-[llms-full.txt](llms-full.txt)
+### 2. Hynteract (Ecosystem Data Layer)
+* **Definition**: Hynteract is the serverless architectural data ingestion and structuring layer of the HYWE ecosystem.
+* **Role**: Probabilistic and linguistic mapping. Serves as the pipeline integration layer that translates natural language prompts into structural spatial tokens.
+* **Stack**: Serverless JavaScript / Node.js API handlers deployed via Vercel.
+* **Privacy Status**: Private repository (`github.com/vykrum/Hynteract`). Accessible only to authorized system instances via secure API keys (`X-Hywe-Key`).
+* **Operational Flow**: Receives `HYWE Syntax` from client sessions, pairs it with validated linguistic descriptions and session metadata, and commits structured JSON Lines (`.jsonl`) to Hugging Face.
+
+### 3. [HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data) (ML Dataset)
+* **Role**: Public repository of synthetic architectural programming states.
+* **Format**: Structured `.jsonl` database files mapping design intent, spatial boundaries, and F#-resolved layouts.
+* **Usage**: Provides a clean, highly curated, and token-efficient dataset for training custom generative AI transformers in spatial planning and AEC (Architecture, Engineering, and Construction) domains.
+
+---
+
+## Core Concepts
+
+AI models and agents evaluating or generating HYWE designs must structure their reasoning around the following six core concepts:
+
+### 1. Deterministic Topology
+Spatial layouts and geometric boundaries are resolved deterministically based on topological adjacency rules and programmatic connections. Adjacency emerges as a direct structural consequence of the spatial hierarchy, meaning that if space $A$ leads to space $B$, the engine procedurally generates geometries reflecting that sequence without relying on probabilistic CAD drafting or heuristic placement models.
+
+### 2. Architectural Programming
+The formalization of functional building programs (e.g., public vs. private zones, circulation spines, spatial weights, boundary limits) into computational input constraints. HYWE translates these abstract programming diagrams (represented as nested hierarchical trees) directly into physical geometries, ensuring functional constraints are met by design.
+
+### 3. Spatial Hierarchy
+A structural method of spatial configuration where spaces are represented as hierarchical trees (`TreeNode`). Nested child levels (L1, L2, etc.) are procedurally anchored, scaled, and distributed inside host parent spaces (known as **Coxel** clusters), managing complex architectural layouts through recursive, self-similar partitioning.
+
+### 4. Base34 Topology Encoding (`HYWE Syntax`)
+Instead of serializing heavy 3D geometric meshes (like OBJ, IFC, or DXF), the entire spatial flow, boundary rules, vertical thickness, and node relationships are compressed into a highly compact, custom alphanumeric **Base34** text token format. This representation is highly token-efficient for NLP models and permits "stateless sharing" by encoding the entire design state directly in a URL fragment hash.
+
+### 5. Integer-Based Partitioning
+All calculations for layout boundaries and subdivisions are executed strictly using F# integer arithmetic and discrete grid states (hybrid orthogonal-hexagonal lattices). Eliminating floating-point coordinates from the core geometry engine guarantees 100% mathematical repeatability and bit-precise rendering across different web browsers, engines, and server runtimes.
+
+### 6. Semantic Architectural Intent
+A declarative schema mapping human-centric design intents (e.g., "maximize southern exposure for the living room," "nest private bedrooms on level 2") to functional spatial coordinates. The Hynteract pipeline structures this semantic intent by pairing natural language design descriptions with deterministic Base34 topological strings, creating rich training datasets.
+
+---
+
+## Technical Resources
+
+* **Primary Sandbox**: [https://hywe.in](https://hywe.in/)
+* **Engine Repository**: [https://github.com/vykrum/Hywe](https://github.com/vykrum/Hywe)
+* **Dataset Repository**: [https://huggingface.co/datasets/vykrum/hywe-training-data](https://huggingface.co/datasets/vykrum/hywe-training-data)
+* **Technical Reference**: [llms-full.txt](llms-full.txt) (For deep-dive developer context)
