@@ -10,20 +10,24 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+*Project Status: HYWE is an actively evolving computational design engine.*
+
 ---
 
 ## Philosophy
 
-HYWE is founded on the idea that **spatial reasoning can be expressive and computational without imitating traditional architectural software**. It encourages a form of design thinking where **spatial topology and flow-based hierarchy** guide the creation of layouts. At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that enables the composition of unconventional spatial topologies through procedural logic, functioning conceptually as a **computational 'bubble diagram'** where spatial adjacency is a direct consequence of defined connections and intent.
+HYWE explores spatial reasoning through a computational lens. It encourages a form of design thinking where **topology and flow-based hierarchy** guide the creation of layouts.
 
-As a **bespoke, zero-dependency engine**, HYWE operates on a logic where **HYWE Syntax is the singular source of truth**. The engine **weaves** abstract spatial definitions into a cohesive **Ensemble** - a coherent, emergent structure resolved through native **Boolean-driven topological logic** without dependence on external geometry kernels or optimization solvers. In this ecosystem, design intent is encoded into a logic-driven language where geometry depends entirely on the integrity of the syntax.
+At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
+
+As a zero-dependency engine, HYWE operates on a logic where **Syntax is the singular source of truth**. The engine weaves abstract spatial definitions into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
 
 ---
 
 ## Access
 
 [Launch HYWE in your browser](https://vykrum.github.io/Hywe/)  
-*(Requires a modern desktop browser with WebGPU enabled, such as Chrome or Edge)*
+*(Requires a modern browser with WebGPU enabled)*
 
 ## The Workspace
 
@@ -43,7 +47,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 | **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
 | **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
 | **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
-| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (Hynteract) |
+| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset ([Hynteract](https://github.com/vykrum/Hynteract)) |
 | **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
 ## Operational Domain
@@ -52,7 +56,7 @@ HYWE functions as a computational sandbox bridging abstract intent and physical 
 
 The spatial logic within HYWE incorporates **boundary confinement**, allowing configurations to organically adapt to irregular site boundaries and non-standard footprints. Furthermore, this topological reasoning extends vertically to resolve **programmatic stacking** and multi-level flow distribution across a building mass.
 
-Within broader computational ecosystems, HYWE acts as a **deterministic foundation**. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation**. This ensures bit-precise structural integrity when training or anchoring generative AI models.
+Within broader computational ecosystems, HYWE acts as a **deterministic foundation**. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation** via pipelines like [Hynteract](https://github.com/vykrum/Hynteract). This ensures bit-precise structural integrity when training or anchoring generative AI models.
 
 ---
 
