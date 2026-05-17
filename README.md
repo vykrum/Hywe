@@ -23,7 +23,7 @@ As a **bespoke, zero-dependency engine**, HYWE operates on a logic where **HYWE 
 ## Access
 
 [Launch HYWE in your browser](https://vykrum.github.io/Hywe/)  
-*(Requires a modern desktop browser with WebGPU enabled, such as Chrome or Edge)*
+*(Requires a modern browser with WebGPU enabled)*
 
 ## The Workspace
 
