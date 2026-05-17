@@ -13,7 +13,7 @@
 
 **[Launch HYWE](https://vykrum.github.io/Hywe/)**
 
-*Actively evolving. WebGPU recommended for best performance*
+*Actively evolving. WebGPU browser recommended.*
 
 ---
 
