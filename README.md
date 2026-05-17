@@ -22,7 +22,7 @@ As a **bespoke, zero-dependency engine**, HYWE operates on a logic where **HYWE 
 
 ## Access
 
-[Open HYWE in your browser — No installation or Sign-in required](https://vykrum.github.io/Hywe/)  
+[Launch HYWE in your browser](https://vykrum.github.io/Hywe/)  
 
 ## The Workspace
 

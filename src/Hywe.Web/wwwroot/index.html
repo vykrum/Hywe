@@ -32,6 +32,43 @@
     <meta name="twitter:site" content="@_hywe_" />
     
     <meta name="keywords" content="How to automate architectural programming, Software for spatial adjacency matrix to floor plan, Floor layout generation without adjacency matrix, Floor layout generation based on flow of activity, Alternative to generative AI for floor layouts, Browser based Programmatic stacking diagrams, Endogenous Space Planning, rule-based spatial design, building massing from program, architectural feasibility tool, wasm architectural layout engine" />
+    <meta property="article:published_time" content="2022-08-15T00:00:00Z" />
+    <meta property="article:modified_time" content="2026-05-07T00:00:00Z" />
+    
+    <!-- JSON-LD Structured Data Schema for HYWE -->
+    <script type="application/ld+json" id="hywe-schema">
+    {
+      "@context": "https://schema.org",
+      "@type": ["WebApplication", "CreativeWork", "SoftwareApplication"],
+      "applicationCategory": "DesignApplication",
+      "name": "HYWE",
+      "alternateName": "HYWE – Hygrid Woven Ensemble",
+      "url": "https://hywe.in",
+      "logo": "https://hywe.in/images/web-app-manifest-192x192.png",
+      "author": {
+        "@type": "Person",
+        "name": "Vikram Subbaiah",
+        "url": "https://github.com/vykrum"
+      },
+      "description": "HYWE is a browser-based architectural tool to automate architectural programming and generate floor layouts based on flow of activity. A deterministic alternative to generative AI for floor plans.",
+      "inLanguage": "en",
+      "keywords": [ 
+        "How to automate architectural programming", "Software for spatial adjacency matrix to floor plan",
+        "Floor layout generation without adjacency matrix", "Floor layout generation based on flow of activity",
+        "Alternative to generative AI for floor layouts", "Browser based Programmatic stacking diagrams",
+        "Endogenous Space Planning", "Vertical Spatial Hierarchy", "rule-based spatial design",
+        "wasm architectural tool", "deterministic layout generation"
+      ],
+      "license": "https://github.com/vykrum/Hywe/blob/main/LICENSE",
+      "creativeWorkStatus": "InDevelopment",
+      "isAccessibleForFree": true,
+      "browserRequirements": "Requires a modern browser with WebAssembly support.",
+      "operatingSystem": "All",
+      "codeRepository": "https://github.com/vykrum/Hywe",
+      "datePublished": "2022-08-15T00:00:00Z",
+      "dateModified": "2026-05-07T00:00:00Z"
+    }
+    </script>
     
     <!-- Content managed by VZ-Shell.fs -->
 
@@ -138,6 +175,14 @@
         @media (max-width: 220px) {
             .intro-section { left: 0; right: 0; margin: 0 auto; max-width: calc(100% - 50px); }
         }
+        .offscreen-hidden {
+            position: absolute;
+            left: -9999px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -169,6 +214,46 @@
         </div>
     </div>
 
+
+    <!-- Offscreen hidden metadata and about content (SEO friendly) -->
+    <section id="about-hywe" class="offscreen-hidden">
+        <h1>HYWE – Hygrid Woven Ensemble</h1>
+        
+        <h2>About HYWE</h2>
+        <p><em>HYWE - <strong>Hygrid Woven Ensemble</strong></em></p>
+        <p><strong>HYWE</strong> is a <strong>browser-based</strong> design sandbox where <strong>structured intent</strong> metamorphoses into <strong>spatial configurations</strong> through <strong>design computation</strong>.</p>
+        
+        <h3>Philosophy</h3>
+        <p>HYWE is founded on the idea that <strong>spatial reasoning can be expressive and computational without imitating traditional architectural software</strong>. It encourages a form of design thinking where <strong>spatial topology and flow-based hierarchy</strong> guide the creation of layouts. At its core is the <strong>Hygrid</strong>, a hybrid orthogonal-hexagonal grid system that enables the composition of unconventional spatial topologies through procedural logic, functioning conceptually as a <strong>computational 'bubble diagram'</strong> where spatial adjacency is a direct consequence of defined connections and intent.</p>
+        <p>As a <strong>bespoke, zero-dependency engine</strong>, HYWE operates on a logic where <strong>HYWE Syntax is the singular source of truth</strong>. The engine <strong>weaves</strong> abstract spatial definitions into a cohesive <strong>Ensemble</strong> - a coherent, emergent structure resolved through native <strong>Boolean-driven topological logic</strong> without dependence on external geometry kernels or optimization solvers. In this ecosystem, design intent is encoded into a logic-driven language where geometry depends entirely on the integrity of the syntax.</p>
+        
+        <h3>Features</h3>
+        <ul>
+            <li><strong>Topology & Flow</strong>: Topology-first spatial flow editor with real-time mapping of structural relationships.</li>
+            <li><strong>Visual Performance</strong>: High-performance 2D SVG layouts and 3D extrusions via <strong>WebGPU</strong> hardware acceleration.</li>
+            <li><strong>Generative Core</strong>: Dynamic, multi-level layout generation via procedural logic for massive architectural dataset creation.</li>
+            <li><strong>Deterministic Logic</strong>: Purely functional, <strong>integer-based</strong> spatial partitioning ensuring <strong>bit-precise data generation</strong> (no floating-point drift) for AI training and AEC interoperability.</li>
+            <li><strong>Extensibility</strong>: Transparent, text-based syntax with native support for industry formats for seamless integration with professional design workflows. The core is decoupled as a pure <strong>F#</strong> library for programmatic API potential.</li>
+            <li><strong>Stateless Sharing</strong>: Share entire 3D designs via simple URLs; the Syntax is serialized directly into the URL hash with no database required.</li>
+            <li><strong>Edge Architecture</strong>: Built from first principles in <strong>F#</strong> and compiled to <strong>WASM</strong> for a zero-install, privacy-focused PWA with all computation running client-side (zero server round-trips).</li>
+        </ul>
+        
+        <h3>Targeted Use Cases</h3>
+        <ul>
+            <li><strong>Automate Architectural Programming</strong>: Rapidly synthesize programmatic requirements and hierarchical trees into structured spatial configurations.</li>
+            <li><strong>Boundary Confinement</strong>: Confine spatial configurations to arbitrary closed boundaries, from rectilinear sites to complex polygonal footprints with islands.</li>
+            <li><strong>Vertical Hierarchy</strong>: Handle programmatic stacking diagrams and multi-level distribution in a zero-install web environment.</li>
+            <li><strong>Hybrid AI Foundation</strong>: Provides a <strong>deterministic foundation</strong> for layout generation, ensuring logical consistency when leveraging generative AI for creative exploration.</li>
+        </ul>
+        
+        <h3>Repository & Social</h3>
+        <ul>
+            <li><strong>GitHub: </strong><a href="https://github.com/vykrum/Hywe" target="_blank">github.com/vykrum/Hywe</a></li>
+            <li><strong>Author: </strong><a href="https://github.com/vykrum" target="_blank">Vikram Subbaiah</a></li>
+            <li><strong>LinkedIn: </strong><a href="https://www.linkedin.com/company/hywein/" target="_blank">linkedin.com/company/hywein</a></li>
+            <li><strong>X (formerly Twitter): </strong><a href="https://x.com/_hywe_" target="_blank">@_hywe_</a></li>
+        </ul>
+    </section>
 
     <!--Scripts-->
     <script>
