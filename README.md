@@ -9,7 +9,7 @@
 
 **Hy**grid **W**oven **E**nsemble
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
 
 **[Launch HYWE](https://vykrum.github.io/Hywe/) **
 *Actively evolving. WebGPU recommended for best performance*
