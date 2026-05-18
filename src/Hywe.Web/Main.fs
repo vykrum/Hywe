@@ -574,6 +574,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         PolygonExport = newExport
                         Sequences = newSqns
                         Derived = Cache.deriveFromSource content newSqns newExport newTree.ActiveLevel
+                        LayoutCache = Map.empty
                         NeedsHyweave = true
                         IsPresetsCollapsed = true
                     }
@@ -604,6 +605,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonExport = resetExport
             Sequences = Map.ofList [0, allSqns.[11]]
             Derived = Cache.deriveFromSource resetSyntax (Map.ofList [0, allSqns.[11]]) resetExport 0
+            LayoutCache = Map.empty
             NeedsHyweave = true
             EditsCount = 0
             SelectedPreset = None
@@ -624,6 +626,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 PolygonExport = newExport
                                 Sequences     = snap.Sequences
                                 Derived      = Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
+                                LayoutCache  = Map.empty
                                 UndoStack    = rest
                                 RedoStack    = redoSnap :: model.RedoStack
                                 NeedsHyweave = true }
@@ -643,6 +646,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                 PolygonExport = newExport
                                 Sequences     = snap.Sequences
                                 Derived      = Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
+                                LayoutCache  = Map.empty
                                 RedoStack    = rest
                                 UndoStack    = undoSnap :: model.UndoStack
                                 NeedsHyweave = true }
@@ -845,7 +849,7 @@ type MyApp() =
 
                         if model.ShowPrivacyAlert && model.CurrentScreen = MainScreen then
                             div {
-                                attr.style "position: fixed; top: 75px; right: 10px; z-index: 5000; background: #363636; color: white; padding: 15px 18px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-size: 13px; max-width: 220px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(255,255,255,0.1); animation: slideIn 0.3s ease-out;"
+                                attr.style "position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 5000; background: #363636; color: white; padding: 15px 18px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-size: 13px; max-width: 260px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(255,255,255,0.1); animation: fadeIn 0.3s ease-out;"
                                 div {
                                     attr.style "font-weight: 500; display: flex; align-items: center; gap: 8px;"
                                     rawHtml """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0ad4e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12" y2="17.01"></line></svg>"""
