@@ -53,21 +53,23 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 | **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
 | **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
 | **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
-| **Expansion** | `Batch` & `Teach` | **Variation processing** and **dataset generation**. | AI Dataset (via Hynteract) |
+| **Expansion** | `Batch` & `Teach` | **Variation processing** and **data collection**. | Dataset Ingestion (via Hynteract) |
 | **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
 
 ---
 
-### Data Pipeline
+### Data Collection Pipeline
 
-HYWE and the HYWE Architectural Training Data repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for AI workflows.
+HYWE and the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)** repository form an active, deterministic data collection ecosystem. Instead of presenting a pre-existing, static database, HYWE leverages its functional design engine as a live generator for crowdsourced and automated architectural AI datasets.
 
 #### System Architecture Flow
-`Designer Intent` ➔ `HYWE Syntax` ➔ `Deterministic Topology` ➔ `Spatial Configuration` ➔ `Hynteract Structuring` ➔ `JSONL Dataset` ➔ `AI Training`
+`Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations` ➔ `Hynteract Ingestion & Structuring` ➔ `JSONL Dataset Commit` ➔ `Future AI Training`
 
-Within broader computational ecosystems, HYWE acts as a **deterministic foundation** for machine learning workflows. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **architectural dataset generation** via **Hynteract** (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem). This ensures bit-precise structural integrity when training or anchoring generative AI models.
+Within broader machine learning workflows, HYWE serves as a **deterministic foundation** for dataset synthesis. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **generating clean topological datasets** via **Hynteract** (the serverless data ingestion and structuring layer of the HYWE ecosystem). This ensures bit-precise structural integrity during future training or anchoring of generative AI models.
 
-Instead of exporting heavy geometric files (like OBJ or IFC), HYWE encodes entire spatial flow hierarchies known as `HYWE Syntax` into a highly compressed **Base34** string representation. Hynteract captures these text-based topological tokens, pairs them with natural language prompts, and structures them into highly efficient JSON Lines (`.jsonl`) datasets. Because HYWE can calculate multiple valid permutations of layouts for a given input, the Hynteract pipeline automates the batch processing of large volumes of topological states, routing them directly to the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)** dataset on Hugging Face that forms the foundation for custom AI model training.
+Instead of exporting heavy geometric files (like OBJ or IFC), HYWE encodes entire spatial flow hierarchies known as `HYWE Syntax` into highly compressed **Base34** strings. Through the interactive **Teach** pipeline, designers can attach natural language metadata tags (such as ambience, typology, and flow intent) to these configurations. Hynteract captures these text-based topological tokens, couples them with the metadata, and structures them into highly efficient JSON Lines (`.jsonl`) datasets. 
+
+As designers build and weave layouts, this serverless pipeline continuously commits these structured procedural variations to the Hugging Face repository. This active, ongoing collection phase is compiling the open-source dataset that will form the future foundation for custom, layout-aware AI models.
 
 ---
 
