@@ -38,7 +38,8 @@ module Cache
            cxOuIl = cxOuIl
            cxAdj1 = derived.cxAdj1
            cxB36 = derived.cxB36
-           cxRto1 = cxRto1 |}
+           cxRto1 = cxRto1
+           cxClr1 = derived.cxClr1 |}
 
     /// <summary>
     /// Generates a single configuration for a specific level and orientation.
@@ -104,7 +105,7 @@ module Cache
     let toDerived (config: BatchConfgrtns) : DerivedData =
         { cxCxl1 = config.cxCxl1
           cxlAvl = config.cxlAvl
-          cxClr1 = config.shapes |> Array.map (fun s -> s.color)
+          cxClr1 = config.cxClr1
           cxOuIl = config.cxOuIl
           cxElv1 = config.cxElv1
           cxRto1 = config.cxRto1

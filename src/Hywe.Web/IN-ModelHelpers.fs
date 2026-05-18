@@ -130,17 +130,21 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         div {
             attr.style "display:flex; width: 100%; gap:0px; padding: 0 4px; justify-content: flex-start; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
             
+            // 1. Editor Toggle (on the top left edge)
             div {
-                attr.``class`` "node-code-toolbar"
-                attr.style "display:flex; gap:0px; align-items: center; pointer-events: auto;"
-                
-                // 1. Editor Toggle
+                attr.style "margin-left: 4px; margin-top: 2px; pointer-events: auto; display: flex; align-items: center;"
                 toolbarBtn 
                     (match model.EditorMode with Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
                     (Some ToggleEditorMode)
                     (iconSwitchNode model)
                     dispatch "" ""
+            }
 
+            // Right Command Palette
+            div {
+                attr.``class`` "node-code-toolbar"
+                attr.style "position: fixed; top: 80px; right: 10px; display: flex; flex-direction: column; gap: 6px; padding: 6px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); align-items: center; pointer-events: auto;"
+                
                 // 2. Save
                 toolbarBtn "Save" (Some SaveRequested) iconSave dispatch "" ""
 
@@ -197,7 +201,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
             if model.InstallPromptAvailable then
                 div {
-                    attr.style "margin-left: auto; margin-right: 10px; pointer-events: auto; display: flex; align-items: center;"
+                    attr.style "margin-left: auto; margin-right: 10px; margin-top: 6px; pointer-events: auto; display: flex; align-items: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
                         attr.title "Install as an App"
