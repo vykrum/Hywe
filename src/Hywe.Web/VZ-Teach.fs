@@ -210,7 +210,7 @@ let view model dispatch =
         div {
             attr.``class`` "teach-intro-section"
             h2 { attr.``class`` "teach-intro-title"; text "Architectural Data Collection" }
-            p { attr.``class`` "teach-intro-text"; text "Help generate a robust architectural dataset by tagging your design intent. Your input directly trains the underlying spatial logic to better understand complex hierarchical layouts." }
+            p { attr.``class`` "teach-intro-text"; text "Help generate a robust architectural dataset by tagging your design intent. The fields below should be filled with respect to your currently defined workflow, training the underlying spatial logic to learn complex hierarchical layouts." }
         }
         div {
             attr.``class`` "teach-objective-section"
