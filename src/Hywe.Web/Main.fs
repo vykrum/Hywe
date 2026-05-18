@@ -142,7 +142,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | TransitionToIntro | TransitionToMain 
             | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
-            | UpdateMetadata _ | Undo | Redo -> model
+            | UpdateMetadata _ | Undo | Redo
+            | SetIsStandalone _ | SetPrivacyAlert _ | SetInstallPromptAvailable _
+            | CacheResult _ | HyweaveResult _ | RecordResult _ | ReportGenerated _
+            | HideLinkCopied -> model
             | TreeMsg (SubMsg.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
             | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }
