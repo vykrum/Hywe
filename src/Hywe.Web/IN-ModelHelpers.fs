@@ -23,7 +23,7 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
         let title, msg, confirmMsg, onConfirm =
             match action with
             | ConfirmAction.ResetWorkspace ->
-                "Reset Workspace", "Reset entire workspace? All unsaved changes will be lost.", "Reset", HardReset
+                "Reset Layout", "Current Layout will be replaced.", "Reset", HardReset
             | ConfirmAction.LoadPreset (name, label) ->
                 "Load Preset", (sprintf "Load %s preset? Current layout will be replaced." label), "Load", SelectPreset name
             | ConfirmAction.SwitchTo tab ->
@@ -125,49 +125,50 @@ let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node)
         }
 
 // View helpers
+let private drawerActionBtn (title: string) (label: string) (msg: Message option) (icon: Bolero.Node) (dispatch: Message -> unit) (style: string) =
+    let btnCls = "hywe-btn hywe-btn-sm hywe-btn-flat"
+    let content =
+        concat {
+            icon
+            span {
+                attr.style "font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 1px; color: inherit; opacity: 0.8;"
+                text label
+            }
+        }
+    match msg with
+    | Some m ->
+        button {
+            attr.``class`` btnCls
+            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 44px; gap: 2px; " + style)
+            attr.title title
+            on.click (fun _ -> dispatch m)
+            content
+        }
+    | None ->
+        button {
+            attr.``class`` btnCls
+            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 44px; gap: 2px; opacity: 0.3; pointer-events: none; " + style)
+            attr.title title
+            content
+        }
+
+// View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     concat {
         div {
             attr.style "display:flex; width: 100%; gap:0px; padding: 0 4px; justify-content: flex-start; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
             
-            // 1. Editor Toggle (on the top left edge)
+            // 1. Editor Toggle & Undo/Redo (on the top left edge)
             div {
-                attr.style "margin-left: 4px; margin-top: 2px; pointer-events: auto; display: flex; align-items: center;"
+                attr.style "margin-left: 4px; margin-top: 2px; pointer-events: auto; display: flex; align-items: center; gap: 4px;"
+                
                 toolbarBtn 
                     (match model.EditorMode with Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
                     (Some ToggleEditorMode)
                     (iconSwitchNode model)
                     dispatch "" ""
-            }
 
-            // Right Command Palette
-            div {
-                attr.``class`` "node-code-toolbar"
-                attr.style "position: fixed; top: 80px; right: 10px; display: flex; flex-direction: column; gap: 6px; padding: 6px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); align-items: center; pointer-events: auto;"
-                
-                // 2. Save
-                toolbarBtn "Save" (Some SaveRequested) iconSave dispatch "" ""
-
-                // 3. Load
-                toolbarBtn "Load" (Some ImportRequested) iconLoad dispatch "" ""
-
-                // 4. Share
-                toolbarBtn 
-                    (if model.ShowLinkCopied then "Link Shared!" else "Share Link")
-                    (Some ShareLink)
-                    (iconShare model)
-                    dispatch
-                    "" (sprintf "color: %s;" (if model.ShowLinkCopied then "#27ae60" else "#555"))
-
-                // 5. Reset
-                toolbarBtn 
-                    "Hard Reset" 
-                    (Some (ToggleConfirm (Some ConfirmAction.ResetWorkspace))) 
-                    iconReset 
-                    dispatch 
-                    "" ""
-
-                // 6. Undo/Redo
+                // Undo/Redo
                 let canUndo = model.UndoStack <> []
                 let canRedo = model.RedoStack <> []
 
@@ -184,19 +185,6 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     iconRedo 
                     dispatch 
                     "" (sprintf "opacity: %s;" (if canRedo then "1" else "0.3"))
-
-                input {
-                    attr.id "hyw-import-hidden"
-                    attr.``type`` "file"
-                    attr.style "display:none"
-                    attr.accept ".hyw"
-                    on.change (fun e ->
-                        async {
-                            let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
-                            dispatch (FileImported content)
-                        } |> Async.StartImmediate
-                    )
-                }
             }
 
             if model.InstallPromptAvailable then
@@ -213,41 +201,109 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     }
                 }
         }
-        if model.EditorMode = Interactive then
-            let isCollapsed = model.IsPresetsCollapsed
-            concat {
-                div {
-                    attr.style (if isCollapsed then "display: none;" else "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
-                    on.click (fun _ -> dispatch TogglePresetsCollapse)
-                }
+        
+        // 2. Exchange Drawer (Always available, top drawer)
+        let isWorkspaceCollapsed = model.IsWorkspaceCollapsed
+        concat {
+            div {
+                attr.style (if isWorkspaceCollapsed then "display: none;" else "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
+                on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
+            }
 
+            div {
+                attr.``class`` (if isWorkspaceCollapsed then "preset-drawer collapsed" else "preset-drawer")
+                attr.style "top: 80px;"
+                
                 div {
-                    attr.``class`` (if isCollapsed then "preset-drawer collapsed" else "preset-drawer")
+                    attr.``class`` "preset-drawer-content"
+                    attr.style "min-width: 100px;"
                     
                     div {
-                        attr.``class`` "preset-drawer-content"
+                        attr.style "display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;"
                         
-                        let presetButton name label isSelected =
-                            button {
-                                attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
-                                on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
-                                text label
-                            }
+                        // Save
+                        drawerActionBtn "Save" "Save" (Some SaveRequested) iconSave dispatch ""
 
-                        presetButton "Simple" "Simple" (model.SelectedPreset = Some "Simple")
-                        presetButton "Branched" "Branch" (model.SelectedPreset = Some "Branched")
-                        presetButton "Stacked" "Stack" (model.SelectedPreset = Some "Stacked")
+                        // Load
+                        drawerActionBtn "Load" "Load" (Some ImportRequested) iconLoad dispatch ""
+
+                        // Share
+                        drawerActionBtn 
+                            (if model.ShowLinkCopied then "Link Shared!" else "Share Link")
+                            (if model.ShowLinkCopied then "Copied" else "Share")
+                            (Some ShareLink)
+                            (iconShare model)
+                            dispatch
+                            (sprintf "color: %s;" (if model.ShowLinkCopied then "#27ae60" else "#555"))
+
+                        // Reset
+                        drawerActionBtn 
+                            "Hard Reset" 
+                            "Reset"
+                            (Some (ToggleConfirm (Some ConfirmAction.ResetWorkspace))) 
+                            iconReset 
+                            dispatch 
+                            ""
                     }
 
-                    div {
-                        attr.``class`` "preset-drawer-handle"
-                        on.click (fun _ -> dispatch TogglePresetsCollapse)
-                        span { text "Presets" }
+                    input {
+                        attr.id "hyw-import-hidden"
+                        attr.``type`` "file"
+                        attr.style "display:none"
+                        attr.accept ".hyw"
+                        on.change (fun e ->
+                            async {
+                                let! content = js.InvokeAsync<string>("readHywFile", "hyw-import-hidden").AsTask() |> Async.AwaitTask
+                                dispatch (FileImported content)
+                            } |> Async.StartImmediate
+                        )
                     }
                 }
+
+                div {
+                    attr.``class`` "preset-drawer-handle"
+                    on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
+                    span { text "Exchange" }
+                }
             }
-        else
-            empty()
+        }
+
+        // 3. Presets Drawer (Always available, below Exchange)
+        let isPresetsCollapsed = model.IsPresetsCollapsed
+        concat {
+            div {
+                attr.style (if isPresetsCollapsed then "display: none;" else "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
+                on.click (fun _ -> dispatch TogglePresetsCollapse)
+            }
+
+            div {
+                attr.``class`` (if isPresetsCollapsed then "preset-drawer collapsed" else "preset-drawer")
+                attr.style "top: 196px;"
+                
+                div {
+                    attr.``class`` "preset-drawer-content"
+                    attr.style "min-width: 100px;"
+                    
+                    let presetButton name label isSelected =
+                        button {
+                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
+                            attr.style "width: 100%; text-align: center; justify-content: center;"
+                            on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
+                            text label
+                        }
+
+                    presetButton "Simple" "Simple" (model.SelectedPreset = Some "Simple")
+                    presetButton "Branched" "Branch" (model.SelectedPreset = Some "Branched")
+                    presetButton "Stacked" "Stack" (model.SelectedPreset = Some "Stacked")
+                }
+
+                div {
+                    attr.``class`` "preset-drawer-handle"
+                    on.click (fun _ -> dispatch TogglePresetsCollapse)
+                    span { text "Presets" }
+                }
+            }
+        }
     }
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
