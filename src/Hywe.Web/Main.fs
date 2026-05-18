@@ -95,6 +95,7 @@ let initModel =
         ViewLocked = false
         EditsCount = 0
         IsPresetsCollapsed = true
+        IsWorkspaceCollapsed = true
         IsHelpCollapsed = false
         PendingConfirm = None
         UndoStack = []
@@ -148,7 +149,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | HideLinkCopied -> model
             | TreeMsg (SubMsg.PointerMove _) -> model
             | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
-            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }
+            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }
         else model
     
     let model = modelBefore
@@ -218,12 +219,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let m = pushUndo model
         let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
+        let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
         let newSqns = extractSequences value
         { m with 
             SrcOfTrth = value
             Sequences = newSqns
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
+            IsWorkspaceCollapsed = nextWorkspaceCollapse
         }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js value m.ActivePanel }) () (fun _ -> NoOp)
 
     | StartHyweave ->
@@ -362,6 +365,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let isIncrementalEdit = not (isMoving || isLevelSwitch)
             let nextCount = if isIncrementalEdit then model.EditsCount + 1 else model.EditsCount
             let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
+            let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
             
             let modelWithTree = 
                 { model with 
@@ -370,7 +374,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     SrcOfTrth = newOutput 
                     NeedsHyweave = if isMoving then model.NeedsHyweave else true
                     EditsCount = nextCount
-                    IsPresetsCollapsed = nextCollapse }
+                    IsPresetsCollapsed = nextCollapse
+                    IsWorkspaceCollapsed = nextWorkspaceCollapse }
 
             if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
                 Protocol.sync js newOutput model.ActivePanel
@@ -577,6 +582,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         LayoutCache = Map.empty
                         NeedsHyweave = true
                         IsPresetsCollapsed = true
+                        IsWorkspaceCollapsed = true
                     }
                 
                 // Validate that the loaded state actually results in a layout, 
@@ -686,6 +692,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                             SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
             ActivePanel = newActivePanel
             IsPresetsCollapsed = if isFinished then true else model.IsPresetsCollapsed
+            IsWorkspaceCollapsed = if isFinished then true else model.IsWorkspaceCollapsed
         }, cmd
 
     | PreviousOnboardingStep ->
@@ -718,7 +725,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | SkipOnboarding ->
-        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true }, 
+        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, 
         Cmd.map TreeMsg (Cmd.ofMsg CancelAction) // Just in case
 
     | RestartOnboarding ->
@@ -753,10 +760,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             CurrentScreen = MainScreen
             Onboarding = { model.Onboarding with IsActive = model.Onboarding.IsActive }
             IsPresetsCollapsed = true 
+            IsWorkspaceCollapsed = true
         }, Cmd.none
 
     | TogglePresetsCollapse ->
         { model with IsPresetsCollapsed = not model.IsPresetsCollapsed }, Cmd.none
+
+    | ToggleWorkspaceCollapse ->
+        { model with IsWorkspaceCollapsed = not model.IsWorkspaceCollapsed }, Cmd.none
 
     | ToggleHelpCollapse ->
         { model with IsHelpCollapsed = not model.IsHelpCollapsed }, Cmd.none

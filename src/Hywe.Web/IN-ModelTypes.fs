@@ -250,6 +250,7 @@ type Model =
         SelectedPreset: string option
         EditsCount: int
         IsPresetsCollapsed: bool
+        IsWorkspaceCollapsed: bool
         IsHelpCollapsed: bool
         PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
@@ -313,6 +314,7 @@ type Message =
     | SkipOnboarding
     | RestartOnboarding
     | TogglePresetsCollapse
+    | ToggleWorkspaceCollapse
     | ToggleHelpCollapse
     | StartAutoSimulation
     | StopAutoSimulation
