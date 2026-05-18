@@ -212,7 +212,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
             div {
                 attr.``class`` (if isWorkspaceCollapsed then "preset-drawer collapsed" else "preset-drawer")
-                attr.style "top: 80px;"
+                attr.style "top: 65px;"
                 
                 div {
                     attr.``class`` "preset-drawer-content"
@@ -278,7 +278,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
             div {
                 attr.``class`` (if isPresetsCollapsed then "preset-drawer collapsed" else "preset-drawer")
-                attr.style "top: 196px;"
+                attr.style "top: 180px;"
                 
                 div {
                     attr.``class`` "preset-drawer-content"
