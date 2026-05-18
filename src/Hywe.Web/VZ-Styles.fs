@@ -464,7 +464,7 @@ let editorStyles = """
 
 .preset-drawer {
     position: absolute;
-    top: 80px;
+    top: 65px;
     left: 0;
     z-index: 1802;
     display: flex;
