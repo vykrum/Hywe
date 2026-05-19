@@ -75,7 +75,7 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 
 ### 6. Semantic Architectural Intent
 *   **Concepts**: Structuring generative dataset records by mapping architectural programming constraints and prompts with completed, functional layouts.
-*   **Code Location**: [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs) captures layout runs. When users commit designs, it calls `VZ-Teach.fs` to post JSON payloads containing `SessionId`, `Timestamp`, `Author`, `ProjectTitle`, and `Base34` syntax to the private Hynteract serverless endpoint, which compiles them into `.jsonl` datasets for Hugging Face.
+*   **Code Location**: [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs) captures layout runs. When users commit designs, it calls `VZ-Teach.fs` to post JSON payloads containing `Definition`, `Description`, and `Configuration` to the private Hynteract serverless endpoint (with Author name and Project Title optionally embedded directly in the generated natural language summary description), which compiles them into `.jsonl` datasets for Hugging Face.
 
 ---
 
@@ -91,4 +91,4 @@ The client-side F# engine executes a sequence-driven pipeline on every design ch
 6.  **Graphics Dispatch**:
     *   *SVG Viewport*: Renders vector plans via [VZ-Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Graphics.fs).
     *   *WebGPU Viewport*: [VZ-ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-ThreeD.fs) maps the 3D meshes to GPU vertex buffers, rendering volumetric models.
-7.  **Data Export**: [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs) serializes layout metadata and sends it to the serverless `Hynteract` endpoint.
+7.  **Data Export**: [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs) serializes layout tokens, coordinates, and descriptions, and sends them to the serverless `Hynteract` endpoint.

@@ -79,8 +79,16 @@ let generateSuggestion (model: Model) =
         if String.IsNullOrWhiteSpace body then header + sprintf "Starting from %s." root.Name
         else header + body
 
-    let intro = sprintf "This is a %s stage %s %s project with a %s flow and %s ambience. " 
-                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) (meta.Flow.ToLower()) (meta.Ambience.ToLower())
+    let authorPart = 
+        if String.IsNullOrWhiteSpace meta.Author then ""
+        else sprintf " by %s" (meta.Author.Trim())
+
+    let projectPart = 
+        if String.IsNullOrWhiteSpace meta.ProjectTitle then ""
+        else sprintf " for the '%s' project" (meta.ProjectTitle.Trim())
+
+    let intro = sprintf "This is a %s stage %s %s project%s%s with a %s flow and %s ambience. " 
+                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) authorPart projectPart (meta.Flow.ToLower()) (meta.Ambience.ToLower())
 
     let levelsContent = 
         tree.Levels 
@@ -147,7 +155,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                 with ex -> "" 
                             key, data)
                         |> Map.ofArray
-                    let payload = {| Definition = currentSrc; Description = currentDesc; Configuration = configMap; Boundary = currentOuter; Islands = currentIslands; Metadata = {| Author = model.TeachMetadata.Author; ProjectTitle = model.TeachMetadata.ProjectTitle; SessionId = model.TeachMetadata.SessionId; Timestamp = DateTime.UtcNow.ToString("O"); Scale = model.TeachMetadata.Scale; Typology = model.TeachMetadata.Typology; Flow = model.TeachMetadata.Flow; Ambience = model.TeachMetadata.Ambience; Stage = model.TeachMetadata.Stage |} |}
+                    let payload = {| Definition = currentSrc; Description = currentDesc; Configuration = configMap |}
                     let! success = js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
                     return success, currentCache
                 with ex -> return false, model.LayoutCache
