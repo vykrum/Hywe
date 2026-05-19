@@ -29,7 +29,7 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
     let mutable finalState = current
     match List.tryHead parsed with
     | Some segment ->
-        let attrs = segment.Attributes
+        let attrs = match segment with | Level l -> l.Attributes | Nest n -> n.Attributes
         finalState <- 
             { finalState with
                 LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * 10.0) |> Option.defaultValue finalState.LogicalWidth

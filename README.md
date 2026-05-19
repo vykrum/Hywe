@@ -63,7 +63,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 HYWE and the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)** repository form an active, deterministic data collection ecosystem. Instead of presenting a pre-existing, static database, HYWE leverages its functional design engine as a live generator for crowdsourced and automated architectural AI datasets.
 
 #### System Architecture Flow
-`Designer Intent` ➔ `HYWE Syntax` ➔ `Deterministic Topology` ➔ `Spatial Configuration` ➔ `Hynteract Structuring` ➔ `JSONL Dataset` ➔ `AI Training`
+`Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations` ➔ `Hynteract Ingestion & Structuring` ➔ `JSONL Dataset Commit` ➔ `Future AI Training`
 
 Within broader machine learning workflows, HYWE serves as a **deterministic foundation** for dataset synthesis. By prioritizing absolute geometric consistency and integer-based spatial partitioning, it provides a logic-driven substrate for **generating clean topological datasets** via **Hynteract** (the serverless data ingestion and structuring layer of the HYWE ecosystem). This ensures bit-precise structural integrity during future training or anchoring of generative AI models.
 
@@ -99,7 +99,7 @@ graph TD
     I -.-> ReportLabel
     
     I -.-> DatasetLabel((Hynteract: AI Dataset))
-    DesignIntent[Design Intent Narrative] --> DatasetLabel
+    DesignIntent[Design Intent] --> DatasetLabel
 ```
 ---
 
