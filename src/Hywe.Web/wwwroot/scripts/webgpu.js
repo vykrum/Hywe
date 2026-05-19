@@ -14,7 +14,10 @@ let _gpuCache = {
         ry: 0,
         rx: Math.PI / 6,
         zoom: 3
-    }
+    },
+    lastProjId: null,
+    lastCenter: null,
+    lastScale: null
 };
 
 window.disposeWebGPU = (canvasId) => {
@@ -125,11 +128,21 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         })
     ));
 
-    const cx = (minX === Infinity) ? 0 : (minX + maxX) / 2;
-    const cy = (minY === Infinity) ? 0 : (minY + maxY) / 2;
+    const computedCx = (minX === Infinity) ? 0 : (minX + maxX) / 2;
+    const computedCy = (minY === Infinity) ? 0 : (minY + maxY) / 2;
     const maxDim = Math.max(maxX - minX, maxY - minY);
-    const scaleXY = (maxDim > 0) ? 2 / maxDim : 1;
-    const scaleZ = scaleXY;
+    const computedScaleXY = (maxDim > 0) ? 2 / maxDim : 1;
+    const computedScaleZ = computedScaleXY;
+
+    if (!_gpuCache.lastCenter || Math.abs(_gpuCache.lastCenter.cx - computedCx) > 10.0 || Math.abs(_gpuCache.lastCenter.cy - computedCy) > 10.0) {
+        _gpuCache.lastCenter = { cx: computedCx, cy: computedCy };
+        _gpuCache.lastScale = { scaleXY: computedScaleXY, scaleZ: computedScaleZ };
+    }
+
+    const cx = _gpuCache.lastCenter.cx;
+    const cy = _gpuCache.lastCenter.cy;
+    const scaleXY = _gpuCache.lastScale.scaleXY;
+    const scaleZ = _gpuCache.lastScale.scaleZ;
 
     let numTris = 0;
     meshes.forEach(tris => numTris += tris.length);
@@ -332,16 +345,28 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         totalFaceVertices, totalEdgeVertices, lastW: 0, lastH: 0
     };
 
-    if (canvas._cam_rx === undefined) {
-        canvas._cam_ry = _gpuCache.lastCamera.ry; 
-        canvas._cam_rx = _gpuCache.lastCamera.rx; 
-        canvas._cam_zoom = _gpuCache.lastCamera.zoom;
-    }
+    canvas._cam_ry = _gpuCache.lastCamera.ry; 
+    canvas._cam_rx = _gpuCache.lastCamera.rx; 
+    canvas._cam_zoom = _gpuCache.lastCamera.zoom;
+
     let dragging = false, lx = 0, ly = 0;
     if (!canvas._listenersAdded) {
-        canvas.addEventListener("pointerdown", e => { if (canvas._viewLocked) return; dragging = true; lx = e.clientX; ly = e.clientY; });
-        document.addEventListener("pointerup", () => dragging = false);
-        document.addEventListener("pointermove", e => {
+        canvas.addEventListener("pointerdown", e => {
+            if (canvas._viewLocked) return;
+            dragging = true;
+            lx = e.clientX;
+            ly = e.clientY;
+            canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointerup", e => {
+            dragging = false;
+            canvas.releasePointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointercancel", e => {
+            dragging = false;
+            canvas.releasePointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointermove", e => {
             if (!dragging || canvas._viewLocked) return;
             canvas._cam_ry -= (e.clientX - lx) * 0.01;
             canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + (e.clientY - ly) * 0.01, 0.01), Math.PI/2 - 0.01);

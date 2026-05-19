@@ -69,7 +69,7 @@ Within broader machine learning workflows, HYWE serves as a **deterministic foun
 
 Instead of exporting heavy geometric files (like OBJ or IFC), HYWE encodes entire spatial flow hierarchies known as `HYWE Syntax` into highly compressed **Base34** strings. Through the interactive **Teach** pipeline, designers can generate natural language summary descriptions (which optionally include the author's name and project title) and couple them with these configurations. Hynteract captures these text-based topological tokens, pairs them with the summaries, and structures them into highly efficient JSON Lines (`.jsonl`) datasets.
 
-As designers build and weave layouts, this serverless pipeline continuously commits these structured procedural variations to the Hugging Face repository. This active, ongoing collection phase is compiling the open-source dataset that will form the future foundation for custom, layout-aware AI models.
+Importantly, each committed record contains a complete sweep of all 24 layout configurations (corresponding to the 24 procedural sequence rules), rather than being restricted to the active sequence defined in the initial syntax string. As designers build and weave layouts, this serverless pipeline continuously commits these structured procedural variations to the Hugging Face repository. This active, ongoing collection phase is compiling the open-source dataset that will form the future foundation for custom, layout-aware AI models.
 
 ---
 
