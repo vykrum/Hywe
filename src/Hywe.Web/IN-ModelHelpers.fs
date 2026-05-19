@@ -482,7 +482,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
 
         | ViewPanel ->
-            let sideEffect = async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked } |> Async.StartImmediate
+            let sideEffect = async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked model.SrcOfTrth } |> Async.StartImmediate
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; overflow-x: hidden;"
                 

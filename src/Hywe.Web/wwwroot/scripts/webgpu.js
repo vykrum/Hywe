@@ -14,7 +14,10 @@ let _gpuCache = {
         ry: 0,
         rx: Math.PI / 6,
         zoom: 3
-    }
+    },
+    lastProjId: null,
+    lastCenter: null,
+    lastScale: null
 };
 
 window.disposeWebGPU = (canvasId) => {
@@ -43,8 +46,8 @@ window.disposeWebGPU = (canvasId) => {
     canvas._wgpuState = null;
 };
 
-window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked) => {
-    console.log("WebGPU: Initializing for", canvasId);
+window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked, projId) => {
+    console.log("WebGPU: Initializing for", canvasId, "project:", projId);
     
     const computeWgsl = window._gpuShaders.compute;
     const wgslShaders = window._gpuShaders.render;
@@ -125,11 +128,31 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         })
     ));
 
-    const cx = (minX === Infinity) ? 0 : (minX + maxX) / 2;
-    const cy = (minY === Infinity) ? 0 : (minY + maxY) / 2;
+    const computedCx = (minX === Infinity) ? 0 : (minX + maxX) / 2;
+    const computedCy = (minY === Infinity) ? 0 : (minY + maxY) / 2;
     const maxDim = Math.max(maxX - minX, maxY - minY);
-    const scaleXY = (maxDim > 0) ? 2 / maxDim : 1;
-    const scaleZ = scaleXY;
+    const computedScaleXY = (maxDim > 0) ? 2 / maxDim : 1;
+    const computedScaleZ = computedScaleXY;
+
+    if (canvas._cachedProjId !== projId || !canvas._cachedCenter) {
+        if (_gpuCache.lastProjId === projId && _gpuCache.lastCenter) {
+            canvas._cachedProjId = projId;
+            canvas._cachedCenter = _gpuCache.lastCenter;
+            canvas._cachedScale = _gpuCache.lastScale;
+        } else {
+            canvas._cachedProjId = projId;
+            canvas._cachedCenter = { cx: computedCx, cy: computedCy };
+            canvas._cachedScale = { scaleXY: computedScaleXY, scaleZ: computedScaleZ };
+            _gpuCache.lastProjId = projId;
+            _gpuCache.lastCenter = canvas._cachedCenter;
+            _gpuCache.lastScale = canvas._cachedScale;
+        }
+    }
+
+    const cx = canvas._cachedCenter.cx;
+    const cy = canvas._cachedCenter.cy;
+    const scaleXY = canvas._cachedScale.scaleXY;
+    const scaleZ = canvas._cachedScale.scaleZ;
 
     let numTris = 0;
     meshes.forEach(tris => numTris += tris.length);
