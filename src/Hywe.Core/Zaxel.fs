@@ -101,7 +101,7 @@ module Zaxel =
                                 | Level l, _, _, _, _, _, lIdx when lIdx = lvlIdx -> Some l.Attributes.Thickness
                                 | _ -> None)
                             |> Option.defaultValue 3.0
-                        match Nexel.generateNestLayout n_block hostCxl hostThickness state.Cxls with
+                        match Nexel.generateNestLayout n_block hostCxl hostThickness state.Cxls None with
                         | Some (cxls, bounds, _) ->
                             { state with Cxls = Array.append state.Cxls cxls; Bounds = Array.append state.Bounds [| bounds |] }
                         | None -> state
