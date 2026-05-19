@@ -145,7 +145,6 @@ let extrudePolygons
     (colors: string[])
     (levelElevations: float[])
     (viewLocked: bool)
-    (projId: string)
     : Async<unit> =
     async {
         // Register shaders before initialization
@@ -250,6 +249,6 @@ let extrudePolygons
         if meshes.Length > 0 then
             do! js.InvokeVoidAsync("initWebGPUExtrudedPolygons", 
                                     canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
-                                    projMatrix, viewLocked, projId).AsTask()
+                                    projMatrix, viewLocked).AsTask()
                 |> Async.AwaitTask
     }

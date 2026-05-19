@@ -46,8 +46,8 @@ window.disposeWebGPU = (canvasId) => {
     canvas._wgpuState = null;
 };
 
-window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked, projId) => {
-    console.log("WebGPU: Initializing for", canvasId, "project:", projId);
+window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, baseHeights, edgePolygons, centroids, externalProj, viewLocked) => {
+    console.log("WebGPU: Initializing for", canvasId);
     
     const computeWgsl = window._gpuShaders.compute;
     const wgslShaders = window._gpuShaders.render;
@@ -134,25 +134,15 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     const computedScaleXY = (maxDim > 0) ? 2 / maxDim : 1;
     const computedScaleZ = computedScaleXY;
 
-    if (canvas._cachedProjId !== projId || !canvas._cachedCenter) {
-        if (_gpuCache.lastProjId === projId && _gpuCache.lastCenter) {
-            canvas._cachedProjId = projId;
-            canvas._cachedCenter = _gpuCache.lastCenter;
-            canvas._cachedScale = _gpuCache.lastScale;
-        } else {
-            canvas._cachedProjId = projId;
-            canvas._cachedCenter = { cx: computedCx, cy: computedCy };
-            canvas._cachedScale = { scaleXY: computedScaleXY, scaleZ: computedScaleZ };
-            _gpuCache.lastProjId = projId;
-            _gpuCache.lastCenter = canvas._cachedCenter;
-            _gpuCache.lastScale = canvas._cachedScale;
-        }
+    if (!_gpuCache.lastCenter || Math.abs(_gpuCache.lastCenter.cx - computedCx) > 10.0 || Math.abs(_gpuCache.lastCenter.cy - computedCy) > 10.0) {
+        _gpuCache.lastCenter = { cx: computedCx, cy: computedCy };
+        _gpuCache.lastScale = { scaleXY: computedScaleXY, scaleZ: computedScaleZ };
     }
 
-    const cx = canvas._cachedCenter.cx;
-    const cy = canvas._cachedCenter.cy;
-    const scaleXY = canvas._cachedScale.scaleXY;
-    const scaleZ = canvas._cachedScale.scaleZ;
+    const cx = _gpuCache.lastCenter.cx;
+    const cy = _gpuCache.lastCenter.cy;
+    const scaleXY = _gpuCache.lastScale.scaleXY;
+    const scaleZ = _gpuCache.lastScale.scaleZ;
 
     let numTris = 0;
     meshes.forEach(tris => numTris += tris.length);
@@ -355,16 +345,28 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         totalFaceVertices, totalEdgeVertices, lastW: 0, lastH: 0
     };
 
-    if (canvas._cam_rx === undefined) {
-        canvas._cam_ry = _gpuCache.lastCamera.ry; 
-        canvas._cam_rx = _gpuCache.lastCamera.rx; 
-        canvas._cam_zoom = _gpuCache.lastCamera.zoom;
-    }
+    canvas._cam_ry = _gpuCache.lastCamera.ry; 
+    canvas._cam_rx = _gpuCache.lastCamera.rx; 
+    canvas._cam_zoom = _gpuCache.lastCamera.zoom;
+
     let dragging = false, lx = 0, ly = 0;
     if (!canvas._listenersAdded) {
-        canvas.addEventListener("pointerdown", e => { if (canvas._viewLocked) return; dragging = true; lx = e.clientX; ly = e.clientY; });
-        document.addEventListener("pointerup", () => dragging = false);
-        document.addEventListener("pointermove", e => {
+        canvas.addEventListener("pointerdown", e => {
+            if (canvas._viewLocked) return;
+            dragging = true;
+            lx = e.clientX;
+            ly = e.clientY;
+            canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointerup", e => {
+            dragging = false;
+            canvas.releasePointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointercancel", e => {
+            dragging = false;
+            canvas.releasePointerCapture(e.pointerId);
+        });
+        canvas.addEventListener("pointermove", e => {
             if (!dragging || canvas._viewLocked) return;
             canvas._cam_ry -= (e.clientX - lx) * 0.01;
             canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + (e.clientY - ly) * 0.01, 0.01), Math.PI/2 - 0.01);
