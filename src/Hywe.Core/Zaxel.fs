@@ -28,7 +28,9 @@ module Zaxel =
 
     /// <summary> Recursively processes all levels using a purely functional state-carrying approach. </summary>
     let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) (seqOverride: (int * Sqn) option) (ouStrOverride: string option) (ilStrOverride: string option) =
-        let parsedLevels = processFullString fullStr
+        let parsedLevels = 
+            processFullString fullStr
+            |> List.choose (function | Level l -> Some l | Nest _ -> None)
         
         // --- Pass 1: Resolve Attributes & Global Ratio ---
         let resolvedLevels, globalRatio =

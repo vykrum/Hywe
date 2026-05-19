@@ -18,18 +18,22 @@ module Serialization =
         else
             let processedLevels = 
                 levels |> List.mapi (fun i levelData ->
-                    let marker = 
-                        if String.IsNullOrWhiteSpace levelData.Marker then sprintf "L%d" i 
-                        else levelData.Marker
+                    let marker, attrs, tree = 
+                        match levelData with
+                        | Level l -> l.Marker, l.Attributes, l.Tree
+                        | Nest n -> n.Marker, n.Attributes, n.Tree
+                        
+                    let finalMarker = 
+                        if String.IsNullOrWhiteSpace marker then sprintf "L%d" i 
+                        else marker
                     
-                    let attrs = levelData.Attributes
                     let attrStr = 
                         let w = match attrs.Width with Some v -> $"/W={v}" | None -> ""
                         let h = match attrs.Height with Some v -> $"/H={v}" | None -> ""
                         $"Q={attrs.Sequence}/L={attrs.Level}/X={attrs.Scale}/E={attrs.Entry}/O={attrs.OuterBoundary}/I={attrs.Islands}/T={attrs.Thickness}{w}{h}"
                     
                     let nodes = 
-                        levelData.Tree 
+                        tree 
                         |> List.collect id 
                         |> List.map (fun n -> 
                             let extr = match n.Extrusion with Some v -> $"/{v}" | None -> ""
@@ -37,7 +41,7 @@ module Serialization =
                             $"({n.Id}/{n.Area}/{n.Label}{extr}{baseStr})")
                         |> String.concat ""
 
-                    $"{marker}({attrStr}){nodes}"
+                    $"{finalMarker}({attrStr}){nodes}"
                 )
 
             String.Join("", processedLevels)
@@ -48,7 +52,8 @@ module Serialization =
         let levels = processFullString processed
         
         levels |> List.mapi (fun lvlIdx levelData ->
-            let nodes = levelData.Tree |> List.collect id
+            let tree = match levelData with | Level l -> l.Tree | Nest n -> n.Tree
+            let nodes = tree |> List.collect id
             
             // Find the root (path "1") or default to the first node
             let rootNode = 
@@ -155,11 +160,12 @@ module Serialization =
         
         let allParts = 
             levels |> List.toArray |> Array.mapi (fun i levelData ->
-                let attrs = levelData.Attributes
+                let attrs = match levelData with | Level l -> l.Attributes | Nest n -> n.Attributes
+                let tree = match levelData with | Level l -> l.Tree | Nest n -> n.Tree
                 let tVal = attrs.Thickness
                 let sVal = Some attrs.Scale
                 let eVal = attrs.Entry
-                let nodes = levelData.Tree |> List.collect id
+                let nodes = tree |> List.collect id
                 (i, tVal, sVal, nodes, eVal)
             )
 

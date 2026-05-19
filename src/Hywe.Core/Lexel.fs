@@ -32,11 +32,21 @@ module Lexel =
         Base: string option
     }
 
-    type LexelBlock = {
+    type LevelBlock = {
         Marker: string
         Attributes: LexelAttributes
         Tree: LexelNode list list // Grouped nodes
     }
+
+    type NestBlock = {
+        Marker: string
+        Attributes: LexelAttributes
+        Tree: LexelNode list list // Grouped nodes
+    }
+
+    type LexelBlock =
+        | Level of LevelBlock
+        | Nest of NestBlock
 
     // --- Core Active Patterns ---
 
@@ -140,7 +150,12 @@ module Lexel =
             let marker = m.Groups.[1].Value.Trim()
             let content = m.Groups.[2].Value.Trim()
             processXyxel content
-            |> Option.map (fun res -> { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }))
+            |> Option.map (fun res -> 
+                if marker.StartsWith("N") then
+                    Nest { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }
+                else
+                    Level { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }
+            ))
         |> Seq.toList
 
     /// <summary> 
@@ -148,7 +163,9 @@ module Lexel =
     /// </summary>
     let extractSequences (input: string) : Map<int, string> =
         processFullString input
-        |> List.mapi (fun i s -> i, s.Attributes.Sequence)
+        |> List.mapi (fun i s -> 
+            let attrs = match s with | Level l -> l.Attributes | Nest n -> n.Attributes
+            i, attrs.Sequence)
         |> Map.ofList
 
     /// <summary> 
