@@ -140,9 +140,67 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
     |> Array.groupBy (fun cxl -> let (_, _, z) = hxlCrd cxl.Base in z)
     |> Array.sortBy fst
     |> Array.map (fun (_, levelCxls) ->
-        levelCxls
-        |> Array.map getCxlCoordsString
-        |> String.concat ";"
+        let parentCoordsMap =
+            levelCxls
+            |> Array.map (fun c ->
+                let coords = 
+                    Array.append [| c.Base |] c.Hxls
+                    |> Array.map (fun h -> let (x, y, _) = hxlCrd h in x, y)
+                    |> Set.ofArray
+                c, coords)
+            |> Map.ofArray
+
+        let isNested (c: Cxl) =
+            levelCxls
+            |> Array.exists (fun p ->
+                if p = c then false
+                else
+                    let pCoords = parentCoordsMap.[p]
+                    let (cx, cy, _) = hxlCrd c.Base
+                    pCoords.Contains(cx, cy) && (Array.append [|p.Base|] p.Hxls).Length > (Array.append [|c.Base|] c.Hxls).Length
+            )
+
+        let findHost (c: Cxl) =
+            levelCxls
+            |> Array.tryFind (fun p ->
+                if p = c then false
+                else
+                    let pCoords = parentCoordsMap.[p]
+                    let (cx, cy, _) = hxlCrd c.Base
+                    pCoords.Contains(cx, cy) && (Array.append [|p.Base|] p.Hxls).Length > (Array.append [|c.Base|] c.Hxls).Length
+            )
+
+        let topLevels = levelCxls |> Array.filter (fun c -> not (isNested c))
+        let nestedGroups = 
+            levelCxls 
+            |> Array.filter isNested
+            |> Array.groupBy findHost
+            |> Array.map (fun (hostOpt, children) ->
+                let childrenStr = 
+                    children 
+                    |> Array.map getCxlCoordsString 
+                    |> String.concat ";"
+                hostOpt, sprintf "{%s}" childrenStr
+            )
+            |> Map.ofArray
+
+        let parts = 
+            topLevels
+            |> Array.map (fun host ->
+                let hostStr = getCxlCoordsString host
+                match nestedGroups |> Map.tryFind (Some host) with
+                | Some nestStr -> hostStr + ";" + nestStr
+                | None -> hostStr
+            )
+        
+        let orphanNests =
+            nestedGroups
+            |> Map.toList
+            |> List.filter (fun (hostOpt, _) -> hostOpt.IsNone)
+            |> List.map snd
+
+        let allParts = Array.append parts (List.toArray orphanNests)
+        allParts |> String.concat ";"
     )
     |> String.concat "|"
 
