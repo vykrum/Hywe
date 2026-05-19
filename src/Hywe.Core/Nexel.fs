@@ -33,7 +33,7 @@ module Nexel =
             | _ -> None)
 
     /// <summary> Generates nested layout using the Xyxel layout engine. </summary>
-    let generateNestLayout (nest: NestBlock) (hostCxl: Coxel.Cxl) (allCxls: Coxel.Cxl[]) =
+    let generateNestLayout (nest: NestBlock) (hostCxl: Coxel.Cxl) (hostThickness: float) (allCxls: Coxel.Cxl[]) =
         let attrs = nest.Attributes
         let elv = 
             let _, _, z = Hexel.hxlCrd hostCxl.Base
@@ -47,7 +47,7 @@ module Nexel =
             |> Array.map (fun (x, y) -> sprintf "%d,%d" x y)
             |> String.concat ","
             
-        let attrMap = Map.ofList [ "Q", attrs.Sequence; "L", string elv; "X", string attrs.Scale; "O", hostPerimeter; "I", attrs.Islands; "T", string attrs.Thickness ]
+        let attrMap = Map.ofList [ "Q", attrs.Sequence; "L", string elv; "X", string attrs.Scale; "O", hostPerimeter; "I", ""; "T", string hostThickness ]
 
         let rawTree = nest.Tree |> List.map (fun g -> g |> List.map (fun n -> (n.Id, n.Area, n.Label)) |> List.toArray) |> List.toArray
         let treeObj = Xyxel.LayoutTree.Create rawTree
@@ -59,7 +59,7 @@ module Nexel =
             Width = None
             Height = None
             OuterStr = Some hostPerimeter
-            IslandsStr = match attrs.Islands with "" -> None | s -> Some s
+            IslandsStr = None
             ParentCxl = Some hostCxl
             Ratio = None // Nests calculate their own ratio based on the boundary
             Elevation = Some elv

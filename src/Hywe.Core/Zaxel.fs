@@ -95,7 +95,13 @@ module Zaxel =
                     let targetId = n_block.Attributes.Entry
                     match state.Cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId) with
                     | Some hostCxl ->
-                        match Nexel.generateNestLayout n_block hostCxl state.Cxls with
+                        let hostThickness = 
+                            resolvedLevels 
+                            |> List.tryPick (function 
+                                | Level l, _, _, _, _, _, lIdx when lIdx = lvlIdx -> Some l.Attributes.Thickness
+                                | _ -> None)
+                            |> Option.defaultValue 3.0
+                        match Nexel.generateNestLayout n_block hostCxl hostThickness state.Cxls with
                         | Some (cxls, bounds, _) ->
                             { state with Cxls = Array.append state.Cxls cxls; Bounds = Array.append state.Bounds [| bounds |] }
                         | None -> state
