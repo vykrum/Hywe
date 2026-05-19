@@ -25,11 +25,12 @@ module Nexel =
     /// Extracts the nest index from a marker.
     /// </summary>
     let getNestIndex (marker: string) =
-        if isNestMarker marker then
-            match Int32.TryParse(marker.Substring(1)) with
+        Some marker
+        |> Option.filter isNestMarker
+        |> Option.bind (fun m -> 
+            match Int32.TryParse(m.Substring(1)) with
             | true, v -> Some v
-            | _ -> None
-        else None
+            | _ -> None)
 
     /// <summary> Generates nested layout using the Xyxel layout engine. </summary>
     let generateNestLayout (nest: NestBlock) (hostCxl: Coxel.Cxl) (allCxls: Coxel.Cxl[]) =
@@ -46,17 +47,13 @@ module Nexel =
             |> Array.map (fun (x, y) -> sprintf "%d,%d" x y)
             |> String.concat ","
             
-        let hostBaseHex = 
-            let x, y, _ = Hexel.hxlCrd hostCxl.Base
-            sprintf "%d,%d" x y
-
-        let attrMap = Map.ofList [ "Q", attrs.Sequence; "L", string elv; "X", string attrs.Scale; "E", hostBaseHex; "O", hostPerimeter; "I", attrs.Islands; "T", string attrs.Thickness ]
+        let attrMap = Map.ofList [ "Q", attrs.Sequence; "L", string elv; "X", string attrs.Scale; "O", hostPerimeter; "I", attrs.Islands; "T", string attrs.Thickness ]
 
         let rawTree = nest.Tree |> List.map (fun g -> g |> List.map (fun n -> (n.Id, n.Area, n.Label)) |> List.toArray) |> List.toArray
         let treeObj = Xyxel.LayoutTree.Create rawTree
 
         let opts: Xyxel.LayoutOptions = { 
-            EntryFallback = hostBaseHex
+            EntryFallback = "0,0"
             InitialOcc = allCxls |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls) |> Hexel.hxlUni 1
             Seq = None
             Width = None

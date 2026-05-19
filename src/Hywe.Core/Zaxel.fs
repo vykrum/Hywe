@@ -13,6 +13,7 @@ module Zaxel =
     open Goxel
     open Lexel
     open Xyxel
+    open Nexel
 
     /// <summary> Internal state for multi-level construction. </summary>
     type BuildState = {
@@ -32,9 +33,9 @@ module Zaxel =
         
         // --- Pass 1: Resolve Attributes & Global Ratio ---
         let resolvedLevels, globalRatio =
-            let initial = (ouStrOverride, ilStrOverride, None, None, None) // O, I, W, H, Ratio
-            ((initial, []), Array.indexed (List.toArray parsedLevels))
-            ||> Array.fold (fun ((ou, il, w, h, r), acc) (i, segment) ->
+            let initial = (ouStrOverride, ilStrOverride, None, None, None, 0) // O, I, W, H, Ratio, LvlIdx
+            ((initial, []), parsedLevels)
+            ||> List.fold (fun ((ou, il, w, h, r, lvlIdx), acc) segment ->
                 match segment with
                 | Level a_block ->
                     let a = a_block.Attributes
@@ -50,22 +51,22 @@ module Zaxel =
                     let ratio = calculateTargetRatio attrMap treeObj { 
                         EntryFallback = entryAtrFallback; InitialOcc = initialOcc; Seq = None
                         Width = curW; Height = curH; OuterStr = curO; IslandsStr = curI
-                        ParentCxl = None; Ratio = None; Elevation = Some a.Level 
+                        ParentCxl = None; Ratio = None; Elevation = Some lvlIdx 
                     }
                     
                     let nextR = match r with None -> Some ratio | Some current -> Some (min current ratio)
-                    (curO, curI, curW, curH, nextR), (segment, Some treeObj, curW, curH, curO, curI) :: acc
+                    (curO, curI, curW, curH, nextR, lvlIdx + 1), (segment, Some treeObj, curW, curH, curO, curI, lvlIdx) :: acc
                 | Nest n_block ->
-                    (ou, il, w, h, r), (segment, None, None, None, None, None) :: acc
+                    (ou, il, w, h, r, lvlIdx), (segment, None, None, None, None, None, lvlIdx - 1) :: acc
             )
-            |> fun ((_, _, _, _, r), levels) -> List.rev levels, r
+            |> fun ((_, _, _, _, r, _), levels) -> List.rev levels, r
 
         // --- Pass 2: Generation ---
         let initialState = { Cxls = [||]; Bounds = [||]; Elvs = [||]; Ratio = globalRatio; RootW = None; RootH = None; RootO = None; RootI = None }
         
         let finalState = 
-            (initialState, Array.indexed (List.toArray resolvedLevels)) 
-            ||> Array.fold (fun state (i, (segment, treeObjOpt, w, h, o, iStr)) ->
+            (initialState, resolvedLevels) 
+            ||> List.fold (fun state (segment, treeObjOpt, w, h, o, iStr, lvlIdx) ->
                 match segment with
                 | Level a_block ->
                     let attrs = a_block.Attributes
@@ -73,16 +74,16 @@ module Zaxel =
                     let attrMap = Map.ofList [ "Q", attrs.Sequence; "L", string attrs.Level; "X", string attrs.Scale; "E", attrs.Entry; "O", attrs.OuterBoundary; "I", attrs.Islands; "T", string attrs.Thickness ]
                     
                     let bsHx = 
-                        match attrs.Level with
+                        match lvlIdx with
                         | 0 -> None
                         | _ -> 
                             let targetId = attrs.Entry
-                            state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = attrs.Level - 1) |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId)
+                            state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = lvlIdx - 1) |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId)
 
                     let ctx = prepareLayoutContext attrMap treeObj { 
                         EntryFallback = entryAtrFallback; InitialOcc = initialOcc; Ratio = state.Ratio
-                        Seq = match seqOverride with Some (l, s) when l = attrs.Level -> Some s | _ -> None
-                        Width = w; Height = h; OuterStr = o; IslandsStr = iStr; ParentCxl = bsHx; Elevation = Some attrs.Level 
+                        Seq = match seqOverride with Some (l, s) when l = lvlIdx -> Some s | _ -> None
+                        Width = w; Height = h; OuterStr = o; IslandsStr = iStr; ParentCxl = bsHx; Elevation = Some lvlIdx 
                     }
                     
                     match generateBaseCxl ctx with

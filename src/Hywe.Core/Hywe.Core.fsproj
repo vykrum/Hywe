@@ -10,6 +10,7 @@
     <Compile Include="Goxel.fs" />
     <Compile Include="Lexel.fs" />
     <Compile Include="Xyxel.fs" />
+    <Compile Include="Nexel.fs" />
     <Compile Include="Zaxel.fs" />
   </ItemGroup>
 </Project>
