@@ -30,3 +30,48 @@ module Nexel =
             | true, v -> Some v
             | _ -> None
         else None
+
+    /// <summary> Generates nested layout using the Xyxel layout engine. </summary>
+    let generateNestLayout (nest: NestBlock) (hostCxl: Coxel.Cxl) (allCxls: Coxel.Cxl[]) =
+        let attrs = nest.Attributes
+        let elv = 
+            let _, _, z = Hexel.hxlCrd hostCxl.Base
+            z
+        
+        let hostSeqn = hostCxl.Seqn
+        // Format parent's perimeter for Xyxel's OuterStr
+        let hostPerimeter = 
+            Coxel.cxlPrm hostCxl elv
+            |> Goxel.cleanPolygon hostSeqn
+            |> Array.map (fun (x, y) -> sprintf "%d,%d" x y)
+            |> String.concat ","
+            
+        let hostBaseHex = 
+            let x, y, _ = Hexel.hxlCrd hostCxl.Base
+            sprintf "%d,%d" x y
+
+        let attrMap = Map.ofList [ "Q", attrs.Sequence; "L", string elv; "X", string attrs.Scale; "E", hostBaseHex; "O", hostPerimeter; "I", attrs.Islands; "T", string attrs.Thickness ]
+
+        let rawTree = nest.Tree |> List.map (fun g -> g |> List.map (fun n -> (n.Id, n.Area, n.Label)) |> List.toArray) |> List.toArray
+        let treeObj = Xyxel.LayoutTree.Create rawTree
+
+        let opts: Xyxel.LayoutOptions = { 
+            EntryFallback = hostBaseHex
+            InitialOcc = allCxls |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls) |> Hexel.hxlUni 1
+            Seq = None
+            Width = None
+            Height = None
+            OuterStr = Some hostPerimeter
+            IslandsStr = match attrs.Islands with "" -> None | s -> Some s
+            ParentCxl = Some hostCxl
+            Ratio = None // Nests calculate their own ratio based on the boundary
+            Elevation = Some elv
+        }
+
+        let ctx = Xyxel.prepareLayoutContext attrMap treeObj opts
+        
+        match Xyxel.generateBaseCxl ctx with
+        | Some (root, occ) ->
+            let cxls, bounds, rto = Xyxel.generateCxlLayout ctx root occ
+            Some (cxls, bounds, rto)
+        | None -> None
