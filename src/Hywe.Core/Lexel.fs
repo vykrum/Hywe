@@ -117,7 +117,8 @@ module Lexel =
         nodes 
         |> List.choose (fun n ->
             let children = nodes |> List.filter (fun c -> isChild n.Id c.Id)
-            match children, n.Id.EndsWith("1"), n.Id.Contains(".") with
+            let origId = n.Id.Substring(markerPrefix.Length + 1)
+            match children, origId = "1", origId.Contains(".") with
             | [], true, false -> Some (n :: children)
             | [], _, _ -> None
             | _ -> Some (n :: children))

@@ -50,54 +50,54 @@ module Cache
         fromFullLayout data sqn elv
 
     /// <summary>
-    /// Initializes an empty cache for all current levels.
+    /// Initializes an empty cache for all current levels/markers.
     /// </summary>
-    let init (levels: int list) : LayoutCache =
-        levels |> List.map (fun l -> l, Array.replicate 24 None) |> Map.ofList
+    let init (markers: string list) : LayoutCache =
+        markers |> List.map (fun m -> m, Array.replicate 24 None) |> Map.ofList
 
     /// <summary>
     /// Gets a specific configuration from the cache.
     /// </summary>
-    let get (lvl: int) (sqnIdx: int) (cache: LayoutCache) : BatchConfgrtns option =
-        cache |> Map.tryFind lvl |> Option.bind (fun arr -> if sqnIdx >= 0 && sqnIdx < 24 then arr.[sqnIdx] else None)
+    let get (marker: string) (sqnIdx: int) (cache: LayoutCache) : BatchConfgrtns option =
+        cache |> Map.tryFind marker |> Option.bind (fun arr -> if sqnIdx >= 0 && sqnIdx < 24 then arr.[sqnIdx] else None)
 
     /// <summary>
     /// Checks if a level has any generated configuration.
     /// </summary>
-    let hasAny (lvl: int) (cache: LayoutCache) : bool =
-        cache |> Map.tryFind lvl |> Option.map (Array.exists Option.isSome) |> Option.defaultValue false
+    let hasAny (marker: string) (cache: LayoutCache) : bool =
+        cache |> Map.tryFind marker |> Option.map (Array.exists Option.isSome) |> Option.defaultValue false
 
     /// <summary>
     /// Updates the cache with a new configuration.
     /// </summary>
-    let update (lvl: int) (sqnIdx: int) (data: BatchConfgrtns) (cache: LayoutCache) : LayoutCache =
-        match cache |> Map.tryFind lvl with
+    let update (marker: string) (sqnIdx: int) (data: BatchConfgrtns) (cache: LayoutCache) : LayoutCache =
+        match cache |> Map.tryFind marker with
         | Some arr ->
             let newArr = Array.copy arr
             newArr.[sqnIdx] <- Some data
-            cache |> Map.add lvl newArr
+            cache |> Map.add marker newArr
         | None ->
             let arr = Array.replicate 24 None
             arr.[sqnIdx] <- Some data
-            cache |> Map.add lvl arr
+            cache |> Map.add marker arr
 
     /// <summary>
     /// Finds the first missing configuration for a specific level.
     /// </summary>
-    let nextMissingInLevel (lvl: int) (cache: LayoutCache) : int option =
-        match cache |> Map.tryFind lvl with
+    let nextMissingInMarker (marker: string) (cache: LayoutCache) : int option =
+        match cache |> Map.tryFind marker with
         | Some arr -> arr |> Array.tryFindIndex Option.isNone
         | None -> Some 0
 
     /// <summary>
     /// Finds the next missing configuration across all levels.
     /// </summary>
-    let nextMissingGlobal (cache: LayoutCache) : (int * int) option =
+    let nextMissingGlobal (cache: LayoutCache) : (string * int) option =
         cache 
         |> Map.toList 
         |> List.sortBy fst 
-        |> List.tryPick (fun (lvl, arr) -> 
-            arr |> Array.tryFindIndex Option.isNone |> Option.map (fun idx -> lvl, idx))
+        |> List.tryPick (fun (marker, arr) -> 
+            arr |> Array.tryFindIndex Option.isNone |> Option.map (fun idx -> marker, idx))
 
     /// <summary>
     /// Reconstructs DerivedData from a cached configuration.
@@ -113,10 +113,10 @@ module Cache
           cxB36 = config.cxB36 }
 
     /// <summary>
-    /// Returns all cached variations for a specific level.
+    /// Returns all cached variations for a specific marker.
     /// </summary>
-    let getAllVariations (elv: int) (cache: LayoutCache) =
-        [0..23] |> List.choose (fun i -> get elv i cache) |> List.toArray
+    let getAllVariations (marker: string) (cache: LayoutCache) =
+        [0..23] |> List.choose (fun i -> get marker i cache) |> List.toArray
 
     /// <summary>
     /// Generates DerivedData directly from source strings and sequences (convenience helper).

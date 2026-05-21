@@ -86,15 +86,18 @@ let private getBaseCoordStringDec (cxl: Cxl) =
 /// Generates a CSV of all Coxel coordinates
 let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
     let sb = StringBuilder()
-    sb.AppendLine("Orientation,Level,CoxelID,CoxelName,BaseCoordinate,Coordinates") |> ignore
+    sb.AppendLine("Orientation,Level,Rooms (ID Name Base Coordinates...)") |> ignore
     for (sqn, elv, cxls) in data do
-        for i = 0 to cxls.Length - 1 do
-            let cxl = cxls.[i]
-            let id = prpVlu cxl.Rfid
-            let name = prpVlu cxl.Name
-            let baseCoord = getBaseCoordStringDec cxl
-            let coords = getCxlCoordsStringDec cxl
-            sb.AppendLine(sprintf "%s,%d,%s,%s,%s,%s" sqn elv id name baseCoord coords) |> ignore
+        let roomStrings =
+            cxls |> Array.map (fun cxl ->
+                let id = prpVlu cxl.Rfid
+                let name = prpVlu cxl.Name
+                let baseCoord = getBaseCoordStringDec cxl
+                let coords = getCxlCoordsStringDec cxl
+                sprintf "%s %s %s %s" id name baseCoord coords
+            )
+        let rowStr = sprintf "%s,%d,%s" sqn elv (String.concat "," roomStrings)
+        sb.AppendLine(rowStr) |> ignore
     sb.ToString()
 
 /// Generates a CSV of area metrics

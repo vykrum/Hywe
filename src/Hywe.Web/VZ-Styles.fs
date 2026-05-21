@@ -1006,6 +1006,16 @@ let nodeStyles = """
     background-color: #3498db;
 }
 
+.node-outer.is-nesting .node-inner {
+    background-color: #eafaf1;
+}
+
+.node-outer.is-nesting {
+    background-color: #2ecc71;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.4);
+    border: 1px solid #2ecc71;
+}
+
 .node-outer.is-dragging {
     transform: scale(0.9);
 }

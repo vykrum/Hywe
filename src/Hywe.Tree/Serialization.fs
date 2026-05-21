@@ -158,15 +158,47 @@ module Serialization =
                     Some $"{marker}({attrs}){body}"
             )
         
-        String.concat "" segments
+        let nestSegments =
+            model.Nests |> Map.toList |> List.map (fun (nId, root) ->
+                let nodes = getNodesWithPrefix "1" root |> Seq.toList
+                let anchorId = model.NestAnchors |> Map.tryFind nId |> Option.defaultValue Guid.Empty
+                let anchorInfo = 
+                    allLvlNodes |> List.indexed |> List.tryPick (fun (lvl, lvlNodesOpt) ->
+                        match lvlNodesOpt with
+                        | Some nodesList -> 
+                            nodesList |> List.tryFind (fun (n, _) -> n.Id = anchorId)
+                            |> Option.map (fun (_, prefix) -> (lvl, prefix))
+                        | None -> None
+                    )
+                
+                let (parentLvl, bVal) = match anchorInfo with Some (l, p) -> (l, p) | None -> (0, "0")
+                
+                let currentL = if parentLvl < elevations.Length then elevations.[parentLvl] else 0.0
+                
+                let attrs = $"Q=VRCCNE/L={parentLvl}/W={w}/H={h}/X={x}/E=0/B={bVal}/O={o}/I={i}"
+                
+                let body = 
+                    nodes 
+                    |> List.map (fun (n, p) -> 
+                        let extrStr = match n.Extrusion = 3.0 with true -> "" | false -> $"/{n.Extrusion}"
+                        let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
+                        $"({p}/{n.Weight}/{n.Name}{extrStr}{baseStr})") 
+                    |> String.concat ""
+                
+                $"N{nId}({attrs}){body}"
+            )
+
+        String.concat "" (segments @ nestSegments)
 
     let buildTreeMap (input: string) =
-        let levels = processFullString input
+        let blocks = processFullString input
+        let levelBlocks = blocks |> List.choose (function | Level l -> Some l | _ -> None)
+        let nestBlocks = blocks |> List.choose (function | Nest n -> Some n | _ -> None)
         
         let allParts = 
-            levels |> List.toArray |> Array.mapi (fun i levelData ->
-                let attrs = match levelData with | Level l -> l.Attributes | Nest n -> n.Attributes
-                let tree = match levelData with | Level l -> l.Tree | Nest n -> n.Tree
+            levelBlocks |> List.toArray |> Array.mapi (fun i l ->
+                let attrs = l.Attributes
+                let tree = l.Tree
                 let tVal = attrs.Thickness
                 let sVal = Some attrs.Scale
                 let eVal = attrs.Entry
@@ -185,16 +217,16 @@ module Serialization =
             |> Array.toList
             |> List.distinctBy (fun (p, _, _, _, l, _) -> (p, l))
 
-        let rec build (lvl: int) (prefix: int list) (currentGuidMap: Map<int * string, Guid>) =
+        let rec build (lvl: int) (prefix: int list) (currentGuidMap: Map<int * string, Guid>) (srcData: (int list * string * string * float * int * string option) list) (isNest: bool) =
             let nodesToBuild = 
-                nodeData 
+                srcData 
                 |> List.filter (fun (path, _, _, _, nLvl, _) -> 
                     nLvl = lvl && ((prefix = [] && path.Length = 1) || (path.Length = prefix.Length + 1 && List.take prefix.Length path = prefix)))
             
             nodesToBuild |> List.fold (fun (nodes, guidMap) (path, weight, name, extrusion, lvl, bVal) ->
                 let pathStr = String.Join(".", path)
                 let id, guidMapAfterId = 
-                    match lvl > 0 && prefix = [] with
+                    match lvl > 0 && prefix = [] && not isNest with
                     | true ->
                         let _, _, _, _, eVal = allParts.[lvl]
                         match eVal <> "0" with
@@ -211,7 +243,7 @@ module Serialization =
                         let g = Guid.NewGuid()
                         g, guidMap |> Map.add (lvl, pathStr) g
                 
-                let children, guidMapAfterChildren = build lvl path guidMapAfterId
+                let children, guidMapAfterChildren = build lvl path guidMapAfterId srcData isNest
                 let node = { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = children; Level = lvl; Extrusion = extrusion; Base = bVal }
                 nodes @ [node], guidMapAfterChildren
             ) ([], currentGuidMap)
@@ -220,7 +252,7 @@ module Serialization =
         
         let levelsList, finalGuidMap = 
             [0 .. maxLvl] |> List.fold (fun (acc, currentGuidMap) lvl ->
-                let rootNodes, nextGuidMap = build lvl [] currentGuidMap
+                let rootNodes, nextGuidMap = build lvl [] currentGuidMap nodeData false
                 let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
                 let laidOut = fst (TreeOps.layoutTree root 0 50.0)
                 acc @ [lvl, laidOut], nextGuidMap
@@ -252,14 +284,49 @@ module Serialization =
         let topExtrusion = 
             match Array.tryLast allParts with Some (_, t, _, _, _) -> t | None -> 3.0
 
-        levelsMapFinal, levelAnchors, topExtrusion
+        let nestDataList =
+            nestBlocks |> List.map (fun n ->
+                let nId = match Int32.TryParse(n.Marker.Substring(1)) with true, v -> v | _ -> 1
+                let attrs = n.Attributes
+                let tree = n.Tree
+                let bVal = attrs.Base
+                let parentLvl = attrs.Level
+                let nodes = tree |> List.collect id
+                let parsedNodes = 
+                    nodes |> List.map (fun nd ->
+                        let idx = nd.Id.IndexOf('.')
+                        let rawId = if idx >= 0 then nd.Id.Substring(idx + 1) else nd.Id
+                        (rawId.Split('.') |> Array.map int |> Array.toList, string nd.Area, nd.Label, nd.Extrusion |> Option.defaultValue 3.0, parentLvl, nd.Base)
+                    )
+                (nId, bVal, parentLvl, parsedNodes)
+            )
+
+        let nestsMapAndAnchors =
+            nestDataList |> List.map (fun (nId, bVal, parentLvl, nodesData) ->
+                let rootNodes, _ = build parentLvl [] Map.empty nodesData true
+                let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = parentLvl; Extrusion = 3.0; Base = None }
+                let laidOut = fst (TreeOps.layoutTree root 0 50.0)
+                let anchorId = 
+                    match finalGuidMap |> Map.tryFind (parentLvl, bVal) with
+                    | Some g -> g
+                    | None -> Guid.Empty
+                (nId, laidOut), (nId, anchorId)
+            )
+            
+        let nestsMapFinal = nestsMapAndAnchors |> List.map fst |> Map.ofList
+        let nestAnchorsFinal = nestsMapAndAnchors |> List.map snd |> Map.ofList
+
+        levelsMapFinal, levelAnchors, topExtrusion, nestsMapFinal, nestAnchorsFinal
 
     let initModel (inputString: string) : SubModel =
-        let levelsMap, levelAnchors, topExtrusion = buildTreeMap inputString
+        let levelsMap, levelAnchors, topExtrusion, nestsMap, nestAnchors = buildTreeMap inputString
         
         { Levels = levelsMap
+          Nests = nestsMap
           ActiveLevel = 0
+          ActiveNest = None
           LevelAnchors = levelAnchors
+          NestAnchors = nestAnchors
           ConfirmingId = None
           ActiveActionId = ActionIds.NoAction
           ActiveMenuId = None

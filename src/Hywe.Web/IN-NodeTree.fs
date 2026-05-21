@@ -69,9 +69,31 @@ module NodeActionsUI =
             }
     }
 
+    let nestAction = {
+        Logic = Actions.nestActionLogic
+        RenderConfirm = fun dispatch _ node ->
+            concat {
+                button {
+                    attr.``class`` "nodename"
+                    attr.style "color: #2ecc71; font-weight: bold; cursor: pointer; border: none !important; width: 54px; padding: 0; margin: auto; background: none;"
+                    "onpointerdown:stopPropagation" => true
+                    on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, ActionIds.Nest)))
+                    text "NEST"
+                }
+                button {
+                    attr.``class`` "nodebutton2"
+                    attr.style "color: #999; font-size: 10px;"
+                    "onpointerdown:stopPropagation" => true
+                    on.pointerdown (fun _ -> dispatch CancelAction)
+                    text "↺"
+                }
+            }
+    }
+
     let uiRegistry = [
         deleteAction
         elevateAction
+        nestAction
     ]
 
     let findAction id = uiRegistry |> List.tryFind (fun a -> a.Logic.LogicId = id)
@@ -103,38 +125,47 @@ module NodeTree =
         { SvgX = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
           SvgY = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH }
 
+    let getCurrentTree model = 
+        match model.ActiveNest with
+        | Some nId -> model.Nests |> Map.tryFind nId |> Option.defaultValue (model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0])
+        | None -> model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+
+    let updateCurrentTree model newTree =
+        match model.ActiveNest with
+        | Some nId -> { model with Nests = model.Nests |> Map.add nId newTree }
+        | None -> 
+            let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel newTree) model.LevelAnchors 0
+            { model with Levels = finalLevels }
+
     let handleExecuteAction id actionId model =
         match NodeActionsUI.findAction actionId with
         | Some action ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+            let currentTree = getCurrentTree model
             match TreeOps.findNodeById id currentTree with
             | Some node -> action.Logic.Execute model node
             | None -> model, Cmd.none
         | None -> model, Cmd.none
 
     let handleNodeUpdate msg model =
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+        let currentTree = getCurrentTree model
         match msg with
         | UpdateName (id, name) ->
             let newRoot = TreeOps.updateNodeById id (fun n -> { n with Name = name }) currentTree
-            let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel newRoot) model.LevelAnchors 0
-            { model with Levels = finalLevels }, Cmd.none
+            updateCurrentTree model newRoot, Cmd.none
         | UpdateWeight (id, weight) ->
             let sanitizedWeight = match Double.TryParse weight with true, v -> (int (round v)).ToString() | _ -> weight
             let newRoot = TreeOps.updateNodeById id (fun n -> { n with Weight = sanitizedWeight }) currentTree
-            let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel newRoot) model.LevelAnchors 0
-            { model with Levels = finalLevels }, Cmd.none
+            updateCurrentTree model newRoot, Cmd.none
         | UpdateExtrusion (id, newVal) ->
             let extrusion = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> currentTree.Extrusion
             let updatedRoot = TreeOps.updateNodeById id (fun n -> { n with Extrusion = extrusion }) currentTree
-            let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel updatedRoot) model.LevelAnchors 0
-            { model with Levels = finalLevels }, Cmd.none
+            updateCurrentTree model updatedRoot, Cmd.none
         | ActionInput (id, actionId, value) ->
             match NodeActionsUI.findAction actionId with
             | Some action ->
                 match action.Logic.HandleInput with
                 | Some handler ->
-                    let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+                    let currentTree = getCurrentTree model
                     match TreeOps.findNodeById id currentTree with
                     | Some node -> handler model node value
                     | None -> model, Cmd.none
@@ -145,7 +176,7 @@ module NodeTree =
     let handlePointerEvent msg js model =
         match msg with
         | PointerDown data ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+            let currentTree = getCurrentTree model
             { model with PointerDownPos = None; PendingDragId = None }, Cmd.OfAsync.perform (fun _ -> getSvgInfo js) () (fun info -> 
                 let pt = toSvgCoords info (float data.ClientX) (float data.ClientY)
                 let rec findNode node =
@@ -164,7 +195,7 @@ module NodeTree =
             | _ ->
                 match model.DraggingId, model.SvgInfo with
                 | Some _, Some info ->
-                    let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+                    let currentTree = getCurrentTree model
                     let pt = toSvgCoords info (float data.ClientX) (float data.ClientY)
                     let rec findNode node =
                         match pt.SvgX >= node.X - 30.0 && pt.SvgX <= node.X + 30.0 &&
@@ -184,7 +215,7 @@ module NodeTree =
                 | _ -> { model with LastMoveMs = Some nowMs }, Cmd.none
         | PointerUp ->
             let m = { model with PendingDragId = None; PointerDownPos = None }
-            let currentTree = m.Levels |> Map.tryFind m.ActiveLevel |> Option.defaultValue m.Levels.[0]
+            let currentTree = getCurrentTree m
             match m.DraggingId, m.DropTargetId with
             | Some sourceId, Some targetId when sourceId <> targetId ->
                 let sourceNode = TreeOps.findNodeById sourceId currentTree
@@ -194,7 +225,8 @@ module NodeTree =
                     match rootWithoutSource, extracted with
                     | Some rs, Some ex ->
                         let laidOut = fst (TreeOps.layoutTree (TreeOps.insertBefore targetId ex rs) 0 50.0)
-                        { m with Levels = m.Levels |> Map.add m.ActiveLevel laidOut; DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
+                        let updatedModel = updateCurrentTree m laidOut
+                        { updatedModel with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
                     | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
                 | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
             | _ -> { m with DraggingId = None; DropTargetId = None; SvgInfo = None }, Cmd.none
@@ -208,7 +240,8 @@ module NodeTree =
         match msg with
         | OpenMenu id -> { model with ActiveMenuId = Some id; ConfirmingId = None }, Cmd.none
         | CloseMenu -> { model with ActiveMenuId = None }, Cmd.none
-        | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveMenuId = None }, Cmd.none
+        | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveNest = None; ActiveMenuId = None }, Cmd.none
+        | SetNest nId -> { model with ActiveNest = Some nId; ActiveMenuId = None }, Cmd.none
         | SetTopExtrusion newVal ->
             let extr = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> model.TopExtrusion
             { model with TopExtrusion = extr }, Cmd.none
@@ -217,11 +250,11 @@ module NodeTree =
         | CancelAction -> { model with ConfirmingId = None; ActiveActionId = ActionIds.NoAction }, Cmd.none
         | ExecuteAction (id, actionId) -> handleExecuteAction id actionId model
         | AddChild parentId ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+            let currentTree = getCurrentTree model
             let newChild = { Id = Guid.NewGuid(); Name = TreeOps.getRandomName(); Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
             let newRoot = TreeOps.updateNodeById parentId (fun n -> { n with Children = n.Children @ [newChild] }) currentTree
             let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-            { model with Levels = model.Levels |> Map.add model.ActiveLevel laidOut }, Cmd.none
+            updateCurrentTree model laidOut, Cmd.none
         | UpdateName _ | UpdateWeight _ | UpdateExtrusion _ | ActionInput _ -> handleNodeUpdate msg model
         | PointerDown _ | PointerMove _ | PointerUp | DragStartInternal _ | PointerUpInternal -> handlePointerEvent msg js model
 
@@ -229,12 +262,14 @@ module NodeTree =
     // View
     // --------------------
     let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: bool) (colorList: string[]) (allNodes: TreeNode list) (dispatch: SubMsg -> unit) =
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+        let currentTree = getCurrentTree model
         let isRoot = node.Id = currentTree.Id
         let isConfirmingThis = model.ConfirmingId = Some node.Id
         let isMenuOpen = model.ActiveMenuId = Some node.Id
         let isDropTarget = model.DropTargetId = Some node.Id
         let hasHalo = node.Level > model.ActiveLevel
+        
+        let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = node.Id)
         
         let outerClasses = 
             [ "node-outer"
@@ -244,8 +279,10 @@ module NodeTree =
                     match model.ActiveActionId with
                     | ActionIds.Delete -> "is-confirming"
                     | ActionIds.Elevate -> "is-elevating"
+                    | ActionIds.Nest -> "is-nesting"
                     | _ -> ""
               | false -> ""
+              match isNestAnchor && not isRoot with true -> "is-nesting" | false -> ""
               match model.DraggingId = Some node.Id && not isRoot with true -> "is-dragging" | false -> ""
               match isDropTarget && not isRoot with true -> "is-drop-target" | false -> ""
               match hasHalo with true -> "is-elevated" | false -> "" ]
@@ -348,7 +385,7 @@ module NodeTree =
 
     let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> unit) : Node =      
 
-        let currentLvlRoot = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+        let currentLvlRoot = getCurrentTree model
         let displayTree = currentLvlRoot
         let laidOutDisplayTree = displayTree
 
@@ -404,10 +441,29 @@ module NodeTree =
                 forEach (List.init (maxLevel + 1) id) (fun i ->
                     let elv = match i < elevations.Length with true -> elevations.[i] | false -> 0.0
                     let elvStr = match elv = floor elv with true -> string (int elv) | false -> string elv
-                    button {
-                        attr.``class`` (match model.ActiveLevel = i with true -> "level-tab active" | false -> "level-tab")
-                        on.pointerdown (fun _ -> dispatch (SetLevel i))
-                        text elvStr
+                    let levelTab =
+                        button {
+                            attr.``class`` (match model.ActiveLevel = i && model.ActiveNest.IsNone with true -> "level-tab active" | false -> "level-tab")
+                            on.pointerdown (fun _ -> dispatch (SetLevel i))
+                            text elvStr
+                        }
+                    
+                    let nestTabs = 
+                        model.Nests 
+                        |> Map.toList 
+                        |> List.filter (fun (_, tree) -> tree.Level = i)
+                        |> List.map (fun (nId, _) ->
+                            button {
+                                attr.``class`` (match model.ActiveNest = Some nId with true -> "level-tab active" | false -> "level-tab")
+                                attr.style "margin-left: 2px; color: #2ecc71;"
+                                on.pointerdown (fun _ -> dispatch (SetNest nId))
+                                text $"N{nId}"
+                            }
+                        )
+                    
+                    concat {
+                        levelTab
+                        for t in nestTabs do t
                     }
                 )
                 
