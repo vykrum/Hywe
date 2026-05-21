@@ -90,24 +90,24 @@ module Lexel =
     /// Processes Hywe node blocks and organizes them into a hierarchical tree.
     /// Handles (ID/Area/Label/Extrusion/B=Base) format and dot-notation grouping.
     /// </summary>
-    let parseNodes (blocks: string list) : LexelNode list list =
+    let parseNodes (markerPrefix: string) (blocks: string list) : LexelNode list list =
         let nodes = 
             blocks |> List.choose (fun b ->
                 let bits = b.Trim('(', ')').Split('/')
                 match bits.Length with
                 | 3 -> 
                     match bits.[1] with
-                    | Int area -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = None }
+                    | Int area -> Some { Id = $"{markerPrefix}.{bits.[0].Trim()}"; Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = None }
                     | _ -> None
                 | 4 ->
                     match bits.[1], bits.[3] with
-                    | Int area, Float extr -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = None }
-                    | Int area, s when s.StartsWith "B=" -> Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = Some (s.Substring(2)) }
+                    | Int area, Float extr -> Some { Id = $"{markerPrefix}.{bits.[0].Trim()}"; Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = None }
+                    | Int area, s when s.StartsWith "B=" -> Some { Id = $"{markerPrefix}.{bits.[0].Trim()}"; Area = area; Label = bits.[2].Trim(); Extrusion = None; Base = Some (s.Substring(2)) }
                     | _ -> None
                 | 5 ->
                     match bits.[1], bits.[3], bits.[4] with
                     | Int area, Float extr, s when s.StartsWith "B=" -> 
-                        Some { Id = bits.[0].Trim(); Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = Some (s.Substring(2)) }
+                        Some { Id = $"{markerPrefix}.{bits.[0].Trim()}"; Area = area; Label = bits.[2].Trim(); Extrusion = Some extr; Base = Some (s.Substring(2)) }
                     | _ -> None
                 | _ -> None)
 
@@ -126,7 +126,7 @@ module Lexel =
     /// <summary> 
     /// Unified entry point for processing a single Xyxel segment (attributes + nodes).
     /// </summary>
-    let processXyxel (input: string) =
+    let processXyxel (markerPrefix: string) (input: string) =
         Regex.Matches(input.Trim(), @"\(([^)]*)\)")
         |> Seq.cast<Match>
         |> Seq.map (fun m -> m.Value)
@@ -136,7 +136,7 @@ module Lexel =
             | attrBlock :: nodeBlocks ->
                 Some {|
                     Attributes = parseAttributes attrBlock
-                    Tree = parseNodes nodeBlocks
+                    Tree = parseNodes markerPrefix nodeBlocks
                 |}
 
     /// <summary> 
@@ -147,9 +147,10 @@ module Lexel =
         Regex.Matches(input.Trim(), @"([^()]*?)((?:\([^)]*\))+(?=(?:[^()]*\(|$)))")
         |> Seq.cast<Match>
         |> Seq.choose (fun m ->
-            let marker = m.Groups.[1].Value.Trim()
+            let markerRaw = m.Groups.[1].Value.Trim()
+            let marker = if String.IsNullOrEmpty(markerRaw) then "L0" else markerRaw
             let content = m.Groups.[2].Value.Trim()
-            processXyxel content
+            processXyxel marker content
             |> Option.map (fun res -> 
                 if marker.StartsWith("N") then
                     Nest { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }

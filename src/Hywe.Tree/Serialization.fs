@@ -38,7 +38,9 @@ module Serialization =
                         |> List.map (fun n -> 
                             let extr = match n.Extrusion with Some v -> $"/{v}" | None -> ""
                             let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
-                            $"({n.Id}/{n.Area}/{n.Label}{extr}{baseStr})")
+                            let idx = n.Id.IndexOf('.')
+                            let rawId = if idx >= 0 then n.Id.Substring(idx + 1) else n.Id
+                            $"({rawId}/{n.Area}/{n.Label}{extr}{baseStr})")
                         |> String.concat ""
 
                     $"{finalMarker}({attrStr}){nodes}"
@@ -57,7 +59,10 @@ module Serialization =
             
             // Find the root (path "1") or default to the first node
             let rootNode = 
-                nodes |> List.tryFind (fun n -> n.Id = "1")
+                nodes |> List.tryFind (fun n -> 
+                    let idx = n.Id.IndexOf('.')
+                    let rawId = if idx >= 0 then n.Id.Substring(idx + 1) else n.Id
+                    rawId = "1")
                 |> Option.orElse (nodes |> List.tryHead)
 
             match rootNode with
@@ -172,7 +177,9 @@ module Serialization =
         let nodeData = 
             allParts |> Array.collect (fun (lvl, t, s, nodes, e) ->
                 nodes |> List.map (fun n ->
-                    (n.Id.Split('.') |> Array.map int |> Array.toList, string n.Area, n.Label, n.Extrusion |> Option.defaultValue 3.0, lvl, n.Base)
+                    let idx = n.Id.IndexOf('.')
+                    let rawId = if idx >= 0 then n.Id.Substring(idx + 1) else n.Id
+                    (rawId.Split('.') |> Array.map int |> Array.toList, string n.Area, n.Label, n.Extrusion |> Option.defaultValue 3.0, lvl, n.Base)
                 ) |> List.toArray
             )
             |> Array.toList
