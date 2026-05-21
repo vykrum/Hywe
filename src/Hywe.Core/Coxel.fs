@@ -50,57 +50,45 @@ module Coxel =
         let szn = ini |> Array.map (fun (_, _, y, z) -> y, z)
         let idn = ini |> Array.map (fun (h, r, _, _) -> h, r)
 
-        let cnt = bas |> Array.map snd |> function [||] -> 0 | x -> Array.max x
+        let cnt = match bas |> Array.map snd with | [||] -> 0 | x -> Array.max x
         
-        let acc = bas |> Array.map (fun x -> 
-            let list = System.Collections.Generic.List<Hxl * int>()
-            list.Add(x)
-            list)
+        let acc = bas |> Array.map (fun x -> [| x |])
         
         let initialOcc = Array.append occ (getHxls bas)
-        let occSet = hxlSet initialOcc
             
-        let rec clsts (hxo : (Hxl * int)[]) (elv : int) (occSet : System.Collections.Generic.HashSet<Hxl>) (acc : System.Collections.Generic.List<Hxl * int>[]) (cnt : int) = 
+        let rec clsts (hxo : (Hxl * int)[]) (currentOcc : Hxl[]) (acc : (Hxl * int)[][]) (cnt : int) = 
             match cnt with 
             | c when c < 1 -> acc
             | _ -> 
                 let hx1 = 
                     acc |> Array.mapi (fun i row ->
                         let (_, count) = hxo.[i]
-                        let mutable foundPoint = None
-                        let mutable j = 0
-                        while j < row.Count && foundPoint.IsNone do
-                            let h, _ = row.[j]
-                            if (availableSet sqn elv h occSet) > 0 then
-                                foundPoint <- Some h
-                            j <- j + 1
+                        let foundPoint = 
+                            row |> Array.tryFind (fun (h, _) -> 
+                                available sqn elv h currentOcc > 0
+                            )
                         
                         match foundPoint with
-                        | Some h -> (h, count - 1)
+                        | Some (h, _) -> (h, count - 1)
                         | None   -> (hxlVld sqn (RV(0,0,elv)), 0xFFFFFFFF)
                     )
 
-                let inc = incrementsSet sqn elv hx1 occSet
+                let inc = increments sqn elv hx1 currentOcc
                                 
-                for i = 0 to acc.Length - 1 do
-                    let newEl = inc.[i]
-                    acc.[i].Add(newEl)
-                    let h, _ = newEl
-                    let x, y, z = hxlCrd h
-                    occSet.Add(AV(x, y, z)) |> ignore
+                let nextAcc = Array.map2 (fun row newEl -> Array.append row [|newEl|]) acc inc
+                let newOcc = Array.append currentOcc (getHxls inc) |> hxlUni 1
                 
-                clsts hx1 elv occSet acc (cnt - 1)
+                clsts hx1 newOcc nextAcc (cnt - 1)
 
         let cls = 
-            clsts bas elv occSet acc cnt
+            clsts bas initialOcc acc cnt
             |> Array.map (fun row -> 
-                row.ToArray() |> Array.filter (fun (_, z) -> z >= 0))
+                row |> Array.filter (fun (_, z) -> z >= 0))
             
         let cl1 = cls |> Array.map getHxls
 
         Array.map3 (fun (y, z) (h, r) (cluster: Hxl[]) ->
-                let clusterOcc = hxlSet (Array.append occ cluster)
-                let hx1 = hxlChkSet sqn elv clusterOcc cluster
+                let hx1 = hxlChk sqn elv occ cluster
 
                 match hx1 with
                 | [||] ->
@@ -141,10 +129,9 @@ module Coxel =
         
         let finalCxc =
             cxc1 |> Array.map (fun x -> 
-                let clusterOcc = hxlSet (Array.append chOc1 x.Hxls)
-                let h2 = hxlChkSet sqn elv clusterOcc x.Hxls
-                let baseCheck = hxlChkSet sqn elv clusterOcc [|x.Base|]
-                let b2 = if Array.isEmpty baseCheck then x.Base else baseCheck.[0]
+                let h2 = hxlChk sqn elv chOc1 x.Hxls
+                let baseCheck = hxlChk sqn elv chOc1 [|x.Base|]
+                let b2 = match Array.isEmpty baseCheck with | true -> x.Base | false -> baseCheck.[0]
                 { x with Hxls = h2; Base = b2 })
                 
         bsCx, finalCxc, chOc1
@@ -175,10 +162,10 @@ module Coxel =
             rootCxl, updatedOcc
         | None ->
             let bsHx = 
-                if bsAtr = "0" then entryFallback
-                else
-                    let parts = bsAtr.Split ','
-                    match parts with
+                match bsAtr with
+                | "0" -> entryFallback
+                | _ ->
+                    match bsAtr.Split ',' with
                     | [| xStr; yStr |] ->
                         match System.Int32.TryParse(xStr.Trim()), System.Int32.TryParse(yStr.Trim()) with
                         | (true, x), (true, y) -> AV(x, y, elv)
@@ -210,84 +197,80 @@ module Coxel =
     let cxlHxl (cxl : Cxl) (elv : int) = 
         let bndSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) = 
             let arr (hxl : Hxl[]) (opt : bool) = 
-                let availableSet = System.Collections.Generic.HashSet<Hxl>(hxl)
                 let startNode = Array.last hxl
-                let acc = System.Collections.Generic.List<Hxl>()
-                acc.Add(startNode)
-                availableSet.Remove(startNode) |> ignore
+                let initialAvail = Set.ofArray hxl |> Set.remove startNode
                 
-                let rec loop current cnt =
+                let rec loop current avail acc cnt =
                     match cnt with
-                    | c when c <= 1 -> ()
+                    | c when c <= 1 -> List.rev acc |> List.toArray
                     | _ ->
                         let adj = adjacent sqn current
-                        let validAdj = adj |> Array.filter (fun x -> availableSet.Contains(x))
-                        let nextOpt = if opt then Array.tryLast validAdj else Array.tryHead validAdj
+                        let validAdj = adj |> Array.filter (fun x -> Set.contains x avail)
+                        let nextOpt = match opt with | true -> Array.tryLast validAdj | false -> Array.tryHead validAdj
                         match nextOpt with
                         | Some nxt ->
-                            acc.Add(nxt)
-                            availableSet.Remove(nxt) |> ignore
-                            loop nxt (cnt - 1)
-                        | None -> ()
+                            loop nxt (Set.remove nxt avail) (nxt :: acc) (cnt - 1)
+                        | None -> List.rev acc |> List.toArray
 
-                loop startNode hxl.Length
-                acc.ToArray()
+                loop startNode initialAvail [startNode] hxl.Length
 
             let hxl = hxo |> Array.sortByDescending (fun x -> available sqn elv x hxo)
-            let a1 = if Array.isEmpty hxl then [||] else arr hxl true
-            let ar1 = if Array.length a1 = Array.length hxl then a1 else arr hxl false
+            let a1 = match Array.isEmpty hxl with | true -> [||] | false -> arr hxl true
+            let ar1 = match Array.length a1 = Array.length hxl with | true -> a1 | false -> arr hxl false
 
-            if Array.isEmpty hxo then [||]
-            elif (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) then Array.rev ar1
-            else Array.rev (hxlUni 1 ar1)
+            match Array.isEmpty hxo with
+            | true -> [||]
+            | false ->
+                match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with
+                | true -> Array.rev ar1
+                | false -> Array.rev (hxlUni 1 ar1)
 
         let cntSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) =      
             let hxl = hxlUni 1 hxo
             let ctSq (hxlArr : Hxl[]) = 
-                let availableSet = System.Collections.Generic.HashSet<Hxl>(hxlArr)
                 let startNode = Array.head hxlArr
-                let acc = System.Collections.Generic.List<Hxl>()
-                acc.Add(startNode)
-                availableSet.Remove(startNode) |> ignore
+                let initialAvail = Set.ofArray hxlArr |> Set.remove startNode
                 
-                let rec loop current cnt =
+                let rec loop current avail acc cnt =
                     match cnt with
-                    | c when c <= 1 -> ()
+                    | c when c <= 1 -> List.rev acc |> List.toArray
                     | _ ->
                         let d = (adjacent sqn current) |> Array.tail
-                        let e = d |> Array.tryFind (fun x -> availableSet.Contains(x))
+                        let e = d |> Array.tryFind (fun x -> Set.contains x avail)
                         match e with
                         | Some nxt ->
-                            acc.Add(nxt)
-                            availableSet.Remove(nxt) |> ignore
-                            loop nxt (cnt - 1)
-                        | None -> ()
+                            loop nxt (Set.remove nxt avail) (nxt :: acc) (cnt - 1)
+                        | None -> List.rev acc |> List.toArray
 
-                loop startNode hxlArr.Length
-                acc.ToArray()
+                loop startNode initialAvail [startNode] hxlArr.Length
 
-            let hxl = hxl |> Array.sortByDescending (fun x -> available sqn elv x hxl)
-            let cnt = Array.length(hxl)
-            let arr = if Array.isEmpty hxl then [||] else ctSq hxl
-            let ar1 = if cnt = Array.length(arr) then arr else ctSq (Array.rev hxl)
+            let hxlSort = hxl |> Array.sortByDescending (fun x -> available sqn elv x hxl)
+            let cnt = Array.length(hxlSort)
+            let arr = match Array.isEmpty hxlSort with | true -> [||] | false -> ctSq hxlSort
+            let ar1 = match cnt = Array.length(arr) with | true -> arr | false -> ctSq (Array.rev hxlSort)
 
-            if Array.isEmpty hxo then [||]
-            elif (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) then ar1
-            else hxlUni 1 ar1
+            match Array.isEmpty hxo with
+            | true -> [||]
+            | false ->
+                match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with
+                | true -> ar1
+                | false -> hxlUni 1 ar1
 
         let allHxlsAV = cxl.Hxls |> hxlUni 1
-        let innerOccSet = hxlSet allHxlsAV
         let avrv = cxl.Hxls |> Array.partition (fun x -> x = AV(hxlCrd x))
-        let rv01 = (snd avrv) |> Array.partition (fun x -> availableSet cxl.Seqn elv (AV(hxlCrd x)) innerOccSet < 1)
-        let av01 = if Array.isEmpty (snd rv01) then avrv |> fst |> bndSqn cxl.Seqn elv else avrv |> fst |> cntSqn cxl.Seqn elv
-        let br01 = if Array.isEmpty (fst rv01) then rv01 |> snd |> bndSqn cxl.Seqn elv else rv01 |> snd |> cntSqn cxl.Seqn elv
+        let rv01 = (snd avrv) |> Array.partition (fun x -> available cxl.Seqn elv (AV(hxlCrd x)) allHxlsAV < 1)
+        let av01 = match Array.isEmpty (snd rv01) with | true -> avrv |> fst |> bndSqn cxl.Seqn elv | false -> avrv |> fst |> cntSqn cxl.Seqn elv
+        let br01 = match Array.isEmpty (fst rv01) with | true -> rv01 |> snd |> bndSqn cxl.Seqn elv | false -> rv01 |> snd |> cntSqn cxl.Seqn elv
              
         let pr01 = 
-            if Array.isEmpty av01 then br01
-            elif Array.isEmpty br01 then av01
-            else 
+            match Array.isEmpty av01, Array.isEmpty br01 with
+            | true, _ -> br01
+            | false, true -> av01
+            | false, false -> 
                 let isAdj = adjacent cxl.Seqn (Array.last av01) |> hxlUni 2 |> Array.contains (Array.head br01)
-                if isAdj then Array.append av01 br01 else Array.append av01 (Array.rev br01)
+                match isAdj with
+                | true -> Array.append av01 br01
+                | false -> Array.append av01 (Array.rev br01)
 
         let pr02 = 
             match pr01 with
@@ -299,7 +282,7 @@ module Coxel =
                 let gs = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
                 match sign gs with
                 | -1 -> pr01
-                | 0  -> if x2 > x1 then pr01 else Array.rev pr01
+                | 0  -> match x2 > x1 with | true -> pr01 | false -> Array.rev pr01
                 | _  -> Array.rev pr01
 
         {| Base = cxl.Base; Hxls = cxl.Hxls; Core = rv01 |> fst; Prph = pr02; Brdr = br01; Avbl = av01 |}  
