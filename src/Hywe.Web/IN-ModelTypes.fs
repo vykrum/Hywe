@@ -205,7 +205,7 @@ type ReportOptions = {
     Captured3DImage: string option
 }
 
-type LayoutCache = Map<int, BatchConfgrtns option []>
+type LayoutCache = Map<string, BatchConfgrtns option []>
 
 /// <summary> Central application state for the interface. </summary>
 type Model =
@@ -271,7 +271,7 @@ type Message =
     | RunHyweave
     | FinishHyweave
     | HyweaveResult of src: string * cache: LayoutCache
-    | CacheResult of lvl: int * sqnIdx: int * data: BatchConfgrtns
+    | CacheResult of marker: string * lvl: int * sqnIdx: int * data: BatchConfgrtns
     | PolygonEditorMsg of PolygonEditorMessage
     | PolygonEditorUpdated of PolygonEditorModel
     | SetActivePanel of ActivePanel

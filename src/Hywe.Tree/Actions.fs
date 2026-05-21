@@ -108,9 +108,31 @@ module Actions =
         )
     }
 
+    let nestActionLogic = {
+        LogicId = ActionIds.Nest
+        LogicLabel = "Nest"
+        IsApplicable = fun _ _ -> true
+        IsDisabled = fun _ _ -> false
+        Execute = fun model node ->
+            let newNestId = match model.Nests.IsEmpty with true -> 1 | false -> (model.Nests.Keys |> Seq.max) + 1
+            let newNestRoot = { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
+            let laidOut = fst (TreeOps.layoutTree newNestRoot 0 50.0)
+            let newNests = model.Nests |> Map.add newNestId laidOut
+            let newNestAnchors = model.NestAnchors |> Map.add newNestId node.Id
+            { model with 
+                Nests = newNests
+                NestAnchors = newNestAnchors
+                ActiveNest = Some newNestId
+                ConfirmingId = None
+                ActiveActionId = ActionIds.NoAction
+                ActiveMenuId = None }, Cmd.none
+        HandleInput = None
+    }
+
     let logicRegistry = [
         deleteActionLogic
         elevateActionLogic
+        nestActionLogic
     ]
 
     let findLogic id = logicRegistry |> List.tryFind (fun a -> a.LogicId = id)

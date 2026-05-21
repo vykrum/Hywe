@@ -19,6 +19,7 @@ open Cache
 open FileManager
 
 // Defaults / init 
+let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
 let initialTree = Serialization.initModel beeyond
 let initialSequence = allSqns.[11]
 let initialPolygonExport = syncPolygonState PolygonEditor.initModel
@@ -196,7 +197,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         Protocol.sync js updatedSrc model.ActivePanel
 
-        match Cache.get currentLevel i model.LayoutCache with
+        match Cache.get (toMarker currentLevel) i model.LayoutCache with
         | Some config ->
             { model with 
                 Sequences = newSqns
@@ -212,7 +213,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 SelectedPreviewIndex = None 
             }, Cmd.OfAsync.perform (fun () -> async {
                 let config = Cache.generateSingleConfig updatedSrc Hexel.sqnArray.[i] model.PolygonExport currentLevel
-                return currentLevel, i, config
+                return toMarker currentLevel, currentLevel, i, config
             }) () CacheResult
 
     | SetSrcOfTrth value ->
@@ -230,8 +231,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js value m.ActivePanel }) () (fun _ -> NoOp)
 
     | StartHyweave ->
-        let levels = model.Tree.Levels.Keys |> Seq.toList
-        let newCache = Cache.init levels
+        let markers = model.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
+        let newCache = Cache.init markers
         let model2 = { model with 
                         IsHyweaving = true
                         NeedsHyweave = false
@@ -274,7 +275,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn model.PolygonExport currentLevel
             for lvl in model.Tree.Levels.Keys do
                 let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl
-                updatedCache <- Cache.update lvl currentSqnIdx c updatedCache
+                updatedCache <- Cache.update (toMarker lvl) currentSqnIdx c updatedCache
             
             // 2. Handle orientation 11 (standard default) if current orientation is different
             if currentSqnIdx <> 11 then
@@ -282,7 +283,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] model.PolygonExport 0
                 for lvl in model.Tree.Levels.Keys do
                     let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl
-                    updatedCache <- Cache.update lvl 11 c updatedCache
+                    updatedCache <- Cache.update (toMarker lvl) 11 c updatedCache
 
             return updatedSrcOfTrth, updatedCache
         }) () HyweaveResult
@@ -294,7 +295,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             |> Map.tryFind currentLevel 
             |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
             |> Option.defaultValue 11
-        let activeConfig = Cache.get currentLevel currentSqnIdx cache |> Option.get
+        let activeConfig = Cache.get (toMarker currentLevel) currentSqnIdx cache |> Option.get
         
         { model with 
             SrcOfTrth = src
@@ -304,8 +305,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             NeedsHyweave = false
         }, Cmd.none
 
-    | CacheResult (lvl, idx, data) ->
-        let newCache = Cache.update lvl idx data model.LayoutCache
+    | CacheResult (marker, lvl, idx, data) ->
+        let newCache = Cache.update marker idx data model.LayoutCache
         let newModel = { model with LayoutCache = newCache }
         if lvl = model.Tree.ActiveLevel then
             let currentSqnIdx = 
@@ -478,7 +479,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     // Update cache for all levels
                     for lvl in model.Tree.Levels.Keys do
                         let config = Cache.fromFullLayout fullData sqn lvl
-                        currentCache <- Cache.update lvl i config currentCache
+                        currentCache <- Cache.update (toMarker lvl) i config currentCache
                     
                     let activeConfig = Cache.fromFullLayout fullData sqn model.Tree.ActiveLevel
                     do! Async.Sleep 5

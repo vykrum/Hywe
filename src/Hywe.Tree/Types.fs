@@ -29,6 +29,8 @@ module ActionIds =
     [<Literal>]
     let Elevate = "Elevate"
     [<Literal>]
+    let Nest = "Nest"
+    [<Literal>]
     let NoAction = "NoAction"
 
 /// Abstract pointer event data to decouple from AspNetCore.Components.Web
@@ -36,8 +38,11 @@ type PointerEventData = { ClientX: float; ClientY: float }
 
 type SubModel = 
     { Levels: Map<int, TreeNode>
+      Nests: Map<int, TreeNode>
       ActiveLevel: int
+      ActiveNest: int option
       LevelAnchors: Map<int, Guid>
+      NestAnchors: Map<int, Guid>
       ConfirmingId: Guid option
       ActiveActionId: ActionId
       ActiveMenuId: Guid option
@@ -53,6 +58,7 @@ type SubMsg =
     | OpenMenu of Guid
     | CloseMenu
     | SetLevel of int
+    | SetNest of int
     | SetTopExtrusion of string
     | PrepareAction of Guid * ActionId
     | ExecuteAction of Guid * ActionId

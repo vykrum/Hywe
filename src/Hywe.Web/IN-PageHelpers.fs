@@ -18,6 +18,8 @@ open Hywe.Node
 
 // --- Logic ---
 
+let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
     match panel with
     | BatchPanel ->
@@ -196,7 +198,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let results = 
             match model.BatchPreview with
             | Some r -> r
-            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
             
         if results.Length > 0 then
             let batchData = results |> Array.collect (fun r -> 
@@ -215,7 +217,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let results = 
             match model.BatchPreview with
             | Some r -> r
-            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
 
         if results.Length > 0 then
             let batchData = results |> Array.collect (fun r -> 
@@ -231,7 +233,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let results = 
             match model.BatchPreview with
             | Some r -> r
-            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
 
         if results.Length > 0 then
             let batchData = results |> Array.map (fun r -> 
@@ -254,7 +256,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let results = 
             match model.BatchPreview with
             | Some r -> r
-            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
 
         if results.Length > 0 then
             let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1)
@@ -266,7 +268,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let results = 
             match model.BatchPreview with
             | Some r -> r
-            | None -> Cache.getAllVariations model.Tree.ActiveLevel model.LayoutCache
+            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
 
         if results.Length > 0 then
             let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1, r.cxElv1)
@@ -311,7 +313,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                           for i in range do
                               try
                                   let config = 
-                                      match Cache.get level i currentCache with
+                                      match Cache.get (toMarker level) i currentCache with
                                       | Some c -> c
                                       | None -> 
                                           // Compute full data once, and update cache for ALL levels
@@ -319,7 +321,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                           let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport level
                                           for l in model.Tree.Levels.Keys do
                                               let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l
-                                              currentCache <- Cache.update l i cfg currentCache
+                                              currentCache <- Cache.update (toMarker l) i cfg currentCache
                                           
                                           Cache.fromFullLayout fullData Hexel.sqnArray.[i] level
 

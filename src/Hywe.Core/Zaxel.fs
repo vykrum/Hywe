@@ -92,7 +92,7 @@ module Zaxel =
                         { state with Cxls = Array.append state.Cxls cxls; Bounds = Array.append state.Bounds [| bounds |]; Elvs = Array.append state.Elvs [| float attrs.Level |] }
                     | None -> { state with Elvs = Array.append state.Elvs [| float attrs.Level |] }
                 | Nest n_block ->
-                    let targetId = n_block.Attributes.Entry
+                    let targetId = n_block.Attributes.Base
                     match state.Cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId) with
                     | Some hostCxl ->
                         let hostThickness = 
