@@ -108,6 +108,12 @@ graph TD
 
 ---
 
+## Documentation
+
+For in-depth tutorials, spatial concepts, architectural programming guides, and comprehensive technical references, please visit the **[HYWE Wiki](https://github.com/vykrum/Hywe/wiki)**. 
+
+---
+
 ## Development
 
 HYWE is an open project exploring **design computation**. 
