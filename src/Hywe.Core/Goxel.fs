@@ -79,46 +79,55 @@ module Goxel =
 
     /// <summary> Removes aliasing/sawtooth artifacts from a sequence of hex coordinates. </summary>
     let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
-        if arr.Length = 0 then [||] else
-        let (primary, secondary) = 
-            match sqn with
-            | Vertical   -> (fst, snd)
-            | Horizontal -> (snd, fst)
+        match arr.Length with
+        | 0 -> [||]
+        | n ->
+            let (primary, secondary) = 
+                match sqn with
+                | Vertical   -> (fst, snd)
+                | Horizontal -> (snd, fst)
 
-        let result = ResizeArray<int*int>()
-        let mutable i = 0
-        let n = arr.Length
-        while i < n do
-            let mutable j = i
-            while j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) = 2 do
-                j <- j + 1
-                
-            let groupLen = j - i + 1
-            if groupLen > 3 then
-                let mutable isOscillating = true
-                for k = i to j - 1 do
-                    if abs(secondary arr.[k+1] - secondary arr.[k]) <> 1 then
-                        isOscillating <- false
-                
-                if isOscillating then
-                    let f = arr.[i]
-                    let l = arr.[j]
-                    let low = min (secondary f) (secondary l)
-                    match sqn with
-                    | Vertical   -> 
-                        result.Add((low, snd f))
-                        result.Add((low, snd l))
-                    | Horizontal -> 
-                        result.Add((fst f, low))
-                        result.Add((fst l, low))
-                else
-                    for k = i to j do
-                        result.Add(arr.[k])
-            else
-                for k = i to j do
-                    result.Add(arr.[k])
-            i <- j + 1
-        result.ToArray()
+            let rec findGroupEnd j =
+                match j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) = 2 with
+                | true -> findGroupEnd (j + 1)
+                | false -> j
+
+            let isOscillating i j =
+                let rec checkOsc k =
+                    match k >= j with
+                    | true -> true
+                    | false ->
+                        match abs(secondary arr.[k+1] - secondary arr.[k]) = 1 with
+                        | true -> checkOsc (k + 1)
+                        | false -> false
+                checkOsc i
+
+            let rec processSegments i acc =
+                match i >= n with
+                | true -> List.rev acc |> List.toArray
+                | false ->
+                    let j = findGroupEnd i
+                    let groupLen = j - i + 1
+                    
+                    let newAcc =
+                        match groupLen > 3 && isOscillating i j with
+                        | true ->
+                            let f = arr.[i]
+                            let l = arr.[j]
+                            let low = min (secondary f) (secondary l)
+                            match sqn with
+                            | Vertical   -> (low, snd l) :: (low, snd f) :: acc
+                            | Horizontal -> (fst l, low) :: (fst f, low) :: acc
+                        | false ->
+                            let rec addNormal k currentAcc =
+                                match k > j with
+                                | true -> currentAcc
+                                | false -> addNormal (k + 1) (arr.[k] :: currentAcc)
+                            addNormal i acc
+                            
+                    processSegments (j + 1) newAcc
+                    
+            processSegments 0 []
 
     /// <summary> Deduplicates sequential points. </summary>
     let dedupeSequential (pts: (int * int)[]) =
@@ -230,18 +239,17 @@ module Goxel =
             let vt1 = Array.concat [| [|xx, yy|]; Array.tail vtx |]
             let verts = cleanPolygon sqn vt1
             
-            verts |> Array.fold (fun (acc: ResizeArray<Hxl>, lastOpt) pt ->
+            verts |> Array.fold (fun (acc, lastOpt) pt ->
                 let (ix, iy) = pt
                 let current = hxlVld sqn (RV(ix, iy, elv))
                 match lastOpt with
                 | None -> 
-                    acc.Add(current)
-                    (acc, Some current)
+                    (current :: acc, Some current)
                 | Some last ->
                     let seg = hxlLin sqn elv last current
-                    acc.AddRange(seg)
-                    (acc, Some (Array.last seg))
-            ) (ResizeArray<Hxl>(), None) |> fst |> (fun ra -> ra.ToArray())
+                    let newAcc = Array.fold (fun a s -> s :: a) acc seg
+                    (newAcc, Some (Array.last seg))
+            ) ([], None) |> fst |> List.rev |> List.toArray
 
     // --- Geometry Parsing ---
 
