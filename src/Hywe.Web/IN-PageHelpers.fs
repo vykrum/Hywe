@@ -9,7 +9,9 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open Hywe.Core.Zaxel
-open PolygonEditor
+open Hywe.Site
+open Hywe.Site.State
+open Hywe.Site.View
 open Page
 open Layout
 open FileManager

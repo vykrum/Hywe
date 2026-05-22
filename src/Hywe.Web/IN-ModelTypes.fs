@@ -3,7 +3,9 @@ module ModelTypes
 
 open Hywe.Node
 
-open PolygonEditor
+open Hywe.Site
+open Hywe.Site.State
+open Hywe.Site.View
 open Hywe.Core.Coxel
 open System
 
@@ -343,7 +345,7 @@ type Message =
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
 let syncPolygonState (p: PolygonEditorModel) =
-    let outer, islands, absolute, entry, w, h, elv, baseS = PolygonEditor.exportPolygonStrings p
+    let outer, islands, absolute, entry, w, h, elv, baseS = State.exportPolygonStrings p
     
     let w', h', entry', outer', islands' =
         match p.UseBoundary with
