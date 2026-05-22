@@ -127,10 +127,9 @@ module Coxel =
             | true -> 
                 let divs = match cnt > 0 with | true -> (Array.length chHx) / cnt | false -> 1
                 chHx |> Array.chunkBySize divs |> Array.map Array.head |> Array.take cnt
-            | false -> 
-                Array.append chHx (Array.replicate (max 0 (cnt - (Array.length chHx))) (identity elv))
+            | false -> chHx
                 
-        let ini = Array.map2 (fun a (b, c, d) -> a, b, c, d) chBs (Array.tail tre)
+        let ini = Array.map2 (fun a (b, c, d) -> a, b, c, d) chBs (Array.tail tre |> Array.take chBs.Length)
         let cxc1 = coxel sqn elv ini occ
         
         let chOc1 = 

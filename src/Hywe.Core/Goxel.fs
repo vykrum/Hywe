@@ -163,9 +163,9 @@ module Goxel =
 
     /// <summary> Bounding box of a polygon in grid coordinates. </summary>
     let bounds (pts: (int * int)[]) =
-        match pts.Length with
-        | 0 -> (0, 0, 0, 0)
-        | _ ->
+        if Array.isEmpty pts then
+            (0, 0, 0, 0)
+        else
             let xs = pts |> Array.map fst
             let ys = pts |> Array.map snd
             (Array.min xs, Array.min ys, Array.max xs, Array.max ys)

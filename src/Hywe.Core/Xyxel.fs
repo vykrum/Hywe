@@ -195,10 +195,10 @@ module Xyxel =
             match Goxel.polygonWithHolesArea ctx.Boundary ctx.Islands > 0L with
             | true -> 
                 let allVtx = Array.append ctx.Boundary (ctx.Islands |> Array.collect id)
-                let minX = allVtx |> Array.minBy fst |> fst |> (fun x -> x - 2)
-                let maxX = allVtx |> Array.maxBy fst |> fst |> (fun x -> x + 2)
-                let minY = allVtx |> Array.minBy snd |> snd |> (fun y -> y - 2)
-                let maxY = allVtx |> Array.maxBy snd |> snd |> (fun y -> y + 2)
+                let minX = allVtx |> Array.minBy fst |> fst |> (fun x -> x - 30)
+                let maxX = allVtx |> Array.maxBy fst |> fst |> (fun x -> x + 30)
+                let minY = allVtx |> Array.minBy snd |> snd |> (fun y -> y - 30)
+                let maxY = allVtx |> Array.maxBy snd |> snd |> (fun y -> y + 30)
     
                 [| minX .. maxX |]
                 |> Array.collect (fun x ->

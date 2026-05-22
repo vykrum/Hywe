@@ -78,7 +78,7 @@ module Zaxel =
                         | 0 -> None
                         | _ -> 
                             let targetId = attrs.Entry
-                            state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = lvlIdx - 1) |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId)
+                            state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = lvlIdx - 1) |> Array.tryFind (fun c -> let id = prpVlu c.Rfid in id = targetId || id.EndsWith("." + targetId))
 
                     let ctx = prepareLayoutContext attrMap treeObj { 
                         EntryFallback = entryAtrFallback; InitialOcc = initialOcc; Ratio = state.Ratio
@@ -93,7 +93,7 @@ module Zaxel =
                     | None -> { state with Elvs = Array.append state.Elvs [| float attrs.Level |] }
                 | Nest n_block ->
                     let targetId = n_block.Attributes.Base
-                    match state.Cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = targetId) with
+                    match state.Cxls |> Array.tryFind (fun c -> let id = prpVlu c.Rfid in id = targetId || id.EndsWith("." + targetId)) with
                     | Some hostCxl ->
                         let hostThickness = 
                             resolvedLevels 

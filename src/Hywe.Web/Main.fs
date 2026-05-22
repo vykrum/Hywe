@@ -261,7 +261,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         Protocol.sync js updatedSrcOfTrth model.ActivePanel
 
-        let currentLevel = model.Tree.ActiveLevel
+        let currentLevel = max 0 model.Tree.ActiveLevel
         let currentSqnIdx = 
             model.Sequences 
             |> Map.tryFind currentLevel 
@@ -291,7 +291,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }) () HyweaveResult
 
     | HyweaveResult (src, cache) ->
-        let currentLevel = model.Tree.ActiveLevel
+        let currentLevel = max 0 model.Tree.ActiveLevel
         let currentSqnIdx = 
             model.Sequences 
             |> Map.tryFind currentLevel 
@@ -299,25 +299,28 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             |> Option.defaultValue 11
         let activeConfig = Cache.get (toMarker currentLevel) currentSqnIdx cache |> Option.get
         
+        let finalSrc = Cache.populateNestBoundaries src activeConfig.cxCxl1
+
         { model with 
-            SrcOfTrth = src
+            SrcOfTrth = finalSrc
             LayoutCache = cache
             Derived = Cache.toDerived activeConfig
             IsHyweaving = false
             NeedsHyweave = false
-        }, Cmd.none
+        }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
 
     | CacheResult (marker, lvl, idx, data) ->
         let newCache = Cache.update marker idx data model.LayoutCache
         let newModel = { model with LayoutCache = newCache }
-        if lvl = model.Tree.ActiveLevel then
+        if lvl = max 0 model.Tree.ActiveLevel then
             let currentSqnIdx = 
                 model.Sequences 
                 |> Map.tryFind lvl 
                 |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
                 |> Option.defaultValue 11
             if idx = currentSqnIdx then
-                { newModel with Derived = Cache.toDerived data; IsHyweaving = false }, Cmd.none
+                let finalSrc = Cache.populateNestBoundaries newModel.SrcOfTrth data.cxCxl1
+                { newModel with Derived = Cache.toDerived data; SrcOfTrth = finalSrc; IsHyweaving = false }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
             else newModel, Cmd.none
         else newModel, Cmd.none
 
