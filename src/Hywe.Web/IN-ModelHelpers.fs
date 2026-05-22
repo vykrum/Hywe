@@ -431,9 +431,63 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
+                let filteredCxls, filteredClrs, bgCxl = 
+                    let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+                        seq {
+                            yield $"{marker}.{prefix}"
+                            yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds marker $"{prefix}.{i + 1}" child)
+                        }
+                    match model.Tree.ActiveNest with
+                    | Some nestId ->
+                        match model.Tree.Nests |> Map.tryFind nestId with
+                        | Some nestNode ->
+                            let validIds = getIds $"N{nestId}" "1" nestNode |> Set.ofSeq
+                            
+                            let indexed = 
+                                model.Derived.cxCxl1 
+                                |> Array.indexed 
+                                |> Array.filter (fun (_, c) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
+                                
+                            let cxls = indexed |> Array.map (fun (i, _) -> model.Derived.cxCxl1.[i])
+                            let clrs = indexed |> Array.map (fun (i, _) -> model.Derived.cxClr1.[i])
+                            
+                            let isParentCxl (rfid: string) =
+                                match nestNode.Base with
+                                | Some targetId -> rfid = targetId || rfid.EndsWith("." + targetId)
+                                | None -> false
+                                
+                            let bgCxl = 
+                                model.Derived.cxCxl1 
+                                |> Array.tryFind (fun c -> isParentCxl (Hywe.Core.Coxel.prpVlu c.Rfid))
+                                
+                            cxls, clrs, bgCxl
+                        | None -> 
+                            model.Derived.cxCxl1, model.Derived.cxClr1, None
+                    | None ->
+                        match model.Tree.Levels |> Map.tryFind model.Tree.ActiveLevel with
+                        | Some levelNode ->
+                            let marker = match model.Tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}"
+                            let validIds = getIds marker "1" levelNode |> Set.ofSeq
+                            let indexed = 
+                                model.Derived.cxCxl1 
+                                |> Array.indexed 
+                                |> Array.filter (fun (_, c) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
+                            let cxls = indexed |> Array.map (fun (i, _) -> model.Derived.cxCxl1.[i])
+                            let clrs = indexed |> Array.map (fun (i, _) -> model.Derived.cxClr1.[i])
+                            cxls, clrs, None
+                        | None ->
+                            model.Derived.cxCxl1, model.Derived.cxClr1, None
+                
+                let bdrToPass = 
+                    match bgCxl with
+                    | Some bg -> 
+                        let (_, _, z) = Hywe.Core.Hexel.hxlCrd bg.Base
+                        [| Hywe.Core.Coxel.cxlPrm bg z |> Hywe.Core.Goxel.cleanPolygon bg.Seqn |]
+                    | None -> model.Derived.cxOuIl
+                
                 div {
                     attr.id "hywe-svg-container"
-                    svgCoxels model.Derived.cxCxl1 model.Derived.cxOuIl model.Tree.ActiveLevel model.Derived.cxClr1 20 (Some "layout-svg-output")
+                    svgCoxels filteredCxls bdrToPass model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
                 }
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"

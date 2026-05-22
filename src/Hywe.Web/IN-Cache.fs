@@ -5,7 +5,39 @@ module Cache
     open Hywe.Core
     open Hywe.Core.Coxel
     open Hywe.Core.Lexel
+    open System.Text.RegularExpressions
     
+    /// <summary>
+    /// Populates the O= attribute in the source string for any N-blocks using the computed footprint.
+    /// </summary>
+    let populateNestBoundaries (src: string) (cxls: Cxl[]) =
+        let regex = Regex(@"N(\d+)\(([^)]*)\)")
+        regex.Replace(src, fun (m: Match) ->
+            let idStr = m.Groups.[1].Value
+            let attrsStr = m.Groups.[2].Value
+            let attrs = Lexel.parseAttributes ("(" + attrsStr + ")")
+            let bVal = attrs.Base
+            
+            match cxls |> Array.tryFind (fun c -> let id = Coxel.prpVlu c.Rfid in id = bVal || id.EndsWith("." + bVal)) with
+            | Some hostCxl ->
+                let _, _, z = Hexel.hxlCrd hostCxl.Base
+                let pts = Coxel.cxlPrm hostCxl z |> Goxel.cleanPolygon hostCxl.Seqn
+                let oStr = pts |> Array.map (fun (x,y) -> $"{x},{y}") |> String.concat ","
+                
+                let minX, minY, maxX, maxY = Goxel.bounds pts
+                let w = maxX - minX
+                let h = maxY - minY
+                
+                let s1 = Regex.Replace(attrsStr, @"O=[^/]*", "O=" + oStr)
+                let s2 = Regex.Replace(s1, @"W=[^/]*", "W=" + string w)
+                let s3 = Regex.Replace(s2, @"H=[^/]*", "H=" + string h)
+                let s4 = Regex.Replace(s3, @"X=[^/]*", "X=0")
+                
+                $"N{idStr}({s4})"
+            | None -> 
+                m.Value
+        )
+
     /// <summary>
     /// Computes the full layout data for all levels.
     /// </summary>
