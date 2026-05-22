@@ -14,11 +14,13 @@ module Geometry =
         let wx = p.X - a.X
         let wy = p.Y - a.Y
         let c1 = wx * vx + wy * vy
-        if c1 <= 0.0 then distanceSq p a
-        else
+        match c1 <= 0.0 with
+        | true -> distanceSq p a
+        | false ->
             let c2 = vx * vx + vy * vy
-            if c2 <= c1 then distanceSq p b
-            else
+            match c2 <= c1 with
+            | true -> distanceSq p b
+            | false ->
                 let t = c1 / c2
                 let proj = { X = a.X + t*vx; Y = a.Y + t*vy }
                 distanceSq p proj
@@ -29,17 +31,22 @@ module Geometry =
     /// </summary>
     let isInsidePolygon (poly: Point[]) (pt: Point) =
         let n = poly.Length
-        let mutable inside = false
-        let mutable j = n - 1
-        for i = 0 to n - 1 do
-            let vi = poly.[i]
-            let vj = poly.[j]
-            if (vi.Y > pt.Y) <> (vj.Y > pt.Y) then
-                let xIntersect = (vj.X - vi.X) * (pt.Y - vi.Y) / (vj.Y - vi.Y) + vi.X
-                if pt.X < xIntersect then
-                    inside <- not inside
-            j <- i
-        inside
+        let rec loop i j inside =
+            match i < n with
+            | false -> inside
+            | true ->
+                let vi = poly.[i]
+                let vj = poly.[j]
+                let newInside = 
+                    match (vi.Y > pt.Y) <> (vj.Y > pt.Y) with
+                    | true ->
+                        let xIntersect = (vj.X - vi.X) * (pt.Y - vi.Y) / (vj.Y - vi.Y) + vi.X
+                        match pt.X < xIntersect with
+                        | true -> not inside
+                        | false -> inside
+                    | false -> inside
+                loop (i + 1) i newInside
+        loop 0 (n - 1) false
 
     let isPolygonInside outer inner =
         inner |> Array.forall (isInsidePolygon outer)
@@ -48,7 +55,12 @@ module Geometry =
 
     let private orient (p: Point) (q: Point) (r: Point) =
         let v = (q.Y - p.Y) * (r.X - q.X) - (q.X - p.X) * (r.Y - q.Y)
-        if abs v < eps then 0 elif v > 0.0 then 1 else 2
+        match abs v < eps with
+        | true -> 0
+        | false -> 
+            match v > 0.0 with
+            | true -> 1
+            | false -> 2
 
     let private onSegment (p: Point) (q: Point) (r: Point) =
         q.X <= max p.X r.X + eps && q.X >= min p.X r.X - eps &&
@@ -60,21 +72,37 @@ module Geometry =
         let o3 = orient p2 q2 p1
         let o4 = orient p2 q2 q1
 
-        if o1 <> o2 && o3 <> o4 then true
-        elif o1 = 0 && onSegment p1 p2 q1 then true
-        elif o2 = 0 && onSegment p1 q2 q1 then true
-        elif o3 = 0 && onSegment p2 p1 q2 then true
-        elif o4 = 0 && onSegment p2 q1 q2 then true
-        else false
+        match o1 <> o2 && o3 <> o4 with
+        | true -> true
+        | false ->
+            match o1 = 0 && onSegment p1 p2 q1 with
+            | true -> true
+            | false ->
+                match o2 = 0 && onSegment p1 q2 q1 with
+                | true -> true
+                | false ->
+                    match o3 = 0 && onSegment p2 p1 q2 with
+                    | true -> true
+                    | false ->
+                        match o4 = 0 && onSegment p2 q1 q2 with
+                        | true -> true
+                        | false -> false
 
     let polygonSelfIntersects (points: Point[]) =
         let n = points.Length
         let rec loop i j =
-            if i >= n then false
-            elif j >= n then loop (i + 1) (i + 2)
-            elif abs (i - j) = 1 || abs (i - j) = n - 1 then loop i (j + 1)
-            elif edgesIntersect points.[i] points.[(i+1)%n] points.[j] points.[(j+1)%n] then true
-            else loop i (j + 1)
+            match i >= n with
+            | true -> false
+            | false ->
+                match j >= n with
+                | true -> loop (i + 1) (i + 2)
+                | false ->
+                    match abs (i - j) = 1 || abs (i - j) = n - 1 with
+                    | true -> loop i (j + 1)
+                    | false ->
+                        match edgesIntersect points.[i] points.[(i+1)%n] points.[j] points.[(j+1)%n] with
+                        | true -> true
+                        | false -> loop i (j + 1)
         loop 0 2
 
     let polygonsIntersect (polyA: Point[]) (polyB: Point[]) : bool =
@@ -89,60 +117,72 @@ module Geometry =
         let clearanceSq = 40.0 * 40.0 // Increased clearance
 
         let tooClose (poly: Point[]) =
-            let mutable close = false
             let n = poly.Length
-            let mutable i = 0
-            let mutable j = n - 1
-            while i < n && not close do
-                let a = poly.[j]
-                let b = poly.[i]
-                if distancePointToSegmentSq pt a b <= clearanceSq then
-                    close <- true
-                j <- i
-                i <- i + 1
-            close
+            let rec loop i j =
+                match i < n with
+                | false -> false
+                | true ->
+                    let a = poly.[j]
+                    let b = poly.[i]
+                    match distancePointToSegmentSq pt a b <= clearanceSq with
+                    | true -> true
+                    | false -> loop (i + 1) i
+            loop 0 (n - 1)
 
-        if not (isInsidePolygon outer pt) then false
-        else
-            let mutable inIsland = false
-            let mutable idx = 0
-            while idx < islands.Length && not inIsland do
-                if isInsidePolygon islands.[idx] pt then inIsland <- true
-                idx <- idx + 1
+        match not (isInsidePolygon outer pt) with
+        | true -> false
+        | false ->
+            let rec checkIslands idx =
+                match idx < islands.Length with
+                | false -> false
+                | true ->
+                    match isInsidePolygon islands.[idx] pt with
+                    | true -> true
+                    | false -> checkIslands (idx + 1)
             
-            if inIsland then false
-            elif tooClose outer then false
-            else
-                let mutable tooCloseToIsland = false
-                let mutable iidx = 0
-                while iidx < islands.Length && not tooCloseToIsland do
-                    if tooClose islands.[iidx] then tooCloseToIsland <- true
-                    iidx <- iidx + 1
-                not tooCloseToIsland
+            match checkIslands 0 with
+            | true -> false
+            | false ->
+                match tooClose outer with
+                | true -> false
+                | false ->
+                    let rec checkIslandClose idx =
+                        match idx < islands.Length with
+                        | false -> false
+                        | true ->
+                            match tooClose islands.[idx] with
+                            | true -> true
+                            | false -> checkIslandClose (idx + 1)
+                    not (checkIslandClose 0)
 
     let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
         let centroid = 
             let sx, sy = outer |> Array.fold (fun (ax, ay) p -> (ax + p.X, ay + p.Y)) (0.0, 0.0)
             { X = sx / float outer.Length; Y = sy / float outer.Length }
 
-        let mutable candidate = centroid
         let step = 10.0
         let maxSearch = 400.0
-        let mutable found = false
 
-        // Spiral search outward from centroid
-        for r in 0.0 .. step .. maxSearch do
-            if not found then
+        let rec searchR r =
+            match r > maxSearch with
+            | true -> centroid
+            | false ->
                 let steps = max 8 (int (r / 2.0))
-                for i in 0 .. steps - 1 do
-                    if not found then
+                let rec searchAngle i =
+                    match i >= steps with
+                    | true -> None
+                    | false ->
                         let angle = 2.0 * Math.PI * float i / float steps
                         let pt = { X = centroid.X + r * Math.Cos(angle); Y = centroid.Y + r * Math.Sin(angle) }
-                        if isEntryPointValid outer islands pt then
-                            candidate <- pt
-                            found <- true
+                        match isEntryPointValid outer islands pt with
+                        | true -> Some pt
+                        | false -> searchAngle (i + 1)
+                
+                match searchAngle 0 with
+                | Some pt -> pt
+                | None -> searchR (r + step)
 
-        candidate
+        searchR 0.0
 
     let isConfigurationValid (outer: Point[]) (islands: Point[][]) =
         let allIslandsValid = 

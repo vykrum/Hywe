@@ -33,19 +33,14 @@ module State =
         | _ -> Error $"Invalid point format: {s}"
 
     let sequenceResults (arr: Result<'a,'e> array) : Result<'a array,'e> =
-        let buffer = ResizeArray<'a>()
-        let mutable err : 'e option = None
-        let mutable i = 0
-
-        while i < arr.Length && err.IsNone do
-            match arr.[i] with
-            | Ok v -> buffer.Add v
-            | Error e -> err <- Some e
-            i <- i + 1
-
-        match err with
-        | Some e -> Error e
-        | None -> Ok (buffer.ToArray())
+        let rec loop i acc =
+            match i < arr.Length with
+            | false -> Ok (List.toArray (List.rev acc))
+            | true ->
+                match arr.[i] with
+                | Ok v -> loop (i + 1) (v :: acc)
+                | Error e -> Error e
+        loop 0 []
 
     let parsePoly (s: string) : Result<Point[], string> =
         s.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -54,8 +49,9 @@ module State =
         |> sequenceResults
 
     let parseIslands (s: string) : Result<Point[][], string> =
-        if String.IsNullOrWhiteSpace s then Ok [||]
-        else
+        match String.IsNullOrWhiteSpace s with
+        | true -> Ok [||]
+        | false ->
             s.Split('-', StringSplitOptions.RemoveEmptyEntries)
             |> Array.map (fun isl ->
                 isl.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -117,8 +113,9 @@ module State =
         (islands: Point[][])
         (entry: Point) =
 
-        if Geometry.isEntryPointValid outer islands entry then entry
-        else Geometry.closestValidEntryPoint outer islands
+        match Geometry.isEntryPointValid outer islands entry with
+        | true -> entry
+        | false -> Geometry.closestValidEntryPoint outer islands
 
     /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
     let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
@@ -135,7 +132,7 @@ module State =
             |> String.concat "-"
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
-        let absolute = if model.UseAbsolute then "1" else "0"
+        let absolute = match model.UseAbsolute with | true -> "1" | false -> "0"
         let w = int (System.Math.Round(model.LogicalWidth / 10.0))
         let h = int (System.Math.Round(model.LogicalHeight / 10.0))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
@@ -157,10 +154,10 @@ module State =
             |> Result.bind (fun islands ->
                 parsePoint entryStr
                 |> Result.map (fun entry ->
-                    let width = if w <= 0 then initWidth else float (max 10 w) * 10.0
-                    let height = if h <= 0 then initHeight else float (max 10 h) * 10.0
+                    let width = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
+                    let height = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
                     
-                    let outer = if Array.isEmpty outer then initOuter else outer
+                    let outer = match Array.isEmpty outer with | true -> initOuter | false -> outer
                     let fixedEntry = ensureEntryWithin outer islands entry
 
                     { model with
@@ -211,7 +208,7 @@ module State =
         match msg with
         | ToggleBoundary isChecked ->
             async { 
-                let newOuter = if isChecked && model.Outer.Length < 3 then initOuter else model.Outer
+                let newOuter = match isChecked && model.Outer.Length < 3 with | true -> initOuter | false -> model.Outer
                 return
                     { model with
                         UseBoundary = isChecked
@@ -229,9 +226,9 @@ module State =
                                             }
 
         | UpdateLogicalWidth newW -> async {
-            let safeW = if newW <= 0.0 then initWidth else max minBound ((max 10.0 newW) * 10.0)
+            let safeW = match newW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 newW) * 10.0)
             let oldW = model.LogicalWidth
-            let scaleX = if oldW <= 0.0 then 1.0 else safeW / oldW
+            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
 
             let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX })
             let newIslands =
@@ -242,9 +239,9 @@ module State =
             }
 
         | UpdateLogicalHeight newH -> async {
-            let safeH = if newH <= 0.0 then initHeight else max minBound ((max 10.0 newH) * 10.0)
+            let safeH = match newH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 newH) * 10.0)
             let oldH = model.LogicalHeight
-            let scaleY = if oldH <= 0.0 then 1.0 else safeH / oldH
+            let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
 
             let newOuter = model.Outer |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY })
             let newIslands =
@@ -257,39 +254,51 @@ module State =
 
         | PointerDown ev ->
             async {
-                if not model.PolygonEnabled then return model
-                else
+                match model.PolygonEnabled with
+                | false -> return model
+                | true ->
                     // Get svg transform info once per drag (cheap JS call)
                     let! info = getSvgInfo js
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
 
                     let rHit = float model.VertexRadius + 4.0
                     let rEntryHit = float model.VertexRadius + 4.0 // hit radius for entry point
-                    let mutable drag: DragInfo option = None
-                    let mutable entryDrag = false
 
                     // Check vertices in outer polygon
-                    for i = 0 to model.Outer.Length - 1 do
-                        if drag.IsNone && Geometry.withinRadiusSq model.Outer.[i] svgPt rHit then
-                            drag <- Some { PolyIndex = 0; VertexIndex = i }
+                    let dragOuter =
+                        [|0 .. model.Outer.Length - 1|]
+                        |> Array.tryFind (fun i -> Geometry.withinRadiusSq model.Outer.[i] svgPt rHit)
+                        |> Option.map (fun i -> { PolyIndex = 0; VertexIndex = i })
 
                     // Check vertices in islands
-                    if drag.IsNone then
-                        for pi = 0 to model.Islands.Length - 1 do
-                            let poly = model.Islands.[pi]
-                            for vi = 0 to poly.Length - 1 do
-                                if drag.IsNone && Geometry.withinRadiusSq poly.[vi] svgPt rHit then
-                                    drag <- Some { PolyIndex = pi + 1; VertexIndex = vi }
+                    let dragIsland =
+                        match dragOuter with
+                        | Some _ -> None
+                        | None ->
+                            [|0 .. model.Islands.Length - 1|]
+                            |> Array.tryPick (fun pi ->
+                                let poly = model.Islands.[pi]
+                                [|0 .. poly.Length - 1|]
+                                |> Array.tryFind (fun vi -> Geometry.withinRadiusSq poly.[vi] svgPt rHit)
+                                |> Option.map (fun vi -> { PolyIndex = pi + 1; VertexIndex = vi })
+                            )
 
-                    // Check entry point
-                    if drag.IsNone && Geometry.withinRadiusSq model.EntryPoint svgPt rEntryHit then
-                        entryDrag <- true
+                    let drag = 
+                        match dragOuter with
+                        | Some d -> Some d
+                        | None -> dragIsland
+
+                    let entryDrag = 
+                        match drag with
+                        | Some _ -> false
+                        | None -> Geometry.withinRadiusSq model.EntryPoint svgPt rEntryHit
 
                     match drag, entryDrag with
                     | Some d, _ ->
                         let v =
-                            if d.PolyIndex = 0 then model.Outer.[d.VertexIndex]
-                            else model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
+                            match d.PolyIndex = 0 with
+                            | true -> model.Outer.[d.VertexIndex]
+                            | false -> model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
                         let offset = { X = svgPt.X - v.X; Y = svgPt.Y - v.Y }
                         let newModel = snapshot model
                         return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info }
@@ -306,8 +315,9 @@ module State =
 
         | PointerMove ev ->
             async {
-                if not model.PolygonEnabled then return model
-                else
+                match model.PolygonEnabled with
+                | false -> return model
+                | true ->
                     let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
                 
                     // Throttling check using pattern matching
@@ -371,141 +381,144 @@ module State =
 
         | DoubleClick ev ->
             async {
-                if not model.PolygonEnabled then return model
-                else
+                match model.PolygonEnabled with
+                | false -> return model
+                | true ->
                     let! p = toSvgCoords js ev
                     let rThreshold = float model.VertexRadius + 6.0
-                    let mutable updatedModel = model
-                    let mutable didDelete = false
+                    
                     let tryDeleteVertex (poly: Point[]) =
                         poly
                         |> Array.mapi (fun i pt -> (i, pt))
                         |> Array.tryFind (fun (_, pt) -> Geometry.withinRadiusSq pt p rThreshold)
                         |> Option.bind (fun (vi, _) ->
-                            // Create new polygon with vertex at vi removed
-                            let newPoly = Array.init (poly.Length - 1) (fun idx -> if idx < vi then poly.[idx] else poly.[idx + 1])
-                            // Only accept if polygon has at least 3 vertices and no self intersections
-                            if newPoly.Length >= 3 && not (Geometry.polygonSelfIntersects newPoly) then Some newPoly else None
+                            let newPoly = Array.init (poly.Length - 1) (fun idx -> match idx < vi with | true -> poly.[idx] | false -> poly.[idx + 1])
+                            match newPoly.Length >= 3 && not (Geometry.polygonSelfIntersects newPoly) with
+                            | true -> Some newPoly
+                            | false -> None
                         )
-                    // 1. Try deleting vertex in outer polygon
-                    match tryDeleteVertex model.Outer with
-                    | Some newOuter ->
-                        updatedModel <- snapshot model
-                        updatedModel <- { updatedModel with Outer = newOuter }
-                        didDelete <- true
-                    | None ->
-                        // 2. Try deleting vertex in islands
-                        let mutable islandDeleted = false
-                        for i in 0 .. model.Islands.Length - 1 do
-                            if not islandDeleted then
+
+                    // Step 1: Try deleting vertex in outer polygon
+                    let afterOuterDelete =
+                        match tryDeleteVertex model.Outer with
+                        | Some newOuter -> Some { snapshot model with Outer = newOuter }
+                        | None -> None
+
+                    // Step 2: Try deleting vertex in islands
+                    let afterIslandDelete =
+                        match afterOuterDelete with
+                        | Some _ -> afterOuterDelete
+                        | None ->
+                            [|0 .. model.Islands.Length - 1|]
+                            |> Array.tryPick (fun i ->
                                 match tryDeleteVertex model.Islands.[i] with
                                 | Some newIsland ->
-                                    updatedModel <- snapshot updatedModel
-                                    let newIslands = Array.copy updatedModel.Islands
+                                    let newIslands = Array.copy model.Islands
                                     newIslands.[i] <- newIsland
-                                    updatedModel <- { updatedModel with Islands = newIslands }
-                                    islandDeleted <- true
-                                    didDelete <- true
-                                | None -> ()
+                                    Some { snapshot model with Islands = newIslands }
+                                | None -> None
+                            )
 
-                        if not islandDeleted then
-                            // Check insert vertex on edges
+                    // Step 3: Insert vertex on edges
+                    let afterInsert =
+                        match afterIslandDelete with
+                        | Some _ -> afterIslandDelete
+                        | None ->
                             let rThresholdInsert = 20.0
+                            let edgesOuter =
+                                [|0 .. model.Outer.Length - 1|]
+                                |> Array.map (fun i -> 0, i, model.Outer.[i], model.Outer.[(i + 1) % model.Outer.Length])
+                            
+                            let edgesIslands =
+                                model.Islands
+                                |> Array.mapi (fun idx isl ->
+                                    [|0 .. isl.Length - 1|]
+                                    |> Array.map (fun i -> idx + 1, i, isl.[i], isl.[(i + 1) % isl.Length])
+                                )
+                                |> Array.concat
 
-                            let mutable insertPolyIndex : int option = None
-                            let mutable insertVertexIndex : int option = None
-                            let mutable minDistSq : float = Double.MaxValue
-
-                            let checkEdges (poly: Point[]) (polyIndex: int) =
-                                for i in 0 .. poly.Length - 1 do
-                                    let j = (i + 1) % poly.Length
-                                    let a = poly.[i]
-                                    let b = poly.[j]
+                            let closestEdge =
+                                Array.append edgesOuter edgesIslands
+                                |> Array.map (fun (pIdx, vIdx, a, b) ->
                                     let distSq = Geometry.distancePointToSegmentSq p a b
-                                    if distSq < minDistSq && distSq < rThresholdInsert * rThresholdInsert then
-                                        minDistSq <- distSq
-                                        insertPolyIndex <- Some polyIndex
-                                        insertVertexIndex <- Some j
+                                    (pIdx, vIdx, distSq)
+                                )
+                                |> Array.filter (fun (_, _, distSq) -> distSq < rThresholdInsert * rThresholdInsert)
+                                |> Array.sortBy (fun (_, _, distSq) -> distSq)
+                                |> Array.tryHead
 
-                            checkEdges model.Outer 0
-                            for idx in 0 .. model.Islands.Length - 1 do
-                                checkEdges model.Islands.[idx] (idx + 1)
-
-                            match insertPolyIndex, insertVertexIndex with
-                            | Some polyIdx, Some vIdx ->
+                            match closestEdge with
+                            | Some (polyIdx, vIdx, _) ->
                                 let newModel = snapshot model
-                                if polyIdx = 0 then
-                                    let newOuter = Array.append (Array.append (model.Outer.[0..vIdx-1]) [| p |]) (model.Outer.[vIdx..])
-                                    if not (Geometry.polygonSelfIntersects newOuter) &&
-                                       not (model.Islands |> Array.exists (fun island -> Geometry.polygonsIntersect newOuter island)) &&
-                                       (model.Islands |> Array.forall (fun island -> Geometry.isPolygonInside newOuter island)) then
-                                        updatedModel <- { newModel with Outer = newOuter }
-                                        didDelete <- true
-                                    // else do nothing
-                                else
+                                match polyIdx = 0 with
+                                | true ->
+                                    let newOuter = Array.append (Array.append (model.Outer.[0..vIdx]) [| p |]) (model.Outer.[vIdx+1..])
+                                    let ok = not (Geometry.polygonSelfIntersects newOuter) &&
+                                             not (model.Islands |> Array.exists (fun island -> Geometry.polygonsIntersect newOuter island)) &&
+                                             (model.Islands |> Array.forall (fun island -> Geometry.isPolygonInside newOuter island))
+                                    match ok with
+                                    | true -> Some { newModel with Outer = newOuter }
+                                    | false -> None
+                                | false ->
                                     let islandIdx = polyIdx - 1
                                     let island = model.Islands.[islandIdx]
-                                    let newIsland = Array.append (Array.append (island.[0..vIdx-1]) [| p |]) (island.[vIdx..])
-
-                                    if Geometry.isPolygonInside model.Outer newIsland &&
-                                       not (Geometry.polygonSelfIntersects newIsland) &&
-                                       not (model.Islands
-                                            |> Array.mapi (fun i isl -> i, isl)
-                                            |> Array.exists (fun (i, isl) -> i <> islandIdx && Geometry.polygonsIntersect newIsland isl)) then
+                                    let newIsland = Array.append (Array.append (island.[0..vIdx]) [| p |]) (island.[vIdx+1..])
+                                    let ok = Geometry.isPolygonInside model.Outer newIsland &&
+                                             not (Geometry.polygonSelfIntersects newIsland) &&
+                                             not (model.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.exists (fun (i, isl) -> i <> islandIdx && Geometry.polygonsIntersect newIsland isl))
+                                    match ok with
+                                    | true ->
                                         let newIslands = Array.copy model.Islands
                                         newIslands.[islandIdx] <- newIsland
-                                        updatedModel <- { newModel with Islands = newIslands }
-                                        didDelete <- true
-                                    // else do nothing
-                            | _ -> ()
+                                        Some { newModel with Islands = newIslands }
+                                    | false -> None
+                            | None -> None
 
-                            // 3. Delete entire island if inside polygon but NOT near vertex or edge
+                    // Step 4: Delete entire island if inside
+                    let afterIslandRemove =
+                        match afterInsert with
+                        | Some _ -> afterInsert
+                        | None ->
                             let insideIslandIdx =
                                 model.Islands
                                 |> Array.tryFindIndex (fun island ->
                                     Geometry.isInsidePolygon island p &&
-                                    // NOT near any vertex
                                     (island |> Array.forall (fun v -> not (Geometry.withinRadiusSq v p rThreshold))) &&
-                                    // NOT near any edge (distance > threshold)
-                                    (let distToEdgesOk =
-                                        [| 0 .. island.Length - 1 |]
-                                        |> Array.forall (fun i ->
-                                            let a = island.[i]
-                                            let b = island.[(i + 1) % island.Length]
-                                            Geometry.distancePointToSegmentSq p a b > rThreshold * rThreshold)
-                                    distToEdgesOk)
+                                    ([| 0 .. island.Length - 1 |] |> Array.forall (fun i ->
+                                        let a = island.[i]
+                                        let b = island.[(i + 1) % island.Length]
+                                        Geometry.distancePointToSegmentSq p a b > rThreshold * rThreshold))
                                 )
-
                             match insideIslandIdx with
                             | Some idx ->
-                                updatedModel <- snapshot updatedModel
-                                let newIslands = updatedModel.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.filter (fun (i,_) -> i <> idx) |> Array.map snd
-                                updatedModel <- { updatedModel with Islands = newIslands }
-                                didDelete <- true
-                            | None -> ()
+                                let newIslands = model.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.filter (fun (i,_) -> i <> idx) |> Array.map snd
+                                Some { snapshot model with Islands = newIslands }
+                            | None -> None
 
-                    // 4. fallback: add new island rectangle if not deleted anything
-                    if not didDelete then
-                        if Geometry.isInsidePolygon model.Outer p then
-                            let size = 40.0 * (model.LogicalWidth/fst initBound)
-                            let half = size / 2.0
-                            let island = [| { X = p.X - half; Y = p.Y - half }
-                                            { X = p.X + half; Y = p.Y - half }
-                                            { X = p.X + half; Y = p.Y + half }
-                                            { X = p.X - half; Y = p.Y + half } |]
+                    // Step 5: Add new island fallback
+                    let finalModel =
+                        match afterIslandRemove with
+                        | Some m -> m
+                        | None ->
+                            match Geometry.isInsidePolygon model.Outer p with
+                            | false -> model
+                            | true ->
+                                let size = 40.0 * (model.LogicalWidth/fst initBound)
+                                let half = size / 2.0
+                                let island = [| { X = p.X - half; Y = p.Y - half }
+                                                { X = p.X + half; Y = p.Y - half }
+                                                { X = p.X + half; Y = p.Y + half }
+                                                { X = p.X - half; Y = p.Y + half } |]
+                                let insideOuter = Geometry.isPolygonInside model.Outer island
+                                let insideAnyIsland = model.Islands |> Array.exists (fun existingIsland -> Geometry.isPolygonInside existingIsland island)
+                                let noIntersectsExisting = not (model.Islands |> Array.exists (fun existingIsland -> Geometry.polygonsIntersect island existingIsland))
+                                let noSelfIntersect = not (Geometry.polygonSelfIntersects island)
+                                let wouldEncloseEntry = Geometry.isInsidePolygon island model.EntryPoint
+                                match insideOuter && not insideAnyIsland && noIntersectsExisting && noSelfIntersect && not wouldEncloseEntry with
+                                | true -> { snapshot model with Islands = Array.append [| island |] model.Islands }
+                                | false -> model
 
-                            let insideOuter = Geometry.isPolygonInside model.Outer island
-                            let insideAnyIsland = model.Islands |> Array.exists (fun existingIsland -> Geometry.isPolygonInside existingIsland island)
-                            let noIntersectsExisting = not (model.Islands |> Array.exists (fun existingIsland -> Geometry.polygonsIntersect island existingIsland))
-                            let noSelfIntersect = not (Geometry.polygonSelfIntersects island)
-                            // Prevent island that would enclose the current entry point
-                            let wouldEncloseEntry = Geometry.isInsidePolygon island model.EntryPoint
-
-                            if insideOuter && not insideAnyIsland && noIntersectsExisting && noSelfIntersect && not wouldEncloseEntry then
-                                updatedModel <- { updatedModel with Islands = Array.append [| island |] model.Islands }
-                            // else do nothing
-
-                    return updatedModel |> refreshCachedStrings
+                    return finalModel |> refreshCachedStrings
             }
      
         | RemoveVertex _ -> async { return model }
@@ -532,12 +545,9 @@ module State =
                     let outsideIslands =
                         not (model.Islands |> Array.exists (fun isl -> Geometry.isInsidePolygon isl newEntry))
 
-                    if insideOuter && outsideIslands then
-                        let updated =  { model with EntryPoint = newEntry }
-                        return updated
-                    else
-                        let updated =  { model with EntryPoint = Geometry.closestValidEntryPoint model.Outer model.Islands }
-                        return updated
+                    match insideOuter && outsideIslands with
+                    | true -> return { model with EntryPoint = newEntry }
+                    | false -> return { model with EntryPoint = Geometry.closestValidEntryPoint model.Outer model.Islands }
                 | _ ->
                     return model
             }

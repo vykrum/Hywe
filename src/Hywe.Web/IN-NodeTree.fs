@@ -81,7 +81,7 @@ module NodeActionsUI =
                 }
                 button {
                     attr.``class`` "nodename"
-                    attr.style "color: #2ecc71; font-weight: bold; cursor: pointer; border: none !important; width: 54px; padding: 0; margin: auto; transform: translateY(5px); background: none;"
+                    attr.style "color: #2ecc71; font-weight: normal; font-size: 10px; cursor: pointer; border: none !important; width: 54px; padding: 0; margin: auto; transform: translateY(5px); background: none;"
                     "onpointerdown:stopPropagation" => true
                     on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, ActionIds.Nest)))
                     text "NEST"
@@ -275,7 +275,8 @@ module NodeTree =
         let isDropTarget = model.DropTargetId = Some node.Id
         let hasHalo = node.Level > model.ActiveLevel
         
-        let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = node.Id)
+        let nestIdOpt = model.NestAnchors |> Map.tryPick (fun k v -> match v = node.Id with true -> Some k | false -> None)
+        let isNestAnchor = nestIdOpt.IsSome
         
         let outerClasses = 
             [ "node-outer"
@@ -349,12 +350,21 @@ module NodeTree =
                                 on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
                             }
                             
-                            button { 
-                                attr.``class`` "nodebutton2"
-                                "onpointerdown:stopPropagation" => true
-                                on.pointerdown (fun _ -> dispatch (AddChild node.Id))
-                                text "+" 
-                            }
+                            match nestIdOpt with
+                            | Some nId ->
+                                div {
+                                    attr.``class`` "nodebutton2"
+                                    attr.style "color: #2ecc71; cursor: pointer; font-size: 8px; margin-top: 2px;"
+                                    on.pointerdown (fun _ -> dispatch (SetNest nId))
+                                    text $"N{nId}"
+                                }
+                            | None ->
+                                button { 
+                                    attr.``class`` "nodebutton2"
+                                    "onpointerdown:stopPropagation" => true
+                                    on.pointerdown (fun _ -> dispatch (AddChild node.Id))
+                                    text "+" 
+                                }
                         }
                 }
             }

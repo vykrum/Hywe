@@ -8,45 +8,48 @@ module Serialization =
 
     /// Standardizes Hywe syntax, ensuring markers, attributes and correctly formatted paths
     let preprocessCode (code: string) : string =
-        if String.IsNullOrWhiteSpace code then "" else
-        
-        let levels = processFullString code
-        if levels.IsEmpty then 
-            // Fallback for raw node list without parentheses
-            if code.Contains "/" then $"L0(Q=VRCCNE/L=0/X=1)({code.Trim()})"
-            else code
-        else
-            let processedLevels = 
-                levels |> List.mapi (fun i levelData ->
-                    let marker, attrs, tree = 
-                        match levelData with
-                        | Level l -> l.Marker, l.Attributes, l.Tree
-                        | Nest n -> n.Marker, n.Attributes, n.Tree
+        match String.IsNullOrWhiteSpace code with
+        | true -> ""
+        | false ->
+            let levels = processFullString code
+            match levels.IsEmpty with
+            | true -> 
+                match code.Contains "/" with
+                | true -> $"L0(Q=VRCCNE/L=0/X=1)({code.Trim()})"
+                | false -> code
+            | false ->
+                let processedLevels = 
+                    levels |> List.mapi (fun i levelData ->
+                        let marker, attrs, tree = 
+                            match levelData with
+                            | Level l -> l.Marker, l.Attributes, l.Tree
+                            | Nest n -> n.Marker, n.Attributes, n.Tree
+                            
+                        let finalMarker = 
+                            match String.IsNullOrWhiteSpace marker with
+                            | true -> sprintf "L%d" i 
+                            | false -> marker
                         
-                    let finalMarker = 
-                        if String.IsNullOrWhiteSpace marker then sprintf "L%d" i 
-                        else marker
-                    
-                    let attrStr = 
-                        let w = match attrs.Width with Some v -> $"/W={v}" | None -> ""
-                        let h = match attrs.Height with Some v -> $"/H={v}" | None -> ""
-                        $"Q={attrs.Sequence}/L={attrs.Level}/X={attrs.Scale}/E={attrs.Entry}/O={attrs.OuterBoundary}/I={attrs.Islands}/T={attrs.Thickness}{w}{h}"
-                    
-                    let nodes = 
-                        tree 
-                        |> List.collect id 
-                        |> List.map (fun n -> 
-                            let extr = match n.Extrusion with Some v -> $"/{v}" | None -> ""
-                            let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
-                            let idx = n.Id.IndexOf('.')
-                            let rawId = if idx >= 0 then n.Id.Substring(idx + 1) else n.Id
-                            $"({rawId}/{n.Area}/{n.Label}{extr}{baseStr})")
-                        |> String.concat ""
+                        let attrStr = 
+                            let w = match attrs.Width with Some v -> $"/W={v}" | None -> ""
+                            let h = match attrs.Height with Some v -> $"/H={v}" | None -> ""
+                            $"Q={attrs.Sequence}/L={attrs.Level}/X={attrs.Scale}/E={attrs.Entry}/O={attrs.OuterBoundary}/I={attrs.Islands}/T={attrs.Thickness}{w}{h}"
+                        
+                        let nodes = 
+                            tree 
+                            |> List.collect id 
+                            |> List.map (fun n -> 
+                                let extr = match n.Extrusion with Some v -> $"/{v}" | None -> ""
+                                let baseStr = match n.Base with Some b -> $"/B={b}" | None -> ""
+                                let idx = n.Id.IndexOf('.')
+                                let rawId = match idx >= 0 with | true -> n.Id.Substring(idx + 1) | false -> n.Id
+                                $"({rawId}/{n.Area}/{n.Label}{extr}{baseStr})")
+                            |> String.concat ""
 
-                    $"{finalMarker}({attrStr}){nodes}"
-                )
+                        $"{finalMarker}({attrStr}){nodes}"
+                    )
 
-            String.Join("", processedLevels)
+                String.Join("", processedLevels)
 
     /// Parses code into a list of hierarchical trees (one per level)
     let parseToTrees (code: string) : TreeNode list =
@@ -61,7 +64,7 @@ module Serialization =
             let rootNode = 
                 nodes |> List.tryFind (fun n -> 
                     let idx = n.Id.IndexOf('.')
-                    let rawId = if idx >= 0 then n.Id.Substring(idx + 1) else n.Id
+                    let rawId = match idx >= 0 with | true -> n.Id.Substring(idx + 1) | false -> n.Id
                     rawId = "1")
                 |> Option.orElse (nodes |> List.tryHead)
 
@@ -89,7 +92,7 @@ module Serialization =
         )
 
     let getElevations (model: SubModel) =
-        let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
+        let maxLevel = match model.Levels.IsEmpty with | true -> 0 | false -> model.Levels.Keys |> Seq.max
         let bases = 
             [0 .. maxLevel - 1] |> List.scan (fun currentSum lvl ->
                 let root = model.Levels |> Map.tryFind lvl |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
@@ -107,7 +110,7 @@ module Serialization =
                 yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getNodesWithPrefix $"{prefix}.{i + 1}" child)
             }
         
-        let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
+        let maxLevel = match model.Levels.IsEmpty with | true -> 0 | false -> model.Levels.Keys |> Seq.max
         let elevations = getElevations model
 
         let allLvlNodes = 
@@ -133,7 +136,7 @@ module Serialization =
                             | _ -> "0"
 
                     let currentL = elevations.[lvl]
-                    let lStr = if currentL = floor currentL then string (int currentL) else string currentL
+                    let lStr = match currentL = floor currentL with | true -> string (int currentL) | false -> string currentL
 
                     let tAttr = 
                         match lvl = maxLevel with
@@ -143,7 +146,7 @@ module Serialization =
                         | false -> ""
                     
                     let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
-                    let bVal = if lvl = 0 then "0" else eVal
+                    let bVal = match lvl = 0 with | true -> "0" | false -> eVal
                     let attrs = $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B={bVal}/O={o}/I={i}{tAttr}"
 
                     let body = 
@@ -154,7 +157,7 @@ module Serialization =
                             $"({p}/{n.Weight}/{n.Name}{extrStr}{baseStr})") 
                         |> String.concat ""
                     
-                    let marker = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                    let marker = match lvl = 0 with | true -> "L0" | false -> sprintf "L%d" lvl
                     Some $"{marker}({attrs}){body}"
             )
         
@@ -173,7 +176,7 @@ module Serialization =
                 
                 let (parentLvl, bVal) = match anchorInfo with Some (l, p) -> (l, p) | None -> (0, "0")
                 
-                let currentL = if parentLvl < elevations.Length then elevations.[parentLvl] else 0.0
+                let currentL = match parentLvl < elevations.Length with | true -> elevations.[parentLvl] | false -> 0.0
                 
                 let attrs = $"Q=VRCCNE/L={parentLvl}/W={w}/H={h}/X={x}/E=0/B={bVal}/O={o}/I={i}"
                 
@@ -210,7 +213,7 @@ module Serialization =
             allParts |> Array.collect (fun (lvl, t, s, nodes, e) ->
                 nodes |> List.map (fun n ->
                     let idx = n.Id.IndexOf('.')
-                    let rawId = if idx >= 0 then n.Id.Substring(idx + 1) else n.Id
+                    let rawId = match idx >= 0 with | true -> n.Id.Substring(idx + 1) | false -> n.Id
                     (rawId.Split('.') |> Array.map int |> Array.toList, string n.Area, n.Label, n.Extrusion |> Option.defaultValue 3.0, lvl, n.Base)
                 ) |> List.toArray
             )
@@ -295,7 +298,7 @@ module Serialization =
                 let parsedNodes = 
                     nodes |> List.map (fun nd ->
                         let idx = nd.Id.IndexOf('.')
-                        let rawId = if idx >= 0 then nd.Id.Substring(idx + 1) else nd.Id
+                        let rawId = match idx >= 0 with | true -> nd.Id.Substring(idx + 1) | false -> nd.Id
                         (rawId.Split('.') |> Array.map int |> Array.toList, string nd.Area, nd.Label, nd.Extrusion |> Option.defaultValue 3.0, parentLvl, nd.Base)
                     )
                 (nId, bVal, parentLvl, parsedNodes)
