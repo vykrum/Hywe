@@ -112,7 +112,7 @@ module Actions =
         LogicId = ActionIds.Nest
         LogicLabel = "Nest"
         IsApplicable = fun _ _ -> true
-        IsDisabled = fun _ _ -> false
+        IsDisabled = fun model node -> node.Level > model.ActiveLevel
         Execute = fun model node ->
             let newNestId = match model.Nests.IsEmpty with true -> 1 | false -> (model.Nests.Keys |> Seq.max) + 1
             let newNestRoot = { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }

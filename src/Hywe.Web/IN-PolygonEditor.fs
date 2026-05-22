@@ -847,10 +847,10 @@ let controlAndInstructions model dispatch =
         div {
             attr.``class`` "polygon-editor-instructions"
             attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-            p { text "ΓÇó Clk edg: add vtx" }
-            p { text "ΓÇó Dbl-clk vtx: del" }
-            p { text "ΓÇó Dbl-clk in: island" }
-            p { text "ΓÇó Dbl-clk island: del" }
+            p { text "Clk edg: add vtx" }
+            p { text "Dbl-clk vtx: del" }
+            p { text "Dbl-clk in: island" }
+            p { text "Dbl-clk island: del" }
         }
     }
 
