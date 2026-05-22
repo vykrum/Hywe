@@ -8,7 +8,9 @@ open Hywe
 open Page
 open Graphics
 open Hywe.Node
-open PolygonEditor
+open Hywe.Site
+open Hywe.Site.State
+open Hywe.Site.View
 open ModelTypes
 open Bolero.Html
 open Hywe.Core
@@ -419,7 +421,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
             div { 
                 attr.id "hywe-polygon-editor"
-                PolygonEditor.view currentInner (PolygonEditorMsg >> dispatch) js 
+                View.view currentInner (PolygonEditorMsg >> dispatch) js 
             }
 
         | LayoutPanel ->

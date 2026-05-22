@@ -7,7 +7,9 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
-open PolygonEditor
+open Hywe.Site
+open Hywe.Site.State
+open Hywe.Site.View
 open ModelTypes
 
 // --- FILE IMPORT/EXPORT ---

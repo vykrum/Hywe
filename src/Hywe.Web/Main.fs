@@ -8,7 +8,9 @@ open Bolero
 open Bolero.Html
 open Page
 open Hywe.Node
-open PolygonEditor
+open Hywe.Site
+open Hywe.Site.State
+open Hywe.Site.View
 open ModelTypes
 open ModelHelpers
 open Hywe
@@ -22,7 +24,7 @@ open FileManager
 let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
 let initialTree = Serialization.initModel beeyond
 let initialSequence = allSqns.[11]
-let initialPolygonExport = syncPolygonState PolygonEditor.initModel
+let initialPolygonExport = syncPolygonState State.initModel
 
 let initialOutput = Serialization.getOutput
                         initialTree
@@ -48,7 +50,7 @@ let initModel =
         IsHyweaving = false
         IsCancelling = false
         CancelToken = None
-        PolygonEditor = Stable PolygonEditor.initModel
+        PolygonEditor = Stable State.initModel
         ActivePanel = LayoutPanel 
         EditorMode = Interactive
         BatchPreview = None
@@ -149,7 +151,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | CacheResult _ | HyweaveResult _ | RecordResult _ | ReportGenerated _
             | HideLinkCopied -> model
             | TreeMsg (SubMsg.PointerMove _) -> model
-            | PolygonEditorMsg (PolygonEditor.PointerMove _) -> model
+            | PolygonEditorMsg (PointerMove _) -> model
             | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }
         else model
     
@@ -401,7 +403,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
         model,
         Cmd.OfAsync.perform
-            (PolygonEditor.update js subMsg)
+            (State.update js subMsg)
             currentInnerModel
             PolygonEditorUpdated
 
@@ -601,7 +603,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let model = pushUndo model
         let resetSyntax = start
         let resetTree = Serialization.initModel resetSyntax
-        let resetPoly = PolygonEditor.initModel
+        let resetPoly = State.initModel
         let resetExport = syncPolygonState resetPoly
         
         { model with 

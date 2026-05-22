@@ -7,13 +7,14 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Hywe.Core\Hywe.Core.fsproj" />
 		<ProjectReference Include="..\Hywe.Tree\Hywe.Tree.fsproj" />
+		<ProjectReference Include="..\Hywe.Site\Hywe.Site.fsproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="VZ-Graphics.fs" />
 		<Compile Include="VZ-Shaders.fs" />
 		<Compile Include="VZ-ThreeD.fs" />
-		<Compile Include="IN-PolygonEditor.fs" />
+		<Compile Include="VZ-Boundary.fs" />
 		<Compile Include="IN-NodeTree.fs" />
 		<Compile Include="IN-ModelTypes.fs" />
 		<Compile Include="IN-Page.fs" />

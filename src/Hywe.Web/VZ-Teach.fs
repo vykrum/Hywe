@@ -6,7 +6,9 @@ open Elmish
 open Bolero
 open Bolero.Html
 open ModelTypes
-open PolygonEditor
+open Hywe.Site
+open Hywe.Site.State
+open Hywe.Site.View
 open Hywe.Core
 open Hywe.Core.Lexel
 open Hywe.Core.Hexel

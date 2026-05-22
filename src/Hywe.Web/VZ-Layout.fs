@@ -223,7 +223,7 @@ let svgCoxels
                         | [||] -> -10.0, -10.0
                         | _ -> snd label
 
-                    let r = 10.0
+                    let r = 20.0
                     crPh()
                         .pathid(path)
                         .sx($"{x}")
