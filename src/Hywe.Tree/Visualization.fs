@@ -10,43 +10,49 @@ type VisualElement =
 
 module Visualization =
 
-    let rec private layoutTreeViz (node: TreeNode) (depth: int) (xRef: float ref) : TreeNode =
+    let rec private layoutTreeViz (node: TreeNode) (depth: int) (currentX: float) : TreeNode * float =
         let horizontalSpacing = 70.0
         let verticalSpacing = 55.0 // 40 (height) + 15 (gap)
 
-        let laidOutChildren = node.Children |> List.map (fun child -> layoutTreeViz child (depth + 1) xRef)
+        let laidOutChildren, nextX =
+            node.Children |> List.fold (fun (acc, cx) child ->
+                let (cNode, nx) = layoutTreeViz child (depth + 1) cx
+                (cNode :: acc, nx)
+            ) ([], currentX)
+            
+        let laidOutChildren = List.rev laidOutChildren
 
-        let x =
-            if laidOutChildren.IsEmpty then
-                let x = xRef.Value
-                xRef.Value <- x + horizontalSpacing
-                x
-            else laidOutChildren |> List.averageBy (fun n -> n.X)
+        let x, finalX =
+            match laidOutChildren.IsEmpty with
+            | true -> currentX, currentX + horizontalSpacing
+            | false -> 
+                let avgX = laidOutChildren |> List.averageBy (fun n -> n.X)
+                avgX, nextX
 
-        { node with X = x; Y = float depth * verticalSpacing; Children = laidOutChildren }
+        { node with X = x; Y = float depth * verticalSpacing; Children = laidOutChildren }, finalX
 
     let private flattenTree (node: TreeNode) : TreeNode list =
         let rec loop n = n :: (n.Children |> List.collect loop)
         loop node
 
     let calculateTreeBounds (root: TreeNode) =
-        let root = layoutTreeViz root 0 (ref 100.0)
+        let root, _ = layoutTreeViz root 0 100.0
         let nodes = flattenTree root
         let margin = 50.0
-        let minX = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.X) |> List.min
-        let maxX = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.X) |> List.max
-        let minY = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.Y) |> List.min
-        let maxY = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.Y) |> List.max
+        let minX = match nodes.IsEmpty with | true -> 0.0 | false -> nodes |> List.map (fun n -> n.X) |> List.min
+        let maxX = match nodes.IsEmpty with | true -> 100.0 | false -> nodes |> List.map (fun n -> n.X) |> List.max
+        let minY = match nodes.IsEmpty with | true -> 0.0 | false -> nodes |> List.map (fun n -> n.Y) |> List.min
+        let maxY = match nodes.IsEmpty with | true -> 100.0 | false -> nodes |> List.map (fun n -> n.Y) |> List.max
         (maxX - minX + 2.0 * margin, maxY - minY + 2.0 * margin)
 
     let private calculateTreeBoundsWithNodes (root: TreeNode) =
-        let root = layoutTreeViz root 0 (ref 100.0)
+        let root, _ = layoutTreeViz root 0 100.0
         let nodes = flattenTree root
         let margin = 50.0
-        let minX = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.X) |> List.min
-        let maxX = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.X) |> List.max
-        let minY = if nodes.IsEmpty then 0.0 else nodes |> List.map (fun n -> n.Y) |> List.min
-        let maxY = if nodes.IsEmpty then 100.0 else nodes |> List.map (fun n -> n.Y) |> List.max
+        let minX = match nodes.IsEmpty with | true -> 0.0 | false -> nodes |> List.map (fun n -> n.X) |> List.min
+        let maxX = match nodes.IsEmpty with | true -> 100.0 | false -> nodes |> List.map (fun n -> n.X) |> List.max
+        let minY = match nodes.IsEmpty with | true -> 0.0 | false -> nodes |> List.map (fun n -> n.Y) |> List.min
+        let maxY = match nodes.IsEmpty with | true -> 100.0 | false -> nodes |> List.map (fun n -> n.Y) |> List.max
         let contentW = maxX - minX + 2.0 * margin
         let contentH = maxY - minY + 2.0 * margin
         let vbX = minX - margin
@@ -65,51 +71,60 @@ module Visualization =
         
         let finalBounds = (vbX - ox, vbY - oy, finalW, finalH)
         
-        let elements = [
-            // Render Connections
-            for node in nodes do
-                for child in node.Children do
-                    // End at the pointy top (cy - 20) of children and start at pointy bottom (cy + 20) of parent
-                    yield VLine(node.X, node.Y + 20.0, child.X, child.Y - 20.0, "#ccc")
+        let elements =
+            let connections =
+                nodes
+                |> List.collect (fun node ->
+                    node.Children
+                    |> List.map (fun child ->
+                        VLine(node.X, node.Y + 20.0, child.X, child.Y - 20.0, "#ccc")
+                    )
+                )
 
-            // Render Nodes
-            for i, node in nodes |> List.indexed do
-                let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
-                let fill = 
-                    if i < colorList.Length then colorList.[i]
-                    else "white"
+            let renderNodes =
+                nodes
+                |> List.mapi (fun i node ->
+                    let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
+                    let fill = 
+                        match i < colorList.Length with
+                        | true -> colorList.[i]
+                        | false -> "white"
 
-                
-                // Highlight Elevated nodes (extrusion <> 3.0)
-                let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
-                let hasBase = node.Base.IsSome
-                
-                let stroke = if isElevated then "#4a90e2" else "none"
-                let strokeWidth = if isElevated then "2" else "0"
-                
-                // Draw Hexagon (width 50, height 40)
-                let w, h = 50.0, 40.0
-                let cx, cy = node.X, node.Y
-                let pts = sprintf "%f,%f %f,%f %f,%f %f,%f %f,%f %f,%f" 
-                            cx (cy - h/2.0)
-                            (cx + w/2.0) (cy - h/4.0)
-                            (cx + w/2.0) (cy + h/4.0)
-                            cx (cy + h/2.0)
-                            (cx - w/2.0) (cy + h/4.0)
-                            (cx - w/2.0) (cy - h/4.0)
-                
-                yield VPolygon(pts, fill, stroke, strokeWidth)
-                
-                let textFill = "#333"
-                yield VText(node.X, node.Y - 6.0, 11, "middle", textFill, safeName)
-                
-                let weightColor = if isElevated then "#4a90e2" else "#888"
-                yield VText(node.X, node.Y + 11.0, 9, "middle", weightColor, node.Weight)
+                    let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
+                    let hasBase = node.Base.IsSome
+                    
+                    let stroke = match isElevated with | true -> "#4a90e2" | false -> "none"
+                    let strokeWidth = match isElevated with | true -> "2" | false -> "0"
+                    
+                    let w, h = 50.0, 40.0
+                    let cx, cy = node.X, node.Y
+                    let pts = sprintf "%f,%f %f,%f %f,%f %f,%f %f,%f %f,%f" 
+                                cx (cy - h/2.0)
+                                (cx + w/2.0) (cy - h/4.0)
+                                (cx + w/2.0) (cy + h/4.0)
+                                cx (cy + h/2.0)
+                                (cx - w/2.0) (cy + h/4.0)
+                                (cx - w/2.0) (cy - h/4.0)
+                    
+                    let polygon = VPolygon(pts, fill, stroke, strokeWidth)
+                    
+                    let textFill = "#333"
+                    let textName = VText(node.X, node.Y - 6.0, 11, "middle", textFill, safeName)
+                    
+                    let weightColor = match isElevated with | true -> "#4a90e2" | false -> "#888"
+                    let textWeight = VText(node.X, node.Y + 11.0, 9, "middle", weightColor, node.Weight)
 
-                if hasBase then
-                    let baseLabel = sprintf "B:%s" node.Base.Value
-                    yield VText(node.X + 22.0, node.Y - 18.0, 7, "start", "#27ae60", baseLabel)
-        ]
+                    match hasBase with
+                    | true ->
+                        let baseLabel = sprintf "B:%s" node.Base.Value
+                        let textBase = VText(node.X + 22.0, node.Y - 18.0, 7, "start", "#27ae60", baseLabel)
+                        [polygon; textName; textWeight; textBase]
+                    | false ->
+                        [polygon; textName; textWeight]
+                )
+                |> List.concat
+
+            connections @ renderNodes
         
         elements, finalBounds
 
@@ -121,14 +136,18 @@ module Visualization =
         
         sprintf """<svg viewBox="%f %f %f %f" xmlns="http://www.w3.org/2000/svg" width="100%%" height="auto" style="background: #fafafa; border-radius: 12px; max-height: 100%%;">""" vx vy vw vh |> sb.AppendLine |> ignore
         
-        for el in elements do
-            match el with
-            | VLine(x1, y1, x2, y2, st) ->
-                sprintf """<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="%s" stroke-width="0.8" stroke-linecap="round" />""" x1 y1 x2 y2 st |> sb.AppendLine |> ignore
-            | VPolygon(pts, fill, stroke, sw) -> 
-                sprintf """<polygon points="%s" fill="%s" stroke="%s" stroke-width="%s" />""" pts fill stroke sw |> sb.AppendLine |> ignore
-            | VText(x, y, sz, ta, fl, nm) ->
-                sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz ta fl nm |> sb.AppendLine |> ignore
+        let elStrings = 
+            elements |> List.map (fun el ->
+                match el with
+                | VLine(x1, y1, x2, y2, st) ->
+                    sprintf """<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="%s" stroke-width="0.8" stroke-linecap="round" />""" x1 y1 x2 y2 st
+                | VPolygon(pts, fill, stroke, sw) -> 
+                    sprintf """<polygon points="%s" fill="%s" stroke="%s" stroke-width="%s" />""" pts fill stroke sw
+                | VText(x, y, sz, ta, fl, nm) ->
+                    sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz ta fl nm
+            )
+            
+        elStrings |> List.iter (fun s -> sb.AppendLine(s) |> ignore)
                 
         sb.AppendLine("</svg>") |> ignore
         sb.ToString()

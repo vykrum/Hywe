@@ -9,68 +9,112 @@ module Actions =
         LogicId = ActionIds.Delete
         LogicLabel = "Delete"
         IsApplicable = fun model node ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+            let currentTree = 
+                match model.ActiveNest with
+                | Some nId -> model.Nests |> Map.tryFind nId |> Option.defaultValue (model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0])
+                | None -> model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+                
             let isRoot = node.Id = currentTree.Id
             match isRoot with
-            | true -> model.ActiveLevel > 0 && model.Levels.Keys |> Seq.forall (fun k -> k <= model.ActiveLevel)
+            | true -> 
+                match model.ActiveNest with
+                | Some _ -> true
+                | None -> model.ActiveLevel > 0 && model.Levels.Keys |> Seq.forall (fun k -> k <= model.ActiveLevel)
             | false -> 
-                match node.Level > model.ActiveLevel with
-                | true -> not node.Children.IsEmpty
-                | false -> 
-                    let elevatedAnchorIds = 
-                        model.LevelAnchors 
-                        |> Map.filter (fun k _ -> k > model.ActiveLevel) 
-                        |> Map.toSeq 
-                        |> Seq.map snd 
-                        |> Set.ofSeq
-                    let nodeHasElevatedDescendant =
-                        elevatedAnchorIds |> Set.contains node.Id ||
-                        elevatedAnchorIds |> Seq.exists (fun anchorId -> TreeOps.isDescendant anchorId node)
-                    not nodeHasElevatedDescendant
+                match model.ActiveNest.IsSome with
+                | true -> true
+                | false ->
+                    match node.Level > model.ActiveLevel with
+                    | true -> not node.Children.IsEmpty
+                    | false -> 
+                        let elevatedAnchorIds = 
+                            model.LevelAnchors 
+                            |> Map.filter (fun k _ -> k > model.ActiveLevel) 
+                            |> Map.toSeq 
+                            |> Seq.map snd 
+                            |> Set.ofSeq
+                            
+                        let nestAnchorIds =
+                            model.NestAnchors
+                            |> Map.toSeq
+                            |> Seq.map snd
+                            |> Set.ofSeq
+                            
+                        let nodeHasElevatedDescendant =
+                            elevatedAnchorIds |> Set.contains node.Id ||
+                            elevatedAnchorIds |> Seq.exists (fun anchorId -> TreeOps.isDescendant anchorId node)
+                            
+                        let nodeHasNestDescendant =
+                            nestAnchorIds |> Set.contains node.Id ||
+                            nestAnchorIds |> Seq.exists (fun anchorId -> TreeOps.isDescendant anchorId node)
+                            
+                        not nodeHasElevatedDescendant && not nodeHasNestDescendant
         IsDisabled = fun _ _ -> false
         Execute = fun model node ->
-            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+            let currentTree = 
+                match model.ActiveNest with
+                | Some nId -> model.Nests |> Map.tryFind nId |> Option.defaultValue (model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0])
+                | None -> model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+                
+            let updateModelWithNewRoot newRoot =
+                let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
+                match model.ActiveNest with
+                | Some nId ->
+                    let newNests = model.Nests |> Map.add nId laidOut
+                    { model with Nests = newNests; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
+                | None ->
+                    let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
+                    { model with Levels = newLevels; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
+                    
             match node.Id = currentTree.Id with
             | true ->
-                match model.ActiveLevel = 0 with
-                | true -> model, Cmd.none
-                | false ->
-                    let hasElevatedDescendants = model.Levels.Keys |> Seq.exists (fun k -> k > model.ActiveLevel)
-                    match hasElevatedDescendants with
+                match model.ActiveNest with
+                | Some nId ->
+                    let newNests = model.Nests |> Map.remove nId
+                    let newNestAnchors = model.NestAnchors |> Map.remove nId
+                    { model with 
+                        Nests = newNests
+                        NestAnchors = newNestAnchors
+                        ActiveNest = None
+                        ConfirmingId = None
+                        ActiveActionId = ActionIds.NoAction
+                        ActiveMenuId = None }, Cmd.none
+                | None ->
+                    match model.ActiveLevel = 0 with
                     | true -> model, Cmd.none
                     | false ->
-                        let parentLvl = model.ActiveLevel - 1
-                        let anchorId = model.LevelAnchors |> Map.tryFind model.ActiveLevel
-                        match anchorId, model.Levels |> Map.tryFind parentLvl with
-                        | Some aId, Some pTree ->
-                            let updatedParentTree = TreeOps.updateNodeById aId (fun n -> { n with Level = parentLvl }) pTree
-                            let laidOutParent = fst (TreeOps.layoutTree updatedParentTree 0 50.0)
-                            let newLevels = 
-                                model.Levels 
-                                |> Map.remove model.ActiveLevel 
-                                |> Map.add parentLvl laidOutParent
-                            let newAnchors = model.LevelAnchors |> Map.remove model.ActiveLevel
-                            { model with 
-                                Levels = newLevels
-                                LevelAnchors = newAnchors
-                                ActiveLevel = parentLvl
-                                ConfirmingId = None
-                                ActiveActionId = ActionIds.NoAction
-                                ActiveMenuId = None }, Cmd.none
-                        | _ -> model, Cmd.none
+                        let hasElevatedDescendants = model.Levels.Keys |> Seq.exists (fun k -> k > model.ActiveLevel)
+                        match hasElevatedDescendants with
+                        | true -> model, Cmd.none
+                        | false ->
+                            let parentLvl = model.ActiveLevel - 1
+                            let anchorId = model.LevelAnchors |> Map.tryFind model.ActiveLevel
+                            match anchorId, model.Levels |> Map.tryFind parentLvl with
+                            | Some aId, Some pTree ->
+                                let updatedParentTree = TreeOps.updateNodeById aId (fun n -> { n with Level = parentLvl }) pTree
+                                let laidOutParent = fst (TreeOps.layoutTree updatedParentTree 0 50.0)
+                                let newLevels = 
+                                    model.Levels 
+                                    |> Map.remove model.ActiveLevel 
+                                    |> Map.add parentLvl laidOutParent
+                                let newAnchors = model.LevelAnchors |> Map.remove model.ActiveLevel
+                                { model with 
+                                    Levels = newLevels
+                                    LevelAnchors = newAnchors
+                                    ActiveLevel = parentLvl
+                                    ConfirmingId = None
+                                    ActiveActionId = ActionIds.NoAction
+                                    ActiveMenuId = None }, Cmd.none
+                            | _ -> model, Cmd.none
             | false ->
-                match node.Level > model.ActiveLevel with
+                match node.Level > model.ActiveLevel && model.ActiveNest.IsNone with
                 | true ->
                     let newRoot = TreeOps.updateNodeById node.Id (fun n -> { n with Children = [] }) currentTree
-                    let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-                    let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
-                    { model with Levels = newLevels; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }, Cmd.none
+                    updateModelWithNewRoot newRoot, Cmd.none
                 | false ->
                     match TreeOps.removeNodeById node.Id currentTree with
                     | Some newRoot -> 
-                        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-                        let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
-                        { model with Levels = newLevels; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }, Cmd.none
+                        updateModelWithNewRoot newRoot, Cmd.none
                     | None -> model, Cmd.none
         HandleInput = None
     }
@@ -78,7 +122,9 @@ module Actions =
     let elevateActionLogic = {
         LogicId = ActionIds.Elevate
         LogicLabel = "Elevate"
-        IsApplicable = fun model node -> node.Level >= model.ActiveLevel
+        IsApplicable = fun model node -> 
+            let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = node.Id)
+            node.Level >= model.ActiveLevel && not isNestAnchor
         IsDisabled = fun _ _ -> false
         Execute = fun model node ->
             let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
@@ -111,7 +157,9 @@ module Actions =
     let nestActionLogic = {
         LogicId = ActionIds.Nest
         LogicLabel = "Nest"
-        IsApplicable = fun _ _ -> true
+        IsApplicable = fun model node -> 
+            let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = node.Id)
+            node.Children.IsEmpty && not isNestAnchor
         IsDisabled = fun model node -> node.Level > model.ActiveLevel
         Execute = fun model node ->
             let newNestId = match model.Nests.IsEmpty with true -> 1 | false -> (model.Nests.Keys |> Seq.max) + 1
