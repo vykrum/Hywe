@@ -93,7 +93,8 @@ module Zaxel =
                     | None -> { state with Elvs = Array.append state.Elvs [| float attrs.Level |] }
                 | Nest n_block ->
                     let targetId = n_block.Attributes.Base
-                    match state.Cxls |> Array.tryFind (fun c -> let id = prpVlu c.Rfid in id = targetId || id.EndsWith("." + targetId)) with
+                    let targetLvl = n_block.Attributes.Level
+                    match state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = targetLvl) |> Array.tryFind (fun c -> let id = prpVlu c.Rfid in id = targetId || id.EndsWith("." + targetId)) with
                     | Some hostCxl ->
                         let hostThickness = 
                             resolvedLevels 
