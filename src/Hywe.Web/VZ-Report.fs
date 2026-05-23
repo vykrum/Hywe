@@ -552,7 +552,7 @@ let viewReport (model: Model) dispatch =
             let s = match Map.tryFind marker opts.LevelSections with | Some sections -> sections | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             div {
                 attr.``class`` "report-level-card"
-                attr.style (if isNest then "margin-left: 40px; border-left: 3px solid #ddd; border-radius: 0;" else "")
+                attr.style (if isNest then "margin-left: 40px;" else "")
                 div { attr.``class`` "report-level-header"; text (getMarkerTitle marker) }
                 div {
                     attr.style "display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 5px;"
