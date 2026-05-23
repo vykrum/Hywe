@@ -19,6 +19,14 @@ module View =
 
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
+        let dynamicFactor = 
+            match model.UseMapBase with
+            | false -> 10.0
+            | true ->
+                let w = max 1.0 model.LogicalWidth
+                let magnitude = System.Math.Floor(System.Math.Log10(w))
+                System.Math.Pow(10.0, magnitude - 1.0)
+                
         let renderNumericInput labelText value msg isHeight =
             div {
                 attr.``class`` "field-group"
@@ -26,12 +34,11 @@ module View =
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
-                    let factor = 10.0
-                    attr.value (string (System.Math.Round(value / factor)))
-                    attr.disabled (not model.UseBoundary)
+                    attr.value (string (System.Math.Round(value / dynamicFactor)))
+                    attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
                         match System.Double.TryParse (string ev.Value) with
-                        | (true, v) -> dispatch (msg v)
+                        | (true, v) -> dispatch (msg (v * dynamicFactor))
                         | _ -> ()
                     )
                 }
@@ -118,7 +125,7 @@ module View =
             // Col 2: Dimensions
             div {
                 attr.``class`` "dimension-fields"
-                attr.style (match model.UseMapBase with | true -> "display: none;" | false -> (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;"))
+                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
                 renderNumericInput "Width:" model.LogicalWidth UpdateLogicalWidth false
                 renderNumericInput "Height:" model.LogicalHeight UpdateLogicalHeight true
             }
@@ -136,6 +143,14 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
+                let dynamicFactor = 
+                    match model.UseMapBase with
+                    | false -> 10.0
+                    | true ->
+                        let w = max 1.0 model.LogicalWidth
+                        let magnitude = System.Math.Floor(System.Math.Log10(w))
+                        System.Math.Pow(10.0, magnitude - 1.0)
+                        
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
                                     | _ -> 1.0            
@@ -210,8 +225,8 @@ module View =
                 for i = 0 to model.Outer.Length - 1 do
                     let pt = model.Outer.[i]
                     let id = sprintf "outerVertex-%d" i
-                    let cartX = int (System.Math.Round( pt.X / 10.0))
-                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / 10.0))
+                    let cartX = int (System.Math.Round( pt.X / dynamicFactor))
+                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / dynamicFactor))
                     bdrCrl()
                         .cs("outerVertex")
                         .cx(sprintf "%.1f" pt.X)
@@ -242,8 +257,8 @@ module View =
                     for vertexIdx in 0 .. island.Length - 1 do
                         let pt = island.[vertexIdx]
                         let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
-                        let cartX = int (System.Math.Round( pt.X / 10.0))
-                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / 10.0))
+                        let cartX = int (System.Math.Round( pt.X / dynamicFactor))
+                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / dynamicFactor))
 
                         bdrCrl()
                             .cs("islandVertex")
