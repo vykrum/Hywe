@@ -512,8 +512,18 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         
         | AnalyzePanel ->
             let elv = model.Tree.ActiveLevel
-            let fCxls, fClrs, fAvls, _ = getFilteredGeometries ()
-            let fAdj = cxlAdj fCxls
+            let currentSqnIdx = sqnToIndex currentSqn
+            let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+            
+            let fCxls, fClrs, fAvls, fAdj = 
+                match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
+                | Some cfg -> 
+                    let filtered = Page.TreeFiltering.filterBatchConfig true model.Tree cfg
+                    filtered.cxCxl1, filtered.cxClr1, filtered.cxlAvl, filtered.cxAdj1
+                | None ->
+                    // Fallback to on-the-fly filtering if not yet cached
+                    let fCxls, fClrs, fAvls, _ = getFilteredGeometries ()
+                    fCxls, fClrs, fAvls, cxlAdj fCxls
 
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
@@ -598,38 +608,40 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | BatchPanel ->
             div {
                 attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
-                cond model.BatchPreview <| function
-                    | Some results -> 
-                        alternateConfigurations 
-                            results 
-                            model.SelectedPreviewIndex 
-                            TapBatchPreview                   
-                            dispatch                   
-                            (fun () -> dispatch (SetActivePanel LayoutPanel)) js
-                    | None -> 
-                        div { 
-                            attr.style "text-align:center; padding: 40px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
-                            
-                            // Text Above - Multi-line, width constrained to match 4x6 grid (156px)
-                            div {
-                                attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 15px; text-align: center; font-weight: 500; line-height: 1.3;"
-                                text "Generating Configurations"
-                            }
-
-                            span { attr.``class`` "spinner"; attr.style "display: block; margin-bottom: 25px;" }
-                            
-                            // Progress Grid (4x6) - Delicate filleted squares
-                            div {
-                                // 4 columns * 14px + 3 gaps * 14px = 56 + 42 = 98px
-                                attr.style "display: grid; grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(6, 14px); gap: 14px; margin: 0 auto; justify-content: center; width: 98px;"
-                                for i in 0 .. 23 do
-                                    let isComplete = i < model.BatchProgress
-                                    div {
-                                        attr.style (sprintf "width: 14px; height: 14px; border: 1px solid #e0e0e0; border-radius: 3px; background: %s; transition: all 0.5s ease;" 
-                                            (if isComplete then "rgba(136, 136, 136, 0.4)" else "transparent"))
-                                    }
-                            }
+                let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+                if rawResults.Length > 0 && model.BatchProgress = 24 then
+                    let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig false model.Tree)
+                    alternateConfigurations 
+                        results 
+                        model.SelectedPreviewIndex 
+                        TapBatchPreview                   
+                        dispatch                   
+                        (fun () -> dispatch (SetActivePanel LayoutPanel)) js
+                else
+                    div { 
+                        attr.style "text-align:center; padding: 40px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
+                        
+                        // Text Above - Multi-line, width constrained to match 4x6 grid (156px)
+                        div {
+                            attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 1.1em; letter-spacing: 0.5px; color: #666; width: 156px; margin-bottom: 15px; text-align: center; font-weight: 500; line-height: 1.3;"
+                            text "Generating Configurations"
                         }
+
+                        span { attr.``class`` "spinner"; attr.style "display: block; margin-bottom: 25px;" }
+                        
+                        // Progress Grid (4x6) - Delicate filleted squares
+                        div {
+                            // 4 columns * 14px + 3 gaps * 14px = 56 + 42 = 98px
+                            attr.style "display: grid; grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(6, 14px); gap: 14px; margin: 0 auto; justify-content: center; width: 98px;"
+                            for i in 0 .. 23 do
+                                let isComplete = i < model.BatchProgress
+                                div {
+                                    attr.style (sprintf "width: 14px; height: 14px; border: 1px solid #e0e0e0; border-radius: 3px; background: %s; transition: all 0.5s ease;" 
+                                        (if isComplete then "rgba(136, 136, 136, 0.4)" else "transparent"))
+                                }
+                        }
+                    }
             }
 
         | TeachPanel ->

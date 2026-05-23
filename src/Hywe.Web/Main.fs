@@ -53,7 +53,6 @@ let initModel =
         PolygonEditor = Stable State.initModel
         ActivePanel = LayoutPanel 
         EditorMode = Interactive
-        BatchPreview = None
         LastBatchSrc = None
         SelectedPreviewIndex = None
         UserDescription = ""
@@ -93,7 +92,6 @@ let initModel =
             SeenSteps = Set.empty
         }
         BatchProgress = 0
-        BatchAccumulator = []
         CurrentScreen = LoadingScreen
         ViewLocked = false
         EditsCount = 0
@@ -270,7 +268,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let currentSqn = Hexel.sqnArray.[currentSqnIdx]
         
         model, Cmd.OfAsync.perform (fun () -> async {
-            let mutable updatedCache = model.LayoutCache
+            let mutable updatedCache = Map.empty // Clear cache because source text or boundary changed
             
             // 1. Handle current orientation (might be different from 11)
             let srcForCurrent = ensureCategory updatedSrcOfTrth currentSqnIdx
@@ -393,8 +391,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         { m with 
                             IsHyweaving = true
                             BatchProgress = 0
-                            BatchAccumulator = []
-                            BatchPreview = None
                         }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
                     else
                         m, Cmd.map TreeMsg treeCmd
@@ -452,9 +448,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
             newModel, cmd
         | None -> model, Cmd.none
-    | SetBatchPreview results ->
+    | SetBatchFinished ->
         { model with 
-            BatchPreview = Some results
             LastBatchSrc = Some model.SrcOfTrth 
             IsHyweaving = false 
             IsCancelling = false
@@ -468,37 +463,39 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | GenerateNextBatchItem i ->
         if i >= 24 || model.IsCancelling then
             { model with IsHyweaving = false; IsCancelling = false }, 
-            Cmd.ofMsg (SetBatchPreview (model.BatchAccumulator |> List.toArray |> Array.rev))
+            Cmd.ofMsg SetBatchFinished
         else
             model, Cmd.OfAsync.perform (fun () -> async {
                 try
                     let mutable currentCache = model.LayoutCache
                     let sqn = Hexel.sqnArray.[i]
+                    let marker = toMarker model.Tree.ActiveLevel
                     
-                    // Force all levels in the source to match the current batch orientation 'sqn'
-                    let srcForBatch = ensureCategory model.SrcOfTrth i
+                    match Cache.get marker i currentCache with
+                    | Some _ ->
+                        // Fill-in-the-blanks approach: skip if already computed
+                        do! Async.Sleep 1
+                        return currentCache
+                    | None ->
+                        // Force all levels in the source to match the current batch orientation 'sqn'
+                        let srcForBatch = ensureCategory model.SrcOfTrth i
 
-                    // Compute full layout once for this orientation
-                    let fullData = Cache.computeFullLayout srcForBatch sqn model.PolygonExport 0
-                    
-                    // Update cache for all levels
-                    for lvl in model.Tree.Levels.Keys do
-                        let config = Cache.fromFullLayout fullData sqn lvl
-                        currentCache <- Cache.update (toMarker lvl) i config currentCache
-                    
-                    let activeConfig = Cache.fromFullLayout fullData sqn model.Tree.ActiveLevel
-                    do! Async.Sleep 5
-                    return Some activeConfig, currentCache
-                with _ -> return None, model.LayoutCache
+                        // Compute full layout once for this orientation
+                        let fullData = Cache.computeFullLayout srcForBatch sqn model.PolygonExport 0
+                        
+                        // Update cache for all levels
+                        for lvl in model.Tree.Levels.Keys do
+                            let config = Cache.fromFullLayout fullData sqn lvl
+                            currentCache <- Cache.update (toMarker lvl) i config currentCache
+                        
+                        do! Async.Sleep 5
+                        return currentCache
+                with _ -> return model.LayoutCache
             }) () AddBatchItem
 
-    | AddBatchItem (res, updatedCache) ->
+    | AddBatchItem updatedCache ->
         let nextI = model.BatchProgress + 1
-        let nextAcc = 
-            match res with
-            | Some r -> r :: model.BatchAccumulator
-            | None -> model.BatchAccumulator
-        { model with BatchProgress = nextI; BatchAccumulator = nextAcc; LayoutCache = updatedCache }, Cmd.ofMsg (GenerateNextBatchItem nextI)
+        { model with BatchProgress = nextI; LayoutCache = updatedCache }, Cmd.ofMsg (GenerateNextBatchItem nextI)
     | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with
