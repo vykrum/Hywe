@@ -60,13 +60,15 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 
 ### Data Collection Pipeline
 
-HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with compressed **Base34** syntax strings.
+HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with compressed **Base36** syntax strings.
 
 #### System Architecture Flow
-`Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`
+`Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations (×24)` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`
 
 - **Serverless Ingestion**: The **Hynteract** layer structures the data into token-efficient JSON Lines (`.jsonl`) records.
-- **Full Sequence Sweeps**: Every committed record contains a resolved layout array of **all 24 configuration sweeps** (corresponding to the 24 sequence rules) rather than being restricted to the active view.
+- **Container-First Layout**: Each committed record's `configuration` field is an array of strings — one per architectural container (`L0`, `L1`, `N1`, etc.) — each encoding all 24 sequence sweep variations for all rooms within that container.
+- **Base36 Compression**: All hexagonal grid coordinates are encoded in Base36, and room coordinate groups within each variation are semicolon-separated and **positionally aligned** with the container's room index header.
+- **Full Sequence Sweeps**: Every committed record covers all **24 configuration sweeps** (corresponding to the 24 sequence rules), independent of the active sequence at time of export.
 
 ---
 
