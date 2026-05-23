@@ -19,7 +19,18 @@ type PageEntry = {
 
 // --- GENERATOR LOGIC (from UT-ReportGenerator.fs) ---
 
-let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list =
+let getOrderedMarkers (tree: SubModel) =
+    tree.Levels.Keys |> Seq.toList |> List.sort |> List.collect (fun lvl ->
+        let levelMarker = if lvl = 0 then "L0" else sprintf "L%d" lvl
+        let nests = tree.Nests |> Map.toList |> List.filter (fun (_, n) -> n.Level = lvl) |> List.map (fun (id, _) -> sprintf "N%d" id)
+        levelMarker :: nests
+    )
+
+let getMarkerTitle (marker: string) =
+    if marker.StartsWith("N") then sprintf "Nest %s" (marker.Substring(1))
+    else sprintf "Level %s" (marker.Substring(1))
+
+let buildPageManifest (opts: ReportOptions) (markers: string list) : PageEntry list =
     let mutable pages = []
     let mutable pageNum = 1
 
@@ -29,24 +40,27 @@ let buildPageManifest (opts: ReportOptions) (levels: int list) : PageEntry list 
 
     if opts.IncludeCover then addPage "Cover Page" 0
 
-    for level in levels do
+    for marker in markers do
         let section = 
-            match Map.tryFind level opts.LevelSections with
+            match Map.tryFind marker opts.LevelSections with
             | Some s -> s
             | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             
         let hasAny = section.FlowChart || section.BatchOverview || section.Variations
         if hasAny then
-            addPage (sprintf "Level %d" level) 0
-            if section.FlowChart then addPage "Flow Chart" 1
+            let title = getMarkerTitle marker
+            let isNest = marker.StartsWith("N")
+            addPage title (if isNest then 1 else 0)
+            let contentDepth = if isNest then 2 else 1
+            if section.FlowChart then addPage "Flow Chart" contentDepth
             if section.BatchOverview then 
-                addPage "Batch Overview" 1
+                addPage "Batch Overview" contentDepth
                 let numPages = int (System.Math.Ceiling(24.0 / 8.0))
                 if numPages > 1 then pageNum <- pageNum + (numPages - 1)
             if section.Variations then
                 for i = 0 to 23 do
                     if section.SelectedVariations.Contains(i) then
-                        addPage (labelPhrase.[i].ToString()) 2
+                        addPage (labelPhrase.[i].ToString()) (contentDepth + 1)
     
     let revPages = pages |> List.rev
     revPages |> List.map (fun p -> 
@@ -314,13 +328,13 @@ let tVariation : Printf.StringFormat<string -> string -> string -> string -> str
     %s
 </div></div>"""
 
-let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int, BatchConfgrtns[]>) : string =
+let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<string, BatchConfgrtns[]>) : string =
     let sb = StringBuilder()
     let d = DateTime.Now.ToString("dd MMM yyyy")
     sprintf tBase opts.ProjectTitle |> sb.AppendLine |> ignore
 
-    let levels = batches.Keys |> Seq.toList |> List.sort
-    let manifest = buildPageManifest opts levels
+    let markers = getOrderedMarkers tree
+    let manifest = buildPageManifest opts markers
     let mutable currentPage = 1
 
     let renderHeader title subtitle = sprintf tHeader title subtitle
@@ -338,9 +352,16 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
 
     let flowChartMaxW, flowChartMaxH =
         let allTrees = 
-            levels |> List.choose (fun lvl ->
-                let s = Map.tryFind lvl opts.LevelSections |> Option.defaultValue { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
-                if s.FlowChart then Some (tree.Levels.[lvl]) else None
+            markers |> List.choose (fun marker ->
+                let s = Map.tryFind marker opts.LevelSections |> Option.defaultValue { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
+                if s.FlowChart then 
+                    if marker.StartsWith("N") then
+                        let nId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
+                        Map.tryFind nId tree.Nests
+                    else
+                        let lvl = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
+                        Map.tryFind lvl tree.Levels
+                else None
             )
         if allTrees.IsEmpty then None, None
         else
@@ -349,20 +370,28 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
             let mh = bounds |> List.map snd |> List.max
             Some mw, Some mh
 
-    for level in levels do
+    for marker in markers do
         let section = 
-            match Map.tryFind level opts.LevelSections with
+            match Map.tryFind marker opts.LevelSections with
             | Some s -> s
             | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
-        let batchInfo = batches.[level]
+        let batchInfo = batches.[marker]
         let maxW = if batchInfo.Length > 0 then Some (batchInfo |> Array.map (fun c -> c.w) |> Array.max) else None
         let maxH = if batchInfo.Length > 0 then Some (batchInfo |> Array.map (fun c -> c.h) |> Array.max) else None
 
+        let title = getMarkerTitle marker
+
         if section.FlowChart then
-            let root = tree.Levels.[level]
+            let root = 
+                if marker.StartsWith("N") then
+                    let nId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
+                    Map.tryFind nId tree.Nests |> Option.defaultValue tree.Levels.[0]
+                else
+                    let lvl = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
+                    Map.tryFind lvl tree.Levels |> Option.defaultValue tree.Levels.[0]
             let colors = if batchInfo.Length > 0 then batchInfo.[0].shapes |> Array.map (fun s -> s.color) else [||]
             let svg = renderFlowchartSvg root colors flowChartMaxW flowChartMaxH
-            sprintf tFlowChart (renderHeader (sprintf "Flow Chart — Level %d" level) opts.ProjectTitle) svg (renderFooter()) |> sb.AppendLine |> ignore
+            sprintf tFlowChart (renderHeader (sprintf "Flow Chart — %s" title) opts.ProjectTitle) svg (renderFooter()) |> sb.AppendLine |> ignore
 
         if section.BatchOverview && batchInfo.Length > 0 then
             let limit = Math.Min(23, batchInfo.Length - 1)
@@ -371,38 +400,36 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<int,
                 let chunkStart = pageIndex * 8
                 let chunkEnd = Math.Min(chunkStart + 7, limit)
                 let pageStr = if totalPages > 1 then sprintf " (%d/%d)" (pageIndex+1) totalPages else ""
-                sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — Level %d%s" level pageStr) opts.ProjectTitle) |> sb.AppendLine |> ignore
+                sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — %s%s" title pageStr) opts.ProjectTitle) |> sb.AppendLine |> ignore
                 for i = chunkStart to chunkEnd do
                     let conf = batchInfo[i]
-                    let levelCxlNames = 
-                        conf.cxCxl1 
-                        |> Array.filter (fun c -> 
-                            let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level)
-                            let (_, _, bz) = Hexel.hxlCrd c.Base
-                            hasHxls || bz = level)
-                        |> Array.map (fun c -> prpVlu c.Name) |> Set.ofArray
-                    let levelShapes = conf.shapes |> Array.filter (fun s -> levelCxlNames.Contains(s.name) && s.points.Length > 0)
+                    let levelShapes = conf.shapes
                     let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
                     sprintf tBatchCell svg (labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
                 let allPageShapes = [| chunkStart .. chunkEnd |] |> Array.collect (fun idx -> batchInfo.[idx].shapes)
-                let legendNames = [| chunkStart .. chunkEnd |] |> Array.collect (fun idx -> batchInfo.[idx].cxCxl1) |> Array.filter (fun c -> let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level) in let (_, _, bz) = Hexel.hxlCrd c.Base in hasHxls || bz = level) |> Array.map (fun c -> prpVlu c.Name) |> Set.ofArray
-                let levelShapes = allPageShapes |> Array.filter (fun s -> legendNames.Contains(s.name) && s.points.Length > 0)
-                let legend = if levelShapes.Length > 0 then renderLegend levelShapes else ""
+                let legend = if allPageShapes.Length > 0 then renderLegend allPageShapes else ""
                 sprintf tBatchGrid2 legend (renderFooter()) |> sb.AppendLine |> ignore
 
         if section.Variations then
             for i = 0 to Math.Min(23, batchInfo.Length - 1) do
                 if section.SelectedVariations.Contains(i) then
                     let conf = batchInfo[i]
-                    let levelCxls = conf.cxCxl1 |> Array.filter (fun (c: Cxl) -> let hasHxls = c.Hxls |> Array.exists (fun h -> let (_, _, z) = Hexel.hxlCrd h in z = level) in let (_, _, bz) = Hexel.hxlCrd c.Base in hasHxls || bz = level)
-                    let levelNames = levelCxls |> Array.map (fun c -> prpVlu c.Name) |> Set.ofArray
-                    let levelShapes = conf.shapes |> Array.filter (fun s -> levelNames.Contains(s.name) && s.points.Length > 0)
+                    let levelCxls = conf.cxCxl1
+                    let levelShapes = conf.shapes
                     let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
                     let legend = renderLegend levelShapes
                     let colorMap = levelShapes |> Array.map (fun s -> s.name, s.color) |> Map.ofArray
-                    let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap level
+                    
+                    let baseLevel = 
+                        if marker.StartsWith("N") then
+                            let nestId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
+                            match tree.Nests |> Map.tryFind nestId with | Some n -> n.Level | None -> 0
+                        else
+                            match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
+                    
+                    let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap baseLevel
                     let adjMatrix = renderAdjacencyMatrix levelCxls colorMap
-                    sprintf tVariation (renderHeader (sprintf "%s — Level %d" (labelPhrase.[i].ToString()) level) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
+                    sprintf tVariation (renderHeader (sprintf "%s — %s" (labelPhrase.[i].ToString()) title) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
 
     sb.AppendLine("</body></html>") |> ignore
     sb.ToString()
@@ -520,26 +547,28 @@ let viewReport (model: Model) dispatch =
                     text "Please lock 3D view for inclusion in cover page"
             }
 
-        forEach (Map.toList model.Tree.Levels |> List.sortBy fst) <| fun (level, _) ->
-            let s = match Map.tryFind level opts.LevelSections with | Some sections -> sections | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
+        forEach (getOrderedMarkers model.Tree) <| fun marker ->
+            let isNest = marker.StartsWith("N")
+            let s = match Map.tryFind marker opts.LevelSections with | Some sections -> sections | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             div {
                 attr.``class`` "report-level-card"
-                div { attr.``class`` "report-level-header"; text (sprintf "Level %d" level) }
+                attr.style (if isNest then "margin-left: 40px; border-left: 3px solid #ddd; border-radius: 0;" else "")
+                div { attr.``class`` "report-level-header"; text (getMarkerTitle marker) }
                 div {
                     attr.style "display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 5px;"
                     div {
                         attr.style "display: flex; flex-direction: column;"
-                        renderToggleRow "Flow Chart" s.FlowChart (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with FlowChart = v } o.LevelSections }))
-                        renderToggleRow "Batch Overview (Grid)" s.BatchOverview (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with BatchOverview = v } o.LevelSections }))
+                        renderToggleRow "Flow Chart" s.FlowChart (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with FlowChart = v } o.LevelSections }))
+                        renderToggleRow "Batch Overview (Grid)" s.BatchOverview (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with BatchOverview = v } o.LevelSections }))
                     }
                     div {
                         attr.style "display: flex; flex-direction: column; align-items: flex-start; gap: 8px;"
-                        renderToggleRow "Individual Variations" s.Variations (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with Variations = v } o.LevelSections }))
+                        renderToggleRow "Individual Variations" s.Variations (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with Variations = v } o.LevelSections }))
                         button {
                             attr.disabled (not s.Variations)
                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light"
                             attr.style (if s.Variations then "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #666; background: transparent; border: 1px solid #ddd;" else "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #aaa; background: transparent; border: 1px solid #eee; cursor: not-allowed;")
-                            on.click (fun _ -> if s.Variations then updateOpts (fun o -> { o with LevelSections = Map.add level { s with IsFilterExpanded = not s.IsFilterExpanded } o.LevelSections }))
+                            on.click (fun _ -> if s.Variations then updateOpts (fun o -> { o with LevelSections = Map.add marker { s with IsFilterExpanded = not s.IsFilterExpanded } o.LevelSections }))
                             text (if s.Variations && s.IsFilterExpanded then "Hide filters" else "Filter variations")
                         }
                     }
@@ -550,12 +579,12 @@ let viewReport (model: Model) dispatch =
                             attr.``class`` "variation-grid-controls"
                             button {
                                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
-                                on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
+                                on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
                                 text "All"
                             }
                             button {
                                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
-                                on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = Set.empty } o.LevelSections }))
+                                on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with SelectedVariations = Set.empty } o.LevelSections }))
                                 text "None"
                             }
                         }
@@ -567,7 +596,7 @@ let viewReport (model: Model) dispatch =
                                     attr.``class`` (if isSelected then "var-chip selected" else "var-chip")
                                     on.click (fun _ ->
                                         let newSet = if isSelected then Set.remove i s.SelectedVariations else Set.add i s.SelectedVariations
-                                        updateOpts (fun o -> { o with LevelSections = Map.add level { s with SelectedVariations = newSet } o.LevelSections }))
+                                        updateOpts (fun o -> { o with LevelSections = Map.add marker { s with SelectedVariations = newSet } o.LevelSections }))
                                     text (labelPhrase.[i].ToString())
                                 }
                         }
@@ -580,7 +609,7 @@ let viewReport (model: Model) dispatch =
             text "3. Generate"
         }
         
-        let reportPages = buildPageManifest opts (model.Tree.Levels.Keys |> Seq.toList |> List.sort)
+        let reportPages = buildPageManifest opts (getOrderedMarkers model.Tree)
         div {
             attr.``class`` "report-page-count"
             text (sprintf "Report ready — %d pages" reportPages.Length)
