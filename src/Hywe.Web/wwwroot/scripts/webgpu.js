@@ -164,7 +164,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             triInputData[tIdx++] = tri[2][0]; triInputData[tIdx++] = tri[2][1];
             triInputData[tIdx++] = c[0]; triInputData[tIdx++] = c[1]; triInputData[tIdx++] = c[2];
             triInputData[tIdx++] = bh; triInputData[tIdx++] = h;
-            tIdx++; // Padding to 12 floats
+            triInputData[tIdx++] = c[3] !== undefined ? c[3] : 1.0;
         }
     });
 
@@ -181,7 +181,8 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 wallInputData[wIdx++] = p2[0]; wallInputData[wIdx++] = p2[1];
                 wallInputData[wIdx++] = c[0]; wallInputData[wIdx++] = c[1]; wallInputData[wIdx++] = c[2];
                 wallInputData[wIdx++] = bh; wallInputData[wIdx++] = h;
-                wIdx += 3; // Padding to 12 floats
+                wallInputData[wIdx++] = c[3] !== undefined ? c[3] : 1.0;
+                wIdx += 2; // Padding to 12 floats
             }
         });
     }

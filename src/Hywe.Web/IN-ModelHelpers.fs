@@ -538,7 +538,27 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
 
         | ViewPanel ->
-            let sideEffect = async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" model.Derived.cxCxl1 model.Derived.cxClr1 model.Derived.cxElv1 model.ViewLocked } |> Async.StartImmediate
+            let idMap = Page.TreeFiltering.getHierarchicalIdMap model.Tree
+            let hostIds = 
+                model.Tree.NestAnchors 
+                |> Map.toSeq 
+                |> Seq.choose (fun (_, guid) -> Map.tryFind guid idMap) 
+                |> Set.ofSeq
+
+            let viewCxls, viewClrs =
+                if hostIds.IsEmpty then
+                    model.Derived.cxCxl1, model.Derived.cxClr1
+                else
+                    let validIndices = 
+                        model.Derived.cxCxl1 
+                        |> Array.indexed 
+                        |> Array.filter (fun (_, c) -> not (hostIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid)))
+                        |> Array.map fst
+                    
+                    validIndices |> Array.map (fun i -> model.Derived.cxCxl1.[i]),
+                    validIndices |> Array.map (fun i -> model.Derived.cxClr1.[i])
+
+            let sideEffect = async { do! ThreeD.extrudePolygons js "hywe-extruded-polygon" viewCxls viewClrs model.Derived.cxElv1 model.ViewLocked } |> Async.StartImmediate
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; overflow-x: hidden;"
                 
