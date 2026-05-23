@@ -168,15 +168,15 @@ let extrudePolygons
         // 2. Helper: Color normalization
         let normalizeColor (rgba: string) =
             let parts = 
-                rgba.Replace("rgba(", "").Replace(")", "").Split(',')
+                rgba.Replace("rgba(", "").Replace("rgb(", "").Replace(")", "").Split(',')
                 |> Array.choose (fun s -> 
                     match System.Double.TryParse(s.Trim()) with
                     | true, v -> Some v
                     | _ -> None)
             match parts with
-            | [| r; g; b; _ |] 
-            | [| r; g; b |] -> [| r / 255.0; g / 255.0; b / 255.0 |]
-            | _ -> [| 0.8; 0.8; 0.8 |]
+            | [| r; g; b; a |] -> [| r / 255.0; g / 255.0; b / 255.0; a |]
+            | [| r; g; b |] -> [| r / 255.0; g / 255.0; b / 255.0; 1.0 |]
+            | _ -> [| 0.8; 0.8; 0.8; 1.0 |]
 
         // 3. Process initial data
         let processedData =

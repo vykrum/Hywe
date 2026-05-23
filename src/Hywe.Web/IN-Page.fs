@@ -362,6 +362,20 @@ module Help =
         }
 
 module TreeFiltering =
+    let getHierarchicalIdMap (tree: Hywe.Node.SubModel) =
+        let rec traverse (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+            seq {
+                yield node.Id, $"{m}.{prefix}"
+                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
+            }
+        
+        seq {
+            for kvp in tree.Levels do
+                yield! traverse $"L{kvp.Key}" "1" kvp.Value
+            for kvp in tree.Nests do
+                yield! traverse $"N{kvp.Key}" "1" kvp.Value
+        } |> Map.ofSeq
+
     let getValidIdsForMarker (tree: Hywe.Node.SubModel) (marker: string) =
         let rec getIds (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
             seq {
