@@ -413,6 +413,50 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         if model.Tree.ActiveLevel = 0 then 0, 23
         else if baseSqn.StartsWith "V" then 0, 11
         else 12, 23
+
+    let getFilteredGeometries () =
+        let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+            seq {
+                yield $"{marker}.{prefix}"
+                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds marker $"{prefix}.{i + 1}" child)
+            }
+        let validIds =
+            match model.Tree.ActiveNest with
+            | Some nestId ->
+                match model.Tree.Nests |> Map.tryFind nestId with
+                | Some nestNode -> getIds $"N{nestId}" "1" nestNode |> Set.ofSeq
+                | None -> Set.empty
+            | None ->
+                match model.Tree.Levels |> Map.tryFind model.Tree.ActiveLevel with
+                | Some levelNode ->
+                    let marker = match model.Tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}"
+                    getIds marker "1" levelNode |> Set.ofSeq
+                | None -> Set.empty
+        
+        let indexed = 
+            model.Derived.cxCxl1 
+            |> Array.indexed 
+            |> Array.filter (fun (_, c) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
+            
+        let cxls = indexed |> Array.map (fun (i, _) -> model.Derived.cxCxl1.[i])
+        let clrs = indexed |> Array.map (fun (i, _) -> model.Derived.cxClr1.[i])
+        let avls = indexed |> Array.map (fun (i, _) -> model.Derived.cxlAvl.[i])
+        
+        let bgCxl = 
+            match model.Tree.ActiveNest with
+            | Some nestId ->
+                match model.Tree.Nests |> Map.tryFind nestId with
+                | Some nestNode ->
+                    let isParentCxl (rfid: string) =
+                        match nestNode.Base with
+                        | Some targetId -> rfid = targetId || rfid.EndsWith("." + targetId)
+                        | None -> false
+                    model.Derived.cxCxl1 |> Array.tryFind (fun c -> isParentCxl (Hywe.Core.Coxel.prpVlu c.Rfid))
+                | None -> None
+            | None -> None
+            
+        cxls, clrs, avls, bgCxl
+
     div {
         attr.style "padding: 10px; min-height: 400px;"
         
@@ -431,52 +475,8 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
-                let filteredCxls, filteredClrs, bgCxl = 
-                    let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
-                        seq {
-                            yield $"{marker}.{prefix}"
-                            yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds marker $"{prefix}.{i + 1}" child)
-                        }
-                    match model.Tree.ActiveNest with
-                    | Some nestId ->
-                        match model.Tree.Nests |> Map.tryFind nestId with
-                        | Some nestNode ->
-                            let validIds = getIds $"N{nestId}" "1" nestNode |> Set.ofSeq
-                            
-                            let indexed = 
-                                model.Derived.cxCxl1 
-                                |> Array.indexed 
-                                |> Array.filter (fun (_, c) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
-                                
-                            let cxls = indexed |> Array.map (fun (i, _) -> model.Derived.cxCxl1.[i])
-                            let clrs = indexed |> Array.map (fun (i, _) -> model.Derived.cxClr1.[i])
-                            
-                            let isParentCxl (rfid: string) =
-                                match nestNode.Base with
-                                | Some targetId -> rfid = targetId || rfid.EndsWith("." + targetId)
-                                | None -> false
-                                
-                            let bgCxl = 
-                                model.Derived.cxCxl1 
-                                |> Array.tryFind (fun c -> isParentCxl (Hywe.Core.Coxel.prpVlu c.Rfid))
-                                
-                            cxls, clrs, bgCxl
-                        | None -> 
-                            model.Derived.cxCxl1, model.Derived.cxClr1, None
-                    | None ->
-                        match model.Tree.Levels |> Map.tryFind model.Tree.ActiveLevel with
-                        | Some levelNode ->
-                            let marker = match model.Tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}"
-                            let validIds = getIds marker "1" levelNode |> Set.ofSeq
-                            let indexed = 
-                                model.Derived.cxCxl1 
-                                |> Array.indexed 
-                                |> Array.filter (fun (_, c) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
-                            let cxls = indexed |> Array.map (fun (i, _) -> model.Derived.cxCxl1.[i])
-                            let clrs = indexed |> Array.map (fun (i, _) -> model.Derived.cxClr1.[i])
-                            cxls, clrs, None
-                        | None ->
-                            model.Derived.cxCxl1, model.Derived.cxClr1, None
+                
+                let filteredCxls, filteredClrs, _, bgCxl = getFilteredGeometries ()
                 
                 let bdrToPass = 
                     match bgCxl with
@@ -486,7 +486,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     | None -> model.Derived.cxOuIl
                 
                 div {
-                    attr.id "hywe-svg-container"
+                    attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
                     svgCoxels filteredCxls bdrToPass model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
                 }
                 div {
@@ -512,18 +512,8 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         
         | AnalyzePanel ->
             let elv = model.Tree.ActiveLevel
-            let filteredIdx = 
-                model.Derived.cxCxl1 
-                |> Array.indexed 
-                |> Array.filter (fun (_, c) -> 
-                    let (_, _, z) = Hexel.hxlCrd c.Base
-                    z = elv)
-                |> Array.map fst
-            
-            let fCxls = filteredIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
-            let fClrs = filteredIdx |> Array.map (fun i -> model.Derived.cxClr1.[i])
-            let fAvls = filteredIdx |> Array.map (fun i -> model.Derived.cxlAvl.[i])
-            let fAdj  = cxlAdj fCxls
+            let fCxls, fClrs, fAvls, _ = getFilteredGeometries ()
+            let fAdj = cxlAdj fCxls
 
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
