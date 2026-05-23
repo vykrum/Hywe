@@ -311,7 +311,7 @@ let private selectField (model: Model) dispatch (label: string) (current: string
 
 let view model dispatch =
     let flowDescs = Map [ "Sequential", "A 'deep' flow where spaces lead into one another in a chain."; "Radial", "A 'shallow' flow where most spaces branch directly from a single central hub."; "Hierarchical", "A multi-level tree where primary spaces lead to secondary clusters." ]
-    let ambiDescs = Map [ "Open", "Minimizes walls to maximize visual and spatial continuity."; "Modular", "Highly partitioned with distinct, repeatable, or enclosed spaces."; "Minimal", "Stripped back to essential connections and clean flow." ]
+    let ambiDescs = Map [ "Organic", "Flowing, natural, and unstructured spatial character."; "Structured", "Rigid, highly orderly, and systematic layout."; "Intimate", "Cozy, human-scale, and sheltering environment." ]
     let stageDescs = Map [ "Ideation", "Initial loose clustering and spatial relationship mapping."; "Zoning", "Structured grouping of distinct functional areas."; "Massing", "Defined volumetric proportions and 3D stacking logic." ]
     let scaleDescs = Map [ "Layout", "Single-level spatial arrangement or individual unit logic."; "Building", "Multi-level structure with vertical hierarchical dependencies."; "Masterplan", "Large-scale arrangement or multi-building planning." ]
     let typoDescs = Map [ "Residential", "Homes, apartments, or private living quarters."; "Commercial", "Workspaces, retail, or corporate environments."; "Institutional", "Healthcare, educational, or civic facilities." ]
@@ -348,7 +348,7 @@ let view model dispatch =
             selectField model dispatch "Scale" model.TeachMetadata.Scale [ "Layout"; "Building"; "Masterplan" ] scaleDescs (fun m v -> { m with Scale = v })
             selectField model dispatch "Typology" model.TeachMetadata.Typology [ "Residential"; "Commercial"; "Institutional" ] typoDescs (fun m v -> { m with Typology = v })
             selectField model dispatch "Flow" model.TeachMetadata.Flow [ "Sequential"; "Radial"; "Hierarchical" ] flowDescs (fun m v -> { m with Flow = v })
-            selectField model dispatch "Ambience" model.TeachMetadata.Ambience [ "Open"; "Modular"; "Minimal" ] ambiDescs (fun m v -> { m with Ambience = v })
+            selectField model dispatch "Ambience" model.TeachMetadata.Ambience [ "Organic"; "Structured"; "Intimate" ] ambiDescs (fun m v -> { m with Ambience = v })
             selectField model dispatch "Stage" model.TeachMetadata.Stage [ "Ideation"; "Zoning"; "Massing" ] stageDescs (fun m v -> { m with Stage = v })
         }
         div {
