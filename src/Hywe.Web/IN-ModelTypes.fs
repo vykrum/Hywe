@@ -43,14 +43,14 @@ type DerivedData = {
 
 // --- Constants & Helpers ---
 
-let labelPhrase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+let labelPhrase = "alternATE◦CONFIGURATions"
 
 let indexToLabel (i: int) =
-    if i < 0 then "A"
-    elif i < 26 then string labelPhrase.[i]
+    if i < 0 then "a"
+    elif i < 24 then string labelPhrase.[i]
     else
-        let first = labelPhrase.[(i / 26) - 1]
-        let second = labelPhrase.[i % 26]
+        let first = labelPhrase.[(i / 24) - 1]
+        let second = labelPhrase.[i % 24]
         $"{first}{second}"
 
 // Consistent Pastel Color

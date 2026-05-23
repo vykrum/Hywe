@@ -1978,7 +1978,7 @@ let reportPanelStyles = """
 
 .var-chip:hover {
     border-color: #aaa;
-    background: #f0f0f0;
+    background: #fafafa;
 }
 
 .var-chip.selected {
