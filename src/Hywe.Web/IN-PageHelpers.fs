@@ -288,37 +288,53 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                   
                   let mutable currentCache = model.LayoutCache
                   let mutable allBatches = Map.empty
-                  for level in model.Tree.Levels.Keys |> Seq.toList |> List.sort do
-                      do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Processing Level %d" level).AsTask() |> Async.AwaitTask
+                  
+                  let levelMarkers = model.Tree.Levels.Keys |> Seq.map (fun lvl -> if lvl = 0 then "L0" else sprintf "L%d" lvl) |> Seq.toList
+                  let nestMarkers = model.Tree.Nests.Keys |> Seq.map (sprintf "N%d") |> Seq.toList
+                  let allMarkers = levelMarkers @ nestMarkers
+                  
+                  for marker in allMarkers do
+                      do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Processing %s" marker).AsTask() |> Async.AwaitTask
                       let section = 
-                          match Map.tryFind level model.ReportOptions.LevelSections with
+                          match Map.tryFind marker model.ReportOptions.LevelSections with
                           | Some s -> s
                           | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
                       
                       let mutable levelBatches = []
                       
                       if section.BatchOverview || section.Variations || section.FlowChart then
-                          do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating layout data for level %d..." level).AsTask() |> Async.AwaitTask
+                          do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating layout data for %s..." marker).AsTask() |> Async.AwaitTask
                           let range = if section.BatchOverview || section.Variations then [0..23] else [11] // Use index 11 as default for coloring
+                          
+                          let baseLevel = 
+                              if marker.StartsWith("N") then
+                                  let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
+                                  match model.Tree.Nests |> Map.tryFind nestId with
+                                  | Some n -> n.Level
+                                  | None -> 0
+                              else
+                                  match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
+
                           for i in range do
                               try
                                   let config = 
-                                      match Cache.get (toMarker level) i currentCache with
+                                      match Cache.get (toMarker baseLevel) i currentCache with
                                       | Some c -> c
                                       | None -> 
                                           // Compute full data once, and update cache for ALL levels
                                           let srcForBatch = ensureCategory currentSrc i
-                                          let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport level
+                                          let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport baseLevel
                                           for l in model.Tree.Levels.Keys do
                                               let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l
                                               currentCache <- Cache.update (toMarker l) i cfg currentCache
                                           
-                                          Cache.fromFullLayout fullData Hexel.sqnArray.[i] level
+                                          Cache.fromFullLayout fullData Hexel.sqnArray.[i] baseLevel
 
-                                  levelBatches <- config :: levelBatches
+                                  let filteredConfig = Page.TreeFiltering.filterBatchConfigForMarker true model.Tree marker config
+                                  levelBatches <- filteredConfig :: levelBatches
                               with _ -> ()
                               
-                      allBatches <- Map.add level (levelBatches |> List.rev |> List.toArray) allBatches
+                      allBatches <- Map.add marker (levelBatches |> List.rev |> List.toArray) allBatches
                       
                   do! js.InvokeVoidAsync("console.log", "Hywe: Compiling final HTML report...").AsTask() |> Async.AwaitTask
                   let opts = { model.ReportOptions with Captured3DImage = model.Captured3DImage }

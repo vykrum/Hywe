@@ -203,7 +203,7 @@ type ReportOptions = {
     ClientName    : string
     Description   : string
     IncludeCover  : bool
-    LevelSections : Map<int, LevelReportSections>
+    LevelSections : Map<string, LevelReportSections>
     Captured3DImage: string option
 }
 

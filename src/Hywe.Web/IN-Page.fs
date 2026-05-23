@@ -362,26 +362,31 @@ module Help =
         }
 
 module TreeFiltering =
-    let getValidIds (tree: Hywe.Node.SubModel) =
-        let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+    let getValidIdsForMarker (tree: Hywe.Node.SubModel) (marker: string) =
+        let rec getIds (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
             seq {
-                yield $"{marker}.{prefix}"
-                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds marker $"{prefix}.{i + 1}" child)
+                yield $"{m}.{prefix}"
+                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds m $"{prefix}.{i + 1}" child)
             }
-        match tree.ActiveNest with
-        | Some nestId ->
+        
+        if marker.StartsWith("N") then
+            let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
             match tree.Nests |> Map.tryFind nestId with
-            | Some nestNode -> getIds $"N{nestId}" "1" nestNode |> Set.ofSeq
+            | Some nestNode -> getIds marker "1" nestNode |> Set.ofSeq
             | None -> Set.empty
-        | None ->
-            match tree.Levels |> Map.tryFind tree.ActiveLevel with
-            | Some levelNode ->
-                let marker = match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}"
-                getIds marker "1" levelNode |> Set.ofSeq
+        else
+            let lvl = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
+            match tree.Levels |> Map.tryFind lvl with
+            | Some levelNode -> getIds marker "1" levelNode |> Set.ofSeq
             | None -> Set.empty
 
-    let filterBatchConfig (computeExpensive: bool) (tree: Hywe.Node.SubModel) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
-        let validIds = getValidIds tree
+    let getValidIds (tree: Hywe.Node.SubModel) =
+        match tree.ActiveNest with
+        | Some nestId -> getValidIdsForMarker tree $"N{nestId}"
+        | None -> getValidIdsForMarker tree (match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}")
+
+    let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubModel) (marker: string) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
+        let validIds = getValidIdsForMarker tree marker
         if validIds.IsEmpty then config
         else
             let indexed = 
@@ -406,3 +411,6 @@ module TreeFiltering =
                 shapes = shapes
                 cxAdj1 = adj
                 cxB36 = b36s |}
+
+    let filterBatchConfig (computeExpensive: bool) (tree: Hywe.Node.SubModel) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
+        filterBatchConfigForMarker computeExpensive tree (match tree.ActiveNest with | Some nestId -> $"N{nestId}" | None -> match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}") config
