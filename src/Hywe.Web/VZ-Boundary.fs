@@ -18,7 +18,7 @@ module View =
         """>
 
     // Control and Instructions panel with numeric inputs and checkboxes
-    let controlAndInstructions model dispatch =
+    let controlAndInstructions model dispatch (js: IJSRuntime) =
         let renderNumericInput labelText value msg isHeight =
             div {
                 attr.``class`` "field-group"
@@ -75,10 +75,50 @@ module View =
                 }
             }
 
+            // Col 1.5: Map Toggles
+            div {
+                attr.``class`` "toggle-column"
+                
+                div {
+                    attr.``class`` "toggle-group"
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseMapBase with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
+                        on.click (fun _ -> dispatch (ToggleMapBase false))
+                        text "Manual"
+                    }
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseMapBase with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
+                        on.click (fun _ -> dispatch (ToggleMapBase true))
+                        text "Map Base"
+                    }
+                }
+
+                div {
+                    attr.``class`` "toggle-group"
+                    attr.style (match model.UseMapBase with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.IsMapLocked with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
+                        on.click (fun _ -> 
+                            dispatch (ToggleMapLock false)
+                            js.InvokeVoidAsync("eval", [| box "var iframe = document.getElementById('hymap-iframe'); if (iframe) iframe.contentWindow.postMessage({ type: 'UNLOCK_MAP' }, '*');" |]).AsTask() |> ignore
+                        )
+                        text "Unlock"
+                    }
+                    button {
+                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.IsMapLocked with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
+                        on.click (fun _ -> 
+                            dispatch (ToggleMapLock true)
+                            js.InvokeVoidAsync("eval", [| box "var iframe = document.getElementById('hymap-iframe'); if (iframe) iframe.contentWindow.postMessage({ type: 'LOCK_MAP' }, '*');" |]).AsTask() |> ignore
+                        )
+                        text "Lock"
+                    }
+                }
+            }
+
             // Col 2: Dimensions
             div {
                 attr.``class`` "dimension-fields"
-                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
+                attr.style (match model.UseMapBase with | true -> "display: none;" | false -> (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;"))
                 renderNumericInput "Width:" model.LogicalWidth UpdateLogicalWidth false
                 renderNumericInput "Height:" model.LogicalHeight UpdateLogicalHeight true
             }
@@ -240,11 +280,52 @@ module View =
 
     let view model dispatch (js: IJSRuntime) =
         div {
-            controlAndInstructions model dispatch
+            controlAndInstructions model dispatch js
 
-            match model.PolygonEnabled with
-            | true -> polygonEditorSvg model dispatch
-            | false ->     div {
-                                attr.style "pointer-events:none; opacity:0.5;"
-                                polygonEditorSvg model dispatch}
+            // Hidden fields for JS interop callback
+            input { attr.id "hymap-data"; attr.``type`` "hidden" }
+            button {
+                attr.id "hymap-trigger"
+                attr.style "display:none;"
+                on.click (fun _ -> 
+                    async {
+                        let! dataStr = js.InvokeAsync<string>("eval", [| box "document.getElementById('hymap-data').value" |]).AsTask() |> Async.AwaitTask
+                        if not (System.String.IsNullOrWhiteSpace(dataStr)) then
+                            try
+                                let doc = System.Text.Json.JsonDocument.Parse(dataStr)
+                                let root = doc.RootElement
+                                let w = root.GetProperty("widthMeters").GetDouble()
+                                let h = root.GetProperty("heightMeters").GetDouble()
+                                let pts = root.GetProperty("points").GetRawText()
+                                dispatch (MapTopographyReceived (w, h, pts))
+                            with ex ->
+                                printfn "Error parsing topography: %s" ex.Message
+                    } |> Async.StartImmediate
+                )
+            }
+
+            // Map and SVG Container
+            div {
+                attr.style "position: relative; width: 100%; height: 100%; min-height: 600px;"
+                
+                // Hymap Iframe Layer
+                match model.UseMapBase with
+                | true ->
+                    iframe {
+                        attr.src "http://localhost:8080" // Hosted locally for testing, or replace with github pages URL
+                        attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; border: none; z-index: 0; pointer-events: %s;" (match model.IsMapLocked with | true -> "none" | false -> "auto"))
+                        attr.id "hymap-iframe"
+                    }
+                | false -> ()
+
+                // SVG Editor Layer
+                div {
+                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" (match model.UseMapBase && not model.IsMapLocked with | true -> "none" | false -> "auto"))
+                    match model.PolygonEnabled with
+                    | true -> polygonEditorSvg model dispatch
+                    | false ->     div {
+                                        attr.style "pointer-events:none; opacity:0.5;"
+                                        polygonEditorSvg model dispatch}
+                }
+            }
         }

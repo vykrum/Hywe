@@ -184,7 +184,10 @@ module State =
         {
             UseBoundary = false
             UseAbsolute = true
-            PolygonEnabled = false        
+            PolygonEnabled = false
+            UseMapBase = false
+            IsMapLocked = false
+            TopographyData = None
             LogicalWidth = initWidth
             LogicalHeight = initHeight
             Elevation = 0
@@ -223,6 +226,32 @@ module State =
         | ToggleAbsolute isChecked -> async{ 
                                                 let updated = { model with UseAbsolute = isChecked }
                                                 return updated
+                                            }
+
+        | ToggleMapBase isChecked -> async {
+                                                // When turning map base off, ensure it unloads lock state
+                                                let updated = { model with UseMapBase = isChecked; IsMapLocked = false }
+                                                return updated
+                                            }
+
+        | ToggleMapLock isLocked -> async {
+                                                let updated = { model with IsMapLocked = isLocked }
+                                                return updated
+                                            }
+
+        | MapTopographyReceived (w, h, topoJson) -> async {
+                                                let safeW = max minBound (w)
+                                                let safeH = max minBound (h)
+                                                
+                                                // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
+                                                let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
+                                                let scaleY = match model.LogicalHeight <= 0.0 with | true -> 1.0 | false -> safeH / model.LogicalHeight
+                                                
+                                                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+                                                let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+                                                
+                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some topoJson }
+                                                return updated |> refreshCachedStrings
                                             }
 
         | UpdateLogicalWidth newW -> async {
