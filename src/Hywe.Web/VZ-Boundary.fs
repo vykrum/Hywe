@@ -146,23 +146,28 @@ module View =
                 let bndStWdI = max 1 (int (4.0 * boundScale))            
                 
                 let boundingBoxWithLogical =
-                    let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
-                    if allPoints.Length = 0 then
+                    match model.UseMapBase with
+                    | true -> 
+                        // Strictly lock to Logical Width and Height to match the map exactly
                         (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
-                    else
-                        let minX = allPoints |> Array.minBy (fun p -> p.X)
-                        let maxX = allPoints |> Array.maxBy (fun p -> p.X)
-                        let minY = allPoints |> Array.minBy (fun p -> p.Y)
-                        let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
-                        let minX' = min 0.0 minX.X
-                        let minY' = min 0.0 minY.Y
-                        let maxX' = max model.LogicalWidth maxX.X
-                        let maxY' = max model.LogicalHeight maxY.Y
-                        (minX', minY', maxX' - minX', maxY' - minY')
+                    | false ->
+                        let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
+                        if allPoints.Length = 0 then
+                            (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
+                        else
+                            let minX = allPoints |> Array.minBy (fun p -> p.X)
+                            let maxX = allPoints |> Array.maxBy (fun p -> p.X)
+                            let minY = allPoints |> Array.minBy (fun p -> p.Y)
+                            let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
+                            let minX' = min 0.0 minX.X
+                            let minY' = min 0.0 minY.Y
+                            let maxX' = max model.LogicalWidth maxX.X
+                            let maxY' = max model.LogicalHeight maxY.Y
+                            (minX', minY', maxX' - minX', maxY' - minY')
 
                 let viewBoxString =
                     let (x, y, w, h) = boundingBoxWithLogical
-                    let padding = 50.0 * boundScale
+                    let padding = match model.UseMapBase with | true -> 0.0 | false -> 50.0 * boundScale
 
                     // Allow min-x / min-y to go negative
                     let minX = x - padding
@@ -177,6 +182,7 @@ module View =
                 svg {
                 attr.id "polygon-editor-svg"
                 attr.``class`` "polygon-editor-svg"
+                attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
 
                 // Pointer events
@@ -306,7 +312,7 @@ module View =
 
             // Map and SVG Container
             div {
-                attr.style "position: relative; width: 100%; height: 100%; min-height: 600px;"
+                attr.style "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; min-height: 400px; border: 1px solid #e0e0e0; background: #f0f0f0;"
                 
                 // Hymap Iframe Layer
                 match model.UseMapBase with
@@ -324,7 +330,7 @@ module View =
                     match model.PolygonEnabled with
                     | true -> polygonEditorSvg model dispatch
                     | false ->     div {
-                                        attr.style "pointer-events:none; opacity:0.5;"
+                                        attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
                                         polygonEditorSvg model dispatch}
                 }
             }
