@@ -35,9 +35,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                     IsHyweaving = true
                     IsCancelling = false 
                     CancelToken = Some cts
-                    BatchPreview = None 
                     BatchProgress = 0
-                    BatchAccumulator = []
                     IsPresetsCollapsed = true
                     IsWorkspaceCollapsed = true
                 }
@@ -98,7 +96,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
         }, Cmd.none
 
 let handleExportPdfRequested (model: Model) : Model * Cmd<Message> =
-    { model with IsHyweaving = true; BatchProgress = 0; BatchAccumulator = [] }, 
+    { model with IsHyweaving = true; BatchProgress = 0; LayoutCache = Map.empty; ReportBatch = Map.empty }, 
     Cmd.ofMsg (GenerateNextBatchItem 0)
 
 let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model * Cmd<Message> =
@@ -197,10 +195,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadBatchCoordCsv ->
-        let results = 
-            match model.BatchPreview with
-            | Some r -> r
-            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
             
         if results.Length > 0 then
             let batchData = results |> Array.collect (fun r -> 
@@ -216,10 +212,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         else Some (model, Cmd.none)
     | DownloadBatchMetricsCsv ->
-        let results = 
-            match model.BatchPreview with
-            | Some r -> r
-            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
 
         if results.Length > 0 then
             let batchData = results |> Array.collect (fun r -> 
@@ -232,10 +226,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         else Some (model, Cmd.none)
     | DownloadBatchAdjCsv ->
-        let results = 
-            match model.BatchPreview with
-            | Some r -> r
-            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
 
         if results.Length > 0 then
             let batchData = results |> Array.map (fun r -> 
@@ -255,10 +247,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadBatchDxf ->
-        let results = 
-            match model.BatchPreview with
-            | Some r -> r
-            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
 
         if results.Length > 0 then
             let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1)
@@ -267,10 +257,8 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         else Some (model, Cmd.none)
     | DownloadBatchObj ->
-        let results = 
-            match model.BatchPreview with
-            | Some r -> r
-            | None -> Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
+        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
 
         if results.Length > 0 then
             let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1, r.cxElv1)

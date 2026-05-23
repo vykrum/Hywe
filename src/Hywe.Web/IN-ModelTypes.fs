@@ -226,7 +226,6 @@ type Model =
         PolygonEditor: EditorState
         ActivePanel: ActivePanel
         EditorMode: EditorMode
-        BatchPreview: BatchConfgrtns[] option
         IsCancelling: bool
         CancelToken: System.Threading.CancellationTokenSource option
         LastBatchSrc: string option
@@ -242,8 +241,6 @@ type Model =
         Onboarding: OnboardingState
         /// <summary> Number of variations successfully generated in the current batch. </summary>
         BatchProgress: int
-        /// <summary> Temporary storage for configurations as they are generated recursively. </summary>
-        BatchAccumulator: BatchConfgrtns list
         CurrentScreen: AppScreen
         ViewLocked: bool
         ReportOptions: ReportOptions
@@ -277,12 +274,12 @@ type Message =
     | PolygonEditorMsg of PolygonEditorMessage
     | PolygonEditorUpdated of PolygonEditorModel
     | SetActivePanel of ActivePanel
-    | SetBatchPreview of BatchConfgrtns[]
+    | SetBatchFinished
     | SetBatchProgress of int
     /// <summary> Triggers the generation of the next configuration in a batch sequence. </summary>
     | GenerateNextBatchItem of int
     /// <summary> Adds a completed configuration to the accumulator and proceeds to the next item. </summary>
-    | AddBatchItem of BatchConfgrtns option * LayoutCache
+    | AddBatchItem of LayoutCache
     | ToggleEditorMode
     | ToggleBoundary
     | ExportPdfRequested

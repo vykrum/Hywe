@@ -360,3 +360,49 @@ module Help =
                 }
             }
         }
+
+module TreeFiltering =
+    let getValidIds (tree: Hywe.Node.SubModel) =
+        let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+            seq {
+                yield $"{marker}.{prefix}"
+                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds marker $"{prefix}.{i + 1}" child)
+            }
+        match tree.ActiveNest with
+        | Some nestId ->
+            match tree.Nests |> Map.tryFind nestId with
+            | Some nestNode -> getIds $"N{nestId}" "1" nestNode |> Set.ofSeq
+            | None -> Set.empty
+        | None ->
+            match tree.Levels |> Map.tryFind tree.ActiveLevel with
+            | Some levelNode ->
+                let marker = match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}"
+                getIds marker "1" levelNode |> Set.ofSeq
+            | None -> Set.empty
+
+    let filterBatchConfig (computeExpensive: bool) (tree: Hywe.Node.SubModel) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
+        let validIds = getValidIds tree
+        if validIds.IsEmpty then config
+        else
+            let indexed = 
+                config.cxCxl1 
+                |> Array.indexed 
+                |> Array.filter (fun (_, (c: Hywe.Core.Coxel.Cxl)) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
+            
+            let cxls = indexed |> Array.map (fun (i, _) -> config.cxCxl1.[i])
+            let clrs = indexed |> Array.map (fun (i, _) -> config.cxClr1.[i])
+            let avls = indexed |> Array.map (fun (i, _) -> config.cxlAvl.[i])
+            let b36s = indexed |> Array.map (fun (i, _) -> config.cxB36.[i])
+            
+            let validNames = cxls |> Array.map (fun c -> Hywe.Core.Coxel.prpVlu c.Name) |> Set.ofArray
+            let shapes = config.shapes |> Array.filter (fun s -> validNames.Contains(s.name))
+            
+            let adj = if computeExpensive then Hywe.Core.Coxel.cxlAdj cxls else config.cxAdj1
+
+            {| config with 
+                cxCxl1 = cxls
+                cxClr1 = clrs
+                cxlAvl = avls
+                shapes = shapes
+                cxAdj1 = adj
+                cxB36 = b36s |}
