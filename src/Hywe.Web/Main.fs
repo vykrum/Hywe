@@ -63,7 +63,7 @@ let initModel =
             Scale = "Layout"
             Typology = "Residential"
             Flow = "Sequential"
-            Ambience = "Open"
+            Ambience = "Organic"
             Stage = "Ideation"
         }
         ReportOptions = {
