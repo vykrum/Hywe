@@ -240,8 +240,9 @@ module State =
                                             }
 
         | MapTopographyReceived (w, h, topoJson) -> async {
-                                                let safeW = max minBound (w)
-                                                let safeH = max minBound (h)
+                                                // Lock both Width and Height to the physical Width of the map to enforce a perfect square
+                                                let safeW = max 1.0 (w)
+                                                let safeH = max 1.0 (w) 
                                                 
                                                 // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
                                                 let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth

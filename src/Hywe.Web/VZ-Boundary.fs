@@ -19,13 +19,7 @@ module View =
 
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
-        let dynamicFactor = 
-            match model.UseMapBase with
-            | false -> 10.0
-            | true ->
-                let w = max 1.0 model.LogicalWidth
-                let magnitude = System.Math.Floor(System.Math.Log10(w))
-                System.Math.Pow(10.0, magnitude - 1.0)
+        let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
                 
         let renderNumericInput labelText value msg isHeight =
             div {
@@ -34,11 +28,11 @@ module View =
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
-                    attr.value (string (System.Math.Round(value / dynamicFactor)))
+                    attr.value (string (System.Math.Round(value / factor)))
                     attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
                         match System.Double.TryParse (string ev.Value) with
-                        | (true, v) -> dispatch (msg (v * dynamicFactor))
+                        | (true, v) -> dispatch (msg (v * factor))
                         | _ -> ()
                     )
                 }
@@ -143,13 +137,7 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
-                let dynamicFactor = 
-                    match model.UseMapBase with
-                    | false -> 10.0
-                    | true ->
-                        let w = max 1.0 model.LogicalWidth
-                        let magnitude = System.Math.Floor(System.Math.Log10(w))
-                        System.Math.Pow(10.0, magnitude - 1.0)
+                let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
                         
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
@@ -225,8 +213,8 @@ module View =
                 for i = 0 to model.Outer.Length - 1 do
                     let pt = model.Outer.[i]
                     let id = sprintf "outerVertex-%d" i
-                    let cartX = int (System.Math.Round( pt.X / dynamicFactor))
-                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / dynamicFactor))
+                    let cartX = int (System.Math.Round( pt.X / factor))
+                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
                     bdrCrl()
                         .cs("outerVertex")
                         .cx(sprintf "%.1f" pt.X)
@@ -257,8 +245,8 @@ module View =
                     for vertexIdx in 0 .. island.Length - 1 do
                         let pt = island.[vertexIdx]
                         let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
-                        let cartX = int (System.Math.Round( pt.X / dynamicFactor))
-                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / dynamicFactor))
+                        let cartX = int (System.Math.Round( pt.X / factor))
+                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
 
                         bdrCrl()
                             .cs("islandVertex")
