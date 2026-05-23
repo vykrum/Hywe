@@ -28,10 +28,16 @@ module Cache
                 let w = maxX - minX
                 let h = maxY - minY
                 
-                let s1 = Regex.Replace(attrsStr, @"O=[^/]*", "O=" + oStr)
-                let s2 = Regex.Replace(s1, @"W=[^/]*", "W=" + string w)
-                let s3 = Regex.Replace(s2, @"H=[^/]*", "H=" + string h)
-                let s4 = Regex.Replace(s3, @"X=[^/]*", "X=0")
+                let replaceOrAppend pattern (replacement: string) (str: string) =
+                    if Regex.IsMatch(str, pattern) then
+                        Regex.Replace(str, pattern, replacement)
+                    else
+                        str + "/" + replacement
+
+                let s1 = replaceOrAppend @"O=[^/]*" ("O=" + oStr) attrsStr
+                let s2 = replaceOrAppend @"W=[^/]*" ("W=" + string w) s1
+                let s3 = replaceOrAppend @"H=[^/]*" ("H=" + string h) s2
+                let s4 = replaceOrAppend @"X=[^/]*" "X=0" s3
                 
                 $"N{idStr}({s4})"
             | None -> 
@@ -39,16 +45,23 @@ module Cache
         )
 
     /// <summary>
-    /// Computes the full layout data for all levels.
+    /// Computes the full layout data for all levels recursively until nested dependencies are resolved.
     /// </summary>
-    let computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
-        Zaxel.generateMultiLevelLayout 
-            src 
-            polyExport.EntryStr 
-            [||] 
-            (Some (elv, sqn)) 
-            (Some polyExport.OuterStr) 
-            (Some polyExport.IslandsStr)
+    let rec computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
+        let fullData = 
+            Zaxel.generateMultiLevelLayout 
+                src 
+                polyExport.EntryStr 
+                [||] 
+                (Some (elv, sqn)) 
+                (Some polyExport.OuterStr) 
+                (Some polyExport.IslandsStr)
+        let cxls, _, _, _ = fullData
+        let newSrc = populateNestBoundaries src cxls
+        if newSrc <> src then
+            computeFullLayout newSrc sqn polyExport elv
+        else
+            fullData
 
     /// <summary>
     /// Extracts level-specific configuration from full layout data.
@@ -127,7 +140,10 @@ module Cache
     let nextMissingGlobal (cache: LayoutCache) : (string * int) option =
         cache 
         |> Map.toList 
-        |> List.sortBy fst 
+        |> List.sortBy (fun (m, _) -> 
+            let isN = m.StartsWith("N")
+            let num = match Int32.TryParse(if m.Length > 1 then m.Substring(1) else "0") with true, v -> v | _ -> 0
+            (if isN then 1 else 0), num)
         |> List.tryPick (fun (marker, arr) -> 
             arr |> Array.tryFindIndex Option.isNone |> Option.map (fun idx -> marker, idx))
 

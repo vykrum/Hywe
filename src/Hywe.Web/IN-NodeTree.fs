@@ -247,7 +247,12 @@ module NodeTree =
         | OpenMenu id -> { model with ActiveMenuId = Some id; ConfirmingId = None }, Cmd.none
         | CloseMenu -> { model with ActiveMenuId = None }, Cmd.none
         | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveNest = None; ActiveMenuId = None }, Cmd.none
-        | SetNest nId -> { model with ActiveNest = Some nId; ActiveMenuId = None }, Cmd.none
+        | SetNest nId -> 
+            let parentLvl = 
+                match model.Nests |> Map.tryFind nId with
+                | Some nestNode -> nestNode.Level
+                | None -> model.ActiveLevel
+            { model with ActiveLevel = parentLvl; ActiveNest = Some nId; ActiveMenuId = None }, Cmd.none
         | SetTopExtrusion newVal ->
             let extr = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> model.TopExtrusion
             { model with TopExtrusion = extr }, Cmd.none
@@ -469,9 +474,11 @@ module NodeTree =
                         |> Map.toList 
                         |> List.filter (fun (_, tree) -> tree.Level = i)
                         |> List.map (fun (nId, _) ->
+                            let isActive = model.ActiveNest = Some nId
+                            let fw = if isActive then "bold" else "normal"
                             button {
-                                attr.``class`` (match model.ActiveNest = Some nId with true -> "level-tab active" | false -> "level-tab")
-                                attr.style "margin-left: 2px; color: #2ecc71;"
+                                attr.``class`` (if isActive then "level-tab active" else "level-tab")
+                                attr.style $"margin-left: 2px; color: #2ecc71; font-weight: {fw};"
                                 on.pointerdown (fun _ -> dispatch (SetNest nId))
                                 text $"N{nId}"
                             }

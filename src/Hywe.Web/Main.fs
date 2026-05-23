@@ -365,7 +365,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                  model.PolygonExport.OuterStr
                                  model.PolygonExport.IslandsStr
 
-            let isLevelSwitch = match subMsg with SubMsg.SetLevel _ -> true | _ -> false
+            let isLevelSwitch = match subMsg with SubMsg.SetLevel _ | SubMsg.SetNest _ -> true | _ -> false
             let isAction = match subMsg with SubMsg.ExecuteAction _ -> true | _ -> false
 
             let isIncrementalEdit = not (isMoving || isLevelSwitch)
