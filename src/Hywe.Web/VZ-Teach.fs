@@ -102,107 +102,69 @@ let generateSuggestion (model: Model) =
 
     (intro + "\n" + levelsContent).Trim()
 
-let generateHynteractPayload (src: string) (entryFallback: string) (initialOcc: Hxl[]) (polyExport: PolygonExportData) : string[] =
-    Hexel.sqnArray
-    |> Array.mapi (fun i sqnCase ->
-        let srcForBatch = ensureCategory src i
-        let cxls, _, _, _ = 
-            Zaxel.generateMultiLevelLayout 
-                srcForBatch 
-                entryFallback 
-                initialOcc 
-                None 
-                (Some polyExport.OuterStr) 
-                (Some polyExport.IslandsStr)
+let generateHynteractPayload (model: Model) : string[] =
+    let b36 (v: int) = Hexel.toBase36 (int64 v)
+    
+    let srcForBatch = ensureCategory model.SrcOfTrth 11
+    let parsedBlocks = Lexel.processFullString srcForBatch
+    
+    let levels = parsedBlocks |> List.choose (function Lexel.Level l -> Some l | _ -> None)
+    let nests = parsedBlocks |> List.choose (function Lexel.Nest n -> Some n | _ -> None)
+    
+    let results = ResizeArray<string>()
+    
+    // Process Base Levels
+    for (lvlIdx, lvlBlock) in levels |> List.indexed do
+        let markerLen = lvlBlock.Marker.Length + 1
+        let nodes = lvlBlock.Tree |> List.collect id
+        let roomIdsStr = nodes |> List.map (fun n -> n.Id.Substring(markerLen)) |> String.concat ";"
+        let header = sprintf "%s(%s" lvlBlock.Marker roomIdsStr
         
-        let parsedBlocks = Lexel.processFullString srcForBatch
-        
-        let getCxlCoordsString (cxl: Cxl) =
-            Array.append [|cxl.Base|] cxl.Hxls 
-            |> Array.map (fun h -> 
-                let (x, y, _) = hxlCrd h
-                sprintf "%d,%d" x y)
-            |> String.concat " "
-
-        let levels = 
-            parsedBlocks
-            |> List.choose (function Lexel.Level l -> Some l | Lexel.Nest _ -> None)
-            |> List.sortBy (fun (l: Lexel.LevelBlock) -> l.Attributes.Level)
-
-        levels
-        |> List.map (fun (lvlBlock: Lexel.LevelBlock) ->
-            let elv = lvlBlock.Attributes.Level
-            let levelCxls = cxls |> Array.filter (fun (cxl: Cxl) -> let (_, _, z) = hxlCrd cxl.Base in z = elv)
+        let variations = ResizeArray<string>()
+        for i = 0 to 23 do
+            match Cache.get lvlBlock.Marker i model.LayoutCache with
+            | Some config ->
+                // Zaxel assigns z = sequential lvlIdx, not the L= attribute value
+                let cxls = config.cxCxl1 |> Array.filter (fun c -> let (_,_,z) = hxlCrd c.Base in z = lvlIdx)
+                let roomCoords = 
+                    nodes |> List.map (fun n ->
+                        match cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = n.Id) with
+                        | Some cxl ->
+                            let coords = Array.append [|cxl.Base|] cxl.Hxls
+                            coords |> Array.map (fun h -> let x,y,_ = hxlCrd h in b36 x + "," + b36 y) |> String.concat ","
+                        | None -> ""
+                    )
+                variations.Add(roomCoords |> String.concat ";")
+            | None -> variations.Add("")
             
-            let parentCoordsMap =
-                levelCxls
-                |> Array.map (fun (c: Cxl) ->
-                    let coords = 
-                        Array.append [| c.Base |] c.Hxls
-                        |> Array.map (fun h -> let (x, y, _) = hxlCrd h in x, y)
-                        |> Set.ofArray
-                    c, coords)
-                |> Map.ofArray
-
-            let isNested (c: Cxl) =
-                let cId = prpVlu c.Rfid
-                let cCoords = parentCoordsMap.[c]
-                levelCxls
-                |> Array.exists (fun (p: Cxl) ->
-                    if p = c then false
-                    else
-                        let pId = prpVlu p.Rfid
-                        let pCoords = parentCoordsMap.[p]
-                        let spatialSubset = Set.isSubset cCoords pCoords
-                        let syntaxChild =
-                            parsedBlocks
-                            |> List.exists (function
-                                | Lexel.Nest n ->
-                                    n.Attributes.Entry = pId && 
-                                    n.Tree |> List.exists (fun g -> g |> List.exists (fun node -> node.Id = cId))
-                                | _ -> false)
-                        spatialSubset && syntaxChild
-                )
-
-            let topLevels = levelCxls |> Array.filter (fun c -> not (isNested c))
-
-            let formattedRooms =
-                topLevels
-                |> Array.map (fun (host: Cxl) ->
-                    let hostId = prpVlu host.Rfid
-                    let hostStr = sprintf "%s[%s]" hostId (getCxlCoordsString host)
-                    
-                    let nestBlockOpt =
-                        parsedBlocks
-                        |> List.tryPick (function 
-                            | Lexel.Nest n when n.Attributes.Entry = hostId -> Some n
-                            | _ -> None)
-
-                    match nestBlockOpt with
-                    | Some n_block ->
-                        let hostThickness = lvlBlock.Attributes.Thickness
-                        let nestConfigs =
-                            Hexel.sqnArray
-                            |> Array.mapi (fun j nestSqn ->
-                                let nestSqnStr = allSqns.[j]
-                                match Nexel.generateNestLayout n_block host hostThickness cxls (Some nestSqnStr) with
-                                | Some (ncxls, _, _) ->
-                                    ncxls
-                                    |> Array.map (fun (ncxl: Cxl) ->
-                                        let ncxlId = prpVlu ncxl.Rfid
-                                        sprintf "%s.%s[%s]" hostId ncxlId (getCxlCoordsString ncxl))
-                                    |> String.concat ";"
-                                | None -> ""
-                            )
-                            |> String.concat ":"
-                        sprintf "%s{%s}" hostStr nestConfigs
-                    | None -> hostStr
-                )
-
-            sprintf "L%d[ %s ]" elv (formattedRooms |> String.concat " ; ")
-        )
-        |> String.concat " | "
-    )
+        results.Add(sprintf "%s | %s)" header (String.concat " | " variations))
+        
+    // Process Nests
+    for nestBlock in nests do
+        let markerLen = nestBlock.Marker.Length + 1
+        let nodes = nestBlock.Tree |> List.collect id
+        let roomIdsStr = nodes |> List.map (fun n -> n.Id.Substring(markerLen)) |> String.concat ";"
+        let header = sprintf "%s(%s" nestBlock.Marker roomIdsStr
+        
+        let variations = ResizeArray<string>()
+        for i = 0 to 23 do
+            match Cache.get nestBlock.Marker i model.LayoutCache with
+            | Some nConfig ->
+                let cxls = nConfig.cxCxl1
+                let roomCoords = 
+                    nodes |> List.map (fun n ->
+                        match cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = n.Id) with
+                        | Some cxl ->
+                            let coords = Array.append [|cxl.Base|] cxl.Hxls
+                            coords |> Array.map (fun h -> let x,y,_ = hxlCrd h in b36 x + "," + b36 y) |> String.concat ","
+                        | None -> ""
+                    )
+                variations.Add(roomCoords |> String.concat ";")
+            | None -> variations.Add("")
+            
+        results.Add(sprintf "%s | %s)" header (String.concat " | " variations))
+        
+    results.ToArray()
 
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
     match msg with
@@ -233,18 +195,74 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | RecordToHynteract ->
         let currentSrc = model.SrcOfTrth
         let currentDesc = model.UserDescription
-        let entryFallback = model.PolygonExport.EntryStr
-        let polyExport = model.PolygonExport
         let newModel = { model with IsSavingToHynteract = true }
         let cmd = 
             Cmd.OfAsync.perform (fun () -> async {
                 try
-                    let payloadArray = generateHynteractPayload currentSrc entryFallback [||] polyExport
+                    let mutable currentCache = model.LayoutCache
+                    let parsedBlocks = Lexel.processFullString currentSrc
+                    
+                    let levels = parsedBlocks |> List.choose (function Lexel.Level l -> Some l | _ -> None)
+                    let nests = parsedBlocks |> List.choose (function Lexel.Nest n -> Some n | _ -> None)
+
+                    for i = 0 to 23 do
+                        // Check if ALL levels are already cached for this variation
+                        let missingLevels = levels |> List.filter (fun lvl -> Cache.get lvl.Marker i currentCache |> Option.isNone)
+                        
+                        if not missingLevels.IsEmpty then
+                            // Compute once - fullData contains geometry for ALL levels
+                            let rootLevel = 
+                                if model.Tree.Levels |> Map.containsKey 0 then 0 
+                                elif model.Tree.Levels.IsEmpty then 0 
+                                else model.Tree.Levels |> Map.toList |> List.map fst |> List.min
+                            let srcForBatch = ensureCategory currentSrc i
+                            let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport rootLevel
+                            // Populate every level marker from the single full layout
+                            // Use lvlIdx (sequential index) as Zaxel assigns z by sequential block order, not L= attribute
+                            for (lvlIdx, lvl) in levels |> List.indexed do
+                                if Cache.get lvl.Marker i currentCache |> Option.isNone then
+                                    let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] lvlIdx
+                                    currentCache <- Cache.update lvl.Marker i cfg currentCache
+                                
+                        for nestBlock in nests do
+                            let nestMarker = nestBlock.Marker
+                            match Cache.get nestMarker i currentCache with
+                            | Some _ -> ()
+                            | None ->
+                                // Find the level whose L= attribute matches the nest's L= attribute
+                                // Cache key is the sequential marker (L0, L1...) not the L= value
+                                let hostLevelOpt = levels |> List.tryFind (fun lvl -> lvl.Attributes.Level = nestBlock.Attributes.Level)
+                                let hostLevelMarker = hostLevelOpt |> Option.map (fun lvl -> lvl.Marker) |> Option.defaultValue ("L" + string nestBlock.Attributes.Level)
+                                match Cache.get hostLevelMarker i currentCache with
+                                | None -> () // host level not available, skip
+                                | Some rootCfg ->
+                                    let hostCxlOpt = rootCfg.cxCxl1 |> Array.tryFind (fun c -> prpVlu c.Rfid = nestBlock.Attributes.Base || (prpVlu c.Rfid).EndsWith("." + nestBlock.Attributes.Base))
+                                    match hostCxlOpt with
+                                    | Some host ->
+                                        let sqnStr = sprintf "%A" Hexel.sqnArray.[i]
+                                        match Nexel.generateNestLayout nestBlock host nestBlock.Attributes.Thickness rootCfg.cxCxl1 (Some sqnStr) with
+                                        | Some (ncxls, _, _) ->
+                                            let nestCfg = 
+                                                {| sqnName = sqnStr
+                                                   shapes = [||] 
+                                                   w = 0.0; h = 0.0
+                                                   cxCxl1 = ncxls
+                                                   cxElv1 = [||]; cxlAvl = [||]; cxOuIl = [||]
+                                                   cxAdj1 = ([||], [||]); cxB36 = [||]; cxRto1 = [||]; cxClr1 = [||] |}
+                                            currentCache <- Cache.update nestMarker i nestCfg currentCache
+                                        | None -> ()
+                                    | None -> ()
+
+                    let updatedModel = { model with LayoutCache = currentCache }
+                    let payloadArray = generateHynteractPayload updatedModel
+                    
                     let payload = {| definition = currentSrc; description = currentDesc; configuration = payloadArray |}
                     let! success = js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
-                    return success, model.LayoutCache
-                with ex -> return false, model.LayoutCache
-            }) () (fun (res, cache) -> RecordResult (res, cache))
+                    return success, currentCache
+                with e ->
+                    do! js.InvokeVoidAsync("console.error", "Error recording to Hynteract: " + e.Message).AsTask() |> Async.AwaitTask
+                    return false, model.LayoutCache
+            }) () RecordResult
         Some (newModel, cmd)
     | _ -> None
 

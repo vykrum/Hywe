@@ -172,28 +172,50 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
         let fileName = "Hywe3D_" + datePart + ".svg"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("export3DToSVG", "hywe-extruded-polygon", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    
     | DownloadCoordCsv ->
-        let level = model.Tree.ActiveLevel
-        let levelIdx = 
-            model.Derived.cxCxl1 
-            |> Array.indexed 
-            |> Array.filter (fun (_, (c: Cxl)) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = level)
-            |> Array.map fst
+        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
+        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
+        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
+        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
+        | Some c -> 
+            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let level = model.Tree.ActiveLevel
+            let levelIdx = 
+                activeConfig.cxCxl1 
+                |> Array.indexed 
+                |> Array.filter (fun (_, (c: Cxl)) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = level)
+                |> Array.map fst
+            let cxls = levelIdx |> Array.map (fun i -> activeConfig.cxCxl1.[i])
+            let csv = FileManager.generateCoordinatesCsv [| (sqnStr, level, cxls) |]
+            let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
         
-        let cxls = levelIdx |> Array.map (fun i -> model.Derived.cxCxl1.[i])
-        
-        let csv = FileManager.generateCoordinatesCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), level, cxls) |]
-        let fileName = "Hywe_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     | DownloadMetricsCsv ->
-        let activeCxls = model.Derived.cxCxl1 |> Array.filter (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = model.Tree.ActiveLevel)
-        let csv = FileManager.generateAreaMetricsCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), model.Tree.ActiveLevel, activeCxls) |]
-        let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
+        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
+        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
+        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
+        | Some c -> 
+            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let activeCxls = activeConfig.cxCxl1 |> Array.filter (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = model.Tree.ActiveLevel)
+            let csv = FileManager.generateAreaMetricsCsv [| (sqnStr, model.Tree.ActiveLevel, activeCxls) |]
+            let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
+        
     | DownloadAdjCsv ->
-        let csv = FileManager.generateAdjacencyCsv [| ((model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]), model.Tree.ActiveLevel, model.Derived.cxAdj1) |]
-        let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
+        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
+        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
+        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
+        | Some c -> 
+            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let csv = FileManager.generateAdjacencyCsv [| (sqnStr, model.Tree.ActiveLevel, activeConfig.cxAdj1) |]
+            let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
     | DownloadBatchCoordCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
         let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
@@ -238,14 +260,29 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         else Some (model, Cmd.none)
     | DownloadDxf ->
-        let dxf = FileManager.generateDxf model.Derived.cxCxl1 0.0 0.0
-        let fileName = "Hywe_Layout_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
+        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
+        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
+        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
+        | Some c -> 
+            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let dxf = FileManager.generateDxf activeConfig.cxCxl1 0.0 0.0
+            let fileName = "Hywe_Layout_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
+        
     | DownloadObj ->
-        let vOff = ref 1
-        let objStr = FileManager.generateObj model.Derived.cxCxl1 model.Derived.cxElv1 0.0 0.0 vOff
-        let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
+        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
+        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
+        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
+        | Some c -> 
+            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let vOff = ref 1
+            let objStr = FileManager.generateObj activeConfig.cxCxl1 activeConfig.cxElv1 0.0 0.0 vOff
+            let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
+            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        | None -> Some (model, Cmd.none)
     | DownloadBatchDxf ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
         let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
@@ -255,16 +292,6 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let dxf = FileManager.generateDxfBatch batchData
             let fileName = "Hywe_Batch_FloorPlates_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        else Some (model, Cmd.none)
-    | DownloadBatchObj ->
-        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
-        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
-
-        if results.Length > 0 then
-            let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1, r.cxElv1)
-            let objStr = FileManager.generateObjBatch batchData
-            let fileName = "Hywe_Batch_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
-            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         else Some (model, Cmd.none)
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)

@@ -292,7 +292,6 @@ type Message =
     | DownloadDxf
     | DownloadObj
     | DownloadBatchDxf
-    | DownloadBatchObj
     | TapBatchPreview of int
     | CloseBatch
     | CancelBatch
