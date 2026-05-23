@@ -70,12 +70,33 @@ let generateSuggestion (model: Model) =
             let children = node.Children |> List.map getTreeSummary |> String.concat " "
             current + " " + children
 
+    let rec findInTree (node: TreeNode) (targetId: System.Guid) =
+        if node.Id = targetId then Some node
+        else node.Children |> List.tryPick (fun c -> findInTree c targetId)
+
+    let findAnchor (targetId: System.Guid) =
+        let lvlMatch = 
+            tree.Levels |> Map.tryPick (fun lvl root -> 
+                match findInTree root targetId with
+                | Some n -> Some (n.Name, sprintf "Level %d" lvl)
+                | None -> None)
+        match lvlMatch with
+        | Some res -> Some res
+        | None ->
+            tree.Nests |> Map.tryPick (fun nid root ->
+                match findInTree root targetId with
+                | Some n -> Some (n.Name, sprintf "Nest %d" nid)
+                | None -> None)
+
     let describeLevel (level: int) (root: TreeNode) =
         let header = 
             if level = 0 then "\nBase Level: "
             else 
                 match levelToAnchor |> Map.tryFind level with
-                | Some anchorId -> sprintf "\nLevel %d (Elevated): " level
+                | Some anchorId -> 
+                    match findAnchor anchorId with
+                    | Some (nName, hostName) -> sprintf "\nLevel %d (Ascending from %s on %s): " level nName hostName
+                    | None -> sprintf "\nLevel %d (Elevated): " level
                 | None -> sprintf "\nLevel %d: " level
         
         let body = getTreeSummary root
@@ -100,7 +121,30 @@ let generateSuggestion (model: Model) =
         |> List.map (fun (lvl, root) -> describeLevel lvl root)
         |> String.concat "\n"
 
-    (intro + "\n" + levelsContent).Trim()
+    let describeNest (nestId: int) (root: TreeNode) =
+        let anchorInfo = 
+            match tree.NestAnchors |> Map.tryFind nestId with
+            | Some anchorId ->
+                match findAnchor anchorId with
+                | Some (nName, hostName) -> sprintf " (Anchored in %s on %s)" nName hostName
+                | None -> ""
+            | None -> ""
+            
+        let header = sprintf "\nNest %d%s: " nestId anchorInfo
+        let body = getTreeSummary root
+        if String.IsNullOrWhiteSpace body then header + sprintf "Starting from %s." root.Name
+        else header + body
+
+    let nestsContent = 
+        if tree.Nests.IsEmpty then ""
+        else
+            tree.Nests
+            |> Map.toList
+            |> List.sortBy fst
+            |> List.map (fun (nid, root) -> describeNest nid root)
+            |> String.concat "\n"
+
+    (intro + "\n" + levelsContent + "\n" + nestsContent).Trim()
 
 let generateHynteractPayload (model: Model) : string[] =
     let b36 (v: int) = Hexel.toBase36 (int64 v)
