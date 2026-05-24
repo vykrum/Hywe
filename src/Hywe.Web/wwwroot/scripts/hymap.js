@@ -25,7 +25,12 @@ window.Hymap = {
         // Add a slight delay to ensure Bolero has rendered the container
         setTimeout(() => {
             if (this.map) return; // double check inside timeout
-            this.map = L.map('hymap-container', { maxZoom: 24, zoomControl: false }).setView([12.9716, 77.5946], 13);
+            this.map = L.map('hymap-container', { 
+                maxZoom: 24, 
+                zoomControl: false,
+                zoomSnap: 0.1,
+                zoomDelta: 0.1
+            }).setView([12.9716, 77.5946], 13);
             
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -78,6 +83,13 @@ window.Hymap = {
         while (dim / divisor < 10) {
             divisor /= 10;
         }
+        
+        let result = dim / divisor;
+        if (result < 50) {
+            const adjustedResult = 100 - result;
+            divisor = dim / adjustedResult;
+        }
+        
         return divisor;
     },
 
@@ -275,5 +287,91 @@ window.Hymap = {
         this.map.boxZoom.enable();
         this.map.keyboard.enable();
         if (this.map.tap) this.map.tap.enable();
+    },
+
+    exportMapImage: async function() {
+        if (!this.map) return;
+        try {
+            const bounds = this.map.getBounds();
+            
+            let innerNorth = bounds.getNorth();
+            let innerSouth = bounds.getSouth();
+            let innerEast = bounds.getEast();
+            let innerWest = bounds.getWest();
+
+            const svg = document.getElementById('polygon-editor-svg');
+            if (svg && svg.hasAttribute('data-padding-ratio')) {
+                const ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
+                const mapSize = this.map.getSize();
+                const padX = mapSize.x * (ratio / 2);
+                const padY = mapSize.y * (ratio / 2);
+                const innerNw = this.map.containerPointToLatLng(L.point(padX, padY));
+                const innerSe = this.map.containerPointToLatLng(L.point(mapSize.x - padX, mapSize.y - padY));
+                innerNorth = innerNw.lat;
+                innerSouth = innerSe.lat;
+                innerEast = innerSe.lng;
+                innerWest = innerNw.lng;
+            }
+
+            const z = this.map.getZoom();
+            const lon2tile = (lon, zoom) => Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
+            const lat2tile = (lat, zoom) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+            
+            const minX = lon2tile(innerWest, z);
+            const maxX = lon2tile(innerEast, z);
+            const minY = lat2tile(innerNorth, z);
+            const maxY = lat2tile(innerSouth, z);
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = (maxX - minX + 1) * 256;
+            canvas.height = (maxY - minY + 1) * 256;
+            
+            const tilePromises = [];
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    tilePromises.push(new Promise((resolve) => {
+                        const img = new Image();
+                        img.crossOrigin = "Anonymous";
+                        img.onload = () => {
+                            ctx.drawImage(img, (x - minX) * 256, (y - minY) * 256, 256, 256);
+                            resolve();
+                        };
+                        img.onerror = () => resolve(); 
+                        img.src = `https://a.tile.openstreetmap.org/${z}/${x}/${y}.png`;
+                    }));
+                }
+            }
+            
+            await Promise.all(tilePromises);
+            
+            // Crop it exactly to the inner bounds
+            const nwPoint = this.map.project([innerNorth, innerWest], z);
+            const sePoint = this.map.project([innerSouth, innerEast], z);
+            
+            const tileNwPoint = new L.Point(minX * 256, minY * 256);
+            
+            const cropX = nwPoint.x - tileNwPoint.x;
+            const cropY = nwPoint.y - tileNwPoint.y;
+            const cropW = sePoint.x - nwPoint.x;
+            const cropH = sePoint.y - nwPoint.y;
+            
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = cropW;
+            finalCanvas.height = cropH;
+            const finalCtx = finalCanvas.getContext('2d');
+            finalCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            
+            const dataUrl = finalCanvas.toDataURL("image/png");
+            
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = "hywe-map-extents.png";
+            a.click();
+            
+        } catch (err) {
+            console.error("Map Image Extraction Error:", err);
+        }
     }
 };
