@@ -25,8 +25,7 @@ window.Hymap = {
         // Add a slight delay to ensure Bolero has rendered the container
         setTimeout(() => {
             if (this.map) return; // double check inside timeout
-            
-            this.map = L.map('hymap-container', { maxZoom: 24, zoomControl: false }).setView([51.505, -0.09], 13);
+            this.map = L.map('hymap-container', { maxZoom: 24, zoomControl: false }).setView([12.9716, 77.5946], 13);
             
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -109,7 +108,7 @@ window.Hymap = {
 
         const label = document.getElementById('hymap-distance-label');
         if (label) {
-            label.innerText = `Map Width: ${Math.round(scaledWidth)} units`;
+            label.innerText = `Map Width: ${Math.round(calcWidth)}m`;
         }
         
         const liveData = document.getElementById('hymap-live-data');
@@ -139,10 +138,33 @@ window.Hymap = {
         const bounds = this.map.getBounds();
         const northWest = bounds.getNorthWest();
         const southWest = bounds.getSouthWest();
+
+        // Calculate the inner geographical bounds (excluding SVG padding)
+        let innerNorth = bounds.getNorth();
+        let innerSouth = bounds.getSouth();
+        let innerEast = bounds.getEast();
+        let innerWest = bounds.getWest();
+
+        const svg = document.getElementById('polygon-editor-svg');
+        if (svg && svg.hasAttribute('data-padding-ratio')) {
+            const ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
+            const mapSize = this.map.getSize();
+            
+            // padding ratio is the total padding fraction (e.g. 0.166 => 16.6%)
+            const padX = mapSize.x * (ratio / 2);
+            const padY = mapSize.y * (ratio / 2);
+            
+            const innerNw = this.map.containerPointToLatLng(L.point(padX, padY));
+            const innerSe = this.map.containerPointToLatLng(L.point(mapSize.x - padX, mapSize.y - padY));
+            
+            innerNorth = innerNw.lat;
+            innerSouth = innerSe.lat;
+            innerEast = innerSe.lng;
+            innerWest = innerNw.lng;
+        }
         
         const calcWidth = this.getCalculatedWidth(bounds);
         let exactHeight = this.map.distance(northWest, southWest);
-        const svg = document.getElementById('polygon-editor-svg');
         if (svg && svg.hasAttribute('data-padding-ratio')) {
             const ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
             exactHeight = exactHeight * (1 - ratio);
@@ -152,41 +174,78 @@ window.Hymap = {
         const scaledWidth = calcWidth / divisor;
         const scaledHeight = exactHeight / divisor;
 
-        // 3. Generate a grid of points within the current visible bounds for topography
-        const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
-        const cellSideKm = (calcWidth / 1000) / 10; 
-        
-        let points = [];
-        try {
-            const grid = turf.pointGrid(bbox, cellSideKm, { units: 'kilometers' });
-            points = grid.features.map(f => ({
-                latitude: f.geometry.coordinates[1],
-                longitude: f.geometry.coordinates[0]
-            }));
-        } catch (e) {
-            console.error("Error generating grid", e);
-        }
-
-        // 4. Fetch Topography
+        // 3. Generate 100x100 Topography Grid via AWS Terrarium Tiles
         let elevations = [];
-        if (points.length > 0 && points.length < 500) {
-            try {
-                const response = await fetch('https://api.open-elevation.com/api/v1/lookup', {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ locations: points })
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    elevations = result.results;
+        try {
+            const gridSize = 100;
+            const z = Math.min(this.map.getZoom(), 14); // Terrarium optimal max zoom
+            
+            const west = innerWest;
+            const east = innerEast;
+            const north = innerNorth;
+            const south = innerSouth;
+            
+            const lon2tile = (lon, zoom) => Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
+            const lat2tile = (lat, zoom) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+            
+            const minX = lon2tile(west, z);
+            const maxX = lon2tile(east, z);
+            const minY = lat2tile(north, z);
+            const maxY = lat2tile(south, z);
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            canvas.width = (maxX - minX + 1) * 256;
+            canvas.height = (maxY - minY + 1) * 256;
+            
+            const tilePromises = [];
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    tilePromises.push(new Promise((resolve) => {
+                        const img = new Image();
+                        img.crossOrigin = "Anonymous";
+                        img.onload = () => {
+                            ctx.drawImage(img, (x - minX) * 256, (y - minY) * 256, 256, 256);
+                            resolve();
+                        };
+                        img.onerror = () => resolve(); 
+                        img.src = `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;
+                    }));
                 }
-            } catch (err) {
-                console.error("Topography API Error:", err);
             }
+            
+            await Promise.all(tilePromises);
+            
+            // Sample the 100x100 grid
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const lat = north - (north - south) * (i / (gridSize - 1));
+                    const lon = west + (east - west) * (j / (gridSize - 1));
+                    
+                    const x = ((lon + 180) / 360 * Math.pow(2, z));
+                    const y = ((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+                    
+                    const px = Math.floor((x - minX) * 256);
+                    const py = Math.floor((y - minY) * 256);
+                    
+                    if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+                        const pData = ctx.getImageData(px, py, 1, 1).data;
+                        const elevation = (pData[0] * 256 + pData[1] + pData[2] / 256) - 32768;
+                        
+                        elevations.push({
+                            latitude: lat,
+                            longitude: lon,
+                            elevation: elevation
+                        });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Topography Extraction Error:", err);
         }
 
-        // 5. Write to hidden field and trigger click so F# picks it up
+        // 4. Write to hidden field and trigger click so F# picks it up
         const hiddenData = document.getElementById('hymap-data');
         const triggerBtn = document.getElementById('hymap-trigger');
         
@@ -194,7 +253,13 @@ window.Hymap = {
             hiddenData.value = JSON.stringify({
                 widthMeters: Math.round(scaledWidth),
                 heightMeters: Math.round(scaledHeight),
-                points: elevations
+                points: elevations,
+                extents: {
+                    north: innerNorth,
+                    south: innerSouth,
+                    east: innerEast,
+                    west: innerWest
+                }
             });
             triggerBtn.click();
         }

@@ -2,6 +2,7 @@ module FileManager
 
 open System
 open System.Text
+open System.Text.Json
 open Microsoft.JSInterop
 open Hywe.Core
 open Hywe.Core.Hexel
@@ -9,7 +10,6 @@ open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open Hywe.Site
 open Hywe.Site.State
-open Hywe.Site.View
 open ModelTypes
 
 // --- FILE IMPORT/EXPORT ---
@@ -19,6 +19,23 @@ let saveFile (js: IJSRuntime) (content: string) =
     let timestamp = DateTime.Now.ToString("yyMMddHHmm")
     let fileName = sprintf "%s.hyw" timestamp
     js.InvokeVoidAsync("downloadFile", fileName, content, "application/octet-stream") |> ignore
+
+/// Exports Map Extents or Terrain Grid from Topography JSON
+let exportMapData (js: IJSRuntime) (topoJson: string) (exportType: string) =
+    try
+        use doc = JsonDocument.Parse(topoJson)
+        let root = doc.RootElement
+        if exportType = "extents" && root.TryGetProperty("extents") |> fst then
+            let content = root.GetProperty("extents").GetRawText()
+            js.InvokeVoidAsync("downloadFile", "hywe-map-extents.json", content, "application/json") |> ignore
+        elif exportType = "terrain" && root.TryGetProperty("points") |> fst then
+            let content = root.GetProperty("points").GetRawText()
+            js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.json", content, "application/json") |> ignore
+        else
+            let fileName = if exportType = "extents" then "hywe-map-extents.json" else "hywe-terrain-grid.json"
+            js.InvokeVoidAsync("downloadFile", fileName, topoJson, "application/json") |> ignore
+    with _ ->
+        ()
 
 /// Traditional import
 let importFile (js: IJSRuntime) (inputId: string) =
