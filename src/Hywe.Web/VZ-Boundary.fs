@@ -40,7 +40,7 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: 12px; width: 100%;"
+            attr.style "display: flex; flex-flow: row wrap; align-items: flex-start; justify-content: center; gap: 8px; width: 100%; padding: 4px;"
 
             // Col 1: Small Toggles
             div {
@@ -152,6 +152,8 @@ module View =
                 p { text "Dbl-clk in: island" }
                 p { text "Dbl-clk island: del" }
             }
+            
+
         }
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
@@ -363,7 +365,7 @@ module View =
                     // Internal map styling provided by Bolero (replacing style.css)
                     div {
                         attr.id "hymap-distance-label"
-                        attr.style "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.95); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #363636; box-shadow: 0 2px 6px rgba(0,0,0,0.15); pointer-events: none;"
+                        attr.style "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 13px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;"
                         text "Map Width: -- meters"
                     }
                 }
@@ -378,4 +380,22 @@ module View =
                                         polygonEditorSvg model dispatch}
                 }
             }
+
+            // Bottom Action Bar
+            if model.UseMapBase && model.IsMapLocked && model.TopographyData.IsSome then
+                div {
+                    attr.style "display: flex; justify-content: center; gap: 12px; margin-top: 10px; padding-bottom: 30px;"
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                        on.click (fun _ -> FileManager.exportMapData js model.TopographyData.Value "extents")
+                        text "Download Map Extents"
+                    }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                        on.click (fun _ -> FileManager.exportMapData js model.TopographyData.Value "terrain")
+                        text "Download Terrain Grid"
+                    }
+                }
+            else
+                empty()
         }

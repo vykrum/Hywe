@@ -5,7 +5,6 @@ open Hywe.Node
 
 open Hywe.Site
 open Hywe.Site.State
-open Hywe.Site.View
 open Hywe.Core.Coxel
 open System
 
