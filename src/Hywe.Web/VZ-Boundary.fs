@@ -321,8 +321,7 @@ module View =
                                 let root = doc.RootElement
                                 let w = root.GetProperty("widthMeters").GetDouble()
                                 let h = root.GetProperty("heightMeters").GetDouble()
-                                let pts = root.GetProperty("points").GetRawText()
-                                dispatch (MapTopographyReceived (w, h, pts))
+                                dispatch (MapTopographyReceived (w, h, dataStr))
                             with ex ->
                                 printfn "Error parsing topography: %s" ex.Message
                     } |> Async.StartImmediate
