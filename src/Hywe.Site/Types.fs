@@ -16,7 +16,10 @@ type PolygonEditorModel =
     {
         UseBoundary: bool
         UseAbsolute: bool
-        PolygonEnabled: bool        
+        PolygonEnabled: bool
+        UseMapBase: bool
+        IsMapLocked: bool
+        TopographyData: string option
         LogicalWidth: float
         LogicalHeight: float
         Elevation: int
@@ -41,8 +44,12 @@ type EditorState =
 type PolygonEditorMessage =
     | ToggleBoundary of bool
     | ToggleAbsolute of bool
+    | ToggleMapBase of bool
+    | ToggleMapLock of bool
+    | MapTopographyReceived of float * float * string
     | UpdateLogicalWidth of float
     | UpdateLogicalHeight of float
+    | UpdateLogicalDimensions of float * float
     | PointerDown of MouseEventArgs
     | PointerUp
     | PointerMove of MouseEventArgs

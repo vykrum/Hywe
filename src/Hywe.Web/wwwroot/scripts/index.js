@@ -195,3 +195,15 @@ window.triggerPwaInstall = async function () {
     window.hyweDeferredPrompt = null;
     return outcome === 'accepted';
 };
+
+// --- Hymap Iframe Communication ---
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'MAP_LOCKED_DATA') {
+        const input = document.getElementById('hymap-data');
+        const trigger = document.getElementById('hymap-trigger');
+        if (input && trigger) {
+            input.value = JSON.stringify(event.data);
+            trigger.click();
+        }
+    }
+});

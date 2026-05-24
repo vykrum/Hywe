@@ -18,7 +18,9 @@ module View =
         """>
 
     // Control and Instructions panel with numeric inputs and checkboxes
-    let controlAndInstructions model dispatch =
+    let controlAndInstructions model dispatch (js: IJSRuntime) =
+        let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
+                
         let renderNumericInput labelText value msg isHeight =
             div {
                 attr.``class`` "field-group"
@@ -26,12 +28,11 @@ module View =
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
-                    let factor = 10.0
                     attr.value (string (System.Math.Round(value / factor)))
-                    attr.disabled (not model.UseBoundary)
+                    attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
                         match System.Double.TryParse (string ev.Value) with
-                        | (true, v) -> dispatch (msg v)
+                        | (true, v) -> dispatch (msg (v * factor))
                         | _ -> ()
                     )
                 }
@@ -46,31 +47,90 @@ module View =
                 attr.``class`` "toggle-column"
                 
                 div {
-                    attr.``class`` "toggle-group"
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseBoundary with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleBoundary false))
-                        text "Unbound"
+                    attr.``class`` "hywe-switch-container"
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` model.UseBoundary
+                            on.change (fun _ -> dispatch (ToggleBoundary (not model.UseBoundary)))
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
                     }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseBoundary with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleBoundary true))
+                    span {
+                        attr.``class`` "hywe-switch-label"
                         text "Boundary"
                     }
                 }
 
                 div {
-                    attr.``class`` "toggle-group"
+                    attr.``class`` "hywe-switch-container"
                     attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseAbsolute with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleAbsolute false))
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` (not model.UseAbsolute)
+                            on.change (fun _ -> dispatch (ToggleAbsolute (not model.UseAbsolute)))
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
+                    }
+                    span {
+                        attr.``class`` "hywe-switch-label"
                         text "Relative"
                     }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseAbsolute with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleAbsolute true))
-                        text "Absolute"
+                }
+            }
+
+            // Col 1.5: Map Toggles
+            div {
+                attr.``class`` "toggle-column"
+                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
+                
+                div {
+                    attr.``class`` "hywe-switch-container"
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` model.UseMapBase
+                            on.change (fun _ -> 
+                                let newState = not model.UseMapBase
+                                dispatch (ToggleMapBase newState)
+                                if newState then
+                                    js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
+                            )
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
+                    }
+                    span {
+                        attr.``class`` "hywe-switch-label"
+                        text "Map Base"
+                    }
+                }
+
+                div {
+                    attr.``class`` "hywe-switch-container"
+                    attr.style (match model.UseMapBase with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` model.IsMapLocked
+                            on.change (fun _ -> 
+                                let newState = not model.IsMapLocked
+                                dispatch (ToggleMapLock newState)
+                                if newState then
+                                    js.InvokeVoidAsync("Hymap.lockMap").AsTask() |> ignore
+                                else
+                                    js.InvokeVoidAsync("Hymap.unlockMap").AsTask() |> ignore
+                            )
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
+                    }
+                    span {
+                        attr.``class`` "hywe-switch-label"
+                        text "Lock Map"
                     }
                 }
             }
@@ -96,6 +156,8 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
+                let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
+                        
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
                                     | _ -> 1.0            
@@ -120,23 +182,24 @@ module View =
                         let maxY' = max model.LogicalHeight maxY.Y
                         (minX', minY', maxX' - minX', maxY' - minY')
 
-                let viewBoxString =
-                    let (x, y, w, h) = boundingBoxWithLogical
-                    let padding = 50.0 * boundScale
+                let (x, y, w, h) = boundingBoxWithLogical
+                let padding = 50.0 * boundScale
 
-                    // Allow min-x / min-y to go negative
-                    let minX = x - padding
-                    let minY = y - padding
+                // Allow min-x / min-y to go negative
+                let minX = x - padding
+                let minY = y - padding
 
-                    // Ensure width / height never negative or zero
-                    let safeW = max 1.0 (w + 2.0 * padding)
-                    let safeH = max 1.0 (h + 2.0 * padding)
+                // Ensure width / height never negative or zero
+                let safeW = max 1.0 (w + 2.0 * padding)
+                let safeH = max 1.0 (h + 2.0 * padding)
 
-                    sprintf "%f %f %f %f" minX minY safeW safeH
+                let viewBoxString = sprintf "%f %f %f %f" minX minY safeW safeH
 
                 svg {
                 attr.id "polygon-editor-svg"
                 attr.``class`` "polygon-editor-svg"
+                "data-padding-ratio" => (((2.0 * padding) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
+                attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
 
                 // Pointer events
@@ -147,7 +210,7 @@ module View =
 
                 // Outer polygon
                 bdrPgn()
-                    .cs("outerPolygon")
+                    .cs(match model.UseMapBase with | true -> "outerPolygon mapModeOpacity" | false -> "outerPolygon")
                     .pt(model.OuterPointsStr)
                     .sw(string bndStWdO)
                     .Elt()
@@ -155,7 +218,7 @@ module View =
                 // Islands
                 for i = 0 to model.Islands.Length - 1 do
                     bdrPgn()
-                        .cs("islandPolygon")
+                        .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
                         .pt(model.IslandPointsStrs.[i])
                         .sw(string bndStWdI)
                         .Elt()
@@ -164,8 +227,8 @@ module View =
                 for i = 0 to model.Outer.Length - 1 do
                     let pt = model.Outer.[i]
                     let id = sprintf "outerVertex-%d" i
-                    let cartX = int (System.Math.Round( pt.X / 10.0))
-                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / 10.0))
+                    let cartX = int (System.Math.Round( pt.X / factor))
+                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
                     bdrCrl()
                         .cs("outerVertex")
                         .cx(sprintf "%.1f" pt.X)
@@ -196,8 +259,8 @@ module View =
                     for vertexIdx in 0 .. island.Length - 1 do
                         let pt = island.[vertexIdx]
                         let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
-                        let cartX = int (System.Math.Round( pt.X / 10.0))
-                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / 10.0))
+                        let cartX = int (System.Math.Round( pt.X / factor))
+                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
 
                         bdrCrl()
                             .cs("islandVertex")
@@ -240,11 +303,79 @@ module View =
 
     let view model dispatch (js: IJSRuntime) =
         div {
-            controlAndInstructions model dispatch
+            controlAndInstructions model dispatch js
 
-            match model.PolygonEnabled with
-            | true -> polygonEditorSvg model dispatch
-            | false ->     div {
-                                attr.style "pointer-events:none; opacity:0.5;"
-                                polygonEditorSvg model dispatch}
+            // Hidden fields for JS interop callback
+            input { attr.id "hymap-data"; attr.``type`` "hidden" }
+            button {
+                attr.id "hymap-trigger"
+                attr.style "display:none;"
+                on.click (fun _ -> 
+                    async {
+                        let! dataStr = js.InvokeAsync<string>("eval", [| box "document.getElementById('hymap-data').value" |]).AsTask() |> Async.AwaitTask
+                        if not (System.String.IsNullOrWhiteSpace(dataStr)) then
+                            try
+                                let doc = System.Text.Json.JsonDocument.Parse(dataStr)
+                                let root = doc.RootElement
+                                let w = root.GetProperty("widthMeters").GetDouble()
+                                let h = root.GetProperty("heightMeters").GetDouble()
+                                let pts = root.GetProperty("points").GetRawText()
+                                dispatch (MapTopographyReceived (w, h, pts))
+                            with ex ->
+                                printfn "Error parsing topography: %s" ex.Message
+                    } |> Async.StartImmediate
+                )
+            }
+
+            // Hidden fields for live dimension updates
+            input { attr.id "hymap-live-data"; attr.``type`` "hidden" }
+            button {
+                attr.id "hymap-live-trigger"
+                attr.style "display:none;"
+                on.click (fun _ -> 
+                    async {
+                        let! dataStr = js.InvokeAsync<string>("eval", [| box "document.getElementById('hymap-live-data').value" |]).AsTask() |> Async.AwaitTask
+                        if not (System.String.IsNullOrWhiteSpace(dataStr)) then
+                            try
+                                let doc = System.Text.Json.JsonDocument.Parse(dataStr)
+                                let root = doc.RootElement
+                                let w = root.GetProperty("widthMeters").GetDouble()
+                                let h = root.GetProperty("heightMeters").GetDouble()
+                                dispatch (UpdateLogicalDimensions (w, h))
+                            with ex ->
+                                printfn "Error parsing live dimensions: %s" ex.Message
+                    } |> Async.StartImmediate
+                )
+            }
+
+            // Map and SVG Container
+            div {
+                attr.style "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; min-height: 400px; border: 1px solid #e0e0e0; background: #f0f0f0;"
+                
+                // Hymap Layer (Native)
+                div {
+                    attr.id "hymap-container"
+                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" 
+                        (if model.UseMapBase then 
+                            (if model.IsMapLocked then "pointer-events: none;" else "pointer-events: auto;")
+                         else "visibility: hidden;"))
+                    
+                    // Internal map styling provided by Bolero (replacing style.css)
+                    div {
+                        attr.id "hymap-distance-label"
+                        attr.style "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.95); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #363636; box-shadow: 0 2px 6px rgba(0,0,0,0.15); pointer-events: none;"
+                        text "Map Width: -- meters"
+                    }
+                }
+
+                // SVG Editor Layer
+                div {
+                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" (match model.UseMapBase && not model.IsMapLocked with | true -> "none" | false -> "auto"))
+                    match model.PolygonEnabled with
+                    | true -> polygonEditorSvg model dispatch
+                    | false ->     div {
+                                        attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
+                                        polygonEditorSvg model dispatch}
+                }
+            }
         }
