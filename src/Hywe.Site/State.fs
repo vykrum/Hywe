@@ -228,11 +228,25 @@ module State =
                                                 return updated
                                             }
 
-        | ToggleMapBase isChecked -> async {
-                                                // When turning map base off, ensure it unloads lock state
-                                                let updated = { model with UseMapBase = isChecked; IsMapLocked = false }
-                                                return updated
-                                            }
+        | ToggleMapBase isChecked -> 
+            async {
+                let updated = { model with UseMapBase = isChecked; IsMapLocked = false }
+                match isChecked with
+                | true -> return updated
+                | false ->
+                    // Switching back to No Base. The map scale divisor is lost, so multiplying by 10
+                    // is inaccurate if the user zoomed heavily.
+                    // Instead, we ensure "default settings and scaling" by normalizing 
+                    // the polygon's logical width back to exactly `initWidth` (300.0).
+                    let scale = initWidth / updated.LogicalWidth
+                    let safeW = initWidth
+                    let safeH = updated.LogicalHeight * scale
+                    
+                    let newOuter = updated.Outer |> Array.map (fun pt -> { pt with X = pt.X * scale; Y = pt.Y * scale })
+                    let newIslands = updated.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scale; Y = pt.Y * scale }))
+                    
+                    return { updated with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands } |> refreshCachedStrings
+            }
 
         | ToggleMapLock isLocked -> async {
                                                 let updated = { model with IsMapLocked = isLocked }
@@ -279,6 +293,25 @@ module State =
                 |> Array.map (Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
 
             let updated = { model with LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
+            return updated |> refreshCachedStrings
+            }
+
+        | UpdateLogicalDimensions (newW, newH) -> async {
+            // In Map Mode, we trust the scaled values from JS. No arbitrary minimums or multiplications.
+            let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW
+            let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH
+            
+            let oldW = model.LogicalWidth
+            let oldH = model.LogicalHeight
+            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+            let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
+
+            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+            let newIslands =
+                model.Islands
+                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+
+            let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
             return updated |> refreshCachedStrings
             }
 

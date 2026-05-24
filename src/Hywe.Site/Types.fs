@@ -49,6 +49,7 @@ type PolygonEditorMessage =
     | MapTopographyReceived of float * float * string
     | UpdateLogicalWidth of float
     | UpdateLogicalHeight of float
+    | UpdateLogicalDimensions of float * float
     | PointerDown of MouseEventArgs
     | PointerUp
     | PointerMove of MouseEventArgs

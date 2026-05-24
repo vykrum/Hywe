@@ -1624,6 +1624,15 @@ let polygonEditorStyles = """
     stroke: #D6CFAF;
 }
 
+.mapModeOpacity {
+    fill-opacity: 0.3;
+    stroke: #363636 !important;
+}
+
+.mapModeOpacity:hover {
+    stroke: #111111 !important;
+}
+
 /* Label Styles */
 .outerVertexLabel {
     fill: #5A3E2B;
@@ -2096,6 +2105,74 @@ let reportPrintStyles = """
 """
 
 
+let toggleSwitchStyles = """
+/* =====================
+   TOGGLE SWITCHES
+   ===================== */
+.hywe-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+}
+
+.hywe-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin: 0;
+}
+
+.hywe-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.hywe-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ddd;
+    transition: .3s;
+    border-radius: 20px;
+}
+
+.hywe-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.hywe-switch input:checked + .hywe-switch-slider {
+    background-color: #363636;
+}
+
+.hywe-switch input:checked + .hywe-switch-slider:before {
+    transform: translateX(20px);
+}
+
+.hywe-switch-label {
+    font-size: 0.75rem;
+    color: #555;
+    font-family: 'Segoe UI', sans-serif;
+    min-width: 60px;
+    user-select: none;
+    font-weight: 500;
+}
+"""
+
 let allCss = 
     baseStyles +
     sharedStyles +
@@ -2112,7 +2189,8 @@ let allCss =
     onboardingStyles +
     batchStyles +
     reportPanelStyles +
-    reportPrintStyles
+    reportPrintStyles +
+    toggleSwitchStyles
 
 let render () = 
     style { text allCss }

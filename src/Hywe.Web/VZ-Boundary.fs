@@ -47,31 +47,37 @@ module View =
                 attr.``class`` "toggle-column"
                 
                 div {
-                    attr.``class`` "toggle-group"
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseBoundary with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleBoundary false))
-                        text "Unbound"
+                    attr.``class`` "hywe-switch-container"
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` model.UseBoundary
+                            on.change (fun _ -> dispatch (ToggleBoundary (not model.UseBoundary)))
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
                     }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseBoundary with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleBoundary true))
+                    span {
+                        attr.``class`` "hywe-switch-label"
                         text "Boundary"
                     }
                 }
 
                 div {
-                    attr.``class`` "toggle-group"
+                    attr.``class`` "hywe-switch-container"
                     attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseAbsolute with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleAbsolute false))
-                        text "Relative"
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` (not model.UseAbsolute)
+                            on.change (fun _ -> dispatch (ToggleAbsolute (not model.UseAbsolute)))
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
                     }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseAbsolute with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleAbsolute true))
-                        text "Absolute"
+                    span {
+                        attr.``class`` "hywe-switch-label"
+                        text "Relative"
                     }
                 }
             }
@@ -79,39 +85,52 @@ module View =
             // Col 1.5: Map Toggles
             div {
                 attr.``class`` "toggle-column"
+                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
                 
                 div {
-                    attr.``class`` "toggle-group"
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseMapBase with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleMapBase false))
-                        text "Manual"
+                    attr.``class`` "hywe-switch-container"
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` model.UseMapBase
+                            on.change (fun _ -> 
+                                let newState = not model.UseMapBase
+                                dispatch (ToggleMapBase newState)
+                                if newState then
+                                    js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
+                            )
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
                     }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.UseMapBase with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> dispatch (ToggleMapBase true))
+                    span {
+                        attr.``class`` "hywe-switch-label"
                         text "Map Base"
                     }
                 }
 
                 div {
-                    attr.``class`` "toggle-group"
+                    attr.``class`` "hywe-switch-container"
                     attr.style (match model.UseMapBase with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.IsMapLocked with | false -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> 
-                            dispatch (ToggleMapLock false)
-                            js.InvokeVoidAsync("eval", [| box "var iframe = document.getElementById('hymap-iframe'); if (iframe) iframe.contentWindow.postMessage({ type: 'UNLOCK_MAP' }, '*');" |]).AsTask() |> ignore
-                        )
-                        text "Unlock"
+                    label {
+                        attr.``class`` "hywe-switch"
+                        input {
+                            attr.``type`` "checkbox"
+                            attr.``checked`` model.IsMapLocked
+                            on.change (fun _ -> 
+                                let newState = not model.IsMapLocked
+                                dispatch (ToggleMapLock newState)
+                                if newState then
+                                    js.InvokeVoidAsync("Hymap.lockMap").AsTask() |> ignore
+                                else
+                                    js.InvokeVoidAsync("Hymap.unlockMap").AsTask() |> ignore
+                            )
+                        }
+                        span { attr.``class`` "hywe-switch-slider" }
                     }
-                    button {
-                        attr.``class`` ("hywe-btn hywe-btn-sm " + (match model.IsMapLocked with | true -> "hywe-btn-dark active toggle-btn" | _ -> "hywe-btn-light toggle-btn"))
-                        on.click (fun _ -> 
-                            dispatch (ToggleMapLock true)
-                            js.InvokeVoidAsync("eval", [| box "var iframe = document.getElementById('hymap-iframe'); if (iframe) iframe.contentWindow.postMessage({ type: 'LOCK_MAP' }, '*');" |]).AsTask() |> ignore
-                        )
-                        text "Lock"
+                    span {
+                        attr.``class`` "hywe-switch-label"
+                        text "Lock Map"
                     }
                 }
             }
@@ -149,42 +168,37 @@ module View =
                 let bndStWdI = max 1 (int (4.0 * boundScale))            
                 
                 let boundingBoxWithLogical =
-                    match model.UseMapBase with
-                    | true -> 
-                        // Strictly lock to Logical Width and Height to match the map exactly
+                    let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
+                    if allPoints.Length = 0 then
                         (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
-                    | false ->
-                        let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
-                        if allPoints.Length = 0 then
-                            (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
-                        else
-                            let minX = allPoints |> Array.minBy (fun p -> p.X)
-                            let maxX = allPoints |> Array.maxBy (fun p -> p.X)
-                            let minY = allPoints |> Array.minBy (fun p -> p.Y)
-                            let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
-                            let minX' = min 0.0 minX.X
-                            let minY' = min 0.0 minY.Y
-                            let maxX' = max model.LogicalWidth maxX.X
-                            let maxY' = max model.LogicalHeight maxY.Y
-                            (minX', minY', maxX' - minX', maxY' - minY')
+                    else
+                        let minX = allPoints |> Array.minBy (fun p -> p.X)
+                        let maxX = allPoints |> Array.maxBy (fun p -> p.X)
+                        let minY = allPoints |> Array.minBy (fun p -> p.Y)
+                        let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
+                        let minX' = min 0.0 minX.X
+                        let minY' = min 0.0 minY.Y
+                        let maxX' = max model.LogicalWidth maxX.X
+                        let maxY' = max model.LogicalHeight maxY.Y
+                        (minX', minY', maxX' - minX', maxY' - minY')
 
-                let viewBoxString =
-                    let (x, y, w, h) = boundingBoxWithLogical
-                    let padding = match model.UseMapBase with | true -> 0.0 | false -> 50.0 * boundScale
+                let (x, y, w, h) = boundingBoxWithLogical
+                let padding = 50.0 * boundScale
 
-                    // Allow min-x / min-y to go negative
-                    let minX = x - padding
-                    let minY = y - padding
+                // Allow min-x / min-y to go negative
+                let minX = x - padding
+                let minY = y - padding
 
-                    // Ensure width / height never negative or zero
-                    let safeW = max 1.0 (w + 2.0 * padding)
-                    let safeH = max 1.0 (h + 2.0 * padding)
+                // Ensure width / height never negative or zero
+                let safeW = max 1.0 (w + 2.0 * padding)
+                let safeH = max 1.0 (h + 2.0 * padding)
 
-                    sprintf "%f %f %f %f" minX minY safeW safeH
+                let viewBoxString = sprintf "%f %f %f %f" minX minY safeW safeH
 
                 svg {
                 attr.id "polygon-editor-svg"
                 attr.``class`` "polygon-editor-svg"
+                "data-padding-ratio" => (((2.0 * padding) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
                 attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
 
@@ -196,7 +210,7 @@ module View =
 
                 // Outer polygon
                 bdrPgn()
-                    .cs("outerPolygon")
+                    .cs(match model.UseMapBase with | true -> "outerPolygon mapModeOpacity" | false -> "outerPolygon")
                     .pt(model.OuterPointsStr)
                     .sw(string bndStWdO)
                     .Elt()
@@ -204,7 +218,7 @@ module View =
                 // Islands
                 for i = 0 to model.Islands.Length - 1 do
                     bdrPgn()
-                        .cs("islandPolygon")
+                        .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
                         .pt(model.IslandPointsStrs.[i])
                         .sw(string bndStWdI)
                         .Elt()
@@ -313,19 +327,46 @@ module View =
                 )
             }
 
+            // Hidden fields for live dimension updates
+            input { attr.id "hymap-live-data"; attr.``type`` "hidden" }
+            button {
+                attr.id "hymap-live-trigger"
+                attr.style "display:none;"
+                on.click (fun _ -> 
+                    async {
+                        let! dataStr = js.InvokeAsync<string>("eval", [| box "document.getElementById('hymap-live-data').value" |]).AsTask() |> Async.AwaitTask
+                        if not (System.String.IsNullOrWhiteSpace(dataStr)) then
+                            try
+                                let doc = System.Text.Json.JsonDocument.Parse(dataStr)
+                                let root = doc.RootElement
+                                let w = root.GetProperty("widthMeters").GetDouble()
+                                let h = root.GetProperty("heightMeters").GetDouble()
+                                dispatch (UpdateLogicalDimensions (w, h))
+                            with ex ->
+                                printfn "Error parsing live dimensions: %s" ex.Message
+                    } |> Async.StartImmediate
+                )
+            }
+
             // Map and SVG Container
             div {
                 attr.style "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; min-height: 400px; border: 1px solid #e0e0e0; background: #f0f0f0;"
                 
-                // Hymap Iframe Layer
-                match model.UseMapBase with
-                | true ->
-                    iframe {
-                        attr.src "http://localhost:8080" // Hosted locally for testing, or replace with github pages URL
-                        attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; border: none; z-index: 0; pointer-events: %s;" (match model.IsMapLocked with | true -> "none" | false -> "auto"))
-                        attr.id "hymap-iframe"
+                // Hymap Layer (Native)
+                div {
+                    attr.id "hymap-container"
+                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" 
+                        (if model.UseMapBase then 
+                            (if model.IsMapLocked then "pointer-events: none;" else "pointer-events: auto;")
+                         else "visibility: hidden;"))
+                    
+                    // Internal map styling provided by Bolero (replacing style.css)
+                    div {
+                        attr.id "hymap-distance-label"
+                        attr.style "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.95); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #363636; box-shadow: 0 2px 6px rgba(0,0,0,0.15); pointer-events: none;"
+                        text "Map Width: -- meters"
                     }
-                | false -> ()
+                }
 
                 // SVG Editor Layer
                 div {
