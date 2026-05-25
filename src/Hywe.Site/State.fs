@@ -277,11 +277,17 @@ module State =
 
         | MapTopographyReceived (w, h, topoJson) -> async {
                                                 // Hymap sends exact physical width/height in Meters.
-                                                // We use a unified 10.0 internal scale so that the UI (which divides by 10) 
-                                                // perfectly displays the map's exact physical meter dimensions.
+                                                let rec findScaleFactor width height factor =
+                                                    if width <= 100.0 && height <= 100.0 then factor
+                                                    else findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
+                                                let sf = findScaleFactor w h 1.0
+                                                
+                                                let floorW = System.Math.Floor((w / sf) + 0.001)
+                                                let floorH = System.Math.Floor((h / sf) + 0.001)
+
                                                 let hyweInternalScale = 10.0
-                                                let scaledW = w * hyweInternalScale
-                                                let scaledH = h * hyweInternalScale
+                                                let scaledW = floorW * hyweInternalScale
+                                                let scaledH = floorH * hyweInternalScale
 
                                                 // Scale topography data X and Y points to match internal decimeter scale
                                                 let scaledTopoJson = 
@@ -294,8 +300,8 @@ module State =
                                                                 | :? JsonObject as obj ->
                                                                     let x = obj.["X"].GetValue<float>()
                                                                     let y = obj.["Y"].GetValue<float>()
-                                                                    obj.["X"] <- JsonValue.Create(x * hyweInternalScale)
-                                                                    obj.["Y"] <- JsonValue.Create(y * hyweInternalScale)
+                                                                    obj.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
+                                                                    obj.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
                                                                 | _ -> ()
                                                             node.ToJsonString()
                                                         | _ -> topoJson
