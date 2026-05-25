@@ -17,11 +17,25 @@ module View =
         </text>
         """>
 
+    // Core logic for dynamic scaling based on user request
+    let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
+        let factor = 
+            if isMapBase && w > 1000.0 then
+                let rec findFactor currentW currentFactor =
+                    if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
+                    else currentFactor
+                findFactor w 10.0
+            else
+                10.0 // remain unchanged otherwise
+                
+        let res = value / factor
+        if isMapBase && w > 1000.0 && res < 500.0 then
+            1000.0 - res
+        else
+            res
+
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
-        // Unified UI scale factor. Internal state is always decimeters (10 units per meter).
-        let factor = 10.0
-                
         let renderNumericInput labelText value msg isHeight =
             div {
                 attr.``class`` "field-group"
@@ -29,9 +43,10 @@ module View =
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
-                    attr.value (string (System.Math.Round(value / factor)))
+                    attr.value (string (System.Math.Round(formatBoundaryValue model.LogicalWidth value model.UseMapBase)))
                     attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
+                        let factor = 10.0 // Inputs are disabled in Map Mode, so edits are only manual (factor 10.0)
                         match System.Double.TryParse (string ev.Value) with
                         | (true, v) -> dispatch (msg (v * factor))
                         | _ -> ()
@@ -159,9 +174,6 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
-                // Unified UI scale factor for rendering labels correctly
-                let factor = 10.0
-                        
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
                                     | _ -> 1.0            
@@ -231,8 +243,8 @@ module View =
                 for i = 0 to model.Outer.Length - 1 do
                     let pt = model.Outer.[i]
                     let id = sprintf "outerVertex-%d" i
-                    let cartX = int (System.Math.Round( pt.X / factor))
-                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
+                    let cartX = int (System.Math.Round(formatBoundaryValue model.LogicalWidth pt.X model.UseMapBase))
+                    let cartY = int (System.Math.Round(formatBoundaryValue model.LogicalWidth (model.LogicalHeight - pt.Y) model.UseMapBase))
                     bdrCrl()
                         .cs("outerVertex")
                         .cx(sprintf "%.1f" pt.X)
@@ -258,16 +270,14 @@ module View =
                         .Elt()
 
                 // Island vertices
-                for islandIdx in 0 .. model.Islands.Length - 1 do
-                    let island = model.Islands.[islandIdx]
-                    for vertexIdx in 0 .. island.Length - 1 do
-                        let pt = island.[vertexIdx]
-                        let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
-                        let cartX = int (System.Math.Round( pt.X / factor))
-                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
-
-                        bdrCrl()
-                            .cs("islandVertex")
+                for i = 0 to model.Islands.Length - 1 do
+                    for j = 0 to model.Islands.[i].Length - 1 do
+                        let pt = model.Islands.[i].[j]
+                        let id = sprintf "islandVertex-%d-%d" i j
+                        let cartX = int (System.Math.Round(formatBoundaryValue model.LogicalWidth pt.X model.UseMapBase))
+                        let cartY = int (System.Math.Round(formatBoundaryValue model.LogicalWidth (model.LogicalHeight - pt.Y) model.UseMapBase))
+                        
+                        bdrCrl()    .cs("islandVertex")
                             .cx(sprintf "%.1f" pt.X)
                             .cy(sprintf "%.1f" pt.Y)
                             .cr(string boundRadius)
