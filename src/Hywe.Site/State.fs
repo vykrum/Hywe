@@ -134,19 +134,7 @@ module State =
 
     /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
     let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
-        let initialW = model.LogicalWidth / 10.0
-        let initialH = model.LogicalHeight / 10.0
-        
-        let rec findScaleFactor w h factor =
-            if w <= 100.0 && h <= 100.0 then factor
-            else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
-            
-        let scaleFactor = findScaleFactor initialW initialH 1.0
-
-        let fmtPoint (p: Point) = 
-            let scaledX = (p.X / 10.0) / scaleFactor
-            let scaledY = (p.Y / 10.0) / scaleFactor
-            sprintf "%d,%d" (int (System.Math.Floor(scaledX + 0.001))) (int (System.Math.Floor(scaledY + 0.001)))
+        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor((p.X + 0.001) / 10.0))) (int (System.Math.Floor((p.Y + 0.001) / 10.0)))
 
         let outer =
             model.Outer
@@ -160,9 +148,8 @@ module State =
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
         let absolute = match model.UseAbsolute with | true -> "1" | false -> "0"
-        let w = int (System.Math.Floor((initialW / scaleFactor) + 0.001))
-        let h = int (System.Math.Floor((initialH / scaleFactor) + 0.001))
-        
+        let w = int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0))
+        let h = int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
     // ---------- Import function ----------
@@ -331,29 +318,55 @@ module State =
                                             }
 
         | UpdateLogicalWidth newW -> async {
-            let safeW = match newW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 newW) * 10.0)
-            let oldW = model.LogicalWidth
-            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+            let currentH = model.LogicalHeight / 10.0
+            let rec findScaleFactor w h factor =
+                if w <= 100.0 && h <= 100.0 then factor
+                else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+            let sf = findScaleFactor newW currentH 1.0
+            
+            let scaledW = newW / sf
+            let scaledH = currentH / sf
 
-            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX })
+            let safeW = match scaledW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 scaledW) * 10.0)
+            let safeH = max minBound ((max 10.0 scaledH) * 10.0)
+
+            let oldW = model.LogicalWidth
+            let oldH = model.LogicalHeight
+            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+            let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
+
+            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
             let newIslands =
                 model.Islands
-                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX }))
-            let updated = { model with LogicalWidth = safeW; Outer = newOuter; Islands = newIslands }
+                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+            let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
             return updated |> refreshCachedStrings
             }
 
         | UpdateLogicalHeight newH -> async {
-            let safeH = match newH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 newH) * 10.0)
+            let currentW = model.LogicalWidth / 10.0
+            let rec findScaleFactor w h factor =
+                if w <= 100.0 && h <= 100.0 then factor
+                else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+            let sf = findScaleFactor currentW newH 1.0
+            
+            let scaledW = currentW / sf
+            let scaledH = newH / sf
+
+            let safeW = max minBound ((max 10.0 scaledW) * 10.0)
+            let safeH = match scaledH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 scaledH) * 10.0)
+
+            let oldW = model.LogicalWidth
             let oldH = model.LogicalHeight
+            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
             let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
 
-            let newOuter = model.Outer |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY })
+            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
             let newIslands =
                 model.Islands
-                |> Array.map (Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
+                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
 
-            let updated = { model with LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
+            let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
             return updated |> refreshCachedStrings
             }
 
@@ -365,9 +378,17 @@ module State =
             if model.UseMapBase && model.IsMapLocked then
                 return model
             else
+                let rec findScaleFactor w h factor =
+                    if w <= 100.0 && h <= 100.0 then factor
+                    else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+                let sf = findScaleFactor newW newH 1.0
+                
+                let scaledW = newW / sf
+                let scaledH = newH / sf
+
                 let hyweInternalScale = 10.0
-                let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW * hyweInternalScale
-                let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH * hyweInternalScale
+                let safeW = match scaledW <= 0.0 with | true -> 1.0 | false -> scaledW * hyweInternalScale
+                let safeH = match scaledH <= 0.0 with | true -> 1.0 | false -> scaledH * hyweInternalScale
                 
                 let oldW = model.LogicalWidth
                 let oldH = model.LogicalHeight
