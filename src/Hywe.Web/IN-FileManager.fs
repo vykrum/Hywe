@@ -28,14 +28,48 @@ let exportMapData (js: IJSRuntime) (topoJson: string) (exportType: string) =
         if exportType = "extents" && root.TryGetProperty("extents") |> fst then
             let content = root.GetProperty("extents").GetRawText()
             js.InvokeVoidAsync("downloadFile", "hywe-map-extents.json", content, "application/json") |> ignore
-        elif exportType = "terrain" && root.TryGetProperty("points") |> fst then
-            let content = root.GetProperty("points").GetRawText()
-            js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.json", content, "application/json") |> ignore
+        elif exportType = "terrain" && root.TryGetProperty("elevations") |> fst then
+            let elevationsProp = root.GetProperty("elevations")
+            let elevationsArr = elevationsProp.EnumerateArray() |> Seq.toArray
+            
+            if elevationsArr.Length > 0 then
+                let extents = root.GetProperty("extents")
+                let north = extents.GetProperty("north").GetDouble()
+                let south = extents.GetProperty("south").GetDouble()
+                let east = extents.GetProperty("east").GetDouble()
+                let west = extents.GetProperty("west").GetDouble()
+                
+                let gridSize = int (Math.Sqrt(float elevationsArr.Length))
+                
+                let lat0 = south // Bottom-left reference
+                let lon0 = west
+                
+                let sb = StringBuilder()
+                sb.AppendLine("X,Y,Z") |> ignore
+                
+                let mutable idx = 0
+                for i = 0 to gridSize - 1 do
+                    for j = 0 to gridSize - 1 do
+                        let lat = north - (north - south) * (float i / float (gridSize - 1))
+                        let lon = west + (east - west) * (float j / float (gridSize - 1))
+                        let ele = elevationsArr.[idx].GetDouble()
+                        idx <- idx + 1
+                        
+                        let x = (lon - lon0) * 111320.0 * Math.Cos(lat0 * Math.PI / 180.0)
+                        let y = (lat - lat0) * 111320.0
+                        sb.AppendLine(sprintf "%.2f,%.2f,%.2f" x y ele) |> ignore
+                
+                let csvContent = sb.ToString()
+                js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.csv", csvContent, "text/csv") |> ignore
         else
             let fileName = if exportType = "extents" then "hywe-map-extents.json" else "hywe-terrain-grid.json"
             js.InvokeVoidAsync("downloadFile", fileName, topoJson, "application/json") |> ignore
     with _ ->
         ()
+
+/// Exports the current map view as a PNG image using Leaflet.
+let exportMapImage (js: IJSRuntime) =
+    js.InvokeVoidAsync("exportMapImage") |> ignore
 
 /// Traditional import
 let importFile (js: IJSRuntime) (inputId: string) =
@@ -57,6 +91,7 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
                 BaseStr = "" // Not directly in attributes now, usually handled by nodes
                 UseAbsolute = (attrs.Scale = 1.0)
                 UseBoundary = (attrs.Scale <> 1.0)
+                UseMapBase = (attrs.Scale = 2.0)
             }
 
         // Handle Entry point

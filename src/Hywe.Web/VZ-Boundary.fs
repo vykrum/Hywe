@@ -26,6 +26,8 @@ module View =
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
+                    attr.min "10"
+                    attr.max "100"
                     attr.value (string (System.Math.Round(value)))
                     attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
@@ -39,7 +41,7 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "display: grid; grid-template-columns: auto auto auto; gap: 16px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
+            attr.style "display: flex; flex-direction: row; gap: 16px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
 
             // Col 1: Segmented Pill Toggles
             div {
@@ -49,7 +51,7 @@ module View =
                 // Boundary
                 div {
                     attr.``class`` "seg-row"
-                    span { attr.``class`` "seg-row-label"; text "Boundary" }
+                    span { attr.``class`` "seg-row-label"; text "Site:" }
                     div {
                         attr.``class`` "seg-btn-group"
                         button {
@@ -60,7 +62,7 @@ module View =
                         button {
                             attr.``class`` (if model.UseBoundary then "seg-btn active" else "seg-btn")
                             on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
-                            text "Site"
+                            text "Boundary"
                         }
                     }
                 }
@@ -113,7 +115,12 @@ module View =
             // Col 2: Dimensions & Scale (stacked vertically)
             div {
                 attr.``class`` "control-panel"
-                attr.style "display: flex; flex-direction: column; gap: 8px;"
+                attr.style (
+                    if not model.UseBoundary || model.UseMapBase then
+                        "display: flex; flex-direction: column; gap: 8px; opacity: 0.3; pointer-events: none;"
+                    else
+                        "display: flex; flex-direction: column; gap: 8px;"
+                )
 
                 // Width
                 div {
@@ -340,7 +347,16 @@ module View =
 
             // Map and SVG Container
             div {
-                attr.style "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; min-height: 400px; border: 1px solid #e0e0e0; background: #f0f0f0;"
+                attr.style (
+                    let aspectRatio =
+                        if model.UseBoundary && not model.UseMapBase && model.LogicalHeight > 0.0 then
+                            sprintf "%.6f" (model.LogicalWidth / model.LogicalHeight)
+                        else
+                            "1"
+                    match model.UseBoundary, model.UseMapBase with
+                    | false, false -> "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; border: none; background: transparent;"
+                    | _ -> sprintf "position: relative; width: 100%%; max-width: 800px; aspect-ratio: %s; margin: 20px auto; border: 1px solid #e0e0e0; background: #f0f0f0;" aspectRatio
+                )
                 
                 // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
                 div {
@@ -392,10 +408,10 @@ module View =
             if model.UseMapBase && model.IsMapLocked && model.TopographyData.IsSome then
                 div {
                     attr.style "display: flex; justify-content: center; gap: 12px; margin-top: 10px; padding-bottom: 30px;"
-                    button {
+                    button { // Download Map Image
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                        on.click (fun _ -> FileManager.exportMapData js model.TopographyData.Value "extents")
-                        text "Download Map Extents"
+                        on.click (fun _ -> FileManager.exportMapImage js)
+                        text "Download Map Image"
                     }
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"

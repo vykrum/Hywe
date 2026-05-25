@@ -234,12 +234,9 @@ window.Hymap = {
                     if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
                         const pData = ctx.getImageData(px, py, 1, 1).data;
                         const elevation = (pData[0] * 256 + pData[1] + pData[2] / 256) - 32768;
-                        
-                        elevations.push({
-                            latitude: lat,
-                            longitude: lon,
-                            elevation: elevation
-                        });
+                        elevations.push(elevation);
+                    } else {
+                        elevations.push(0);
                     }
                 }
             }
@@ -255,7 +252,7 @@ window.Hymap = {
             hiddenData.value = JSON.stringify({
                 widthMeters: Math.round(calcWidth),
                 heightMeters: Math.round(exactHeight),
-                points: elevations,
+                elevations: elevations,
                 extents: {
                     north: innerNorth,
                     south: innerSouth,

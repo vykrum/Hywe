@@ -1,4 +1,0 @@
-# Ignore javascript files for GitHub language statistics
-*.js linguist-vendored
-*.xml linguist-vendored
-*.json linguist-vendored
