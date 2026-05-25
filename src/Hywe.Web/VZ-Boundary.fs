@@ -39,11 +39,12 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "display: flex; flex-flow: row wrap; align-items: flex-start; justify-content: center; gap: 8px; width: 100%; padding: 4px;"
+            attr.style "display: grid; grid-template-columns: auto auto auto; gap: 40px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
 
-            // Col 1: Small Toggles
+            // Col 1: Toggles
             div {
                 attr.``class`` "toggle-column"
+                attr.style "display: flex; flex-direction: column; gap: 12px;"
                 
                 div {
                     attr.``class`` "hywe-switch-container"
@@ -58,7 +59,7 @@ module View =
                     }
                     span {
                         attr.``class`` "hywe-switch-label"
-                        text "Boundary"
+                        text (if model.UseBoundary then "Boundary: Site" else "Boundary: Free")
                     }
                 }
 
@@ -69,25 +70,20 @@ module View =
                         attr.``class`` "hywe-switch"
                         input {
                             attr.``type`` "checkbox"
-                            attr.``checked`` (not model.UseAbsolute)
+                            attr.``checked`` model.UseAbsolute
                             on.change (fun _ -> dispatch (ToggleAbsolute (not model.UseAbsolute)))
                         }
                         span { attr.``class`` "hywe-switch-slider" }
                     }
                     span {
                         attr.``class`` "hywe-switch-label"
-                        text "Relative"
+                        text (if model.UseAbsolute then "Count: Absolute" else "Count: Relative")
                     }
                 }
-            }
 
-            // Col 1.5: Map Toggles
-            div {
-                attr.``class`` "toggle-column"
-                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                
                 div {
                     attr.``class`` "hywe-switch-container"
+                    attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
                     label {
                         attr.``class`` "hywe-switch"
                         input {
@@ -104,21 +100,26 @@ module View =
                     }
                     span {
                         attr.``class`` "hywe-switch-label"
-                        text "Map Base"
+                        text (if model.UseMapBase then "Base: Map" else "Base: None")
                     }
                 }
-
-
             }
 
-            // Col 2: Dimensions
+            // Col 2: Dimensions & Scale
             div {
-            attr.``class`` "control-panel"
-            div {
-                attr.style "display: flex; gap: 15px; margin-bottom: 10px;"
-                renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
-                renderNumericInput "Length:" model.DisplayHeight UpdateLogicalHeight true
-            }
+                attr.``class`` "control-panel"
+                attr.style "display: flex; flex-direction: column; gap: 12px;"
+                
+                div {
+                    attr.style "display: flex; gap: 15px;"
+                    renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
+                    renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+                }
+
+                div {
+                    attr.style "font-size: 13px; font-weight: 600; color: #444; padding-left: 5px;"
+                    text (sprintf "Scale: %.1f" (if model.UseMapBase then model.MapScale else 1.0))
+                }
             }
 
             // Col 3: Tight Instructions

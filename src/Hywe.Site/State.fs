@@ -225,6 +225,7 @@ module State =
             DisplayHeight = 0.0
             DisplayOuter = [||]
             DisplayIslands = [||]
+            MapScale = 1.0
         }
         |> refreshCachedStrings
 
@@ -319,7 +320,7 @@ module State =
                                                 let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
                                                 let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
                                                 
-                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson }
+                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson; MapScale = sf * 10.0 }
                                                 return updated |> refreshCachedStrings
                                             }
 
@@ -406,7 +407,7 @@ module State =
                     model.Islands
                     |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
 
-                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
+                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; MapScale = sf * 10.0 }
                 return updated |> refreshCachedStrings
             }
 
