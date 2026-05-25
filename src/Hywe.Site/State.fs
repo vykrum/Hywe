@@ -77,16 +77,13 @@ module State =
     // Core logic for dynamic UI scaling based on user request
     let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
         let factor = 
-            if isMapBase then
-                if w > 1000.0 then
-                    let rec findFactor currentW currentFactor =
-                        if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
-                        else currentFactor
-                    findFactor w 1.0
-                else
-                    1.0
+            if isMapBase && w > 1000.0 then
+                let rec findFactor currentW currentFactor =
+                    if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
+                    else currentFactor
+                findFactor w 10.0
             else
-                10.0
+                10.0 // Both MapBase and Manual modes divide by 10 by default
                 
         let res = value / factor
         if isMapBase && w > 1000.0 && res < 500.0 then
