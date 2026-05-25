@@ -72,27 +72,6 @@ window.Hymap = {
         }, 100);
     },
 
-    getScaleDivisor: function(width, height) {
-        const dim = Math.max(width, height);
-        if (dim <= 0) return 1; // Prevent infinite loop if map bounds are invalid
-        
-        let divisor = 1;
-        while (dim / divisor >= 100) {
-            divisor *= 10;
-        }
-        while (dim / divisor < 10) {
-            divisor /= 10;
-        }
-        
-        let result = dim / divisor;
-        if (result < 50) {
-            const adjustedResult = 100 - result;
-            divisor = dim / adjustedResult;
-        }
-        
-        return divisor;
-    },
-
     getCalculatedWidth: function(bounds) {
         let exactWidth = this.map.distance(bounds.getNorthWest(), bounds.getNorthEast());
         const svg = document.getElementById('polygon-editor-svg');
@@ -114,10 +93,6 @@ window.Hymap = {
             exactHeight = exactHeight * (1 - ratio);
         }
         
-        const divisor = this.getScaleDivisor(calcWidth, exactHeight);
-        const scaledWidth = calcWidth / divisor;
-        const scaledHeight = exactHeight / divisor;
-
         const label = document.getElementById('hymap-distance-label');
         if (label) {
             label.innerText = `Map Width: ${Math.round(calcWidth)}m`;
@@ -127,8 +102,8 @@ window.Hymap = {
         const liveTrigger = document.getElementById('hymap-live-trigger');
         if (liveData && liveTrigger) {
             liveData.value = JSON.stringify({
-                widthMeters: Math.round(scaledWidth),
-                heightMeters: Math.round(scaledHeight)
+                widthMeters: Math.round(calcWidth),
+                heightMeters: Math.round(exactHeight)
             });
             liveTrigger.click();
         }
@@ -182,9 +157,7 @@ window.Hymap = {
             exactHeight = exactHeight * (1 - ratio);
         }
         
-        const divisor = this.getScaleDivisor(calcWidth, exactHeight);
-        const scaledWidth = calcWidth / divisor;
-        const scaledHeight = exactHeight / divisor;
+
 
         // 3. Generate 100x100 Topography Grid via AWS Terrarium Tiles
         let elevations = [];
@@ -263,8 +236,8 @@ window.Hymap = {
         
         if (hiddenData && triggerBtn) {
             hiddenData.value = JSON.stringify({
-                widthMeters: Math.round(scaledWidth),
-                heightMeters: Math.round(scaledHeight),
+                widthMeters: Math.round(calcWidth),
+                heightMeters: Math.round(exactHeight),
                 points: elevations,
                 extents: {
                     north: innerNorth,
