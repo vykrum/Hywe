@@ -159,7 +159,7 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
-                let boundScale = match model.DisplayWidth with
+                let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
                                     | _ -> 1.0            
                 let boundRadius = max 1 (int (float model.VertexRadius * boundScale))
@@ -169,9 +169,9 @@ module View =
                 let bndStWdI = max 1 (int (4.0 * boundScale))            
                 
                 let boundingBoxWithLogical =
-                    let allPoints = Array.append model.DisplayOuter (model.DisplayIslands |> Array.collect id)
+                    let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
                     if allPoints.Length = 0 then
-                        (0.0, 0.0, model.DisplayWidth, model.DisplayHeight)
+                        (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
                     else
                         let minX = allPoints |> Array.minBy (fun p -> p.X)
                         let maxX = allPoints |> Array.maxBy (fun p -> p.X)
@@ -179,8 +179,8 @@ module View =
                         let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
                         let minX' = min 0.0 minX.X
                         let minY' = min 0.0 minY.Y
-                        let maxX' = max model.DisplayWidth maxX.X
-                        let maxY' = max model.DisplayHeight maxY.Y
+                        let maxX' = max model.LogicalWidth maxX.X
+                        let maxY' = max model.LogicalHeight maxY.Y
                         (minX', minY', maxX' - minX', maxY' - minY')
 
                 let (x, y, w, h) = boundingBoxWithLogical
@@ -225,10 +225,11 @@ module View =
                         .Elt()
 
                 // Outer vertices
-                for i = 0 to model.DisplayOuter.Length - 1 do
-                    let rawPt = model.DisplayOuter.[i]
-                    let cartX = int (System.Math.Round(rawPt.X))
-                    let cartY = int (System.Math.Round(rawPt.Y))
+                for i = 0 to model.Outer.Length - 1 do
+                    let rawPt = model.Outer.[i]
+                    let dispPt = model.DisplayOuter.[i]
+                    let cartX = int (System.Math.Round(dispPt.X))
+                    let cartY = int (System.Math.Round(dispPt.Y))
                     bdrCrl()
                         .cs("outerVertex")
                         .cx(sprintf "%.1f" rawPt.X)
@@ -254,11 +255,12 @@ module View =
                         .Elt()
 
                 // Island vertices
-                for i = 0 to model.DisplayIslands.Length - 1 do
-                    for j = 0 to model.DisplayIslands.[i].Length - 1 do
-                        let rawPt = model.DisplayIslands.[i].[j]
-                        let cartX = int (System.Math.Round(rawPt.X))
-                        let cartY = int (System.Math.Round(rawPt.Y))
+                for i = 0 to model.Islands.Length - 1 do
+                    for j = 0 to model.Islands.[i].Length - 1 do
+                        let rawPt = model.Islands.[i].[j]
+                        let dispPt = model.DisplayIslands.[i].[j]
+                        let cartX = int (System.Math.Round(dispPt.X))
+                        let cartY = int (System.Math.Round(dispPt.Y))
                         
                         bdrCrl()    .cs("islandVertex")
                             .cx(sprintf "%.1f" rawPt.X)
