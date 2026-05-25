@@ -347,19 +347,17 @@ module View =
             div {
                 attr.style "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; min-height: 400px; border: 1px solid #e0e0e0; background: #f0f0f0;"
                 
-                // Hymap Layer (Native)
+                // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
                 div {
-                    attr.id "hymap-container"
                     attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" 
                         (if model.UseMapBase then 
                             (if model.IsMapLocked then "pointer-events: none;" else "pointer-events: auto;")
                          else "visibility: hidden;"))
-                    
-                    // Internal map styling provided by Bolero (replacing style.css)
+                         
+                    // Hymap Layer (Native) - Absolutely no children or dynamic attributes to ensure Leaflet DOM is fully preserved
                     div {
-                        attr.id "hymap-distance-label"
-                        attr.style "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 13px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;"
-                        text "Map Width: -- meters"
+                        attr.id "hymap-container"
+                        attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"
                     }
                 }
 

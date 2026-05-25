@@ -103,9 +103,16 @@ window.Hymap = {
             exactHeight = exactHeight * (1 - ratio);
         }
         
-        const label = document.getElementById('hymap-distance-label');
+        let label = document.getElementById('hymap-distance-label');
+        if (!label) {
+            label = document.createElement('div');
+            label.id = 'hymap-distance-label';
+            label.style.cssText = "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 13px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;";
+            const container = document.getElementById('hymap-container');
+            if (container) container.parentElement.appendChild(label);
+        }
         if (label) {
-            label.innerText = `Map Width: ${Math.round(calcWidth)}m`;
+            label.innerText = `Map Width: ${Math.round(calcWidth)} meters`;
         }
         
         const liveData = document.getElementById('hymap-live-data');
