@@ -256,8 +256,9 @@ module State =
 
         | MapTopographyReceived (w, h, topoJson) -> async {
                                                 // Hymap sends exact physical width/height in Meters.
-                                                // Hywe internal unit (decimeters) scales meters by 10.
-                                                let hyweInternalScale = 10.0
+                                                // Hywe internal unit requires a 100x scale relative to meters to properly reflect 
+                                                // a 10x value in the UI (since UI divides by 10).
+                                                let hyweInternalScale = 100.0
                                                 let scaledW = w * hyweInternalScale
 
                                                 // Scale topography data X and Y points to match internal decimeter scale
