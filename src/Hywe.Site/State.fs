@@ -22,24 +22,14 @@ module State =
                        { X = 0.0; Y = initHeight } |]
     let initIslands = Array.empty<Point[]>
 
-    // ---------- Shared Scale Factor ----------
-    let getFactor (w: float) (isMapBase: bool) =
-        if isMapBase then
-            if w <= 0.0 then 1.0
-            else
-                let magnitude = System.Math.Floor(System.Math.Log10(w))
-                System.Math.Pow(10.0, magnitude - 1.0)
-        else
-            10.0
-
     // ---------- Import helpers ----------
 
-    let parsePoint (factor: float) (s: string) : Result<Point, string> =
+    let parsePoint (s: string) : Result<Point, string> =
         match s.Split(',', StringSplitOptions.RemoveEmptyEntries) with
         | [| x; y |] ->
             match Double.TryParse x, Double.TryParse y with
             | (true, xv), (true, yv) ->
-                Ok { X = xv * factor; Y = yv * factor }
+                Ok { X = xv * 10.0; Y = yv * 10.0 }
             | _ -> Error $"Invalid point: {s}"
         | _ -> Error $"Invalid point format: {s}"
 
@@ -53,13 +43,13 @@ module State =
                 | Error e -> Error e
         loop 0 []
 
-    let parsePoly (factor: float) (s: string) : Result<Point[], string> =
+    let parsePoly (s: string) : Result<Point[], string> =
         s.Split(',', StringSplitOptions.RemoveEmptyEntries)
         |> Array.chunkBySize 2
-        |> Array.map (fun a -> parsePoint factor (String.concat "," a))
+        |> Array.map (fun a -> parsePoint (String.concat "," a))
         |> sequenceResults
 
-    let parseIslands (factor: float) (s: string) : Result<Point[][], string> =
+    let parseIslands (s: string) : Result<Point[][], string> =
         match String.IsNullOrWhiteSpace s with
         | true -> Ok [||]
         | false ->
@@ -67,7 +57,7 @@ module State =
             |> Array.map (fun isl ->
                 isl.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 |> Array.chunkBySize 2
-                |> Array.map (fun a -> parsePoint factor (String.concat "," a))
+                |> Array.map (fun a -> parsePoint (String.concat "," a))
                 |> sequenceResults)
             |> sequenceResults
 
@@ -84,15 +74,9 @@ module State =
     let polyToSvgPoints (poly: Point[]) =
         poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
 
-    // Core logic for dynamic UI scaling based on user request
+    // Core logic for UI scaling (Unified 10x ratio for all modes)
     let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
-        let factor = getFactor w isMapBase
-                
-        let res = value / factor
-        if isMapBase && w > 100.0 && res < 50.0 then
-            100.0 - res
-        else
-            res
+        value / 10.0
 
     let updateDisplayFields (model: PolygonEditorModel) =
         let scale v = formatBoundaryValue model.LogicalWidth v model.UseMapBase
@@ -181,13 +165,12 @@ module State =
 
         let logicalWidth = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
         let logicalHeight = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
-        let factor = getFactor logicalWidth model.UseMapBase
 
-        parsePoly factor outerStr
+        parsePoly outerStr
         |> Result.bind (fun outer ->
-            parseIslands factor islandsStr
+            parseIslands islandsStr
             |> Result.bind (fun islands ->
-                parsePoint factor entryStr
+                parsePoint entryStr
                 |> Result.map (fun entry ->
                     let width = logicalWidth
                     let height = logicalHeight
@@ -294,9 +277,9 @@ module State =
 
         | MapTopographyReceived (w, h, topoJson) -> async {
                                                 // Hymap sends exact physical width/height in Meters.
-                                                // Hywe internal unit requires a 100x scale relative to meters to properly reflect 
-                                                // a 10x value in the UI (since UI divides by 10).
-                                                let hyweInternalScale = 100.0
+                                                // We use a unified 10.0 internal scale so that the UI (which divides by 10) 
+                                                // perfectly displays the map's exact physical meter dimensions.
+                                                let hyweInternalScale = 10.0
                                                 let scaledW = w * hyweInternalScale
 
                                                 // Scale topography data X and Y points to match internal decimeter scale
