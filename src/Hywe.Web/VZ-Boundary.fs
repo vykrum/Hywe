@@ -55,7 +55,7 @@ module View =
                         button {
                             attr.``class`` (if not model.UseBoundary then "seg-btn active" else "seg-btn")
                             on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
-                            text "Free"
+                            text "None"
                         }
                         button {
                             attr.``class`` (if model.UseBoundary then "seg-btn active" else "seg-btn")
@@ -161,14 +161,21 @@ module View =
                     if allPoints.Length = 0 then
                         (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
                     else
-                        let minX = allPoints |> Array.minBy (fun p -> p.X)
-                        let maxX = allPoints |> Array.maxBy (fun p -> p.X)
-                        let minY = allPoints |> Array.minBy (fun p -> p.Y)
-                        let maxY = allPoints |> Array.maxBy (fun p -> p.Y)
-                        let minX' = min 0.0 minX.X
-                        let minY' = min 0.0 minY.Y
-                        let maxX' = max model.LogicalWidth maxX.X
-                        let maxY' = max model.LogicalHeight maxY.Y
+                        let mutable minX = System.Double.MaxValue
+                        let mutable maxX = System.Double.MinValue
+                        let mutable minY = System.Double.MaxValue
+                        let mutable maxY = System.Double.MinValue
+                        for i = 0 to allPoints.Length - 1 do
+                            let p = allPoints.[i]
+                            if p.X < minX then minX <- p.X
+                            if p.X > maxX then maxX <- p.X
+                            if p.Y < minY then minY <- p.Y
+                            if p.Y > maxY then maxY <- p.Y
+                        
+                        let minX' = min 0.0 minX
+                        let minY' = min 0.0 minY
+                        let maxX' = max model.LogicalWidth maxX
+                        let maxY' = max model.LogicalHeight maxY
                         (minX', minY', maxX' - minX', maxY' - minY')
 
                 let (x, y, w, h) = boundingBoxWithLogical
