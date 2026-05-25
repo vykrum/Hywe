@@ -134,7 +134,7 @@ module State =
 
     /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
     let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
-        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Round(p.X / 10.0))) (int (System.Math.Round(p.Y / 10.0)))
+        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor(p.X / 10.0))) (int (System.Math.Floor(p.Y / 10.0)))
 
         let outer =
             model.Outer
@@ -148,8 +148,8 @@ module State =
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
         let absolute = match model.UseAbsolute with | true -> "1" | false -> "0"
-        let w = int (System.Math.Round(model.LogicalWidth / 10.0))
-        let h = int (System.Math.Round(model.LogicalHeight / 10.0))
+        let w = int (System.Math.Floor(model.LogicalWidth / 10.0))
+        let h = int (System.Math.Floor(model.LogicalHeight / 10.0))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
     // ---------- Import function ----------
