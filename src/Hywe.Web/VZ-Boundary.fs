@@ -24,9 +24,9 @@ module View =
                 let rec findFactor currentW currentFactor =
                     if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
                     else currentFactor
-                findFactor w 10.0
+                findFactor w 1.0
             else
-                10.0 // remain unchanged otherwise
+                1.0 // remain unchanged otherwise without dividing by 10
                 
         let res = value / factor
         if isMapBase && w > 1000.0 && res < 500.0 then
@@ -46,7 +46,7 @@ module View =
                     attr.value (string (System.Math.Round(formatBoundaryValue model.LogicalWidth value model.UseMapBase)))
                     attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
-                        let factor = 10.0 // Inputs are disabled in Map Mode, so edits are only manual (factor 10.0)
+                        let factor = 1.0 // Removed divide by 10 factor
                         match System.Double.TryParse (string ev.Value) with
                         | (true, v) -> dispatch (msg (v * factor))
                         | _ -> ()
