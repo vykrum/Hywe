@@ -324,8 +324,8 @@ module State =
                 else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
             let sf = findScaleFactor newW currentH 1.0
             
-            let scaledW = newW / sf
-            let scaledH = currentH / sf
+            let scaledW = System.Math.Floor((newW / sf) + 0.001)
+            let scaledH = System.Math.Floor((currentH / sf) + 0.001)
 
             let safeW = match scaledW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 scaledW) * 10.0)
             let safeH = max minBound ((max 10.0 scaledH) * 10.0)
@@ -350,8 +350,8 @@ module State =
                 else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
             let sf = findScaleFactor currentW newH 1.0
             
-            let scaledW = currentW / sf
-            let scaledH = newH / sf
+            let scaledW = System.Math.Floor((currentW / sf) + 0.001)
+            let scaledH = System.Math.Floor((newH / sf) + 0.001)
 
             let safeW = max minBound ((max 10.0 scaledW) * 10.0)
             let safeH = match scaledH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 scaledH) * 10.0)
@@ -383,8 +383,8 @@ module State =
                     else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
                 let sf = findScaleFactor newW newH 1.0
                 
-                let scaledW = newW / sf
-                let scaledH = newH / sf
+                let scaledW = System.Math.Floor((newW / sf) + 0.001)
+                let scaledH = System.Math.Floor((newH / sf) + 0.001)
 
                 let hyweInternalScale = 10.0
                 let safeW = match scaledW <= 0.0 with | true -> 1.0 | false -> scaledW * hyweInternalScale
