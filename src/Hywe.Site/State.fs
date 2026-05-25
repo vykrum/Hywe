@@ -22,14 +22,24 @@ module State =
                        { X = 0.0; Y = initHeight } |]
     let initIslands = Array.empty<Point[]>
 
+    // ---------- Shared Scale Factor ----------
+    let getFactor (w: float) (isMapBase: bool) =
+        if isMapBase then
+            if w <= 0.0 then 1.0
+            else
+                let magnitude = System.Math.Floor(System.Math.Log10(w))
+                System.Math.Pow(10.0, magnitude - 1.0)
+        else
+            10.0
+
     // ---------- Import helpers ----------
 
-    let parsePoint (s: string) : Result<Point, string> =
+    let parsePoint (factor: float) (s: string) : Result<Point, string> =
         match s.Split(',', StringSplitOptions.RemoveEmptyEntries) with
         | [| x; y |] ->
             match Double.TryParse x, Double.TryParse y with
             | (true, xv), (true, yv) ->
-                Ok { X = xv * 10.0; Y = yv * 10.0 }
+                Ok { X = xv * factor; Y = yv * factor }
             | _ -> Error $"Invalid point: {s}"
         | _ -> Error $"Invalid point format: {s}"
 
@@ -43,13 +53,13 @@ module State =
                 | Error e -> Error e
         loop 0 []
 
-    let parsePoly (s: string) : Result<Point[], string> =
+    let parsePoly (factor: float) (s: string) : Result<Point[], string> =
         s.Split(',', StringSplitOptions.RemoveEmptyEntries)
         |> Array.chunkBySize 2
-        |> Array.map (fun a -> parsePoint (String.concat "," a))
+        |> Array.map (fun a -> parsePoint factor (String.concat "," a))
         |> sequenceResults
 
-    let parseIslands (s: string) : Result<Point[][], string> =
+    let parseIslands (factor: float) (s: string) : Result<Point[][], string> =
         match String.IsNullOrWhiteSpace s with
         | true -> Ok [||]
         | false ->
@@ -57,7 +67,7 @@ module State =
             |> Array.map (fun isl ->
                 isl.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 |> Array.chunkBySize 2
-                |> Array.map (fun a -> parsePoint (String.concat "," a))
+                |> Array.map (fun a -> parsePoint factor (String.concat "," a))
                 |> sequenceResults)
             |> sequenceResults
 
@@ -76,14 +86,7 @@ module State =
 
     // Core logic for dynamic UI scaling based on user request
     let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
-        let factor = 
-            if isMapBase && w > 100.0 then
-                let rec findFactor currentW currentFactor =
-                    if currentW > 100.0 then findFactor (currentW / 100.0) (currentFactor * 100.0)
-                    else currentFactor
-                findFactor w 10.0
-            else
-                10.0 // Both MapBase and Manual modes divide by 10 by default
+        let factor = getFactor w isMapBase
                 
         let res = value / factor
         if isMapBase && w > 100.0 && res < 50.0 then
@@ -176,14 +179,18 @@ module State =
         (model: PolygonEditorModel)
         : Result<PolygonEditorModel, string> =
 
-        parsePoly outerStr
+        let logicalWidth = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
+        let logicalHeight = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
+        let factor = getFactor logicalWidth model.UseMapBase
+
+        parsePoly factor outerStr
         |> Result.bind (fun outer ->
-            parseIslands islandsStr
+            parseIslands factor islandsStr
             |> Result.bind (fun islands ->
-                parsePoint entryStr
+                parsePoint factor entryStr
                 |> Result.map (fun entry ->
-                    let width = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
-                    let height = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
+                    let width = logicalWidth
+                    let height = logicalHeight
                     
                     let outer = match Array.isEmpty outer with | true -> initOuter | false -> outer
                     let fixedEntry = ensureEntryWithin outer islands entry
