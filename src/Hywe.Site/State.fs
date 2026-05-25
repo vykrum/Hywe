@@ -356,22 +356,18 @@ module State =
                 let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW * hyweInternalScale
                 let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH * hyweInternalScale
                 
-                if model.UseMapBase then
-                    let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH }
-                    return updated |> refreshCachedStrings
-                else
-                    let oldW = model.LogicalWidth
-                    let oldH = model.LogicalHeight
-                    let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
-                    let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
+                let oldW = model.LogicalWidth
+                let oldH = model.LogicalHeight
+                let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+                let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
 
-                    let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
-                    let newIslands =
-                        model.Islands
-                        |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+                let newIslands =
+                    model.Islands
+                    |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
 
-                    let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
-                    return updated |> refreshCachedStrings
+                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
+                return updated |> refreshCachedStrings
             }
 
         | PointerDown ev ->
