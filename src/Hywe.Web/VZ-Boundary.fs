@@ -20,13 +20,16 @@ module View =
     // Core logic for dynamic scaling based on user request
     let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
         let factor = 
-            if isMapBase && w > 1000.0 then
-                let rec findFactor currentW currentFactor =
-                    if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
-                    else currentFactor
-                findFactor w 1.0
+            if isMapBase then
+                if w > 1000.0 then
+                    let rec findFactor currentW currentFactor =
+                        if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
+                        else currentFactor
+                    findFactor w 1.0
+                else
+                    1.0 // Mapbase mode does NOT divide by 10
             else
-                1.0 // remain unchanged otherwise without dividing by 10
+                10.0 // Manual mode remains at factor 10.0
                 
         let res = value / factor
         if isMapBase && w > 1000.0 && res < 500.0 then
@@ -46,7 +49,7 @@ module View =
                     attr.value (string (System.Math.Round(formatBoundaryValue model.LogicalWidth value model.UseMapBase)))
                     attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
-                        let factor = 1.0 // Removed divide by 10 factor
+                        let factor = 10.0 // Inputs are disabled in Map Mode, so edits are only manual (factor 10.0)
                         match System.Double.TryParse (string ev.Value) with
                         | (true, v) -> dispatch (msg (v * factor))
                         | _ -> ()
