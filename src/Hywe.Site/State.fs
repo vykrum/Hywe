@@ -134,7 +134,19 @@ module State =
 
     /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
     let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
-        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor(p.X / 10.0))) (int (System.Math.Floor(p.Y / 10.0)))
+        let initialW = model.LogicalWidth / 10.0
+        let initialH = model.LogicalHeight / 10.0
+        
+        let rec findScaleFactor w h factor =
+            if w <= 100.0 && h <= 100.0 then factor
+            else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+            
+        let scaleFactor = findScaleFactor initialW initialH 1.0
+
+        let fmtPoint (p: Point) = 
+            let scaledX = (p.X / 10.0) / scaleFactor
+            let scaledY = (p.Y / 10.0) / scaleFactor
+            sprintf "%d,%d" (int (System.Math.Floor(scaledX + 0.001))) (int (System.Math.Floor(scaledY + 0.001)))
 
         let outer =
             model.Outer
@@ -148,8 +160,9 @@ module State =
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
         let absolute = match model.UseAbsolute with | true -> "1" | false -> "0"
-        let w = int (System.Math.Floor(model.LogicalWidth / 10.0))
-        let h = int (System.Math.Floor(model.LogicalHeight / 10.0))
+        let w = int (System.Math.Floor((initialW / scaleFactor) + 0.001))
+        let h = int (System.Math.Floor((initialH / scaleFactor) + 0.001))
+        
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
     // ---------- Import function ----------
