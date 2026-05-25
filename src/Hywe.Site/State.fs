@@ -407,7 +407,8 @@ module State =
                     model.Islands
                     |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
 
-                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; MapScale = sf * 10.0 }
+                let mapScale = if newW <= 100.0 && newH <= 100.0 then sf else sf * 10.0
+                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; MapScale = mapScale }
                 return updated |> refreshCachedStrings
             }
 

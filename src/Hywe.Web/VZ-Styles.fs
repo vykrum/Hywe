@@ -1552,8 +1552,10 @@ let polygonEditorStyles = """
     border: none;
     background: transparent;
     text-align: right;
-    font-size: 14px;
-    color: #333;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+    font-family: 'Segoe UI', sans-serif;
 }
 
 /* SVG drawing canvas for the polygon editor */
@@ -2102,6 +2104,74 @@ let reportPrintStyles = """
     .page { page-break-after: always; width: 390mm; height: 267mm; }
     body  { font-family: 'Outfit', system-ui, sans-serif; }
 }
+
+
+/* Updated segmented pill button styles */
+.seg-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+}
+
+.seg-btn-group {
+    display: flex;
+    width: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1.5px solid #333;
+}
+
+.seg-btn {
+    flex: 1;
+    padding: 2px 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    font-family: 'Segoe UI', sans-serif;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: #333;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1.4;
+    user-select: none;
+    text-align: center;
+}
+
+.seg-btn.active {
+    background: #222;
+    color: #fff;
+}
+
+.seg-btn:not(.active):hover {
+    background: #f0f0f0;
+}
+
+.seg-row-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #666;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+    min-width: 38px;
+    text-align: right;
+    margin-right: 6px;
+}
+
+.field-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 20px;
+}
+
+.field-group label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #666;
+    font-family: 'Segoe UI', sans-serif;
+    margin-right: 4px;
+}
 """
 
 
@@ -2113,6 +2183,7 @@ let toggleSwitchStyles = """
     display: flex;
     align-items: center;
     gap: 6px;
+    height: 20px;
 }
 
 .seg-row-label {
@@ -2133,7 +2204,7 @@ let toggleSwitchStyles = """
 }
 
 .seg-btn {
-    padding: 3px 9px;
+    padding: 1px 9px;
     font-size: 0.68rem;
     font-weight: 600;
     font-family: 'Segoe UI', sans-serif;
@@ -2142,7 +2213,7 @@ let toggleSwitchStyles = """
     background: transparent;
     color: #333;
     transition: background 0.15s, color 0.15s;
-    line-height: 1.4;
+    line-height: 1.2;
     user-select: none;
     white-space: nowrap;
 }

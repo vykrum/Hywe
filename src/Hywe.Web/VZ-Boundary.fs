@@ -39,12 +39,12 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "display: grid; grid-template-columns: auto auto auto; gap: 40px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
+            attr.style "display: grid; grid-template-columns: auto auto auto; gap: 16px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
 
             // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                attr.style "display: flex; flex-direction: column; gap: 7px;"
+                attr.style "display: flex; flex-direction: column; gap: 8px;"
 
                 // Boundary
                 div {
@@ -110,20 +110,25 @@ module View =
                 }
             }
 
-            // Col 2: Dimensions & Scale
+            // Col 2: Dimensions & Scale (stacked vertically)
             div {
                 attr.``class`` "control-panel"
-                attr.style "display: flex; flex-direction: column; gap: 12px;"
-                
+                attr.style "display: flex; flex-direction: column; gap: 8px;"
+
+                // Width
                 div {
-                    attr.style "display: flex; gap: 15px;"
                     renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
+                }
+                // Height
+                div {
                     renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
                 }
-
+                // Scale
+                                // Scale
                 div {
-                    attr.style "font-size: 13px; font-weight: 600; color: #444; padding-left: 5px;"
-                    text (sprintf "Scale: %.1f" (if model.UseMapBase then model.MapScale else 1.0))
+                    attr.style "display: flex; align-items: center; justify-content: space-between; height: 20px; font-size: 0.68rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif;"
+                    span { text "Scale:" }
+                    span { text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) }
                 }
             }
 
