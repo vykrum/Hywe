@@ -4,6 +4,7 @@ open System
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Web
 open System.Text.Json
+open System.Text.Json.Nodes
 
 module State =
 
@@ -254,9 +255,33 @@ module State =
                                             }
 
         | MapTopographyReceived (w, h, topoJson) -> async {
+                                                // Hymap sends exact physical width/height in Meters.
+                                                // Hywe internal unit (decimeters) scales meters by 10.
+                                                let hyweInternalScale = 10.0
+                                                let scaledW = w * hyweInternalScale
+
+                                                // Scale topography data X and Y points to match internal decimeter scale
+                                                let scaledTopoJson = 
+                                                    try
+                                                        let node = JsonNode.Parse(topoJson)
+                                                        match node with
+                                                        | :? JsonArray as arr ->
+                                                            for item in arr do
+                                                                match item with
+                                                                | :? JsonObject as obj ->
+                                                                    let x = obj.["X"].GetValue<float>()
+                                                                    let y = obj.["Y"].GetValue<float>()
+                                                                    obj.["X"] <- JsonValue.Create(x * hyweInternalScale)
+                                                                    obj.["Y"] <- JsonValue.Create(y * hyweInternalScale)
+                                                                | _ -> ()
+                                                            node.ToJsonString()
+                                                        | _ -> topoJson
+                                                    with _ ->
+                                                        topoJson
+
                                                 // Lock both Width and Height to the physical Width of the map to enforce a perfect square
-                                                let safeW = max 1.0 (w)
-                                                let safeH = max 1.0 (w) 
+                                                let safeW = max 1.0 (scaledW)
+                                                let safeH = max 1.0 (scaledW) 
                                                 
                                                 // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
                                                 let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
@@ -265,7 +290,7 @@ module State =
                                                 let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
                                                 let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
                                                 
-                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some topoJson }
+                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson }
                                                 return updated |> refreshCachedStrings
                                             }
 

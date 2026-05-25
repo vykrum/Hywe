@@ -19,7 +19,8 @@ module View =
 
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
-        let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
+        // Unified UI scale factor. Internal state is always decimeters (10 units per meter).
+        let factor = 10.0
                 
         let renderNumericInput labelText value msg isHeight =
             div {
@@ -158,7 +159,8 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
-                let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
+                // Unified UI scale factor for rendering labels correctly
+                let factor = 10.0
                         
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
