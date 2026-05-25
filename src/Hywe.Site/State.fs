@@ -281,6 +281,7 @@ module State =
                                                 // perfectly displays the map's exact physical meter dimensions.
                                                 let hyweInternalScale = 10.0
                                                 let scaledW = w * hyweInternalScale
+                                                let scaledH = h * hyweInternalScale
 
                                                 // Scale topography data X and Y points to match internal decimeter scale
                                                 let scaledTopoJson = 
@@ -298,12 +299,12 @@ module State =
                                                                 | _ -> ()
                                                             node.ToJsonString()
                                                         | _ -> topoJson
-                                                    with _ ->
+                                                    with ex ->
+                                                        printfn "Error scaling topography JSON: %s" ex.Message
                                                         topoJson
 
-                                                // Lock both Width and Height to the physical Width of the map to enforce a perfect square
                                                 let safeW = max 1.0 (scaledW)
-                                                let safeH = max 1.0 (scaledW) 
+                                                let safeH = max 1.0 (scaledH) 
                                                 
                                                 // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
                                                 let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
@@ -344,9 +345,10 @@ module State =
             }
 
         | UpdateLogicalDimensions (newW, newH) -> async {
-            // In Map Mode, we trust the scaled values from JS. No arbitrary minimums or multiplications.
-            let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW
-            let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH
+            // In Map Mode, we trust the scaled values from JS, multiplied by the standard 10.0 ratio
+            let hyweInternalScale = 10.0
+            let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW * hyweInternalScale
+            let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH * hyweInternalScale
             
             let oldW = model.LogicalWidth
             let oldH = model.LogicalHeight
