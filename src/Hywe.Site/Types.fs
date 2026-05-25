@@ -35,6 +35,10 @@ type PolygonEditorModel =
         DraggingEntry: bool
         OuterPointsStr: string        // Cached for performance
         IslandPointsStrs: string[]    // Cached for performance
+        DisplayWidth: float
+        DisplayHeight: float
+        DisplayOuter: Point[]
+        DisplayIslands: Point[][]
     }
 
 type EditorState =

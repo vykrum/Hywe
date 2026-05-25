@@ -74,11 +74,41 @@ module State =
     let polyToSvgPoints (poly: Point[]) =
         poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
 
-    /// Refreshes cached strings to avoid expensive re-formatting during every frame
-    let refreshCachedStrings (model: PolygonEditorModel) =
+    // Core logic for dynamic UI scaling based on user request
+    let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
+        let factor = 
+            if isMapBase then
+                if w > 1000.0 then
+                    let rec findFactor currentW currentFactor =
+                        if currentW > 1000.0 then findFactor (currentW / 1000.0) (currentFactor * 1000.0)
+                        else currentFactor
+                    findFactor w 1.0
+                else
+                    1.0
+            else
+                10.0
+                
+        let res = value / factor
+        if isMapBase && w > 1000.0 && res < 500.0 then
+            1000.0 - res
+        else
+            res
+
+    let updateDisplayFields (model: PolygonEditorModel) =
+        let scale v = formatBoundaryValue model.LogicalWidth v model.UseMapBase
         { model with
-            OuterPointsStr = polyToSvgPoints model.Outer
-            IslandPointsStrs = model.Islands |> Array.map polyToSvgPoints }
+            DisplayWidth = scale model.LogicalWidth
+            DisplayHeight = scale model.LogicalHeight
+            DisplayOuter = model.Outer |> Array.map (fun pt -> { X = scale pt.X; Y = scale (model.LogicalHeight - pt.Y) })
+            DisplayIslands = model.Islands |> Array.map (Array.map (fun pt -> { X = scale pt.X; Y = scale (model.LogicalHeight - pt.Y) }))
+        }
+
+    /// Refreshes cached strings and UI fields to avoid expensive re-formatting during every frame
+    let refreshCachedStrings (model: PolygonEditorModel) =
+        let displayUpdated = updateDisplayFields model
+        { displayUpdated with
+            OuterPointsStr = polyToSvgPoints displayUpdated.Outer
+            IslandPointsStrs = displayUpdated.Islands |> Array.map polyToSvgPoints }
 
     // ---------- JS interop helpers ----------
     let getSvgInfo (js: IJSRuntime) =
@@ -204,6 +234,10 @@ module State =
             DraggingEntry = false
             OuterPointsStr = ""
             IslandPointsStrs = [||]
+            DisplayWidth = 0.0
+            DisplayHeight = 0.0
+            DisplayOuter = [||]
+            DisplayIslands = [||]
         }
         |> refreshCachedStrings
 
