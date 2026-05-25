@@ -14,9 +14,12 @@ module View =
     type bdcrTx = Template<"""
         <text id="${pth}" class="${tc}" font-size="${tf}" fill="#808080" text-anchor="middle">
           <textPath href="#${pth}" letter-spacing="0.1px" startOffset="50%">${nm}</textPath>
+        </text>
+        """>
+
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
-        let renderNumericInput labelText value msg isHeight =
+        let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
                 label { text labelText }
@@ -243,12 +246,12 @@ module View =
                         .ey($"{rawPt.Y - float bndTxtRr}")
                         .Elt()
 
-                    text {
-                        attr.``class`` "vertex-label"
-                        attr.x (string (rawPt.X + (if rawPt.X < model.DisplayWidth / 2.0 then -15.0 else 15.0)))
-                        attr.y (string (rawPt.Y + (if rawPt.Y < model.DisplayHeight / 2.0 then -15.0 else 15.0)))
-                        text (sprintf "(%d, %d)" cartX cartY)
-                    }
+                    bdcrTx()
+                        .pth(sprintf "outerVertex-%d" i)
+                        .tc("outerVertexLabel")
+                        .tf(boundLabel)
+                        .nm(sprintf "(%d, %d)" cartX cartY)
+                        .Elt()
 
                 // Island vertices
                 for i = 0 to model.DisplayIslands.Length - 1 do
@@ -273,12 +276,12 @@ module View =
                             .ey($"{rawPt.Y - float bndTxtRr}")
                             .Elt()
 
-                        text {
-                            attr.``class`` "vertex-label"
-                            attr.x (string (rawPt.X + (if rawPt.X < model.DisplayWidth / 2.0 then -15.0 else 15.0)))
-                            attr.y (string (rawPt.Y + (if rawPt.Y < model.DisplayHeight / 2.0 then -15.0 else 15.0)))
-                            text (sprintf "(%d, %d)" cartX cartY)
-                        }
+                        bdcrTx()
+                            .pth(sprintf "islandVertex-%d-%d" i j) 
+                            .tc("islandVertexLabel")
+                            .tf(boundLabel)
+                            .nm(sprintf "(%d, %d)" cartX cartY)
+                            .Elt()
 
                 // --- Entry point ---
                 let scale = boundScale * 0.3
