@@ -41,66 +41,71 @@ module View =
             attr.``class`` "control-and-instructions"
             attr.style "display: grid; grid-template-columns: auto auto auto; gap: 40px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
 
-            // Col 1: Toggles
+            // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                attr.style "display: flex; flex-direction: column; gap: 12px;"
-                
+                attr.style "display: flex; flex-direction: column; gap: 7px;"
+
+                // Boundary
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` model.UseBoundary
-                            on.change (fun _ -> dispatch (ToggleBoundary (not model.UseBoundary)))
+                    attr.``class`` "seg-row"
+                    span { attr.``class`` "seg-row-label"; text "Boundary" }
+                    div {
+                        attr.``class`` "seg-btn-group"
+                        button {
+                            attr.``class`` (if not model.UseBoundary then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
+                            text "Free"
                         }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text (if model.UseBoundary then "Boundary: Site" else "Boundary: Free")
+                        button {
+                            attr.``class`` (if model.UseBoundary then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
+                            text "Site"
+                        }
                     }
                 }
 
+                // Count
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` model.UseAbsolute
-                            on.change (fun _ -> dispatch (ToggleAbsolute (not model.UseAbsolute)))
+                    attr.``class`` ("seg-row" + (if model.UseBoundary then "" else " disabled"))
+                    span { attr.``class`` "seg-row-label"; text "Count" }
+                    div {
+                        attr.``class`` "seg-btn-group"
+                        button {
+                            attr.``class`` (if not model.UseAbsolute then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if model.UseAbsolute then dispatch (ToggleAbsolute false))
+                            text "Relative"
                         }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text (if model.UseAbsolute then "Count: Absolute" else "Count: Relative")
+                        button {
+                            attr.``class`` (if model.UseAbsolute then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if not model.UseAbsolute then dispatch (ToggleAbsolute true))
+                            text "Absolute"
+                        }
                     }
                 }
 
+                // Base
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` model.UseMapBase
-                            on.change (fun _ -> 
-                                let newState = not model.UseMapBase
-                                dispatch (ToggleMapBase newState)
-                                if newState then
+                    attr.``class`` ("seg-row" + (if model.UseBoundary then "" else " disabled"))
+                    span { attr.``class`` "seg-row-label"; text "Base" }
+                    div {
+                        attr.``class`` "seg-btn-group"
+                        button {
+                            attr.``class`` (if not model.UseMapBase then "seg-btn active" else "seg-btn")
+                            on.click (fun _ ->
+                                if model.UseMapBase then dispatch (ToggleMapBase false)
+                            )
+                            text "None"
+                        }
+                        button {
+                            attr.``class`` (if model.UseMapBase then "seg-btn active" else "seg-btn")
+                            on.click (fun _ ->
+                                if not model.UseMapBase then
+                                    dispatch (ToggleMapBase true)
                                     js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
                             )
+                            text "Map"
                         }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text (if model.UseMapBase then "Base: Map" else "Base: None")
                     }
                 }
             }

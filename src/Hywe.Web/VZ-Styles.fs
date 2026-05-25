@@ -2107,69 +2107,62 @@ let reportPrintStyles = """
 
 let toggleSwitchStyles = """
 /* =====================
-   TOGGLE SWITCHES
+   SEGMENTED PILL BUTTONS
    ===================== */
-.hywe-switch-container {
+.seg-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 28px;
+    gap: 6px;
 }
 
-.hywe-switch {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 20px;
-    margin: 0;
-}
-
-.hywe-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.hywe-switch-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ddd;
-    transition: .3s;
-    border-radius: 20px;
-}
-
-.hywe-switch-slider:before {
-    position: absolute;
-    content: "";
-    height: 14px;
-    width: 14px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .3s;
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.hywe-switch input:checked + .hywe-switch-slider {
-    background-color: #363636;
-}
-
-.hywe-switch input:checked + .hywe-switch-slider:before {
-    transform: translateX(20px);
-}
-
-.hywe-switch-label {
-    font-size: 0.75rem;
-    color: #555;
+.seg-row-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #666;
     font-family: 'Segoe UI', sans-serif;
-    min-width: 60px;
     user-select: none;
-    font-weight: 500;
+    min-width: 38px;
+    text-align: right;
+}
+
+.seg-btn-group {
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1.5px solid #333;
+}
+
+.seg-btn {
+    padding: 3px 9px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    font-family: 'Segoe UI', sans-serif;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: #333;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1.4;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.seg-btn + .seg-btn {
+    border-left: 1.5px solid #333;
+}
+
+.seg-btn.active {
+    background: #222;
+    color: #fff;
+}
+
+.seg-btn:not(.active):hover {
+    background: #f0f0f0;
+}
+
+.seg-row.disabled {
+    opacity: 0.3;
+    pointer-events: none;
 }
 """
 
