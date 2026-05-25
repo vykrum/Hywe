@@ -57,40 +57,29 @@ window.Hymap = {
                 this.map.fitBounds(poly.getBounds());
             }).addTo(this.map);
             
-            // Prevent zooming in too much (ensure map width >= 30m)
-            this.map.on('zoomend', () => {
-                const bounds = this.map.getBounds();
-                const calcWidth = this.getCalculatedWidth(bounds);
-                if (calcWidth < 30) {
-                    this.map.zoomOut();
+            // Prevent zooming in too much by dynamically setting maxZoom so that map width remains >= 25m
+            const updateMaxZoom = () => {
+                const centerLat = this.map.getCenter().lat;
+                const containerWidth = this.map.getSize().x;
+                const svg = document.getElementById('polygon-editor-svg');
+                let ratio = 0;
+                if (svg && svg.hasAttribute('data-padding-ratio')) {
+                    ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
                 }
-            });
+                const activeWidthPx = containerWidth * (1 - ratio);
+                if (activeWidthPx > 0) {
+                    const maxZ = Math.log2((activeWidthPx * 156543.03 * Math.cos(centerLat * Math.PI / 180)) / 25.0);
+                    this.map.setMaxZoom(maxZ);
+                }
+            };
+            this.map.on('resize', updateMaxZoom);
+            this.map.on('move', updateMaxZoom);
+            updateMaxZoom();
             
             // Update distance label
             this.map.on('move', () => this.updateDistanceLabel());
             this.map.whenReady(() => this.updateDistanceLabel());
         }, 100);
-    },
-
-    getScaleDivisor: function(width, height) {
-        const dim = Math.max(width, height);
-        if (dim <= 0) return 1; // Prevent infinite loop if map bounds are invalid
-        
-        let divisor = 1;
-        while (dim / divisor >= 100) {
-            divisor *= 10;
-        }
-        while (dim / divisor < 10) {
-            divisor /= 10;
-        }
-        
-        let result = dim / divisor;
-        if (result < 50) {
-            const adjustedResult = 100 - result;
-            divisor = dim / adjustedResult;
-        }
-        
-        return divisor;
     },
 
     getCalculatedWidth: function(bounds) {
@@ -114,21 +103,24 @@ window.Hymap = {
             exactHeight = exactHeight * (1 - ratio);
         }
         
-        const divisor = this.getScaleDivisor(calcWidth, exactHeight);
-        const scaledWidth = calcWidth / divisor;
-        const scaledHeight = exactHeight / divisor;
-
-        const label = document.getElementById('hymap-distance-label');
+        let label = document.getElementById('hymap-distance-label');
+        if (!label) {
+            label = document.createElement('div');
+            label.id = 'hymap-distance-label';
+            label.style.cssText = "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 13px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;";
+            const container = document.getElementById('hymap-container');
+            if (container) container.parentElement.appendChild(label);
+        }
         if (label) {
-            label.innerText = `Map Width: ${Math.round(calcWidth)}m`;
+            label.innerText = `Map Width: ${Math.round(calcWidth)} meters`;
         }
         
         const liveData = document.getElementById('hymap-live-data');
         const liveTrigger = document.getElementById('hymap-live-trigger');
         if (liveData && liveTrigger) {
             liveData.value = JSON.stringify({
-                widthMeters: Math.round(scaledWidth),
-                heightMeters: Math.round(scaledHeight)
+                widthMeters: Math.round(calcWidth),
+                heightMeters: Math.round(exactHeight)
             });
             liveTrigger.click();
         }
@@ -182,9 +174,7 @@ window.Hymap = {
             exactHeight = exactHeight * (1 - ratio);
         }
         
-        const divisor = this.getScaleDivisor(calcWidth, exactHeight);
-        const scaledWidth = calcWidth / divisor;
-        const scaledHeight = exactHeight / divisor;
+
 
         // 3. Generate 100x100 Topography Grid via AWS Terrarium Tiles
         let elevations = [];
@@ -263,8 +253,8 @@ window.Hymap = {
         
         if (hiddenData && triggerBtn) {
             hiddenData.value = JSON.stringify({
-                widthMeters: Math.round(scaledWidth),
-                heightMeters: Math.round(scaledHeight),
+                widthMeters: Math.round(calcWidth),
+                heightMeters: Math.round(exactHeight),
                 points: elevations,
                 extents: {
                     north: innerNorth,

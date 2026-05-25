@@ -4,6 +4,7 @@ open System
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Web
 open System.Text.Json
+open System.Text.Json.Nodes
 
 module State =
 
@@ -73,11 +74,25 @@ module State =
     let polyToSvgPoints (poly: Point[]) =
         poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
 
-    /// Refreshes cached strings to avoid expensive re-formatting during every frame
-    let refreshCachedStrings (model: PolygonEditorModel) =
+    // Core logic for UI scaling (Unified 10x ratio for all modes)
+    let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
+        value / 10.0
+
+    let updateDisplayFields (model: PolygonEditorModel) =
+        let scale v = formatBoundaryValue model.LogicalWidth v model.UseMapBase
         { model with
-            OuterPointsStr = polyToSvgPoints model.Outer
-            IslandPointsStrs = model.Islands |> Array.map polyToSvgPoints }
+            DisplayWidth = scale model.LogicalWidth
+            DisplayHeight = scale model.LogicalHeight
+            DisplayOuter = model.Outer |> Array.map (fun pt -> { X = scale pt.X; Y = scale (model.LogicalHeight - pt.Y) })
+            DisplayIslands = model.Islands |> Array.map (Array.map (fun pt -> { X = scale pt.X; Y = scale (model.LogicalHeight - pt.Y) }))
+        }
+
+    /// Refreshes cached strings and UI fields to avoid expensive re-formatting during every frame
+    let refreshCachedStrings (model: PolygonEditorModel) =
+        let displayUpdated = updateDisplayFields model
+        { displayUpdated with
+            OuterPointsStr = polyToSvgPoints displayUpdated.Outer
+            IslandPointsStrs = displayUpdated.Islands |> Array.map polyToSvgPoints }
 
     // ---------- JS interop helpers ----------
     let getSvgInfo (js: IJSRuntime) =
@@ -119,7 +134,7 @@ module State =
 
     /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
     let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
-        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Round(p.X / 10.0))) (int (System.Math.Round(p.Y / 10.0)))
+        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor((p.X + 0.001) / 10.0))) (int (System.Math.Floor((p.Y + 0.001) / 10.0)))
 
         let outer =
             model.Outer
@@ -133,8 +148,8 @@ module State =
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
         let absolute = match model.UseAbsolute with | true -> "1" | false -> "0"
-        let w = int (System.Math.Round(model.LogicalWidth / 10.0))
-        let h = int (System.Math.Round(model.LogicalHeight / 10.0))
+        let w = int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0))
+        let h = int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
     // ---------- Import function ----------
@@ -148,14 +163,17 @@ module State =
         (model: PolygonEditorModel)
         : Result<PolygonEditorModel, string> =
 
+        let logicalWidth = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
+        let logicalHeight = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
+
         parsePoly outerStr
         |> Result.bind (fun outer ->
             parseIslands islandsStr
             |> Result.bind (fun islands ->
                 parsePoint entryStr
                 |> Result.map (fun entry ->
-                    let width = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
-                    let height = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
+                    let width = logicalWidth
+                    let height = logicalHeight
                     
                     let outer = match Array.isEmpty outer with | true -> initOuter | false -> outer
                     let fixedEntry = ensureEntryWithin outer islands entry
@@ -203,6 +221,10 @@ module State =
             DraggingEntry = false
             OuterPointsStr = ""
             IslandPointsStrs = [||]
+            DisplayWidth = 0.0
+            DisplayHeight = 0.0
+            DisplayOuter = [||]
+            DisplayIslands = [||]
         }
         |> refreshCachedStrings
 
@@ -254,9 +276,35 @@ module State =
                                             }
 
         | MapTopographyReceived (w, h, topoJson) -> async {
-                                                // Lock both Width and Height to the physical Width of the map to enforce a perfect square
-                                                let safeW = max 1.0 (w)
-                                                let safeH = max 1.0 (w) 
+                                                // Hymap sends exact physical width/height in Meters.
+                                                // We use a unified 10.0 internal scale so that the UI (which divides by 10) 
+                                                // perfectly displays the map's exact physical meter dimensions.
+                                                let hyweInternalScale = 10.0
+                                                let scaledW = w * hyweInternalScale
+                                                let scaledH = h * hyweInternalScale
+
+                                                // Scale topography data X and Y points to match internal decimeter scale
+                                                let scaledTopoJson = 
+                                                    try
+                                                        let node = JsonNode.Parse(topoJson)
+                                                        match node with
+                                                        | :? JsonArray as arr ->
+                                                            for item in arr do
+                                                                match item with
+                                                                | :? JsonObject as obj ->
+                                                                    let x = obj.["X"].GetValue<float>()
+                                                                    let y = obj.["Y"].GetValue<float>()
+                                                                    obj.["X"] <- JsonValue.Create(x * hyweInternalScale)
+                                                                    obj.["Y"] <- JsonValue.Create(y * hyweInternalScale)
+                                                                | _ -> ()
+                                                            node.ToJsonString()
+                                                        | _ -> topoJson
+                                                    with ex ->
+                                                        printfn "Error scaling topography JSON: %s" ex.Message
+                                                        topoJson
+
+                                                let safeW = max 1.0 (scaledW)
+                                                let safeH = max 1.0 (scaledH) 
                                                 
                                                 // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
                                                 let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
@@ -265,42 +313,49 @@ module State =
                                                 let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
                                                 let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
                                                 
-                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some topoJson }
+                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson }
                                                 return updated |> refreshCachedStrings
                                             }
 
         | UpdateLogicalWidth newW -> async {
-            let safeW = match newW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 newW) * 10.0)
-            let oldW = model.LogicalWidth
-            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+            let currentH = model.LogicalHeight / 10.0
+            let rec findScaleFactor w h factor =
+                if w <= 100.0 && h <= 100.0 then factor
+                else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+            let sf = findScaleFactor newW currentH 1.0
+            
+            let scaledW = System.Math.Floor((newW / sf) + 0.001)
+            let scaledH = System.Math.Floor((currentH / sf) + 0.001)
 
-            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX })
+            let safeW = match scaledW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 scaledW) * 10.0)
+            let safeH = max minBound ((max 10.0 scaledH) * 10.0)
+
+            let oldW = model.LogicalWidth
+            let oldH = model.LogicalHeight
+            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+            let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
+
+            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
             let newIslands =
                 model.Islands
-                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX }))
-            let updated = { model with LogicalWidth = safeW; Outer = newOuter; Islands = newIslands }
+                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+            let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
             return updated |> refreshCachedStrings
             }
 
         | UpdateLogicalHeight newH -> async {
-            let safeH = match newH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 newH) * 10.0)
-            let oldH = model.LogicalHeight
-            let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
-
-            let newOuter = model.Outer |> Array.map (fun pt -> { pt with Y = pt.Y * scaleY })
-            let newIslands =
-                model.Islands
-                |> Array.map (Array.map (fun pt -> { pt with Y = pt.Y * scaleY }))
-
-            let updated = { model with LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
-            return updated |> refreshCachedStrings
-            }
-
-        | UpdateLogicalDimensions (newW, newH) -> async {
-            // In Map Mode, we trust the scaled values from JS. No arbitrary minimums or multiplications.
-            let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW
-            let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH
+            let currentW = model.LogicalWidth / 10.0
+            let rec findScaleFactor w h factor =
+                if w <= 100.0 && h <= 100.0 then factor
+                else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+            let sf = findScaleFactor currentW newH 1.0
             
+            let scaledW = System.Math.Floor((currentW / sf) + 0.001)
+            let scaledH = System.Math.Floor((newH / sf) + 0.001)
+
+            let safeW = max minBound ((max 10.0 scaledW) * 10.0)
+            let safeH = match scaledH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 scaledH) * 10.0)
+
             let oldW = model.LogicalWidth
             let oldH = model.LogicalHeight
             let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
@@ -313,6 +368,40 @@ module State =
 
             let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
             return updated |> refreshCachedStrings
+            }
+
+        | UpdateLogicalDimensions (newW, newH) -> async {
+            // If we are in Map Base mode, the geographic dimensions are managed by the map bounds.
+            // We should ONLY update the LogicalWidth/Height to match the map viewport, 
+            // but NEVER scale the polygon's SVG coordinates. If the map is locked, we don't 
+            // even update the LogicalWidth/Height because the bounds are locked geographically.
+            if model.UseMapBase && model.IsMapLocked then
+                return model
+            else
+                let rec findScaleFactor w h factor =
+                    if w <= 100.0 && h <= 100.0 then factor
+                    else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+                let sf = findScaleFactor newW newH 1.0
+                
+                let scaledW = System.Math.Floor((newW / sf) + 0.001)
+                let scaledH = System.Math.Floor((newH / sf) + 0.001)
+
+                let hyweInternalScale = 10.0
+                let safeW = match scaledW <= 0.0 with | true -> 1.0 | false -> scaledW * hyweInternalScale
+                let safeH = match scaledH <= 0.0 with | true -> 1.0 | false -> scaledH * hyweInternalScale
+                
+                let oldW = model.LogicalWidth
+                let oldH = model.LogicalHeight
+                let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+                let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
+
+                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+                let newIslands =
+                    model.Islands
+                    |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+
+                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
+                return updated |> refreshCachedStrings
             }
 
         | PointerDown ev ->

@@ -460,13 +460,15 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
     div {
         attr.style "padding: 10px; min-height: 400px;"
         
+        let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        div { 
+            attr.id "hywe-polygon-editor"
+            attr.style (if model.ActivePanel = BoundaryPanel then "display: block;" else "display: none;")
+            View.view currentInner (PolygonEditorMsg >> dispatch) js 
+        }
+
         match model.ActivePanel with
-        | BoundaryPanel ->
-            let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            div { 
-                attr.id "hywe-polygon-editor"
-                View.view currentInner (PolygonEditorMsg >> dispatch) js 
-            }
+        | BoundaryPanel -> empty()
 
         | LayoutPanel ->
             div {

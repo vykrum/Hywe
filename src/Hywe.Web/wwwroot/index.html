@@ -1,44 +1,50 @@
 <!DOCTYPE html>
 <html lang="en-IN">
+
 <head>
     <!-- Begin: Metadata for SEO, Social Sharing, and Browsers -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Title and SEO -->
     <title>HYWE – Hygrid Woven Ensemble</title>
-    <meta name="description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
+    <meta name="description"
+        content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
     <link rel="canonical" href="https://hywe.in/" />
     <meta name="author" content="Vikram Subbaiah" />
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
+
     <!-- Leaflet & Map CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    
+
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
     <meta property="og:title" content="HYWE" />
-    <meta property="og:description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
+    <meta property="og:description"
+        content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://hywe.in/" />
     <meta property="og:image" content="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" />
     <meta property="og:image:width" content="1600" />
     <meta property="og:image:height" content="400" />
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="HYWE" />
-    <meta name="twitter:description" content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
+    <meta name="twitter:description"
+        content="Weave controlled spatial layouts through an approach powered by design computation. An F#-driven sandbox for early-stage planning." />
     <meta name="twitter:image" content="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" />
     <meta name="twitter:site" content="@_hywe_" />
-    
-    <meta name="keywords" content="How to automate architectural programming, Software for spatial adjacency matrix to floor plan, Floor layout generation without adjacency matrix, Floor layout generation based on flow of activity, Alternative to generative AI for floor layouts, Browser based Programmatic stacking diagrams, Endogenous Space Planning, rule-based spatial design, building massing from program, architectural feasibility tool, wasm architectural layout engine, architecture, topology, computational-design, deterministic-geometry, spatial-computation, architectural-ai, procedural-generation, graph-topology" />
+
+    <meta name="keywords"
+        content="How to automate architectural programming, Software for spatial adjacency matrix to floor plan, Floor layout generation without adjacency matrix, Floor layout generation based on flow of activity, Alternative to generative AI for floor layouts, Browser based Programmatic stacking diagrams, Endogenous Space Planning, rule-based spatial design, building massing from program, architectural feasibility tool, wasm architectural layout engine, architecture, topology, computational-design, deterministic-geometry, spatial-computation, architectural-ai, procedural-generation, graph-topology" />
     <meta property="article:published_time" content="2022-08-15T00:00:00Z" />
     <meta property="article:modified_time" content="2026-05-07T00:00:00Z" />
-    
+
     <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
     {
@@ -74,12 +80,12 @@
       "dateModified": "2026-05-07T00:00:00Z"
     }
     </script>
-    
+
     <!-- Content managed by VZ-Shell.fs -->
 
     <base href="/">
     <!-- CSS is now handled natively in F# -->
-    
+
     <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
     <link rel="shortcut icon" href="/images/favicon.ico" />
@@ -109,6 +115,7 @@
             padding: 0;
             background-color: white;
         }
+
         #loading-frame {
             position: fixed;
             top: 37px;
@@ -116,8 +123,9 @@
             bottom: 0;
             left: 0;
             z-index: 900;
-            background: white; 
+            background: white;
         }
+
         .fullscreen-bg {
             position: fixed;
             width: 100%;
@@ -126,10 +134,12 @@
             z-index: 100;
             background-color: white;
         }
+
         .fullscreen-bg.fade-out {
             opacity: 0;
             pointer-events: none;
         }
+
         .intro-section {
             position: absolute;
             z-index: 250;
@@ -148,12 +158,14 @@
             max-width: 220px;
             box-sizing: border-box;
         }
+
         .loadingText {
             font-size: 12px;
             text-align: center;
             margin-top: 6px;
             color: #363636;
         }
+
         .site-header {
             display: flex;
             flex-direction: row;
@@ -168,6 +180,7 @@
             gap: 10px;
             box-sizing: border-box;
         }
+
         .site-header .title {
             color: white;
             font-size: 20px;
@@ -175,12 +188,20 @@
             padding: 0 10px 7px 10px;
             white-space: nowrap;
         }
+
         .site-header .logo-acronym {
             opacity: 1;
         }
+
         @media (max-width: 220px) {
-            .intro-section { left: 0; right: 0; margin: 0 auto; max-width: calc(100% - 50px); }
+            .intro-section {
+                left: 0;
+                right: 0;
+                margin: 0 auto;
+                max-width: calc(100% - 50px);
+            }
         }
+
         .offscreen-hidden {
             position: absolute;
             left: -9999px;
@@ -201,7 +222,8 @@
             </div>
             <div class="title">H Y W E</div>
             <div class="logo-acronym">
-                <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45" alt="HYWE acronym">
+                <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45"
+                    alt="HYWE acronym">
             </div>
         </header>
 
@@ -213,8 +235,10 @@
             <section class="intro-section">
                 Weave spatial configurations with<br><br>
                 <strong> H Y W E </strong><br><br>
-                An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design.<br><br>
-                Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections.
+                An endogenous space planning concept that introduces a novel and distinctive approach to early-stage
+                design.<br><br>
+                Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and
+                connections.
                 <div class="loadingText">Loading<span>...</span></div>
             </section>
         </div>
@@ -222,25 +246,38 @@
     <!-- Offscreen hidden metadata and about content (SEO friendly) -->
     <section id="about-hywe" class="offscreen-hidden">
         <h1>HYWE – Hygrid Woven Ensemble</h1>
-        
+
         <h2>About HYWE</h2>
         <p><em>HYWE - <strong>Hygrid Woven Ensemble</strong></em></p>
-        <p><strong>HYWE</strong> is a zero-dependency, browser-native computational design sandbox where structured intent resolves into spatial configurations through deterministic topological logic. HYWE and the HYWE Architectural Training Data repository form an active, deterministic data collection ecosystem.</p>
-        <p>For more detailed information regarding the core engine, design computation logic, and layout features, refer directly to the <a href="https://github.com/vykrum/Hywe" target="_blank">HYWE GitHub Repository README</a>.</p>
-        
+        <p><strong>HYWE</strong> is a zero-dependency, browser-native computational design sandbox where structured
+            intent resolves into spatial configurations through deterministic topological logic. HYWE and the HYWE
+            Architectural Training Data repository form an active, deterministic data collection ecosystem.</p>
+        <p>For more detailed information regarding the core engine, design computation logic, and layout features, refer
+            directly to the <a href="https://github.com/vykrum/Hywe" target="_blank">HYWE GitHub Repository README</a>.
+        </p>
+
         <h3>Ecosystem Components & Sync</h3>
-        <p>The HYWE ecosystem operates as a closed-loop data curation and design pipeline across three distinct components:</p>
+        <p>The HYWE ecosystem operates as a closed-loop data curation and design pipeline across three distinct
+            components:</p>
         <ul>
             <li>
-                <strong>HYWE Engine (Core &amp; Client Sandbox):</strong> The F#-driven client interface compiling to WebAssembly via Bolero. Resolves discrete spatial topologies and generates real-time SVG 2D plans and WebGPU 3D volumes.
+                <strong>HYWE Engine (Core &amp; Client Sandbox):</strong> The F#-driven client interface compiling to
+                WebAssembly via Bolero. Resolves discrete spatial topologies and generates real-time SVG 2D plans and
+                WebGPU 3D volumes.
                 Learn more in the <a href="https://github.com/vykrum/Hywe" target="_blank">HYWE GitHub Repository</a>.
             </li>
             <li>
-                <strong>Hynteract (Ecosystem Data Layer):</strong> The private serverless JavaScript/Node.js API ingestion layer deployed via Vercel. It secures client sessions, maps linguistic architectural prompts, captures Base34 spatial tokens, and formats structured JSON Lines (.jsonl) payloads.
+                <strong>Hynteract (Ecosystem Data Layer):</strong> The private serverless JavaScript/Node.js API
+                ingestion layer deployed via Vercel. It secures client sessions, maps linguistic architectural prompts,
+                captures Base34 spatial tokens, and formats structured JSON Lines (.jsonl) payloads.
             </li>
             <li>
-                <strong>HYWE Architectural Training Data (ML Dataset):</strong> The public repository hosting structured synthetic architectural layouts currently in its active data collection phase. This token-efficient dataset will provide the foundation for training custom, layout-aware AI models.
-                Access the database, schema definition, and licensing on the <a href="https://huggingface.co/datasets/vykrum/hywe-training-data" target="_blank">Hugging Face Datacard</a>.
+                <strong>HYWE Architectural Training Data (ML Dataset):</strong> The public repository hosting structured
+                synthetic architectural layouts currently in its active data collection phase. This token-efficient
+                dataset will provide the foundation for training custom, layout-aware AI models.
+                Access the database, schema definition, and licensing on the <a
+                    href="https://huggingface.co/datasets/vykrum/hywe-training-data" target="_blank">Hugging Face
+                    Datacard</a>.
             </li>
         </ul>
 
@@ -310,22 +347,29 @@
         <h3>The 6 Core Topological Concepts</h3>
         <ul>
             <li>
-                <strong>1. Deterministic Topology:</strong> Adjacency resolves strictly through procedural topological rules rather than probabilistic drafting, ensuring math-precise layout repeatability.
+                <strong>1. Deterministic Topology:</strong> Adjacency resolves strictly through procedural topological
+                rules rather than probabilistic drafting, ensuring math-precise layout repeatability.
             </li>
             <li>
-                <strong>2. Architectural Programming:</strong> Abstract building programs (hierarchical trees, circulation weight, boundary limits) compile directly into resolved geometries.
+                <strong>2. Architectural Programming:</strong> Abstract building programs (hierarchical trees,
+                circulation weight, boundary limits) compile directly into resolved geometries.
             </li>
             <li>
-                <strong>3. Spatial Hierarchy:</strong> Recursive, self-similar space partitioning distributes nested child spaces (L1, L2, etc.) dynamically within parent Coxel hosts.
+                <strong>3. Spatial Hierarchy:</strong> Recursive, self-similar space partitioning distributes nested
+                child spaces (L1, L2, etc.) dynamically within parent Coxel hosts.
             </li>
             <li>
-                <strong>4. Base34 Topology Encoding (HYWE Syntax):</strong> High-efficiency serialization format that compresses layout relationships into standard text tokens, allowing stateless sharing via URL fragment hashes.
+                <strong>4. Base34 Topology Encoding (HYWE Syntax):</strong> High-efficiency serialization format that
+                compresses layout relationships into standard text tokens, allowing stateless sharing via URL fragment
+                hashes.
             </li>
             <li>
-                <strong>5. Integer-Based Partitioning:</strong> Custom arithmetic and discrete orthogonal-hexagonal lattices replace floating-point coordinates, preventing browser-specific rounding bugs.
+                <strong>5. Integer-Based Partitioning:</strong> Custom arithmetic and discrete orthogonal-hexagonal
+                lattices replace floating-point coordinates, preventing browser-specific rounding bugs.
             </li>
             <li>
-                <strong>6. Semantic Architectural Intent:</strong> Declarative natural language design prompts are mapped directly to discrete spatial coordinates via the Hynteract pipeline, building rich dataset cards.
+                <strong>6. Semantic Architectural Intent:</strong> Declarative natural language design prompts are
+                mapped directly to discrete spatial coordinates via the Hynteract pipeline, building rich dataset cards.
             </li>
         </ul>
 
@@ -338,10 +382,15 @@
 
         <h3>Repository &amp; Ecosystem Links</h3>
         <ul>
-            <li><strong>HYWE GitHub Repository:</strong> <a href="https://github.com/vykrum/Hywe" target="_blank">github.com/vykrum/Hywe</a></li>
-            <li><strong>Hugging Face Dataset Card:</strong> <a href="https://huggingface.co/datasets/vykrum/hywe-training-data" target="_blank">huggingface.co/datasets/vykrum/hywe-training-data</a></li>
-            <li><strong>Author:</strong> <a href="https://github.com/vykrum" target="_blank">Vikram Subbaiah (vykrum)</a></li>
-            <li><strong>LinkedIn Page:</strong> <a href="https://www.linkedin.com/company/hywein/" target="_blank">linkedin.com/company/hywein</a></li>
+            <li><strong>HYWE GitHub Repository:</strong> <a href="https://github.com/vykrum/Hywe"
+                    target="_blank">github.com/vykrum/Hywe</a></li>
+            <li><strong>Hugging Face Dataset Card:</strong> <a
+                    href="https://huggingface.co/datasets/vykrum/hywe-training-data"
+                    target="_blank">huggingface.co/datasets/vykrum/hywe-training-data</a></li>
+            <li><strong>Author:</strong> <a href="https://github.com/vykrum" target="_blank">Vikram Subbaiah
+                    (vykrum)</a></li>
+            <li><strong>LinkedIn Page:</strong> <a href="https://www.linkedin.com/company/hywein/"
+                    target="_blank">linkedin.com/company/hywein</a></li>
             <li><strong>X (Twitter) Profile:</strong> <a href="https://x.com/_hywe_" target="_blank">@_hywe_</a></li>
         </ul>
     </section>
@@ -356,11 +405,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="scripts/index.js" defer></script>
     <script src="scripts/webgpu.js" defer></script>
-    
+
     <!-- Map Dependencies -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script src="scripts/hymap.js" defer></script>
 </body>
+
 </html>

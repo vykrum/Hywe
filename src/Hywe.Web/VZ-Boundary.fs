@@ -19,18 +19,17 @@ module View =
 
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
-        let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
-                
-        let renderNumericInput labelText value msg isHeight =
+        let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
                 label { text labelText }
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
-                    attr.value (string (System.Math.Round(value / factor)))
+                    attr.value (string (System.Math.Round(value)))
                     attr.disabled (not model.UseBoundary || model.UseMapBase)
                     on.change (fun ev ->
+                        let factor = 10.0 // Inputs are disabled in Map Mode, so edits are only manual (factor 10.0)
                         match System.Double.TryParse (string ev.Value) with
                         | (true, v) -> dispatch (msg (v * factor))
                         | _ -> ()
@@ -137,10 +136,12 @@ module View =
 
             // Col 2: Dimensions
             div {
-                attr.``class`` "dimension-fields"
-                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                renderNumericInput "Width:" model.LogicalWidth UpdateLogicalWidth false
-                renderNumericInput "Height:" model.LogicalHeight UpdateLogicalHeight true
+            attr.``class`` "control-panel"
+            div {
+                attr.style "display: flex; gap: 15px; margin-bottom: 10px;"
+                renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
+                renderNumericInput "Length:" model.DisplayHeight UpdateLogicalHeight true
+            }
             }
 
             // Col 3: Tight Instructions
@@ -158,8 +159,6 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch =
-                let factor = match model.UseMapBase with | true -> 1.0 | false -> 10.0
-                        
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
                                     | _ -> 1.0            
@@ -218,7 +217,7 @@ module View =
                     .Elt()
 
                 // Islands
-                for i = 0 to model.Islands.Length - 1 do
+                for i = 0 to model.DisplayIslands.Length - 1 do
                     bdrPgn()
                         .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
                         .pt(model.IslandPointsStrs.[i])
@@ -227,71 +226,66 @@ module View =
 
                 // Outer vertices
                 for i = 0 to model.Outer.Length - 1 do
-                    let pt = model.Outer.[i]
-                    let id = sprintf "outerVertex-%d" i
-                    let cartX = int (System.Math.Round( pt.X / factor))
-                    let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
+                    let rawPt = model.Outer.[i]
+                    let dispPt = model.DisplayOuter.[i]
+                    let cartX = int (System.Math.Round(dispPt.X))
+                    let cartY = int (System.Math.Round(dispPt.Y))
                     bdrCrl()
                         .cs("outerVertex")
-                        .cx(sprintf "%.1f" pt.X)
-                        .cy(sprintf "%.1f" pt.Y)
+                        .cx(sprintf "%.1f" rawPt.X)
+                        .cy(sprintf "%.1f" rawPt.Y)
                         .cr(string boundRadius)
                         .cl("#333")
                         .Elt()
 
                     bdcrPh()
-                        .pathid(id)
-                        .sx($"{pt.X}")
-                        .sy($"{pt.Y + float bndTxtRr}")
+                        .pathid(sprintf "outerVertex-%d" i)
+                        .sx($"{rawPt.X}")
+                        .sy($"{rawPt.Y + float bndTxtRr}")
                         .r($"{bndTxtRr}")
-                        .ex($"{pt.X}")
-                        .ey($"{pt.Y - float bndTxtRr}")
+                        .ex($"{rawPt.X}")
+                        .ey($"{rawPt.Y - float bndTxtRr}")
                         .Elt()
 
                     bdcrTx()
-                        .pth(id)
+                        .pth(sprintf "outerVertex-%d" i)
                         .tc("outerVertexLabel")
                         .tf(boundLabel)
                         .nm(sprintf "(%d, %d)" cartX cartY)
                         .Elt()
 
                 // Island vertices
-                for islandIdx in 0 .. model.Islands.Length - 1 do
-                    let island = model.Islands.[islandIdx]
-                    for vertexIdx in 0 .. island.Length - 1 do
-                        let pt = island.[vertexIdx]
-                        let id = sprintf "islandVertex-%d-%d" islandIdx vertexIdx
-                        let cartX = int (System.Math.Round( pt.X / factor))
-                        let cartY = int (System.Math.Round((model.LogicalHeight - pt.Y) / factor))
-
-                        bdrCrl()
-                            .cs("islandVertex")
-                            .cx(sprintf "%.1f" pt.X)
-                            .cy(sprintf "%.1f" pt.Y)
+                for i = 0 to model.Islands.Length - 1 do
+                    for j = 0 to model.Islands.[i].Length - 1 do
+                        let rawPt = model.Islands.[i].[j]
+                        let dispPt = model.DisplayIslands.[i].[j]
+                        let cartX = int (System.Math.Round(dispPt.X))
+                        let cartY = int (System.Math.Round(dispPt.Y))
+                        
+                        bdrCrl()    .cs("islandVertex")
+                            .cx(sprintf "%.1f" rawPt.X)
+                            .cy(sprintf "%.1f" rawPt.Y)
                             .cr(string boundRadius)
                             .cl("#333")
                             .Elt()
 
                         bdcrPh()
-                            .pathid(id)
-                            .sx($"{pt.X}")
-                            .sy($"{pt.Y + float bndTxtRr}")
+                            .pathid(sprintf "islandVertex-%d-%d" i j)
+                            .sx($"{rawPt.X}")
+                            .sy($"{rawPt.Y + float bndTxtRr}")
                             .r($"{bndTxtRr}")
-                            .ex($"{pt.X}")
-                            .ey($"{pt.Y - float bndTxtRr}")
+                            .ex($"{rawPt.X}")
+                            .ey($"{rawPt.Y - float bndTxtRr}")
                             .Elt()
 
                         bdcrTx()
-                            .pth(id) 
+                            .pth(sprintf "islandVertex-%d-%d" i j) 
                             .tc("islandVertexLabel")
                             .tf(boundLabel)
                             .nm(sprintf "(%d, %d)" cartX cartY)
                             .Elt()
 
                 // --- Entry point ---
-                // Scaled down version of the entry icon.
-                // Using SVG transform (translate + scale) allows us to move the icon
-                // without recalculating its internal coordinates or constructing strings every frame.
                 let scale = boundScale * 0.3
                 elt "g" {
                     attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y scale)
@@ -353,19 +347,17 @@ module View =
             div {
                 attr.style "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; min-height: 400px; border: 1px solid #e0e0e0; background: #f0f0f0;"
                 
-                // Hymap Layer (Native)
+                // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
                 div {
-                    attr.id "hymap-container"
                     attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" 
                         (if model.UseMapBase then 
                             (if model.IsMapLocked then "pointer-events: none;" else "pointer-events: auto;")
                          else "visibility: hidden;"))
-                    
-                    // Internal map styling provided by Bolero (replacing style.css)
+                         
+                    // Hymap Layer (Native) - Absolutely no children or dynamic attributes to ensure Leaflet DOM is fully preserved
                     div {
-                        attr.id "hymap-distance-label"
-                        attr.style "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 13px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;"
-                        text "Map Width: -- meters"
+                        attr.id "hymap-container"
+                        attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"
                     }
                 }
 

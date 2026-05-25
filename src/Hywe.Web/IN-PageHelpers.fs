@@ -64,6 +64,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
+                    model.PolygonExport.BaseStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
@@ -85,6 +86,7 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
                 model.PolygonExport.Width
                 model.PolygonExport.Height
                 model.PolygonExport.AbsStr
+                model.PolygonExport.BaseStr
                 model.PolygonExport.OuterStr
                 model.PolygonExport.IslandsStr
 
@@ -305,6 +307,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
+                    model.PolygonExport.BaseStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> model.SrcOfTrth
