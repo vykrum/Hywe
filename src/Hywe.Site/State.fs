@@ -15,7 +15,7 @@ module State =
     let initEntry = { X = 150.0; Y = 50.0 }
     let initRadius = 6
     let minBound = 100.0
-    let maxBound = 4000.0
+    let maxBound = 1000.0
     let initOuter = [| { X = 0.0; Y = 0.0 }
                        { X = initWidth; Y = 0.0 }
                        { X = initWidth; Y = initHeight }
@@ -147,7 +147,7 @@ module State =
             |> String.concat "-"
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
-        let absolute = match model.UseAbsolute with | true -> "1" | false -> "0"
+        let absolute = if model.UseAbsolute then "1" elif model.UseMapBase then "2" else "0"
         let w = int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0))
         let h = int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
@@ -185,8 +185,9 @@ module State =
                         LogicalWidth = width
                         LogicalHeight = height
                         UseAbsolute = (absStr = "1")
-                        UseBoundary = not (absStr = "1")
-                        PolygonEnabled = not (absStr = "1")
+                        UseBoundary = (absStr <> "1")
+                        UseMapBase = (absStr = "2")
+                        PolygonEnabled = (absStr <> "1")
                         Dragging = None
                         DragOffset = None
                         SvgInfo = None }
@@ -325,20 +326,13 @@ module State =
                                             }
 
         | UpdateLogicalWidth newW -> async {
-            let currentH = model.LogicalHeight / 10.0
-            let rec findScaleFactor w h factor =
-                if w <= 100.0 && h <= 100.0 then factor
-                else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
-            let sf = findScaleFactor newW currentH 1.0
-            
-            let scaledW = System.Math.Floor((newW / sf) + 0.001)
-            let scaledH = System.Math.Floor((currentH / sf) + 0.001)
-
-            let safeW = match scaledW <= 0.0 with | true -> initWidth | false -> max minBound ((max 10.0 scaledW) * 10.0)
-            let safeH = max minBound ((max 10.0 scaledH) * 10.0)
-
             let oldW = model.LogicalWidth
             let oldH = model.LogicalHeight
+
+            let safeW = match newW <= 0.0 with | true -> initWidth | false -> min maxBound (max minBound newW)
+            
+            let safeH = oldH
+
             let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
             let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
 
@@ -351,20 +345,13 @@ module State =
             }
 
         | UpdateLogicalHeight newH -> async {
-            let currentW = model.LogicalWidth / 10.0
-            let rec findScaleFactor w h factor =
-                if w <= 100.0 && h <= 100.0 then factor
-                else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
-            let sf = findScaleFactor currentW newH 1.0
-            
-            let scaledW = System.Math.Floor((currentW / sf) + 0.001)
-            let scaledH = System.Math.Floor((newH / sf) + 0.001)
-
-            let safeW = max minBound ((max 10.0 scaledW) * 10.0)
-            let safeH = match scaledH <= 0.0 with | true -> initHeight | false -> max minBound ((max 10.0 scaledH) * 10.0)
-
             let oldW = model.LogicalWidth
             let oldH = model.LogicalHeight
+
+            let safeH = match newH <= 0.0 with | true -> initHeight | false -> min maxBound (max minBound newH)
+
+            let safeW = oldW
+
             let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
             let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
 

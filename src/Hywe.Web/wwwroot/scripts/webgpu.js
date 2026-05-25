@@ -110,6 +110,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
 
     canvas.width = canvas.clientWidth || 600;
     canvas.height = canvas.clientHeight || 400;
+    canvas.style.touchAction = 'none';
 
     context.configure({
         device,
@@ -351,30 +352,76 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
     canvas._cam_zoom = _gpuCache.lastCamera.zoom;
 
     let dragging = false, lx = 0, ly = 0;
+    let activePointers = [];
+    let lastPinchDist = 0;
+    
     if (!canvas._listenersAdded) {
         canvas.addEventListener("pointerdown", e => {
             if (canvas._viewLocked) return;
-            dragging = true;
-            lx = e.clientX;
-            ly = e.clientY;
+            activePointers.push(e);
+            
+            if (activePointers.length === 1) {
+                dragging = true;
+                lx = e.clientX;
+                ly = e.clientY;
+            } else if (activePointers.length === 2) {
+                dragging = false;
+                lastPinchDist = Math.hypot(
+                    activePointers[0].clientX - activePointers[1].clientX,
+                    activePointers[0].clientY - activePointers[1].clientY
+                );
+            }
             canvas.setPointerCapture(e.pointerId);
         });
+        
         canvas.addEventListener("pointerup", e => {
-            dragging = false;
+            activePointers = activePointers.filter(p => p.pointerId !== e.pointerId);
+            if (activePointers.length === 1) {
+                dragging = true;
+                lx = activePointers[0].clientX;
+                ly = activePointers[0].clientY;
+            } else if (activePointers.length === 0) {
+                dragging = false;
+            }
             canvas.releasePointerCapture(e.pointerId);
         });
+        
         canvas.addEventListener("pointercancel", e => {
-            dragging = false;
+            activePointers = activePointers.filter(p => p.pointerId !== e.pointerId);
+            if (activePointers.length === 1) {
+                dragging = true;
+                lx = activePointers[0].clientX;
+                ly = activePointers[0].clientY;
+            } else if (activePointers.length === 0) {
+                dragging = false;
+            }
             canvas.releasePointerCapture(e.pointerId);
         });
+        
         canvas.addEventListener("pointermove", e => {
-            if (!dragging || canvas._viewLocked) return;
-            canvas._cam_ry -= (e.clientX - lx) * 0.01;
-            canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + (e.clientY - ly) * 0.01, 0.01), Math.PI/2 - 0.01);
-            lx = e.clientX; ly = e.clientY;
-            _gpuCache.lastCamera.ry = canvas._cam_ry;
-            _gpuCache.lastCamera.rx = canvas._cam_rx;
+            if (canvas._viewLocked) return;
+            const index = activePointers.findIndex(p => p.pointerId === e.pointerId);
+            if (index !== -1) activePointers[index] = e;
+
+            if (activePointers.length === 2) {
+                const dist = Math.hypot(
+                    activePointers[0].clientX - activePointers[1].clientX,
+                    activePointers[0].clientY - activePointers[1].clientY
+                );
+                const delta = lastPinchDist - dist;
+                canvas._cam_zoom = Math.min(Math.max(canvas._cam_zoom + delta * 0.01, 1.5), 10);
+                _gpuCache.lastCamera.zoom = canvas._cam_zoom;
+                lastPinchDist = dist;
+            } else if (activePointers.length === 1 && dragging) {
+                canvas._cam_ry -= (e.clientX - lx) * 0.01;
+                canvas._cam_rx = Math.min(Math.max(canvas._cam_rx + (e.clientY - ly) * 0.01, 0.01), Math.PI/2 - 0.01);
+                lx = e.clientX; 
+                ly = e.clientY;
+                _gpuCache.lastCamera.ry = canvas._cam_ry;
+                _gpuCache.lastCamera.rx = canvas._cam_rx;
+            }
         });
+        
         canvas.addEventListener("wheel", e => { 
             if (!canvas._viewLocked) { 
                 e.preventDefault(); 
@@ -382,6 +429,7 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
                 _gpuCache.lastCamera.zoom = canvas._cam_zoom;
             } 
         }, { passive: false });
+        
         canvas._listenersAdded = true;
     }
 
@@ -427,7 +475,15 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
             });
         }
 
-        const proj = externalProj ? new Float32Array(externalProj) : new Float32Array([1.8, 0, 0, 0, 0, 2.4, 0, 0, 0, 0, -1, -1, 0, 0, -0.2, 0]);
+        const aspect = w / h;
+        const proj = new Float32Array(16);
+        const f = 1.0 / Math.tan(Math.PI / 8.0);
+        proj[0] = f / aspect;
+        proj[5] = f;
+        proj[10] = (100.0 + 0.1) / (0.1 - 100.0);
+        proj[11] = -1.0;
+        proj[14] = (2.0 * 100.0 * 0.1) / (0.1 - 100.0);
+        proj[15] = 0;
         const camX = canvas._cam_zoom * Math.cos(canvas._cam_ry) * Math.cos(canvas._cam_rx);
         const camY = canvas._cam_zoom * Math.sin(canvas._cam_ry) * Math.cos(canvas._cam_rx);
         const camZ = canvas._cam_zoom * Math.sin(canvas._cam_rx);

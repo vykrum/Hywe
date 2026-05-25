@@ -570,7 +570,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }                
 
                 div {
-                    attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
+                    attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; max-height: 70vh; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
                     
                     // Floating Lock button
                     button {
