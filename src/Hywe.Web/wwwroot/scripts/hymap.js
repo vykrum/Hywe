@@ -45,7 +45,7 @@ window.Hymap = {
             // Add search control
             L.Control.geocoder({
                 defaultMarkGeocode: false,
-                position: 'bottomleft'
+                position: 'topleft'
             }).on('markgeocode', (e) => {
                 const bbox = e.geocode.bbox;
                 const poly = L.polygon([

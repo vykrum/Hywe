@@ -39,6 +39,7 @@ type PolygonEditorModel =
         DisplayHeight: float
         DisplayOuter: Point[]
         DisplayIslands: Point[][]
+        MapScale: float
     }
 
 type EditorState =

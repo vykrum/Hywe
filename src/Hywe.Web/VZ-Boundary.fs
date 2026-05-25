@@ -39,109 +39,97 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "display: flex; flex-flow: row wrap; align-items: flex-start; justify-content: center; gap: 8px; width: 100%; padding: 4px;"
+            attr.style "display: grid; grid-template-columns: auto auto auto; gap: 16px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
 
-            // Col 1: Small Toggles
+            // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                
+                attr.style "display: flex; flex-direction: column; gap: 8px;"
+
+                // Boundary
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` model.UseBoundary
-                            on.change (fun _ -> dispatch (ToggleBoundary (not model.UseBoundary)))
+                    attr.``class`` "seg-row"
+                    span { attr.``class`` "seg-row-label"; text "Boundary" }
+                    div {
+                        attr.``class`` "seg-btn-group"
+                        button {
+                            attr.``class`` (if not model.UseBoundary then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
+                            text "Free"
                         }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text "Boundary"
+                        button {
+                            attr.``class`` (if model.UseBoundary then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
+                            text "Site"
+                        }
                     }
                 }
 
+                // Count
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` (not model.UseAbsolute)
-                            on.change (fun _ -> dispatch (ToggleAbsolute (not model.UseAbsolute)))
+                    attr.``class`` ("seg-row" + (if model.UseBoundary then "" else " disabled"))
+                    span { attr.``class`` "seg-row-label"; text "Count" }
+                    div {
+                        attr.``class`` "seg-btn-group"
+                        button {
+                            attr.``class`` (if not model.UseAbsolute then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if model.UseAbsolute then dispatch (ToggleAbsolute false))
+                            text "Relative"
                         }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text "Relative"
+                        button {
+                            attr.``class`` (if model.UseAbsolute then "seg-btn active" else "seg-btn")
+                            on.click (fun _ -> if not model.UseAbsolute then dispatch (ToggleAbsolute true))
+                            text "Absolute"
+                        }
                     }
                 }
-            }
 
-            // Col 1.5: Map Toggles
-            div {
-                attr.``class`` "toggle-column"
-                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                
+                // Base
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` model.UseMapBase
-                            on.change (fun _ -> 
-                                let newState = not model.UseMapBase
-                                dispatch (ToggleMapBase newState)
-                                if newState then
+                    attr.``class`` ("seg-row" + (if model.UseBoundary then "" else " disabled"))
+                    span { attr.``class`` "seg-row-label"; text "Base" }
+                    div {
+                        attr.``class`` "seg-btn-group"
+                        button {
+                            attr.``class`` (if not model.UseMapBase then "seg-btn active" else "seg-btn")
+                            on.click (fun _ ->
+                                if model.UseMapBase then dispatch (ToggleMapBase false)
+                            )
+                            text "None"
+                        }
+                        button {
+                            attr.``class`` (if model.UseMapBase then "seg-btn active" else "seg-btn")
+                            on.click (fun _ ->
+                                if not model.UseMapBase then
+                                    dispatch (ToggleMapBase true)
                                     js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
                             )
+                            text "Map"
                         }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text "Map Base"
                     }
                 }
+            }
 
+            // Col 2: Dimensions & Scale (stacked vertically)
+            div {
+                attr.``class`` "control-panel"
+                attr.style "display: flex; flex-direction: column; gap: 8px;"
+
+                // Width
                 div {
-                    attr.``class`` "hywe-switch-container"
-                    attr.style (match model.UseMapBase with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                    label {
-                        attr.``class`` "hywe-switch"
-                        input {
-                            attr.``type`` "checkbox"
-                            attr.``checked`` model.IsMapLocked
-                            on.change (fun _ -> 
-                                let newState = not model.IsMapLocked
-                                dispatch (ToggleMapLock newState)
-                                if newState then
-                                    js.InvokeVoidAsync("Hymap.lockMap").AsTask() |> ignore
-                                else
-                                    js.InvokeVoidAsync("Hymap.unlockMap").AsTask() |> ignore
-                            )
-                        }
-                        span { attr.``class`` "hywe-switch-slider" }
-                    }
-                    span {
-                        attr.``class`` "hywe-switch-label"
-                        text "Lock Map"
-                    }
+                    renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
                 }
-            }
-
-            // Col 2: Dimensions
-            div {
-            attr.``class`` "control-panel"
-            div {
-                attr.style "display: flex; gap: 15px; margin-bottom: 10px;"
-                renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
-                renderNumericInput "Length:" model.DisplayHeight UpdateLogicalHeight true
-            }
+                // Height
+                div {
+                    renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+                }
+                // Scale
+                                // Scale
+                div {
+                    attr.style "display: flex; align-items: center; justify-content: space-between; height: 20px; font-size: 0.68rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif;"
+                    span { text "Scale:" }
+                    span { text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) }
+                }
             }
 
             // Col 3: Tight Instructions
@@ -370,6 +358,27 @@ module View =
                                         attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
                                         polygonEditorSvg model dispatch}
                 }
+
+                // Lock Icon Overlay (Top Right)
+                if model.UseMapBase then
+                    div {
+                        attr.style "position: absolute; top: 10px; right: 10px; z-index: 2000; cursor: pointer; background: white; width: 34px; height: 34px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: background 0.2s;"
+                        on.click (fun _ ->
+                            let newState = not model.IsMapLocked
+                            dispatch (ToggleMapLock newState)
+                            if newState then
+                                js.InvokeVoidAsync("Hymap.lockMap").AsTask() |> ignore
+                            else
+                                js.InvokeVoidAsync("Hymap.unlockMap").AsTask() |> ignore
+                        )
+                        
+                        if model.IsMapLocked then
+                            // Locked Icon
+                            rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
+                        else
+                            // Unlocked Icon
+                            rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+                    }
             }
 
             // Bottom Action Bar
