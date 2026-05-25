@@ -59,18 +59,20 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
                 UseBoundary = (attrs.Scale <> 1.0)
             }
 
+        let factor = getFactor finalState.LogicalWidth false
+
         // Handle Entry point
-        match parsePoint attrs.Entry with
+        match parsePoint factor attrs.Entry with
         | Ok pt -> finalState <- { finalState with EntryPoint = pt }
         | _ -> ()
 
         // Handle Outer boundary
-        match parsePoly attrs.OuterBoundary with
+        match parsePoly factor attrs.OuterBoundary with
         | Ok pts -> finalState <- { finalState with Outer = pts }
         | _ -> ()
 
         // Handle Islands
-        match parseIslands attrs.Islands with
+        match parseIslands factor attrs.Islands with
         | Ok pts -> finalState <- { finalState with Islands = pts }
         | _ -> ()
     | None -> ()
