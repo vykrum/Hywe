@@ -32,6 +32,7 @@ let initialOutput = Serialization.getOutput
                         initialPolygonExport.Width
                         initialPolygonExport.Height
                         initialPolygonExport.AbsStr
+                        initialPolygonExport.BaseStr
                         initialPolygonExport.OuterStr
                         initialPolygonExport.IslandsStr
 
@@ -184,6 +185,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
+                    model.PolygonExport.BaseStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
             | Syntax -> 
@@ -254,6 +256,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     model.PolygonExport.Width
                     model.PolygonExport.Height
                     model.PolygonExport.AbsStr
+                    model.PolygonExport.BaseStr
                     model.PolygonExport.OuterStr
                     model.PolygonExport.IslandsStr
 
@@ -360,6 +363,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                  model.PolygonExport.Width
                                  model.PolygonExport.Height
                                  model.PolygonExport.AbsStr
+                                 model.PolygonExport.BaseStr
                                  model.PolygonExport.OuterStr
                                  model.PolygonExport.IslandsStr
 
@@ -415,6 +419,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                              newExport.Width
                              newExport.Height
                              newExport.AbsStr
+                             newExport.BaseStr
                              newExport.OuterStr
                              newExport.IslandsStr
         Protocol.sync js newOutput model.ActivePanel

@@ -103,7 +103,7 @@ module Serialization =
         let terminal = lastBase + model.TopExtrusion
         (bases @ [terminal]) |> List.toArray
 
-    let getOutput (model: SubModel) (qMap: Map<int, string>) w h x o i =
+    let getOutput (model: SubModel) (qMap: Map<int, string>) w h x b o i =
         let rec getNodesWithPrefix prefix node =
             seq {
                 yield (node, prefix)
@@ -146,7 +146,7 @@ module Serialization =
                         | false -> ""
                     
                     let qVal = qMap |> Map.tryFind lvl |> Option.defaultValue "VRCCNE"
-                    let bVal = match lvl = 0 with | true -> "0" | false -> eVal
+                    let bVal = match lvl = 0 with | true -> (if String.IsNullOrWhiteSpace b then "0" else b) | false -> eVal
                     let attrs = $"Q={qVal}/L={lStr}/W={w}/H={h}/X={x}/E={eVal}/B={bVal}/O={o}/I={i}{tAttr}"
 
                     let body = 
