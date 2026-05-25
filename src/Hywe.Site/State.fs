@@ -345,23 +345,33 @@ module State =
             }
 
         | UpdateLogicalDimensions (newW, newH) -> async {
-            // In Map Mode, we trust the scaled values from JS, multiplied by the standard 10.0 ratio
-            let hyweInternalScale = 10.0
-            let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW * hyweInternalScale
-            let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH * hyweInternalScale
-            
-            let oldW = model.LogicalWidth
-            let oldH = model.LogicalHeight
-            let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
-            let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
+            // If we are in Map Base mode, the geographic dimensions are managed by the map bounds.
+            // We should ONLY update the LogicalWidth/Height to match the map viewport, 
+            // but NEVER scale the polygon's SVG coordinates. If the map is locked, we don't 
+            // even update the LogicalWidth/Height because the bounds are locked geographically.
+            if model.UseMapBase && model.IsMapLocked then
+                return model
+            else
+                let hyweInternalScale = 10.0
+                let safeW = match newW <= 0.0 with | true -> 1.0 | false -> newW * hyweInternalScale
+                let safeH = match newH <= 0.0 with | true -> 1.0 | false -> newH * hyweInternalScale
+                
+                if model.UseMapBase then
+                    let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH }
+                    return updated |> refreshCachedStrings
+                else
+                    let oldW = model.LogicalWidth
+                    let oldH = model.LogicalHeight
+                    let scaleX = match oldW <= 0.0 with | true -> 1.0 | false -> safeW / oldW
+                    let scaleY = match oldH <= 0.0 with | true -> 1.0 | false -> safeH / oldH
 
-            let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
-            let newIslands =
-                model.Islands
-                |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+                    let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+                    let newIslands =
+                        model.Islands
+                        |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
 
-            let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
-            return updated |> refreshCachedStrings
+                    let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands }
+                    return updated |> refreshCachedStrings
             }
 
         | PointerDown ev ->

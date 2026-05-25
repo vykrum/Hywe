@@ -57,14 +57,24 @@ window.Hymap = {
                 this.map.fitBounds(poly.getBounds());
             }).addTo(this.map);
             
-            // Prevent zooming in too much (ensure map width >= 30m)
-            this.map.on('zoomend', () => {
-                const bounds = this.map.getBounds();
-                const calcWidth = this.getCalculatedWidth(bounds);
-                if (calcWidth < 30) {
-                    this.map.zoomOut();
+            // Prevent zooming in too much by dynamically setting maxZoom so that map width remains >= 25m
+            const updateMaxZoom = () => {
+                const centerLat = this.map.getCenter().lat;
+                const containerWidth = this.map.getSize().x;
+                const svg = document.getElementById('polygon-editor-svg');
+                let ratio = 0;
+                if (svg && svg.hasAttribute('data-padding-ratio')) {
+                    ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
                 }
-            });
+                const activeWidthPx = containerWidth * (1 - ratio);
+                if (activeWidthPx > 0) {
+                    const maxZ = Math.log2((activeWidthPx * 156543.03 * Math.cos(centerLat * Math.PI / 180)) / 25.0);
+                    this.map.setMaxZoom(maxZ);
+                }
+            };
+            this.map.on('resize', updateMaxZoom);
+            this.map.on('move', updateMaxZoom);
+            updateMaxZoom();
             
             // Update distance label
             this.map.on('move', () => this.updateDistanceLabel());
