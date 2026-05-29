@@ -152,6 +152,44 @@ let sharedStyles = """
 /* =====================
    UNIFIED COMPONENT SYSTEM
    ===================== */
+.hywe-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+    white-space: nowrap;
+    text-align: left;
+    min-width: 45px;
+}
+
+.hywe-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    height: 20px;
+}
+
+.hywe-btn-group {
+    display: flex;
+    width: 140px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1.5px solid #333;
+}
+
+.hywe-btn-group .hywe-btn {
+    border-radius: 0;
+    border: none;
+    margin: 0;
+    flex: 1;
+}
+
+.hywe-btn-group .hywe-btn + .hywe-btn {
+    border-left: 1.5px solid #333;
+}
+
 .hywe-card {
     background: #fff;
     border: 1px solid #eee;
@@ -1353,13 +1391,6 @@ let teachStyles = """
     width: 100%;
 }
 
-.teach-field-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    color: #999;
-}
 
 .teach-option-group {
     display: flex;
@@ -1671,14 +1702,6 @@ let polygonEditorStyles = """
     /* Stronger than padding for shifting the block */
 }
 
-.toggle-group {
-    display: inline-flex;
-    gap: 8px;
-}
-
-.toggle-btn {
-    min-width: 65px;
-}
 
 /* Column 2: Dimensions */
 .dimension-fields {
@@ -1697,17 +1720,13 @@ let polygonEditorStyles = """
     gap: 6px;
 }
 
-.field-group label {
-    font-size: 0.8rem;
-    color: #5A3E2B;
-}
 
 /* Column 3: Narrow Instructions */
 .polygon-editor-instructions {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     color: #888;
-    line-height: 1.1;
-    max-width: 110px;
+    line-height: 1.2;
+    max-width: 140px;
     /* Aggressively narrow */
 }
 
@@ -2105,137 +2124,8 @@ let reportPrintStyles = """
     body  { font-family: 'Outfit', system-ui, sans-serif; }
 }
 
-
-/* Updated segmented pill button styles */
-.seg-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 20px;
-}
-
-.seg-btn-group {
-    display: flex;
-    width: 100%;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1.5px solid #333;
-}
-
-.seg-btn {
-    flex: 1;
-    padding: 2px 0;
-    font-size: 0.68rem;
-    font-weight: 600;
-    font-family: 'Segoe UI', sans-serif;
-    border: none;
-    cursor: pointer;
-    background: transparent;
-    color: #333;
-    transition: background 0.15s, color 0.15s;
-    line-height: 1.4;
-    user-select: none;
-    text-align: center;
-}
-
-.seg-btn.active {
-    background: #222;
-    color: #fff;
-}
-
-.seg-btn:not(.active):hover {
-    background: #f0f0f0;
-}
-
-.seg-row-label {
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: #666;
-    font-family: 'Segoe UI', sans-serif;
-    user-select: none;
-    min-width: 38px;
-    text-align: right;
-    margin-right: 6px;
-}
-
-.field-group {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 20px;
-}
-
-.field-group label {
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: #666;
-    font-family: 'Segoe UI', sans-serif;
-    margin-right: 4px;
-}
 """
 
-
-let toggleSwitchStyles = """
-/* =====================
-   SEGMENTED PILL BUTTONS
-   ===================== */
-.seg-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 20px;
-}
-
-.seg-row-label {
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: #666;
-    font-family: 'Segoe UI', sans-serif;
-    user-select: none;
-    min-width: 38px;
-    text-align: right;
-}
-
-.seg-btn-group {
-    display: flex;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1.5px solid #333;
-}
-
-.seg-btn {
-    padding: 1px 9px;
-    font-size: 0.68rem;
-    font-weight: 600;
-    font-family: 'Segoe UI', sans-serif;
-    border: none;
-    cursor: pointer;
-    background: transparent;
-    color: #333;
-    transition: background 0.15s, color 0.15s;
-    line-height: 1.2;
-    user-select: none;
-    white-space: nowrap;
-}
-
-.seg-btn + .seg-btn {
-    border-left: 1.5px solid #333;
-}
-
-.seg-btn.active {
-    background: #222;
-    color: #fff;
-}
-
-.seg-btn:not(.active):hover {
-    background: #f0f0f0;
-}
-
-.seg-row.disabled {
-    opacity: 0.3;
-    pointer-events: none;
-}
-"""
 
 let allCss = 
     baseStyles +
@@ -2253,8 +2143,7 @@ let allCss =
     onboardingStyles +
     batchStyles +
     reportPanelStyles +
-    reportPrintStyles +
-    toggleSwitchStyles
+    reportPrintStyles
 
 let render () = 
     style { text allCss }
