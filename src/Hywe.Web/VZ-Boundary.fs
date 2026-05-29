@@ -22,7 +22,7 @@ module View =
         let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
-                label { text labelText }
+                label { attr.``class`` "hywe-label"; text labelText }
                 input {
                     attr.``class`` "boundaryInput"
                     attr.``type`` "number"
@@ -50,17 +50,17 @@ module View =
 
                 // Boundary
                 div {
-                    attr.``class`` "seg-row"
-                    span { attr.``class`` "seg-row-label"; text "Site:" }
+                    attr.``class`` "hywe-row"
+                    span { attr.``class`` "hywe-label"; text "Site:" }
                     div {
-                        attr.``class`` "seg-btn-group"
+                        attr.``class`` "hywe-btn-group"
                         button {
-                            attr.``class`` (if not model.UseBoundary then "seg-btn active" else "seg-btn")
+                            attr.``class`` (if not model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                             on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
                             text "None"
                         }
                         button {
-                            attr.``class`` (if model.UseBoundary then "seg-btn active" else "seg-btn")
+                            attr.``class`` (if model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                             on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
                             text "Boundary"
                         }
@@ -69,17 +69,17 @@ module View =
 
                 // Count
                 div {
-                    attr.``class`` ("seg-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "seg-row-label"; text "Count" }
+                    attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
+                    span { attr.``class`` "hywe-label"; text "Count:" }
                     div {
-                        attr.``class`` "seg-btn-group"
+                        attr.``class`` "hywe-btn-group"
                         button {
-                            attr.``class`` (if not model.UseAbsolute then "seg-btn active" else "seg-btn")
+                            attr.``class`` (if not model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                             on.click (fun _ -> if model.UseAbsolute then dispatch (ToggleAbsolute false))
                             text "Relative"
                         }
                         button {
-                            attr.``class`` (if model.UseAbsolute then "seg-btn active" else "seg-btn")
+                            attr.``class`` (if model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                             on.click (fun _ -> if not model.UseAbsolute then dispatch (ToggleAbsolute true))
                             text "Absolute"
                         }
@@ -88,19 +88,19 @@ module View =
 
                 // Base
                 div {
-                    attr.``class`` ("seg-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "seg-row-label"; text "Base" }
+                    attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
+                    span { attr.``class`` "hywe-label"; text "Base:" }
                     div {
-                        attr.``class`` "seg-btn-group"
+                        attr.``class`` "hywe-btn-group"
                         button {
-                            attr.``class`` (if not model.UseMapBase then "seg-btn active" else "seg-btn")
+                            attr.``class`` (if not model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                             on.click (fun _ ->
                                 if model.UseMapBase then dispatch (ToggleMapBase false)
                             )
                             text "None"
                         }
                         button {
-                            attr.``class`` (if model.UseMapBase then "seg-btn active" else "seg-btn")
+                            attr.``class`` (if model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                             on.click (fun _ ->
                                 if not model.UseMapBase then
                                     dispatch (ToggleMapBase true)
@@ -112,7 +112,7 @@ module View =
                 }
             }
 
-            // Col 2: Dimensions & Scale (stacked vertically)
+            // Col 2: Dimensions & Scale
             div {
                 attr.``class`` "control-panel"
                 attr.style (
@@ -131,11 +131,14 @@ module View =
                     renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
                 }
                 // Scale
-                                // Scale
+                // Scale
                 div {
-                    attr.style "display: flex; align-items: center; justify-content: space-between; height: 20px; font-size: 0.68rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif;"
-                    span { text "Scale:" }
-                    span { text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) }
+                    attr.``class`` "field-group"
+                    span { attr.``class`` "hywe-label"; text "Scale:" }
+                    span { 
+                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right;"
+                        text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
+                    }
                 }
             }
 

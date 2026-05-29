@@ -322,7 +322,7 @@ let private selectField (model: Model) dispatch (label: string) (current: string
         | _ -> if isPredefined then descriptions |> Map.tryFind current else Some $"Custom {label.ToLower()} tag applied."
     div {
         attr.``class`` "teach-select-row"
-        span { attr.``class`` "teach-field-label"; text label }
+        span { attr.``class`` "hywe-label"; text label }
         div {
             attr.``class`` "teach-option-group"
             for opt in options do
@@ -371,7 +371,7 @@ let view model dispatch =
             attr.``class`` "teach-objective-section"
             div {
                 attr.``class`` "teach-select-row"
-                span { attr.``class`` "teach-field-label"; text "Author" }
+                span { attr.``class`` "hywe-label"; text "Author" }
                 input {
                     attr.``class`` "teach-custom-input"
                     attr.placeholder "Optional author name..."
@@ -381,7 +381,7 @@ let view model dispatch =
             }
             div {
                 attr.``class`` "teach-select-row"
-                span { attr.``class`` "teach-field-label"; text "Project" }
+                span { attr.``class`` "hywe-label"; text "Project" }
                 input {
                     attr.``class`` "teach-custom-input"
                     attr.placeholder "Optional project title..."
