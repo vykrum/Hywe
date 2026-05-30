@@ -47,7 +47,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 
 | Stage | Component | Logic | Output |
 | :--- | :--- | :--- | :--- |
-| **Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints. | Design Intent |
+| **Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints (with optional contextual background maps). | Design Intent |
 | **Encoding** | HYWE Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
 | **Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
 | **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
