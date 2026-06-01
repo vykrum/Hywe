@@ -117,9 +117,9 @@ module View =
                 attr.``class`` "control-panel"
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "display: flex; flex-direction: column; gap: 8px; opacity: 0.3; pointer-events: none;"
+                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 16px; opacity: 0.3; pointer-events: none;"
                     else
-                        "display: flex; flex-direction: column; gap: 8px;"
+                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 16px;"
                 )
 
                 // Width
@@ -142,14 +142,14 @@ module View =
                 }
             }
 
-            // Col 3: Tight Instructions
+            // Col 3: Editor Instructions
             div {
                 attr.``class`` "polygon-editor-instructions"
-                attr.style (match model.UseBoundary with | true -> "" | _ -> "opacity: 0.3; pointer-events: none;")
-                p { text "Clk edg: add vtx" }
-                p { text "Dbl-clk vtx: del" }
-                p { text "Dbl-clk in: island" }
-                p { text "Dbl-clk island: del" }
+                attr.style (match model.UseBoundary with | true -> "display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555;" | _ -> "display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; opacity: 0.3; pointer-events: none;")
+                p { attr.style "margin: 0;"; text "Click edge to add point" }
+                p { attr.style "margin: 0;"; text "Double-click point to delete" }
+                p { attr.style "margin: 0;"; text "Double-click inside to add island" }
+                p { attr.style "margin: 0;"; text "Double-click island to delete" }
             }
             
 
