@@ -1,8 +1,4 @@
-module Hywe.Styles
 
-open Bolero.Html
-
-let baseStyles = """
 html,
 body {
     width: 100%;
@@ -146,9 +142,8 @@ a {
     color: #333 !important;
     transform: scale(1.1);
 }
-"""
 
-let sharedStyles = """
+
 /* =====================
    UNIFIED COMPONENT SYSTEM
    ===================== */
@@ -271,9 +266,8 @@ textarea.hywe-input {
     from { opacity: 0; transform: translateX(-50%) scale(0.95) translateY(-5px); }
     to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
 }
-"""
 
-let headerStyles = """
+
 /* =====================
    SITE HEADER
    ===================== */
@@ -352,9 +346,8 @@ let headerStyles = """
     margin-bottom: 0.1em;
     line-height: 1;
 }
-"""
 
-let layoutStyles = """
+
 /* =====================
    FLEX & FADE CONTAINERS
    ===================== */
@@ -373,9 +366,8 @@ let layoutStyles = """
 .fade-container.visible {
     opacity: 1;
 }
-"""
 
-let formStyles = """
+
 /* =====================
    FORM ELEMENTS
    ===================== */
@@ -467,9 +459,8 @@ input[type=number] {
     cursor: pointer;
     transform: translateY(-14px);
 }
-"""
 
-let editorStyles = """
+
 /* =====================
    SYNTAX INPUT
    ===================== */
@@ -582,9 +573,8 @@ let editorStyles = """
     color: #000;
     font-weight: 500;
 }
-"""
 
-let animationStyles = """
+
 /* =====================
    SPINNER & VIDEO
    ===================== */
@@ -824,9 +814,8 @@ video.fullscreen-bg {
     opacity: 0.25;
     transition: opacity 0.8s ease;
 }
-"""
 
-let nodeStyles = """
+
 /* =====================
    NODE INPUTS
    ===================== */
@@ -1193,9 +1182,8 @@ let nodeStyles = """
     color: #000;
     background: rgba(0,0,0,0.05);
 }
-"""
 
-let hyweaveStyles = """
+
 /* Layout Container remains full width and centered */
 .hyweave-container {
     width: 100%;
@@ -1331,9 +1319,8 @@ let hyweaveStyles = """
     padding: 0 8px;
     min-width: 32px;
 }
-"""
 
-let teachStyles = """
+
 /* =====================
    TEACH PANEL
    ===================== */
@@ -1513,9 +1500,8 @@ let teachStyles = """
         transform: scale(1);
     }
 }
-"""
 
-let footerStyles = """
+
 /* =====================
    FOOTER LICENSE
    ===================== */
@@ -1570,9 +1556,8 @@ let footerStyles = """
 .view-lock-trigger.locked:hover {
     color: #d35400;
 }
-"""
 
-let polygonEditorStyles = """
+
 /* =========================================
    POLYGON EDITOR
    ========================================= */
@@ -1735,9 +1720,8 @@ let polygonEditorStyles = """
     white-space: nowrap;
     /* Prevents awkward wrapping */
 }
-"""
 
-let onboardingStyles = """
+
 /* =========================================
    ONBOARDING & TOOLTIPS
    ========================================= */
@@ -1899,9 +1883,8 @@ let onboardingStyles = """
     from { width: 0%; }
     to { width: 100%; }
 }
-"""
 
-let batchStyles = """
+
 /* Batch Panel Grid */
 .batch-progress-grid {
     display: grid;
@@ -1923,9 +1906,8 @@ let batchStyles = """
 .batch-box.filled {
     background-color: rgba(136, 136, 136, 0.3); /* Subtle gray fill matching app aesthetic */
 }
-"""
 
-let reportPanelStyles = """
+
 /* =====================
    REPORT PANEL
    ===================== */
@@ -2115,35 +2097,13 @@ let reportPanelStyles = """
     margin-right: 6px;
     vertical-align: middle;
 }
-"""
 
-let reportPrintStyles = """
+
 @media print {
     @page { size: A3 landscape; margin: 15mm 20mm; }
     .page { page-break-after: always; width: 390mm; height: 267mm; }
     body  { font-family: 'Outfit', system-ui, sans-serif; }
 }
 
-"""
 
 
-let allCss = 
-    baseStyles +
-    sharedStyles +
-    headerStyles +
-    layoutStyles +
-    formStyles +
-    editorStyles +
-    animationStyles +
-    nodeStyles +
-    hyweaveStyles +
-    teachStyles +
-    footerStyles +
-    polygonEditorStyles +
-    onboardingStyles +
-    batchStyles +
-    reportPanelStyles +
-    reportPrintStyles
-
-let render () = 
-    style { text allCss }

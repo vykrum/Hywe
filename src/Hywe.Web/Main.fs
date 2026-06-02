@@ -843,7 +843,6 @@ type MyApp() =
                     if model.Onboarding.IsActive && model.CurrentScreen = MainScreen then
                         Page.Help.viewHelp model.Onboarding dispatch
 
-                    Styles.render()
                     Index.coreScript
                     Index.siteHeader
                     div {
