@@ -180,7 +180,7 @@ window.Hymap = {
         let elevations = [];
         try {
             const gridSize = 100;
-            const z = Math.min(this.map.getZoom(), 14); // Terrarium optimal max zoom
+            const z = Math.min(Math.round(this.map.getZoom()), 14); // Terrarium optimal max zoom
             
             const west = innerWest;
             const east = innerEast;
@@ -300,7 +300,7 @@ window.Hymap = {
                 innerWest = innerNw.lng;
             }
 
-            const z = this.map.getZoom();
+            const z = Math.round(this.map.getZoom());
             const lon2tile = (lon, zoom) => Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
             const lat2tile = (lat, zoom) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
             
