@@ -1842,13 +1842,13 @@ let onboardingStyles = """
 .onboarding-tooltip.top-left-header {
     position: absolute;
     top: 65px;
-    left: 10px;
+    left: 15px;
 }
 
 .onboarding-tooltip.lower-left-slider {
     position: absolute;
     top: 410px; 
-    left: 10px;
+    left: 15px;
 }
 
 

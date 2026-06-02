@@ -151,7 +151,7 @@ module View =
             // Col 3: Editor Instructions
             div {
                 attr.``class`` "polygon-editor-instructions"
-                attr.style (match model.UseBoundary with | true -> "flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555;" | _ -> "flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; opacity: 0.3; pointer-events: none;")
+                attr.style (match model.UseBoundary with | true -> "flex: 1 1 0px; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; align-items: flex-start;" | _ -> "flex: 1 1 0px; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; align-items: flex-start; opacity: 0.3; pointer-events: none;")
                 p { attr.style "margin: 0;"; text "Click edge to add vertex" }
                 p { attr.style "margin: 0;"; text "Dbl-clk Vertex to delete" }
                 p { attr.style "margin: 0;"; text "Dbl-clk inside adds Island" }
