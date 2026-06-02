@@ -152,10 +152,10 @@ module View =
             div {
                 attr.``class`` "polygon-editor-instructions"
                 attr.style (match model.UseBoundary with | true -> "flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555;" | _ -> "flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; opacity: 0.3; pointer-events: none;")
-                p { attr.style "margin: 0;"; text "Click edge to add point" }
-                p { attr.style "margin: 0;"; text "Double-click point to delete" }
-                p { attr.style "margin: 0;"; text "Double-click inside to add island" }
-                p { attr.style "margin: 0;"; text "Double-click island to delete" }
+                p { attr.style "margin: 0;"; text "Click edge to add vertex" }
+                p { attr.style "margin: 0;"; text "Dbl-clk Vertex to delete" }
+                p { attr.style "margin: 0;"; text "Dbl-clk inside adds Island" }
+                p { attr.style "margin: 0;"; text "Dbl-clk island to delete" }
             }
             
 
