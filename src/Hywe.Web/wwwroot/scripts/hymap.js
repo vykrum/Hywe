@@ -36,7 +36,7 @@ window.Hymap = {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxNativeZoom: 19,
                 maxZoom: 24,
-                attribution: '© OpenStreetMap'
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(this.map);
             
             // Add custom zoom control
