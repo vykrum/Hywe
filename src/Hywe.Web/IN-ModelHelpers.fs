@@ -141,7 +141,7 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
     | Some m ->
         button {
             attr.``class`` btnCls
-            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 44px; gap: 2px; " + style)
+            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 38px; gap: 2px; " + style)
             attr.title title
             on.click (fun _ -> dispatch m)
             content
@@ -149,7 +149,7 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
     | None ->
         button {
             attr.``class`` btnCls
-            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 44px; gap: 2px; opacity: 0.3; pointer-events: none; " + style)
+            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 38px; gap: 2px; opacity: 0.3; pointer-events: none; " + style)
             attr.title title
             content
         }
@@ -221,7 +221,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     attr.style "min-width: 100px;"
                     
                     div {
-                        attr.style "display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;"
+                        attr.style "display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;"
                         
                         // Save
                         drawerActionBtn "Save" "Save" (Some SaveRequested) iconSave dispatch ""
@@ -249,22 +249,21 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     }
 
                     div {
-                        attr.style "margin-top: 12px; display: flex; flex-direction: column; gap: 4px;"
+                        attr.style "margin-top: 6px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
                         div {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 2px;"
+                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; margin-bottom: 2px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; width: 100%;"
                             text "Presets"
                         }
-                        let presetButton name label isSelected =
-                            button {
-                                attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
-                                attr.style "width: 100%; text-align: center; justify-content: center;"
+                        let presetLink name label =
+                            a {
+                                attr.style "cursor: pointer; color: #666; font-size: 0.85rem; text-decoration: none;"
                                 on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
                                 text label
                             }
 
-                        presetButton "Simple" "Simple" (model.SelectedPreset = Some "Simple")
-                        presetButton "Branched" "Branch" (model.SelectedPreset = Some "Branched")
-                        presetButton "Stacked" "Stack" (model.SelectedPreset = Some "Stacked")
+                        presetLink "Simple" "Simple"
+                        presetLink "Branched" "Branch"
+                        presetLink "Stacked" "Stack"
                     }
 
                     input {
@@ -284,7 +283,10 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 div {
                     attr.``class`` "preset-drawer-handle"
                     on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
-                    span { text "Waggle Exchange" }
+                    span { 
+                        attr.style "white-space: pre;"
+                        text "Waggle  Exchange" 
+                    }
                 }
             }
         }
