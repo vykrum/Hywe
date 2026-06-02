@@ -248,6 +248,25 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                             ""
                     }
 
+                    div {
+                        attr.style "margin-top: 12px; display: flex; flex-direction: column; gap: 4px;"
+                        div {
+                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 2px;"
+                            text "Presets"
+                        }
+                        let presetButton name label isSelected =
+                            button {
+                                attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
+                                attr.style "width: 100%; text-align: center; justify-content: center;"
+                                on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
+                                text label
+                            }
+
+                        presetButton "Simple" "Simple" (model.SelectedPreset = Some "Simple")
+                        presetButton "Branched" "Branch" (model.SelectedPreset = Some "Branched")
+                        presetButton "Stacked" "Stack" (model.SelectedPreset = Some "Stacked")
+                    }
+
                     input {
                         attr.id "hyw-import-hidden"
                         attr.``type`` "file"
@@ -265,47 +284,12 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 div {
                     attr.``class`` "preset-drawer-handle"
                     on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
-                    span { text "Exchange" }
+                    span { text "Waggle Exchange" }
                 }
             }
         }
 
-        // 3. Presets Drawer (Always available, below Exchange)
-        let isPresetsCollapsed = model.IsPresetsCollapsed
-        concat {
-            div {
-                attr.style (if isPresetsCollapsed then "display: none;" else "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
-                on.click (fun _ -> dispatch TogglePresetsCollapse)
-            }
 
-            div {
-                attr.``class`` (if isPresetsCollapsed then "preset-drawer collapsed" else "preset-drawer")
-                attr.style "top: 180px;"
-                
-                div {
-                    attr.``class`` "preset-drawer-content"
-                    attr.style "min-width: 100px;"
-                    
-                    let presetButton name label isSelected =
-                        button {
-                            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-fillet " + (if isSelected then "hywe-btn-dark active" else "hywe-btn-light"))
-                            attr.style "width: 100%; text-align: center; justify-content: center;"
-                            on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
-                            text label
-                        }
-
-                    presetButton "Simple" "Simple" (model.SelectedPreset = Some "Simple")
-                    presetButton "Branched" "Branch" (model.SelectedPreset = Some "Branched")
-                    presetButton "Stacked" "Stack" (model.SelectedPreset = Some "Stacked")
-                }
-
-                div {
-                    attr.``class`` "preset-drawer-handle"
-                    on.click (fun _ -> dispatch TogglePresetsCollapse)
-                    span { text "Presets" }
-                }
-            }
-        }
     }
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
