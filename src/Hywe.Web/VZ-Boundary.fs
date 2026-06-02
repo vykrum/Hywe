@@ -41,26 +41,28 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "display: flex; flex-direction: row; gap: 16px; align-items: flex-start; justify-content: center; width: 100%; padding: 10px;"
+            attr.style "zoom: 0.75; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 16px; align-items: flex-start; justify-content: center; width: fit-content; max-width: 100%; margin: 0 auto; padding: 10px; box-sizing: border-box;"
 
             // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                attr.style "display: flex; flex-direction: column; gap: 8px;"
+                attr.style "flex: 1; display: flex; flex-direction: column; gap: 8px;"
 
                 // Boundary
                 div {
                     attr.``class`` "hywe-row"
-                    span { attr.``class`` "hywe-label"; text "Site:" }
+                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Site:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
                             attr.``class`` (if not model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
                             text "None"
                         }
                         button {
                             attr.``class`` (if model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
                             text "Boundary"
                         }
@@ -70,16 +72,18 @@ module View =
                 // Count
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; text "Count:" }
+                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Count:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
                             attr.``class`` (if not model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if model.UseAbsolute then dispatch (ToggleAbsolute false))
                             text "Relative"
                         }
                         button {
                             attr.``class`` (if model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if not model.UseAbsolute then dispatch (ToggleAbsolute true))
                             text "Absolute"
                         }
@@ -89,11 +93,12 @@ module View =
                 // Base
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; text "Base:" }
+                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Base:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
                             attr.``class`` (if not model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ ->
                                 if model.UseMapBase then dispatch (ToggleMapBase false)
                             )
@@ -101,6 +106,7 @@ module View =
                         }
                         button {
                             attr.``class`` (if model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ ->
                                 if not model.UseMapBase then
                                     dispatch (ToggleMapBase true)
@@ -117,9 +123,9 @@ module View =
                 attr.``class`` "control-panel"
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 16px; opacity: 0.3; pointer-events: none;"
+                        "flex: 0.5; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px; opacity: 0.3; pointer-events: none;"
                     else
-                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 16px;"
+                        "flex: 0.5; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px;"
                 )
 
                 // Width
@@ -145,7 +151,7 @@ module View =
             // Col 3: Editor Instructions
             div {
                 attr.``class`` "polygon-editor-instructions"
-                attr.style (match model.UseBoundary with | true -> "display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555;" | _ -> "display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; opacity: 0.3; pointer-events: none;")
+                attr.style (match model.UseBoundary with | true -> "flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555;" | _ -> "flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; opacity: 0.3; pointer-events: none;")
                 p { attr.style "margin: 0;"; text "Click edge to add point" }
                 p { attr.style "margin: 0;"; text "Double-click point to delete" }
                 p { attr.style "margin: 0;"; text "Double-click inside to add island" }
