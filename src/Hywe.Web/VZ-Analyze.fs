@@ -6,7 +6,7 @@ open ModelTypes
 
 // --- INTERFACE ---
 
-let renderRow (cxl: Cxl) (clr: string) (avl: int) (ratio: float) (elv: int) =
+let renderRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) (ratio: float) (elv: int) (useMapBase: bool) =
     let hxlAreaX = 4
     let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
     let count = if isRootLvl0 then (prpVlu cxl.Size |> float) + 1.0 else (prpVlu cxl.Size |> float)
@@ -42,6 +42,14 @@ let renderRow (cxl: Cxl) (clr: string) (avl: int) (ratio: float) (elv: int) =
             attr.``style`` $"padding: 8px; text-align: center; color:{avlCl}; border: 1px solid #eee;"
             text (sprintf "%.0f" (float avl * float hxlAreaX)) 
         }
+        if useMapBase then
+            td {
+                attr.width "15%"
+                attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
+                match solarVal with
+                | Some s -> text (sprintf "%.0f" s)
+                | None -> text "-"
+            }
     }
 
 let renderAdjacencyCell isAdj color =
@@ -107,7 +115,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             }
         }
 
-let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) =
+let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (solarVals: float[] option) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) (useMapBase: bool) =
     let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> 
         let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
@@ -146,11 +154,14 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                             th { attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"; text "Required" }
                             th { attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"; text "Achieved" }
                             th { attr.``style`` "border: 1px solid #eee; padding: 12px; background: #fdfdfd;"; text "Open" }
+                            if useMapBase then
+                                th { attr.``style`` "border: 1px solid #eee; padding: 12px; background: #fdfdfd;"; text "W/m²" }
                         }
                     }
                     tbody {
                         for i in 0 .. cxCxl1.Length - 1 do
-                            renderRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] ratio elv
+                            let sVal = match solarVals with | Some arr -> Some arr.[i] | None -> None
+                            renderRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] sVal ratio elv useMapBase
                     }
                     tfoot {
                         tr {
@@ -165,6 +176,8 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                                 text (sprintf "%.0f" totalAch) 
                             }
                             td { attr.``style`` "border: 1px solid #eee;" }
+                            if useMapBase then
+                                td { attr.``style`` "border: 1px solid #eee;" }
                         }
                     }
                 }
