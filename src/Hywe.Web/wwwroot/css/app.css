@@ -4,9 +4,9 @@ body {
     width: 100%;
     height: 99%;
     margin: 0;
-    font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-sans);
     font-size: 14px;
-    color: #333;
+    color: var(--color-text-main);
     -webkit-text-size-adjust: 100%;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -17,6 +17,56 @@ body {
 a {
     text-decoration: none;
 }
+
+:root {
+    --color-bg: #ffffff;
+    --color-text-main: #333;
+    --color-text-muted: #666;
+    --color-text-light: #999;
+    
+    --color-primary: #363636;
+    --color-primary-hover: #111;
+    --color-border: #eee;
+    --color-border-hover: #ccc;
+    
+    --color-accent-orange: #E67E22;
+    --color-accent-blue: #2E86C1;
+    --color-accent-green: #2ecc71;
+    
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 20px;
+    --spacing-xl: 1.5rem;
+    
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    
+    --font-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: Consolas, "PT Mono", "Courier New", Courier, monospace;
+}
+
+/* =====================
+   UNIVERSAL UTILITIES
+   ===================== */
+.u-flex-col { display: flex; flex-direction: column; }
+.u-flex-row { display: flex; flex-direction: row; }
+.u-items-center { align-items: center; }
+.u-justify-center { justify-content: center; }
+.u-justify-between { justify-content: space-between; }
+.u-gap-xs { gap: var(--spacing-xs); }
+.u-gap-sm { gap: var(--spacing-sm); }
+.u-gap-md { gap: var(--spacing-md); }
+.u-gap-lg { gap: var(--spacing-lg); }
+.u-gap-xl { gap: var(--spacing-xl); }
+.u-p-lg { padding: var(--spacing-lg); }
+.u-w-full { width: 100%; box-sizing: border-box; }
+.u-max-w-800 { max-width: 800px; margin: 0 auto; }
+.u-text-center { text-align: center; }
+.u-mt-sm { margin-top: var(--spacing-sm); }
+.u-mt-md { margin-top: var(--spacing-md); }
+.u-mt-lg { margin-top: var(--spacing-lg); }
 
 /* =====================
    UNIFIED BUTTON SYSTEM
@@ -196,21 +246,21 @@ a {
 
 .hywe-input {
     width: 100%;
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 12px 14px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) 14px;
     font-size: 0.95rem;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.6;
-    color: #333;
+    color: var(--color-text-main);
     outline: none;
     box-sizing: border-box;
     transition: all 0.2s ease;
 }
 
 .hywe-input:focus {
-    border-color: #363636;
+    border-color: var(--color-primary);
 }
 
 textarea.hywe-input {
@@ -707,26 +757,7 @@ video.fullscreen-bg {
     /* Optional for visual feedback */
 }
 
-.intro-preset-btn {
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(54, 54, 54, 0.15);
-    border-radius: 4px;
-    padding: 6px 14px;
-    color: #363636;
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-    max-width: 180px;
-    margin-top: 5px;
-}
 
-.intro-preset-btn:hover {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: #363636;
-    transform: translateY(-1px);
-}
 
 @media (max-width: 220px) {
     .intro-section {
@@ -1324,17 +1355,7 @@ video.fullscreen-bg {
 /* =====================
    TEACH PANEL
    ===================== */
-.teach-panel-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 20px;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    box-sizing: border-box;
-}
+
 
 .teach-intro-section {
     width: 100%;
@@ -1387,25 +1408,7 @@ video.fullscreen-bg {
 }
 
 
-.teach-custom-input {
-    width: 100%;
-    box-sizing: border-box;
-    margin-top: 0.4rem;
-    padding: 6px 12px;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    color: #333;
-    outline: none;
-    background: #fdfdfd;
-    transition: all 0.2s ease;
-}
 
-.teach-custom-input:focus {
-    border-color: #363636;
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
 
 .teach-row-tip {
     width: 100%;
@@ -1442,12 +1445,7 @@ video.fullscreen-bg {
     box-sizing: border-box;
 }
 
-.record-submit-btn {
-    width: 100%;
-    max-width: 800px;
-    margin-top: 10px;
-    box-sizing: border-box;
-}
+
 
 /* Microphone Button specific adjustments */
 .mic-button {
@@ -1483,9 +1481,7 @@ video.fullscreen-bg {
 
 /* Submit Button styling */
 /* Submit Button specific overrides if any */
-.record-submit-btn {
-    padding: 10px 20px;
-}
+
 
 @keyframes mic-pulse {
     0% {
@@ -1911,20 +1907,7 @@ video.fullscreen-bg {
 /* =====================
    REPORT PANEL
    ===================== */
-.report-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 20px;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 13px;
-    color: #333;
-}
+
 
 .report-section-title {
     font-size: 1.1rem;
@@ -2006,21 +1989,7 @@ video.fullscreen-bg {
     letter-spacing: 0.2px;
 }
 
-.report-field input,
-.report-field textarea {
-    width: 100%;
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 0.95rem;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
+
 
 
 
@@ -2072,11 +2041,7 @@ video.fullscreen-bg {
     letter-spacing: 0.5px;
 }
 
-.report-generate-btn {
-    width: 100%;
-    max-width: 800px;
-    margin-top: 10px;
-}
+
 
 .report-status {
     font-size: 11px;

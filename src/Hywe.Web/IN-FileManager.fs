@@ -69,7 +69,7 @@ let exportMapData (js: IJSRuntime) (topoJson: string) (exportType: string) =
 
 /// Exports the current map view as a PNG image using Leaflet.
 let exportMapImage (js: IJSRuntime) =
-    js.InvokeVoidAsync("exportMapImage") |> ignore
+    js.InvokeVoidAsync("Hymap.exportMapImage") |> ignore
 
 /// Traditional import
 let importFile (js: IJSRuntime) (inputId: string) =
