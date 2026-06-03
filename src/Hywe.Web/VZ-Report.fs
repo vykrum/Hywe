@@ -452,7 +452,7 @@ let viewReport (model: Model) dispatch =
         }
 
     div {
-        attr.``class`` "report-panel fade-in"
+        attr.``class`` "u-flex-col u-items-center u-gap-xl u-p-lg u-w-full u-max-w-800 fade-in"
         
         div {
             attr.``class`` "teach-intro-section"
@@ -616,7 +616,7 @@ let viewReport (model: Model) dispatch =
         }
         
         button {
-            attr.``class`` "hywe-btn hywe-btn-dark report-generate-btn"
+            attr.``class`` "hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md"
             attr.disabled model.IsGeneratingReport
             on.click (fun _ -> dispatch GenerateReport)
             text (if model.IsGeneratingReport then "Generating..." else "Generate Report (PDF)")

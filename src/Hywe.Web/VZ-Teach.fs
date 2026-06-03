@@ -346,7 +346,7 @@ let private selectField (model: Model) dispatch (label: string) (current: string
         match currentTip with | Some tip -> div { attr.``class`` "teach-row-tip"; text tip } | None -> ()
         if not isPredefined then
             input {
-                attr.``class`` "teach-custom-input"
+                attr.``class`` "hywe-input"
                 attr.placeholder (sprintf "Enter custom %s..." (label.ToLower()))
                 attr.value current
                 on.input (fun e -> dispatch (UpdateMetadata (fun m -> updater m (unbox<string> e.Value))))
@@ -361,7 +361,7 @@ let view model dispatch =
     let typoDescs = Map [ "Residential", "Homes, apartments, or private living quarters."; "Commercial", "Workspaces, retail, or corporate environments."; "Institutional", "Healthcare, educational, or civic facilities." ]
 
     div {
-        attr.``class`` "teach-panel-container"
+        attr.``class`` "u-flex-col u-items-center u-gap-xl u-p-lg u-w-full u-max-w-800"
         div {
             attr.``class`` "teach-intro-section"
             h2 { attr.``class`` "teach-intro-title"; text "Architectural Data Collection" }
@@ -373,7 +373,7 @@ let view model dispatch =
                 attr.``class`` "teach-select-row"
                 span { attr.``class`` "hywe-label"; text "Author" }
                 input {
-                    attr.``class`` "teach-custom-input"
+                    attr.``class`` "hywe-input"
                     attr.placeholder "Optional author name..."
                     attr.value model.TeachMetadata.Author
                     on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with Author = unbox<string> e.Value })))
@@ -383,7 +383,7 @@ let view model dispatch =
                 attr.``class`` "teach-select-row"
                 span { attr.``class`` "hywe-label"; text "Project" }
                 input {
-                    attr.``class`` "teach-custom-input"
+                    attr.``class`` "hywe-input"
                     attr.placeholder "Optional project title..."
                     attr.value model.TeachMetadata.ProjectTitle
                     on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with ProjectTitle = unbox<string> e.Value })))
@@ -438,7 +438,7 @@ let view model dispatch =
                 if hasSummary then text "Review summary and add any relevant input/details" else text "A spatial summary is required to enable commitment"
             }
             button {
-                attr.``class`` ("hywe-btn hywe-btn-dark record-submit-btn" + (if isBusy || not hasSummary then " disabled" else " active"))
+                attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not hasSummary then " disabled" else " active"))
                 attr.style (if not hasSummary then "opacity: 0.5; cursor: not-allowed;" else "")
                 attr.title (if not hasSummary then "Please generate or enter a summary first" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not hasSummary)
