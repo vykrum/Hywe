@@ -350,6 +350,17 @@ window.Hymap = {
             const finalCtx = finalCanvas.getContext('2d');
             finalCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
             
+            // Add OpenStreetMap attribution to the exported image
+            finalCtx.font = "11px sans-serif";
+            const text = "© OpenStreetMap contributors";
+            const textWidth = finalCtx.measureText(text).width;
+            
+            finalCtx.fillStyle = "rgba(255, 255, 255, 0.7)";
+            finalCtx.fillRect(cropW - textWidth - 10, cropH - 20, textWidth + 10, 20);
+            
+            finalCtx.fillStyle = "#333";
+            finalCtx.fillText(text, cropW - textWidth - 5, cropH - 6);
+            
             const dataUrl = finalCanvas.toDataURL("image/png");
             
             const a = document.createElement('a');
