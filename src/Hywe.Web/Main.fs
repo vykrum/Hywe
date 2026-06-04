@@ -442,7 +442,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             newModel, cmd
         | None -> model, Cmd.none
 
-    | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DSvg 
+    | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DPng 
     | DownloadDxf | DownloadObj | DownloadBatchDxf | GenerateReport as msg ->
         let model = 
             match msg with

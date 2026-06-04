@@ -101,6 +101,53 @@ let coreScript =
             reader.readAsDataURL(blob);
         };
 
+        window.downloadSvgAsPng = function(fileName, svgString) {
+            const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width || 800; // Fallback width if missing
+                canvas.height = img.height || 600;
+                const ctx = canvas.getContext("2d");
+                
+                // Add a white background since SVG is transparent and PNG might look bad in dark mode viewers
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
+
+                canvas.toBlob(function(pngBlob) {
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        try {
+                            const file = new File([pngBlob], fileName, { type: "image/png" });
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                navigator.share({
+                                    files: [file],
+                                    title: fileName,
+                                    text: "Hywe Layout Export"
+                                }).catch(console.warn);
+                                return; // Successfully shared
+                            }
+                        } catch(e) { }
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const a = document.createElement("a");
+                        a.href = reader.result;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => { document.body.removeChild(a); }, 500);
+                    };
+                    reader.readAsDataURL(pngBlob);
+                }, "image/png");
+            };
+            img.src = url;
+        };
+
         window.openReport = function(html) {
             const w = window.open('', '_blank');
             w.document.write(html);

@@ -489,6 +489,26 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     }
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
+                        on.pointerdown (fun _ ->
+                            let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                            let fileName = "HyweLayout_" + datePart + ".png"
+                            async {
+                                let elv = model.Tree.ActiveLevel
+                                let currentSqnIdx = sqnToIndex currentSqn
+                                let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                                match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
+                                | Some cfg ->
+                                    let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
+                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, svgString).AsTask() |> Async.AwaitTask
+                                | None ->
+                                    // If cache missing, fall back to SVG scraper (could write a PNG scraper fallback, but cache is usually populated)
+                                    do! downloadSvg js "layout-svg-output" fileName 
+                            } |> Async.StartImmediate
+                        )
+                        text "PNG"
+                    }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadDxf)
                         text "DXF"
                     }
@@ -581,9 +601,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.style "display: flex; gap: 8px; margin-top: 10px; align-items: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
-                        attr.title "Download View as SVG"
-                        on.pointerdown (fun _ -> dispatch Download3DSvg)
-                        text "SVG"
+                        attr.title "Download View as PNG"
+                        on.pointerdown (fun _ -> dispatch Download3DPng)
+                        text "PNG"
                     }
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
