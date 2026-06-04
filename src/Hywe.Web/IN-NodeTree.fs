@@ -476,9 +476,10 @@ module NodeTree =
                         |> List.map (fun (nId, _) ->
                             let isActive = model.ActiveNest = Some nId
                             let fw = if isActive then "bold" else "normal"
+                            let colorStyle = if isActive then "color: #2ecc71;" else ""
                             button {
                                 attr.``class`` (if isActive then "level-tab active" else "level-tab")
-                                attr.style $"margin-left: 2px; color: #2ecc71; font-weight: {fw};"
+                                attr.style $"margin-left: 2px; font-weight: {fw}; {colorStyle}"
                                 on.pointerdown (fun _ -> dispatch (SetNest nId))
                                 text $"N{nId}"
                             }
