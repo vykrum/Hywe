@@ -170,10 +170,19 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                 Cmd.OfAsync.perform (fun () -> js.InvokeAsync<string>("captureCanvasSVG", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask) () ViewCaptured
             else Cmd.none
         Some (newModel, cmd)
-    | Download3DSvg ->
+    | Download3DPng ->
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
-        let fileName = "Hywe3D_" + datePart + ".svg"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("export3DToSVG", "hywe-extruded-polygon", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let fileName = "Hywe3D_" + datePart + ".png"
+        let downloadCmd = 
+            Cmd.OfAsync.perform (fun () -> 
+                async {
+                    let! pngDataUrl = js.InvokeAsync<string>("captureCanvasWebGPU", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask
+                    if not (System.String.IsNullOrEmpty(pngDataUrl)) then
+                        // The string returned is already a Data URL (base64) so we just trigger a download directly
+                        let jsCode = sprintf "var a = document.createElement('a'); a.href = '%s'; a.download = '%s'; document.body.appendChild(a); a.click(); document.body.removeChild(a);" pngDataUrl fileName
+                        do! js.InvokeVoidAsync("eval", jsCode).AsTask() |> Async.AwaitTask
+                }) () (fun _ -> NoOp)
+        Some (model, downloadCmd)
     
     | DownloadCoordCsv ->
         let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]

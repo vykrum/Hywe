@@ -382,7 +382,7 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
     let append (s: string) = sb.Append(s) |> ignore
 
     append $"""<?xml version="1.0" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {wdt} {hgt}">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {wdt} {hgt}" width="{wdt}" height="{hgt}">
 """
     
     // Boundary Outlines

@@ -366,7 +366,7 @@ type Message =
     | TransitionToIntro
     | TransitionToMain
     | ToggleViewLock
-    | Download3DSvg
+    | Download3DPng
     | UpdateReportOptions of (ReportOptions -> ReportOptions)
     | GenerateReport
     | ReportGenerated of html: string * cache: LayoutCache
