@@ -355,10 +355,10 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                           let srcForBatch = ensureCategory currentSrc i
                                           let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport baseLevel
                                           for l in model.Tree.Levels.Keys do
-                                              let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l
+                                              let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l model.PolygonExport
                                               currentCache <- Cache.update (toMarker l) i cfg currentCache
                                           
-                                          Cache.fromFullLayout fullData Hexel.sqnArray.[i] baseLevel
+                                          Cache.fromFullLayout fullData Hexel.sqnArray.[i] baseLevel model.PolygonExport
 
                                   let filteredConfig = Page.TreeFiltering.filterBatchConfigForMarker true model.Tree marker config
                                   levelBatches <- filteredConfig :: levelBatches

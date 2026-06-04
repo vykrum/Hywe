@@ -265,7 +265,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                             // Use lvlIdx (sequential index) as Zaxel assigns z by sequential block order, not L= attribute
                             for (lvlIdx, lvl) in levels |> List.indexed do
                                 if Cache.get lvl.Marker i currentCache |> Option.isNone then
-                                    let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] lvlIdx
+                                    let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] lvlIdx model.PolygonExport
                                     currentCache <- Cache.update lvl.Marker i cfg currentCache
                                 
                         for nestBlock in nests do
@@ -292,7 +292,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                                    w = 0.0; h = 0.0
                                                    cxCxl1 = ncxls
                                                    cxElv1 = [||]; cxlAvl = [||]; cxOuIl = [||]
-                                                   cxAdj1 = ([||], [||]); cxB36 = [||]; cxRto1 = [||]; cxClr1 = [||] |}
+                                                   cxAdj1 = ([||], [||]); cxB36 = [||]; cxRto1 = [||]; cxClr1 = [||]; cxSol1 = None |}
                                             currentCache <- Cache.update nestMarker i nestCfg currentCache
                                         | None -> ()
                                     | None -> ()

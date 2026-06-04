@@ -24,12 +24,12 @@ module State =
 
     // ---------- Import helpers ----------
 
-    let parsePoint (s: string) : Result<Point, string> =
+    let parsePoint (multiplier: float) (s: string) : Result<Point, string> =
         match s.Split(',', StringSplitOptions.RemoveEmptyEntries) with
         | [| x; y |] ->
             match Double.TryParse x, Double.TryParse y with
             | (true, xv), (true, yv) ->
-                Ok { X = xv * 10.0; Y = yv * 10.0 }
+                Ok { X = xv * multiplier; Y = yv * multiplier }
             | _ -> Error $"Invalid point: {s}"
         | _ -> Error $"Invalid point format: {s}"
 
@@ -43,13 +43,13 @@ module State =
                 | Error e -> Error e
         loop 0 []
 
-    let parsePoly (s: string) : Result<Point[], string> =
+    let parsePoly (multiplier: float) (s: string) : Result<Point[], string> =
         s.Split(',', StringSplitOptions.RemoveEmptyEntries)
         |> Array.chunkBySize 2
-        |> Array.map (fun a -> parsePoint (String.concat "," a))
+        |> Array.map (fun a -> parsePoint multiplier (String.concat "," a))
         |> sequenceResults
 
-    let parseIslands (s: string) : Result<Point[][], string> =
+    let parseIslands (multiplier: float) (s: string) : Result<Point[][], string> =
         match String.IsNullOrWhiteSpace s with
         | true -> Ok [||]
         | false ->
@@ -57,7 +57,7 @@ module State =
             |> Array.map (fun isl ->
                 isl.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 |> Array.chunkBySize 2
-                |> Array.map (fun a -> parsePoint (String.concat "," a))
+                |> Array.map (fun a -> parsePoint multiplier (String.concat "," a))
                 |> sequenceResults)
             |> sequenceResults
 
@@ -134,7 +134,8 @@ module State =
 
     /// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
     let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
-        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor((p.X + 0.001) / 10.0))) (int (System.Math.Floor((p.Y + 0.001) / 10.0)))
+        let divisor = 10.0
+        let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor((p.X + 0.001) / divisor))) (int (System.Math.Floor((p.Y + 0.001) / divisor)))
 
         let outer =
             model.Outer
@@ -148,8 +149,8 @@ module State =
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
         let absolute = if model.UseAbsolute then "1" elif model.UseMapBase then "2" else "0"
-        let w = int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0))
-        let h = int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0))
+        let w = max 1 (int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0)))
+        let h = max 1 (int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0)))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
     // ---------- Import function ----------
@@ -166,11 +167,13 @@ module State =
         let logicalWidth = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
         let logicalHeight = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
 
-        parsePoly outerStr
+        let multiplier = if absStr = "2" then 2.0 else 10.0
+
+        parsePoly multiplier outerStr
         |> Result.bind (fun outer ->
-            parseIslands islandsStr
+            parseIslands multiplier islandsStr
             |> Result.bind (fun islands ->
-                parsePoint entryStr
+                parsePoint multiplier entryStr
                 |> Result.map (fun entry ->
                     let width = logicalWidth
                     let height = logicalHeight

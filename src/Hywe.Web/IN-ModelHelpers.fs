@@ -503,15 +503,15 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             let currentSqnIdx = sqnToIndex currentSqn
             let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
             
-            let fCxls, fClrs, fAvls, fAdj = 
+            let fCxls, fClrs, fAvls, fAdj, fSol = 
                 match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
                 | Some cfg -> 
                     let filtered = Page.TreeFiltering.filterBatchConfig true model.Tree cfg
-                    filtered.cxCxl1, filtered.cxClr1, filtered.cxlAvl, filtered.cxAdj1
+                    filtered.cxCxl1, filtered.cxClr1, filtered.cxlAvl, filtered.cxAdj1, filtered.cxSol1
                 | None ->
                     // Fallback to on-the-fly filtering if not yet cached
                     let fCxls, fClrs, fAvls, _ = getFilteredGeometries ()
-                    fCxls, fClrs, fAvls, cxlAdj fCxls
+                    fCxls, fClrs, fAvls, cxlAdj fCxls, model.Derived.cxSol1
 
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
@@ -522,63 +522,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 
                 let editor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 
-                let solarVals = 
-                    match editor.UseMapBase, editor.TopographyData with
-                    | true, Some topoData ->
-                        let lat = 
-                            try
-                                let node = System.Text.Json.Nodes.JsonNode.Parse(topoData)
-                                let extents = node.["extents"]
-                                let n = extents.["north"].GetValue<float>()
-                                let s = extents.["south"].GetValue<float>()
-                                (n + s) / 2.0
-                            with _ -> 0.0
-
-                        // Build global occupancy set to identify exposed edges
-                        let allHxls = fCxls |> Array.collect (fun c -> c.Hxls)
-                        let occSet = Hywe.Core.Hexel.hxlSet allHxls
-
-                        let degreesToRadians deg = deg * System.Math.PI / 180.0
-                        let approxDailyInsolation azDeg =
-                            let equatorFacing = if lat >= 0.0 then 180.0 else 0.0
-                            let azDiff = abs(azDeg - equatorFacing)
-                            let azDiffMod = if azDiff > 180.0 then 360.0 - azDiff else azDiff
-                            let facingFactor = System.Math.Cos(degreesToRadians azDiffMod)
-                            200.0 + (100.0 * facingFactor)
-
-                        Some (fCxls |> Array.map (fun cxl ->
-                            let openEdges = 
-                                cxl.Hxls 
-                                |> Array.collect (fun h -> 
-                                    let hx, hy, _ = hxlCrd h
-                                    Hywe.Core.Hexel.adjacent cxl.Seqn h
-                                    |> Array.choose (fun a -> 
-                                        if occSet.Contains(a) then None
-                                        else
-                                            let ax, ay, _ = hxlCrd a
-                                            let dx = float (ax - hx)
-                                            let dy = float (ay - hy)
-                                            
-                                            let rad = System.Math.Atan2(dy, dx)
-                                            let mutAz = 90.0 + (rad * 180.0 / System.Math.PI)
-                                            let azimuth = 
-                                                if mutAz < 0.0 then mutAz + 360.0 
-                                                elif mutAz >= 360.0 then mutAz - 360.0 
-                                                else mutAz
-                                            
-                                            Some (approxDailyInsolation azimuth)
-                                    )
-                                )
-
-                            match openEdges with
-                            | [||] -> 0.0
-                            | edges -> Array.average edges
-                        ))
-                    | _ -> None
-
                 div {
                     attr.id "hywe-table-wrapper"; attr.style "width: 100%; overflow-x: auto;"
-                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls solarVals fAdj (model.Derived.cxRto1 |> Array.tryItem elv |> Option.defaultValue 1.0) elv model.IsCoordsVisible editor.UseMapBase
+                    Analyze.viewHyweAnalyze dispatch currentSqn fCxls fClrs fAvls fSol fAdj (model.Derived.cxRto1 |> Array.tryItem elv |> Option.defaultValue 1.0) elv model.IsCoordsVisible editor.UseMapBase
                 }
             }
 

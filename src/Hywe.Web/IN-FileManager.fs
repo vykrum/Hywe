@@ -83,10 +83,11 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
     match List.tryHead parsed with
     | Some segment ->
         let attrs = match segment with | Level l -> l.Attributes | Nest n -> n.Attributes
+        let multiplier = if attrs.Scale = 2.0 then 2.0 else 10.0
         finalState <- 
             { finalState with
-                LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * 10.0) |> Option.defaultValue finalState.LogicalWidth
-                LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * 10.0) |> Option.defaultValue finalState.LogicalHeight
+                LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue finalState.LogicalWidth
+                LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue finalState.LogicalHeight
                 Elevation = attrs.Level
                 BaseStr = "" // Not directly in attributes now, usually handled by nodes
                 UseAbsolute = (attrs.Scale = 1.0)
@@ -95,17 +96,17 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
             }
 
         // Handle Entry point
-        match parsePoint attrs.Entry with
+        match parsePoint multiplier attrs.Entry with
         | Ok pt -> finalState <- { finalState with EntryPoint = pt }
         | _ -> ()
 
         // Handle Outer boundary
-        match parsePoly attrs.OuterBoundary with
+        match parsePoly multiplier attrs.OuterBoundary with
         | Ok pts -> finalState <- { finalState with Outer = pts }
         | _ -> ()
 
         // Handle Islands
-        match parseIslands attrs.Islands with
+        match parseIslands multiplier attrs.Islands with
         | Ok pts -> finalState <- { finalState with Islands = pts }
         | _ -> ()
     | None -> ()

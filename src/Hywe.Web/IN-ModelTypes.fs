@@ -38,6 +38,7 @@ type DerivedData = {
     cxRto1: float[]
     cxAdj1: string[] * bool[][]
     cxB36: string[]
+    cxSol1: float[] option
 }
 
 // --- Constants & Helpers ---
@@ -86,7 +87,7 @@ let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
             $"rgba({r}, {g}, {b}, {opacity})"
     )
 
-let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[]) (cxRto1: float[]) (elv: int) : DerivedData =
+let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[]) (cxRto1: float[]) (elv: int) (latitude: float option) : DerivedData =
     let fallbackSqn = Hywe.Core.Hexel.VRCCNE 
     let activeSqn = 
         cxCxl1 
@@ -107,6 +108,51 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
     let cxAdj1 = Hywe.Core.Coxel.cxlAdj cxCxl1
     let cxB36 = cxCxl1 |> Array.map Hywe.Core.Coxel.getCxlCoordsString
 
+    let cxSol1 = 
+        match latitude with
+        | None -> None
+        | Some lat ->
+            let allHxls = cxCxl1 |> Array.collect (fun c -> c.Hxls)
+            let occSet = Hywe.Core.Hexel.hxlSet allHxls
+
+            let degreesToRadians deg = deg * System.Math.PI / 180.0
+            let approxDailyInsolation azDeg =
+                let equatorFacing = if lat >= 0.0 then 180.0 else 0.0
+                let azDiff = abs(azDeg - equatorFacing)
+                let azDiffMod = if azDiff > 180.0 then 360.0 - azDiff else azDiff
+                let facingFactor = System.Math.Cos(degreesToRadians azDiffMod)
+                200.0 + (100.0 * facingFactor)
+
+            Some (cxCxl1 |> Array.map (fun cxl ->
+                let openEdges = 
+                    cxl.Hxls 
+                    |> Array.collect (fun h -> 
+                        let hx, hy, _ = Hywe.Core.Hexel.hxlCrd h
+                        Hywe.Core.Hexel.adjacent cxl.Seqn h
+                        |> Array.choose (fun a -> 
+                            if occSet.Contains(a) then None
+                            else
+                                let ax, ay, _ = Hywe.Core.Hexel.hxlCrd a
+                                let dx = float (ax - hx)
+                                let dy = float (ay - hy)
+                                
+                                let rad = System.Math.Atan2(dy, dx)
+                                let mutAz = 90.0 + (rad * 180.0 / System.Math.PI)
+                                let azimuth = 
+                                    if mutAz < 0.0 then mutAz + 360.0 
+                                    elif mutAz >= 360.0 then mutAz - 360.0 
+                                    else mutAz
+                                
+                                Some (approxDailyInsolation azimuth)
+                        )
+                    )
+
+                if openEdges.Length = 0 then 0.0
+                else 
+                    try Array.average openEdges
+                    with _ -> 0.0
+            ))
+
     {
         cxCxl1 = cxCxl1
         cxlAvl = cxlAvl
@@ -116,6 +162,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
         cxRto1 = cxRto1
         cxAdj1 = cxAdj1
         cxB36 = cxB36
+        cxSol1 = cxSol1
     }
 
 type ConfirmAction =
@@ -139,6 +186,7 @@ type PolygonExportData = {
     BaseStr: string
     Width: int
     Height: int
+    Latitude: float option
 }
 
 type OnboardingStep =
@@ -184,7 +232,7 @@ type AppScreen =
 
 // Batch Export Types
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[] |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[]; cxSol1: float[] option |}
 
 // Report Types
 type LevelReportSections = {
@@ -347,4 +395,16 @@ let syncPolygonState (p: PolygonEditorModel) =
         | false -> w, h, "0,0", "", ""
         | true  -> w, h, entry, outer, islands
         
-    { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h' }
+    let lat = 
+        match p.TopographyData with
+        | Some topoData ->
+            try
+                let node = System.Text.Json.Nodes.JsonNode.Parse(topoData)
+                let extents = node.["extents"]
+                let n = extents.["north"].GetValue<float>()
+                let s = extents.["south"].GetValue<float>()
+                Some ((n + s) / 2.0)
+            with _ -> Some 0.0
+        | None -> None
+
+    { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h'; Latitude = lat }
