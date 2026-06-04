@@ -250,6 +250,184 @@ let svgCoxels
             }
 ///
 
+let generateSvgString
+    (cxl : Cxl[])
+    (bdr : (int*int)[][])
+    (elv : int)
+    (clr : string[])
+    (scl : int) = 
+    
+    match cxl with
+    | [||] -> ""
+    | _ ->
+        // Vertices
+        let sqn = cxl |> Array.map (fun x ->x.Seqn)
+        let cr1 = cxl |> Array.map (fun x -> svgCxlPrm x elv) 
+        let crd = Array.map2 (fun a b -> svgCleanPolygon a b) sqn cr1
+
+        // Shift and Scale Vertices
+        let padd = float (5*scl)
+        let crd1 = 
+            Array.map2 (fun s pts -> 
+                pts |> Array.map (fun p -> 
+                    let (cx, cy) = svgToCartesian s p
+                    cx * float scl, cy * float scl)
+            ) sqn crd
+
+        // --- Coordinate Transformation & Offsetting ---
+        let fallbackSqn = Hexel.VRCCNE 
+        let activeSqn = 
+            cxl 
+            |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
+            |> Option.map (fun c -> c.Seqn)
+            |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
+
+        // Calculate scaled boundary points to include in bounds
+        let bdrPoints = 
+            bdr |> Array.collect (fun pts ->
+                pts |> Array.map (fun (x, y) -> 
+                    let (cx, cy) = toCartesian activeSqn (x, y)
+                    cx * float scl, cy * float scl)
+            )
+
+        // Calculate global shifts to normalize the layout within the SVG viewport
+        let allPoints = Array.concat [| Array.concat crd1; bdrPoints |]
+        match allPoints with
+        | [||] -> ""
+        | _ ->
+            let minX1 = fst (Array.minBy fst allPoints)
+            let maxX1 = fst (Array.maxBy fst allPoints)
+            let minY1 = snd (Array.minBy snd allPoints)
+            let maxY1 = snd (Array.maxBy snd allPoints)
+            
+            // Shift points into the positive coordinate space with padding
+            let shfX = (-1.0 * minX1) + padd
+            let shfY = (-1.0 * minY1) + padd
+        
+            // Transform all vertices (already calculated as midpoints in cxlPrm)
+            let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> float a+shfX, float b+shfY)x) crd1
+            
+            let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
+            let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
+            
+            // Labels
+            let lPs = Array.map(fun a -> 
+                                        let gx, gy = cxlCnt a
+                                        let x, y = toCartesian a.Seqn (gx, gy)
+                                        (x * float scl) + shfX, (y * float scl) + shfY) cxl
+            let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
+
+            let sb = System.Text.StringBuilder()
+            let append (s: string) = sb.Append(s) |> ignore
+
+            append $"""<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {wdt} {hgt}">
+"""
+            let prp = Array.zip crd2 clr
+            for (xxyy, color) in prp do
+                let xy =
+                    xxyy
+                    |> Array.collect (fun (x, y) -> [|string x; string y|])
+                    |> String.concat ","
+                append $"""    <polygon points="{xy}" fill="{color}" opacity="0.75" />
+"""
+
+            // Boundary Outlines
+            for boundary in bdr do
+                let xy =
+                    boundary
+                    |> Array.collect (fun (x, y) -> 
+                        let fallbackSqn = Hexel.VRCCNE 
+                        let activeSqn = 
+                            cxl 
+                            |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
+                            |> Option.map (fun c -> c.Seqn)
+                            |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
+                        let (cx, cy) = toCartesian activeSqn (x, y)
+                        [| string ((cx * float scl) + shfX); string ((cy * float scl) + shfY) |])
+                    |> String.concat ","
+
+                append $"""    <polygon points="{xy}" stroke="#000000" fill="none" stroke-width="2" opacity="0.1" />
+"""
+
+            let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
+            let prp1 = Array.zip crd2 clr
+            let prp2 = Array.zip lbl pth
+            let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+
+            for i, (xxyy, label, color, path) in prp |> Array.indexed do
+                let x, y =
+                    match xxyy with
+                    | [||] -> -10.0, -10.0
+                    | _ -> snd label
+
+                let r = 20.0
+                append $"""    <path id="{path}" fill="none" d="M {x},{y + r} A {r},{r} 0 1,1 {x},{y - r} A {r},{r} 0 1,1 {x},{y + r}" />
+"""
+                append $"""    <text font-weight="normal" fill="#333" text-decoration="none" font-size="20px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase">
+        <textPath href="#{path}" letter-spacing="0.5px" startOffset="50%%">{label |> fst}</textPath>
+    </text>
+"""
+                append $"""    <circle cx="{x}" cy="{y}" r="5" fill="{color}" />
+"""
+            append "</svg>"
+            sb.ToString()
+
+let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
+    let padd = 5.0 * scl
+    let wdt = int (cfg.w * scl + padd * 2.0 + 15.0)
+    let hgt = int (cfg.h * scl + padd * 1.0)
+    
+    let sb = System.Text.StringBuilder()
+    let append (s: string) = sb.Append(s) |> ignore
+
+    append $"""<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {wdt} {hgt}">
+"""
+    
+    // Boundary Outlines
+    let sqn = match parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
+    for poly in cfg.cxOuIl do
+        let xy = 
+            poly 
+            |> Array.map (fun (x,y) -> svgToCartesian sqn (float x, float y))
+            |> Array.map (fun (x,y) -> $"{x * scl + padd},{y * scl + padd}")
+            |> String.concat " "
+        append $"""    <polygon points="{xy}" fill="none" stroke="#000000" stroke-width="2" opacity="0.1" />
+"""
+
+    // Shapes
+    for s in cfg.shapes do
+        if not (Array.isEmpty s.points) then
+            let xy = 
+                s.points 
+                |> Array.chunkBySize 2 
+                |> Array.map (fun p -> $"{p.[0] * scl + padd},{p.[1] * scl + padd}") 
+                |> String.concat " "
+            append $"""    <polygon points="{xy}" fill="{s.color}" opacity="0.75" />
+"""
+            // Labels
+            let tx = s.lx * scl + padd
+            let ty = s.ly * scl + padd
+            let r = 20.0
+            
+            // Randomish ID for path to avoid collisions
+            let guidStr = System.Guid.NewGuid().ToString("N").Substring(0,8)
+            let pathId = $"path_{guidStr}"
+            
+            append $"""    <path id="{pathId}" fill="none" d="M {tx},{ty + r} A {r},{r} 0 1,1 {tx},{ty - r} A {r},{r} 0 1,1 {tx},{ty + r}" />
+"""
+            append $"""    <text font-weight="normal" fill="#333" text-decoration="none" font-size="20px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase">
+        <textPath href="#{pathId}" letter-spacing="0.5px" startOffset="50%%">{s.name}</textPath>
+    </text>
+"""
+            append $"""    <circle cx="{tx}" cy="{ty}" r="5" fill="{s.color}" />
+"""
+    
+    append "</svg>"
+    sb.ToString()
+
+
 // Batch types moved to ModelTypes
 
 /// Extracts high-fidelity coordinates for Geometry generation

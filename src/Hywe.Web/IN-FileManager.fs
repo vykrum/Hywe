@@ -83,13 +83,12 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
     match List.tryHead parsed with
     | Some segment ->
         let attrs = match segment with | Level l -> l.Attributes | Nest n -> n.Attributes
-        let multiplier = if attrs.Scale = 2.0 then 2.0 else 10.0
+        let multiplier = 10.0
         finalState <- 
             { finalState with
                 LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue finalState.LogicalWidth
                 LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue finalState.LogicalHeight
                 Elevation = attrs.Level
-                BaseStr = "" // Not directly in attributes now, usually handled by nodes
                 UseAbsolute = (attrs.Scale = 1.0)
                 UseBoundary = (attrs.Scale <> 1.0)
                 UseMapBase = (attrs.Scale = 2.0)

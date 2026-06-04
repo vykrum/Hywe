@@ -551,7 +551,28 @@ window.captureCanvasWebGPU = async (canvasId) => {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = w; tempCanvas.height = h;
     const ctx = tempCanvas.getContext('2d'), imageData = ctx.createImageData(w, h);
-    for (let y = 0; y < h; y++) imageData.data.set(data.subarray(y * bytesPerRow, y * bytesPerRow + w * 4), y * w * 4);
+    
+    const isBGRA = state.presentationFormat === 'bgra8unorm';
+    for (let y = 0; y < h; y++) {
+        const srcOffset = y * bytesPerRow;
+        const dstOffset = y * w * 4;
+        for (let x = 0; x < w; x++) {
+            const srcIdx = srcOffset + x * 4;
+            const dstIdx = dstOffset + x * 4;
+            if (isBGRA) {
+                imageData.data[dstIdx] = data[srcIdx + 2];     // R
+                imageData.data[dstIdx + 1] = data[srcIdx + 1]; // G
+                imageData.data[dstIdx + 2] = data[srcIdx];     // B
+                imageData.data[dstIdx + 3] = data[srcIdx + 3]; // A
+            } else {
+                imageData.data[dstIdx] = data[srcIdx];
+                imageData.data[dstIdx + 1] = data[srcIdx + 1];
+                imageData.data[dstIdx + 2] = data[srcIdx + 2];
+                imageData.data[dstIdx + 3] = data[srcIdx + 3];
+            }
+        }
+    }
+    
     ctx.putImageData(imageData, 0, 0);
     const dataUrl = tempCanvas.toDataURL('image/png');
     readBuffer.unmap(); readBuffer.destroy();

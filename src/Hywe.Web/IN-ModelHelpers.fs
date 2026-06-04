@@ -84,19 +84,7 @@ let downloadFile (js: IJSRuntime) (filename: string) (content: string) (contentT
 
 let downloadSvg (js: IJSRuntime) (svgId: string) (filename: string) =
     async {
-        let! source = js.InvokeAsync<string>("eval", sprintf "document.getElementById('%s').outerHTML" svgId).AsTask() |> Async.AwaitTask
-        let clean = 
-            source
-                .Replace("onclick:", "")
-                .Replace("onmouseover:", "")
-                .Replace("onmouseout:", "")
-                .Replace(" xmlns=\"http://www.w3.org/2000/svg\"", "") // Prevent double xmlns
-                .Insert(4, " xmlns=\"http://www.w3.org/2000/svg\"") // Add it back cleanly
-        
-        let xmlHeader = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n"
-        let finalSvg = xmlHeader + clean
-        
-        do! downloadFile js filename finalSvg "image/svg+xml;charset=utf-8"
+        do! js.InvokeVoidAsync("downloadSvgFile", svgId, filename).AsTask() |> Async.AwaitTask
     }
 
 // View helpers
@@ -485,7 +473,16 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             let datePart = System.DateTime.Now.ToString("yyMMddmm")
                             let fileName = "HyweLayout_" + datePart + ".svg"
                             async {
-                                do! downloadSvg js "layout-svg-output" fileName
+                                let elv = model.Tree.ActiveLevel
+                                let currentSqnIdx = sqnToIndex currentSqn
+                                let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                                match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
+                                | Some cfg ->
+                                    let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
+                                    do! js.InvokeVoidAsync("downloadFile", fileName, svgString, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
+                                | None ->
+                                    // Fallback to DOM scraper if cache is missing
+                                    do! downloadSvg js "layout-svg-output" fileName
                             } |> Async.StartImmediate
                         )
                         text "SVG"
