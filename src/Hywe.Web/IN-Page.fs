@@ -424,7 +424,8 @@ module TreeFiltering =
                 cxlAvl = avls
                 shapes = shapes
                 cxAdj1 = adj
-                cxB36 = b36s |}
+                cxB36 = b36s
+                cxSol1 = config.cxSol1 |}
 
     let filterBatchConfig (computeExpensive: bool) (tree: Hywe.Node.SubModel) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
         filterBatchConfigForMarker computeExpensive tree (match tree.ActiveNest with | Some nestId -> $"N{nestId}" | None -> match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}") config

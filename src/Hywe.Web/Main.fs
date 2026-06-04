@@ -277,7 +277,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let srcForCurrent = ensureCategory updatedSrcOfTrth currentSqnIdx
             let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn model.PolygonExport currentLevel
             for lvl in model.Tree.Levels.Keys do
-                let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl
+                let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl model.PolygonExport
                 updatedCache <- Cache.update (toMarker lvl) currentSqnIdx c updatedCache
             
             // 2. Handle orientation 11 (standard default) if current orientation is different
@@ -285,7 +285,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let srcFor11 = ensureCategory updatedSrcOfTrth 11
                 let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] model.PolygonExport 0
                 for lvl in model.Tree.Levels.Keys do
-                    let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl
+                    let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl model.PolygonExport
                     updatedCache <- Cache.update (toMarker lvl) 11 c updatedCache
 
             return updatedSrcOfTrth, updatedCache
@@ -490,7 +490,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         
                         // Update cache for all levels
                         for lvl in model.Tree.Levels.Keys do
-                            let config = Cache.fromFullLayout fullData sqn lvl
+                            let config = Cache.fromFullLayout fullData sqn lvl model.PolygonExport
                             currentCache <- Cache.update (toMarker lvl) i config currentCache
                         
                         do! Async.Sleep 5

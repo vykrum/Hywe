@@ -66,11 +66,11 @@ module Cache
     /// <summary>
     /// Extracts level-specific configuration from full layout data.
     /// </summary>
-    let fromFullLayout (data: Cxl[] * (int * int)[][][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) : BatchConfgrtns =
+    let fromFullLayout (data: Cxl[] * (int * int)[][][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) (polyExport: PolygonExportData) : BatchConfgrtns =
         let cxls, allBounds, cxElv1, cxRto1 = data
         let cxOuIl = if elv >= 0 && elv < allBounds.Length then allBounds.[elv] else [||]
         let sqnStr = sprintf "%A" sqn
-        let derived = deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv
+        let derived = deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv polyExport.Latitude
         let d = Layout.getStaticGeometry cxls derived.cxClr1 elv 1
         
         {| sqnName = sqnStr
@@ -84,7 +84,8 @@ module Cache
            cxAdj1 = derived.cxAdj1
            cxB36 = derived.cxB36
            cxRto1 = cxRto1
-           cxClr1 = derived.cxClr1 |}
+           cxClr1 = derived.cxClr1
+           cxSol1 = derived.cxSol1 |}
 
     /// <summary>
     /// Generates a single configuration for a specific level and orientation.
@@ -92,7 +93,7 @@ module Cache
     /// </summary>
     let generateSingleConfig (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
         let data = computeFullLayout src sqn polyExport elv
-        fromFullLayout data sqn elv
+        fromFullLayout data sqn elv polyExport
 
     /// <summary>
     /// Initializes an empty cache for all current levels/markers.
@@ -158,7 +159,8 @@ module Cache
           cxElv1 = config.cxElv1
           cxRto1 = config.cxRto1
           cxAdj1 = config.cxAdj1
-          cxB36 = config.cxB36 }
+          cxB36 = config.cxB36
+          cxSol1 = config.cxSol1 }
 
     /// <summary>
     /// Returns all cached variations for a specific marker.
