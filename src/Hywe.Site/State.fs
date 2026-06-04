@@ -148,7 +148,7 @@ module State =
             |> String.concat "-"
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
-        let absolute = if model.UseAbsolute then "1" elif model.UseMapBase then "2" else "0"
+        let absolute = if model.UseMapBase then "2" elif model.UseAbsolute then "1" else "0"
         let w = max 1 (int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0)))
         let h = max 1 (int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0)))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr

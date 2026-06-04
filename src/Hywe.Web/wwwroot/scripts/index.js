@@ -76,6 +76,38 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
     return { x: svgP.x, y: svgP.y };
 };
 
+window.downloadSvgFile = function(svgId, filename) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    
+    // Serialize to standard well-formed XML
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+    
+    // Remove injected F# blazor comments
+    source = source.replace(/<!--.*?-->/g, "");
+    
+    // Fix xmlns attributes incorrectly inserted by HTML parser templates
+    source = source.replace(/xmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/g, "");
+    
+    // Ensure root element has the proper SVG namespace
+    if (!source.includes('xmlns="http://www.w3.org/2000/svg"')) {
+        source = source.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+    }
+    
+    // Fix camelCase for specific SVG attributes that Bolero HTML templates might have lowercased
+    source = source.replace(/<textpath/g, "<textPath")
+                   .replace(/<\/textpath>/g, "</textPath>")
+                   .replace(/viewbox=/g, "viewBox=")
+                   .replace(/startoffset=/g, "startOffset=")
+                   .replace(/textlength=/g, "textLength=")
+                   .replace(/lengthadjust=/g, "lengthAdjust=");
+                   
+    const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
+    const finalSvg = xmlHeader + source;
+    
+    window.downloadFile(filename, finalSvg, "image/svg+xml;charset=utf-8");
+};
 
 // ------------------------------------
 //   HEAVY OPS (Keeping in file)

@@ -356,6 +356,7 @@ module View =
 
             // Map and SVG Container
             div {
+                attr.key "map-and-svg-container"
                 attr.style (
                     let aspectRatio =
                         if model.UseBoundary && not model.UseMapBase && model.LogicalHeight > 0.0 then
@@ -369,6 +370,7 @@ module View =
                 
                 // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
                 div {
+                    attr.key "hymap-wrapper"
                     attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" 
                         (if model.UseMapBase then 
                             (if model.IsMapLocked then "pointer-events: none;" else "pointer-events: auto;")
@@ -376,6 +378,7 @@ module View =
                          
                     // Hymap Layer (Native) - Absolutely no children or dynamic attributes to ensure Leaflet DOM is fully preserved
                     div {
+                        attr.key "hymap-container"
                         attr.id "hymap-container"
                         attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"
                     }
