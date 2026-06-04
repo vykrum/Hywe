@@ -74,7 +74,7 @@ let coreScript =
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-            }, 0);
+            }, 250);
         };
 
         window.openReport = function(html) {
