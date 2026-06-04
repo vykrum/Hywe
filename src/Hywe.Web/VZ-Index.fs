@@ -63,11 +63,26 @@ let coreScript =
             if (el) el.click();
         };
 
-        window.downloadFile = function (fileName, content, contentType) {
+        window.downloadFile = async function (fileName, content, contentType) {
             const blob = new Blob([content], { type: contentType });
-            
-            // Use FileReader to convert Blob to Base64 Data URL
-            // Android Download Manager often fails on blob: URLs, so Base64 is much more reliable.
+
+            // On mobile, the Web Share API provides a superior experience for files
+            // that Android doesn't have a default viewer for (like SVG).
+            try {
+                const file = new File([blob], fileName, { type: contentType });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: fileName,
+                        text: "Hywe Export"
+                    });
+                    return; // Successfully shared, skip the hidden download
+                }
+            } catch (e) {
+                console.warn("Web Share API not supported or user cancelled, falling back to download", e);
+            }
+
+            // Fallback: Use FileReader to convert Blob to Base64 Data URL
             const reader = new FileReader();
             reader.onload = function() {
                 const a = document.createElement("a");
