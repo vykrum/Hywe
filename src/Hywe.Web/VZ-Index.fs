@@ -68,18 +68,22 @@ let coreScript =
 
             // On mobile, the Web Share API provides a superior experience for files
             // that Android doesn't have a default viewer for (like SVG).
-            try {
-                const file = new File([blob], fileName, { type: contentType });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: fileName,
-                        text: "Hywe Export"
-                    });
-                    return; // Successfully shared, skip the hidden download
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                try {
+                    const file = new File([blob], fileName, { type: contentType });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: fileName,
+                            text: "Hywe Export"
+                        });
+                        return; // Successfully shared, skip the hidden download
+                    }
+                } catch (e) {
+                    console.warn("Web Share API not supported or user cancelled, falling back to download", e);
                 }
-            } catch (e) {
-                console.warn("Web Share API not supported or user cancelled, falling back to download", e);
             }
 
             // Fallback: Use FileReader to convert Blob to Base64 Data URL
