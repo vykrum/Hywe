@@ -141,7 +141,7 @@ let private getBaseCoordStringDec (cxl: Cxl) =
 let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
     let sb = StringBuilder()
     sb.AppendLine("Orientation,Level,Rooms (ID Name Base Coordinates...)") |> ignore
-    for (sqn, elv, cxls) in data do
+    data |> Array.iter (fun (sqn, elv, cxls) ->
         let roomStrings =
             cxls |> Array.map (fun cxl ->
                 let id = prpVlu cxl.Rfid
@@ -152,6 +152,7 @@ let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
             )
         let rowStr = sprintf "%s,%d,%s" sqn elv (String.concat "," roomStrings)
         sb.AppendLine(rowStr) |> ignore
+    )
     sb.ToString()
 
 /// Generates a CSV of area metrics
@@ -159,29 +160,35 @@ let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
     let sb = StringBuilder()
     let hxlAreaX = 1
     sb.AppendLine("Orientation,Level,CoxelID,CoxelName,Required,Achieved,TargetMet") |> ignore
-    for (sqn, elv, cxls) in data do
-        for cxl in cxls do
+    data |> Array.iter (fun (sqn, elv, cxls) ->
+        cxls |> Array.iter (fun cxl ->
             let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
             let achSz = (Array.length cxl.Hxls) * hxlAreaX
             let id = prpVlu cxl.Rfid
             let name = prpVlu cxl.Name
-            let targetMet = if achSz >= reqSz then "Yes" else "No"
+            let targetMet = match achSz >= reqSz with true -> "Yes" | false -> "No"
             sb.AppendLine(sprintf "%s,%d,%s,%s,%d,%d,%s" sqn elv id name reqSz achSz targetMet) |> ignore
+        )
+    )
     sb.ToString()
 
 /// Generates a CSV for adjacency matrices
 let generateAdjacencyCsv (data: (string * int * (string[] * bool[][]))[]) =
     let sb = StringBuilder()
-    for (sqn, elv, (names, matrix)) in data do
-        if not (Array.isEmpty names) then
+    data |> Array.iter (fun (sqn, elv, (names, matrix)) ->
+        match not (Array.isEmpty names) with
+        | true ->
             sb.AppendLine(sprintf "--- %s | Level %d ---" sqn elv) |> ignore
             let header = "Room," + String.concat "," names
             sb.AppendLine(header) |> ignore
-            for i = 0 to matrix.Length - 1 do
+            [0 .. matrix.Length - 1] |> List.iter (fun i ->
                 let row = matrix.[i]
-                let rowStr = names.[i] + "," + String.concat "," (row |> Array.map (fun adj -> if adj then "1" else "0"))
+                let rowStr = names.[i] + "," + String.concat "," (row |> Array.map (fun adj -> match adj with true -> "1" | false -> "0"))
                 sb.AppendLine(rowStr) |> ignore
+            )
             sb.AppendLine() |> ignore
+        | false -> ()
+    )
     sb.ToString()
 
 /// Generates Hynteract payload
@@ -265,20 +272,24 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
 let generateDxf (cxls: Cxl[]) (offsetX: float) (offsetY: float) =
     let sb = StringBuilder()   
     let hexScale = 1.0
-    for cxl in cxls do
+    cxls |> Array.iter (fun cxl ->
         let prm = cxlPrm cxl 0
-        if prm.Length > 2 then
+        match prm.Length > 2 with
+        | true ->
             sb.AppendLine("0\nLWPOLYLINE") |> ignore
             sb.AppendLine("8\nRooms") |> ignore
             sb.AppendLine("90\n" + string prm.Length) |> ignore
             sb.AppendLine("70\n1") |> ignore           
-            for (x, y) in prm do
+            prm |> Array.iter (fun (x, y) ->
                 let q = float x
                 let r = float y
                 let cx = (hexScale * q) + offsetX
                 let cy = (hexScale * r) + offsetY
                 sb.AppendLine("10\n" + string cx) |> ignore
                 sb.AppendLine("20\n" + string cy) |> ignore
+            )
+        | false -> ()
+    )
     sb.ToString()
 
 let generateDxfBatch (batch: Cxl[] list) =
@@ -304,20 +315,23 @@ let generateDxfBatch (batch: Cxl[] list) =
 /// OBJ Export (3D Geometry)
 let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: float) (vOffset: int ref) =
     let sb = StringBuilder()
-    for cxl in cxls do
+    cxls |> Array.iter (fun cxl ->
         let (_, _, zInt) = Hexel.hxlCrd cxl.Base
-        let zBottom = if zInt < elevations.Length then elevations.[zInt] else float zInt * 3.0
-        let zTop = if zInt + 1 < elevations.Length then elevations.[zInt + 1] else zBottom + 3.0
+        let zBottom = match zInt < elevations.Length with true -> elevations.[zInt] | false -> float zInt * 3.0
+        let zTop = match zInt + 1 < elevations.Length with true -> elevations.[zInt + 1] | false -> zBottom + 3.0
         
         let prm = cxlPrm cxl zInt
         let n = prm.Length
-        if n > 2 then
-            for (x, y) in prm do
+        match n > 2 with
+        | true ->
+            prm |> Array.iter (fun (x, y) ->
                 sb.AppendLine(sprintf "v %f %f %f" (float x + offsetX) zBottom (float y + offsetY)) |> ignore
-            for (x, y) in prm do
+            )
+            prm |> Array.iter (fun (x, y) ->
                 sb.AppendLine(sprintf "v %f %f %f" (float x + offsetX) zTop (float y + offsetY)) |> ignore
+            )
             
-            for i = 0 to n - 1 do
+            [0 .. n - 1] |> List.iter (fun i ->
                 let nextI = (i + 1) % n
                 let b1 = !vOffset + i
                 let b2 = !vOffset + nextI
@@ -325,15 +339,18 @@ let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: f
                 let t2 = !vOffset + n + nextI
                 sb.AppendLine(sprintf "f %d %d %d" b1 b2 t1) |> ignore
                 sb.AppendLine(sprintf "f %d %d %d" b2 t2 t1) |> ignore
+            )
             
             sb.Append("f ") |> ignore
-            for i = 0 to n - 1 do sb.Append(sprintf "%d " (!vOffset + n + i)) |> ignore
+            [0 .. n - 1] |> List.iter (fun i -> sb.Append(sprintf "%d " (!vOffset + n + i)) |> ignore)
             sb.AppendLine() |> ignore
             sb.Append("f ") |> ignore
-            for i = n - 1 downto 0 do sb.Append(sprintf "%d " (!vOffset + i)) |> ignore
+            [n - 1 .. -1 .. 0] |> List.iter (fun i -> sb.Append(sprintf "%d " (!vOffset + i)) |> ignore)
             sb.AppendLine() |> ignore
             
             vOffset := !vOffset + 2 * n
+        | false -> ()
+    )
     sb.ToString()
 
 let generateObjBatch (batch: (Cxl[] * float[]) list) =

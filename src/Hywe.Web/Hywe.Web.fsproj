@@ -28,6 +28,7 @@
 		<Compile Include="IN-ModelHelpers.fs" />
 
 		<Compile Include="VZ-Index.fs" />
+		<Compile Include="IN-State.fs" />
 		<Compile Include="Main.fs" />
 		<Compile Include="Startup.fs" />
 	</ItemGroup>
