@@ -164,20 +164,22 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
                 toolbarBtn 
                     "Undo (Ctrl+Z)" 
-                    (if canUndo then Some Undo else None) 
+                    (match canUndo with true -> Some Undo | false -> None) 
                     iconUndo 
                     dispatch 
-                    "" (sprintf "opacity: %s;" (if canUndo then "1" else "0.3"))
+                    "" (sprintf "opacity: %s;" (match canUndo with true -> "1" | false -> "0.3"))
 
                 toolbarBtn 
                     "Redo (Ctrl+Y)" 
-                    (if canRedo then Some Redo else None) 
+                    (match canRedo with true -> Some Redo | false -> None) 
                     iconRedo 
                     dispatch 
-                    "" (sprintf "opacity: %s;" (if canRedo then "1" else "0.3"))
+                    "" (sprintf "opacity: %s;" (match canRedo with true -> "1" | false -> "0.3"))
             }
 
-            if model.InstallPromptAvailable then
+            match model.InstallPromptAvailable with
+            | false -> empty()
+            | true ->
                 div {
                     attr.style "margin-left: auto; margin-right: 10px; margin-top: 6px; pointer-events: auto; display: flex; align-items: center;"
                     button {
@@ -196,12 +198,12 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
         let isWorkspaceCollapsed = model.IsWorkspaceCollapsed
         concat {
             div {
-                attr.style (if isWorkspaceCollapsed then "display: none;" else "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
+                attr.style (match isWorkspaceCollapsed with true -> "display: none;" | false -> "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;")
                 on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
             }
 
             div {
-                attr.``class`` (if isWorkspaceCollapsed then "preset-drawer collapsed" else "preset-drawer")
+                attr.``class`` (match isWorkspaceCollapsed with true -> "preset-drawer collapsed" | false -> "preset-drawer")
                 attr.style "top: 65px;"
                 
                 div {
@@ -219,12 +221,12 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
                         // Share
                         drawerActionBtn 
-                            (if model.ShowLinkCopied then "Link Shared!" else "Share Link")
-                            (if model.ShowLinkCopied then "Copied" else "Share")
+                            (match model.ShowLinkCopied with true -> "Link Shared!" | false -> "Share Link")
+                            (match model.ShowLinkCopied with true -> "Copied" | false -> "Share")
                             (Some ShareLink)
                             (iconShare model)
                             dispatch
-                            (sprintf "color: %s;" (if model.ShowLinkCopied then "#27ae60" else "#555"))
+                            (sprintf "color: %s;" (match model.ShowLinkCopied with true -> "#27ae60" | false -> "#555"))
 
                         // Reset
                         drawerActionBtn 
@@ -384,9 +386,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
     let baseSqn = model.Sequences |> Map.tryFind 0 |> Option.defaultValue allSqns.[11]
     let currentSqn = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue baseSqn
     let minIdx, maxIdx = 
-        if model.Tree.ActiveLevel = 0 then 0, 23
-        else if baseSqn.StartsWith "V" then 0, 11
-        else 12, 23
+        match model.Tree.ActiveLevel, baseSqn.StartsWith "V" with
+        | 0, _ -> 0, 23
+        | _, true -> 0, 11
+        | _, false -> 12, 23
 
     let getFilteredGeometries () =
         let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
@@ -437,7 +440,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
         div { 
             attr.id "hywe-polygon-editor"
-            attr.style (if model.ActivePanel = BoundaryPanel then "display: block;" else "display: none;")
+            attr.style (match model.ActivePanel = BoundaryPanel with true -> "display: block;" | false -> "display: none;")
             View.view currentInner (PolygonEditorMsg >> dispatch) js 
         }
 
@@ -475,7 +478,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             async {
                                 let elv = model.Tree.ActiveLevel
                                 let currentSqnIdx = sqnToIndex currentSqn
-                                let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                                let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
                                 match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
                                     let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
@@ -495,7 +498,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             async {
                                 let elv = model.Tree.ActiveLevel
                                 let currentSqnIdx = sqnToIndex currentSqn
-                                let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                                let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
                                 match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
                                     let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
@@ -518,7 +521,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | AnalyzePanel ->
             let elv = model.Tree.ActiveLevel
             let currentSqnIdx = sqnToIndex currentSqn
-            let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+            let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
             
             let fCxls, fClrs, fAvls, fAdj, fSol = 
                 match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
@@ -554,9 +557,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 |> Set.ofSeq
 
             let viewCxls, viewClrs =
-                if hostIds.IsEmpty then
+                match hostIds.IsEmpty with
+                | true ->
                     model.Derived.cxCxl1, model.Derived.cxClr1
-                else
+                | false ->
                     let validIndices = 
                         model.Derived.cxCxl1 
                         |> Array.indexed 
@@ -580,14 +584,13 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     
                     // Floating Lock button
                     button {
-                        attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-flat layout-download-btn" + (if model.ViewLocked then " active" else ""))
-                        attr.title (if model.ViewLocked then "View Locked: Captured for cover" else "Lock 3D view for report cover")
+                        attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-flat layout-download-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
+                        attr.title (match model.ViewLocked with true -> "View Locked: Captured for cover" | false -> "Lock 3D view for report cover")
                         attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
                         on.pointerdown (fun _ -> dispatch ToggleViewLock)
-                        if model.ViewLocked then
-                            drawMenuIcon pathLock
-                        else
-                            drawMenuIcon pathUnlock
+                        match model.ViewLocked with
+                        | true -> drawMenuIcon pathLock
+                        | false -> drawMenuIcon pathUnlock
                     }
 
                     canvas { 
@@ -620,7 +623,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
               
                 div {
                     attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 15px 10px; width: 100%; border-top: 1px solid #f0f0f0; margin-top: 5px;"
-                    for i in 0 .. (min model.Derived.cxCxl1.Length model.Derived.cxClr1.Length - 1) do
+                    forEach [0 .. (min model.Derived.cxCxl1.Length model.Derived.cxClr1.Length - 1)] (fun i ->
                         let name = Coxel.prpVlu model.Derived.cxCxl1.[i].Name
                         let color = model.Derived.cxClr1.[i]
                         div {
@@ -630,15 +633,17 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             }
                             text name
                         }
+                    )
                 }
             }
 
         | BatchPanel ->
             div {
                 attr.style "width: 100vw; margin-left: calc(-50vw + 50%); min-height: 500px; display: flex; flex-direction: column; align-items: center; background: #ffffff;"
-                let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
+                let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
                 let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
-                if rawResults.Length > 0 && model.BatchProgress = 24 then
+                match rawResults.Length > 0 && model.BatchProgress = 24 with
+                | true ->
                     let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig false model.Tree)
                     alternateConfigurations 
                         results 
@@ -646,7 +651,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         TapBatchPreview                   
                         dispatch                   
                         (fun () -> dispatch (SetActivePanel LayoutPanel)) js
-                else
+                | false ->
                     div { 
                         attr.style "text-align:center; padding: 40px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
                         
@@ -662,12 +667,13 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         div {
                             // 4 columns * 14px + 3 gaps * 14px = 56 + 42 = 98px
                             attr.style "display: grid; grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(6, 14px); gap: 14px; margin: 0 auto; justify-content: center; width: 98px;"
-                            for i in 0 .. 23 do
+                            forEach [0 .. 23] (fun i ->
                                 let isComplete = i < model.BatchProgress
                                 div {
                                     attr.style (sprintf "width: 14px; height: 14px; border: 1px solid #e0e0e0; border-radius: 3px; background: %s; transition: all 0.5s ease;" 
-                                        (if isComplete then "rgba(136, 136, 136, 0.4)" else "transparent"))
+                                        (match isComplete with true -> "rgba(136, 136, 136, 0.4)" | false -> "transparent"))
                                 }
+                            )
                         }
                     }
             }
@@ -675,7 +681,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | TeachPanel ->
             concat {
                 Teach.view model dispatch
-                if model.ShowSuccessMessage then
+                match model.ShowSuccessMessage with
+                | false -> empty()
+                | true ->
                     div {
                         attr.style "margin-top: 1rem; text-align: center;"
                         span { 
