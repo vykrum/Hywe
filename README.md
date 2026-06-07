@@ -52,6 +52,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 | **Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
 | **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
 | **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
+| **Nesting** | `Nexel` | **Spatial Nesting** and Sub-configurations. | Nested Layout |
 | **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
 | **Expansion** | `Batch` & `Teach` | **Variation processing** and **data collection**. | Dataset Ingestion (via Hynteract) |
 | **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
@@ -84,7 +85,8 @@ graph TD
     C --> D(Hexel: Atomic Spatial Primitive)
     D --> E(Coxel: Simultaneously Evolving Hexel Clusters)
     E --> F(Xyxel: Coxel Configuration and Planar Layout)
-    F --> G(Zaxel: Xyxel Stacking and Volumetric Massing)
+    F --> N(Nexel: Spatial Nesting and Sub-configurations)
+    N --> G(Zaxel: Xyxel Stacking and Volumetric Massing)
     
     F --> F1[SVG Rendering]
     G --> G1[WebGPU Massing]
