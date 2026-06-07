@@ -1,22 +1,14 @@
 module ModelHelpers
 
-open System
 open Microsoft.JSInterop
-open Elmish
 open Layout
 open Hywe
 open Page
-open Graphics
 open Hywe.Node
 open Hywe.Site
-open Hywe.Site.State
-open Hywe.Site.View
 open ModelTypes
 open Bolero.Html
 open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Coxel
-open Hywe.Core.Lexel
 
 let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
     match model.PendingConfirm with
@@ -531,7 +523,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 | None ->
                     // Fallback to on-the-fly filtering if not yet cached
                     let fCxls, fClrs, fAvls, _ = getFilteredGeometries ()
-                    fCxls, fClrs, fAvls, cxlAdj fCxls, model.Derived.cxSol1
+                    fCxls, fClrs, fAvls, Coxel.cxlAdj fCxls, model.Derived.cxSol1
 
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"

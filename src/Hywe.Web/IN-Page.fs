@@ -3,9 +3,7 @@ module Page
 open System
 open Bolero.Html
 open Hywe.Core
-open Graphics
 open ModelTypes
-open Hywe
 
 [<AutoOpen>]
 module Elements =

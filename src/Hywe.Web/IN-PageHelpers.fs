@@ -5,18 +5,11 @@ open Elmish
 open Microsoft.JSInterop
 open ModelTypes
 open Hywe.Core
-open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
-open Hywe.Core.Zaxel
 open Hywe.Site
-open Hywe.Site.State
-open Hywe.Site.View
 open Page
-open Layout
-open FileManager
 open Hywe.Node
-
 
 // --- Logic ---
 
@@ -289,8 +282,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
         | Some c -> 
             let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
-            let vOff = ref 1
-            let objStr = FileManager.generateObj activeConfig.cxCxl1 activeConfig.cxElv1 0.0 0.0 vOff
+            let _, objStr = FileManager.generateObj activeConfig.cxCxl1 activeConfig.cxElv1 0.0 0.0 1
             let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         | None -> Some (model, Cmd.none)

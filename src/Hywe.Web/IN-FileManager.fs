@@ -1,7 +1,6 @@
 module FileManager
 
 open System
-open System.Text
 open System.Text.Json
 open Microsoft.JSInterop
 open Hywe.Core
@@ -20,52 +19,65 @@ let saveFile (js: IJSRuntime) (content: string) =
     let fileName = sprintf "%s.hyw" timestamp
     js.InvokeVoidAsync("downloadFile", fileName, content, "application/octet-stream") |> ignore
 
+/// Safely parse JSON into a JsonDocument using F#'s functional Async.Catch to avoid try...with.
+let private tryParseJson (json: string) =
+    match Async.RunSynchronously(Async.Catch(async { return JsonDocument.Parse(json) })) with
+    | Choice1Of2 doc -> Some doc
+    | Choice2Of2 _ -> None
+
 /// Exports Map Extents or Terrain Grid from Topography JSON
 let exportMapData (js: IJSRuntime) (topoJson: string) (exportType: string) =
-    try
-        use doc = JsonDocument.Parse(topoJson)
+    match tryParseJson topoJson with
+    | Some doc ->
+        use doc = doc
         let root = doc.RootElement
-        if exportType = "extents" && root.TryGetProperty("extents") |> fst then
+        
+        match exportType, root.TryGetProperty("extents") |> fst, root.TryGetProperty("elevations") |> fst with
+        | "extents", true, _ ->
             let content = root.GetProperty("extents").GetRawText()
             js.InvokeVoidAsync("downloadFile", "hywe-map-extents.json", content, "application/json") |> ignore
-        elif exportType = "terrain" && root.TryGetProperty("elevations") |> fst then
+            
+        | "terrain", _, true ->
             let elevationsProp = root.GetProperty("elevations")
             let elevationsArr = elevationsProp.EnumerateArray() |> Seq.toArray
             
-            if elevationsArr.Length > 0 then
+            match elevationsArr.Length with
+            | len when len > 0 ->
                 let extents = root.GetProperty("extents")
                 let north = extents.GetProperty("north").GetDouble()
                 let south = extents.GetProperty("south").GetDouble()
                 let east = extents.GetProperty("east").GetDouble()
                 let west = extents.GetProperty("west").GetDouble()
                 
-                let gridSize = int (Math.Sqrt(float elevationsArr.Length))
+                let gridSize = int (Math.Sqrt(float len))
                 
                 let lat0 = south // Bottom-left reference
                 let lon0 = west
                 
-                let sb = StringBuilder()
-                sb.AppendLine("X,Y,Z") |> ignore
+                let csvContent =
+                    let header = "X,Y,Z\n"
+                    let body =
+                        Array.init len (fun idx ->
+                            let i = idx / gridSize
+                            let j = idx % gridSize
+                            let lat = north - (north - south) * (float i / float (gridSize - 1))
+                            let lon = west + (east - west) * (float j / float (gridSize - 1))
+                            let ele = elevationsArr.[idx].GetDouble()
+                            
+                            let x = (lon - lon0) * 111320.0 * Math.Cos(lat0 * Math.PI / 180.0)
+                            let y = (lat - lat0) * 111320.0
+                            sprintf "%.2f,%.2f,%.2f" x y ele
+                        )
+                        |> String.concat "\n"
+                    header + body + "\n"
                 
-                let mutable idx = 0
-                for i = 0 to gridSize - 1 do
-                    for j = 0 to gridSize - 1 do
-                        let lat = north - (north - south) * (float i / float (gridSize - 1))
-                        let lon = west + (east - west) * (float j / float (gridSize - 1))
-                        let ele = elevationsArr.[idx].GetDouble()
-                        idx <- idx + 1
-                        
-                        let x = (lon - lon0) * 111320.0 * Math.Cos(lat0 * Math.PI / 180.0)
-                        let y = (lat - lat0) * 111320.0
-                        sb.AppendLine(sprintf "%.2f,%.2f,%.2f" x y ele) |> ignore
-                
-                let csvContent = sb.ToString()
                 js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.csv", csvContent, "text/csv") |> ignore
-        else
-            let fileName = if exportType = "extents" then "hywe-map-extents.json" else "hywe-terrain-grid.json"
+            | _ -> ()
+            
+        | _ ->
+            let fileName = match exportType with | "extents" -> "hywe-map-extents.json" | _ -> "hywe-terrain-grid.json"
             js.InvokeVoidAsync("downloadFile", fileName, topoJson, "application/json") |> ignore
-    with _ ->
-        ()
+    | None -> ()
 
 /// Exports the current map view as a PNG image using Leaflet.
 let exportMapImage (js: IJSRuntime) =
@@ -79,45 +91,38 @@ let importFile (js: IJSRuntime) (inputId: string) =
 let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState =
     let parsed = processFullString content |> List.truncate 1
     
-    let mutable finalState = current
-    match List.tryHead parsed with
-    | Some segment ->
+    let processSegment state segment =
         let attrs = match segment with | Level l -> l.Attributes | Nest n -> n.Attributes
         let multiplier = 10.0
-        finalState <- 
-            { finalState with
-                LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue finalState.LogicalWidth
-                LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue finalState.LogicalHeight
+        
+        let state1 = 
+            { state with
+                LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue state.LogicalWidth
+                LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue state.LogicalHeight
                 Elevation = attrs.Level
                 UseAbsolute = (attrs.Scale = 1.0)
                 UseBoundary = (attrs.Scale <> 1.0)
                 UseMapBase = (attrs.Scale = 2.0)
             }
 
-        // Handle Entry point
-        match parsePoint multiplier attrs.Entry with
-        | Ok pt -> finalState <- { finalState with EntryPoint = pt }
-        | _ -> ()
+        let state2 = match parsePoint multiplier attrs.Entry with | Ok pt -> { state1 with EntryPoint = pt } | _ -> state1
+        let state3 = match parsePoly multiplier attrs.OuterBoundary with | Ok pts -> { state2 with Outer = pts } | _ -> state2
+        let state4 = match parseIslands multiplier attrs.Islands with | Ok pts -> { state3 with Islands = pts } | _ -> state3
+        state4
 
-        // Handle Outer boundary
-        match parsePoly multiplier attrs.OuterBoundary with
-        | Ok pts -> finalState <- { finalState with Outer = pts }
-        | _ -> ()
-
-        // Handle Islands
-        match parseIslands multiplier attrs.Islands with
-        | Ok pts -> finalState <- { finalState with Islands = pts }
-        | _ -> ()
-    | None -> ()
+    let baseState = 
+        match List.tryHead parsed with
+        | Some segment -> processSegment current segment
+        | None -> current
     
-    let isZeroBoundary = finalState.LogicalWidth <= 0.0 || finalState.LogicalHeight <= 0.0
+    let isZeroBoundary = baseState.LogicalWidth <= 0.0 || baseState.LogicalHeight <= 0.0
+    let isBoundary = not baseState.UseAbsolute && not isZeroBoundary
     
     let finalStateWithBoundary = 
-        let isBoundary = not finalState.UseAbsolute && not isZeroBoundary
-        { finalState with 
-            Outer = if Array.isEmpty finalState.Outer then initOuter else finalState.Outer
-            LogicalWidth = if finalState.LogicalWidth <= 0.0 then 300.0 else finalState.LogicalWidth
-            LogicalHeight = if finalState.LogicalHeight <= 0.0 then 300.0 else finalState.LogicalHeight
+        { baseState with 
+            Outer = match Array.isEmpty baseState.Outer with | true -> initOuter | false -> baseState.Outer
+            LogicalWidth = match baseState.LogicalWidth <= 0.0 with | true -> 300.0 | false -> baseState.LogicalWidth
+            LogicalHeight = match baseState.LogicalHeight <= 0.0 with | true -> 300.0 | false -> baseState.LogicalHeight
             UseBoundary = isBoundary
             PolygonEnabled = isBoundary }
         |> refreshCachedStrings
@@ -139,57 +144,56 @@ let private getBaseCoordStringDec (cxl: Cxl) =
 
 /// Generates a CSV of all Coxel coordinates
 let generateCoordinatesCsv (data: (string * int * Cxl[])[]) =
-    let sb = StringBuilder()
-    sb.AppendLine("Orientation,Level,Rooms (ID Name Base Coordinates...)") |> ignore
-    data |> Array.iter (fun (sqn, elv, cxls) ->
-        let roomStrings =
-            cxls |> Array.map (fun cxl ->
-                let id = prpVlu cxl.Rfid
-                let name = prpVlu cxl.Name
-                let baseCoord = getBaseCoordStringDec cxl
-                let coords = getCxlCoordsStringDec cxl
-                sprintf "%s %s %s %s" id name baseCoord coords
-            )
-        let rowStr = sprintf "%s,%d,%s" sqn elv (String.concat "," roomStrings)
-        sb.AppendLine(rowStr) |> ignore
-    )
-    sb.ToString()
+    let header = "Orientation,Level,Rooms (ID Name Base Coordinates...)\n"
+    let rows = 
+        data |> Array.map (fun (sqn, elv, cxls) ->
+            let roomStrings =
+                cxls |> Array.map (fun cxl ->
+                    let id = prpVlu cxl.Rfid
+                    let name = prpVlu cxl.Name
+                    let baseCoord = getBaseCoordStringDec cxl
+                    let coords = getCxlCoordsStringDec cxl
+                    sprintf "%s %s %s %s" id name baseCoord coords
+                )
+            sprintf "%s,%d,%s" sqn elv (String.concat "," roomStrings)
+        )
+    header + (String.concat "\n" rows) + "\n"
 
 /// Generates a CSV of area metrics
 let generateAreaMetricsCsv (data: (string * int * Cxl[])[]) =
-    let sb = StringBuilder()
     let hxlAreaX = 1
-    sb.AppendLine("Orientation,Level,CoxelID,CoxelName,Required,Achieved,TargetMet") |> ignore
-    data |> Array.iter (fun (sqn, elv, cxls) ->
-        cxls |> Array.iter (fun cxl ->
-            let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
-            let achSz = (Array.length cxl.Hxls) * hxlAreaX
-            let id = prpVlu cxl.Rfid
-            let name = prpVlu cxl.Name
-            let targetMet = match achSz >= reqSz with true -> "Yes" | false -> "No"
-            sb.AppendLine(sprintf "%s,%d,%s,%s,%d,%d,%s" sqn elv id name reqSz achSz targetMet) |> ignore
+    let header = "Orientation,Level,CoxelID,CoxelName,Required,Achieved,TargetMet\n"
+    let rows = 
+        data |> Array.collect (fun (sqn, elv, cxls) ->
+            cxls |> Array.map (fun cxl ->
+                let reqSz = (prpVlu cxl.Size |> int) * hxlAreaX
+                let achSz = (Array.length cxl.Hxls) * hxlAreaX
+                let id = prpVlu cxl.Rfid
+                let name = prpVlu cxl.Name
+                let targetMet = match achSz >= reqSz with | true -> "Yes" | false -> "No"
+                sprintf "%s,%d,%s,%s,%d,%d,%s" sqn elv id name reqSz achSz targetMet
+            )
         )
-    )
-    sb.ToString()
+    header + (String.concat "\n" rows) + "\n"
 
 /// Generates a CSV for adjacency matrices
 let generateAdjacencyCsv (data: (string * int * (string[] * bool[][]))[]) =
-    let sb = StringBuilder()
-    data |> Array.iter (fun (sqn, elv, (names, matrix)) ->
-        match not (Array.isEmpty names) with
-        | true ->
-            sb.AppendLine(sprintf "--- %s | Level %d ---" sqn elv) |> ignore
-            let header = "Room," + String.concat "," names
-            sb.AppendLine(header) |> ignore
-            [0 .. matrix.Length - 1] |> List.iter (fun i ->
-                let row = matrix.[i]
-                let rowStr = names.[i] + "," + String.concat "," (row |> Array.map (fun adj -> match adj with true -> "1" | false -> "0"))
-                sb.AppendLine(rowStr) |> ignore
-            )
-            sb.AppendLine() |> ignore
-        | false -> ()
+    data 
+    |> Array.choose (fun (sqn, elv, (names, matrix)) ->
+        match Array.isEmpty names with
+        | false ->
+            let header1 = sprintf "--- %s | Level %d ---" sqn elv
+            let header2 = "Room," + String.concat "," names
+            let rows =
+                [0 .. matrix.Length - 1] 
+                |> List.map (fun i ->
+                    let row = matrix.[i]
+                    names.[i] + "," + String.concat "," (row |> Array.map (fun adj -> match adj with | true -> "1" | false -> "0"))
+                )
+            Some (String.concat "\n" (header1 :: header2 :: rows) + "\n")
+        | true -> None
     )
-    sb.ToString()
+    |> String.concat "\n"
 
 /// Generates Hynteract payload
 let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
@@ -217,8 +221,9 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
         let isNested (c: Cxl) =
             levelCxls
             |> Array.exists (fun p ->
-                if p = c then false
-                else
+                match p = c with
+                | true -> false
+                | false ->
                     let pCoords = parentCoordsMap.[p]
                     let (cx, cy, _) = hxlCrd c.Base
                     pCoords.Contains(cx, cy) && (Array.append [|p.Base|] p.Hxls).Length > (Array.append [|c.Base|] c.Hxls).Length
@@ -227,8 +232,9 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
         let findHost (c: Cxl) =
             levelCxls
             |> Array.tryFind (fun p ->
-                if p = c then false
-                else
+                match p = c with
+                | true -> false
+                | false ->
                     let pCoords = parentCoordsMap.[p]
                     let (cx, cy, _) = hxlCrd c.Base
                     pCoords.Contains(cx, cy) && (Array.append [|p.Base|] p.Hxls).Length > (Array.append [|c.Base|] c.Hxls).Length
@@ -270,104 +276,104 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
 
 /// DXF Export (2D Layout)
 let generateDxf (cxls: Cxl[]) (offsetX: float) (offsetY: float) =
-    let sb = StringBuilder()   
     let hexScale = 1.0
-    cxls |> Array.iter (fun cxl ->
+    cxls 
+    |> Array.choose (fun cxl ->
         let prm = cxlPrm cxl 0
         match prm.Length > 2 with
         | true ->
-            sb.AppendLine("0\nLWPOLYLINE") |> ignore
-            sb.AppendLine("8\nRooms") |> ignore
-            sb.AppendLine("90\n" + string prm.Length) |> ignore
-            sb.AppendLine("70\n1") |> ignore           
-            prm |> Array.iter (fun (x, y) ->
-                let q = float x
-                let r = float y
-                let cx = (hexScale * q) + offsetX
-                let cy = (hexScale * r) + offsetY
-                sb.AppendLine("10\n" + string cx) |> ignore
-                sb.AppendLine("20\n" + string cy) |> ignore
-            )
-        | false -> ()
+            let header = [
+                "0"; "LWPOLYLINE"
+                "8"; "Rooms"
+                "90"; string prm.Length
+                "70"; "1"
+            ]
+            let points = 
+                prm |> Array.collect (fun (x, y) ->
+                    let q = float x
+                    let r = float y
+                    let cx = (hexScale * q) + offsetX
+                    let cy = (hexScale * r) + offsetY
+                    [| "10"; string cx; "20"; string cy |]
+                ) |> Array.toList
+            Some (String.concat "\n" (header @ points))
+        | false -> None
     )
-    sb.ToString()
+    |> function
+        | [||] -> ""
+        | arr -> (String.concat "\n" arr) + "\n"
 
 let generateDxfBatch (batch: Cxl[] list) =
-    let sb = StringBuilder()
-    sb.AppendLine("0\nSECTION\n2\nHEADER\n0\nENDSEC") |> ignore
-    sb.AppendLine("0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n1") |> ignore
-    sb.AppendLine("0\nLAYER\n2\nRooms\n70\n0\n62\n7\n0\nENDTAB\n0\nENDSEC") |> ignore
-    sb.AppendLine("0\nSECTION\n2\nBLOCKS\n0\nENDSEC") |> ignore
-    sb.AppendLine("0\nSECTION\n2\nENTITIES") |> ignore
-    
+    let header = [
+        "0"; "SECTION"; "2"; "HEADER"; "0"; "ENDSEC"
+        "0"; "SECTION"; "2"; "TABLES"; "0"; "TABLE"; "2"; "LAYER"; "70"; "1"
+        "0"; "LAYER"; "2"; "Rooms"; "70"; "0"; "62"; "7"; "0"; "ENDTAB"; "0"; "ENDSEC"
+        "0"; "SECTION"; "2"; "BLOCKS"; "0"; "ENDSEC"
+        "0"; "SECTION"; "2"; "ENTITIES"
+    ]
     let cols = 4
-    batch |> List.iteri (fun i cxls ->
-        let r = i / cols
-        let c = i % cols
-        let ox = float c * 100.0
-        let oy = float r * -100.0
-        sb.Append(generateDxf cxls ox oy) |> ignore
-    )
-    sb.AppendLine("0\nENDSEC") |> ignore
-    sb.AppendLine("0\nEOF") |> ignore
-    sb.ToString()
+    let bodies = 
+        batch |> List.mapi (fun i cxls ->
+            let r = i / cols
+            let c = i % cols
+            let ox = float c * 100.0
+            let oy = float r * -100.0
+            generateDxf cxls ox oy
+        )
+    let footer = [ "0"; "ENDSEC"; "0"; "EOF" ]
+    
+    String.concat "\n" (header @ bodies @ footer) + "\n"
 
 /// OBJ Export (3D Geometry)
-let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: float) (vOffset: int ref) =
-    let sb = StringBuilder()
-    cxls |> Array.iter (fun cxl ->
+let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: float) (vOffset: int) =
+    let foldObj (currentOffset: int, accStrings: string list) (cxl: Cxl) =
         let (_, _, zInt) = Hexel.hxlCrd cxl.Base
-        let zBottom = match zInt < elevations.Length with true -> elevations.[zInt] | false -> float zInt * 3.0
-        let zTop = match zInt + 1 < elevations.Length with true -> elevations.[zInt + 1] | false -> zBottom + 3.0
+        let zBottom = match zInt < elevations.Length with | true -> elevations.[zInt] | false -> float zInt * 3.0
+        let zTop = match zInt + 1 < elevations.Length with | true -> elevations.[zInt + 1] | false -> zBottom + 3.0
         
         let prm = cxlPrm cxl zInt
         let n = prm.Length
         match n > 2 with
         | true ->
-            prm |> Array.iter (fun (x, y) ->
-                sb.AppendLine(sprintf "v %f %f %f" (float x + offsetX) zBottom (float y + offsetY)) |> ignore
-            )
-            prm |> Array.iter (fun (x, y) ->
-                sb.AppendLine(sprintf "v %f %f %f" (float x + offsetX) zTop (float y + offsetY)) |> ignore
-            )
+            let vBottoms = prm |> Array.map (fun (x, y) -> sprintf "v %f %f %f" (float x + offsetX) zBottom (float y + offsetY)) |> Array.toList
+            let vTops = prm |> Array.map (fun (x, y) -> sprintf "v %f %f %f" (float x + offsetX) zTop (float y + offsetY)) |> Array.toList
             
-            [0 .. n - 1] |> List.iter (fun i ->
-                let nextI = (i + 1) % n
-                let b1 = !vOffset + i
-                let b2 = !vOffset + nextI
-                let t1 = !vOffset + n + i
-                let t2 = !vOffset + n + nextI
-                sb.AppendLine(sprintf "f %d %d %d" b1 b2 t1) |> ignore
-                sb.AppendLine(sprintf "f %d %d %d" b2 t2 t1) |> ignore
-            )
+            let faces = 
+                [0 .. n - 1] |> List.collect (fun i ->
+                    let nextI = (i + 1) % n
+                    let b1 = currentOffset + i
+                    let b2 = currentOffset + nextI
+                    let t1 = currentOffset + n + i
+                    let t2 = currentOffset + n + nextI
+                    [ sprintf "f %d %d %d" b1 b2 t1; sprintf "f %d %d %d" b2 t2 t1 ]
+                )
             
-            sb.Append("f ") |> ignore
-            [0 .. n - 1] |> List.iter (fun i -> sb.Append(sprintf "%d " (!vOffset + n + i)) |> ignore)
-            sb.AppendLine() |> ignore
-            sb.Append("f ") |> ignore
-            [n - 1 .. -1 .. 0] |> List.iter (fun i -> sb.Append(sprintf "%d " (!vOffset + i)) |> ignore)
-            sb.AppendLine() |> ignore
+            let topFace = "f " + ([0 .. n - 1] |> List.map (fun i -> string (currentOffset + n + i)) |> String.concat " ")
+            let bottomFace = "f " + ([n - 1 .. -1 .. 0] |> List.map (fun i -> string (currentOffset + i)) |> String.concat " ")
             
-            vOffset := !vOffset + 2 * n
-        | false -> ()
-    )
-    sb.ToString()
+            let newLines = vBottoms @ vTops @ faces @ [topFace; bottomFace]
+            (currentOffset + 2 * n, accStrings @ newLines)
+        | false -> (currentOffset, accStrings)
+        
+    let finalOffset, lines = ((vOffset, []), cxls) ||> Array.fold foldObj
+    (finalOffset, match lines with | [] -> "" | _ -> String.concat "\n" lines + "\n")
 
 let generateObjBatch (batch: (Cxl[] * float[]) list) =
-    let sb = StringBuilder()
-    sb.AppendLine("# Hywe 3D Batch Export") |> ignore
-    sb.AppendLine("g Batch") |> ignore
+    let header = "# Hywe 3D Batch Export\ng Batch\n"
     
-    let vOff = ref 1
     let cols = 4
-    batch |> List.iteri (fun i (cxls, elvs) ->
-        let r = i / cols
-        let c = i % cols
-        let ox = float c * 100.0
-        let oy = float r * -100.0
-        sb.Append(generateObj cxls elvs ox oy vOff) |> ignore
-    )
-    sb.ToString()
+    let _, bodyStrings = 
+        ((1, []), batch |> List.indexed)
+        ||> List.fold (fun (vOff, acc) (i, (cxls, elvs)) ->
+            let r = i / cols
+            let c = i % cols
+            let ox = float c * 100.0
+            let oy = float r * -100.0
+            let nextOff, str = generateObj cxls elvs ox oy vOff
+            (nextOff, acc @ [str])
+        )
+        
+    header + String.concat "" bodyStrings
 
 
 // --- PROTOCOL (State Transfer & Persistence) ---
@@ -412,69 +418,75 @@ module Protocol =
 
     /// Synchronizes the current design state to both LocalStorage and the URL Hash.
     let sync (js: IJSRuntime) (content: string) (panel: ActivePanel) =
-        if not (String.IsNullOrWhiteSpace content) then
+        match String.IsNullOrWhiteSpace content with
+        | false ->
             setBackup js content
             let p = panelToString panel
             let hash = sprintf "%s|P=%s" content p
             setUrlHash js hash
-        else
+        | true ->
             setUrlHash js ""
 
     /// Parses a raw hash string (already decoded) into (content, panel option, isFromUrl).
     /// Used synchronously by HandleHashChange when the URL changes in an already-running app.
     let resolveHashChange (rawHash: string) : string * ActivePanel option * bool =
-        if String.IsNullOrWhiteSpace rawHash then "", None, false
-        else
-            try
-                let upperHash = rawHash.ToUpperInvariant()
-                let pIdx = 
-                    let i1 = upperHash.LastIndexOf("|P=")
-                    if i1 <> -1 then i1 
-                    else 
-                        let i2 = upperHash.LastIndexOf("%7CP=")
-                        if i2 <> -1 then i2 else -1
-                if pIdx <> -1 then
-                    let delimLength = if upperHash.Substring(pIdx).StartsWith("|P=") then 3 else 5
+        match String.IsNullOrWhiteSpace rawHash with
+        | true -> "", None, false
+        | false ->
+            let upperHash = rawHash.ToUpperInvariant()
+            let pIdx = 
+                match upperHash.LastIndexOf("|P=") with
+                | -1 -> 
+                    match upperHash.LastIndexOf("%7CP=") with
+                    | -1 -> -1
+                    | i2 -> i2
+                | i1 -> i1
+            match pIdx with
+            | -1 -> rawHash, None, true
+            | _ ->
+                let isStandardDelim = upperHash.Substring(pIdx).StartsWith("|P=")
+                let delimLength = match isStandardDelim with | true -> 3 | false -> 5
+                
+                match pIdx >= 0 && pIdx + delimLength <= rawHash.Length with
+                | true ->
                     let c = rawHash.Substring(0, pIdx)
                     let pName = rawHash.Substring(pIdx + delimLength)
-                    // console.log("Hywe: resolveHashChange", pIdx, delimLength, pName)
                     c, stringToPanel pName, true
-                else
-                    rawHash, None, true
-            with _ -> rawHash, None, true
+                | false -> rawHash, None, true
 
     /// Orchestrates the startup state resolution.
     let resolveStartupState (js: IJSRuntime) =
         async {
-            try
-                // 1. Try URL Hash first
-                let! urlHash = (getUrlHash js).AsTask() |> Async.AwaitTask
-                if not (String.IsNullOrWhiteSpace urlHash) then 
-                    // Case-insensitive search for |P= or %7CP=
-                    let upperHash = urlHash.ToUpperInvariant()
-                    let pIdx = 
-                        let i1 = upperHash.LastIndexOf("|P=")
-                        if i1 <> -1 then i1 
-                        else 
-                            let i2 = upperHash.LastIndexOf("%7CP=")
-                            if i2 <> -1 then i2 else -1
+            let! hashAttempt = Async.Catch ((getUrlHash js).AsTask() |> Async.AwaitTask)
+            match hashAttempt with
+            | Choice1Of2 urlHash when not (String.IsNullOrWhiteSpace urlHash) ->
+                let upperHash = urlHash.ToUpperInvariant()
+                let pIdx = 
+                    match upperHash.LastIndexOf("|P=") with
+                    | -1 -> 
+                        match upperHash.LastIndexOf("%7CP=") with
+                        | -1 -> -1
+                        | i2 -> i2
+                    | i1 -> i1
+                
+                match pIdx with
+                | -1 -> return urlHash, None, true // Source: URL
+                | _ ->
+                    let isStandardDelim = upperHash.Substring(pIdx).StartsWith("|P=")
+                    let delimLength = match isStandardDelim with | true -> 3 | false -> 5
                     
-                    if pIdx <> -1 then
-                        // Calculate content length (excluding the delimiter)
-                        let delimLength = if upperHash.Substring(pIdx).StartsWith("|P=") then 3 else 5
+                    match pIdx >= 0 && pIdx + delimLength <= urlHash.Length with
+                    | true ->
                         let c = urlHash.Substring(0, pIdx)
                         let pName = urlHash.Substring(pIdx + delimLength)
                         return c, stringToPanel pName, true
-                    else
-                        return urlHash, None, true // Source: URL
-                else
-                    // 2. Fallback to Local Backup
-                    let! backup = (getBackup js).AsTask() |> Async.AwaitTask
-                    if not (isNull backup) && not (String.IsNullOrWhiteSpace backup) then
-                        return backup, None, false // Source: Local
-                    else
-                        return "", None, false
-            with _ -> return "", None, false
+                    | false -> return urlHash, None, true
+            | _ ->
+                let! backupAttempt = Async.Catch ((getBackup js).AsTask() |> Async.AwaitTask)
+                match backupAttempt with
+                | Choice1Of2 backup when not (isNull backup) && not (String.IsNullOrWhiteSpace backup) ->
+                    return backup, None, false // Source: Local
+                | _ -> return "", None, false
         }
 
     /// Clears the local backup safely.

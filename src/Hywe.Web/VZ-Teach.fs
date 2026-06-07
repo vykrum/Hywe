@@ -3,19 +3,13 @@ module Hywe.Teach
 open System
 open Microsoft.JSInterop
 open Elmish
-open Bolero
 open Bolero.Html
 open ModelTypes
-open Hywe.Site
-open Hywe.Site.State
-open Hywe.Site.View
 open Hywe.Core
 open Hywe.Core.Lexel
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Node
-open FileManager
-open Cache
 open Page
 
 // --- UTILITIES & TRANSCRIPTION ---

@@ -4,11 +4,8 @@ module ModelTypes
 open Hywe.Node
 
 open Hywe.Site
-open Hywe.Site.State
 open Hywe.Core.Coxel
 open System
-
-
 
 /// <summary> Specifies the currently visible configuration panel. </summary>
 type ActivePanel =

@@ -1,6 +1,5 @@
 module Hywe.Report
 
-open Bolero
 open Bolero.Html
 open ModelTypes
 open System

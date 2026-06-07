@@ -5,8 +5,6 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Microsoft.JSInterop
-open Microsoft.AspNetCore.Components.Web
-open Hywe.Core.Lexel
 
 // --------------------
 // UI Action Registry
