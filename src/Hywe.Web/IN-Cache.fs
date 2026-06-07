@@ -76,7 +76,7 @@ module Cache
         {| sqnName = sqnStr
            shapes = d.shapes |> Array.map (fun s -> 
              {| color = s.color; points = s.points; name = s.name; lx = s.lx; ly = s.ly |}) 
-           w = d.w; h = d.h
+           w = d.w; h = d.h; mapScale = polyExport.MapScale
            cxCxl1 = cxls
            cxElv1 = cxElv1
            cxlAvl = derived.cxlAvl

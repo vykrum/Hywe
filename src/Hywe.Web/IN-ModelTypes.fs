@@ -184,6 +184,7 @@ type PolygonExportData = {
     Width: int
     Height: int
     Latitude: float option
+    MapScale: float
 }
 
 type OnboardingStep =
@@ -229,7 +230,7 @@ type AppScreen =
 
 // Batch Export Types
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[]; cxSol1: float[] option |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; mapScale: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[]; cxSol1: float[] option |}
 
 // Report Types
 type LevelReportSections = {
@@ -404,4 +405,4 @@ let syncPolygonState (p: PolygonEditorModel) =
             with _ -> Some 0.0
         | None -> None
 
-    { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h'; Latitude = lat }
+    { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h'; Latitude = lat; MapScale = p.MapScale }
