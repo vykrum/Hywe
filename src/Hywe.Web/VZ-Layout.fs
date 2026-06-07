@@ -168,6 +168,8 @@ let svgCoxels
 
             svg {
                 "viewBox" => $"0 0 {wdt} {hgt}"
+                "width" => string wdt
+                "height" => string hgt
                 attr.``style`` "display: block; width: 100%; height: auto;"
                 attr.id (svgId |> Option.defaultValue "")
 
