@@ -32,19 +32,19 @@ As a zero-dependency engine, HYWE operates on a logic where **Syntax is the sing
 https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
 
 ### Intro
-![Intro Screen](assets/intro.jpg)
+![Intro Screen Placeholder](path/to/intro.jpg)
 
 ### Layout Generation
-![2D Layout View](assets/layout.jpg)
+![2D Layout View Placeholder](path/to/layout.jpg)
 
 ### Volumetric Massing
-![3D WebGPU View](assets/3d-view.jpg)
+![3D WebGPU View Placeholder](path/to/3d-view.jpg)
 
 ### Spatial Analysis
-![Analysis Metrics](assets/analyze.jpg)
+![Analysis Metrics Placeholder](path/to/analyze.jpg)
 
 ### Procedural Generation
-![Batch Permutations](assets/batch.jpg)
+![Batch Permutations Placeholder](path/to/batch.jpg)
 
 ---
 
