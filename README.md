@@ -27,24 +27,29 @@ As a zero-dependency engine, HYWE operates on a logic where **Syntax is the sing
 
 ---
 
-## The Workspace
-
-https://github.com/user-attachments/assets/cc523e4c-ca69-431a-8cbb-eb58c001b3dc
-
 ### Intro
-![Intro Screen Placeholder](path/to/intro.jpg)
+<img width="1023" height="907" alt="HYWE_Intro" src="https://github.com/user-attachments/assets/0e30e79a-f130-4d64-9119-c8e66a4fd6a9" />
 
 ### Layout Generation
-![2D Layout View Placeholder](path/to/layout.jpg)
+<img width="1023" height="1531" alt="HYWE_Layout" src="https://github.com/user-attachments/assets/4ef3335f-d905-43fa-ac98-3226700249a6" />
 
 ### Volumetric Massing
-![3D WebGPU View Placeholder](path/to/3d-view.jpg)
+<img width="1023" height="1312" alt="HYWE_3D" src="https://github.com/user-attachments/assets/eba2ff4f-c36b-49a3-9500-3e7192bf7f1a" />
 
 ### Spatial Analysis
-![Analysis Metrics Placeholder](path/to/analyze.jpg)
+<img width="1023" height="1289" alt="HYWE_Analyze" src="https://github.com/user-attachments/assets/dc798c70-4da7-45b7-8334-4749fe857689" />
 
 ### Procedural Generation
-![Batch Permutations Placeholder](path/to/batch.jpg)
+<img width="1023" height="2095" alt="HYWE_Batch" src="https://github.com/user-attachments/assets/e017254d-b070-47b0-994e-1a7f07419787" />
+
+### Boundary Condition
+<img width="1023" height="1531" alt="HYWE_Boundary" src="https://github.com/user-attachments/assets/dde4d99e-5f6f-481e-bfd2-16388f92801c" />
+
+### Dataset Preperation
+<img width="1023" height="1641" alt="HYWE_Teach" src="https://github.com/user-attachments/assets/9156d9e1-965f-4b63-8267-381fbdd28341" />
+
+### Report Compilation
+<img width="1023" height="1471" alt="HYWE_Report" src="https://github.com/user-attachments/assets/bfd74716-dd8d-46f3-aba8-1ac531f966d5" />
 
 ---
 
