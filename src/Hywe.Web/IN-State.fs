@@ -1,26 +1,14 @@
 module AppState
 
 open System
-open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
 open Elmish
-open Bolero
-open Bolero.Html
 open Page
 open Hywe.Node
 open Hywe.Site
-open Hywe.Site.State
-open Hywe.Site.View
 open ModelTypes
-open ModelHelpers
 open Hywe
 open Hywe.Core
-open Hywe.Core.Coxel
-open ModelHelpers
-open Teach
-
-open Hywe.Core.Lexel
-open Cache
 open FileManager
 
 // Defaults / init 
@@ -197,7 +185,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 for KeyValue(lvl, sqn) in newSqns do
                     let oldSqn = model.Sequences |> Map.tryFind lvl |> Option.defaultValue ""
                     if sqn <> oldSqn then
-                        s <- injectSqn s lvl sqn
+                        s <- Lexel.injectSqn s lvl sqn
                 s
 
         Protocol.sync js updatedSrc model.ActivePanel
@@ -226,7 +214,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
         let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
-        let newSqns = extractSequences value
+        let newSqns = Lexel.extractSequences value
         { m with 
             SrcOfTrth = value
             Sequences = newSqns
@@ -570,7 +558,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         else
             try
                 // Extract Sequences (Q=...)
-                let newSqns = extractSequences content
+                let newSqns = Lexel.extractSequences content
                 
                 // Restore Tree
                 let newTree = Serialization.initModel content

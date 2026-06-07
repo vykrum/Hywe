@@ -1,9 +1,7 @@
 module Graphics
 
 open Bolero
-open System.Collections.Frozen
 open Hywe.Core
-open Bolero.Html
 
 type plgn = Template<
         """ <polygon 
