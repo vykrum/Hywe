@@ -111,39 +111,32 @@ let coreScript =
                 canvas.height = img.height || 600;
                 const ctx = canvas.getContext("2d");
                 
-                // Add a white background since SVG is transparent and PNG might look bad in dark mode viewers
+                // Add a white background since SVG is transparent
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
                 URL.revokeObjectURL(url);
 
                 canvas.toBlob(function(pngBlob) {
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    if (isMobile) {
-                        try {
-                            const file = new File([pngBlob], fileName, { type: "image/png" });
-                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                                navigator.share({
-                                    files: [file],
-                                    title: fileName,
-                                    text: "Hywe Layout Export"
-                                }).catch(console.warn);
-                                return; // Successfully shared
-                            }
-                        } catch(e) { }
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = function() {
+                    const isSuccess = pngBlob !== null;
+                    if (isSuccess) {
+                        const objUrl = URL.createObjectURL(pngBlob);
                         const a = document.createElement("a");
-                        a.href = reader.result;
+                        a.href = objUrl;
                         a.download = fileName;
                         document.body.appendChild(a);
                         a.click();
-                        setTimeout(() => { document.body.removeChild(a); }, 500);
-                    };
-                    reader.readAsDataURL(pngBlob);
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(objUrl);
+                        }, 500);
+                    } else {
+                        console.error("Hywe: Canvas toBlob failed.");
+                    }
                 }, "image/png");
+            };
+            img.onerror = function(e) {
+                console.error("Hywe: Failed to render SVG into Image for PNG conversion. Invalid SVG format.", e);
             };
             img.src = url;
         };

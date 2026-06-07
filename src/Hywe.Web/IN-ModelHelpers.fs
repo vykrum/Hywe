@@ -496,8 +496,8 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                     let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
                                     do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, svgString).AsTask() |> Async.AwaitTask
                                 | None ->
-                                    // If cache missing, fall back to SVG scraper (could write a PNG scraper fallback, but cache is usually populated)
-                                    do! downloadSvg js "layout-svg-output" fileName 
+                                    // If cache missing, fall back to SVG scraper and pass to PNG converter
+                                    do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName).AsTask() |> Async.AwaitTask 
                             } |> Async.StartImmediate
                         )
                         text "PNG"
