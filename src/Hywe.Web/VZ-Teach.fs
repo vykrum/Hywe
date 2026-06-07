@@ -105,8 +105,23 @@ let generateSuggestion (model: Model) =
         if String.IsNullOrWhiteSpace meta.ProjectTitle then ""
         else sprintf " for the '%s' project" (meta.ProjectTitle.Trim())
 
-    let intro = sprintf "This is a %s stage %s %s project%s%s with a %s flow and %s ambience. " 
-                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) authorPart projectPart (meta.Flow.ToLower()) (meta.Ambience.ToLower())
+    let boundaryPart =
+        let firstConfig = 
+            model.LayoutCache 
+            |> Map.toSeq
+            |> Seq.tryPick (fun (_, configs) -> configs |> Array.tryPick id)
+            
+        match firstConfig with
+        | Some cfg ->
+            if cfg.cxOuIl.Length = 0 then "The layout is unbound."
+            else
+                let islandText = if cfg.cxOuIl.Length > 1 then "with islands" else "without islands"
+                let scaleText = if cfg.mapScale <> 1.0 then sprintf " with a map scale of 1:%d" (int cfg.mapScale) else ""
+                sprintf "The layout is bound at %dx%d%s, %s." model.PolygonExport.Width model.PolygonExport.Height scaleText islandText
+        | None -> "The layout is unbound."
+
+    let intro = sprintf "This is a %s stage %s %s project%s%s with a %s flow and %s ambience. %s" 
+                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) authorPart projectPart (meta.Flow.ToLower()) (meta.Ambience.ToLower()) boundaryPart
 
     let levelsContent = 
         tree.Levels 
@@ -283,7 +298,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                             let nestCfg = 
                                                 {| sqnName = sqnStr
                                                    shapes = [||] 
-                                                   w = 0.0; h = 0.0
+                                                   w = 0.0; h = 0.0; mapScale = 1.0
                                                    cxCxl1 = ncxls
                                                    cxElv1 = [||]; cxlAvl = [||]; cxOuIl = [||]
                                                    cxAdj1 = ([||], [||]); cxB36 = [||]; cxRto1 = [||]; cxClr1 = [||]; cxSol1 = None |}
