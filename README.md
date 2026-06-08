@@ -27,6 +27,9 @@ By replacing manual geometric drafting with an **interactive visual node tree in
 
 ---
 
+### Overview
+<video src="https://github.com/user-attachments/assets/b285dbd8-33bd-45c1-998e-87e2ce0b0d0d" width="100%" autoplay loop muted controls></video>
+
 ### Intro
 <img width="1023" height="907" alt="HYWE_Intro" src="https://github.com/user-attachments/assets/0e30e79a-f130-4d64-9119-c8e66a4fd6a9" />
 
