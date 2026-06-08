@@ -67,27 +67,34 @@ module Coxel =
                 let hx1 = 
                     acc |> Array.mapi (fun i row ->
                         let (_, count) = hxo.[i]
-                        let mutable foundPoint = None
-                        let mutable j = 0
-                        while j < row.Count && foundPoint.IsNone do
-                            let h, _ = row.[j]
-                            if (availableSet sqn elv h occSet) > 0 then
-                                foundPoint <- Some h
-                            j <- j + 1
                         
-                        match foundPoint with
+                        let rec findPoint j =
+                            match j < row.Count with
+                            | false -> None
+                            | true ->
+                                let h, _ = row.[j]
+                                match availableSet sqn elv h occSet > 0 with
+                                | true -> Some h
+                                | false -> findPoint (j + 1)
+                        
+                        match findPoint 0 with
                         | Some h -> (h, count - 1)
                         | None   -> (hxlVld sqn (RV(0,0,elv)), 0xFFFFFFFF)
                     )
 
                 let inc = incrementsSet sqn elv hx1 occSet
                                 
-                for i = 0 to acc.Length - 1 do
-                    let newEl = inc.[i]
-                    acc.[i].Add(newEl)
-                    let h, _ = newEl
-                    let x, y, z = hxlCrd h
-                    occSet.Add(AV(x, y, z)) |> ignore
+                let rec updateAcc i =
+                    match i < acc.Length with
+                    | false -> ()
+                    | true ->
+                        let newEl = inc.[i]
+                        acc.[i].Add(newEl)
+                        let h, _ = newEl
+                        let x, y, z = hxlCrd h
+                        occSet.Add(AV(x, y, z)) |> ignore
+                        updateAcc (i + 1)
+                updateAcc 0
                 
                 clsts hx1 elv occSet acc (cnt - 1)
 
@@ -143,7 +150,7 @@ module Coxel =
                 let clusterOcc = hxlSet (Array.append chOc1 x.Hxls)
                 let h2 = hxlChkSet sqn elv clusterOcc x.Hxls
                 let baseCheck = hxlChkSet sqn elv clusterOcc [|x.Base|]
-                let b2 = if Array.isEmpty baseCheck then x.Base else baseCheck.[0]
+                let b2 = match baseCheck with | [||] -> x.Base | _ -> baseCheck.[0]
                 { x with Hxls = h2; Base = b2 })
                 
         bsCx, finalCxc, chOc1
@@ -174,8 +181,9 @@ module Coxel =
             rootCxl, updatedOcc
         | None ->
             let bsHx = 
-                if bsAtr = "0" then entryFallback
-                else
+                match bsAtr with
+                | "0" -> entryFallback
+                | _ ->
                     let parts = bsAtr.Split ','
                     match parts with
                     | [| xStr; yStr |] ->
@@ -221,7 +229,7 @@ module Coxel =
                     | _ ->
                         let adj = adjacent sqn current
                         let validAdj = adj |> Array.filter (fun x -> availableSet.Contains(x))
-                        let nextOpt = if opt then Array.tryLast validAdj else Array.tryHead validAdj
+                        let nextOpt = match opt with | true -> Array.tryLast validAdj | false -> Array.tryHead validAdj
                         match nextOpt with
                         | Some nxt ->
                             acc.Add(nxt)
@@ -233,12 +241,15 @@ module Coxel =
                 acc.ToArray()
 
             let hxl = hxo |> Array.sortByDescending (fun x -> available sqn elv x hxo)
-            let a1 = if Array.isEmpty hxl then [||] else arr hxl true
-            let ar1 = if Array.length a1 = Array.length hxl then a1 else arr hxl false
+            let a1 = match hxl with | [||] -> [||] | _ -> arr hxl true
+            let ar1 = match Array.length a1 = Array.length hxl with | true -> a1 | false -> arr hxl false
 
-            if Array.isEmpty hxo then [||]
-            elif (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) then Array.rev ar1
-            else Array.rev (hxlUni 1 ar1)
+            match hxo with
+            | [||] -> [||]
+            | _ ->
+                match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with
+                | true -> Array.rev ar1
+                | false -> Array.rev (hxlUni 1 ar1)
 
         let cntSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) =      
             let hxl = hxlUni 1 hxo
@@ -267,26 +278,32 @@ module Coxel =
 
             let hxl = hxl |> Array.sortByDescending (fun x -> available sqn elv x hxl)
             let cnt = Array.length(hxl)
-            let arr = if Array.isEmpty hxl then [||] else ctSq hxl
-            let ar1 = if cnt = Array.length(arr) then arr else ctSq (Array.rev hxl)
+            let arr = match hxl with | [||] -> [||] | _ -> ctSq hxl
+            let ar1 = match cnt = Array.length(arr) with | true -> arr | false -> ctSq (Array.rev hxl)
 
-            if Array.isEmpty hxo then [||]
-            elif (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) then ar1
-            else hxlUni 1 ar1
+            match hxo with
+            | [||] -> [||]
+            | _ ->
+                match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with
+                | true -> ar1
+                | false -> hxlUni 1 ar1
 
         let allHxlsAV = cxl.Hxls |> hxlUni 1
         let innerOccSet = hxlSet allHxlsAV
         let avrv = cxl.Hxls |> Array.partition (fun x -> x = AV(hxlCrd x))
         let rv01 = (snd avrv) |> Array.partition (fun x -> availableSet cxl.Seqn elv (AV(hxlCrd x)) innerOccSet < 1)
-        let av01 = if Array.isEmpty (snd rv01) then avrv |> fst |> bndSqn cxl.Seqn elv else avrv |> fst |> cntSqn cxl.Seqn elv
-        let br01 = if Array.isEmpty (fst rv01) then rv01 |> snd |> bndSqn cxl.Seqn elv else rv01 |> snd |> cntSqn cxl.Seqn elv
+        let av01 = match snd rv01 with | [||] -> avrv |> fst |> bndSqn cxl.Seqn elv | _ -> avrv |> fst |> cntSqn cxl.Seqn elv
+        let br01 = match fst rv01 with | [||] -> rv01 |> snd |> bndSqn cxl.Seqn elv | _ -> rv01 |> snd |> cntSqn cxl.Seqn elv
              
         let pr01 = 
-            if Array.isEmpty av01 then br01
-            elif Array.isEmpty br01 then av01
-            else 
-                let isAdj = adjacent cxl.Seqn (Array.last av01) |> hxlUni 2 |> Array.contains (Array.head br01)
-                if isAdj then Array.append av01 br01 else Array.append av01 (Array.rev br01)
+            match av01 with
+            | [||] -> br01
+            | _ ->
+                match br01 with
+                | [||] -> av01
+                | _ -> 
+                    let isAdj = adjacent cxl.Seqn (Array.last av01) |> hxlUni 2 |> Array.contains (Array.head br01)
+                    match isAdj with | true -> Array.append av01 br01 | false -> Array.append av01 (Array.rev br01)
 
         let pr02 = 
             match pr01 with
@@ -298,7 +315,7 @@ module Coxel =
                 let gs = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
                 match sign gs with
                 | -1 -> pr01
-                | 0  -> if x2 > x1 then pr01 else Array.rev pr01
+                | 0  -> match x2 > x1 with | true -> pr01 | false -> Array.rev pr01
                 | _  -> Array.rev pr01
 
         {| Base = cxl.Base; Hxls = cxl.Hxls; Core = rv01 |> fst; Prph = pr02; Brdr = br01; Avbl = av01 |}  
@@ -307,7 +324,7 @@ module Coxel =
     let (|Collinear|Turning|) (p1: int * int, p2: int * int, p3: int * int) =
         let (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3
         let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-        if crossProduct = 0 then Collinear else Turning
+        match crossProduct = 0 with | true -> Collinear | false -> Turning
 
     let cxlPrm (cxl : Cxl) (elv : int) =
         let rec clean points =
@@ -327,9 +344,9 @@ module Coxel =
             adjacent cxl.Seqn hout 
             |> Array.choose (fun n -> 
                 let (ix, iy, _) = hxlCrd n
-                if insideSet.Contains(AV(ix, iy, elv)) then
-                    Some ( (ox + ix) / 2, (oy + iy) / 2 )
-                else None)
+                match insideSet.Contains(AV(ix, iy, elv)) with
+                | true -> Some ( (ox + ix) / 2, (oy + iy) / 2 )
+                | false -> None)
         )
         |> Array.distinct
         |> Array.toList
@@ -376,5 +393,5 @@ module Coxel =
             let names = cxls |> Array.map (fun c -> prpVlu c.Name)
             let matrix = allHalos |> Array.mapi (fun i halo ->
                 coxelSets |> Array.mapi (fun j otherSet ->
-                    if i = j then false else halo |> Array.exists (fun h -> otherSet.Contains(h))))
+                    match i = j with | true -> false | false -> halo |> Array.exists (fun h -> otherSet.Contains(h))))
             names, matrix
