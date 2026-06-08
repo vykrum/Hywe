@@ -23,7 +23,7 @@ HYWE is an investigation into Spatial reasoning as a function of computational l
 
 At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
 
-As a zero-dependency engine, HYWE operates on a logic where **Syntax is the singular source of truth**. The engine weaves abstract spatial definitions into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
+By replacing manual geometric drafting with an **interactive visual node tree interface**, HYWE provides an accessible sandbox with **no learning curve**. Users simply map out their programmatic hierarchy, and the engine weaves this intuitive spatial intent into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
 
 ---
 
@@ -95,7 +95,7 @@ HYWE operates a continuous, deterministic data collection loop to build the **[H
 
 ## Technical Architecture
 
-HYWE is built as a **strictly functional engine**. It treats spatial design as a computational problem, where inputs are transformed through a series of deterministic geometric and topological transformations.
+HYWE is built as a **strictly functional, zero-dependency engine**. It treats spatial design as a computational problem, where inputs are transformed through a series of deterministic geometric and topological transformations. In this environment, **Syntax is the singular source of truth**, ensuring that every design configuration is perfectly reproducible and strictly tied to its underlying logical rules.
 
 ```mermaid
 graph TD
