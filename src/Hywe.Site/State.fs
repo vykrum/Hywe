@@ -148,7 +148,11 @@ module State =
             |> String.concat "-"
 
         let entry = fmtPoint (ensureEntryWithin model.Outer model.Islands model.EntryPoint)
-        let absolute = if model.UseMapBase then "2" elif model.UseAbsolute then "1" else "0"
+        let absolute = 
+            match model.UseMapBase, model.UseAbsolute with
+            | true, _ -> "2"
+            | false, true -> "1"
+            | false, false -> "0"
         let w = max 1 (int (System.Math.Floor((model.LogicalWidth + 0.001) / 10.0)))
         let h = max 1 (int (System.Math.Floor((model.LogicalHeight + 0.001) / 10.0)))
         outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
@@ -167,7 +171,7 @@ module State =
         let logicalWidth = match w <= 0 with | true -> initWidth | false -> float (max 10 w) * 10.0
         let logicalHeight = match h <= 0 with | true -> initHeight | false -> float (max 10 h) * 10.0
 
-        let multiplier = if absStr = "2" then 2.0 else 10.0
+        let multiplier = match absStr with | "2" -> 2.0 | _ -> 10.0
 
         parsePoly multiplier outerStr
         |> Result.bind (fun outer ->
@@ -283,8 +287,9 @@ module State =
         | MapTopographyReceived (w, h, topoJson) -> async {
                                                 // Hymap sends exact physical width/height in Meters.
                                                 let rec findScaleFactor width height factor =
-                                                    if width <= 100.0 && height <= 100.0 then factor
-                                                    else findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
+                                                    match width <= 100.0 && height <= 100.0 with
+                                                    | true -> factor
+                                                    | false -> findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
                                                 let sf = findScaleFactor w h 1.0
                                                 
                                                 let floorW = System.Math.Floor((w / sf) + 0.001)
@@ -294,25 +299,28 @@ module State =
                                                 let scaledW = floorW * hyweInternalScale
                                                 let scaledH = floorH * hyweInternalScale
 
+                                                let (|ParsedJson|_|) (json: string) =
+                                                    try Some (JsonNode.Parse(json))
+                                                    with _ -> None
+
                                                 // Scale topography data X and Y points to match internal decimeter scale
                                                 let scaledTopoJson = 
-                                                    try
-                                                        let node = JsonNode.Parse(topoJson)
-                                                        match node with
-                                                        | :? JsonArray as arr ->
-                                                            for item in arr do
-                                                                match item with
-                                                                | :? JsonObject as obj ->
-                                                                    let x = obj.["X"].GetValue<float>()
-                                                                    let y = obj.["Y"].GetValue<float>()
-                                                                    obj.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
-                                                                    obj.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
-                                                                | _ -> ()
-                                                            node.ToJsonString()
-                                                        | _ -> topoJson
-                                                    with ex ->
-                                                        printfn "Error scaling topography JSON: %s" ex.Message
-                                                        topoJson
+                                                    match topoJson with
+                                                    | ParsedJson (:? JsonArray as arr) ->
+                                                        let newArr = JsonArray()
+                                                        arr |> Seq.iter (fun item ->
+                                                            match item with
+                                                            | :? JsonObject as obj ->
+                                                                let cloned = obj.DeepClone().AsObject()
+                                                                let x = cloned.["X"].GetValue<float>()
+                                                                let y = cloned.["Y"].GetValue<float>()
+                                                                cloned.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
+                                                                cloned.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
+                                                                newArr.Add(cloned)
+                                                            | other -> newArr.Add(match other with null -> null | x -> x.DeepClone())
+                                                        )
+                                                        newArr.ToJsonString()
+                                                    | _ -> topoJson
 
                                                 let safeW = max 1.0 (scaledW)
                                                 let safeH = max 1.0 (scaledH) 
@@ -372,12 +380,13 @@ module State =
             // We should ONLY update the LogicalWidth/Height to match the map viewport, 
             // but NEVER scale the polygon's SVG coordinates. If the map is locked, we don't 
             // even update the LogicalWidth/Height because the bounds are locked geographically.
-            if model.UseMapBase && model.IsMapLocked then
-                return model
-            else
+            match model.UseMapBase && model.IsMapLocked with
+            | true -> return model
+            | false ->
                 let rec findScaleFactor w h factor =
-                    if w <= 100.0 && h <= 100.0 then factor
-                    else findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
+                    match w <= 100.0 && h <= 100.0 with
+                    | true -> factor
+                    | false -> findScaleFactor (w / 2.0) (h / 2.0) (factor * 2.0)
                 let sf = findScaleFactor newW newH 1.0
                 
                 let scaledW = System.Math.Floor((newW / sf) + 0.001)
@@ -397,7 +406,7 @@ module State =
                     model.Islands
                     |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
 
-                let mapScale = if newW <= 100.0 && newH <= 100.0 then sf else sf * 10.0
+                let mapScale = match newW <= 100.0 && newH <= 100.0 with | true -> sf | false -> sf * 10.0
                 let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; MapScale = mapScale }
                 return updated |> refreshCachedStrings
             }
