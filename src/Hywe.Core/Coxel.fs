@@ -126,14 +126,34 @@ module Coxel =
 
     /// <summary> Generate child coxels. </summary>
     let coxelChildren (sqn : Sqn) (elv : int) (bsCx : Cxl) (tre : (Prp*Prp*Prp)[]) (occ : Hxl[]) =
-        let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
         let cnt = (Array.length tre) - 1
+        
+        let rec growParent (hxls: Hxl[]) =
+            let chHx = hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+            match chHx.Length >= cnt with
+            | true -> hxls, chHx
+            | false ->
+                let nextRing = 
+                    hxls 
+                    |> hxlUni 1 
+                    |> Array.collect (adjacent sqn)
+                    |> Array.distinct
+                    |> Array.except (Array.append occ hxls |> hxlUni 1)
+                
+                match nextRing.Length = 0 with
+                | true -> hxls, chHx
+                | false -> 
+                    let newHxls = Array.append hxls nextRing |> hxlChk sqn elv occ
+                    growParent newHxls
+
+        let finalParentHxls, chHx = growParent bsCx.Hxls
+        let updatedBsCx = { bsCx with Hxls = finalParentHxls }
         
         let chBs = 
             match (Array.length chHx) >= cnt with 
             | true -> 
                 let divs = match cnt > 0 with | true -> (Array.length chHx) / cnt | false -> 1
-                chHx |> Array.chunkBySize divs |> Array.map Array.head |> Array.take cnt
+                chHx |> Array.chunkBySize divs |> Array.map (fun chunk -> chunk.[chunk.Length / 2]) |> Array.take cnt
             | false -> chHx
                 
         let ini = Array.map2 (fun a (b, c, d) -> a, b, c, d) chBs (Array.tail tre |> Array.take chBs.Length)
@@ -153,7 +173,7 @@ module Coxel =
                 let b2 = match baseCheck with | [||] -> x.Base | _ -> baseCheck.[0]
                 { x with Hxls = h2; Base = b2 })
                 
-        bsCx, finalCxc, chOc1
+        updatedBsCx, finalCxc, chOc1
 
     /// <summary> Create the base/root coxel for a layout. </summary>
     let createBaseCoxel (sqn : Sqn) (elv : int) (bsAtr : string) (entryFallback : Hxl) (id : Prp) (ct : Prp) (lb : Prp) (occ : Hxl[]) (bsHxSetOverride : Cxl option) =
