@@ -83,7 +83,7 @@ module Hexel =
             match v = 0L with
             | true -> match acc = "" with | true -> "0" | false -> acc
             | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
-        let prefix = if value < 0L then "-" else ""
+        let prefix = match value < 0L with | true -> "-" | false -> ""
         prefix + convert (abs value) ""
 
     /// <summary> Valid Hexels. </summary>
@@ -116,11 +116,7 @@ module Hexel =
 
     /// <summary> Create a HashSet of AV hexels for O(1) lookup. </summary>
     let hxlSet (hxls: Hxl seq) = 
-        let set = System.Collections.Generic.HashSet<Hxl>()
-        for h in hxls do
-            let x,y,z = hxlCrd h
-            set.Add(AV(x,y,z)) |> ignore
-        set
+        System.Collections.Generic.HashSet<Hxl>(hxls |> Seq.map (fun h -> let x,y,z = hxlCrd h in AV(x,y,z)))
 
     /// <summary> Get Hexel from Tuple. </summary>
     let getHxls (hxo : (Hxl*int)[]) = hxo |> Array.map fst
@@ -153,23 +149,22 @@ module Hexel =
         match hxo with 
         | x, y when y >= 0 -> 
             let adj = adjacent sqn x
-            let inc1 = ResizeArray<Hxl>()
-            if adj.Length > 1 then
-                for i = 1 to adj.Length - 1 do
+            let rec getInc i (acc: Hxl list) =
+                match i < 1 with
+                | true -> acc
+                | false ->
                     let n = adj.[i]
-                    if not (occ.Contains(n)) && n <> x && n <> (identity elv) then inc1.Add(n)
+                    let nextAcc = match not (occ.Contains(n)) && n <> x && n <> identity elv with | true -> n :: acc | false -> acc
+                    getInc (i - 1) nextAcc
+            
+            let inc1List = match adj.Length > 1 with | true -> getInc (adj.Length - 1) [] | false -> []
             let inc2 = 
-                match inc1.Count >= 2 with
-                | true ->
-                    let head = inc1.[0]
-                    let next = inc1.[1]
-                    let adjNext = adjacent sqn next
-                    let mutable isAdj = false
-                    for k = 0 to 6 do if adjNext.[k] = head then isAdj <- true
-                    match isAdj with
-                    | true -> Some head
-                    | false -> Some inc1.[inc1.Count - 1]
-                | false -> if inc1.Count = 1 then Some inc1.[0] else None
+                match inc1List with
+                | head :: next :: _ ->
+                    let isAdj = adjacent sqn next |> Array.contains head
+                    match isAdj with | true -> Some head | false -> Some (List.last inc1List)
+                | [head] -> Some head
+                | [] -> None
             match inc2 with 
             | Some a -> a, y
             | None -> (hxlVld sqn (identity elv), -1)
@@ -187,12 +182,13 @@ module Hexel =
     /// <summary> Available Adjacent Hexels using HashSet for performance. </summary>
     let availableSet (sqn : Sqn) (elv : int) (hxo : Hxl) (occ : System.Collections.Generic.HashSet<Hxl>) =  
         let adj = adjacent sqn hxo
-        let mutable count = 0
-        if adj.Length > 1 then
-            for i = 1 to adj.Length - 1 do
+        let rec countFree i acc =
+            match i >= adj.Length with
+            | true -> acc
+            | false ->
                 let n = adj.[i]
-                if not (occ.Contains(n)) && n <> hxo then count <- count + 1
-        count
+                countFree (i + 1) (match not (occ.Contains(n)) && n <> hxo with | true -> acc + 1 | false -> acc)
+        match adj.Length > 1 with | true -> countFree 1 0 | false -> 0
 
     /// <summary> Optimized version of hxlChk using a HashSet for performance. </summary>
     let hxlChkSet (sqn : Sqn) (elv : int) (occSet : System.Collections.Generic.HashSet<Hxl>) (hxl : Hxl[]) = 
@@ -201,7 +197,7 @@ module Hexel =
             match (x = EX(x1,y1,z1)) with 
             | true -> x
             | false -> 
-                if (availableSet sqn elv x occSet) < 1 then RV(x1,y1,z1) else AV(x1,y1,z1))
+                match (availableSet sqn elv x occSet) < 1 with | true -> RV(x1,y1,z1) | false -> AV(x1,y1,z1))
 
     let hxlChk (sqn : Sqn) (elv : int) (occ : Hxl[]) (hxl : Hxl[]) = 
         let occSet = hxlSet (Array.append occ hxl)
@@ -226,20 +222,20 @@ module Hexel =
         let replaceDuplicateSet (sqn : Sqn) (elv : int) (hxo : (Hxl*int)[]) (inc : (Hxl*int)[]) (occSet : System.Collections.Generic.HashSet<Hxl>) =   
             let localBatchSet = System.Collections.Generic.HashSet<Hxl>()
             Array.map2 (fun (hxBase, weight) (hxInc, _) ->
-                if hxInc <> (hxlVld sqn (identity elv)) && not (localBatchSet.Contains(hxInc)) then
-                    localBatchSet.Add(hxInc) |> ignore
-                    hxInc, weight
-                else
+                match hxInc <> hxlVld sqn (identity elv) && localBatchSet.Add(hxInc) with
+                | true -> hxInc, weight
+                | false ->
                     let next = incrementSet sqn elv (hxBase, weight) occSet
-                    if fst next <> (hxlVld sqn (identity elv)) && not (localBatchSet.Contains(fst next)) then
-                        localBatchSet.Add(fst next) |> ignore
-                        next
-                    else (hxlVld sqn (identity elv)), -1
+                    match fst next <> hxlVld sqn (identity elv) && localBatchSet.Add(fst next) with
+                    | true -> next
+                    | false -> (hxlVld sqn (identity elv)), -1
             ) hxo inc
-        for (h, _) in hxo do let (x,y,z) = hxlCrd h in occSet.Add(AV(x,y,z)) |> ignore
+        hxo |> Array.iter (fun (h, _) -> let x,y,z = hxlCrd h in occSet.Add(AV(x,y,z)) |> ignore)
         let inc = hxo |> Array.map (fun st -> 
                 let next = incrementSet sqn elv st occSet
-                if fst next <> (hxlVld sqn (identity elv)) then let (x,y,z) = hxlCrd (fst next) in occSet.Add(AV(x,y,z)) |> ignore
+                match fst next <> hxlVld sqn (identity elv) with
+                | true -> let x,y,z = hxlCrd (fst next) in occSet.Add(AV(x,y,z)) |> ignore
+                | false -> ()
                 next)
         replaceDuplicateSet sqn elv hxo inc occSet
 
