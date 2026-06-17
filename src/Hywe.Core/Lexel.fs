@@ -149,14 +149,13 @@ module Lexel =
         |> Seq.cast<Match>
         |> Seq.choose (fun m ->
             let markerRaw = m.Groups.[1].Value.Trim()
-            let marker = if String.IsNullOrEmpty(markerRaw) then "L0" else markerRaw
+            let marker = match String.IsNullOrEmpty(markerRaw) with | true -> "L0" | false -> markerRaw
             let content = m.Groups.[2].Value.Trim()
             processXyxel marker content
             |> Option.map (fun res -> 
-                if marker.StartsWith("N") then
-                    Nest { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }
-                else
-                    Level { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }
+                match marker.StartsWith("N") with
+                | true -> Nest { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }
+                | false -> Level { Marker = marker; Attributes = res.Attributes; Tree = res.Tree }
             ))
         |> Seq.toList
 
