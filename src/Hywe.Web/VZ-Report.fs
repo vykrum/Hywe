@@ -150,7 +150,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
     let fontSize = if cxls.Length > 25 then "7.5px" else if cxls.Length > 15 then "8.5px" else "9.5px"
     sb.AppendLine(sprintf """<table class="report-table" style="font-size: %s;">
         <thead>
-            <tr><th></th><th>Required</th><th>Achieved</th><th>Open</th></tr>
+            <tr><th>Room</th><th>Req</th><th>Ach</th><th>Opn</th></tr>
         </thead>
         <tbody>""" fontSize) |> ignore
         
@@ -163,12 +163,13 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
         let reqSz = int (count * float hxlAreaX)
         let achSz = (Array.length cxl.Hxls) * hxlAreaX
         let opnSz = avl * hxlAreaX
-        let name = (prpVlu cxl.Name).Replace("<", "&lt;").Replace(">", "&gt;")
+        let rawName = prpVlu cxl.Name
+        let safeName = rawName.Replace("<", "&lt;").Replace(">", "&gt;")
         
-        let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
-        let swatch = sprintf """<div style="width: 8px; height: 8px; background: %s; border: 1px solid #ddd; display: inline-block; margin-right: 6px; border-radius: 1px; vertical-align: middle;"></div>""" clr
+        let clr = Map.tryFind rawName colorMap |> Option.defaultValue "#eee"
+        let swatch = sprintf """<div style="width: 100%%; max-width: 12px; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: inline-block; border-radius: 2px; box-sizing: border-box; vertical-align: middle;"></div>""" clr
         
-        sb.AppendLine(sprintf """<tr><td>%s<span style="vertical-align: middle;">%s</span></td><td>%d</td><td>%d</td><td>%d</td></tr>""" swatch name reqSz achSz opnSz) |> ignore
+        sb.AppendLine(sprintf """<tr><td title="%s" style="white-space: nowrap;">%s<span style="margin-left: 6px; vertical-align: middle;">%s</span></td><td>%d</td><td>%d</td><td>%d</td></tr>""" safeName swatch safeName reqSz achSz opnSz) |> ignore
         
     sb.AppendLine("</tbody></table>") |> ignore
     sb.ToString()
@@ -177,16 +178,15 @@ let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string
     let names, matrix = Coxel.cxlAdj cxls
     let sb = StringBuilder()
     let fontSize = if names.Length > 25 then "6px" else if names.Length > 15 then "7.5px" else "9px"
-    let headerHeight = if names.Length > 20 then "40px" else "60px"
-    sb.AppendLine(sprintf """<table class="report-table adjacency-matrix" style="font-size: %s;">
+    sb.AppendLine(sprintf """<table class="report-table adjacency-matrix" style="font-size: %s; height: 100%%;">
         <thead>
-            <tr style="height: %s;"><th></th>""" fontSize headerHeight) |> ignore
+            <tr><th></th>""" fontSize) |> ignore
     
     for name in names do
         let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
         let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
-        let swatch = sprintf """<div style="width: 6px; height: 6px; background: %s; border: 1px solid #ddd; display: inline-block; margin-right: 3px; border-radius: 1px; vertical-align: middle;"></div>""" clr
-        sb.Append(sprintf """<th class="adj-header"><div class="rotated-text">%s%s</div></th>""" swatch safeName) |> ignore
+        let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
+        sb.Append(sprintf """<th class="adj-header" title="%s">%s</th>""" safeName swatch) |> ignore
     sb.AppendLine("</tr></thead><tbody>") |> ignore
     
     for i = 0 to matrix.Length - 1 do
@@ -194,12 +194,11 @@ let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string
         let name = names[i]
         let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
         let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
-        let swatch = sprintf """<div style="width: 6px; height: 6px; background: %s; border: 1px solid #ddd; display: inline-block; margin-right: 4px; border-radius: 1px; vertical-align: middle;"></div>""" clr
-        sb.Append(sprintf """<tr><th>%s<span style="vertical-align: middle;">%s</span></th>""" swatch safeName) |> ignore
+        let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
+        sb.Append(sprintf """<tr><th title="%s" style="text-align:center;">%s</th>""" safeName swatch) |> ignore
         for adj in row do
-            let cell = if adj then "■" else ""
             let cls = if adj then "adj-true" else "adj-false"
-            sb.Append(sprintf """<td class="%s">%s</td>""" cls cell) |> ignore
+            sb.Append(sprintf """<td class="%s"></td>""" cls) |> ignore
         sb.AppendLine("</tr>") |> ignore
         
     sb.AppendLine("</tbody></table>") |> ignore
@@ -219,7 +218,7 @@ let tBase : Printf.StringFormat<string -> string> = """<!DOCTYPE html>
 @page { size: A3 landscape; margin: 0; }
 body { font-family: 'Outfit', system-ui, -apple-system, sans-serif; margin: 0; padding: 0; background: #fff; color: #333; font-size: 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .page { width: 420mm; height: 297mm; page-break-after: always; position: relative; box-sizing: border-box; overflow: hidden; }
-.page-inner { padding: 8mm 15mm 15mm 15mm; height: 100%%; box-sizing: border-box; display: flex; flex-direction: column; }
+.page-inner { padding: 8mm 15mm 25mm 15mm; height: 100%%; box-sizing: border-box; display: flex; flex-direction: column; }
 .cover-page { display: flex; flex-direction: row; }
 .cover-left { flex: 1; padding: 30mm; background: #f8f8f8; display: flex; flex-direction: column; justify-content: space-between; }
 .cover-right { flex: 1.5; background: #fff; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -236,14 +235,14 @@ body { font-family: 'Outfit', system-ui, -apple-system, sans-serif; margin: 0; p
 .footer { position: absolute; bottom: 10mm; left: 15mm; right: 15mm; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 3mm; }
 .content-area { display: flex; flex: 1; gap: 10mm; min-height: 0; }
 .col-left { flex: 2.5; display: flex; flex-direction: column; min-width: 0; }
-.col-right { flex: 1.5; display: flex; flex-direction: column; min-width: 0; overflow: hidden; container-type: inline-size; }
+.col-right { flex: 1.5; display: flex; flex-direction: column; min-width: 0; container-type: inline-size; }
 .report-table { width: 100%%; border-collapse: collapse; font-size: 9.5px; margin-bottom: 10px; }
+.report-table tr { break-inside: avoid; page-break-inside: avoid; }
 .report-table th, .report-table td { padding: 4px 6px; border-bottom: 1px solid #eee; text-align: left; }
 .report-table th { background: #fafafa; font-weight: 600; color: #555; }
-.adjacency-matrix { table-layout: fixed; width: 100%%; border-collapse: collapse; }
-.adjacency-matrix th.adj-header { height: 60px; white-space: nowrap; vertical-align: bottom; }
-.rotated-text { transform: rotate(-90deg); width: 100%%; display: inline-block; transform-origin: bottom left; margin-left: 50%%; font-size: clamp(6px, 2.5cqw, 9px); }
-.adjacency-matrix td { text-align: center; border: 1px solid #eee; padding: 0; aspect-ratio: 1/1; font-size: clamp(6px, 2cqw, 10px); }
+.adjacency-matrix { table-layout: fixed; width: 100%%; height: 100%%; margin: 0; border-collapse: collapse; font-size: 0; line-height: 0; }
+.adjacency-matrix tr { height: 1%%; }
+.adjacency-matrix th, .adjacency-matrix td { padding: 0; border: 1px solid #eee; text-align: center; vertical-align: middle; }
 .adj-true { background: #ddd; color: #ddd; }
 .adj-false { background: #fff; color: #fff; }
 .toc-d0 { font-weight: 600; padding-top: 20px !important; border-bottom: 2px solid #eee !important; }
@@ -319,9 +318,11 @@ let tVariation : Printf.StringFormat<string -> string -> string -> string -> str
             <div style="flex: 1; min-height: 0;">%s</div>
             %s
         </div>
-        <div class="col-right" style="display: flex; flex-direction: column; gap: 15px; overflow: hidden;">
-            <div style="flex: 1.2; min-height: 0; overflow: auto;">%s</div>
-            <div style="flex: 1; min-height: 0; overflow: auto;">%s</div>
+        <div class="col-right" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="flex: 1; min-height: 0; column-width: 300px; column-gap: 15px; column-fill: auto; direction: rtl; text-align: left; align-self: flex-end;">
+                <div style="direction: ltr;">%s</div>
+            </div>
+            <div style="width: 100%%; max-width: 300px; aspect-ratio: 1/1; margin-top: auto; margin-left: auto; overflow: hidden;">%s</div>
         </div>
     </div>
     %s
@@ -416,7 +417,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                     let levelCxls = conf.cxCxl1
                     let levelShapes = conf.shapes
                     let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
-                    let legend = renderLegend levelShapes
+                    let legend = "" // Legend removed on pages with area statements
                     let colorMap = levelShapes |> Array.map (fun s -> s.name, s.color) |> Map.ofArray
                     
                     let baseLevel = 
