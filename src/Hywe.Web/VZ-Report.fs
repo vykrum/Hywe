@@ -67,7 +67,7 @@ let buildPageManifest (opts: ReportOptions) (markers: string list) : PageEntry l
         else { p with PageNumber = p.PageNumber }
     )
 
-let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW: float option) (maxH: float option) : string =
+let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW: float option) (maxH: float option) (targetFontSize: float) (containerWidth: float) : string =
     let mutable minX = Double.MaxValue
     let mutable minY = Double.MaxValue
     let mutable maxX = Double.MinValue
@@ -116,19 +116,32 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     let ox = (w - contentW) / 2.0
     let oy = (h - contentH) / 2.0
     
+    let viewBoxW = w + 2.0 * pad
+    let fontSize = targetFontSize * viewBoxW / (containerWidth *1.5)
+    
+    let labels =
+        shapes |> Array.map (fun shp ->
+            if System.String.IsNullOrWhiteSpace(shp.name) || shp.points.Length = 0 then ""
+            else
+                let safeName = shp.name.Replace("<", "&lt;").Replace(">", "&gt;")
+                sprintf """<text x="%f" y="%f" text-anchor="middle" dominant-baseline="central" font-size="%f" fill="#111" font-family="Outfit, sans-serif" font-weight="normal" style="pointer-events: none;">%s</text>""" shp.lx shp.ly fontSize safeName
+        ) |> String.concat ""
+    
     sprintf """<svg viewBox="%f %f %f %f" xmlns="http://www.w3.org/2000/svg" width="100%%" height="100%%">
     <g transform="translate(%f, %f)">
     %s
     %s
+    %s
     </g>
-    </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 polygons boundaries
+    </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 polygons boundaries labels
 
 let renderFlowchartSvg (root: TreeNode) (colorList: string[]) (maxW: float option) (maxH: float option) : string =
     Visualization.renderSvgToString root colorList maxW maxH
 
-let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) : string =
+let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) (validNames: Set<string>) : string =
     let uniqueRooms = 
         shapes 
+        |> Array.filter (fun s -> validNames.Contains s.name || validNames.Contains (s.name.Trim()))
         |> Array.distinctBy (fun s -> s.name.Trim(), s.color)
         |> Array.sortBy (fun s -> s.name.Trim())
     
@@ -150,7 +163,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
     let fontSize = if cxls.Length > 25 then "7.5px" else if cxls.Length > 15 then "8.5px" else "9.5px"
     sb.AppendLine(sprintf """<table class="report-table" style="font-size: %s;">
         <thead>
-            <tr><th>Room</th><th>Req</th><th>Ach</th><th>Opn</th></tr>
+            <tr><th>Label</th><th>Required</th><th>Achieved</th><th>Open</th></tr>
         </thead>
         <tbody>""" fontSize) |> ignore
         
@@ -322,7 +335,10 @@ let tVariation : Printf.StringFormat<string -> string -> string -> string -> str
             <div style="flex: 1; min-height: 0; column-width: 300px; column-gap: 15px; column-fill: auto; direction: rtl; text-align: left; align-self: flex-end;">
                 <div style="direction: ltr;">%s</div>
             </div>
-            <div style="width: 100%%; max-width: 300px; aspect-ratio: 1/1; margin-top: auto; margin-left: auto; overflow: hidden;">%s</div>
+            <div style="width: 100%%; max-width: 300px; margin-top: auto; margin-left: auto;">
+                <div style="font-weight: 500; font-size: 10px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; color: #555; text-align: left; border-bottom: 1px solid #eee; padding-bottom: 2px;">Adjacency Matrix</div>
+                <div style="width: 100%%; aspect-ratio: 1/1; overflow: hidden;">%s</div>
+            </div>
         </div>
     </div>
     %s
@@ -403,11 +419,12 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                 sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — %s%s" title pageStr) opts.ProjectTitle) |> sb.AppendLine |> ignore
                 for i = chunkStart to chunkEnd do
                     let conf = batchInfo[i]
+                    let levelCxls = conf.cxCxl1
                     let levelShapes = conf.shapes
-                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
+                    let targetFontSize = 7.5
+                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH targetFontSize 200.0
                     sprintf tBatchCell svg (labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
-                let allPageShapes = [| chunkStart .. chunkEnd |] |> Array.collect (fun idx -> batchInfo.[idx].shapes)
-                let legend = if allPageShapes.Length > 0 then renderLegend allPageShapes else ""
+                let legend = ""
                 sprintf tBatchGrid2 legend (renderFooter()) |> sb.AppendLine |> ignore
 
         if section.Variations then
@@ -416,7 +433,8 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                     let conf = batchInfo[i]
                     let levelCxls = conf.cxCxl1
                     let levelShapes = conf.shapes
-                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH
+                    let targetFontSize = 7.5
+                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH targetFontSize 550.0
                     let legend = "" // Legend removed on pages with area statements
                     let colorMap = levelShapes |> Array.map (fun s -> s.name, s.color) |> Map.ofArray
                     
