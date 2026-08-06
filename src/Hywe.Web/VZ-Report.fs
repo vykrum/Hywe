@@ -20,93 +20,107 @@ type PageEntry = {
 
 let getOrderedMarkers (tree: SubModel) =
     tree.Levels.Keys |> Seq.toList |> List.sort |> List.collect (fun lvl ->
-        let levelMarker = if lvl = 0 then "L0" else sprintf "L%d" lvl
+        let levelMarker = match lvl with | 0 -> "L0" | _ -> sprintf "L%d" lvl
         let nests = tree.Nests |> Map.toList |> List.filter (fun (_, n) -> n.Level = lvl) |> List.map (fun (id, _) -> sprintf "N%d" id)
         levelMarker :: nests
     )
 
 let getMarkerTitle (marker: string) =
-    if marker.StartsWith("N") then sprintf "Nest %s" (marker.Substring(1))
-    else sprintf "Level %s" (marker.Substring(1))
+    match marker.StartsWith("N") with
+    | true -> sprintf "Nest %s" (marker.Substring(1))
+    | false -> sprintf "Level %s" (marker.Substring(1))
 
 let buildPageManifest (opts: ReportOptions) (markers: string list) : PageEntry list =
-    let mutable pages = []
-    let mutable pageNum = 1
+    let initialPages, initialPageNum = 
+        match opts.IncludeCover with
+        | true -> [{ PageNumber = 1; SectionTitle = "Cover Page"; Depth = 0 }], 2
+        | false -> [], 1
 
-    let addPage title depth =
-        pages <- { PageNumber = pageNum; SectionTitle = title; Depth = depth } :: pages
-        pageNum <- pageNum + 1
-
-    if opts.IncludeCover then addPage "Cover Page" 0
-
-    for marker in markers do
+    let foldMarker (pages, pageNum) marker =
         let section = 
-            match Map.tryFind marker opts.LevelSections with
-            | Some s -> s
-            | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
+            Map.tryFind marker opts.LevelSections 
+            |> Option.defaultValue { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             
         let hasAny = section.FlowChart || section.BatchOverview || section.Variations
-        if hasAny then
+        match hasAny with
+        | false -> (pages, pageNum)
+        | true ->
             let title = getMarkerTitle marker
             let isNest = marker.StartsWith("N")
-            addPage title (if isNest then 1 else 0)
-            let contentDepth = if isNest then 2 else 1
-            if section.FlowChart then addPage "Flow Chart" contentDepth
-            if section.BatchOverview then 
-                addPage "Batch Overview" contentDepth
-                let numPages = int (System.Math.Ceiling(24.0 / 8.0))
-                if numPages > 1 then pageNum <- pageNum + (numPages - 1)
-            if section.Variations then
-                for i = 0 to 23 do
-                    if section.SelectedVariations.Contains(i) then
-                        addPage (labelPhrase.[i].ToString()) (contentDepth + 1)
-    
-    let revPages = pages |> List.rev
-    revPages |> List.map (fun p -> 
-        if p.SectionTitle = "Cover Page" then p
-        else { p with PageNumber = p.PageNumber }
-    )
+            let titleDepth, contentDepth = 
+                match isNest with
+                | true -> 1, 2
+                | false -> 0, 1
+            
+            let p1 = { PageNumber = pageNum; SectionTitle = title; Depth = titleDepth } :: pages
+            let n1 = pageNum + 1
+            
+            let p2, n2 = 
+                match section.FlowChart with
+                | true -> { PageNumber = n1; SectionTitle = "Flow Chart"; Depth = contentDepth } :: p1, n1 + 1
+                | false -> p1, n1
+                
+            let p3, n3 =
+                match section.BatchOverview with
+                | true ->
+                    let pOut = { PageNumber = n2; SectionTitle = "Batch Overview"; Depth = contentDepth } :: p2
+                    let numPages = int (System.Math.Ceiling(24.0 / 8.0))
+                    let nOut = n2 + 1 + (match numPages > 1 with | true -> numPages - 1 | false -> 0)
+                    pOut, nOut
+                | false -> p2, n2
+                
+            let p4, n4 =
+                match section.Variations with
+                | true ->
+                    [0..23] 
+                    |> List.filter (fun i -> section.SelectedVariations.Contains(i))
+                    |> List.fold (fun (accP, accN) i ->
+                        { PageNumber = accN; SectionTitle = labelPhrase.[i].ToString(); Depth = contentDepth + 1 } :: accP, accN + 1
+                    ) (p3, n3)
+                | false -> p3, n3
+                
+            (p4, n4)
+            
+    let (finalPages, _) = markers |> List.fold foldMarker (initialPages, initialPageNum)
+    finalPages |> List.rev
 
 let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW: float option) (maxH: float option) (targetFontSize: float) (containerWidth: float) : string =
-    let mutable minX = Double.MaxValue
-    let mutable minY = Double.MaxValue
-    let mutable maxX = Double.MinValue
-    let mutable maxY = Double.MinValue
-
-    let getPoints (pts: float[]) =
-        let res = StringBuilder()
-        for i = 0 to pts.Length / 2 - 1 do
-            let x = pts.[i * 2]
-            let y = pts.[i * 2 + 1]
-            minX <- min minX x
-            minY <- min minY y
-            maxX <- max maxX x
-            maxY <- max maxY y
-            res.Append(sprintf "%f,%f " x y) |> ignore
-        res.ToString().TrimEnd()
+    let shapePoints = 
+        shapes 
+        |> Array.collect (fun s -> 
+            Array.init (s.points.Length / 2) (fun i -> s.points.[i*2], s.points.[i*2 + 1])
+        )
+        
+    let boundPoints = 
+        cxOuIl 
+        |> Array.collect id
+        |> Array.map (fun (x, y) -> float x, float y)
+        
+    let allPoints = Array.append shapePoints boundPoints
+    
+    let minX, minY, maxX, maxY =
+        match allPoints.Length with
+        | 0 -> 0.0, 0.0, 1.0, 1.0
+        | _ ->
+            let xs = allPoints |> Array.map fst
+            let ys = allPoints |> Array.map snd
+            Array.min xs, Array.min ys, Array.max xs, Array.max ys
 
     let polygons = 
         shapes |> Array.map (fun shp ->
-            let pts = getPoints shp.points
+            let pts = 
+                Array.init (shp.points.Length / 2) (fun i -> sprintf "%f,%f" shp.points.[i*2] shp.points.[i*2+1])
+                |> String.concat " "
             sprintf """<polygon points="%s" fill="%s" opacity="0.75" />""" pts shp.color
         ) |> String.concat ""
         
     let boundaries = 
         cxOuIl |> Array.map (fun bdr ->
             let pts = 
-                bdr |> Array.map (fun (x,y) -> 
-                    let fx, fy = float x, float y
-                    minX <- min minX fx
-                    minY <- min minY fy
-                    maxX <- max maxX fx
-                    maxY <- max maxY fy
-                    sprintf "%f,%f" fx fy
-                ) |> String.concat " "
+                bdr |> Array.map (fun (x,y) -> sprintf "%f,%f" (float x) (float y))
+                |> String.concat " "
             sprintf """<polygon points="%s" fill="none" stroke="#000" stroke-width="0.1" opacity="0.1" />""" pts
         ) |> String.concat ""
-        
-    if shapes.Length = 0 && cxOuIl.Length = 0 then
-        minX <- 0.0; minY <- 0.0; maxX <- 1.0; maxY <- 1.0
     
     let pad = 8.0
     let contentW = maxX - minX
@@ -121,8 +135,9 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     
     let labels =
         shapes |> Array.map (fun shp ->
-            if System.String.IsNullOrWhiteSpace(shp.name) || shp.points.Length = 0 then ""
-            else
+            match System.String.IsNullOrWhiteSpace(shp.name) || shp.points.Length = 0 with
+            | true -> ""
+            | false ->
                 let safeName = shp.name.Replace("<", "&lt;").Replace(">", "&gt;")
                 sprintf """<text x="%f" y="%f" text-anchor="middle" dominant-baseline="central" font-size="%f" fill="#111" font-family="Outfit, sans-serif" font-weight="normal" style="pointer-events: none;">%s</text>""" shp.lx shp.ly fontSize safeName
         ) |> String.concat ""
@@ -135,8 +150,8 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     </g>
     </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 polygons boundaries labels
 
-let renderFlowchartSvg (root: TreeNode) (colorList: string[]) (maxW: float option) (maxH: float option) : string =
-    Visualization.renderSvgToString root colorList maxW maxH
+let renderFlowchartSvg (root: TreeNode) (colorMap: Map<string, string>) (maxW: float option) (maxH: float option) : string =
+    Visualization.renderSvgToString root colorMap maxW maxH
 
 let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) (validNames: Set<string>) : string =
     let uniqueRooms = 
@@ -155,67 +170,73 @@ let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: f
             </div>""" s.color safeName)
         |> String.concat ""
     
-    if uniqueRooms.Length = 0 then ""
-    else sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
+    match uniqueRooms.Length with
+    | 0 -> ""
+    | _ -> sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
     
 let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) (elv: int) : string =
-    let sb = StringBuilder()
-    let fontSize = if cxls.Length > 25 then "7.5px" else if cxls.Length > 15 then "8.5px" else "9.5px"
-    sb.AppendLine(sprintf """<table class="report-table" style="font-size: %s;">
-        <thead>
-            <tr><th>Label</th><th>Required</th><th>Achieved</th><th>Open</th></tr>
-        </thead>
-        <tbody>""" fontSize) |> ignore
+    let fontSize = 
+        match cxls.Length with
+        | l when l > 25 -> "7.5px"
+        | l when l > 15 -> "8.5px"
+        | _ -> "9.5px"
+    let header = sprintf "<table class=\"report-table\" style=\"font-size: %s;\">\n        <thead>\n            <tr><th>Label</th><th>Required</th><th>Achieved</th><th>Open</th></tr>\n        </thead>\n        <tbody>\n" fontSize
         
     let hxlAreaX = 4
-    for i = 0 to cxls.Length - 1 do
-        let cxl = cxls[i]
-        let avl = if i < cxlAvl.Length then cxlAvl[i] else 0
-        let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
-        let count = if isRootLvl0 then (prpVlu cxl.Size |> float) + 1.0 else (prpVlu cxl.Size |> float)
-        let reqSz = int (count * float hxlAreaX)
-        let achSz = (Array.length cxl.Hxls) * hxlAreaX
-        let opnSz = avl * hxlAreaX
-        let rawName = prpVlu cxl.Name
-        let safeName = rawName.Replace("<", "&lt;").Replace(">", "&gt;")
+    let rows = 
+        cxls |> Array.mapi (fun i cxl ->
+            let avl = match i < cxlAvl.Length with | true -> cxlAvl[i] | false -> 0
+            let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
+            let count = match isRootLvl0 with | true -> (prpVlu cxl.Size |> float) + 1.0 | false -> (prpVlu cxl.Size |> float)
+            let reqSz = int (count * float hxlAreaX)
+            let achSz = (Array.length cxl.Hxls) * hxlAreaX
+            let opnSz = avl * hxlAreaX
+            let rawName = prpVlu cxl.Name
+            let safeName = rawName.Replace("<", "&lt;").Replace(">", "&gt;")
+            
+            let clr = Map.tryFind rawName colorMap |> Option.defaultValue "#eee"
+            let swatch = sprintf """<div style="width: 100%%; max-width: 12px; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: inline-block; border-radius: 2px; box-sizing: border-box; vertical-align: middle;"></div>""" clr
+            
+            sprintf "<tr><td title=\"%s\" style=\"white-space: nowrap;\">%s<span style=\"margin-left: 6px; vertical-align: middle;\">%s</span></td><td>%d</td><td>%d</td><td>%d</td></tr>\n" safeName swatch safeName reqSz achSz opnSz
+        ) |> String.concat ""
         
-        let clr = Map.tryFind rawName colorMap |> Option.defaultValue "#eee"
-        let swatch = sprintf """<div style="width: 100%%; max-width: 12px; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: inline-block; border-radius: 2px; box-sizing: border-box; vertical-align: middle;"></div>""" clr
-        
-        sb.AppendLine(sprintf """<tr><td title="%s" style="white-space: nowrap;">%s<span style="margin-left: 6px; vertical-align: middle;">%s</span></td><td>%d</td><td>%d</td><td>%d</td></tr>""" safeName swatch safeName reqSz achSz opnSz) |> ignore
-        
-    sb.AppendLine("</tbody></table>") |> ignore
-    sb.ToString()
+    header + rows + "</tbody></table>\n"
 
 let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string =
     let names, matrix = Coxel.cxlAdj cxls
-    let sb = StringBuilder()
-    let fontSize = if names.Length > 25 then "6px" else if names.Length > 15 then "7.5px" else "9px"
-    sb.AppendLine(sprintf """<table class="report-table adjacency-matrix" style="font-size: %s; height: 100%%;">
-        <thead>
-            <tr><th></th>""" fontSize) |> ignore
+    let fontSize = 
+        match names.Length with
+        | l when l > 25 -> "6px"
+        | l when l > 15 -> "7.5px"
+        | _ -> "9px"
+    let headerStart = sprintf "<table class=\"report-table adjacency-matrix\" style=\"font-size: %s; height: 100%%;\">\n        <thead>\n            <tr><th></th>\n" fontSize
     
-    for name in names do
-        let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
-        let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
-        let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
-        sb.Append(sprintf """<th class="adj-header" title="%s">%s</th>""" safeName swatch) |> ignore
-    sb.AppendLine("</tr></thead><tbody>") |> ignore
-    
-    for i = 0 to matrix.Length - 1 do
-        let row = matrix[i]
-        let name = names[i]
-        let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
-        let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
-        let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
-        sb.Append(sprintf """<tr><th title="%s" style="text-align:center;">%s</th>""" safeName swatch) |> ignore
-        for adj in row do
-            let cls = if adj then "adj-true" else "adj-false"
-            sb.Append(sprintf """<td class="%s"></td>""" cls) |> ignore
-        sb.AppendLine("</tr>") |> ignore
+    let headerCols = 
+        names |> Array.map (fun name ->
+            let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
+            let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
+            let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
+            sprintf """<th class="adj-header" title="%s">%s</th>""" safeName swatch
+        ) |> String.concat ""
         
-    sb.AppendLine("</tbody></table>") |> ignore
-    sb.ToString()
+    let theadEnd = "</tr></thead><tbody>\n"
+    
+    let rows = 
+        matrix |> Array.mapi (fun i row ->
+            let name = names[i]
+            let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
+            let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
+            let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
+            let rowHeader = sprintf """<tr><th title="%s" style="text-align:center;">%s</th>""" safeName swatch
+            let rowCells = 
+                row |> Array.map (fun adj ->
+                    let cls = match adj with | true -> "adj-true" | false -> "adj-false"
+                    sprintf """<td class="%s"></td>""" cls
+                ) |> String.concat ""
+            rowHeader + rowCells + "</tr>\n"
+        ) |> String.concat ""
+        
+    headerStart + headerCols + theadEnd + rows + "</tbody></table>\n"
 
 // --- HTML TEMPLATES ---
 
@@ -345,112 +366,142 @@ let tVariation : Printf.StringFormat<string -> string -> string -> string -> str
 </div></div>"""
 
 let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<string, BatchConfgrtns[]>) : string =
-    let sb = StringBuilder()
     let d = DateTime.Now.ToString("dd MMM yyyy")
-    sprintf tBase opts.ProjectTitle |> sb.AppendLine |> ignore
-
+    let baseHtml = sprintf tBase opts.ProjectTitle
     let markers = getOrderedMarkers tree
-    let manifest = buildPageManifest opts markers
-    let mutable currentPage = 1
-
+    
     let renderHeader title subtitle = sprintf tHeader title subtitle
-    let renderFooter () =
-        let html = sprintf tFooter d currentPage
-        currentPage <- currentPage + 1
-        html
+    let renderFooter page = sprintf tFooter d page
 
-    if opts.IncludeCover then
-        let captureHtml = 
-            match opts.Captured3DImage with
-            | Some url -> sprintf """<img src="%s" style="width: 100%%; height: 100%%; object-fit: contain;" />""" url
-            | None -> ""
-        sprintf tCover opts.ProjectTitle opts.ProjectNumber opts.Description opts.Author opts.ClientName d captureHtml (renderFooter()) |> sb.AppendLine |> ignore
+    let coverHtml, coverPage = 
+        match opts.IncludeCover with
+        | true ->
+            let captureHtml = 
+                match opts.Captured3DImage with
+                | Some url -> sprintf """<img src="%s" style="width: 100%%; height: 100%%; object-fit: contain;" />""" url
+                | None -> ""
+            [sprintf tCover opts.ProjectTitle opts.ProjectNumber opts.Description opts.Author opts.ClientName d captureHtml (renderFooter 1)], 2
+        | false -> [], 1
 
     let flowChartMaxW, flowChartMaxH =
         let allTrees = 
             markers |> List.choose (fun marker ->
                 let s = Map.tryFind marker opts.LevelSections |> Option.defaultValue { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
-                if s.FlowChart then 
-                    if marker.StartsWith("N") then
+                match s.FlowChart with
+                | true -> 
+                    match marker.StartsWith("N") with
+                    | true ->
                         let nId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
                         Map.tryFind nId tree.Nests
-                    else
+                    | false ->
                         let lvl = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
                         Map.tryFind lvl tree.Levels
-                else None
+                | false -> None
             )
-        if allTrees.IsEmpty then None, None
-        else
+        match allTrees.IsEmpty with
+        | true -> None, None
+        | false ->
             let bounds = allTrees |> List.map Visualization.calculateTreeBounds
             let mw = bounds |> List.map fst |> List.max
             let mh = bounds |> List.map snd |> List.max
             Some mw, Some mh
 
-    for marker in markers do
+    let generateMarkerHtml (accHtml: string list, currentPage: int) marker =
         let section = 
             match Map.tryFind marker opts.LevelSections with
             | Some s -> s
             | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
         let batchInfo = batches.[marker]
-        let maxW = if batchInfo.Length > 0 then Some (batchInfo |> Array.map (fun c -> c.w) |> Array.max) else None
-        let maxH = if batchInfo.Length > 0 then Some (batchInfo |> Array.map (fun c -> c.h) |> Array.max) else None
-
+        let maxW = match batchInfo.Length > 0 with | true -> Some (batchInfo |> Array.map (fun c -> c.w) |> Array.max) | false -> None
+        let maxH = match batchInfo.Length > 0 with | true -> Some (batchInfo |> Array.map (fun c -> c.h) |> Array.max) | false -> None
         let title = getMarkerTitle marker
 
-        if section.FlowChart then
-            let root = 
-                if marker.StartsWith("N") then
-                    let nId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
-                    Map.tryFind nId tree.Nests |> Option.defaultValue tree.Levels.[0]
-                else
-                    let lvl = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
-                    Map.tryFind lvl tree.Levels |> Option.defaultValue tree.Levels.[0]
-            let colors = if batchInfo.Length > 0 then batchInfo.[0].shapes |> Array.map (fun s -> s.color) else [||]
-            let svg = renderFlowchartSvg root colors flowChartMaxW flowChartMaxH
-            sprintf tFlowChart (renderHeader (sprintf "Flow Chart — %s" title) opts.ProjectTitle) svg (renderFooter()) |> sb.AppendLine |> ignore
+        let html1, page1 = 
+            match section.FlowChart with
+            | true ->
+                let root = 
+                    match marker.StartsWith("N") with
+                    | true ->
+                        let nId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
+                        Map.tryFind nId tree.Nests |> Option.defaultValue tree.Levels.[0]
+                    | false ->
+                        let lvl = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
+                        Map.tryFind lvl tree.Levels |> Option.defaultValue tree.Levels.[0]
+                let colorMap = 
+                    match batchInfo.Length > 0 with 
+                    | true -> 
+                        batchInfo 
+                        |> Array.collect (fun c -> c.shapes)
+                        |> Array.map (fun s -> s.name, s.color)
+                        |> Map.ofArray 
+                    | false -> Map.empty
+                let svg = renderFlowchartSvg root colorMap flowChartMaxW flowChartMaxH
+                let res = sprintf tFlowChart (renderHeader (sprintf "Flow Chart — %s" title) opts.ProjectTitle) svg (renderFooter currentPage)
+                res :: accHtml, currentPage + 1
+            | false -> accHtml, currentPage
 
-        if section.BatchOverview && batchInfo.Length > 0 then
-            let limit = Math.Min(23, batchInfo.Length - 1)
-            let totalPages = int (Math.Ceiling(float (limit + 1) / 8.0))
-            for pageIndex = 0 to totalPages - 1 do
-                let chunkStart = pageIndex * 8
-                let chunkEnd = Math.Min(chunkStart + 7, limit)
-                let pageStr = if totalPages > 1 then sprintf " (%d/%d)" (pageIndex+1) totalPages else ""
-                sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — %s%s" title pageStr) opts.ProjectTitle) |> sb.AppendLine |> ignore
-                for i = chunkStart to chunkEnd do
-                    let conf = batchInfo[i]
+        let html2, page2 = 
+            match section.BatchOverview && batchInfo.Length > 0 with
+            | true ->
+                let limit = Math.Min(23, batchInfo.Length - 1)
+                let totalPages = int (Math.Ceiling(float (limit + 1) / 8.0))
+                
+                let chunkHtmls, nextPg = 
+                    [0 .. totalPages - 1] 
+                    |> List.fold (fun (acc, pg) pageIndex ->
+                        let chunkStart = pageIndex * 8
+                        let chunkEnd = Math.Min(chunkStart + 7, limit)
+                        let pageStr = match totalPages > 1 with | true -> sprintf " (%d/%d)" (pageIndex+1) totalPages | false -> ""
+                        let grid1 = sprintf tBatchGrid1 (renderHeader (sprintf "Batch Overview — %s%s" title pageStr) opts.ProjectTitle)
+                        
+                        let cells = 
+                            [chunkStart .. chunkEnd] |> List.map (fun i ->
+                                let conf = batchInfo.[i]
+                                let svg = renderFloorPlanSvg conf.shapes conf.cxOuIl maxW maxH 7.5 200.0
+                                sprintf tBatchCell svg (labelPhrase.[i].ToString())
+                            ) |> String.concat ""
+                            
+                        let grid2 = sprintf tBatchGrid2 "" (renderFooter pg)
+                        (grid1 + cells + grid2) :: acc, pg + 1
+                    ) (html1, page1)
+                    
+                chunkHtmls, nextPg
+            | false -> html1, page1
+
+        let html3, page3 = 
+            match section.Variations with
+            | true ->
+                let limit = Math.Min(23, batchInfo.Length - 1)
+                [0 .. limit] 
+                |> List.filter (fun i -> section.SelectedVariations.Contains(i))
+                |> List.fold (fun (acc, pg) i ->
+                    let conf = batchInfo.[i]
                     let levelCxls = conf.cxCxl1
                     let levelShapes = conf.shapes
-                    let targetFontSize = 7.5
-                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH targetFontSize 200.0
-                    sprintf tBatchCell svg (labelPhrase.[i].ToString()) |> sb.AppendLine |> ignore
-                let legend = ""
-                sprintf tBatchGrid2 legend (renderFooter()) |> sb.AppendLine |> ignore
-
-        if section.Variations then
-            for i = 0 to Math.Min(23, batchInfo.Length - 1) do
-                if section.SelectedVariations.Contains(i) then
-                    let conf = batchInfo[i]
-                    let levelCxls = conf.cxCxl1
-                    let levelShapes = conf.shapes
-                    let targetFontSize = 7.5
-                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH targetFontSize 550.0
-                    let legend = "" // Legend removed on pages with area statements
+                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH 7.5 550.0
                     let colorMap = levelShapes |> Array.map (fun s -> s.name, s.color) |> Map.ofArray
                     
                     let baseLevel = 
-                        if marker.StartsWith("N") then
+                        match marker.StartsWith("N") with
+                        | true ->
                             let nestId = match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
                             match tree.Nests |> Map.tryFind nestId with | Some n -> n.Level | None -> 0
-                        else
+                        | false ->
                             match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
-                    
+                            
                     let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap baseLevel
                     let adjMatrix = renderAdjacencyMatrix levelCxls colorMap
-                    sprintf tVariation (renderHeader (sprintf "%s — %s" (labelPhrase.[i].ToString()) title) "") svg legend areaTable adjMatrix (renderFooter()) |> sb.AppendLine |> ignore
+                    let varHtml = sprintf tVariation (renderHeader (sprintf "%s — %s" (labelPhrase.[i].ToString()) title) "") svg "" areaTable adjMatrix (renderFooter pg)
+                    varHtml :: acc, pg + 1
+                ) (html2, page2)
+            | false -> html2, page2
 
-    sb.AppendLine("</body></html>") |> ignore
-    sb.ToString()
+        html3, page3
+
+    let markerHtmls, _ = markers |> List.fold generateMarkerHtml (coverHtml, coverPage)
+    
+    let allHtmls = markerHtmls |> List.rev |> String.concat "\n"
+    baseHtml + "\n" + allHtmls + "\n</body></html>\n"
 
 // --- UI COMPONENTS ---
 

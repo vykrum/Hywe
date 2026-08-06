@@ -59,7 +59,7 @@ module Visualization =
         let vbY = minY - margin
         ((vbX, vbY, contentW, contentH), nodes)
 
-    let generateVisualElements (root: TreeNode) (colorList: string[]) (forcedW: float option) (forcedH: float option) : VisualElement list * (float * float * float * float) =
+    let generateVisualElements (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) : VisualElement list * (float * float * float * float) =
         let (bounds, nodes) = calculateTreeBoundsWithNodes root
         let (vbX, vbY, vbW, vbH) = bounds
         
@@ -86,9 +86,9 @@ module Visualization =
                 |> List.mapi (fun i node ->
                     let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
                     let fill = 
-                        match i < colorList.Length with
-                        | true -> colorList.[i]
-                        | false -> "white"
+                        match Map.tryFind node.Name colorMap with
+                        | Some color -> color
+                        | None -> "white"
 
                     let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
                     let hasBase = node.Base.IsSome
@@ -128,8 +128,8 @@ module Visualization =
         
         elements, finalBounds
 
-    let renderSvgToString (root: TreeNode) (colorList: string[]) (forcedW: float option) (forcedH: float option) =
-        let elements, bounds = generateVisualElements root colorList forcedW forcedH
+    let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) =
+        let elements, bounds = generateVisualElements root colorMap forcedW forcedH
 
         let (vx, vy, vw, vh) = bounds
         let sb = StringBuilder()
