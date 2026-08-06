@@ -29,10 +29,9 @@ module Cache
                 let h = maxY - minY
                 
                 let replaceOrAppend pattern (replacement: string) (str: string) =
-                    if Regex.IsMatch(str, pattern) then
-                        Regex.Replace(str, pattern, replacement)
-                    else
-                        str + "/" + replacement
+                    match Regex.IsMatch(str, pattern) with
+                    | true -> Regex.Replace(str, pattern, replacement)
+                    | false -> str + "/" + replacement
 
                 let s1 = replaceOrAppend @"O=[^/]*" ("O=" + oStr) attrsStr
                 let s2 = replaceOrAppend @"W=[^/]*" ("W=" + string w) s1
@@ -58,17 +57,16 @@ module Cache
                 (Some polyExport.IslandsStr)
         let cxls, _, _, _ = fullData
         let newSrc = populateNestBoundaries src cxls
-        if newSrc <> src then
-            computeFullLayout newSrc sqn polyExport elv
-        else
-            fullData
+        match newSrc <> src with
+        | true -> computeFullLayout newSrc sqn polyExport elv
+        | false -> fullData
 
     /// <summary>
     /// Extracts level-specific configuration from full layout data.
     /// </summary>
     let fromFullLayout (data: Cxl[] * (int * int)[][][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) (polyExport: PolygonExportData) : BatchConfgrtns =
         let cxls, allBounds, cxElv1, cxRto1 = data
-        let cxOuIl = if elv >= 0 && elv < allBounds.Length then allBounds.[elv] else [||]
+        let cxOuIl = match elv >= 0 && elv < allBounds.Length with | true -> allBounds.[elv] | false -> [||]
         let sqnStr = sprintf "%A" sqn
         let derived = deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv polyExport.Latitude
         let d = Layout.getStaticGeometry cxls derived.cxClr1 elv 1
@@ -105,7 +103,7 @@ module Cache
     /// Gets a specific configuration from the cache.
     /// </summary>
     let get (marker: string) (sqnIdx: int) (cache: LayoutCache) : BatchConfgrtns option =
-        cache |> Map.tryFind marker |> Option.bind (fun arr -> if sqnIdx >= 0 && sqnIdx < 24 then arr.[sqnIdx] else None)
+        cache |> Map.tryFind marker |> Option.bind (fun arr -> match sqnIdx >= 0 && sqnIdx < 24 with | true -> arr.[sqnIdx] | false -> None)
 
     /// <summary>
     /// Checks if a level has any generated configuration.
@@ -143,8 +141,8 @@ module Cache
         |> Map.toList 
         |> List.sortBy (fun (m, _) -> 
             let isN = m.StartsWith("N")
-            let num = match Int32.TryParse(if m.Length > 1 then m.Substring(1) else "0") with true, v -> v | _ -> 0
-            (if isN then 1 else 0), num)
+            let num = match Int32.TryParse(match m.Length > 1 with | true -> m.Substring(1) | false -> "0") with true, v -> v | _ -> 0
+            (match isN with | true -> 1 | false -> 0), num)
         |> List.tryPick (fun (marker, arr) -> 
             arr |> Array.tryFindIndex Option.isNone |> Option.map (fun idx -> marker, idx))
 

@@ -16,14 +16,20 @@ let coreScript =
                 if (idx !== -1) hash = url.substring(idx + 1);
             }
             if (hash) {
-                try { return decodeURIComponent(hash); } catch (e) { return hash; }
+                try { 
+                    return window.LZString ? LZString.decompressFromEncodedURIComponent(hash) : hash;
+                } catch (e) { return hash; }
             }
             return "";
         };
 
         window.setUrlHash = function(hash) {
-            if (hash) window.history.replaceState(null, null, "#" + encodeURIComponent(hash));
-            else window.history.replaceState(null, null, window.location.pathname);
+            if (hash) {
+                let encoded = window.LZString ? LZString.compressToEncodedURIComponent(hash) : encodeURIComponent(hash);
+                window.history.replaceState(null, null, "#" + encoded);
+            } else {
+                window.history.replaceState(null, null, window.location.pathname);
+            }
         };
 
         window.copyToClipboard = function(text) {
