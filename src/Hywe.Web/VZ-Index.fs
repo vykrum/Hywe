@@ -64,6 +64,12 @@ let coreScript =
             return window.copyToClipboard(url);
         };
 
+        window.shareCompressedHash = async (title, text, hash) => {
+            let encoded = window.LZString ? LZString.compressToEncodedURIComponent(hash) : encodeURIComponent(hash);
+            const fullUrl = window.location.origin + window.location.pathname + "#" + encoded;
+            return window.shareUrl(title, text, fullUrl);
+        };
+
         window.clickElement = (id) => {
             const el = document.getElementById(id);
             if (el) el.click();

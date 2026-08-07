@@ -191,10 +191,11 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
             let reqSz = int (count * float hxlAreaX)
             let achSz = (Array.length cxl.Hxls) * hxlAreaX
             let opnSz = avl * hxlAreaX
+            let rfid = prpVlu cxl.Rfid
             let rawName = prpVlu cxl.Name
             let safeName = rawName.Replace("<", "&lt;").Replace(">", "&gt;")
             
-            let clr = Map.tryFind rawName colorMap |> Option.defaultValue "#eee"
+            let clr = Map.tryFind rfid colorMap |> Option.defaultValue "#eee"
             let swatch = sprintf """<div style="width: 100%%; max-width: 12px; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: inline-block; border-radius: 2px; box-sizing: border-box; vertical-align: middle;"></div>""" clr
             
             sprintf "<tr><td title=\"%s\" style=\"white-space: nowrap;\">%s<span style=\"margin-left: 6px; vertical-align: middle;\">%s</span></td><td>%d</td><td>%d</td><td>%d</td></tr>\n" safeName swatch safeName reqSz achSz opnSz
@@ -204,6 +205,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
 
 let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string =
     let names, matrix = Coxel.cxlAdj cxls
+    let rfids = cxls |> Array.map (fun c -> prpVlu c.Rfid)
     let fontSize = 
         match names.Length with
         | l when l > 25 -> "6px"
@@ -212,9 +214,10 @@ let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string
     let headerStart = sprintf "<table class=\"report-table adjacency-matrix\" style=\"font-size: %s; height: 100%%;\">\n        <thead>\n            <tr><th></th>\n" fontSize
     
     let headerCols = 
-        names |> Array.map (fun name ->
+        names |> Array.mapi (fun i name ->
             let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
-            let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
+            let rfid = rfids.[i]
+            let clr = Map.tryFind rfid colorMap |> Option.defaultValue "#eee"
             let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
             sprintf """<th class="adj-header" title="%s">%s</th>""" safeName swatch
         ) |> String.concat ""
@@ -223,9 +226,10 @@ let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string
     
     let rows = 
         matrix |> Array.mapi (fun i row ->
-            let name = names[i]
+            let name = names.[i]
+            let rfid = rfids.[i]
             let safeName = name.Replace("<", "&lt;").Replace(">", "&gt;")
-            let clr = Map.tryFind name colorMap |> Option.defaultValue "#eee"
+            let clr = Map.tryFind rfid colorMap |> Option.defaultValue "#eee"
             let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
             let rowHeader = sprintf """<tr><th title="%s" style="text-align:center;">%s</th>""" safeName swatch
             let rowCells = 
@@ -479,7 +483,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                     let levelCxls = conf.cxCxl1
                     let levelShapes = conf.shapes
                     let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH 7.5 550.0
-                    let colorMap = levelShapes |> Array.map (fun s -> s.name, s.color) |> Map.ofArray
+                    let cxlColorMap = Array.zip conf.cxCxl1 conf.cxClr1 |> Array.map (fun (c, clr) -> prpVlu c.Rfid, clr) |> Map.ofArray
                     
                     let baseLevel = 
                         match marker.StartsWith("N") with
@@ -489,8 +493,8 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                         | false ->
                             match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
                             
-                    let areaTable = renderAreaTable levelCxls conf.cxlAvl colorMap baseLevel
-                    let adjMatrix = renderAdjacencyMatrix levelCxls colorMap
+                    let areaTable = renderAreaTable levelCxls conf.cxlAvl cxlColorMap baseLevel
+                    let adjMatrix = renderAdjacencyMatrix levelCxls cxlColorMap
                     let varHtml = sprintf tVariation (renderHeader (sprintf "%s — %s" (labelPhrase.[i].ToString()) title) "") svg "" areaTable adjMatrix (renderFooter pg)
                     varHtml :: acc, pg + 1
                 ) (html2, page2)
