@@ -374,12 +374,13 @@ module TreeFiltering =
                 yield! traverse $"N{kvp.Key}" "1" kvp.Value
         } |> Map.ofSeq
 
+    let rec getIds (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+        seq {
+            yield $"{m}.{prefix}"
+            yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds m $"{prefix}.{i + 1}" child)
+        }
+
     let getValidIdsForMarker (tree: Hywe.Node.SubModel) (marker: string) =
-        let rec getIds (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
-            seq {
-                yield $"{m}.{prefix}"
-                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds m $"{prefix}.{i + 1}" child)
-            }
         
         if marker.StartsWith("N") then
             let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
@@ -411,16 +412,48 @@ module TreeFiltering =
             let avls = indexed |> Array.map (fun (i, _) -> config.cxlAvl.[i])
             let b36s = indexed |> Array.map (fun (i, _) -> config.cxB36.[i])
             
-            let validNames = cxls |> Array.map (fun c -> Hywe.Core.Coxel.prpVlu c.Name) |> Set.ofArray
-            let shapes = config.shapes |> Array.filter (fun s -> validNames.Contains(s.name))
+            let shapes = indexed |> Array.map (fun (i, _) -> config.shapes.[i])
             
             let adj = if computeExpensive then Hywe.Core.Coxel.cxlAdj cxls else config.cxAdj1
+
+            let wtmkShapes = 
+                if marker.StartsWith("N") then
+                    let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
+                    match tree.Nests |> Map.tryFind nestId with
+                    | Some nestNode ->
+                        let lvlMarker = match nestNode.Level with | 0 -> "L0" | lvl -> $"L{lvl}"
+                        let levelIds = 
+                            match tree.Levels |> Map.tryFind nestNode.Level with
+                            | Some levelNode -> getIds lvlMarker "1" levelNode |> Set.ofSeq
+                            | None -> Set.empty
+                        
+                        let isParentCxl (rfid: string) =
+                            match nestNode.Base with
+                            | Some targetId -> rfid = targetId || rfid.EndsWith("." + targetId)
+                            | None -> false
+
+                        let bgCxl = config.cxCxl1 |> Array.tryFind (fun c -> isParentCxl (Hywe.Core.Coxel.prpVlu c.Rfid))
+                        let bgCxlId = bgCxl |> Option.map (fun c -> Hywe.Core.Coxel.prpVlu c.Rfid)
+
+                        let wtmkIndices = 
+                            config.cxCxl1
+                            |> Array.indexed
+                            |> Array.filter (fun (_, c) -> 
+                                let id = Hywe.Core.Coxel.prpVlu c.Rfid
+                                levelIds.Contains(id) && (Some id <> bgCxlId))
+                            |> Array.map fst
+
+                        Some (wtmkIndices |> Array.map (fun i -> config.shapes.[i]))
+                    | None -> None
+                else
+                    None
 
             {| config with 
                 cxCxl1 = cxls
                 cxClr1 = clrs
                 cxlAvl = avls
                 shapes = shapes
+                wtmkShapes = wtmkShapes
                 cxAdj1 = adj
                 cxB36 = b36s
                 cxSol1 = config.cxSol1 |}

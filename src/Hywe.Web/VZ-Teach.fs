@@ -301,6 +301,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                                    w = 0.0; h = 0.0; mapScale = 1.0
                                                    cxCxl1 = ncxls
                                                    cxElv1 = [||]; cxlAvl = [||]; cxOuIl = [||]
+                                                   wtmkShapes = None
                                                    cxAdj1 = ([||], [||]); cxB36 = [||]; cxRto1 = [||]; cxClr1 = [||]; cxSol1 = None |}
                                             currentCache <- Cache.update nestMarker i nestCfg currentCache
                                         | None -> ()
