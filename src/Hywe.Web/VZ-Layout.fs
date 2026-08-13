@@ -101,6 +101,7 @@ let crd
 let svgCoxels
     (cxl : Cxl[])
     (bdr : (int*int)[][])
+    (wtmkCxls : Cxl[])
     (elv : int)
     (clr : string[])
     (scl : int)
@@ -139,8 +140,19 @@ let svgCoxels
                     cx * float scl, cy * float scl)
             )
 
+        // Watermark Vertices
+        let wtmkSqn = wtmkCxls |> Array.map (fun x ->x.Seqn)
+        let wtmkCr1 = wtmkCxls |> Array.map (fun x -> svgCxlPrm x elv)
+        let wtmkCrd = Array.map2 (fun a b -> svgCleanPolygon a b) wtmkSqn wtmkCr1
+        let wtmkCrd1 = 
+            Array.map2 (fun s pts -> 
+                pts |> Array.map (fun p -> 
+                    let (cx, cy) = svgToCartesian s p
+                    cx * float scl, cy * float scl)
+            ) wtmkSqn wtmkCrd
+
         // Calculate global shifts to normalize the layout within the SVG viewport
-        let allPoints = Array.concat [| Array.concat crd1; bdrPoints |]
+        let allPoints = Array.concat [| Array.concat crd1; Array.concat wtmkCrd1; bdrPoints |]
         match allPoints with
         | [||] -> div { attr.style "padding: 20px; color: #888; font-family: 'Outfit', system-ui, sans-serif;"; text "Base Unavailable" }
         | _ ->
@@ -155,6 +167,7 @@ let svgCoxels
         
             // Transform all vertices (already calculated as midpoints in cxlPrm)
             let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> float a+shfX, float b+shfY)x) crd1
+            let wtmkCrd2 = Array.map (fun x -> Array.map(fun (a,b) -> float a+shfX, float b+shfY)x) wtmkCrd1
             
             let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
             let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
@@ -172,6 +185,23 @@ let svgCoxels
                 "height" => string hgt
                 attr.``style`` "display: block; width: 100%; height: auto;"
                 attr.id (svgId |> Option.defaultValue "")
+
+                // Watermark Cells
+                for xxyy in wtmkCrd2 do
+                    let xy =
+                        xxyy
+                        |> Array.map (fun (x, y) -> [|x; y|])
+                        |> Array.concat
+                        |> Array.map string
+                        |> String.concat ","
+
+                    plgn()
+                        .pt(xy)
+                        .cl("#DDDDDD")
+                        .st("#AAAAAA")
+                        .sw("1")
+                        .op("0.3")
+                        .Elt()
 
                 let prp = Array.zip crd2 clr
                 for (xxyy, color) in prp do
@@ -398,6 +428,20 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
         append $"""    <polygon points="{xy}" fill="none" stroke="#000000" stroke-width="2" opacity="0.1" />
 """
 
+    // Watermark Shapes
+    match cfg.wtmkShapes with
+    | Some wShapes ->
+        for s in wShapes do
+            if not (Array.isEmpty s.points) then
+                let xy = 
+                    s.points 
+                    |> Array.chunkBySize 2 
+                    |> Array.map (fun p -> $"{p.[0] * scl + padd},{p.[1] * scl + padd}") 
+                    |> String.concat " "
+                append $"""    <polygon points="{xy}" fill="#DDDDDD" stroke="#AAAAAA" stroke-width="0.1" opacity="0.3" />
+"""
+    | None -> ()
+
     // Shapes
     for s in cfg.shapes do
         if not (Array.isEmpty s.points) then
@@ -552,7 +596,12 @@ let alternateConfigurations
             c.cxOuIl |> Array.collect (fun poly -> 
                 poly |> Array.map (fun (x, y) -> svgToCartesian sqn (float x, float y)))
         
-        let combined = Array.concat [| allPts; bdrPts |]
+        let wtmkPts = 
+            match c.wtmkShapes with
+            | Some ws -> ws |> Array.collect (fun s -> s.points |> Array.chunkBySize 2 |> Array.map (fun p -> p.[0], p.[1]))
+            | None -> [||]
+
+        let combined = Array.concat [| allPts; bdrPts; wtmkPts |]
         if combined.Length = 0 then 1.0, 1.0
         else
             let minX = combined |> Array.map fst |> Array.min
@@ -634,6 +683,18 @@ let alternateConfigurations
                                  |> Array.map (fun (x,y) -> $"{ox + x * scale},{oy + y * scale}")
                                  |> String.concat " "
                         plgn().pt(xy).cl("none").st("#000000").sw("0.5").op("0.3").Elt()
+
+                    // 1.5 WATERMARKS
+                    match cfg.wtmkShapes with
+                    | Some ws ->
+                        for s in ws do
+                            if not (Array.isEmpty s.points) then
+                                let xy = s.points 
+                                         |> Array.chunkBySize 2 
+                                         |> Array.map (fun p -> $"{ox + p.[0] * scale},{oy + p.[1] * scale}") 
+                                         |> String.concat " "
+                                plgn().pt(xy).cl("#DDDDDD").st("#AAAAAA").sw("1").op("0.3").Elt()
+                    | None -> ()
 
                     // 2. SHAPES
                     for j, s in cfg.shapes |> Array.indexed do

@@ -424,7 +424,22 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 | None -> None
             | None -> None
             
-        cxls, clrs, avls, bgCxl
+        let wtmkCxls = 
+            match model.Tree.ActiveNest with
+            | Some _ ->
+                match model.Tree.Levels |> Map.tryFind model.Tree.ActiveLevel with
+                | Some levelNode ->
+                    let marker = match model.Tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}"
+                    let levelIds = getIds marker "1" levelNode |> Set.ofSeq
+                    let bgCxlId = bgCxl |> Option.map (fun c -> Hywe.Core.Coxel.prpVlu c.Rfid)
+                    model.Derived.cxCxl1 
+                    |> Array.filter (fun c -> 
+                        let id = Hywe.Core.Coxel.prpVlu c.Rfid
+                        levelIds.Contains(id) && (Some id <> bgCxlId))
+                | None -> [||]
+            | None -> [||]
+
+        cxls, clrs, avls, bgCxl, wtmkCxls
 
     div {
         attr.style "padding: 10px; min-height: 400px;"
@@ -447,7 +462,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
                 
-                let filteredCxls, filteredClrs, _, bgCxl = getFilteredGeometries ()
+                let filteredCxls, filteredClrs, _, bgCxl, wtmkCxls = getFilteredGeometries ()
                 
                 let bdrToPass = 
                     match bgCxl with
@@ -458,7 +473,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 
                 div {
                     attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
-                    svgCoxels filteredCxls bdrToPass model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
+                    svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
                 }
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
@@ -522,7 +537,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     filtered.cxCxl1, filtered.cxClr1, filtered.cxlAvl, filtered.cxAdj1, filtered.cxSol1
                 | None ->
                     // Fallback to on-the-fly filtering if not yet cached
-                    let fCxls, fClrs, fAvls, _ = getFilteredGeometries ()
+                    let fCxls, fClrs, fAvls, _, _ = getFilteredGeometries ()
                     fCxls, fClrs, fAvls, Coxel.cxlAdj fCxls, model.Derived.cxSol1
 
             div {

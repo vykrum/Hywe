@@ -84,19 +84,27 @@ let buildPageManifest (opts: ReportOptions) (markers: string list) : PageEntry l
     let (finalPages, _) = markers |> List.fold foldMarker (initialPages, initialPageNum)
     finalPages |> List.rev
 
-let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW: float option) (maxH: float option) (targetFontSize: float) (containerWidth: float) : string =
+let renderFloorPlanSvg (shapes: BatchComponent[]) (wtmkShapes: BatchComponent[] option) (cxOuIl: (int*int)[][]) (maxW: float option) (maxH: float option) (targetFontSize: float) (containerWidth: float) : string =
     let shapePoints = 
         shapes 
         |> Array.collect (fun s -> 
             Array.init (s.points.Length / 2) (fun i -> s.points.[i*2], s.points.[i*2 + 1])
         )
+
+    let wtmkPoints =
+        match wtmkShapes with
+        | Some ws -> 
+            ws |> Array.collect (fun s -> 
+                Array.init (s.points.Length / 2) (fun i -> s.points.[i*2], s.points.[i*2 + 1])
+            )
+        | None -> [||]
         
     let boundPoints = 
         cxOuIl 
         |> Array.collect id
         |> Array.map (fun (x, y) -> float x, float y)
         
-    let allPoints = Array.append shapePoints boundPoints
+    let allPoints = Array.concat [| shapePoints; wtmkPoints; boundPoints |]
     
     let minX, minY, maxX, maxY =
         match allPoints.Length with
@@ -105,6 +113,17 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
             let xs = allPoints |> Array.map fst
             let ys = allPoints |> Array.map snd
             Array.min xs, Array.min ys, Array.max xs, Array.max ys
+
+    let wtmkPolygons =
+        match wtmkShapes with
+        | Some ws ->
+            ws |> Array.map (fun shp ->
+                let pts = 
+                    Array.init (shp.points.Length / 2) (fun i -> sprintf "%f,%f" shp.points.[i*2] shp.points.[i*2+1])
+                    |> String.concat " "
+                sprintf """<polygon points="%s" fill="#DDDDDD" stroke="#AAAAAA" stroke-width="0.1" opacity="0.3" />""" pts
+            ) |> String.concat ""
+        | None -> ""
 
     let polygons = 
         shapes |> Array.map (fun shp ->
@@ -125,8 +144,8 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     let pad = 8.0
     let contentW = maxX - minX
     let contentH = maxY - minY
-    let w = maxW |> Option.defaultValue contentW
-    let h = maxH |> Option.defaultValue contentH
+    let w = match maxW with | Some v when v > 0.0 -> v | _ -> contentW
+    let h = match maxH with | Some v when v > 0.0 -> v | _ -> contentH
     let ox = (w - contentW) / 2.0
     let oy = (h - contentH) / 2.0
     
@@ -147,8 +166,9 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (cxOuIl: (int*int)[][]) (maxW:
     %s
     %s
     %s
+    %s
     </g>
-    </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 polygons boundaries labels
+    </svg>""" (minX - pad - ox) (minY - pad - oy) (w + 2.0 * pad) (h + 2.0 * pad) 0.0 0.0 wtmkPolygons polygons boundaries labels
 
 let renderFlowchartSvg (root: TreeNode) (colorMap: Map<string, string>) (maxW: float option) (maxH: float option) : string =
     Visualization.renderSvgToString root colorMap maxW maxH
@@ -461,7 +481,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                         let cells = 
                             [chunkStart .. chunkEnd] |> List.map (fun i ->
                                 let conf = batchInfo.[i]
-                                let svg = renderFloorPlanSvg conf.shapes conf.cxOuIl maxW maxH 7.5 200.0
+                                let svg = renderFloorPlanSvg conf.shapes conf.wtmkShapes conf.cxOuIl maxW maxH 7.5 200.0
                                 sprintf tBatchCell svg (labelPhrase.[i].ToString())
                             ) |> String.concat ""
                             
@@ -482,7 +502,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                     let conf = batchInfo.[i]
                     let levelCxls = conf.cxCxl1
                     let levelShapes = conf.shapes
-                    let svg = renderFloorPlanSvg levelShapes conf.cxOuIl maxW maxH 7.5 550.0
+                    let svg = renderFloorPlanSvg levelShapes conf.wtmkShapes conf.cxOuIl maxW maxH 7.5 550.0
                     let cxlColorMap = Array.zip conf.cxCxl1 conf.cxClr1 |> Array.map (fun (c, clr) -> prpVlu c.Rfid, clr) |> Map.ofArray
                     
                     let baseLevel = 
@@ -609,15 +629,15 @@ let viewReport (model: Model) dispatch =
         renderToggleRow "Cover Page" opts.IncludeCover (fun v -> updateOpts (fun o -> { o with IncludeCover = v }))
         
         if opts.IncludeCover then
-            div {
-                attr.style (
-                    let color = if model.ViewLocked then "#4caf50" else "#e65100"
-                    sprintf "font-size: 11px; color: %s; margin: -5px 0 10px 25px; font-style: italic;" color
-                )
+            let color, msg = 
                 if model.ViewLocked then 
-                    text "(3D view locked: will be included in cover page)"
+                    "#4caf50", "(3D view locked: will be included in cover page)"
                 else 
-                    text "Please lock 3D view for inclusion in cover page"
+                    "#e65100", "Please lock 3D view for inclusion in cover page"
+
+            div {
+                attr.style (sprintf "font-size: 11px; color: %s; margin: -5px 0 10px 25px; font-style: italic;" color)
+                text msg
             }
 
         forEach (getOrderedMarkers model.Tree) <| fun marker ->

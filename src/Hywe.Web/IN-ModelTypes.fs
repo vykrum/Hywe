@@ -230,7 +230,7 @@ type AppScreen =
 
 // Batch Export Types
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
-type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; w: float; h: float; mapScale: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[]; cxSol1: float[] option |}
+type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; wtmkShapes: BatchComponent[] option; w: float; h: float; mapScale: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[]; cxSol1: float[] option |}
 
 // Report Types
 type LevelReportSections = {
