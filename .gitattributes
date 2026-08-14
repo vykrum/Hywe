@@ -1,1 +1,11 @@
-*.fs linguist-language=F#
+# Auto-detect text files and perform LF normalization
+* text=auto
+
+# F# and .NET specific settings
+*.fs text diff=fsharp linguist-language=F#
+*.fsproj text
+*.sln text eol=crlf
+
+# Shell scripts should always have LF line endings
+*.sh text eol=lf
+*.cmd text eol=crlf
