@@ -9,3 +9,7 @@
 # Shell scripts should always have LF line endings
 *.sh text eol=lf
 *.cmd text eol=crlf
+
+# Blazor / WebAssembly (Bolero) binary safety
+*.wasm binary
+*.dll binary
