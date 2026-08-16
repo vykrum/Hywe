@@ -88,6 +88,7 @@ type StressTests(output: ITestOutputHelper) =
         let envInfo = [|
             "### Benchmark Environment"
             sprintf "- **CPU**: %d Cores" Environment.ProcessorCount
+            sprintf "- **RAM**: %d MB" (GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1024L / 1024L)
             sprintf "- **Operating System**: %s" RuntimeInformation.OSDescription
             sprintf "- **Runtime**: %s" RuntimeInformation.FrameworkDescription
 #if DEBUG
@@ -101,8 +102,8 @@ type StressTests(output: ITestOutputHelper) =
             ""
         |]
 
-        perfLines.Add("# Performance")
-        perfLines.Add("Empirical stress-testing of the compilation pipeline across multiple inputs and iterations.")
+        perfLines.Add("# Performance Benchmark")
+        perfLines.Add("Performance benchmarking of the compilation pipeline across multiple inputs and iterations.")
         perfLines.Add("")
         for line in envInfo do perfLines.Add(line)
         perfLines.Add("| Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | Total Time (ms) |")
@@ -116,6 +117,9 @@ type StressTests(output: ITestOutputHelper) =
 
         for iterations in iterationsList do
             output.WriteLine(sprintf "Running stress tests with M=%d iterations across N=%d operators." iterations operators.Length)
+
+            let allTimes = ResizeArray<float>()
+            let maxLatencies = ResizeArray<string * float>()
 
             for op in operators do
                 let sw = Stopwatch()
@@ -135,6 +139,9 @@ type StressTests(output: ITestOutputHelper) =
                 let avgT = times |> Seq.average
                 let sumT = times |> Seq.sum
 
+                allTimes.AddRange(times)
+                maxLatencies.Add(op, maxT)
+
                 let allMatch = 
                     let firstSig = signatures.[0]
                     signatures |> Seq.forall (fun s -> s = firstSig)
@@ -147,8 +154,20 @@ type StressTests(output: ITestOutputHelper) =
 
                 // Assert exact repeatability across all runs!
                 allMatch |> should be True
+            
+            let globalMean = allTimes |> Seq.average
+            let globalMin = allTimes |> Seq.min
+            let globalMax = allTimes |> Seq.max
+            let opsBelow50 = maxLatencies |> Seq.filter (fun (_, max) -> max < 50.0) |> Seq.length
+            let maxOp, maxOpLatency = maxLatencies |> Seq.maxBy snd
 
-        let perfFile = Path.Combine(wikiRoot, "Performance.md")
+            perfLines.Add("")
+            perfLines.Add("### Performance Summary")
+            perfLines.Add("")
+            perfLines.Add(sprintf "The benchmark comprised %d canonical operators executed for %d iterations each, producing %d compilation runs. Observed mean latency across all runs was approximately %.2f ms, with individual run latencies ranging from %.2f ms to %.2f ms. %d of the %d operators exhibited maximum observed latency below 50 ms. The highest observed latency (%.2f ms) occurred for %s." operators.Length iterations (operators.Length * iterations) globalMean globalMin globalMax opsBelow50 operators.Length maxOpLatency maxOp)
+            perfLines.Add("")
+
+        let perfFile = Path.Combine(wikiRoot, "Performance Benchmark.md")
         let repFile = Path.Combine(wikiRoot, "Repeatability.md")
 
         File.WriteAllLines(perfFile, perfLines)
