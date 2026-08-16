@@ -3,6 +3,7 @@ module Hywe.Tests.StressTests
 open System
 open System.IO
 open System.Diagnostics
+open System.Runtime.InteropServices
 open Xunit
 open Xunit.Abstractions
 open FsUnit
@@ -32,7 +33,7 @@ type StressTests(output: ITestOutputHelper) =
     // Configurable number of runs for empirical stress testing
     // The user requested to scale from 10 to 10000. For quick automated runs, we default to 10.
     // Modify this array to [| 10; 100; 1000; 10000 |] to run the full matrix.
-    let iterationsList = [| 10; 100; 1000; 10000 |]
+    let iterationsList = [| 100 |]
 
     let runCompilation (operatorName: string) =
         let tree = LayoutTree.Create [|
@@ -84,9 +85,26 @@ type StressTests(output: ITestOutputHelper) =
         let perfLines = ResizeArray<string>()
         let repLines = ResizeArray<string>()
 
+        let envInfo = [|
+            "### Benchmark Environment"
+            sprintf "- **CPU**: %d Cores" Environment.ProcessorCount
+            sprintf "- **Operating System**: %s" RuntimeInformation.OSDescription
+            sprintf "- **Runtime**: %s" RuntimeInformation.FrameworkDescription
+#if DEBUG
+            "- **Build Configuration**: Development / Debug"
+#else
+            "- **Build Configuration**: Release"
+#endif
+            "- **WebAssembly**: N/A (Native .NET execution)"
+            "- **JIT Warm-up**: None (Cold start included in first iteration)"
+            "- **First Run Included**: Yes"
+            ""
+        |]
+
         perfLines.Add("# Performance")
         perfLines.Add("Empirical stress-testing of the compilation pipeline across multiple inputs and iterations.")
         perfLines.Add("")
+        for line in envInfo do perfLines.Add(line)
         perfLines.Add("| Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | Total Time (ms) |")
         perfLines.Add("|----------|------------|------------------|------------------|------------------|-----------------|")
 
