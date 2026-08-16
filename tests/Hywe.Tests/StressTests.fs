@@ -214,11 +214,11 @@ type StressTests(output: ITestOutputHelper) =
         scaleLines.Add("Performance as spatial problem complexity grows.")
         scaleLines.Add("")
         for line in envInfo do scaleLines.Add(line)
-        scaleLines.Add("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |")
-        scaleLines.Add("|---------------|----------|------------|------------------|------------------|------------------|---------|")
+        scaleLines.Add("| Scale (Nodes) | Operator | Iterations | Valid | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |")
+        scaleLines.Add("|---------------|----------|------------|-------|------------------|------------------|------------------|---------|")
 
-        let iterations = 10
-        let nodeCounts = [| 10; 50; 100; 200 |]
+        let iterations = 25
+        let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200; 300; 500; 1000 |]
         let testOp = "VRCWEE" // Use one consistent operator for scaling
 
         for count in nodeCounts do
@@ -232,19 +232,24 @@ type StressTests(output: ITestOutputHelper) =
             
             let sw = Stopwatch()
             let times = ResizeArray<float>()
+            let signatures = ResizeArray<string>()
 
             for i in 1 .. iterations do
                 sw.Restart()
-                runCompilation tree testOp |> ignore
+                let sig' = runCompilation tree testOp
                 sw.Stop()
                 times.Add(sw.Elapsed.TotalMilliseconds)
+                signatures.Add(sig')
 
             let minT = times |> Seq.min
             let maxT = times |> Seq.max
             let avgT = times |> Seq.average
             let sdT = calculateSD times
+            
+            let firstSig = signatures.[0]
+            let validCount = signatures |> Seq.filter (fun s -> s = firstSig) |> Seq.length
 
-            scaleLines.Add(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count testOp iterations minT maxT avgT sdT)
+            scaleLines.Add(sprintf "| %d | %s | %d | %d/%d | %.2f | %.2f | %.2f | %.2f |" count testOp iterations validCount iterations minT maxT avgT sdT)
 
         let scaleFile = Path.Combine(wikiRoot, "Scaling Benchmark.md")
         File.WriteAllLines(scaleFile, scaleLines)
