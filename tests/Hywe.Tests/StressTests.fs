@@ -33,18 +33,15 @@ type StressTests(output: ITestOutputHelper) =
     // Configurable number of runs for empirical stress testing
     // The user requested to scale from 10 to 10000. For quick automated runs, we default to 10.
     // Modify this array to [| 10; 100; 1000; 10000 |] to run the full matrix.
-    let iterationsList = [| 100 |]
+    let iterationsList = [| 10 |]
 
-    let runCompilation (operatorName: string) =
-        let tree = LayoutTree.Create [|
-            [| 
-                ("Living", 30, "Living Room")
-                ("Kitchen", 15, "Kitchen")
-                ("Bed1", 20, "Master Bedroom")
-                ("Bed2", 15, "Bedroom 2")
-                ("Bath", 10, "Bathroom")
-            |]
-        |]
+    let presets = [|
+        "Simple", LayoutTree.Create [| [| ("1", 105, "Dock"); ("1.1", 85, "Logistics"); ("1.2", 95, "Lab"); ("1.3", 65, "Habitation"); ("1.4", 75, "Power") |] |]
+        "Branched", LayoutTree.Create [| [| ("1", 12, "Foyer"); ("1.1", 12, "Living"); ("1.1.1", 18, "Dining"); ("1.1.1.1", 15, "Kitchen"); ("1.1.1.1.1", 6, "Utility"); ("1.1.1.2", 14, "Bed-1"); ("1.1.1.2.1", 8, "Bath-1"); ("1.1.1.3", 18, "Bed-2"); ("1.1.1.3.1", 10, "Closet-2"); ("1.1.1.3.1.1", 10, "Bath-2"); ("1.1.1.4", 18, "Bed-3"); ("1.1.1.4.1", 11, "Closet-3"); ("1.1.1.4.2", 10, "Bath-3"); ("1.1.2", 12, "Staircase"); ("1.2", 12, "Study") |] |]
+        "Stacked", LayoutTree.Create [| [| ("1", 75, "Lobby"); ("1.1", 88, "Retail"); ("1.2", 54, "Toilets"); ("1.3", 67, "Retail"); ("1.4", 94, "Retail") |]; [| ("1", 75, "Lobby"); ("1.1", 43, "Office"); ("1.2", 123, "Office"); ("1.2.1", 34, "Toilets"); ("1.3", 52, "Office") |]; [| ("1", 75, "Lobby"); ("1.1", 99, "Suite") |] |]
+    |]
+
+    let runCompilation (tree: LayoutTree) (operatorName: string) =
         
         let sqn = 
             match tryParseUnion<Sqn> operatorName with
@@ -106,65 +103,69 @@ type StressTests(output: ITestOutputHelper) =
         perfLines.Add("Performance benchmarking of the compilation pipeline across multiple inputs and iterations.")
         perfLines.Add("")
         for line in envInfo do perfLines.Add(line)
-        perfLines.Add("| Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | Total Time (ms) |")
-        perfLines.Add("|----------|------------|------------------|------------------|------------------|-----------------|")
+        perfLines.Add("| Layout | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | Total Time (ms) |")
+        perfLines.Add("|--------|----------|------------|------------------|------------------|------------------|-----------------|")
 
         repLines.Add("# Repeatability")
         repLines.Add("Validation of exact reproducibility of topology signatures for canonical inputs across repeated executions.")
         repLines.Add("")
-        repLines.Add("| Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |")
-        repLines.Add("|----------|------------|------------------|--------------|-------------------------|")
+        repLines.Add("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |")
+        repLines.Add("|--------|----------|------------|------------------|--------------|-------------------------|")
 
         for iterations in iterationsList do
-            output.WriteLine(sprintf "Running stress tests with M=%d iterations across N=%d operators." iterations operators.Length)
+            output.WriteLine(sprintf "Running stress tests with M=%d iterations across N=%d operators on %d layouts." iterations operators.Length presets.Length)
 
             let allTimes = ResizeArray<float>()
             let maxLatencies = ResizeArray<string * float>()
 
-            for op in operators do
-                let sw = Stopwatch()
-                let times = ResizeArray<float>()
-                let signatures = ResizeArray<string>()
+            for layoutName, tree in presets do
+                for op in operators do
+                    let sw = Stopwatch()
+                    let times = ResizeArray<float>()
+                    let signatures = ResizeArray<string>()
 
-                for i in 1 .. iterations do
-                    sw.Restart()
-                    let sig' = runCompilation op
-                    sw.Stop()
+                    for i in 1 .. iterations do
+                        sw.Restart()
+                        let sig' = runCompilation tree op
+                        sw.Stop()
+                        
+                        times.Add(sw.Elapsed.TotalMilliseconds)
+                        signatures.Add(sig')
+
+                    let minT = times |> Seq.min
+                    let maxT = times |> Seq.max
+                    let avgT = times |> Seq.average
+                    let sumT = times |> Seq.sum
+
+                    allTimes.AddRange(times)
+                    let layoutOpName = sprintf "%s - %s" layoutName op
+                    maxLatencies.Add(layoutOpName, maxT)
+
+                    let allMatch = 
+                        let firstSig = signatures.[0]
+                        signatures |> Seq.forall (fun s -> s = firstSig)
                     
-                    times.Add(sw.Elapsed.TotalMilliseconds)
-                    signatures.Add(sig')
+                    // Just a short hash for display
+                    let hash = signatures.[0].GetHashCode().ToString("X")
 
-                let minT = times |> Seq.min
-                let maxT = times |> Seq.max
-                let avgT = times |> Seq.average
-                let sumT = times |> Seq.sum
+                    perfLines.Add(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f |" layoutName op iterations minT maxT avgT sumT)
+                    repLines.Add(sprintf "| %s | %s | %d | %b | 100%% | `%s` |" layoutName op iterations allMatch hash)
 
-                allTimes.AddRange(times)
-                maxLatencies.Add(op, maxT)
-
-                let allMatch = 
-                    let firstSig = signatures.[0]
-                    signatures |> Seq.forall (fun s -> s = firstSig)
-                
-                // Just a short hash for display
-                let hash = signatures.[0].GetHashCode().ToString("X")
-
-                perfLines.Add(sprintf "| %s | %d | %.2f | %.2f | %.2f | %.2f |" op iterations minT maxT avgT sumT)
-                repLines.Add(sprintf "| %s | %d | %b | 100%% | `%s` |" op iterations allMatch hash)
-
-                // Assert exact repeatability across all runs!
-                allMatch |> should be True
+                    // Assert exact repeatability across all runs!
+                    allMatch |> should be True
             
             let globalMean = allTimes |> Seq.average
             let globalMin = allTimes |> Seq.min
             let globalMax = allTimes |> Seq.max
+            let totalCombinations = operators.Length * presets.Length
+            let totalRuns = totalCombinations * iterations
             let opsBelow50 = maxLatencies |> Seq.filter (fun (_, max) -> max < 50.0) |> Seq.length
             let maxOp, maxOpLatency = maxLatencies |> Seq.maxBy snd
 
             perfLines.Add("")
             perfLines.Add("### Performance Summary")
             perfLines.Add("")
-            perfLines.Add(sprintf "The benchmark comprised %d canonical operators executed for %d iterations each, producing %d compilation runs. Observed mean latency across all runs was approximately %.2f ms, with individual run latencies ranging from %.2f ms to %.2f ms. %d of the %d operators exhibited maximum observed latency below 50 ms. The highest observed latency (%.2f ms) occurred for %s." operators.Length iterations (operators.Length * iterations) globalMean globalMin globalMax opsBelow50 operators.Length maxOpLatency maxOp)
+            perfLines.Add(sprintf "The benchmark comprised %d layout-operator combinations executed for %d iterations each, producing %d compilation runs. Observed mean latency across all runs was approximately %.2f ms, with individual run latencies ranging from %.2f ms to %.2f ms. %d of the %d combinations exhibited maximum observed latency below 50 ms. The highest observed latency (%.2f ms) occurred for %s." totalCombinations iterations totalRuns globalMean globalMin globalMax opsBelow50 totalCombinations maxOpLatency maxOp)
             perfLines.Add("")
 
         let perfFile = Path.Combine(wikiRoot, "Performance Benchmark.md")
