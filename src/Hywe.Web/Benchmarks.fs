@@ -96,78 +96,85 @@ module Benchmarks =
             
         [<JSInvokable("RunConformanceTests")>]
         static member RunConformanceTests () =
-            printfn "=== RUNNING CONFORMANCE TESTS ==="
-            let tree = LayoutTree.Create [| [| ("A", 20, "Room A"); ("B", 30, "Room B") |] |]
+            let sb = System.Text.StringBuilder()
+            sb.AppendLine("=== RUNNING CONFORMANCE TESTS ===") |> ignore
             
-            // 1. Integer Constancy Test
-            let layout = runCompilation tree "VRCWEE"
-            let countHexels (c: Cxl) = c.Hxls.Length + 1
-            let cxlA = layout |> Array.find (fun c -> prpVlu c.Rfid = "A")
-            let cxlB = layout |> Array.find (fun c -> prpVlu c.Rfid = "B")
-            
-            if countHexels cxlA <> 21 then failwithf "Integer Constancy failed for A. Expected 21, got %d" (countHexels cxlA)
-            if countHexels cxlB <> 31 then failwithf "Integer Constancy failed for B. Expected 31, got %d" (countHexels cxlB)
-            printfn "PASS: Integer Constancy (VRCWEE correctly allocated 20+1 and 30+1 hexels)"
-            
-            // 2. Absolute Determinism Test
-            let getSig () =
-                let l = runCompilation tree "VRCWEE"
-                l |> Array.map getCxlCoordsString |> String.concat "|"
+            for presetName, tree in presets do
+                sb.AppendLine(sprintf "--- Preset: %s ---" presetName) |> ignore
                 
-            let res1 = getSig ()
-            let res2 = getSig ()
-            let res3 = getSig ()
-            
-            if res1 <> res2 || res2 <> res3 then failwith "Determinism failed! Runs produced different signatures."
-            printfn "PASS: Absolute Determinism (3 consecutive runs produced identical topology signatures)"
-            printfn "=== CONFORMANCE TESTS COMPLETE ==="
-            0
+                // 1. Integer Constancy Test
+                let layout = runCompilation tree "VRCWEE"
+                let mutable constancyPassed = true
+                for c in layout do
+                    let expectedArea = tree.Raw |> Array.concat |> Array.pick (fun (id, a, _) -> if id = prpVlu c.Rfid then Some a else None)
+                    if c.Hxls.Length <> expectedArea then
+                        sb.AppendLine(sprintf "FAIL: Constancy for %s. Expected %d hexels, got %d" (prpVlu c.Rfid) expectedArea c.Hxls.Length) |> ignore
+                        constancyPassed <- false
+                
+                if constancyPassed then
+                    sb.AppendLine("PASS: Integer Constancy (All generated areas exactly match requested limits)") |> ignore
+                
+                // 2. Absolute Determinism Test
+                let getSig () =
+                    let l = runCompilation tree "VRCWEE"
+                    l |> Array.map getCxlCoordsString |> String.concat "|"
+                    
+                let res1 = getSig ()
+                let res2 = getSig ()
+                let res3 = getSig ()
+                
+                if res1 <> res2 || res2 <> res3 then 
+                    sb.AppendLine("FAIL: Determinism failed! Runs produced different signatures.") |> ignore
+                else
+                    sb.AppendLine("PASS: Absolute Determinism (3 consecutive runs produced identical topology signatures)") |> ignore
+                    
+            sb.AppendLine("=== CONFORMANCE TESTS COMPLETE ===") |> ignore
+            sb.ToString()
 
         [<JSInvokable("RunQualityBenchmarks")>]
         static member RunQualityBenchmarks () =
-            printfn "=== RUNNING QUALITY BENCHMARKS ==="
-            let requiredAdjacencies = [
-                ("Living", "Kitchen")
-                ("Living", "Bed1")
-                ("Bath", "Bed1")
-                ("Bath", "Bed2")
-            ]
+            let sb = System.Text.StringBuilder()
+            sb.AppendLine("=== RUNNING QUALITY BENCHMARKS ===") |> ignore
             
-            let tree = LayoutTree.Create [|
-                [| 
-                    ("Living", 30, "Living Room")
-                    ("Kitchen", 15, "Kitchen")
-                    ("Bed1", 20, "Master Bedroom")
-                    ("Bed2", 15, "Bedroom 2")
-                    ("Bath", 10, "Bathroom")
-                |]
-            |]
-            
-            for op in operators do
-                let layout = runCompilation tree op
-                let allHexels = layout |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls)
-                let xs = allHexels |> Array.map (fun h -> let (x, _, _) = hxlCrd h in x)
-                let ys = allHexels |> Array.map (fun h -> let (_, y, _) = hxlCrd h in y)
+            for presetName, tree in presets do
+                sb.AppendLine(sprintf "\n--- Preset: %s ---" presetName) |> ignore
+                let requiredAdjacencies = 
+                    tree.Raw |> Array.concat |> Array.choose (fun (id, _, _) ->
+                        let parts = id.Split('.')
+                        if parts.Length > 1 then
+                            let parentId = parts.[0 .. parts.Length - 2] |> String.concat "."
+                            Some (id, parentId)
+                        else None)
                 
-                let width = (Array.max xs) - (Array.min xs)
-                let height = (Array.max ys) - (Array.min ys)
-                let compactnessArea = width * height
+                for op in operators do
+                    let layout = runCompilation tree op
+                    let allHexels = layout |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls)
+                    let xs = allHexels |> Array.map (fun h -> let (x, _, _) = hxlCrd h in x)
+                    let ys = allHexels |> Array.map (fun h -> let (_, y, _) = hxlCrd h in y)
+                    
+                    let width = (Array.max xs) - (Array.min xs)
+                    let height = (Array.max ys) - (Array.min ys)
+                    let compactnessArea = width * height
+                    
+                    let _, matrix = cxlAdj layout
+                    
+                    let mutable satisfied = 0
+                    let mutable possible = 0
+                    for (id1, id2) in requiredAdjacencies do
+                        let i1 = layout |> Array.tryFindIndex (fun c -> (prpVlu c.Rfid) = id1)
+                        let i2 = layout |> Array.tryFindIndex (fun c -> (prpVlu c.Rfid) = id2)
+                        match i1, i2 with
+                        | Some a, Some b -> 
+                            possible <- possible + 1
+                            if matrix.[a].[b] then satisfied <- satisfied + 1
+                        | _ -> ()
+                    
+                    let adjacencyScore = if possible = 0 then 100.0 else (float satisfied) / (float possible) * 100.0
+                    sb.AppendLine(sprintf "[%s] Compactness: %d | Adjacency Score: %.1f%%" op compactnessArea adjacencyScore) |> ignore
+                    GC.Collect()
                 
-                let _, matrix = cxlAdj layout
-                let indexOf (id: string) = layout |> Array.findIndex (fun c -> (prpVlu c.Rfid) = id)
-                
-                let mutable satisfied = 0
-                for (id1, id2) in requiredAdjacencies do
-                    let i1 = indexOf id1
-                    let i2 = indexOf id2
-                    if matrix.[i1].[i2] then satisfied <- satisfied + 1
-                
-                let adjacencyScore = (float satisfied) / (float requiredAdjacencies.Length) * 100.0
-                printfn "[%s] Compactness: %d | Adjacency Score: %.1f%%" op compactnessArea adjacencyScore
-                GC.Collect()
-                
-            printfn "=== QUALITY BENCHMARKS COMPLETE ==="
-            0
+            sb.AppendLine("\n=== QUALITY BENCHMARKS COMPLETE ===") |> ignore
+            sb.ToString()
 
         [<JSInvokable("RunScalingBenchmarks")>]
         static member RunScalingBenchmarks () =
