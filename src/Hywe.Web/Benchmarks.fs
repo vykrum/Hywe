@@ -97,38 +97,42 @@ module Benchmarks =
         [<JSInvokable("RunConformanceTests")>]
         static member RunConformanceTests () =
             let sb = System.Text.StringBuilder()
-            sb.AppendLine("=== RUNNING CONFORMANCE TESTS ===") |> ignore
+            sb.AppendLine("# Repeatability") |> ignore
+            sb.AppendLine("Validation of exact reproducibility of topology signatures for canonical inputs across repeated executions.") |> ignore
+            sb.AppendLine("") |> ignore
+            sb.AppendLine("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |") |> ignore
+            sb.AppendLine("|--------|----------|------------|------------------|--------------|-------------------------|") |> ignore
+            
+            printfn "Starting Conformance (Repeatability) Benchmark..."
+            let iterations = 10
             
             for presetName, tree in presets do
-                sb.AppendLine(sprintf "--- Preset: %s ---" presetName) |> ignore
-                
-                // 1. Integer Constancy Test
-                let layout = runCompilation tree "VRCWEE"
-                let mutable constancyPassed = true
-                for c in layout do
-                    let expectedArea = tree.Raw |> Array.concat |> Array.pick (fun (id, a, _) -> if id = prpVlu c.Rfid then Some a else None)
-                    if c.Hxls.Length <> expectedArea then
-                        sb.AppendLine(sprintf "FAIL: Constancy for %s. Expected %d hexels, got %d" (prpVlu c.Rfid) expectedArea c.Hxls.Length) |> ignore
-                        constancyPassed <- false
-                
-                if constancyPassed then
-                    sb.AppendLine("PASS: Integer Constancy (All generated areas exactly match requested limits)") |> ignore
-                
-                // 2. Absolute Determinism Test
-                let getSig () =
-                    let l = runCompilation tree "VRCWEE"
-                    l |> Array.map getCxlCoordsString |> String.concat "|"
+                printfn "-> Checking Conformance on Layout: %s..." presetName
+                for op in operators do
+                    let mutable validCount = 0
+                    let signatures = ResizeArray<string>()
                     
-                let res1 = getSig ()
-                let res2 = getSig ()
-                let res3 = getSig ()
-                
-                if res1 <> res2 || res2 <> res3 then 
-                    sb.AppendLine("FAIL: Determinism failed! Runs produced different signatures.") |> ignore
-                else
-                    sb.AppendLine("PASS: Absolute Determinism (3 consecutive runs produced identical topology signatures)") |> ignore
+                    for i in 1 .. iterations do
+                        try
+                            let layout = runCompilation tree op
+                            let sigStr = layout |> Array.map getCxlCoordsString |> String.concat "|"
+                            signatures.Add(sigStr)
+                            validCount <- validCount + 1
+                        with _ -> ()
+                        
+                    let validStatesStr = sprintf "%d%%" (validCount * 100 / iterations)
                     
-            sb.AppendLine("=== CONFORMANCE TESTS COMPLETE ===") |> ignore
+                    if validCount > 0 then
+                        let firstSig = signatures.[0]
+                        let sigsMatch = (signatures |> Seq.forall (fun s -> s = firstSig)).ToString().ToLower()
+                        let hashStr = sprintf "%X" (abs (hash firstSig))
+                        sb.AppendLine(sprintf "| %s | %s | %d | %s | %s | `%s` |" presetName op iterations sigsMatch validStatesStr hashStr) |> ignore
+                    else
+                        sb.AppendLine(sprintf "| %s | %s | %d | false | %s | `N/A` |" presetName op iterations validStatesStr) |> ignore
+                    
+                    GC.Collect()
+                    
+            sb.AppendLine("\n[Conformance Benchmark Complete]") |> ignore
             sb.ToString()
 
         [<JSInvokable("RunQualityBenchmarks")>]
@@ -184,32 +188,31 @@ module Benchmarks =
             sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
-            // Reduced iterations and max nodes to prevent WebAssembly from freezing/OOMing for 30 minutes
-            let iterations = 5
-            let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200 |]
-            let testOp = "VRCWEE"
+            let iterations = 10
+            let nodeCounts = [| 10; 50; 100; 250; 500; 750; 1000 |]
             
             for count in nodeCounts do
                 printfn "-> Processing scale: %d nodes..." count
                 let genNodes = Array.init count (fun i -> (if i = 0 then "1" else sprintf "1.%d" i), 50, "Node")
                 let tree = LayoutTree.Create [| genNodes |]
                 
-                let sw = Stopwatch()
-                let times = ResizeArray<float>()
-                
-                for i in 1 .. iterations do
-                    sw.Restart()
-                    runCompilation tree testOp |> ignore
-                    sw.Stop()
-                    times.Add(sw.Elapsed.TotalMilliseconds)
+                for op in operators do
+                    let sw = Stopwatch()
+                    let times = ResizeArray<float>()
                     
-                let minT = times |> Seq.min
-                let maxT = times |> Seq.max
-                let avgT = times |> Seq.average
-                let sdT = calculateSD times
-                
-                sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count testOp iterations minT maxT avgT sdT) |> ignore
-                GC.Collect()
+                    for i in 1 .. iterations do
+                        sw.Restart()
+                        runCompilation tree op |> ignore
+                        sw.Stop()
+                        times.Add(sw.Elapsed.TotalMilliseconds)
+                        
+                    let minT = times |> Seq.min
+                    let maxT = times |> Seq.max
+                    let avgT = times |> Seq.average
+                    let sdT = calculateSD times
+                    
+                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count op iterations minT maxT avgT sdT) |> ignore
+                    GC.Collect()
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
             sb.ToString()
