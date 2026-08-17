@@ -188,32 +188,31 @@ module Benchmarks =
             sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
-            // Reduced iterations and max nodes to prevent WebAssembly from freezing/OOMing for 30 minutes
-            let iterations = 5
-            let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200 |]
-            let testOp = "VRCWEE"
+            let iterations = 10
+            let nodeCounts = [| 10; 50; 100; 250; 500; 750; 1000 |]
             
             for count in nodeCounts do
                 printfn "-> Processing scale: %d nodes..." count
                 let genNodes = Array.init count (fun i -> (if i = 0 then "1" else sprintf "1.%d" i), 50, "Node")
                 let tree = LayoutTree.Create [| genNodes |]
                 
-                let sw = Stopwatch()
-                let times = ResizeArray<float>()
-                
-                for i in 1 .. iterations do
-                    sw.Restart()
-                    runCompilation tree testOp |> ignore
-                    sw.Stop()
-                    times.Add(sw.Elapsed.TotalMilliseconds)
+                for op in operators do
+                    let sw = Stopwatch()
+                    let times = ResizeArray<float>()
                     
-                let minT = times |> Seq.min
-                let maxT = times |> Seq.max
-                let avgT = times |> Seq.average
-                let sdT = calculateSD times
-                
-                sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count testOp iterations minT maxT avgT sdT) |> ignore
-                GC.Collect()
+                    for i in 1 .. iterations do
+                        sw.Restart()
+                        runCompilation tree op |> ignore
+                        sw.Stop()
+                        times.Add(sw.Elapsed.TotalMilliseconds)
+                        
+                    let minT = times |> Seq.min
+                    let maxT = times |> Seq.max
+                    let avgT = times |> Seq.average
+                    let sdT = calculateSD times
+                    
+                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count op iterations minT maxT avgT sdT) |> ignore
+                    GC.Collect()
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
             sb.ToString()
