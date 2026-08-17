@@ -393,21 +393,6 @@
                     target="_blank">linkedin.com/company/hywein</a></li>
             <li><strong>X (Twitter) Profile:</strong> <a href="https://x.com/_hywe_" target="_blank">@_hywe_</a></li>
         </ul>
-
-        <h3>Automated Testing</h3>
-        <p>The entire HYWE test suite is built directly into this live environment via WebAssembly JS Interop. To run tests, open your browser's Developer Tools Console (F12) and run any of the following commands:</p>
-        <pre style="background: #2a2a2a; color: #f8f8f2; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 13px; overflow-x: auto;">
-// Run the main Performance Benchmark
-DotNet.invokeMethodAsync('Hywe.Web', 'RunPerformanceBenchmark');
-
-// Run Conformance Tests
-DotNet.invokeMethodAsync('Hywe.Web', 'RunConformanceTests');
-
-// Run Quality Benchmarks
-DotNet.invokeMethodAsync('Hywe.Web', 'RunQualityBenchmarks');
-
-// Run Scaling Benchmarks
-DotNet.invokeMethodAsync('Hywe.Web', 'RunScalingBenchmarks');</pre>
     </section>
 
     <!--Scripts-->
@@ -415,6 +400,13 @@ DotNet.invokeMethodAsync('Hywe.Web', 'RunScalingBenchmarks');</pre>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js');
         }
+        
+        console.log("%cHYWE WebAssembly Test Suite", "color: #3498db; font-size: 16px; font-weight: bold;");
+        console.log("To run the test suite natively in the browser, copy and paste any of the following commands:");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunPerformanceBenchmark');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunConformanceTests');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunQualityBenchmarks');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunScalingBenchmarks');", "color: #e67e22; font-family: monospace;");
     </script>
     <script src="_framework/blazor.webassembly.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
