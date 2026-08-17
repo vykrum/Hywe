@@ -67,9 +67,11 @@ module Benchmarks =
             sb.AppendLine("| Layout | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) | Total Time (ms) |") |> ignore
             sb.AppendLine("|--------|----------|------------|------------------|------------------|------------------|---------|-----------------|") |> ignore
 
+            printfn "Starting Performance Benchmark (Takes ~3-4 minutes)..."
             
             let iterations = 10
             for layoutName, tree in presets do
+                printfn "-> Processing Layout: %s..." layoutName
                 for op in operators do
                     let sw = Stopwatch()
                     let times = ResizeArray<float>()
@@ -174,12 +176,14 @@ module Benchmarks =
             sb.AppendLine("### Scaling Benchmark (WASM)") |> ignore
             sb.AppendLine("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
             sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
+            printfn "Starting Scaling Benchmark..."
             
             let iterations = 25
             let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200; 300; 500; 1000 |]
             let testOp = "VRCWEE"
             
             for count in nodeCounts do
+                printfn "-> Processing scale: %d nodes..." count
                 let genNodes = Array.init count (fun i -> (if i = 0 then "1" else sprintf "1.%d" i), 50, "Node")
                 let tree = LayoutTree.Create [| genNodes |]
                 
