@@ -400,6 +400,13 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js');
         }
+        
+        console.log("%cHYWE WebAssembly Test Suite", "color: #3498db; font-size: 16px; font-weight: bold;");
+        console.log("To run the test suite natively in the browser, copy and paste any of the following commands:");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunPerformanceBenchmark');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunConformanceTests');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunQualityBenchmarks');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunScalingBenchmarks');", "color: #e67e22; font-family: monospace;");
     </script>
     <script src="_framework/blazor.webassembly.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
