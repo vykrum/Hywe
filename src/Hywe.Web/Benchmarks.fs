@@ -197,7 +197,17 @@ module Benchmarks =
             
             for count in nodeCounts do
                 printfn "-> Processing scale: %d nodes..." count
-                let genNodes = Array.init count (fun i -> (if i = 0 then "1" else sprintf "1.%d" i), 50, "Node")
+                
+                // Generate a realistic tree structure (branching factor 3) instead of a flat star topology
+                let ids = Array.create count ""
+                ids.[0] <- "1"
+                let childCounts = Array.create count 0
+                for i in 1 .. count - 1 do
+                    let p = (i - 1) / 3
+                    childCounts.[p] <- childCounts.[p] + 1
+                    ids.[i] <- sprintf "%s.%d" ids.[p] childCounts.[p]
+                    
+                let genNodes = ids |> Array.map (fun id -> id, 50, "Node")
                 let tree = LayoutTree.Create [| genNodes |]
                 
                 for opName, sqn in parsedOperators do
