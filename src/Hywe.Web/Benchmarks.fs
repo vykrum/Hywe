@@ -27,11 +27,11 @@ module Benchmarks =
         "Stacked", LayoutTree.Create [| [| ("1", 75, "Lobby"); ("1.1", 88, "Retail"); ("1.2", 54, "Toilets"); ("1.3", 67, "Retail"); ("1.4", 94, "Retail") |]; [| ("1", 75, "Lobby"); ("1.1", 43, "Office"); ("1.2", 123, "Office"); ("1.2.1", 34, "Toilets"); ("1.3", 52, "Office") |]; [| ("1", 75, "Lobby"); ("1.1", 99, "Suite") |] |]
     |]
 
-    let runCompilation (tree: LayoutTree) (operatorName: string) =
-        let sqn = 
-            match tryParseUnion<Sqn> operatorName with
-            | Some s -> s
-            | None -> failwith "Invalid operator name"
+    let parsedOperators = 
+        operators 
+        |> Array.map (fun opName -> opName, tryParseUnion<Sqn> opName |> Option.get)
+
+    let runCompilation (tree: LayoutTree) (sqn: Sqn) =
 
         let opts = {
             EntryFallback = "0,0"
@@ -76,13 +76,13 @@ module Benchmarks =
             let iterations = 10
             for layoutName, tree in presets do
                 printfn "-> Processing Layout: %s..." layoutName
-                for op in operators do
+                for opName, sqn in parsedOperators do
                     let sw = Stopwatch()
                     let times = ResizeArray<float>()
 
                     for i in 1 .. iterations do
                         sw.Restart()
-                        runCompilation tree op |> ignore
+                        runCompilation tree sqn |> ignore
                         sw.Stop()
                         times.Add(sw.Elapsed.TotalMilliseconds)
 
@@ -92,7 +92,7 @@ module Benchmarks =
                     let sdT = calculateSD times
                     let sumT = times |> Seq.sum
 
-                    sb.AppendLine(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName op iterations minT maxT avgT sdT sumT) |> ignore
+                    sb.AppendLine(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName opName iterations minT maxT avgT sdT sumT) |> ignore
                     GC.Collect()
             
             sb.AppendLine("\n[Benchmark Complete. Copy the table above into your wiki!]") |> ignore
@@ -110,13 +110,13 @@ module Benchmarks =
             
             for presetName, tree in presets do
                 printfn "-> Checking Conformance on Layout: %s..." presetName
-                for op in operators do
+                for opName, sqn in parsedOperators do
                     let mutable validCount = 0
                     let signatures = ResizeArray<string>()
                     
                     for i in 1 .. iterations do
                         try
-                            let layout = runCompilation tree op
+                            let layout = runCompilation tree sqn
                             let sigStr = layout |> Array.map getCxlCoordsString |> String.concat "|"
                             signatures.Add(sigStr)
                             validCount <- validCount + 1
@@ -128,9 +128,9 @@ module Benchmarks =
                         let firstSig = signatures.[0]
                         let sigsMatch = (signatures |> Seq.forall (fun s -> s = firstSig)).ToString().ToLower()
                         let hashStr = sprintf "%X" (abs (hash firstSig))
-                        sb.AppendLine(sprintf "| %s | %s | %d | %s | %s | `%s` |" presetName op iterations sigsMatch validStatesStr hashStr) |> ignore
+                        sb.AppendLine(sprintf "| %s | %s | %d | %s | %s | `%s` |" presetName opName iterations sigsMatch validStatesStr hashStr) |> ignore
                     else
-                        sb.AppendLine(sprintf "| %s | %s | %d | false | %s | `N/A` |" presetName op iterations validStatesStr) |> ignore
+                        sb.AppendLine(sprintf "| %s | %s | %d | false | %s | `N/A` |" presetName opName iterations validStatesStr) |> ignore
                     
                     GC.Collect()
                     
@@ -154,8 +154,8 @@ module Benchmarks =
                             Some (id, parentId)
                         else None)
                 
-                for op in operators do
-                    let layout = runCompilation tree op
+                for opName, sqn in parsedOperators do
+                    let layout = runCompilation tree sqn
                     let allHexels = layout |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls)
                     let xs = allHexels |> Array.map (fun h -> let (x, _, _) = hxlCrd h in x)
                     let ys = allHexels |> Array.map (fun h -> let (_, y, _) = hxlCrd h in y)
@@ -178,7 +178,7 @@ module Benchmarks =
                         | _ -> ()
                     
                     let adjacencyScore = if possible = 0 then 100.0 else (float satisfied) / (float possible) * 100.0
-                    sb.AppendLine(sprintf "| %s | %s | %d | %.1f%% |" presetName op compactnessArea adjacencyScore) |> ignore
+                    sb.AppendLine(sprintf "| %s | %s | %d | %.1f%% |" presetName opName compactnessArea adjacencyScore) |> ignore
                     GC.Collect()
                 
             sb.AppendLine("\n[Quality Benchmark Complete]") |> ignore
@@ -200,13 +200,16 @@ module Benchmarks =
                 let genNodes = Array.init count (fun i -> (if i = 0 then "1" else sprintf "1.%d" i), 50, "Node")
                 let tree = LayoutTree.Create [| genNodes |]
                 
-                for op in operators do
+                for opName, sqn in parsedOperators do
                     let sw = Stopwatch()
                     let times = ResizeArray<float>()
                     
-                    for i in 1 .. iterations do
+                    // Reduce iterations for large node counts to speed up the benchmark significantly
+                    let currentIterations = if count >= 500 then 3 elif count >= 100 then 5 else iterations
+
+                    for i in 1 .. currentIterations do
                         sw.Restart()
-                        runCompilation tree op |> ignore
+                        runCompilation tree sqn |> ignore
                         sw.Stop()
                         times.Add(sw.Elapsed.TotalMilliseconds)
                         
@@ -215,7 +218,7 @@ module Benchmarks =
                     let avgT = times |> Seq.average
                     let sdT = calculateSD times
                     
-                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count op iterations minT maxT avgT sdT) |> ignore
+                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count opName currentIterations minT maxT avgT sdT) |> ignore
                     GC.Collect()
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
