@@ -57,14 +57,16 @@ module Benchmarks =
     type BenchmarkRunner() =
         [<JSInvokable("RunPerformanceBenchmark")>]
         static member RunPerformanceBenchmark () =
-            printfn "### Performance Benchmark — Production / WebAssembly (hywe.in)"
-            printfn ""
-            printfn "- **Note**: Release build metrics gathered via browser execution on WebAssembly."
-            printfn "- **Runtime**: WebAssembly (Mono)"
-            printfn "- **Build Configuration**: Release"
-            printfn ""
-            printfn "| Layout | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) | Total Time (ms) |"
-            printfn "|--------|----------|------------|------------------|------------------|------------------|---------|-----------------|"
+            let sb = System.Text.StringBuilder()
+            sb.AppendLine("### Performance Benchmark — Production / WebAssembly (hywe.in)") |> ignore
+            sb.AppendLine("") |> ignore
+            sb.AppendLine("- **Note**: Release build metrics gathered via browser execution on WebAssembly.") |> ignore
+            sb.AppendLine("- **Runtime**: WebAssembly (Mono)") |> ignore
+            sb.AppendLine("- **Build Configuration**: Release") |> ignore
+            sb.AppendLine("") |> ignore
+            sb.AppendLine("| Layout | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) | Total Time (ms) |") |> ignore
+            sb.AppendLine("|--------|----------|------------|------------------|------------------|------------------|---------|-----------------|") |> ignore
+
             
             let iterations = 10
             for layoutName, tree in presets do
@@ -84,10 +86,11 @@ module Benchmarks =
                     let sdT = calculateSD times
                     let sumT = times |> Seq.sum
 
-                    printfn "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName op iterations minT maxT avgT sdT sumT
+                    sb.AppendLine(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName op iterations minT maxT avgT sdT sumT) |> ignore
                     GC.Collect()
             
-            printfn "\n[Benchmark Complete. Copy the table above into your wiki!]"
+            sb.AppendLine("\n[Benchmark Complete. Copy the table above into your wiki!]") |> ignore
+            printfn "%s" (sb.ToString())
             0
             
         [<JSInvokable("RunConformanceTests")>]
@@ -167,9 +170,10 @@ module Benchmarks =
 
         [<JSInvokable("RunScalingBenchmarks")>]
         static member RunScalingBenchmarks () =
-            printfn "### Scaling Benchmark (WASM)"
-            printfn "| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |"
-            printfn "|---------------|----------|------------|------------------|------------------|------------------|---------|"
+            let sb = System.Text.StringBuilder()
+            sb.AppendLine("### Scaling Benchmark (WASM)") |> ignore
+            sb.AppendLine("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
+            sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
             
             let iterations = 25
             let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200; 300; 500; 1000 |]
@@ -193,8 +197,9 @@ module Benchmarks =
                 let avgT = times |> Seq.average
                 let sdT = calculateSD times
                 
-                printfn "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count testOp iterations minT maxT avgT sdT
+                sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count testOp iterations minT maxT avgT sdT) |> ignore
                 GC.Collect()
                 
-            printfn "\n[Scaling Benchmark Complete]"
+            sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
+            printfn "%s" (sb.ToString())
             0
