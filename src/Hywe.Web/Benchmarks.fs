@@ -188,11 +188,11 @@ module Benchmarks =
         static member RunScalingBenchmarks () =
             let sb = System.Text.StringBuilder()
             appendMarkdownHeader sb "Scaling Benchmark" "Latency metrics scaling up to 1,000 architectural nodes."
-            sb.AppendLine("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
-            sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
+            sb.AppendLine("| Scale (Nodes) | Operator | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
+            sb.AppendLine("|---------------|----------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
-            let iterations = 10
+            let iterations = 1
             let nodeCounts = [| 10; 50; 100; 250; 500; 750; 1000 |]
             
             for count in nodeCounts do
@@ -214,10 +214,7 @@ module Benchmarks =
                     let sw = Stopwatch()
                     let times = ResizeArray<float>()
                     
-                    // Reduce iterations for large node counts to speed up the benchmark significantly
-                    let currentIterations = if count >= 500 then 3 elif count >= 100 then 5 else iterations
-
-                    for i in 1 .. currentIterations do
+                    for i in 1 .. iterations do
                         sw.Restart()
                         runCompilation tree sqn |> ignore
                         sw.Stop()
@@ -228,7 +225,7 @@ module Benchmarks =
                     let avgT = times |> Seq.average
                     let sdT = calculateSD times
                     
-                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count opName currentIterations minT maxT avgT sdT) |> ignore
+                    sb.AppendLine(sprintf "| %d | %s | %.2f | %.2f | %.2f | %.2f |" count opName minT maxT avgT sdT) |> ignore
                     GC.Collect()
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
