@@ -55,9 +55,9 @@ module Benchmarks =
         | None -> failwithf "Failed to generate base hexel for %s" operatorName
 
     type BenchmarkRunner() =
-        [<JSInvokable("RunBenchmarkB")>]
-        static member RunBenchmarkB () =
-            printfn "### Benchmark B — Production / WebAssembly (hywe.in)"
+        [<JSInvokable("RunPerformanceBenchmark")>]
+        static member RunPerformanceBenchmark () =
+            printfn "### Performance Benchmark — Production / WebAssembly (hywe.in)"
             printfn ""
             printfn "- **Note**: Release build metrics gathered via browser execution on WebAssembly."
             printfn "- **Runtime**: WebAssembly (Mono)"
