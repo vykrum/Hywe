@@ -402,11 +402,31 @@
         }
         
         console.log("%cHYWE WebAssembly Test Suite", "color: #3498db; font-size: 16px; font-weight: bold;");
-        console.log("To run the test suite natively in the browser, copy and paste any of the following commands:");
-        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunPerformanceBenchmark').then(console.log);", "color: #e67e22; font-family: monospace;");
-        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunConformanceTests').then(console.log);", "color: #e67e22; font-family: monospace;");
-        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunQualityBenchmarks').then(console.log);", "color: #e67e22; font-family: monospace;");
-        console.log("%c  DotNet.invokeMethodAsync('Hywe.Web', 'RunScalingBenchmarks').then(console.log);", "color: #e67e22; font-family: monospace;");
+        console.log("To run the test suite natively in the browser and save the results as a Markdown file, copy and paste any of the following commands:");
+        console.log("%c  runAndDownloadBenchmark('RunPerformanceBenchmark', 'PerformanceBenchmark.md');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  runAndDownloadBenchmark('RunConformanceTests', 'ConformanceTests.md');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  runAndDownloadBenchmark('RunQualityBenchmarks', 'QualityBenchmarks.md');", "color: #e67e22; font-family: monospace;");
+        console.log("%c  runAndDownloadBenchmark('RunScalingBenchmarks', 'ScalingBenchmarks.md');", "color: #e67e22; font-family: monospace;");
+        
+        window.runAndDownloadBenchmark = async function(methodName, filename) {
+            console.log("%cStarting " + methodName + "... (The browser may freeze for a few minutes while computing)", "color: #f39c12; font-style: italic;");
+            try {
+                const result = await DotNet.invokeMethodAsync('Hywe.Web', methodName);
+                const blob = new Blob([result], { type: 'text/markdown' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                console.log("%cSuccessfully downloaded " + filename + "!", "color: #2ecc71; font-weight: bold;");
+            } catch (err) {
+                console.error("Benchmark failed:", err);
+            }
+        };
     </script>
     <script src="_framework/blazor.webassembly.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
