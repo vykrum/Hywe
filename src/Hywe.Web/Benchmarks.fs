@@ -92,8 +92,7 @@ module Benchmarks =
                     GC.Collect()
             
             sb.AppendLine("\n[Benchmark Complete. Copy the table above into your wiki!]") |> ignore
-            printfn "%s" (sb.ToString())
-            0
+            sb.ToString()
             
         [<JSInvokable("RunConformanceTests")>]
         static member RunConformanceTests () =
@@ -206,5 +205,4 @@ module Benchmarks =
                 GC.Collect()
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
-            printfn "%s" (sb.ToString())
-            0
+            sb.ToString()
