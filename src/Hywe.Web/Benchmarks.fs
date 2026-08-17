@@ -178,8 +178,9 @@ module Benchmarks =
             sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
-            let iterations = 25
-            let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200; 300; 500; 1000 |]
+            // Reduced iterations and max nodes to prevent WebAssembly from freezing/OOMing for 30 minutes
+            let iterations = 5
+            let nodeCounts = [| 10; 25; 50; 75; 100; 150; 200 |]
             let testOp = "VRCWEE"
             
             for count in nodeCounts do
