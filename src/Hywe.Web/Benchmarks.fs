@@ -54,16 +54,20 @@ module Benchmarks =
             layout
         | None -> failwithf "Failed to generate base hexel for %s" operatorName
 
+    let appendMarkdownHeader (sb: System.Text.StringBuilder) (title: string) (description: string) =
+        sb.AppendLine(sprintf "### %s" title) |> ignore
+        sb.AppendLine(description) |> ignore
+        sb.AppendLine("") |> ignore
+        sb.AppendLine("- **Note**: Release build metrics gathered via browser execution on WebAssembly.") |> ignore
+        sb.AppendLine("- **Runtime**: WebAssembly (Mono)") |> ignore
+        sb.AppendLine("- **Build Configuration**: Release") |> ignore
+        sb.AppendLine("") |> ignore
+
     type BenchmarkRunner() =
         [<JSInvokable("RunPerformanceBenchmark")>]
         static member RunPerformanceBenchmark () =
             let sb = System.Text.StringBuilder()
-            sb.AppendLine("### Performance Benchmark — Production / WebAssembly (hywe.in)") |> ignore
-            sb.AppendLine("") |> ignore
-            sb.AppendLine("- **Note**: Release build metrics gathered via browser execution on WebAssembly.") |> ignore
-            sb.AppendLine("- **Runtime**: WebAssembly (Mono)") |> ignore
-            sb.AppendLine("- **Build Configuration**: Release") |> ignore
-            sb.AppendLine("") |> ignore
+            appendMarkdownHeader sb "Performance Benchmark — Production / WebAssembly" "Latency and standard deviation metrics for generating canonical topological presets."
             sb.AppendLine("| Layout | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) | Total Time (ms) |") |> ignore
             sb.AppendLine("|--------|----------|------------|------------------|------------------|------------------|---------|-----------------|") |> ignore
 
@@ -97,9 +101,7 @@ module Benchmarks =
         [<JSInvokable("RunConformanceTests")>]
         static member RunConformanceTests () =
             let sb = System.Text.StringBuilder()
-            sb.AppendLine("# Repeatability") |> ignore
-            sb.AppendLine("Validation of exact reproducibility of topology signatures for canonical inputs across repeated executions.") |> ignore
-            sb.AppendLine("") |> ignore
+            appendMarkdownHeader sb "Repeatability Benchmark" "Validation of exact reproducibility of topology signatures for canonical inputs across repeated executions."
             sb.AppendLine("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |") |> ignore
             sb.AppendLine("|--------|----------|------------|------------------|--------------|-------------------------|") |> ignore
             
@@ -138,10 +140,12 @@ module Benchmarks =
         [<JSInvokable("RunQualityBenchmarks")>]
         static member RunQualityBenchmarks () =
             let sb = System.Text.StringBuilder()
-            sb.AppendLine("=== RUNNING QUALITY BENCHMARKS ===") |> ignore
+            appendMarkdownHeader sb "Quality Benchmark" "Evaluation of architectural adjacency and compactness of generated topologies."
+            sb.AppendLine("| Layout | Operator | Compactness (Bounding Box Area) | Adjacency Score (%) |") |> ignore
+            sb.AppendLine("|--------|----------|---------------------------------|---------------------|") |> ignore
             
             for presetName, tree in presets do
-                sb.AppendLine(sprintf "\n--- Preset: %s ---" presetName) |> ignore
+                printfn "-> Checking Quality on Layout: %s..." presetName
                 let requiredAdjacencies = 
                     tree.Raw |> Array.concat |> Array.choose (fun (id, _, _) ->
                         let parts = id.Split('.')
@@ -174,16 +178,16 @@ module Benchmarks =
                         | _ -> ()
                     
                     let adjacencyScore = if possible = 0 then 100.0 else (float satisfied) / (float possible) * 100.0
-                    sb.AppendLine(sprintf "[%s] Compactness: %d | Adjacency Score: %.1f%%" op compactnessArea adjacencyScore) |> ignore
+                    sb.AppendLine(sprintf "| %s | %s | %d | %.1f%% |" presetName op compactnessArea adjacencyScore) |> ignore
                     GC.Collect()
                 
-            sb.AppendLine("\n=== QUALITY BENCHMARKS COMPLETE ===") |> ignore
+            sb.AppendLine("\n[Quality Benchmark Complete]") |> ignore
             sb.ToString()
 
         [<JSInvokable("RunScalingBenchmarks")>]
         static member RunScalingBenchmarks () =
             let sb = System.Text.StringBuilder()
-            sb.AppendLine("### Scaling Benchmark (WASM)") |> ignore
+            appendMarkdownHeader sb "Scaling Benchmark" "Latency metrics scaling up to 1,000 architectural nodes."
             sb.AppendLine("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
             sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
