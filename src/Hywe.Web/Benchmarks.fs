@@ -188,8 +188,8 @@ module Benchmarks =
         static member RunScalingBenchmarks () =
             let sb = System.Text.StringBuilder()
             appendMarkdownHeader sb "Scaling Benchmark" "Latency metrics scaling up to 1,000 architectural nodes."
-            sb.AppendLine("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
-            sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
+            sb.AppendLine("| Scale (Nodes) | Operator | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
+            sb.AppendLine("|---------------|----------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
             let iterations = 1
@@ -225,7 +225,7 @@ module Benchmarks =
                     let avgT = times |> Seq.average
                     let sdT = calculateSD times
                     
-                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count opName iterations minT maxT avgT sdT) |> ignore
+                    sb.AppendLine(sprintf "| %d | %s | %.2f | %.2f | %.2f | %.2f |" count opName minT maxT avgT sdT) |> ignore
                     GC.Collect()
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
