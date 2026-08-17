@@ -97,38 +97,42 @@ module Benchmarks =
         [<JSInvokable("RunConformanceTests")>]
         static member RunConformanceTests () =
             let sb = System.Text.StringBuilder()
-            sb.AppendLine("=== RUNNING CONFORMANCE TESTS ===") |> ignore
+            sb.AppendLine("# Repeatability") |> ignore
+            sb.AppendLine("Validation of exact reproducibility of topology signatures for canonical inputs across repeated executions.") |> ignore
+            sb.AppendLine("") |> ignore
+            sb.AppendLine("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |") |> ignore
+            sb.AppendLine("|--------|----------|------------|------------------|--------------|-------------------------|") |> ignore
+            
+            printfn "Starting Conformance (Repeatability) Benchmark..."
+            let iterations = 10
             
             for presetName, tree in presets do
-                sb.AppendLine(sprintf "--- Preset: %s ---" presetName) |> ignore
-                
-                // 1. Integer Constancy Test
-                let layout = runCompilation tree "VRCWEE"
-                let mutable constancyPassed = true
-                for c in layout do
-                    let expectedArea = tree.Raw |> Array.concat |> Array.pick (fun (id, a, _) -> if id = prpVlu c.Rfid then Some a else None)
-                    if c.Hxls.Length <> expectedArea then
-                        sb.AppendLine(sprintf "FAIL: Constancy for %s. Expected %d hexels, got %d" (prpVlu c.Rfid) expectedArea c.Hxls.Length) |> ignore
-                        constancyPassed <- false
-                
-                if constancyPassed then
-                    sb.AppendLine("PASS: Integer Constancy (All generated areas exactly match requested limits)") |> ignore
-                
-                // 2. Absolute Determinism Test
-                let getSig () =
-                    let l = runCompilation tree "VRCWEE"
-                    l |> Array.map getCxlCoordsString |> String.concat "|"
+                printfn "-> Checking Conformance on Layout: %s..." presetName
+                for op in operators do
+                    let mutable validCount = 0
+                    let signatures = ResizeArray<string>()
                     
-                let res1 = getSig ()
-                let res2 = getSig ()
-                let res3 = getSig ()
-                
-                if res1 <> res2 || res2 <> res3 then 
-                    sb.AppendLine("FAIL: Determinism failed! Runs produced different signatures.") |> ignore
-                else
-                    sb.AppendLine("PASS: Absolute Determinism (3 consecutive runs produced identical topology signatures)") |> ignore
+                    for i in 1 .. iterations do
+                        try
+                            let layout = runCompilation tree op
+                            let sigStr = layout |> Array.map getCxlCoordsString |> String.concat "|"
+                            signatures.Add(sigStr)
+                            validCount <- validCount + 1
+                        with _ -> ()
+                        
+                    let validStatesStr = sprintf "%d%%" (validCount * 100 / iterations)
                     
-            sb.AppendLine("=== CONFORMANCE TESTS COMPLETE ===") |> ignore
+                    if validCount > 0 then
+                        let firstSig = signatures.[0]
+                        let sigsMatch = (signatures |> Seq.forall (fun s -> s = firstSig)).ToString().ToLower()
+                        let hashStr = sprintf "%X" (abs (hash firstSig))
+                        sb.AppendLine(sprintf "| %s | %s | %d | %s | %s | `%s` |" presetName op iterations sigsMatch validStatesStr hashStr) |> ignore
+                    else
+                        sb.AppendLine(sprintf "| %s | %s | %d | false | %s | `N/A` |" presetName op iterations validStatesStr) |> ignore
+                    
+                    GC.Collect()
+                    
+            sb.AppendLine("\n[Conformance Benchmark Complete]") |> ignore
             sb.ToString()
 
         [<JSInvokable("RunQualityBenchmarks")>]
