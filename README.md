@@ -74,6 +74,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 | **Encoding** | HYWE Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
 | **Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
 | **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
+| **Geometry** | `Goxel` | **Geometry Engine**, coordinate grids, and polygon processing. | Spatial Validation |
 | **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
 | **Nesting** | `Nexel` | **Spatial Nesting** and Sub-configurations. | Nested Layout |
 | **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
@@ -107,7 +108,8 @@ graph TD
     B --> C(Lexel: Architectural Programming and Flow Parsing)
     C --> D(Hexel: Atomic Spatial Primitive)
     D --> E(Coxel: Simultaneously Evolving Hexel Clusters)
-    E --> F(Xyxel: Coxel Configuration and Planar Layout)
+    E --> Gx(Goxel: Geometry Engine and Polygon Utilities)
+    Gx --> F(Xyxel: Coxel Configuration and Planar Layout)
     F --> N(Nexel: Spatial Nesting and Sub-configurations)
     N --> G(Zaxel: Xyxel Stacking and Volumetric Massing)
     
