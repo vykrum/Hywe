@@ -1,4 +1,4 @@
-**HYWE** is a **browser-based** design sandbox where **structured intent** metamorphoses into **spatial configurations** through **deterministic design computation**.
+**HYWE** is a **research project and experimental computational environment** where **structured intent** metamorphoses into **spatial configurations** through **deterministic design computation**.
 
 ---
 
