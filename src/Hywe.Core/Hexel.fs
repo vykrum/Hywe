@@ -76,13 +76,13 @@ module Hexel =
         | RV(x,y,z) -> x,y,z
         | EX(x,y,z) -> x,y,z
 
-    /// <summary> Converts an integer to a Base36 string. </summary>
-    let toBase36 (value: int64) =
-        let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    /// <summary> Converts an integer to a Base34 string (excludes I and O). </summary>
+    let toBase34 (value: int64) =
+        let chars = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
         let rec convert v acc =
             match v = 0L with
             | true -> match acc = "" with | true -> "0" | false -> acc
-            | false -> convert (v / 36L) (string chars.[int (v % 36L)] + acc)
+            | false -> convert (v / 34L) (string chars.[int (v % 34L)] + acc)
         let prefix = match value < 0L with | true -> "-" | false -> ""
         prefix + convert (abs value) ""
 
