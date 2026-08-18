@@ -48,7 +48,7 @@ By replacing manual geometric drafting with an **interactive visual node tree in
 ### Boundary Condition
 <img width="1023" height="1531" alt="HYWE_Boundary" src="https://github.com/user-attachments/assets/dde4d99e-5f6f-481e-bfd2-16388f92801c" />
 
-### Dataset Preperation
+### Dataset Preparation
 <img width="1023" height="1641" alt="HYWE_Teach" src="https://github.com/user-attachments/assets/9156d9e1-965f-4b63-8267-381fbdd28341" />
 
 ### Report Compilation
@@ -84,21 +84,21 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 
 ### Data Collection Pipeline
 
-HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with compressed **Base36** syntax strings.
+HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with compressed **Base34** syntax strings.
 
 #### System Architecture Flow
 `Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations (×24)` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`
 
 - **Serverless Ingestion**: The **Hynteract** layer structures the data into token-efficient JSON Lines (`.jsonl`) records.
 - **Container-First Layout**: Each committed record's `configuration` field is an array of strings — one per architectural container (`L0`, `L1`, `N1`, etc.) — each encoding all 24 sequence sweep variations for all rooms within that container.
-- **Base36 Compression**: All hexagonal grid coordinates are encoded in Base36, and room coordinate groups within each variation are semicolon-separated and **positionally aligned** with the container's room index header.
+- **Base34 Compression**: All hexagonal grid coordinates are encoded in Base34, and room coordinate groups within each variation are semicolon-separated and **positionally aligned** with the container's room index header.
 - **Full Sequence Sweeps**: Every committed record covers all **24 configuration sweeps** (corresponding to the 24 sequence rules), independent of the active sequence at time of export.
 
 ---
 
 ## Technical Architecture
 
-HYWE is built as a **strictly functional, zero-dependency engine**. It treats spatial design as a computational problem, where inputs are transformed through a series of deterministic geometric and topological transformations. In this environment, **Syntax is the singular source of truth**, ensuring that every design configuration is perfectly reproducible and strictly tied to its underlying logical rules.
+The **HYWE core spatial engine is dependency-free**; the browser application uses Bolero/Blazor and Elmish for its interface layer. It treats spatial design as a computational problem, where inputs are transformed through a series of deterministic geometric and topological transformations. In this environment, **Syntax is the singular source of truth**, ensuring that every design configuration is perfectly reproducible and strictly tied to its underlying logical rules.
 
 ```mermaid
 graph TD

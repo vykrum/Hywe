@@ -6,7 +6,7 @@ This document provides a highly technical, deep-dive architectural manual of the
 
 ## Workspace Structure
 
-The project is a zero-dependency, functional-first codebase structured into three F# projects under the [src](file:///c:/Users/vykru/source/repos/Hywe/src) directory:
+The core spatial engine is dependency-free, while the browser application uses Bolero/Blazor and Elmish for its interface layer. The codebase is structured into three F# projects under the [src](file:///c:/Users/vykru/source/repos/Hywe/src) directory:
 
 ### 1. [Hywe.Tree](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree)
 A pure functional library governing the abstract hierarchical data structures.

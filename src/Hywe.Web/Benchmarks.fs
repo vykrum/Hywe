@@ -192,7 +192,7 @@ module Benchmarks =
             sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
-            let iterations = 2
+            let iterations = 10
             let nodeCounts = [| 10; 50; 100; 250; 500; 750; 1000 |]
             
             for count in nodeCounts do

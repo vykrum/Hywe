@@ -156,7 +156,7 @@ let generateSuggestion (model: Model) =
     (intro + "\n" + levelsContent + "\n" + nestsContent).Trim()
 
 let generateHynteractPayload (model: Model) : string[] =
-    let b36 (v: int) = Hexel.toBase36 (int64 v)
+    let b34 (v: int) = Hexel.toBase34 (int64 v)
     
     let srcForBatch = ensureCategory model.SrcOfTrth 11
     let parsedBlocks = Lexel.processFullString srcForBatch
@@ -184,7 +184,7 @@ let generateHynteractPayload (model: Model) : string[] =
                         match cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = n.Id) with
                         | Some cxl ->
                             let coords = Array.append [|cxl.Base|] cxl.Hxls
-                            coords |> Array.map (fun h -> let x,y,_ = hxlCrd h in b36 x + "," + b36 y) |> String.concat ","
+                            coords |> Array.map (fun h -> let x,y,_ = hxlCrd h in b34 x + "," + b34 y) |> String.concat ","
                         | None -> ""
                     )
                 variations.Add(roomCoords |> String.concat ";")
@@ -209,7 +209,7 @@ let generateHynteractPayload (model: Model) : string[] =
                         match cxls |> Array.tryFind (fun c -> prpVlu c.Rfid = n.Id) with
                         | Some cxl ->
                             let coords = Array.append [|cxl.Base|] cxl.Hxls
-                            coords |> Array.map (fun h -> let x,y,_ = hxlCrd h in b36 x + "," + b36 y) |> String.concat ","
+                            coords |> Array.map (fun h -> let x,y,_ = hxlCrd h in b34 x + "," + b34 y) |> String.concat ","
                         | None -> ""
                     )
                 variations.Add(roomCoords |> String.concat ";")
