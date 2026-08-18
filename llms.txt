@@ -16,7 +16,7 @@ HYWE (pronounced "high-way") treating spatial planning as a function of computat
 
 The HYWE ecosystem consists of three distinct, non-overlapping components that form a closed-loop data curation and design pipeline:
 
-### 1. [HYWE Engine](https://github.com/vykrum/Hywe) (Core & Client Sandbox)
+### 1. [HYWE Engine](https://github.com/vykrum/Hywe) (Core & Experimental Environment)
 * **Role**: Deterministic layout geometry and topological resolution.
 * **Stack**: Written in F#; compiled to WebAssembly via Bolero (running entirely client-side).
 * **Outputs**: Real-time interactive SVG (2D layouts), WebGPU (3D volumetric massing), and compressed topological token strings.
@@ -63,7 +63,7 @@ A declarative schema mapping human-centric design intents (e.g., "maximize south
 
 ## Technical Resources
 
-* **Primary Sandbox**: [https://hywe.in](https://hywe.in/)
+* **Experimental Environment**: [https://hywe.in](https://hywe.in/)
 * **Engine Repository**: [https://github.com/vykrum/Hywe](https://github.com/vykrum/Hywe)
 * **Dataset Repository**: [https://huggingface.co/datasets/vykrum/hywe-training-data](https://huggingface.co/datasets/vykrum/hywe-training-data)
 * **Technical Reference**: [llms-full.txt](llms-full.txt) (For deep-dive developer context)

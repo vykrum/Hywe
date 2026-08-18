@@ -1,4 +1,4 @@
-**HYWE** is a **browser-based** design sandbox where **structured intent** metamorphoses into **spatial configurations** through **deterministic design computation**.
+**HYWE** is a **research project and experimental computational environment** where **structured intent** metamorphoses into **spatial configurations** through **deterministic design computation**.
 
 ---
 
@@ -23,7 +23,7 @@ HYWE is an investigation into Spatial reasoning as a function of computational l
 
 At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
 
-By replacing manual geometric drafting with an **interactive visual node tree interface**, HYWE provides an accessible sandbox with **no learning curve**. Users simply map out their programmatic hierarchy, and the engine weaves this intuitive spatial intent into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
+By replacing manual geometric drafting with an **interactive visual node tree interface**, HYWE provides an computational environment with **no learning curve**. Users simply map out their programmatic hierarchy, and the engine weaves this intuitive spatial intent into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
 
 ---
 
@@ -58,7 +58,7 @@ By replacing manual geometric drafting with an **interactive visual node tree in
 
 ## Operational Domain
 
-HYWE functions as a computational sandbox bridging abstract intent and physical constraint. The engine translates **architectural programming**, specifically hierarchical trees and flow sequences, directly into resolved topological configurations, where adjacency emerges as a structural consequence rather than a predetermined matrix input.
+HYWE functions as a experimental apparatus bridging abstract intent and physical constraint. The engine translates **architectural programming**, specifically hierarchical trees and flow sequences, directly into resolved topological configurations, where adjacency emerges as a structural consequence rather than a predetermined matrix input.
 
 The spatial logic within HYWE incorporates **boundary confinement**, allowing configurations to organically adapt to irregular site boundaries and non-standard footprints. Furthermore, this topological reasoning extends vertically to resolve **programmatic stacking** and multi-level flow distribution across a building mass.
 
