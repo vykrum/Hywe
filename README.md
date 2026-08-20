@@ -24,7 +24,7 @@
 
 HYWE is an investigation into Spatial reasoning as a function of computational logic. It encourages a form of design thinking where **topology and flow-based hierarchy** guide the creation of layouts.
 
-At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
+At its core is the **Hygrid**, an integer hybrid lattice designed for deterministic topology-driven spatial synthesis. By sacrificing geometric isotropy for arithmetic determinism, Hygrid maintains strict integer closure and enables HYWE to execute completely kernel-free in WebAssembly. It functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
 
 By replacing manual geometric drafting with an **interactive visual node tree interface**, HYWE provides an computational environment with **no learning curve**. Users simply map out their programmatic hierarchy, and the engine weaves this intuitive spatial intent into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
 
