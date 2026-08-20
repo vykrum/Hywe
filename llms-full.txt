@@ -42,7 +42,7 @@ The client-side UI, rendering pipelines, and Bolero/Elmish runtime environment.
 AI agents modifying or reviewing this codebase must maintain the integrity of the following topological paradigms:
 
 ### 1. Deterministic Topology
-*   **Concepts**: Layout configurations must emerge strictly as a mathematical consequence of declared topological adjacency, without random stochastic placement or CAD dragging.
+*   **Concepts**: Layout configurations must emerge strictly as a mathematical consequence of declared topological adjacency, without random stochastic placement or manual freeform dragging.
 *   **Code Location**: [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs) and [Coxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Coxel.fs) resolve proximity and spatial containment. The coordinates are calculated iteratively by adding discrete vectors on a hexagonal grid, ensuring that adjacent nodes in the tree remain adjacent in the physical layout.
 *   **Rules**: Never introduce random generators (`System.Random`) inside core geometric solvers. Every spatial layout output must be 100% reproducible given the same syntax input.
 

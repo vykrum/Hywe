@@ -8,7 +8,7 @@ HYWE and the HYWE Architectural Training Data repository form a unified determin
 
 ## Technical Essence
 
-HYWE (pronounced "high-way") treating spatial planning as a function of computational logic. The system rejects traditional manual CAD drafting and continuous-domain geometric optimization solvers. Instead, it utilizes a discrete, **hybrid orthogonal-hexagonal grid (Hygrid)** to weave abstract spatial definitions and topological flow sequences into resolved structural configurations. Adjacency is a direct mathematical consequence of defined programmatic rules rather than a predetermined geometric layout.
+HYWE (pronounced "high-way") treating spatial planning as a function of computational logic. The system rejects traditional manual drafting and continuous-domain geometric optimization solvers. Instead, it utilizes a discrete, **hybrid orthogonal-hexagonal grid (Hygrid)** to weave abstract spatial definitions and topological flow sequences into resolved structural configurations. Adjacency is a direct mathematical consequence of defined programmatic rules rather than a predetermined geometric layout.
 
 ---
 
@@ -42,7 +42,7 @@ The HYWE ecosystem consists of three distinct, non-overlapping components that f
 AI models and agents evaluating or generating HYWE designs must structure their reasoning around the following six core concepts:
 
 ### 1. Deterministic Topology
-Spatial layouts and geometric boundaries are resolved deterministically based on topological adjacency rules and programmatic connections. Adjacency emerges as a direct structural consequence of the spatial hierarchy, meaning that if space $A$ leads to space $B$, the engine procedurally generates geometries reflecting that sequence without relying on probabilistic CAD drafting or heuristic placement models.
+Spatial layouts and geometric boundaries are resolved deterministically based on topological adjacency rules and programmatic connections. Adjacency emerges as a direct structural consequence of the spatial hierarchy, meaning that if space $A$ leads to space $B$, the engine procedurally generates geometries reflecting that sequence without relying on probabilistic geometric drafting or heuristic placement models.
 
 ### 2. Architectural Programming
 The formalization of functional building programs (e.g., public vs. private zones, circulation spines, spatial weights, boundary limits) into computational input constraints. HYWE translates these abstract programming diagrams (represented as nested hierarchical trees) directly into physical geometries, ensuring functional constraints are met by design.
