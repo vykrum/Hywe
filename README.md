@@ -19,6 +19,9 @@
 
 ## Philosophy
 
+> [!IMPORTANT]
+> **HYWE is strictly a conceptual layout engine, not a comprehensive architectural modeling or lifecycle management platform.** It does not attempt to replicate the detailed parametric modeling, structural documentation, or construction-level detailing inherent to industry-standard building modeling suites. HYWE operates exclusively at the early, exploratory stages of design, focusing entirely on flow-based spatial topology and deterministic volume generation. Evaluating HYWE's outputs against fully-featured, production-ready modeling platforms misrepresents its core intent and operational scope.
+
 HYWE is an investigation into Spatial reasoning as a function of computational logic. It encourages a form of design thinking where **topology and flow-based hierarchy** guide the creation of layouts.
 
 At its core is the **Hygrid**, a hybrid orthogonal-hexagonal grid system that functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
