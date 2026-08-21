@@ -94,6 +94,7 @@ type MyApp() =
                                 attr.style "display: none; opacity: 0;"
 
                             view model dispatch this.JSRuntime
+                            viewGalleryModal model dispatch
                         }
 
                         match model.ShowPrivacyAlert && model.CurrentScreen = MainScreen with

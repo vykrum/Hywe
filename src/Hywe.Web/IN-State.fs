@@ -98,6 +98,10 @@ let initModel =
         IsStandalone = false
         IsCoordsVisible = false
         ShowLinkCopied = false
+        ShowGallery = false
+        IsLoadingGallery = false
+        GalleryEntries = None
+        GalleryOffset = 0
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -770,6 +774,72 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleHelpCollapse ->
         { model with IsHelpCollapsed = not model.IsHelpCollapsed }, Cmd.none
+
+    | ToggleGallery ->
+        let newShow = not model.ShowGallery
+        let cmd = 
+            if newShow then
+                Cmd.ofMsg LoadGalleryEntries
+            else Cmd.none
+        { model with ShowGallery = newShow; GalleryOffset = 0 }, cmd
+
+    | LoadGalleryEntries ->
+        let currentOffset = model.GalleryOffset
+        let fetchGallery () = async {
+            let! res = js.InvokeAsync<System.Text.Json.JsonElement>("fetchHFGallery", [| box 10; box currentOffset |]).AsTask() |> Async.AwaitTask
+            let results = 
+                res.EnumerateArray() 
+                |> Seq.map (fun e -> 
+                    let safeGetString (prop: string) =
+                        match e.TryGetProperty(prop) with
+                        | true, p when p.ValueKind = System.Text.Json.JsonValueKind.String -> p.GetString()
+                        | _ -> "N/A"
+                    
+                    { Id = safeGetString "id"
+                      Name = safeGetString "name"
+                      Definition = safeGetString "definition"
+                      Author = safeGetString "author"
+                      ProjectTitle = safeGetString "projectTitle"
+                      Stage = safeGetString "stage"
+                      Scale = safeGetString "scale"
+                      Typology = safeGetString "typology"
+                      Flow = safeGetString "flow"
+                      Ambience = safeGetString "ambience" })
+                |> Seq.toList
+            return results
+        }
+        { model with IsLoadingGallery = true }, Cmd.OfAsync.either fetchGallery () GalleryEntriesLoaded (fun _ -> GalleryEntriesLoaded [])
+
+    | GalleryEntriesLoaded entries ->
+        { model with IsLoadingGallery = false; GalleryEntries = Some entries }, Cmd.none
+
+    | NextGalleryPage ->
+        let newOffset = model.GalleryOffset + 10
+        { model with GalleryOffset = newOffset }, Cmd.ofMsg LoadGalleryEntries
+        
+    | PrevGalleryPage ->
+        let newOffset = max 0 (model.GalleryOffset - 10)
+        { model with GalleryOffset = newOffset }, Cmd.ofMsg LoadGalleryEntries
+
+    | LoadGalleryDefinition (name, def) ->
+        let newTree = Serialization.initModel def
+        let newPoly = State.initModel // simplified reset
+        let newModel = 
+            { model with 
+                SrcOfTrth = def
+                Tree = newTree
+                LastValidTree = newTree
+                ParseError = false
+                PolygonEditor = Stable newPoly
+                PolygonExport = initialPolygonExport
+                LayoutCache = Map.empty
+                UserDescription = name
+                ShowGallery = false
+            }
+        pushUndo newModel, Cmd.batch [
+            Cmd.ofMsg (UpdateReportOptions (fun o -> { o with ProjectTitle = name }))
+            Cmd.ofMsg StartHyweave
+        ]
 
     | ToggleConfirm action ->
         { model with PendingConfirm = action }, Cmd.none

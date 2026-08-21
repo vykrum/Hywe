@@ -365,8 +365,7 @@
                 hashes.
             </li>
             <li>
-                <strong>5. Integer-Based Partitioning:</strong> Custom arithmetic and discrete orthogonal-hexagonal
-                lattices replace floating-point coordinates, preventing browser-specific rounding bugs.
+                <strong>5. Integer-Based Partitioning (Hygrid):</strong> A custom integer hybrid lattice replaces floating-point geometry. By sacrificing geometric isotropy for arithmetic determinism, it ensures strict integer closure and allows for dependency-free, kernel-free WebAssembly execution without browser-specific rounding bugs.
             </li>
             <li>
                 <strong>6. Semantic Architectural Intent:</strong> Declarative natural language design prompts are

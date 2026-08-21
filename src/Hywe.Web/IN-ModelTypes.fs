@@ -255,6 +255,19 @@ type ReportOptions = {
 type LayoutCache = Map<string, BatchConfgrtns option []>
 
 /// <summary> Central application state for the interface. </summary>
+type GalleryEntry = {
+    Id: string
+    Name: string
+    Definition: string
+    Author: string
+    ProjectTitle: string
+    Stage: string
+    Scale: string
+    Typology: string
+    Flow: string
+    Ambience: string
+}
+
 type Model =
     {
         Sequences: Map<int, string>
@@ -304,6 +317,10 @@ type Model =
         IsStandalone: bool
         IsCoordsVisible: bool
         ShowLinkCopied: bool
+        ShowGallery: bool
+        IsLoadingGallery: bool
+        GalleryEntries: GalleryEntry list option
+        GalleryOffset: int
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -382,6 +399,12 @@ type Message =
     | SetPrivacyAlert of bool
     | SetIsStandalone of bool
     | ToggleCoords
+    | ToggleGallery
+    | LoadGalleryEntries
+    | NextGalleryPage
+    | PrevGalleryPage
+    | GalleryEntriesLoaded of GalleryEntry list
+    | LoadGalleryDefinition of name: string * definition: string
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>
