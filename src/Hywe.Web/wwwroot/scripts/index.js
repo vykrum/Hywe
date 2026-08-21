@@ -181,6 +181,97 @@ window.recordToHynteract = async (apiUri, payload) => {
     }
 };
 
+window.fetchHFGallery = async (limit, offset) => {
+    try {
+        const sizeUrl = 'https://datasets-server.huggingface.co/size?dataset=vykrum%2Fhywe-training-data';
+        const sizeRes = await fetch(sizeUrl);
+        if (!sizeRes.ok) throw new Error("Failed to fetch dataset size");
+        const sizeData = await sizeRes.json();
+        
+        let numRows = 0;
+        if (sizeData.size && sizeData.size.dataset && sizeData.size.dataset.num_rows) {
+            numRows = sizeData.size.dataset.num_rows;
+        }
+        
+        if (numRows === 0) return [];
+        
+        // Compute offset to get latest rows. 
+        let fetchOffset = Math.max(0, numRows - limit - offset);
+        let fetchLength = Math.min(limit, numRows - offset);
+        
+        if (fetchLength <= 0) return [];
+        
+        const rowsUrl = `https://datasets-server.huggingface.co/rows?dataset=vykrum%2Fhywe-training-data&config=default&split=train&offset=${fetchOffset}&length=${fetchLength}`;
+        const rowsRes = await fetch(rowsUrl);
+        if (!rowsRes.ok) throw new Error("Failed to fetch dataset rows");
+        const rowsData = await rowsRes.json();
+        
+        const results = [];
+        if (rowsData && rowsData.rows) {
+            // Reverse so latest is first
+            const rows = rowsData.rows.slice().reverse();
+            for (const r of rows) {
+                if (r.row && r.row.definition) {
+                    let title = `Configuration ${r.row_idx}`;
+                    let author = "N/A", projectTitle = "N/A", stage = "N/A", scale = "N/A", typology = "N/A", flow = "N/A", ambience = "N/A";
+                    
+                    if (r.row.description) {
+                        const desc = r.row.description.trim();
+                        const teachMatch = desc.match(/^This is an? (.*?) stage (.*?) (.*?) project by (.*?) for the '(.*?)' project with a (.*?) flow and (.*?) ambience/i);
+                        
+                        if (teachMatch) {
+                            stage = teachMatch[1].charAt(0).toUpperCase() + teachMatch[1].slice(1);
+                            scale = teachMatch[2].charAt(0).toUpperCase() + teachMatch[2].slice(1);
+                            typology = teachMatch[3].charAt(0).toUpperCase() + teachMatch[3].slice(1);
+                            author = teachMatch[4];
+                            projectTitle = teachMatch[5];
+                            flow = teachMatch[6].charAt(0).toUpperCase() + teachMatch[6].slice(1);
+                            ambience = teachMatch[7].charAt(0).toUpperCase() + teachMatch[7].slice(1);
+                            title = projectTitle; // Use ProjectTitle as main name if it matched
+                        } else {
+                            // Fallback to basic extraction
+                            let tempDesc = desc.replace(/^This is an?\s+/i, '');
+                            const byIndex = tempDesc.indexOf(' by ');
+                            if (byIndex !== -1) {
+                                const forIndex = tempDesc.indexOf(' for ', byIndex);
+                                if (forIndex !== -1) {
+                                    tempDesc = tempDesc.substring(0, forIndex);
+                                } else {
+                                    const firstPeriod = tempDesc.indexOf('.');
+                                    if (firstPeriod !== -1) tempDesc = tempDesc.substring(0, firstPeriod);
+                                }
+                            } else {
+                                const firstPeriod = tempDesc.indexOf('.');
+                                if (firstPeriod !== -1) tempDesc = tempDesc.substring(0, firstPeriod);
+                            }
+                            if (tempDesc.length > 0) {
+                                title = tempDesc.charAt(0).toUpperCase() + tempDesc.slice(1);
+                            }
+                        }
+                    }
+                    
+                    results.push({
+                        id: `row-${r.row_idx}`,
+                        name: title.trim(),
+                        definition: r.row.definition,
+                        author: author,
+                        projectTitle: projectTitle,
+                        stage: stage,
+                        scale: scale,
+                        typology: typology,
+                        flow: flow,
+                        ambience: ambience
+                    });
+                }
+            }
+        }
+        return results;
+    } catch (e) {
+        console.error("Network/Fetch Error:", e);
+        return [];
+    }
+};
+
 window.downloadReport = function(html, fileName) {
     console.log("Hywe: Starting direct PDF export...");
     const element = document.createElement('div');

@@ -232,20 +232,39 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
                     div {
                         attr.style "margin-top: 6px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
+                        
+                        // Header row with Presets
                         div {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; margin-bottom: 2px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; width: 100%;"
+                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 4px; width: 100%;"
                             text "Presets"
                         }
-                        let presetLink name label =
-                            a {
-                                attr.style "cursor: pointer; color: #666; font-size: 0.85rem; text-decoration: none;"
-                                on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
-                                text label
-                            }
+                        
+                        let presetLink name label isActive =
+                            if isActive then
+                                a {
+                                    attr.style "cursor: pointer; color: #666; font-size: 0.85rem; text-decoration: none;"
+                                    on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
+                                    text label
+                                }
+                            else
+                                span {
+                                    attr.style "color: #bbb; font-size: 0.85rem; cursor: not-allowed;"
+                                    text label
+                                }
 
-                        presetLink "Simple" "Simple"
-                        presetLink "Branched" "Branch"
-                        presetLink "Stacked" "Stack"
+                        div {
+                            attr.style "display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; margin-top: 2px;"
+                            presetLink "Simple" "Simple" true
+                            presetLink "Branched" "Branch" true
+                            presetLink "Stacked" "Stack" true
+                            presetLink "Nest" "Nest" false
+                        }
+                        
+                        a {
+                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; cursor: pointer; text-decoration: none; margin-top: 4px; padding-top: 4px; border-top: 1px solid #e0e0e0; width: 100%; display: block;"
+                            on.pointerdown (fun _ -> dispatch ToggleGallery)
+                            text "Gallery"
+                        }
                     }
 
                     input {
@@ -705,7 +724,122 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
     }
 
 
-
+let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
+    if not model.ShowGallery then empty()
+    else
+        div {
+            attr.style "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;"
+            on.click (fun _ -> dispatch ToggleGallery)
+            
+            div {
+                attr.style "background: #fff; width: 90%; max-width: 1100px; max-height: 80vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"
+                "onclick:stopPropagation" => true
+                
+                div {
+                    attr.style "padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa;"
+                    h2 { 
+                        attr.style "margin: 0; font-size: 1.2rem; color: #333; font-weight: 600;"
+                        text "Community Gallery" 
+                    }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
+                        attr.style "font-size: 1.2rem; padding: 0 5px; line-height: 1;"
+                        on.click (fun _ -> dispatch ToggleGallery)
+                        text "×"
+                    }
+                }
+                
+                div {
+                    attr.style "flex: 1; overflow-y: auto; padding: 15px 20px; display: flex; flex-direction: column; gap: 10px; background: #fdfdfd;"
+                    
+                    if model.IsLoadingGallery then
+                        div {
+                            attr.style "text-align: center; padding: 30px; color: #777; font-style: italic;"
+                            text "Loading latest configurations from Hugging Face..."
+                        }
+                    else
+                        match model.GalleryEntries with
+                        | None | Some [] -> 
+                            div {
+                                attr.style "text-align: center; padding: 30px; color: #777;"
+                                text "No configurations found."
+                            }
+                        | Some entries ->
+                            div {
+                                attr.style "width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;"
+                                table {
+                                    attr.style "width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 800px;"
+                                    thead {
+                                        tr {
+                                            attr.style "border-bottom: 2px solid #eee; text-align: left; color: #666;"
+                                            th { attr.style "padding: 8px; font-weight: 600; width: 60px;"; text "" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Project" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Author" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Stage" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Scale" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Typology" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Flow" }
+                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Ambience" }
+                                        }
+                                    }
+                                    tbody {
+                                        for entry in entries do
+                                            tr {
+                                                attr.style "border-bottom: 1px solid #eee; transition: background 0.2s;"
+                                                
+                                                let cellStyle = "padding: 10px 8px; color: #444; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                                
+                                                td {
+                                                    attr.style "padding: 10px 8px; text-align: center;"
+                                                    button {
+                                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
+                                                        on.click (fun _ -> dispatch (LoadGalleryDefinition (entry.Name, entry.Definition)))
+                                                        text "Load"
+                                                    }
+                                                }
+                                                td { attr.style (cellStyle + " font-weight: 600;"); text entry.Name }
+                                                td { attr.style cellStyle; text entry.Author }
+                                                td { attr.style cellStyle; text entry.Stage }
+                                                td { attr.style cellStyle; text entry.Scale }
+                                                td { attr.style cellStyle; text entry.Typology }
+                                                td { attr.style cellStyle; text entry.Flow }
+                                                td { attr.style cellStyle; text entry.Ambience }
+                                            }
+                                    }
+                                }
+                            }
+                            
+                            // Pagination Footer
+                            div {
+                                attr.style "display: flex; justify-content: space-between; align-items: center; padding-top: 15px; margin-top: auto;"
+                                button {
+                                    attr.``class`` "hywe-btn hywe-btn-sm"
+                                    if model.GalleryOffset = 0 then
+                                        attr.disabled true
+                                        attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
+                                    else
+                                        attr.style "background: #eee; color: #333;"
+                                        on.click (fun _ -> dispatch PrevGalleryPage)
+                                    text "Previous"
+                                }
+                                span {
+                                    attr.style "font-size: 0.85rem; color: #777;"
+                                    text (sprintf "Showing %d - %d" (model.GalleryOffset + 1) (model.GalleryOffset + entries.Length))
+                                }
+                                button {
+                                    attr.``class`` "hywe-btn hywe-btn-sm"
+                                    if entries.Length < 10 then
+                                        attr.disabled true
+                                        attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
+                                    else
+                                        attr.style "background: #eee; color: #333;"
+                                        on.click (fun _ -> dispatch NextGalleryPage)
+                                    text "Next"
+                                }
+                            }
+                }
+            }
+        }
 
 let view model dispatch (js: IJSRuntime) =
     concat {
