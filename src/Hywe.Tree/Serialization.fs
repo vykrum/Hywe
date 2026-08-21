@@ -95,8 +95,15 @@ module Serialization =
         let maxLevel = match model.Levels.IsEmpty with | true -> 0 | false -> model.Levels.Keys |> Seq.max
         let bases = 
             [0 .. maxLevel - 1] |> List.scan (fun currentSum lvl ->
-                let root = model.Levels |> Map.tryFind lvl |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
-                currentSum + root.Extrusion
+                let tree = model.Levels |> Map.tryFind lvl |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
+                let extrusion = 
+                    match model.LevelAnchors |> Map.tryFind (lvl + 1) with
+                    | Some anchorId ->
+                        match TreeOps.findNodeById anchorId tree with
+                        | Some anchorNode -> anchorNode.Extrusion
+                        | None -> tree.Extrusion
+                    | None -> tree.Extrusion
+                currentSum + extrusion
             ) 0.0
         
         let lastBase = match List.tryLast bases with Some b -> b | None -> 0.0
