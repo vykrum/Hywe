@@ -17,41 +17,56 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
         let title, msg, confirmMsg, onConfirm =
             match action with
             | ConfirmAction.ResetWorkspace ->
-                "Reset Layout", "Current Layout will be replaced.", "Reset", HardReset
+                "Reset Layout?", ["Current layout will be replaced."], "Reset", HardReset
             | ConfirmAction.LoadPreset (name, label) ->
-                "Load Preset", (sprintf "Load %s preset? Current layout will be replaced." label), "Load", SelectPreset name
+                (sprintf "Load %s preset?" label), ["Current layout will be replaced."], "Load", SelectPreset name
+            | ConfirmAction.LoadGallery (name, def) ->
+                (sprintf "Load %s?" name), ["Current layout will be replaced."], "Load", LoadGalleryDefinition (name, def)
             | ConfirmAction.SwitchTo tab ->
-                "Switch View", "Switch to this view?", "Switch", SetActivePanel (match tab with Boundary -> BoundaryPanel | _ -> LayoutPanel)
+                "Switch View", ["Switch to this view?"], "Switch", SetActivePanel (match tab with Boundary -> BoundaryPanel | _ -> LayoutPanel)
 
         div {
             attr.style "position: fixed; inset: 0; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;"
             on.pointerdown (fun _ -> dispatch (ToggleConfirm None))
             
             div {
-                attr.style "background: #fff; border: 1px solid #eee; padding: 24px; border-radius: 8px; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px; text-align: center; pointer-events: auto;"
+                attr.style "background: #fff; border: 1px solid #eee; padding: 20px 24px; border-radius: 8px; width: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 12px; text-align: center; pointer-events: auto; justify-content: center;"
                 "onclick:stopPropagation" => true
                 
+                let baseTitle, suffix =
+                    if title.EndsWith("?") then
+                        title.Substring(0, title.Length - 1), "?"
+                    else
+                        title, ""
+                
                 div {
-                    attr.style "font-weight: 600; font-size: 1.1rem; color: #333;"
-                    text title
-                }
-                div {
-                    attr.style "font-size: 0.9rem; color: #666; line-height: 1.4;"
-                    text msg
-                }
-                div {
-                    attr.style "display: flex; gap: 10px; margin-top: 8px;"
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-dark"
-                        attr.style "flex: 1;"
-                        on.pointerdown (fun _ -> dispatch onConfirm)
-                        text confirmMsg
+                    attr.style "display: flex; justify-content: center; width: 100%; font-weight: 600; font-size: 1.1rem; color: #333;"
+                    div {
+                        attr.style "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;"
+                        text baseTitle
                     }
+                    if suffix <> "" then
+                        div {
+                            attr.style "flex-shrink: 0;"
+                            text suffix
+                        }
+                }
+                div {
+                    attr.style "font-size: 0.9rem; color: #666; line-height: 1.3; display: flex; flex-direction: column; gap: 4px;"
+                    for line in msg do
+                        div { text line }
+                }
+                div {
+                    attr.style "display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                        attr.style "flex: 1;"
                         on.pointerdown (fun _ -> dispatch (ToggleConfirm None))
                         text "Cancel"
+                    }
+                    button {
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-dark"
+                        on.pointerdown (fun _ -> dispatch onConfirm)
+                        text confirmMsg
                     }
                 }
             }
@@ -820,7 +835,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         button {
                                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
                                             attr.style "flex-shrink: 0;"
-                                            on.click (fun _ -> dispatch (LoadGalleryDefinition (entry.Name, entry.Definition)))
+                                            on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.Name, entry.Definition)))))
                                             text "Load"
                                         }
                                     }

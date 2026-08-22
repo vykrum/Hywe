@@ -165,6 +165,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string
+    | LoadGallery of name: string * def: string
     | SwitchTo of EditorTab
 
 
