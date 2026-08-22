@@ -320,9 +320,10 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
     | Syntax ->
         div {
             attr.id "hywe-input-syntax"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px;"
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px 5px 30px;"
             textarea {
                 attr.``class`` "hyweSyntax"
+                attr.style "min-height: 185px;"
                 attr.key (model.SrcOfTrth.GetHashCode().ToString())
                 attr.value model.SrcOfTrth
                 on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
