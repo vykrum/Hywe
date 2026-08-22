@@ -243,7 +243,8 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                             if isActive then
                                 a {
                                     attr.style "cursor: pointer; color: #666; font-size: 0.85rem; text-decoration: none;"
-                                    on.pointerdown (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
+                                    "onclick:stopPropagation" => true
+                                    on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
                                     text label
                                 }
                             else
@@ -262,7 +263,11 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         
                         a {
                             attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; cursor: pointer; text-decoration: none; margin-top: 4px; padding-top: 4px; border-top: 1px solid #e0e0e0; width: 100%; display: block;"
-                            on.pointerdown (fun _ -> dispatch ToggleGallery)
+                            "onclick:stopPropagation" => true
+                            on.click (fun _ -> 
+                                dispatch ToggleGallery
+                                dispatch ToggleWorkspaceCollapse
+                            )
                             text "Gallery"
                         }
                     }
@@ -728,12 +733,17 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
     if not model.ShowGallery then empty()
     else
         div {
-            attr.style "position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;"
-            on.click (fun _ -> dispatch ToggleGallery)
+            attr.style "position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000; display: flex; align-items: center; justify-content: center;"
             
+            // Sibling 1: Backdrop
             div {
-                attr.style "background: #fff; width: 90%; max-width: 1100px; max-height: 80vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"
-                "onclick:stopPropagation" => true
+                attr.style "position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8);"
+                on.click (fun _ -> dispatch ToggleGallery)
+            }
+            
+            // Sibling 2: Modal Content
+            div {
+                attr.style "position: relative; background: #fff; width: 90%; max-width: 1100px; max-height: 80vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"
                 
                 div {
                     attr.style "padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa;"
@@ -765,48 +775,55 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                 text "No configurations found."
                             }
                         | Some entries ->
+                            let filterText = if System.String.IsNullOrWhiteSpace(model.GalleryFilter) then "" else model.GalleryFilter.ToLower()
+                            let filteredEntries = 
+                                if filterText = "" then entries
+                                else entries |> List.filter (fun e -> 
+                                    (not (System.String.IsNullOrWhiteSpace e.Name) && e.Name.ToLower().Contains(filterText)) || 
+                                    (not (System.String.IsNullOrWhiteSpace e.Author) && e.Author.ToLower().Contains(filterText)))
+                                    
                             div {
-                                attr.style "width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;"
-                                table {
-                                    attr.style "width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 800px;"
-                                    thead {
-                                        tr {
-                                            attr.style "border-bottom: 2px solid #eee; text-align: left; color: #666;"
-                                            th { attr.style "padding: 8px; font-weight: 600; width: 60px;"; text "" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Project" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Author" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Stage" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Scale" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Typology" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Flow" }
-                                            th { attr.style "padding: 8px; font-weight: 600;"; text "Ambience" }
+                                attr.style "width: 100%; display: flex; flex-direction: column;"
+                                
+                                input {
+                                    attr.``class`` "hywe-input"
+                                    attr.style "margin-bottom: 10px; width: 100%; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;"
+                                    "onclick:stopPropagation" => true
+                                    "onpointerdown:stopPropagation" => true
+                                    attr.placeholder "Search by Project Name or Author..."
+                                    attr.value model.GalleryFilter
+                                    on.input (fun e -> dispatch (UpdateGalleryFilter (unbox<string> e.Value)))
+                                }
+                                
+                                if filteredEntries.IsEmpty then
+                                    div {
+                                        attr.style "text-align: center; padding: 30px; color: #777;"
+                                        text "No configurations match your search."
+                                    }
+                                else
+                                    for entry in filteredEntries do
+                                        div {
+                                        attr.style "display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee;"
+                                        
+                                        div {
+                                            attr.style "display: flex; flex-direction: column; overflow: hidden; padding-right: 10px;"
+                                            div {
+                                                attr.style "font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem;"
+                                                text entry.Name
+                                            }
+                                            div {
+                                                attr.style "font-size: 0.8rem; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;"
+                                                text entry.Author
+                                            }
+                                        }
+                                        
+                                        button {
+                                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
+                                            attr.style "flex-shrink: 0;"
+                                            on.click (fun _ -> dispatch (LoadGalleryDefinition (entry.Name, entry.Definition)))
+                                            text "Load"
                                         }
                                     }
-                                    tbody {
-                                        for entry in entries do
-                                            tr {
-                                                attr.style "border-bottom: 1px solid #eee; transition: background 0.2s;"
-                                                
-                                                let cellStyle = "padding: 10px 8px; color: #444; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-                                                
-                                                td {
-                                                    attr.style "padding: 10px 8px; text-align: center;"
-                                                    button {
-                                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
-                                                        on.click (fun _ -> dispatch (LoadGalleryDefinition (entry.Name, entry.Definition)))
-                                                        text "Load"
-                                                    }
-                                                }
-                                                td { attr.style (cellStyle + " font-weight: 600;"); text entry.Name }
-                                                td { attr.style cellStyle; text entry.Author }
-                                                td { attr.style cellStyle; text entry.Stage }
-                                                td { attr.style cellStyle; text entry.Scale }
-                                                td { attr.style cellStyle; text entry.Typology }
-                                                td { attr.style cellStyle; text entry.Flow }
-                                                td { attr.style cellStyle; text entry.Ambience }
-                                            }
-                                    }
-                                }
                             }
                             
                             // Pagination Footer

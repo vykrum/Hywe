@@ -217,33 +217,17 @@ window.fetchHFGallery = async (limit, offset) => {
                     
                     if (r.row.description) {
                         const desc = r.row.description.trim();
-                        const teachMatch = desc.match(/^This is an? (.*?) stage (.*?) (.*?) project by (.*?) for the '(.*?)' project with a (.*?) flow and (.*?) ambience/i);
+                        const teachMatch = desc.match(/ by (.*?) for the '(.*?)' project/i);
                         
                         if (teachMatch) {
-                            stage = teachMatch[1].charAt(0).toUpperCase() + teachMatch[1].slice(1);
-                            scale = teachMatch[2].charAt(0).toUpperCase() + teachMatch[2].slice(1);
-                            typology = teachMatch[3].charAt(0).toUpperCase() + teachMatch[3].slice(1);
-                            author = teachMatch[4];
-                            projectTitle = teachMatch[5];
-                            flow = teachMatch[6].charAt(0).toUpperCase() + teachMatch[6].slice(1);
-                            ambience = teachMatch[7].charAt(0).toUpperCase() + teachMatch[7].slice(1);
-                            title = projectTitle; // Use ProjectTitle as main name if it matched
+                            author = teachMatch[1];
+                            projectTitle = teachMatch[2];
+                            title = projectTitle;
                         } else {
                             // Fallback to basic extraction
                             let tempDesc = desc.replace(/^This is an?\s+/i, '');
-                            const byIndex = tempDesc.indexOf(' by ');
-                            if (byIndex !== -1) {
-                                const forIndex = tempDesc.indexOf(' for ', byIndex);
-                                if (forIndex !== -1) {
-                                    tempDesc = tempDesc.substring(0, forIndex);
-                                } else {
-                                    const firstPeriod = tempDesc.indexOf('.');
-                                    if (firstPeriod !== -1) tempDesc = tempDesc.substring(0, firstPeriod);
-                                }
-                            } else {
-                                const firstPeriod = tempDesc.indexOf('.');
-                                if (firstPeriod !== -1) tempDesc = tempDesc.substring(0, firstPeriod);
-                            }
+                            const firstPeriod = tempDesc.indexOf('.');
+                            if (firstPeriod !== -1) tempDesc = tempDesc.substring(0, firstPeriod);
                             if (tempDesc.length > 0) {
                                 title = tempDesc.charAt(0).toUpperCase() + tempDesc.slice(1);
                             }
