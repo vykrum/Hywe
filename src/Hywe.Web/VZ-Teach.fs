@@ -381,20 +381,20 @@ let view model dispatch =
             attr.``class`` "teach-objective-section"
             div {
                 attr.``class`` "teach-select-row"
-                span { attr.``class`` "hywe-label"; text "Author" }
+                span { attr.``class`` "hywe-label"; text "Author*" }
                 input {
                     attr.``class`` "hywe-input"
-                    attr.placeholder "Optional author name..."
+                    attr.placeholder "Author name..."
                     attr.value model.TeachMetadata.Author
                     on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with Author = unbox<string> e.Value })))
                 }
             }
             div {
                 attr.``class`` "teach-select-row"
-                span { attr.``class`` "hywe-label"; text "Project" }
+                span { attr.``class`` "hywe-label"; text "Project*" }
                 input {
                     attr.``class`` "hywe-input"
-                    attr.placeholder "Optional project title..."
+                    attr.placeholder "Project title..."
                     attr.value model.TeachMetadata.ProjectTitle
                     on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with ProjectTitle = unbox<string> e.Value })))
                 }
@@ -442,16 +442,21 @@ let view model dispatch =
         div {
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-top: 0.8rem;"
             let hasSummary = not (String.IsNullOrWhiteSpace model.UserDescription)
+            let hasAuthor = not (String.IsNullOrWhiteSpace model.TeachMetadata.Author)
+            let hasProject = not (String.IsNullOrWhiteSpace model.TeachMetadata.ProjectTitle)
+            let canCommit = hasSummary && hasAuthor && hasProject
             let isBusy = model.IsSavingToHynteract
             p { 
                 attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
-                if hasSummary then text "Review summary and add any relevant input/details" else text "A spatial summary is required to enable commitment"
+                if canCommit then text "Review summary and add any relevant input/details" 
+                else if not hasAuthor || not hasProject then text "Author and Project title are required to enable commitment"
+                else text "A spatial summary is required to enable commitment"
             }
             button {
-                attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not hasSummary then " disabled" else " active"))
-                attr.style (if not hasSummary then "opacity: 0.5; cursor: not-allowed;" else "")
-                attr.title (if not hasSummary then "Please generate or enter a summary first" else "Commit this intent to the dataset")
-                attr.disabled (isBusy || not hasSummary)
+                attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
+                attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
+                attr.title (if not canCommit then "Please fill required fields and generate a summary first" else "Commit this intent to the dataset")
+                attr.disabled (isBusy || not canCommit)
                 on.click (fun _ -> dispatch RecordToHynteract)
                 match isBusy with | true -> text "Committing..." | false -> text "Commit to Dataset"
             }

@@ -165,6 +165,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string
+    | LoadGallery of name: string * def: string
     | SwitchTo of EditorTab
 
 
@@ -321,6 +322,7 @@ type Model =
         IsLoadingGallery: bool
         GalleryEntries: GalleryEntry list option
         GalleryOffset: int
+        GalleryFilter: string
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -405,6 +407,7 @@ type Message =
     | PrevGalleryPage
     | GalleryEntriesLoaded of GalleryEntry list
     | LoadGalleryDefinition of name: string * definition: string
+    | UpdateGalleryFilter of string
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

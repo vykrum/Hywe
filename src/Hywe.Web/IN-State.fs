@@ -102,6 +102,7 @@ let initModel =
         IsLoadingGallery = false
         GalleryEntries = None
         GalleryOffset = 0
+        GalleryFilter = ""
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -842,5 +843,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         ]
 
     | ToggleConfirm action ->
-        { model with PendingConfirm = action }, Cmd.none
+        let nextModel = 
+            match action with
+            | Some (ConfirmAction.LoadGallery _) -> { model with PendingConfirm = action; ShowGallery = false }
+            | _ -> { model with PendingConfirm = action }
+        nextModel, Cmd.none
 
+    | UpdateGalleryFilter filter ->
+        { model with GalleryFilter = filter }, Cmd.none
