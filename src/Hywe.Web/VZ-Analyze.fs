@@ -54,15 +54,15 @@ let renderRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) (rati
 
 let renderAdjacencyCell isAdj color =
     match isAdj with
-    | true -> 
+    | true ->
         td {
-            attr.``style`` $"border: 1px solid #eee; padding: 8px; text-align: center; background: {color}; color: #646464;"
-            text "✓"
+            attr.``style`` $"border: 1px solid #eee; padding: 0; background: {color}; height: 12px;"
+            text ""
         }
     | false ->
         td {
-            attr.``style`` "border: 1px solid #eee; padding: 8px; text-align: center; color: #646464; opacity: 0.4;"
-            text "✕"
+            attr.``style`` "border: 1px solid #eee; padding: 0; background: #fafafa; height: 12px;"
+            text ""
         }
 
 let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (matrix: bool[][]) =
@@ -82,19 +82,19 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             div {
                 attr.``style`` "overflow-x: auto;"
                 table {
-                    attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
+                    attr.``style`` "table-layout: fixed; width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
                     thead {
                         tr {
                             attr.``style`` "height: 32px;"
                             th { 
-                                attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"
+                                attr.``style`` "border: 1px solid #eee; padding: 4px; background: #fdfdfd; width: 80px;"
                                 text "" 
                             }
                             for i in 0 .. colors.Length - 1 do
                                 let c = colors.[i]
                                 th { 
-                                    attr.``style`` $"border: 1px solid #eee; padding: 8px; background: {c}; color: #333; min-width: 30px;"
-                                    text names.[i] 
+                                    attr.``style`` $"border: 1px solid #eee; padding: 0; background: {c}; color: #333; height: 12px;"
+                                    text "" 
                                 }
                         }
                     }
@@ -104,7 +104,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
                             tr {
                                 attr.``style`` "height: 32px;"
                                 td { 
-                                    attr.``style`` $"border: 1px solid #eee; padding: 8px; background: {colors.[i]}; color: #333; white-space: nowrap;"
+                                    attr.``style`` $"border: 1px solid #eee; padding: 4px 8px; background: {colors.[i]}; color: #333; text-align: left; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
                                     text names.[i] 
                                 }
                                 for j in 0 .. row.Length - 1 do
@@ -129,7 +129,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         attr.``style`` "width: 100%; padding: 10px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-start;"
         
         div {
-            attr.``style`` "flex: 1 1 450px; min-width: 300px;"
+            attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
             h3 { 
                 attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
                 text "AREA METRICS" 
@@ -185,7 +185,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         }
 
         div {
-            attr.``style`` "flex: 1 1 450px; min-width: 300px;"
+            attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
             viewAdjacencyTable sqn adjNames cxClr1 adjMatrix
         }
         // --- COORDINATES WINDOW ---
