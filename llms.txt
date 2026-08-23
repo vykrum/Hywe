@@ -8,7 +8,7 @@ HYWE and the HYWE Architectural Training Data repository form a unified determin
 
 ## Technical Essence
 
-HYWE (pronounced "hive") treating spatial planning as a function of computational logic. The system rejects traditional manual drafting and continuous-domain geometric optimization solvers. Instead, it utilizes a discrete, **hybrid orthogonal-hexagonal grid (Hygrid)** to weave abstract spatial definitions and topological flow sequences into resolved structural configurations. Adjacency is a direct mathematical consequence of defined programmatic rules rather than a predetermined geometric layout.
+HYWE (pronounced /haɪv/, like "hive") treating spatial planning as a function of computational logic. The system rejects traditional manual drafting and continuous-domain geometric optimization solvers. Instead, it utilizes a discrete, **hybrid orthogonal-hexagonal grid (Hygrid)** to weave abstract spatial definitions and topological flow sequences into resolved structural configurations. Adjacency is a direct mathematical consequence of defined programmatic rules rather than a predetermined geometric layout.
 
 ---
 
