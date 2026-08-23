@@ -263,17 +263,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let fileName = "Hywe_Batch_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         else Some (model, Cmd.none)
-    | DownloadDxf ->
-        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
-        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
-        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
-        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
-        | Some c -> 
-            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
-            let dxf = FileManager.generateDxf activeConfig.cxCxl1 0.0 0.0
-            let fileName = "Hywe_Layout_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
-            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+
         
     | DownloadObj ->
         let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
@@ -286,16 +276,11 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         | None -> Some (model, Cmd.none)
-    | DownloadBatchDxf ->
-        let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
-        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
+    | DownloadBatchSvg ->
+        let datePart = DateTime.Now.ToString("yyMMddHHmm")
+        let fileName = "HywVariations_" + datePart + ".svg"
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
 
-        if results.Length > 0 then
-            let batchData = results |> Array.toList |> List.map (fun r -> r.cxCxl1)
-            let dxf = FileManager.generateDxfBatch batchData
-            let fileName = "Hywe_Batch_FloorPlates_" + DateTime.Now.ToString("yyMMddHHmm") + ".dxf"
-            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, dxf, "application/dxf").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        else Some (model, Cmd.none)
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
     | GenerateReport ->

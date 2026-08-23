@@ -790,18 +790,10 @@ let alternateConfigurations
             attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.pointerdown (fun _ -> 
-                    let datePart = System.DateTime.Now.ToString("yyMMddmm")
-                    let fileName = "HywVariations_" + datePart + ".svg"
-                    js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() |> ignore
-                )
+                on.pointerdown (fun _ -> dispatch DownloadBatchSvg)
                 text "SVG"
             }
-            button {
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.pointerdown (fun _ -> dispatch DownloadBatchDxf)
-                text "DXF"
-            }
+
             div { attr.style "width: 1px; height: 20px; background: #eee; margin: 0 5px;" }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"

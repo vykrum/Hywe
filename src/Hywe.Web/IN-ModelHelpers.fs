@@ -557,11 +557,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         )
                         text "PNG"
                     }
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                        on.pointerdown (fun _ -> dispatch DownloadDxf)
-                        text "DXF"
-                    }
+
                 }
             }
         
@@ -655,11 +651,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         on.pointerdown (fun _ -> dispatch Download3DPng)
                         text "PNG"
                     }
-                    button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
-                        on.pointerdown (fun _ -> dispatch DownloadDxf)
-                        text "DXF"
-                    }
+
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         on.pointerdown (fun _ -> dispatch DownloadObj)
