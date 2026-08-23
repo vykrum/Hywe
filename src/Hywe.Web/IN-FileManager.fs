@@ -274,56 +274,6 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
     )
     |> String.concat "|"
 
-/// DXF Export (2D Layout)
-let generateDxf (cxls: Cxl[]) (offsetX: float) (offsetY: float) =
-    let hexScale = 1.0
-    cxls 
-    |> Array.choose (fun cxl ->
-        let prm = cxlPrm cxl 0
-        match prm.Length > 2 with
-        | true ->
-            let header = [
-                "0"; "LWPOLYLINE"
-                "8"; "Rooms"
-                "90"; string prm.Length
-                "70"; "1"
-            ]
-            let points = 
-                prm |> Array.collect (fun (x, y) ->
-                    let q = float x
-                    let r = float y
-                    let cx = (hexScale * q) + offsetX
-                    let cy = (hexScale * r) + offsetY
-                    [| "10"; string cx; "20"; string cy |]
-                ) |> Array.toList
-            Some (String.concat "\n" (header @ points))
-        | false -> None
-    )
-    |> function
-        | [||] -> ""
-        | arr -> (String.concat "\n" arr) + "\n"
-
-let generateDxfBatch (batch: Cxl[] list) =
-    let header = [
-        "0"; "SECTION"; "2"; "HEADER"; "0"; "ENDSEC"
-        "0"; "SECTION"; "2"; "TABLES"; "0"; "TABLE"; "2"; "LAYER"; "70"; "1"
-        "0"; "LAYER"; "2"; "Rooms"; "70"; "0"; "62"; "7"; "0"; "ENDTAB"; "0"; "ENDSEC"
-        "0"; "SECTION"; "2"; "BLOCKS"; "0"; "ENDSEC"
-        "0"; "SECTION"; "2"; "ENTITIES"
-    ]
-    let cols = 4
-    let bodies = 
-        batch |> List.mapi (fun i cxls ->
-            let r = i / cols
-            let c = i % cols
-            let ox = float c * 100.0
-            let oy = float r * -100.0
-            generateDxf cxls ox oy
-        )
-    let footer = [ "0"; "ENDSEC"; "0"; "EOF" ]
-    
-    String.concat "\n" (header @ bodies @ footer) + "\n"
-
 /// OBJ Export (3D Geometry)
 let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: float) (vOffset: int) =
     let foldObj (currentOffset: int, accStrings: string list) (cxl: Cxl) =

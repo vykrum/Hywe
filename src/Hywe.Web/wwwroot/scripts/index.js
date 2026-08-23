@@ -101,7 +101,8 @@ window.downloadSvgFile = function(svgId, filename) {
                    .replace(/viewbox=/g, "viewBox=")
                    .replace(/startoffset=/g, "startOffset=")
                    .replace(/textlength=/g, "textLength=")
-                   .replace(/lengthadjust=/g, "lengthAdjust=");
+                   .replace(/lengthadjust=/g, "lengthAdjust=")
+                   .replace(/\s*onclick:stoppropagation(?:=["'][^"']*["'])?/gi, "");
                    
     const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
     const finalSvg = xmlHeader + source;
@@ -134,7 +135,8 @@ window.downloadSvgElementAsPng = function(svgId, filename) {
                    .replace(/viewbox=/g, "viewBox=")
                    .replace(/startoffset=/g, "startOffset=")
                    .replace(/textlength=/g, "textLength=")
-                   .replace(/lengthadjust=/g, "lengthAdjust=");
+                   .replace(/lengthadjust=/g, "lengthAdjust=")
+                   .replace(/\s*onclick:stoppropagation(?:=["'][^"']*["'])?/gi, "");
                    
     const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
     const finalSvg = xmlHeader + source;
