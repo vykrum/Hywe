@@ -52,7 +52,7 @@ module Benchmarks =
         | Some (baseCxl, nextOcc) -> 
             let layout, _, _ = generateCxlLayout ctx baseCxl nextOcc
             layout
-        | None -> failwithf "Failed to generate base hexel for %s" (Hexel.sqnToString sqn)
+        | None -> failwithf "Failed to generate base hexel for %s" (sqnToString sqn)
 
     let appendMarkdownHeader (sb: System.Text.StringBuilder) (title: string) (description: string) =
         sb.AppendLine(sprintf "### %s" title) |> ignore
