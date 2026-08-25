@@ -29,7 +29,7 @@ The creator of HYWE is primarily a designer exploring the boundaries of design c
 - If you're adding new HYWE syntax attributes or logic, please try to update the relevant documentation or the `llms-full.txt` reference.
 
 ## Technical Stack
-- **Language**: F# (.NET 8.0+)
+- **Language**: F# (.NET 10.0+)
 - **Web Framework**: Bolero (Blazor WebAssembly)
 - **3D Rendering**: WebGPU (native massing)
 - **2D Rendering**: SVG

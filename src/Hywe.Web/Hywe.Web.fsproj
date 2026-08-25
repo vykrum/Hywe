@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
 	</PropertyGroup>
 	
@@ -35,8 +35,8 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="Bolero" Version="0.24.39" />
-		<PackageReference Include="Bolero.Build" Version="0.24.39" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.15" />
+		<PackageReference Include="Bolero" Version="0.25.63" />
+		<PackageReference Include="Bolero.Build" Version="0.25.63" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0-preview.1.25120.3" />
 	</ItemGroup>
 </Project>
