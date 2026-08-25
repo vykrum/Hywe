@@ -435,7 +435,7 @@ module TreeFiltering =
             let synthClrs = System.Collections.Generic.List<string>()
             let synthAvls = System.Collections.Generic.List<int>()
             let synthB36s = System.Collections.Generic.List<string>()
-            let synthShapes = System.Collections.Generic.List<ModelTypes.SVGShape>()
+            let synthShapes = System.Collections.Generic.List<ModelTypes.BatchComponent>()
             
             for id in validIdsSeq do
                 match idToIndex |> Map.tryFind id with
@@ -459,7 +459,7 @@ module TreeFiltering =
                         synthClrs.Add("#eee")
                         synthAvls.Add(0)
                         synthB36s.Add("")
-                        synthShapes.Add({ name = id; points = [||]; color = "#eee"; isPolygon = true })
+                        synthShapes.Add({| name = id; points = [||]; color = "#eee"; lx = 0.0; ly = 0.0 |})
                     | None -> ()
             
             let cxls = synthCxls.ToArray()
