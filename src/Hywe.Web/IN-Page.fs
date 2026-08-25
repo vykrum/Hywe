@@ -380,39 +380,93 @@ module TreeFiltering =
             yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds m $"{prefix}.{i + 1}" child)
         }
 
-    let getValidIdsForMarker (tree: Hywe.Node.SubModel) (marker: string) =
-        
+    let getValidIdsForMarkerSeq (tree: Hywe.Node.SubModel) (marker: string) =
         if marker.StartsWith("N") then
             let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
             match tree.Nests |> Map.tryFind nestId with
-            | Some nestNode -> getIds marker "1" nestNode |> Set.ofSeq
-            | None -> Set.empty
+            | Some nestNode -> getIds marker "1" nestNode
+            | None -> Seq.empty
         else
             let lvl = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
             match tree.Levels |> Map.tryFind lvl with
-            | Some levelNode -> getIds marker "1" levelNode |> Set.ofSeq
-            | None -> Set.empty
+            | Some levelNode -> getIds marker "1" levelNode
+            | None -> Seq.empty
+
+    let getValidIdsForMarker (tree: Hywe.Node.SubModel) (marker: string) =
+        getValidIdsForMarkerSeq tree marker |> Set.ofSeq
 
     let getValidIds (tree: Hywe.Node.SubModel) =
         match tree.ActiveNest with
         | Some nestId -> getValidIdsForMarker tree $"N{nestId}"
         | None -> getValidIdsForMarker tree (match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}")
 
+    let getIdToNodeMap (tree: Hywe.Node.SubModel) =
+        let rec traverse (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+            seq {
+                yield $"{m}.{prefix}", node
+                yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
+            }
+        seq {
+            for kvp in tree.Levels do
+                yield! traverse $"L{kvp.Key}" "1" kvp.Value
+            for kvp in tree.Nests do
+                yield! traverse $"N{kvp.Key}" "1" kvp.Value
+        } |> Map.ofSeq
+
     let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubModel) (marker: string) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
-        let validIds = getValidIdsForMarker tree marker
+        let validIdsSeq = getValidIdsForMarkerSeq tree marker |> Seq.toArray
+        let validIds = validIdsSeq |> Set.ofArray
         if validIds.IsEmpty then config
         else
-            let indexed = 
+            let idToNode = getIdToNodeMap tree
+            
+            let idToIndex = 
                 config.cxCxl1 
                 |> Array.indexed 
-                |> Array.filter (fun (_, (c: Hywe.Core.Coxel.Cxl)) -> validIds.Contains(Hywe.Core.Coxel.prpVlu c.Rfid))
+                |> Array.choose (fun (i, (c: Hywe.Core.Coxel.Cxl)) -> 
+                    let id = Hywe.Core.Coxel.prpVlu c.Rfid
+                    if validIds.Contains id then Some(id, i) else None)
+                |> Map.ofArray
+                
+            let fallbackSqn = if config.cxCxl1.Length > 0 then config.cxCxl1.[0].Seqn else Hywe.Core.Hexel.VRCCNE
+            let fallbackElv = if config.cxCxl1.Length > 0 then let (_, _, z) = Hywe.Core.Hexel.hxlCrd config.cxCxl1.[0].Base in z else 0
             
-            let cxls = indexed |> Array.map (fun (i, _) -> config.cxCxl1.[i])
-            let clrs = indexed |> Array.map (fun (i, _) -> config.cxClr1.[i])
-            let avls = indexed |> Array.map (fun (i, _) -> config.cxlAvl.[i])
-            let b36s = indexed |> Array.map (fun (i, _) -> config.cxB36.[i])
+            let synthCxls = System.Collections.Generic.List<Hywe.Core.Coxel.Cxl>()
+            let synthClrs = System.Collections.Generic.List<string>()
+            let synthAvls = System.Collections.Generic.List<int>()
+            let synthB36s = System.Collections.Generic.List<string>()
+            let synthShapes = System.Collections.Generic.List<ModelTypes.SVGShape>()
             
-            let shapes = indexed |> Array.map (fun (i, _) -> config.shapes.[i])
+            for id in validIdsSeq do
+                match idToIndex |> Map.tryFind id with
+                | Some i ->
+                    synthCxls.Add(config.cxCxl1.[i])
+                    synthClrs.Add(config.cxClr1.[i])
+                    synthAvls.Add(config.cxlAvl.[i])
+                    synthB36s.Add(config.cxB36.[i])
+                    synthShapes.Add(config.shapes.[i])
+                | None ->
+                    match idToNode |> Map.tryFind id with
+                    | Some node ->
+                        let count = match System.Int32.TryParse node.Weight with true, v -> v | _ -> 0
+                        let fakeCxl = { Hywe.Core.Coxel.Name = Hywe.Core.Coxel.Label node.Name
+                                        Hywe.Core.Coxel.Rfid = Hywe.Core.Coxel.Refid id
+                                        Hywe.Core.Coxel.Size = Hywe.Core.Coxel.Count count
+                                        Hywe.Core.Coxel.Seqn = fallbackSqn
+                                        Hywe.Core.Coxel.Base = Hywe.Core.Hexel.identity fallbackElv
+                                        Hywe.Core.Coxel.Hxls = [||] }
+                        synthCxls.Add(fakeCxl)
+                        synthClrs.Add("#eee")
+                        synthAvls.Add(0)
+                        synthB36s.Add("")
+                        synthShapes.Add({ name = id; points = [||]; color = "#eee"; isPolygon = true })
+                    | None -> ()
+            
+            let cxls = synthCxls.ToArray()
+            let clrs = synthClrs.ToArray()
+            let avls = synthAvls.ToArray()
+            let b36s = synthB36s.ToArray()
+            let shapes = synthShapes.ToArray()
             
             let adj = if computeExpensive then Hywe.Core.Coxel.cxlAdj cxls else config.cxAdj1
 
