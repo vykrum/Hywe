@@ -9,7 +9,7 @@ open ModelTypes
 module Elements =
     /// <summary> Helper to parse a sequence name string into a Sqn type. </summary>
     let parseSqn (name: string) =
-        Hexel.sqnArray |> Array.tryFind (fun x -> (sprintf "%A" x).Equals(name, StringComparison.OrdinalIgnoreCase))
+        Hexel.sqnArray |> Array.tryFind (fun x -> (Hexel.sqnToString x).Equals(name, StringComparison.OrdinalIgnoreCase))
 
     // SVG Icons
 

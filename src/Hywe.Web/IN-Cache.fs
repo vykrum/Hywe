@@ -67,7 +67,7 @@ module Cache
     let fromFullLayout (data: Cxl[] * (int * int)[][][] * float[] * float[]) (sqn: Hexel.Sqn) (elv: int) (polyExport: PolygonExportData) : BatchConfgrtns =
         let cxls, allBounds, cxElv1, cxRto1 = data
         let cxOuIl = match elv >= 0 && elv < allBounds.Length with | true -> allBounds.[elv] | false -> [||]
-        let sqnStr = sprintf "%A" sqn
+        let sqnStr = Hexel.sqnToString sqn
         let derived = deriveDataFromLayout cxls cxOuIl cxElv1 cxRto1 elv polyExport.Latitude
         let d = Layout.getStaticGeometry cxls derived.cxClr1 elv 1
         
@@ -174,6 +174,6 @@ module Cache
         let sqnIdx = 
             sqns 
             |> Map.tryFind lvl 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> (sprintf "%A" x).Equals(s, StringComparison.OrdinalIgnoreCase))) 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> (Hexel.sqnToString x).Equals(s, StringComparison.OrdinalIgnoreCase))) 
             |> Option.defaultValue 11
         generateSingleConfig src Hexel.sqnArray.[sqnIdx] poly lvl |> toDerived

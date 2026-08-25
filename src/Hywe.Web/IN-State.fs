@@ -262,7 +262,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let currentSqnIdx = 
             model.Sequences 
             |> Map.tryFind currentLevel 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
             |> Option.defaultValue 11
         let currentSqn = Hexel.sqnArray.[currentSqnIdx]
         
@@ -292,7 +292,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let currentSqnIdx = 
             model.Sequences 
             |> Map.tryFind currentLevel 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
             |> Option.defaultValue 11
         let activeConfig = Cache.get (toMarker currentLevel) currentSqnIdx cache |> Option.get
         
@@ -313,7 +313,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let currentSqnIdx = 
                 model.Sequences 
                 |> Map.tryFind lvl 
-                |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> sprintf "%A" x = s)) 
+                |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
                 |> Option.defaultValue 11
             if idx = currentSqnIdx then
                 let finalSrc = Cache.populateNestBoundaries newModel.SrcOfTrth data.cxCxl1

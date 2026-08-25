@@ -292,7 +292,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                     let hostCxlOpt = rootCfg.cxCxl1 |> Array.tryFind (fun c -> prpVlu c.Rfid = nestBlock.Attributes.Base || (prpVlu c.Rfid).EndsWith("." + nestBlock.Attributes.Base))
                                     match hostCxlOpt with
                                     | Some host ->
-                                        let sqnStr = sprintf "%A" Hexel.sqnArray.[i]
+                                        let sqnStr = Hexel.sqnToString Hexel.sqnArray.[i]
                                         match Nexel.generateNestLayout nestBlock host nestBlock.Attributes.Thickness rootCfg.cxCxl1 (Some sqnStr) with
                                         | Some (ncxls, _, _) ->
                                             let nestCfg = 
