@@ -66,6 +66,16 @@ module Hexel =
         HRCWNN; HRCCNN; HRCWNE; HRCCNE; HRCWSE; HRCCSE; HRCWSS; HRCCSS; HRCWSW; HRCCSW; HRCWNW; HRCCNW
     |]
 
+    let sqnToString (sqn: Sqn) =
+        match sqn with
+        | VRCWEE -> "VRCWEE" | VRCCEE -> "VRCCEE" | VRCWSE -> "VRCWSE" | VRCCSE -> "VRCCSE" 
+        | VRCWSW -> "VRCWSW" | VRCCSW -> "VRCCSW" | VRCWWW -> "VRCWWW" | VRCCWW -> "VRCCWW" 
+        | VRCWNW -> "VRCWNW" | VRCCNW -> "VRCCNW" | VRCWNE -> "VRCWNE" | VRCCNE -> "VRCCNE"
+        | HRCWNN -> "HRCWNN" | HRCCNN -> "HRCCNN" | HRCWNE -> "HRCWNE" | HRCCNE -> "HRCCNE" 
+        | HRCWSE -> "HRCWSE" | HRCCSE -> "HRCCSE" | HRCWSS -> "HRCWSS" | HRCCSS -> "HRCCSS" 
+        | HRCWSW -> "HRCWSW" | HRCCSW -> "HRCCSW" | HRCWNW -> "HRCWNW" | HRCCNW -> "HRCCNW"
+
+
     /// <summary> Identity Hexel. </summary>
     let identity (elv:int) = RV(0,0, elv)
 
