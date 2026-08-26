@@ -20,8 +20,8 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 "Reset Layout?", ["Current layout will be replaced."], "Reset", HardReset
             | ConfirmAction.LoadPreset (name, label) ->
                 (sprintf "Load %s preset?" label), ["Current layout will be replaced."], "Load", SelectPreset name
-            | ConfirmAction.LoadGallery (name, def) ->
-                (sprintf "Load %s?" name), ["Current layout will be replaced."], "Load", LoadGalleryDefinition (name, def)
+            | ConfirmAction.LoadGallery (name, rowId) ->
+                (sprintf "Load %s?" name), ["Current layout will be replaced."], "Load", LoadGalleryDefinition (name, rowId)
             | ConfirmAction.SwitchTo tab ->
                 "Switch View", ["Switch to this view?"], "Switch", SetActivePanel (match tab with Boundary -> BoundaryPanel | _ -> LayoutPanel)
 
@@ -780,7 +780,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                         | None | Some [] -> 
                             div {
                                 attr.style "text-align: center; padding: 30px; color: #777;"
-                                text "No configurations found."
+                                text "Gallery is syncing... Please check back in a few minutes."
                             }
                         | Some entries ->
                             let filterText = if System.String.IsNullOrWhiteSpace(model.GalleryFilter) then "" else model.GalleryFilter.ToLower()
@@ -790,6 +790,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     (not (System.String.IsNullOrWhiteSpace e.Name) && e.Name.ToLower().Contains(filterText)) || 
                                     (not (System.String.IsNullOrWhiteSpace e.Author) && e.Author.ToLower().Contains(filterText)))
                                     
+                            let pagedEntries = 
+                                filteredEntries 
+                                |> List.skip (min model.GalleryOffset (max 0 (filteredEntries.Length - 1))) 
+                                |> List.truncate 10
+
                             div {
                                 attr.style "width: 100%; display: flex; flex-direction: column;"
                                 
@@ -803,13 +808,13 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     on.input (fun e -> dispatch (UpdateGalleryFilter (unbox<string> e.Value)))
                                 }
                                 
-                                if filteredEntries.IsEmpty then
+                                if pagedEntries.IsEmpty then
                                     div {
                                         attr.style "text-align: center; padding: 30px; color: #777;"
                                         text "No configurations match your search."
                                     }
                                 else
-                                    for entry in filteredEntries do
+                                    for entry in pagedEntries do
                                         div {
                                         attr.style "display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee;"
                                         
@@ -828,7 +833,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         button {
                                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
                                             attr.style "flex-shrink: 0;"
-                                            on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.Name, entry.Definition)))))
+                                            on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.Name, entry.Id)))))
                                             text "Load"
                                         }
                                     }
@@ -849,11 +854,12 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                 }
                                 span {
                                     attr.style "font-size: 0.85rem; color: #777;"
-                                    text (sprintf "Showing %d - %d" (model.GalleryOffset + 1) (model.GalleryOffset + entries.Length))
+                                    let currentStart = if filteredEntries.IsEmpty then 0 else model.GalleryOffset + 1
+                                    text (sprintf "Showing %d - %d of %d" currentStart (model.GalleryOffset + pagedEntries.Length) filteredEntries.Length)
                                 }
                                 button {
                                     attr.``class`` "hywe-btn hywe-btn-sm"
-                                    if entries.Length < 10 then
+                                    if model.GalleryOffset + 10 >= filteredEntries.Length then
                                         attr.disabled true
                                         attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
                                     else

@@ -183,78 +183,33 @@ window.recordToHynteract = async (apiUri, payload) => {
     }
 };
 
-window.fetchHFGallery = async (limit, offset) => {
+window.fetchHFGallery = async () => {
     try {
-        const sizeUrl = 'https://datasets-server.huggingface.co/size?dataset=vykrum%2Fhywe-training-data';
-        const sizeRes = await fetch(sizeUrl);
-        if (!sizeRes.ok) throw new Error("Failed to fetch dataset size");
-        const sizeData = await sizeRes.json();
+        const url = `https://hynteract.vercel.app/api/gallery`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch gallery");
+        const data = await res.json();
         
-        let numRows = 0;
-        if (sizeData.size && sizeData.size.dataset && sizeData.size.dataset.num_rows) {
-            numRows = sizeData.size.dataset.num_rows;
-        }
-        
-        if (numRows === 0) return [];
-        
-        // Compute offset to get latest rows. 
-        let fetchOffset = Math.max(0, numRows - limit - offset);
-        let fetchLength = Math.min(limit, numRows - offset);
-        
-        if (fetchLength <= 0) return [];
-        
-        const rowsUrl = `https://datasets-server.huggingface.co/rows?dataset=vykrum%2Fhywe-training-data&config=default&split=train&offset=${fetchOffset}&length=${fetchLength}`;
-        const rowsRes = await fetch(rowsUrl);
-        if (!rowsRes.ok) throw new Error("Failed to fetch dataset rows");
-        const rowsData = await rowsRes.json();
-        
-        const results = [];
-        if (rowsData && rowsData.rows) {
-            // Reverse so latest is first
-            const rows = rowsData.rows.slice().reverse();
-            for (const r of rows) {
-                if (r.row && r.row.definition) {
-                    let title = `Configuration ${r.row_idx}`;
-                    let author = "N/A", projectTitle = "N/A", stage = "N/A", scale = "N/A", typology = "N/A", flow = "N/A", ambience = "N/A";
-                    
-                    if (r.row.description) {
-                        const desc = r.row.description.trim();
-                        const teachMatch = desc.match(/ by (.*?) for the '(.*?)' project/i);
-                        
-                        if (teachMatch) {
-                            author = teachMatch[1];
-                            projectTitle = teachMatch[2];
-                            title = projectTitle;
-                        } else {
-                            // Fallback to basic extraction
-                            let tempDesc = desc.replace(/^This is an?\s+/i, '');
-                            const firstPeriod = tempDesc.indexOf('.');
-                            if (firstPeriod !== -1) tempDesc = tempDesc.substring(0, firstPeriod);
-                            if (tempDesc.length > 0) {
-                                title = tempDesc.charAt(0).toUpperCase() + tempDesc.slice(1);
-                            }
-                        }
-                    }
-                    
-                    results.push({
-                        id: `row-${r.row_idx}`,
-                        name: title.trim(),
-                        definition: r.row.definition,
-                        author: author,
-                        projectTitle: projectTitle,
-                        stage: stage,
-                        scale: scale,
-                        typology: typology,
-                        flow: flow,
-                        ambience: ambience
-                    });
-                }
-            }
-        }
-        return results;
+        return data.entries || [];
     } catch (e) {
         console.error("Network/Fetch Error:", e);
         return [];
+    }
+};
+
+window.fetchGalleryDefinition = async (rowIdx) => {
+    try {
+        const url = `https://datasets-server.huggingface.co/rows?dataset=vykrum%2Fhywe-training-data&config=default&split=train&offset=${rowIdx}&length=1`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch specific definition");
+        const data = await res.json();
+        if (data && data.rows && data.rows.length > 0) {
+            return data.rows[0].row.definition || "";
+        }
+        return "";
+    } catch (e) {
+        console.error("Network/Fetch Error for definition:", e);
+        return "";
     }
 };
 

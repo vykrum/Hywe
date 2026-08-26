@@ -165,7 +165,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string
-    | LoadGallery of name: string * def: string
+    | LoadGallery of name: string * rowId: string
     | SwitchTo of EditorTab
 
 
@@ -259,7 +259,6 @@ type LayoutCache = Map<string, BatchConfgrtns option []>
 type GalleryEntry = {
     Id: string
     Name: string
-    Definition: string
     Author: string
     ProjectTitle: string
     Stage: string
@@ -405,7 +404,8 @@ type Message =
     | NextGalleryPage
     | PrevGalleryPage
     | GalleryEntriesLoaded of GalleryEntry list
-    | LoadGalleryDefinition of name: string * definition: string
+    | LoadGalleryDefinition of name: string * rowId: string
+    | LoadGalleryDefinitionSuccess of name: string * definition: string
     | UpdateGalleryFilter of string
     | NoOp
 
