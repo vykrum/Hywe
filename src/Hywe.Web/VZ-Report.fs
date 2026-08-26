@@ -16,7 +16,7 @@ type PageEntry = {
     Depth: int
 }
 
-// --- GENERATOR LOGIC (from UT-ReportGenerator.fs) ---
+// --- GENERATOR LOGIC ---
 
 let getOrderedMarkers (tree: SubModel) =
     tree.Levels.Keys |> Seq.toList |> List.sort |> List.collect (fun lvl ->

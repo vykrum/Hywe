@@ -832,22 +832,37 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with PendingConfirm = None; ShowGallery = false }, Cmd.OfAsync.perform loadAsync () successHandler
 
     | LoadGalleryDefinitionSuccess (name, def) ->
-        let newTree = Serialization.initModel def
-        let newPoly = State.initModel // simplified reset
+        let clean = def.Trim()
+        let newTree = 
+            clean 
+            |> Serialization.preprocessCode 
+            |> fun processed ->
+                try Serialization.initModel processed
+                with _ -> model.Tree 
+
+        let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let newState = FileManager.importFromHyw clean currentInner
+        let finalPoly = match newState with Stable m | FreshlyImported m -> m
+        let newExport = syncPolygonState finalPoly
+        let newSqns = Lexel.extractSequences clean
+        
         let newModel = 
             { model with 
-                SrcOfTrth = def
+                SrcOfTrth = clean
                 Tree = newTree
                 LastValidTree = newTree
+                Derived = Cache.deriveFromSource clean newSqns newExport newTree.ActiveLevel
+                PolygonEditor = newState
+                PolygonExport = newExport
                 ParseError = false
-                PolygonEditor = Stable newPoly
-                PolygonExport = initialPolygonExport
+                Sequences = newSqns
                 LayoutCache = Map.empty
                 UserDescription = name
                 ShowGallery = false
                 PendingConfirm = None
             }
         pushUndo newModel, Cmd.batch [
+            Cmd.ofMsg (PolygonEditorUpdated finalPoly)
             Cmd.ofMsg (UpdateReportOptions (fun o -> { o with ProjectTitle = name }))
             Cmd.ofMsg StartHyweave
         ]
