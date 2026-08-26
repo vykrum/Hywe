@@ -310,7 +310,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                     let updatedModel = { model with LayoutCache = currentCache }
                     let payloadArray = generateHynteractPayload updatedModel
                     
-                    let payload = {| definition = currentSrc; description = currentDesc; configuration = payloadArray |}
+                    let payload = {| definition = currentSrc; description = currentDesc; configuration = payloadArray; projectName = model.TeachMetadata.ProjectTitle; author = model.TeachMetadata.Author |}
                     let! success = js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
                     return success, currentCache
                 with e ->

@@ -785,9 +785,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with ShowGallery = newShow; GalleryOffset = 0 }, cmd
 
     | LoadGalleryEntries ->
-        let currentOffset = model.GalleryOffset
         let fetchGallery () = async {
-            let! res = js.InvokeAsync<System.Text.Json.JsonElement>("fetchHFGallery", [| box 10; box currentOffset |]).AsTask() |> Async.AwaitTask
+            let! res = js.InvokeAsync<System.Text.Json.JsonElement>("fetchHFGallery").AsTask() |> Async.AwaitTask
             let results = 
                 res.EnumerateArray() 
                 |> Seq.map (fun e -> 
@@ -798,7 +797,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     
                     { Id = safeGetString "id"
                       Name = safeGetString "name"
-                      Definition = safeGetString "definition"
                       Author = safeGetString "author"
                       ProjectTitle = safeGetString "projectTitle"
                       Stage = safeGetString "stage"
@@ -816,13 +814,24 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | NextGalleryPage ->
         let newOffset = model.GalleryOffset + 10
-        { model with GalleryOffset = newOffset }, Cmd.ofMsg LoadGalleryEntries
+        { model with GalleryOffset = newOffset }, Cmd.none
         
     | PrevGalleryPage ->
         let newOffset = max 0 (model.GalleryOffset - 10)
-        { model with GalleryOffset = newOffset }, Cmd.ofMsg LoadGalleryEntries
+        { model with GalleryOffset = newOffset }, Cmd.none
 
-    | LoadGalleryDefinition (name, def) ->
+    | LoadGalleryDefinition (name, rowId) ->
+        let loadAsync () = async {
+            let! def = js.InvokeAsync<string>("fetchGalleryDefinition", rowId).AsTask() |> Async.AwaitTask
+            return (name, def)
+        }
+        let successHandler (loadedName, loadedDef) =
+            if System.String.IsNullOrWhiteSpace(loadedDef) then NoOp
+            else LoadGalleryDefinitionSuccess (loadedName, loadedDef)
+            
+        { model with PendingConfirm = None; ShowGallery = false }, Cmd.OfAsync.perform loadAsync () successHandler
+
+    | LoadGalleryDefinitionSuccess (name, def) ->
         let newTree = Serialization.initModel def
         let newPoly = State.initModel // simplified reset
         let newModel = 
