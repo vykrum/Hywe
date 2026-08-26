@@ -153,12 +153,12 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (wtmkShapes: BatchComponent[] 
     let fontSize = targetFontSize * viewBoxW / (containerWidth *1.5)
     
     let labels =
-        shapes |> Array.map (fun shp ->
-            match System.String.IsNullOrWhiteSpace(shp.name) || shp.points.Length = 0 with
-            | true -> ""
-            | false ->
-                let safeName = shp.name.Replace("<", "&lt;").Replace(">", "&gt;")
-                sprintf """<text x="%f" y="%f" text-anchor="middle" dominant-baseline="central" font-size="%f" fill="#111" font-family="Outfit, sans-serif" font-weight="normal" style="pointer-events: none;">%s</text>""" shp.lx shp.ly fontSize safeName
+        shapes 
+        |> Array.filter (fun _ -> shapes.Length <= 20 || containerWidth > 200.0)
+        |> Array.filter (fun shp -> not (System.String.IsNullOrWhiteSpace(shp.name)) && shp.points.Length > 0)
+        |> Array.map (fun shp ->
+            let safeName = shp.name.Replace("<", "&lt;").Replace(">", "&gt;")
+            sprintf """<text x="%f" y="%f" text-anchor="middle" dominant-baseline="central" font-size="%f" fill="#111" font-family="Outfit, sans-serif" font-weight="normal" style="pointer-events: none;">%s</text>""" shp.lx shp.ly fontSize safeName
         ) |> String.concat ""
     
     sprintf """<svg viewBox="%f %f %f %f" xmlns="http://www.w3.org/2000/svg" width="100%%" height="100%%">
@@ -253,9 +253,12 @@ let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string
             let swatch = sprintf """<div style="width: 100%%; aspect-ratio: 1/1; background: %s; border: 1px solid #ccc; display: block; border-radius: 2px; box-sizing: border-box; margin: auto;"></div>""" clr
             let rowHeader = sprintf """<tr><th title="%s" style="text-align:center;">%s</th>""" safeName swatch
             let rowCells = 
-                row |> Array.map (fun adj ->
-                    let cls = match adj with | true -> "adj-true" | false -> "adj-false"
-                    sprintf """<td class="%s"></td>""" cls
+                row |> Array.mapi (fun j adj ->
+                    if adj then
+                        let colClr = Map.tryFind rfids.[j] colorMap |> Option.defaultValue "#ddd"
+                        sprintf """<td style="background: %s;"></td>""" colClr
+                    else
+                        """<td class="adj-false"></td>"""
                 ) |> String.concat ""
             rowHeader + rowCells + "</tr>\n"
         ) |> String.concat ""
