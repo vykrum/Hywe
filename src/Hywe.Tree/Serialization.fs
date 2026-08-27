@@ -330,7 +330,10 @@ module Serialization =
                 let anchorId = 
                     match currentGuidMap |> Map.tryFind (parentLvl, fullBVal) with
                     | Some g -> g
-                    | None -> Guid.Empty
+                    | None -> 
+                        match currentGuidMap |> Map.tryFind (parentLvl, sprintf "L%d.1" parentLvl) with
+                        | Some g -> g
+                        | None -> Guid.Empty
                 acc @ [((nId, laidOut), (nId, anchorId))], nextGuidMap
             ) ([], finalGuidMap)
             
