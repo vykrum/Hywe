@@ -27,7 +27,7 @@ HYWE is an investigation into spatial reasoning as a function of computational l
 At its core is the **Hygrid**, an integer hybrid lattice designed for deterministic topology-driven spatial synthesis. By trading geometric isotropy for arithmetic determinism, Hygrid maintains strict integer closure and enables HYWE to execute kernel-free within WebAssembly. 
 
 In this system:
-- **Connectivity** is the declared relational graph—the architectural requirement that nodes belong to structured flows and programmatic branches.
+- **Connectivity** is the declared relational graph - the architectural requirement that nodes belong to structured flows and programmatic branches.
 - **Adjacency** is not prescribed as an arbitrary pairwise matrix; it is an emergent geometric and topological consequence of connectivity, directional sequence rules, and lattice packing constraints.
 
 By replacing manual geometric drafting with a **visual node tree interface**, HYWE lowers the barrier to topological exploration, allowing designers to map out programmatic hierarchies while the engine deterministically weaves this intent into a cohesive spatial **Ensemble**.
