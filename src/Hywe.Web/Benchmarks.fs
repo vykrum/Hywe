@@ -2,6 +2,7 @@ namespace Hywe.Web
 
 open System
 open System.Diagnostics
+open System.Runtime.InteropServices
 open Microsoft.JSInterop
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
@@ -32,7 +33,6 @@ module Benchmarks =
         |> Array.map (fun opName -> opName, tryParseUnion<Sqn> opName |> Option.get)
 
     let runCompilation (tree: LayoutTree) (sqn: Sqn) =
-
         let opts = {
             EntryFallback = "0,0"
             InitialOcc = [||]
@@ -58,9 +58,13 @@ module Benchmarks =
         sb.AppendLine(sprintf "### %s" title) |> ignore
         sb.AppendLine(description) |> ignore
         sb.AppendLine("") |> ignore
-        sb.AppendLine("- **Note**: Release build metrics gathered via browser execution on WebAssembly.") |> ignore
-        sb.AppendLine("- **Runtime**: WebAssembly (Mono)") |> ignore
+        sb.AppendLine("#### Benchmark Protocol & Execution Environment") |> ignore
+        sb.AppendLine("- **Runtime**: WebAssembly (Mono / " + RuntimeInformation.FrameworkDescription + ")") |> ignore
+        sb.AppendLine("- **Architecture**: " + RuntimeInformation.ProcessArchitecture.ToString()) |> ignore
         sb.AppendLine("- **Build Configuration**: Release") |> ignore
+        sb.AppendLine("- **Timing Scope**: Core layout engine compilation (`runCompilation`), excluding DOM manipulation, SVG formatting, and WebGPU rendering.") |> ignore
+        sb.AppendLine("- **Warm-up Policy**: 2 warm-up cycles executed prior to steady-state measurement (eliminating JIT/WASM compilation and static dispatch latency).") |> ignore
+        sb.AppendLine("- **Memory Isolation**: Forced generation garbage collection (`GC.Collect()`) executed between operator batches.") |> ignore
         sb.AppendLine("") |> ignore
 
     type BenchmarkRunner() =
@@ -68,19 +72,33 @@ module Benchmarks =
         static member RunPerformanceBenchmark () =
             let sb = System.Text.StringBuilder()
             appendMarkdownHeader sb "Performance Benchmark — Production / WebAssembly" "Latency and standard deviation metrics for generating canonical topological presets."
-            sb.AppendLine("| Layout | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) | Total Time (ms) |") |> ignore
-            sb.AppendLine("|--------|----------|------------|------------------|------------------|------------------|---------|-----------------|") |> ignore
+            sb.AppendLine("| Layout | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) | Total Warm (ms) |") |> ignore
+            sb.AppendLine("|--------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|-----------------|") |> ignore
 
             printfn "Starting Performance Benchmark (Takes ~3-4 minutes)..."
             
+            let warmUpRuns = 2
             let iterations = 10
             for layoutName, tree in presets do
                 printfn "-> Processing Layout: %s..." layoutName
                 for opName, sqn in parsedOperators do
-                    let sw = Stopwatch()
-                    let times = ResizeArray<float>()
+                    GC.Collect()
 
-                    for i in 1 .. iterations do
+                    // Cold run measurement
+                    let swCold = Stopwatch.StartNew()
+                    runCompilation tree sqn |> ignore
+                    swCold.Stop()
+                    let coldTime = swCold.Elapsed.TotalMilliseconds
+
+                    // Warm-up run to ensure JIT/WASM compilation has stabilized
+                    for _ in 1 .. (warmUpRuns - 1) do
+                        runCompilation tree sqn |> ignore
+
+                    // Steady-state measurement
+                    let times = ResizeArray<float>()
+                    let sw = Stopwatch()
+
+                    for _ in 1 .. iterations do
                         sw.Restart()
                         runCompilation tree sqn |> ignore
                         sw.Stop()
@@ -92,16 +110,15 @@ module Benchmarks =
                     let sdT = calculateSD times
                     let sumT = times |> Seq.sum
 
-                    sb.AppendLine(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName opName iterations minT maxT avgT sdT sumT) |> ignore
-                    GC.Collect()
+                    sb.AppendLine(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName opName iterations coldTime minT maxT avgT sdT sumT) |> ignore
             
-            sb.AppendLine("\n[Benchmark Complete. Copy the table above into your wiki!]") |> ignore
+            sb.AppendLine("\n[Benchmark Complete. Copy the table above into your documentation/wiki!]") |> ignore
             sb.ToString()
             
         [<JSInvokable("RunConformanceTests")>]
         static member RunConformanceTests () =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Repeatability Benchmark" "Validation of exact reproducibility of topology signatures for canonical inputs across repeated executions."
+            appendMarkdownHeader sb "Repeatability & Conformance Benchmark" "Empirical verification of topology signature consistency for canonical inputs across repeated executions under the same engine build."
             sb.AppendLine("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |") |> ignore
             sb.AppendLine("|--------|----------|------------|------------------|--------------|-------------------------|") |> ignore
             
@@ -114,7 +131,7 @@ module Benchmarks =
                     let mutable validCount = 0
                     let signatures = ResizeArray<string>()
                     
-                    for i in 1 .. iterations do
+                    for _ in 1 .. iterations do
                         try
                             let layout = runCompilation tree sqn
                             let sigStr = layout |> Array.map getCxlCoordsString |> String.concat "|"
@@ -140,7 +157,7 @@ module Benchmarks =
         [<JSInvokable("RunQualityBenchmarks")>]
         static member RunQualityBenchmarks () =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Quality Benchmark" "Evaluation of architectural adjacency and compactness of generated topologies."
+            appendMarkdownHeader sb "Quality Benchmark — Adjacency & Compactness" "Empirical evaluation of emergent topological adjacency and bounding box compactness across canonical presets."
             sb.AppendLine("| Layout | Operator | Compactness (Bounding Box Area) | Adjacency Score (%) |") |> ignore
             sb.AppendLine("|--------|----------|---------------------------------|---------------------|") |> ignore
             
@@ -187,11 +204,12 @@ module Benchmarks =
         [<JSInvokable("RunScalingBenchmarks")>]
         static member RunScalingBenchmarks () =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Scaling Benchmark" "Latency metrics scaling up to 1,000 architectural nodes."
-            sb.AppendLine("| Scale (Nodes) | Operator | Iterations | Min Latency (ms) | Max Latency (ms) | Avg Latency (ms) | SD (ms) |") |> ignore
-            sb.AppendLine("|---------------|----------|------------|------------------|------------------|------------------|---------|") |> ignore
+            appendMarkdownHeader sb "Scaling Benchmark" "Algorithmic scaling latency metrics from 10 to 1,000 architectural nodes under branching tree topologies."
+            sb.AppendLine("| Scale (Nodes) | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) |") |> ignore
+            sb.AppendLine("|---------------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|") |> ignore
             printfn "Starting Scaling Benchmark..."
             
+            let warmUpRuns = 2
             let iterations = 10
             let nodeCounts = [| 10; 50; 100; 250; 500; 750; 1000 |]
             
@@ -211,10 +229,23 @@ module Benchmarks =
                 let tree = LayoutTree.Create [| genNodes |]
                 
                 for opName, sqn in parsedOperators do
-                    let sw = Stopwatch()
+                    GC.Collect()
+
+                    // Cold run measurement
+                    let swCold = Stopwatch.StartNew()
+                    runCompilation tree sqn |> ignore
+                    swCold.Stop()
+                    let coldTime = swCold.Elapsed.TotalMilliseconds
+
+                    // Additional warm-up
+                    for _ in 1 .. (warmUpRuns - 1) do
+                        runCompilation tree sqn |> ignore
+
+                    // Steady-state measurement
                     let times = ResizeArray<float>()
+                    let sw = Stopwatch()
                     
-                    for i in 1 .. iterations do
+                    for _ in 1 .. iterations do
                         sw.Restart()
                         runCompilation tree sqn |> ignore
                         sw.Stop()
@@ -225,8 +256,8 @@ module Benchmarks =
                     let avgT = times |> Seq.average
                     let sdT = calculateSD times
                     
-                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f |" count opName iterations minT maxT avgT sdT) |> ignore
-                    GC.Collect()
+                    sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" count opName iterations coldTime minT maxT avgT sdT) |> ignore
                 
             sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
             sb.ToString()
+

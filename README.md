@@ -22,11 +22,15 @@
 > [!IMPORTANT]
 > **HYWE is strictly a conceptual layout engine, not a comprehensive architectural modeling or lifecycle management platform.** It does not attempt to replicate the detailed parametric modeling, structural documentation, or construction-level detailing inherent to industry-standard building modeling suites. HYWE operates exclusively at the early, exploratory stages of design, focusing entirely on flow-based spatial topology and deterministic volume generation. Evaluating HYWE's outputs against fully-featured, production-ready modeling platforms misrepresents its core intent and operational scope.
 
-HYWE is an investigation into Spatial reasoning as a function of computational logic. It encourages a form of design thinking where **topology and flow-based hierarchy** guide the creation of layouts.
+HYWE is an investigation into spatial reasoning as a function of computational logic. It explores a methodology where **hierarchical programming and relational flow** drive spatial generation.
 
-At its core is the **Hygrid**, an integer hybrid lattice designed for deterministic topology-driven spatial synthesis. By sacrificing geometric isotropy for arithmetic determinism, Hygrid maintains strict integer closure and enables HYWE to execute completely kernel-free in WebAssembly. It functions conceptually as a computational 'bubble diagram' where spatial adjacency is a direct consequence of defined connections rather than manual drafting.
+At its core is the **Hygrid**, an integer hybrid lattice designed for deterministic topology-driven spatial synthesis. By trading geometric isotropy for arithmetic determinism, Hygrid maintains strict integer closure and enables HYWE to execute kernel-free within WebAssembly. 
 
-By replacing manual geometric drafting with an **interactive visual node tree interface**, HYWE provides an computational environment with **no learning curve**. Users simply map out their programmatic hierarchy, and the engine weaves this intuitive spatial intent into a cohesive **Ensemble**, an emergent structure resolved through native Boolean-driven topological logic, completely independent of external geometry kernels or optimization solvers.
+In this system:
+- **Connectivity** is the declared relational graph—the architectural requirement that nodes belong to structured flows and programmatic branches.
+- **Adjacency** is not prescribed as an arbitrary pairwise matrix; it is an emergent geometric and topological consequence of connectivity, directional sequence rules, and lattice packing constraints.
+
+By replacing manual geometric drafting with a **visual node tree interface**, HYWE lowers the barrier to topological exploration, allowing designers to map out programmatic hierarchies while the engine deterministically weaves this intent into a cohesive spatial **Ensemble**.
 
 ---
 
@@ -61,48 +65,50 @@ By replacing manual geometric drafting with an **interactive visual node tree in
 
 ## Operational Domain
 
-HYWE functions as a experimental apparatus bridging abstract intent and physical constraint. The engine translates **architectural programming**, specifically hierarchical trees and flow sequences, directly into resolved topological configurations, where adjacency emerges as a structural consequence rather than a predetermined matrix input.
+HYWE functions as an experimental apparatus bridging abstract programmatic intent and physical constraints. The engine translates **architectural programming** (hierarchical trees, room capacities, and sequence operators) directly into resolved planar and volumetric layouts.
 
-The spatial logic within HYWE incorporates **boundary confinement**, allowing configurations to organically adapt to irregular site boundaries and non-standard footprints. Furthermore, this topological reasoning extends vertically to resolve **programmatic stacking** and multi-level flow distribution across a building mass.
-
----
-
-## Core Pipeline
-
-HYWE is structured as a computational pipeline that transforms designer intent into architectural form:
-
-| Stage | Component | Logic | Output |
-| :--- | :--- | :--- | :--- |
-| **Intent** | `Interactive Node Tree Input` & `Interactive Boundary Editor` | Defining spatial rules and physical constraints (with optional contextual background maps). | Design Intent |
-| **Encoding** | HYWE Syntax | Compact, deterministic encoding of design rules. | `.hyw` String |
-| **Parsing** | `Lexel` | **Architectural programming** and flow parsing. | `TreeNode` Hierarchy |
-| **Formation** | `Hexel` & `Coxel` | **Fundamental Units** and **Spatial Clustering**. | Geometric Fabric |
-| **Geometry** | `Goxel` | **Geometry Engine**, coordinate grids, and polygon processing. | Spatial Validation |
-| **Distribution** | `Xyxel` | **Coxel Configuration** and 2D layout. | SVG Rendering |
-| **Nesting** | `Nexel` | **Spatial Nesting** and Sub-configurations. | Nested Layout |
-| **Massing** | `Zaxel` | **Xyxel Stacking** and 3D volume. | WebGPU Massing |
-| **Expansion** | `Batch` & `Teach` | **Variation processing** and **data collection**. | Dataset Ingestion (via Hynteract) |
-| **Insight** | `Analyze` & `Report` | **Spatial metrics** and **automated documentation**. | PDF Report |
+The spatial logic incorporates **boundary confinement**, enabling configurations to adapt to irregular site boundaries and non-standard footprints. Vertically, this reasoning extends to resolve **programmatic stacking**, spatial nesting, and multi-level circulation across building massing.
 
 ---
 
-### Data Collection Pipeline
+## Conceptual & Technical Architecture
 
-HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with **HYWE** syntax strings.
+HYWE separates user-facing architectural concepts from internal computational modules:
 
-#### System Architecture Flow
-`Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations (×24)` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`
+| Architectural Stage | Domain Concept | Implementation Component | Computational Transformation | Output Representation |
+| :--- | :--- | :--- | :--- | :--- |
+| **Intent & Scope** | Programmatic Hierarchy & Boundary Rules | `NodeTree` & `BoundaryEditor` | User input graph construction & polygon boundary capture | Abstract Design Intent |
+| **Encoding** | Symbolic Rule Representation | **HYWE Syntax** | Compact, deterministic serialization | Canonical `.hyw` String |
+| **Parsing** | Programmatic Flow Tokenization | `Lexel` | AST parsing, token extraction, and hierarchy validation | `TreeNode` Tree |
+| **Quantization** | Lattice Coordinate Allocation | `Hexel` | Spatial discretization on the discrete integer Hygrid | Integer Coordinate Lattice |
+| **Clustering** | Emergent Spatial Grouping | `Coxel` | Synchronous outward growth and collision resolution | Spatial Cluster Fabric |
+| **Geometry** | Spatial Boundaries & Constraints | `Goxel` | Polygon containment, clipping, and perimeter calculation | Verified Boundary Topology |
+| **Planar Layout** | 2D Spatial Distribution | `Xyxel` | Sequence-driven planar placement & orientation sweeps | Planar Layout & SVG |
+| **Nesting** | Sub-space Containment | `Nexel` | Child cluster nesting within parent coordinate envelopes | Multi-level Hierarchy |
+| **Massing** | 3D Stacking & Volumetric Form | `Zaxel` | Vertical floor stacking and level elevation assignment | WebGPU 3D Mesh |
+| **Exploration** | Systematic Permutation | `Batch` / `Teach` | Full-space sequence sweep exploration (24 canonical operators) | Multi-variation Records |
+| **Evaluation** | Metrics & Documentation | `Analyze` / `Report` | Compactness, graph adjacency verification, and PDF export | Performance Reports |
 
-- **Serverless Ingestion**: The **Hynteract** layer structures the data into token-efficient JSON Lines (`.jsonl`) records.
-- **Container-First Layout**: Each committed record's `configuration` field is an array of strings — one per architectural container (`L0`, `L1`, `N1`, etc.) — each encoding all 24 sequence sweep variations for all rooms within that container.
-- **Base34 Compression**: All hexagonal grid coordinates are encoded in Base34, and room coordinate groups within each variation are semicolon-separated and **positionally aligned** with the container's room index header.
-- **Full Sequence Sweeps**: Every committed record covers all **24 configuration sweeps** (corresponding to the 24 sequence rules), independent of the active sequence at time of export.
+---
+
+### Downstream Application: Structured Data Serialization
+
+As a downstream capability of its discrete, syntax-first architecture, HYWE provides an automated export pipeline to generate the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Rather than relying on heavyweight or ambiguous 3D file formats, the system pairs natural-language spatial intent with compact, deterministic HYWE syntax strings and Base34 grid encodings.
+
+#### System Flow
+`Design Intent` ➔ `HYWE Syntax` ➔ `24-Operator Sequence Sweeps` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`
+
+- **Container-First Layout**: Each record encodes one container (`L0`, `L1`, `N1`, etc.) containing all 24 sequence sweep variations positionally aligned with the room header.
+- **Base34 Coordinate Compression**: Hexagonal grid coordinates are encoded in Base34 strings for compact representation.
+- **Full Sequence Sweeps**: Every record covers the complete space of 24 canonical sequence rules for each layout container.
 
 ---
 
 ## Technical Architecture
 
-The **HYWE core spatial engine is dependency-free**; the browser application uses Bolero/Blazor and Elmish for its interface layer. It treats spatial design as a computational problem, where inputs are transformed through a series of deterministic geometric and topological transformations. In this environment, **Syntax is the singular source of truth**, ensuring that every design configuration is perfectly reproducible and strictly tied to its underlying logical rules.
+The **HYWE core spatial engine is dependency-free** and executes kernel-free in WebAssembly. The web application leverages [Bolero](https://fsbolero.io/) (Blazor on WASM) and Elmish for reactive state management, alongside native WebGPU for 3D rendering. 
+
+In this architecture, **Syntax is the primary source of truth**: every layout is a pure, deterministic transformation of its underlying AST and sequence rules, ensuring identical reproduction across runs on the same engine version.
 
 ```mermaid
 graph TD
@@ -142,7 +148,8 @@ graph TD
 
 ## Documentation
 
-For in-depth tutorials, spatial concepts, architectural programming guides, and comprehensive technical references, please visit the **[HYWE Wiki](https://github.com/vykrum/Hywe/wiki)**. 
+- **[HYWE Wiki](https://github.com/vykrum/Hywe/wiki)**: In-depth tutorials, spatial concepts, architectural programming guides, and technical references.
+- **[Methodology & Scientific Protocol](docs/METHODOLOGY.md)**: Formal definitions of determinism, the adjacency principle, architectural grammar semantics, and benchmark standards.
 
 ---
 
