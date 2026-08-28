@@ -35,31 +35,16 @@ By replacing manual geometric drafting with a **visual node tree interface**, HY
 ---
 
 ### Overview
-<video src="https://github.com/user-attachments/assets/b285dbd8-33bd-45c1-998e-87e2ce0b0d0d" width="1023" controls autoplay loop muted></video>
+<video src="https://github.com/user-attachments/assets/b285dbd8-33bd-45c1-998e-87e2ce0b0d0d" width="100%" controls autoplay loop muted></video>
 
-### Intro
-<img width="1023" height="907" alt="HYWE_Intro" src="https://github.com/user-attachments/assets/0e30e79a-f130-4d64-9119-c8e66a4fd6a9" />
+### Interface & Functional Modules
+*Click any interface preview to view in full resolution.*
 
-### Layout Generation
-<img width="1023" height="1531" alt="HYWE_Layout" src="https://github.com/user-attachments/assets/4ef3335f-d905-43fa-ac98-3226700249a6" />
-
-### Volumetric Massing
-<img width="1023" height="1312" alt="HYWE_3D" src="https://github.com/user-attachments/assets/eba2ff4f-c36b-49a3-9500-3e7192bf7f1a" />
-
-### Spatial Analysis
-<img width="1023" height="1289" alt="HYWE_Analyze" src="https://github.com/user-attachments/assets/dc798c70-4da7-45b7-8334-4749fe857689" />
-
-### Procedural Generation
-<img width="1023" height="2095" alt="HYWE_Batch" src="https://github.com/user-attachments/assets/e017254d-b070-47b0-994e-1a7f07419787" />
-
-### Boundary Condition
-<img width="1023" height="1531" alt="HYWE_Boundary" src="https://github.com/user-attachments/assets/dde4d99e-5f6f-481e-bfd2-16388f92801c" />
-
-### Dataset Preparation
-<img width="1023" height="1641" alt="HYWE_Teach" src="https://github.com/user-attachments/assets/9156d9e1-965f-4b63-8267-381fbdd28341" />
-
-### Report Compilation
-<img width="1023" height="1471" alt="HYWE_Report" src="https://github.com/user-attachments/assets/bfd74716-dd8d-46f3-aba8-1ac531f966d5" />
+| **Intro & Hierarchy** | **Layout Generation** | **Volumetric Massing** | **Spatial Analysis** |
+| :---: | :---: | :---: | :---: |
+| <a href="https://github.com/user-attachments/assets/0e30e79a-f130-4d64-9119-c8e66a4fd6a9"><img src="https://github.com/user-attachments/assets/0e30e79a-f130-4d64-9119-c8e66a4fd6a9" alt="HYWE Intro" width="100%"/></a><br/><sub>Interactive node-tree programmatic hierarchy</sub> | <a href="https://github.com/user-attachments/assets/4ef3335f-d905-43fa-ac98-3226700249a6"><img src="https://github.com/user-attachments/assets/4ef3335f-d905-43fa-ac98-3226700249a6" alt="HYWE Layout" width="100%"/></a><br/><sub>Deterministic Hygrid planar packing & SVG export</sub> | <a href="https://github.com/user-attachments/assets/eba2ff4f-c36b-49a3-9500-3e7192bf7f1a"><img src="https://github.com/user-attachments/assets/eba2ff4f-c36b-49a3-9500-3e7192bf7f1a" alt="HYWE 3D" width="100%"/></a><br/><sub>WebGPU 3D vertical stacking & massing</sub> | <a href="https://github.com/user-attachments/assets/dc798c70-4da7-45b7-8334-4749fe857689"><img src="https://github.com/user-attachments/assets/dc798c70-4da7-45b7-8334-4749fe857689" alt="HYWE Analyze" width="100%"/></a><br/><sub>Compactness metrics & graph adjacency verification</sub> |
+| **Procedural Generation** | **Boundary Condition** | **Dataset Preparation** | **Report Compilation** |
+| <a href="https://github.com/user-attachments/assets/e017254d-b070-47b0-994e-1a7f07419787"><img src="https://github.com/user-attachments/assets/e017254d-b070-47b0-994e-1a7f07419787" alt="HYWE Batch" width="100%"/></a><br/><sub>24 canonical operator sequence sweep sweeps</sub> | <a href="https://github.com/user-attachments/assets/dde4d99e-5f6f-481e-bfd2-16388f92801c"><img src="https://github.com/user-attachments/assets/dde4d99e-5f6f-481e-bfd2-16388f92801c" alt="HYWE Boundary" width="100%"/></a><br/><sub>Polygon boundary capture & site confinement</sub> | <a href="https://github.com/user-attachments/assets/9156d9e1-965f-4b63-8267-381fbdd28341"><img src="https://github.com/user-attachments/assets/9156d9e1-965f-4b63-8267-381fbdd28341" alt="HYWE Teach" width="100%"/></a><br/><sub>Base34 grid compression & JSONL dataset commit</sub> | <a href="https://github.com/user-attachments/assets/bfd74716-dd8d-46f3-aba8-1ac531f966d5"><img src="https://github.com/user-attachments/assets/bfd74716-dd8d-46f3-aba8-1ac531f966d5" alt="HYWE Report" width="100%"/></a><br/><sub>Automated multi-page PDF spatial dossiers</sub> |
 
 ---
 
