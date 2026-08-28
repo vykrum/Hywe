@@ -67,7 +67,7 @@ HYWE separates user-facing architectural concepts from internal computational mo
 | **Parsing** | Programmatic Flow Tokenization | `Lexel` | AST parsing, token extraction, and hierarchy validation | `TreeNode` Tree |
 | **Quantization** | Lattice Coordinate Allocation | `Hexel` | Spatial discretization on the discrete integer Hygrid | Integer Coordinate Lattice |
 | **Clustering** | Emergent Spatial Grouping | `Coxel` | Synchronous outward growth and collision resolution | Spatial Cluster Fabric |
-| **Geometry** | Spatial Boundaries & Constraints | `Goxel` | Polygon containment, boundary capture, clipping, & islands | Verified Boundary Topology |
+| **Geometry** | Hygrid Spatial Boundaries & Islands | `Goxel` | Generates Hygrid-specific geometry, boundary capture, clipping, & islands | Verified Boundary Topology |
 | **Planar Layout** | 2D Spatial Distribution | `Xyxel` | Sequence-driven planar placement & orientation sweeps | Planar Layout & SVG |
 | **Nesting** | Sub-space Containment (*Xyxel within*) | `Nexel` | Child cluster nesting within parent coordinate envelopes | Multi-level Hierarchy |
 | **Massing** | 3D Stacking & Volumetric Form (*Xyxel above*) | `Zaxel` | Vertical floor stacking and level elevation assignment | WebGPU 3D Mesh |
@@ -103,7 +103,7 @@ graph TD
     B --> C(Lexel: Architectural Programming and Flow Parsing)
     C --> D(Hexel: Atomic Spatial Primitive)
     D --> E(Coxel: Simultaneously Evolving Hexel Clusters)
-    E --> Gx(Goxel: Boundaries, Islands, and Polygon Engine)
+    E --> Gx(Goxel: Hygrid-Specific Geometry, Boundaries & Islands)
     Gx --> F(Xyxel: Planar Configuration)
     
     F --> N(Nexel: Spatial Nesting - Xyxel within)
