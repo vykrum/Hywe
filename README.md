@@ -88,7 +88,7 @@ HYWE is structured as a computational pipeline that transforms designer intent i
 
 ### Data Collection Pipeline
 
-HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with compressed **Base34** syntax strings.
+HYWE operates a continuous, deterministic data collection loop to build the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Instead of using heavy geometric file formats, the interactive **Teach** interface pairs natural language design intents with **HYWE** syntax strings.
 
 #### System Architecture Flow
 `Designer Intent / Teach Input` ➔ `HYWE Syntax` ➔ `Procedural Permutations (×24)` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`
