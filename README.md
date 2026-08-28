@@ -71,8 +71,9 @@ HYWE separates user-facing architectural concepts from internal computational mo
 | **Planar Layout** | 2D Spatial Distribution | `Xyxel` | Sequence-driven planar placement & orientation sweeps | Planar Layout & SVG |
 | **Nesting** | Sub-space Containment (*Xyxel within*) | `Nexel` | Child cluster nesting within parent coordinate envelopes | Multi-level Hierarchy |
 | **Massing** | 3D Stacking & Volumetric Form (*Xyxel above*) | `Zaxel` | Vertical floor stacking and level elevation assignment | WebGPU 3D Mesh |
+| **Visualization** | Multi-modal Viewports | `Graphics` | 2D planar SVG rendering and WebGPU 3D massing viewport | Visual Interfaces |
+| **Evaluation** | Spatial Metrics & Verification | `Analyze` | Compactness, graph adjacency verification, and PDF export | Performance Reports |
 | **Exploration** | Systematic Permutation | `Batch` / `Teach` | Full-space sequence sweep exploration (24 canonical operators) | Multi-variation Records |
-| **Evaluation** | Metrics & Documentation | `Analyze` / `Report` | Compactness, graph adjacency verification, and PDF export | Performance Reports |
 
 ---
 
@@ -108,13 +109,12 @@ graph TD
     F --> N(Nexel: Spatial Nesting - Xyxel within)
     F --> G(Zaxel: Volumetric Stacking - Xyxel above)
     
-    F --> F1[SVG Rendering]
-    G --> G1[WebGPU Massing]
-    F --> H(Analysis: Compactness and Adjacency)
+    F --> Gr[Graphics: 2D SVG & 3D WebGPU]
+    G --> Gr
+    F --> H[Analysis: Compactness & Adjacency]
     F --> I[Batch Processing: 24 Sweeps]
     
-    F1 -.-> ReportLabel((PDF Report))
-    G1 -.-> ReportLabel
+    Gr -.-> ReportLabel((PDF Report))
     H -.-> ReportLabel
     I -.-> ReportLabel
     
