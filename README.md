@@ -67,12 +67,13 @@ HYWE separates user-facing architectural concepts from internal computational mo
 | **Parsing** | Programmatic Flow Tokenization | `Lexel` | AST parsing, token extraction, and hierarchy validation | `TreeNode` Tree |
 | **Quantization** | Lattice Coordinate Allocation | `Hexel` | Spatial discretization on the discrete integer Hygrid | Integer Coordinate Lattice |
 | **Clustering** | Emergent Spatial Grouping | `Coxel` | Synchronous outward growth and collision resolution | Spatial Cluster Fabric |
-| **Geometry** | Spatial Boundaries & Constraints | `Goxel` | Polygon containment, clipping, and perimeter calculation | Verified Boundary Topology |
+| **Geometry** | Hygrid Spatial Boundaries & Islands | `Goxel` | Generates Hygrid-specific geometry, boundary capture, clipping, & islands | Verified Boundary Topology |
 | **Planar Layout** | 2D Spatial Distribution | `Xyxel` | Sequence-driven planar placement & orientation sweeps | Planar Layout & SVG |
-| **Nesting** | Sub-space Containment | `Nexel` | Child cluster nesting within parent coordinate envelopes | Multi-level Hierarchy |
-| **Massing** | 3D Stacking & Volumetric Form | `Zaxel` | Vertical floor stacking and level elevation assignment | WebGPU 3D Mesh |
+| **Nesting** | Sub-space Containment (*Xyxel within*) | `Nexel` | Child cluster nesting within parent coordinate envelopes | Multi-level Hierarchy |
+| **Massing** | 3D Stacking & Volumetric Form (*Xyxel above*) | `Zaxel` | Vertical floor stacking and level elevation assignment | WebGPU 3D Mesh |
+| **Visualization** | Multi-modal Viewports | `Graphics` | 2D planar SVG rendering and WebGPU 3D massing viewport | Visual Interfaces |
+| **Evaluation** | Spatial Metrics & Verification | `Analyze` | Compactness, graph adjacency verification, and PDF export | Performance Reports |
 | **Exploration** | Systematic Permutation | `Batch` / `Teach` | Full-space sequence sweep exploration (24 canonical operators) | Multi-variation Records |
-| **Evaluation** | Metrics & Documentation | `Analyze` / `Report` | Compactness, graph adjacency verification, and PDF export | Performance Reports |
 
 ---
 
@@ -102,19 +103,18 @@ graph TD
     B --> C(Lexel: Architectural Programming and Flow Parsing)
     C --> D(Hexel: Atomic Spatial Primitive)
     D --> E(Coxel: Simultaneously Evolving Hexel Clusters)
-    E --> Gx(Goxel: Geometry Engine and Polygon Utilities)
-    Gx --> F(Xyxel: Coxel Configuration and Planar Layout)
-    F --> N(Nexel: Spatial Nesting and Sub-configurations)
-    N --> G(Zaxel: Xyxel Stacking and Volumetric Massing)
+    E --> Gx(Goxel: Hygrid-Specific Geometry, Boundaries & Islands)
+    Gx --> F(Xyxel: Planar Configuration)
     
-    F --> F1[SVG Rendering]
-    G --> G1[WebGPU Massing]
+    F --> N(Nexel: Spatial Nesting - Xyxel within)
+    F --> G(Zaxel: Volumetric Stacking - Xyxel above)
     
-    F --> H[Spatial Analysis]
-    F --> I[Batch Processing]
+    F --> Gr[Graphics: 2D SVG & 3D WebGPU]
+    G --> Gr
+    F --> H[Analysis: Compactness & Adjacency]
+    F --> I[Batch Processing: 24 Sweeps]
     
-    F1 -.-> ReportLabel((PDF Report))
-    G1 -.-> ReportLabel
+    Gr -.-> ReportLabel((PDF Report))
     H -.-> ReportLabel
     I -.-> ReportLabel
     
