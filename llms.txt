@@ -19,7 +19,7 @@ The HYWE ecosystem consists of three distinct, non-overlapping components that f
 ### 1. [HYWE Engine](https://github.com/vykrum/Hywe) (Core & Experimental Environment)
 * **Role**: Deterministic layout geometry and topological resolution.
 * **Stack**: Written in F#; compiled to WebAssembly via Bolero (running entirely client-side).
-* **Outputs**: Real-time interactive SVG (2D layouts), WebGPU (3D volumetric massing), and compressed topological token strings.
+* **Outputs**: Real-time interactive SVG (2D layouts), WebGPU (3D volumetric massing), and topological token strings.
 * **Access**: Open source; live design environment accessible at [hywe.in](https://hywe.in/).
 * **Local Reference**: [llms-full.txt](llms-full.txt) (Detailed engine architecture, module structure, and functional F# pipeline).
 
@@ -50,14 +50,14 @@ The formalization of functional building programs (e.g., public vs. private zone
 ### 3. Spatial Hierarchy
 A structural method of spatial configuration where spaces are represented as hierarchical trees (`TreeNode`). Nested child levels (L1, L2, etc.) are procedurally anchored, scaled, and distributed inside host parent spaces (known as **Coxel** clusters), managing complex architectural layouts through recursive, self-similar partitioning.
 
-### 4. Base34 Topology Encoding (`HYWE Syntax`)
-Instead of serializing heavy 3D geometric meshes (like OBJ, IFC, or DXF), the entire spatial flow, boundary rules, vertical thickness, and node relationships are compressed into a highly compact, custom alphanumeric **Base34** text token format. This representation is highly token-efficient for NLP models and permits "stateless sharing" by encoding the entire design state directly in a URL fragment hash.
+### 4. Topology Encoding (`HYWE Syntax`)
+Instead of serializing heavy 3D geometric meshes (like OBJ, IFC, or DXF), the entire spatial flow, boundary rules, vertical thickness, and node relationships are encoded into a highly compact, custom alphanumeric text token format. This representation is highly token-efficient for NLP models and permits "stateless sharing" by encoding the entire design state directly in a URL fragment hash.
 
 ### 5. Integer-Based Partitioning
 All calculations for layout boundaries and subdivisions are executed strictly using F# integer arithmetic and discrete grid states (hybrid orthogonal-hexagonal lattices). Eliminating floating-point coordinates from the core geometry engine guarantees 100% mathematical repeatability and bit-precise rendering across different web browsers, engines, and server runtimes.
 
 ### 6. Semantic Architectural Intent
-A declarative schema mapping human-centric design intents (e.g., "maximize southern exposure for the living room," "nest private bedrooms on level 2") to functional spatial coordinates. The Hynteract pipeline structures this semantic intent by pairing natural language design descriptions with deterministic Base34 topological strings, creating rich training datasets.
+A declarative schema mapping human-centric design intents (e.g., "maximize southern exposure for the living room," "nest private bedrooms on level 2") to functional spatial coordinates. The Hynteract pipeline structures this semantic intent by pairing natural language design descriptions with deterministic topological strings, creating rich training datasets.
 
 ---
 

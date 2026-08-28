@@ -18,7 +18,7 @@ A pure functional library governing the abstract hierarchical data structures.
 ### 2. [Hywe.Core](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core)
 The geometric and topological computation engine.
 *   [Nexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Nexel.fs): Core nodes, attributes, and basic topological configurations.
-*   [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs): Parsing system translating compressed `HYWE Syntax` strings into `TreeNode` models.
+*   [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs): Parsing system translating `HYWE Syntax` strings into `TreeNode` models.
 *   [Hexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Hexel.fs): Defines the **Hexel** (hybrid-grid grid coordinate unit) and basic grid operations.
 *   [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs): Grid configuration, graph relationships, and spatial coordinate grids.
 *   [Coxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Coxel.fs): Manages simultaneously evolving Hexel clusters forming macro spatial structures.
@@ -56,9 +56,9 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 *   **Code Location**: [Xyxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Xyxel.fs) recursively splits structural zones. It uses the weight ratios (`R` attribute) of nested sibling tree nodes to compute proportional boundary subdivisions.
 *   **Rules**: Child layout subdivisions must strictly respect the parent boundaries computed in the previous recursion pass.
 
-### 4. Base34 Topology Encoding
+### 4. Topology Encoding
 *   **Concepts**: Storing hierarchical structures, constraints, and attributes in highly compressed, URL-safe alphanumeric strings.
-*   **Code Location**: [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs). The parsing module translates compact Base34 notation:
+*   **Code Location**: [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs). The parsing module translates compact notation:
     *   `R`: Target spatial weight ratio.
     *   `B`: Outer structural boundaries.
     *   `I`: Islands / Void regions.
