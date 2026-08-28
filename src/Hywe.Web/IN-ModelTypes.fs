@@ -173,7 +173,7 @@ type ConfirmAction =
 let elv = 0
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-08-28T07:46:40Z"
+let MODIFIED_DATE = "2026-08-28T15:32:47Z"
 
 type PolygonExportData = {
     OuterStr: string
@@ -353,7 +353,8 @@ type Message =
     | DownloadBatchMetricsCsv
     | DownloadBatchAdjCsv
     | DownloadBatchSvg
-    | DownloadObj
+    | DownloadBatchPng
+    | Download3DSvg
     | TapBatchPreview of int
     | CloseBatch
     | CancelBatch

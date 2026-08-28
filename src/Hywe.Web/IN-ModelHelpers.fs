@@ -647,15 +647,16 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.style "display: flex; gap: 8px; margin-top: 10px; align-items: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
-                        attr.title "Download View as PNG"
-                        on.pointerdown (fun _ -> dispatch Download3DPng)
-                        text "PNG"
+                        attr.title "Download Layout as SVG"
+                        on.pointerdown (fun _ -> dispatch Download3DSvg)
+                        text "SVG"
                     }
 
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
-                        on.pointerdown (fun _ -> dispatch DownloadObj)
-                        text "OBJ"
+                        attr.title "Download View as PNG"
+                        on.pointerdown (fun _ -> dispatch Download3DPng)
+                        text "PNG"
                     }
                 }
 
