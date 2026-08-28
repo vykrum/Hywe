@@ -274,56 +274,7 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
     )
     |> String.concat "|"
 
-/// OBJ Export (3D Geometry)
-let generateObj (cxls: Cxl[]) (elevations: float[]) (offsetX: float) (offsetY: float) (vOffset: int) =
-    let foldObj (currentOffset: int, accStrings: string list) (cxl: Cxl) =
-        let (_, _, zInt) = Hexel.hxlCrd cxl.Base
-        let zBottom = match zInt < elevations.Length with | true -> elevations.[zInt] | false -> float zInt * 3.0
-        let zTop = match zInt + 1 < elevations.Length with | true -> elevations.[zInt + 1] | false -> zBottom + 3.0
-        
-        let prm = cxlPrm cxl zInt
-        let n = prm.Length
-        match n > 2 with
-        | true ->
-            let vBottoms = prm |> Array.map (fun (x, y) -> sprintf "v %f %f %f" (float x + offsetX) zBottom (float y + offsetY)) |> Array.toList
-            let vTops = prm |> Array.map (fun (x, y) -> sprintf "v %f %f %f" (float x + offsetX) zTop (float y + offsetY)) |> Array.toList
-            
-            let faces = 
-                [0 .. n - 1] |> List.collect (fun i ->
-                    let nextI = (i + 1) % n
-                    let b1 = currentOffset + i
-                    let b2 = currentOffset + nextI
-                    let t1 = currentOffset + n + i
-                    let t2 = currentOffset + n + nextI
-                    [ sprintf "f %d %d %d" b1 b2 t1; sprintf "f %d %d %d" b2 t2 t1 ]
-                )
-            
-            let topFace = "f " + ([0 .. n - 1] |> List.map (fun i -> string (currentOffset + n + i)) |> String.concat " ")
-            let bottomFace = "f " + ([n - 1 .. -1 .. 0] |> List.map (fun i -> string (currentOffset + i)) |> String.concat " ")
-            
-            let newLines = vBottoms @ vTops @ faces @ [topFace; bottomFace]
-            (currentOffset + 2 * n, accStrings @ newLines)
-        | false -> (currentOffset, accStrings)
-        
-    let finalOffset, lines = ((vOffset, []), cxls) ||> Array.fold foldObj
-    (finalOffset, match lines with | [] -> "" | _ -> String.concat "\n" lines + "\n")
 
-let generateObjBatch (batch: (Cxl[] * float[]) list) =
-    let header = "# Hywe 3D Batch Export\ng Batch\n"
-    
-    let cols = 4
-    let _, bodyStrings = 
-        ((1, []), batch |> List.indexed)
-        ||> List.fold (fun (vOff, acc) (i, (cxls, elvs)) ->
-            let r = i / cols
-            let c = i % cols
-            let ox = float c * 100.0
-            let oy = float r * -100.0
-            let nextOff, str = generateObj cxls elvs ox oy vOff
-            (nextOff, acc @ [str])
-        )
-        
-    header + String.concat "" bodyStrings
 
 
 // --- PROTOCOL (State Transfer & Persistence) ---

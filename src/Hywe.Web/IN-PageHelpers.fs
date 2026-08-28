@@ -133,8 +133,11 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
     match msg with
     | SetActivePanel panel -> Some (handleSetActivePanel model panel)
+    
     | ToggleEditorMode -> Some (handleToggleEditorMode model)
+    
     | SetSrcOfTrth src -> Some ({ model with SrcOfTrth = src; SelectedPreset = None }, Cmd.none)
+    
     | SelectPreset name ->
         let content = 
             match name with 
@@ -144,7 +147,9 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             | _ -> ""
         let (nextModel, cmd) = handleFileImported model content js
         Some ({ nextModel with SelectedPreset = Some name; EditsCount = 0 }, cmd)
+    
     | FileImported content -> Some (handleFileImported model content js)
+    
     | Message.ToggleBoundary ->
         match model.ActivePanel with
         | BoundaryPanel -> 
@@ -155,6 +160,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let finalPoly = match newState with Stable m | FreshlyImported m -> m
             let newM = { model with ActivePanel = BoundaryPanel; PolygonEditor = newState }
             Some (newM, Cmd.ofMsg (PolygonEditorUpdated finalPoly))
+    
     | ToggleViewLock ->
         let isLocking = not model.ViewLocked
         let newModel = { model with ViewLocked = isLocking; Captured3DImage = if isLocking then model.Captured3DImage else None }
@@ -163,6 +169,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                 Cmd.OfAsync.perform (fun () -> js.InvokeAsync<string>("captureCanvasSVG", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask) () ViewCaptured
             else Cmd.none
         Some (newModel, cmd)
+    
     | Download3DPng ->
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
         let fileName = "Hywe3D_" + datePart + ".png"
@@ -220,6 +227,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
         | None -> Some (model, Cmd.none)
+    
     | DownloadBatchCoordCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
         let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
@@ -238,6 +246,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let csv = FileManager.generateCoordinatesCsv batchData
             let fileName = "Hywe_Batch_Coords_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    
     | DownloadBatchMetricsCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
         let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
@@ -253,6 +262,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let csv = FileManager.generateAreaMetricsCsv batchData
             let fileName = "Hywe_Batch_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    
     | DownloadBatchAdjCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
         let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
@@ -267,25 +277,32 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             let fileName = "Hywe_Batch_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
 
-        
-    | DownloadObj ->
-        let sqnStr = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue allSqns.[11]
-        let activeIndex = allSqns |> List.tryFindIndex ((=) sqnStr) |> Option.defaultValue 11
-        let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
-        match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
-        | Some c -> 
-            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
-            let _, objStr = FileManager.generateObj activeConfig.cxCxl1 activeConfig.cxElv1 0.0 0.0 1
-            let fileName = "Hywe_3D_" + DateTime.Now.ToString("yyMMddHHmm") + ".obj"
-            Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, objStr, "model/obj").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
-        | None -> Some (model, Cmd.none)
+    | Download3DSvg ->
+        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+        let fileName = "Hywe3D_" + datePart + ".svg"
+        let downloadCmd = 
+            Cmd.OfAsync.perform (fun () -> 
+                async {
+                    let! pngDataUrl = js.InvokeAsync<string>("captureCanvasWebGPU", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask
+                    if not (System.String.IsNullOrEmpty(pngDataUrl)) then
+                        let svgString = sprintf """<svg xmlns="http://www.w3.org/2000/svg" width="100%%" height="100%%"><image href="%s" width="100%%" height="100%%" /></svg>""" pngDataUrl
+                        do! js.InvokeVoidAsync("downloadFile", fileName, svgString, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
+                }) () (fun _ -> NoOp)
+        Some (model, downloadCmd)
+    
     | DownloadBatchSvg ->
         let datePart = DateTime.Now.ToString("yyMMddHHmm")
         let fileName = "HywVariations_" + datePart + ".svg"
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    
+    | DownloadBatchPng ->
+        let datePart = DateTime.Now.ToString("yyMMddHHmm")
+        let fileName = "HywVariations_" + datePart + ".png"
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
 
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
+    
     | GenerateReport ->
         let currentSrc =
             match model.EditorMode with
@@ -375,8 +392,11 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                   do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Report compiled. HTML size: %d bytes" html.Length).AsTask() |> Async.AwaitTask
                   return html, currentCache
               }) () (fun (html, cache) -> ReportGenerated (html, cache)))
+    
     | ReportGenerated (html, cache) ->
         Some ({ model with IsGeneratingReport = false; LayoutCache = cache },
               Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("openReport", html).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+    
     | ToggleCoords -> Some ({ model with IsCoordsVisible = not model.IsCoordsVisible }, Cmd.none)
+    
     | _ -> None

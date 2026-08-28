@@ -353,7 +353,8 @@ type Message =
     | DownloadBatchMetricsCsv
     | DownloadBatchAdjCsv
     | DownloadBatchSvg
-    | DownloadObj
+    | DownloadBatchPng
+    | Download3DSvg
     | TapBatchPreview of int
     | CloseBatch
     | CancelBatch

@@ -118,15 +118,33 @@ let coreScript =
             const url = URL.createObjectURL(blob);
             const img = new Image();
             img.onload = function() {
+                let nativeWidth = img.width || 800;
+                let nativeHeight = img.height || 600;
+                
+                // Parse viewBox to get native high-res dimensions
+                const vbMatch = svgString.match(/viewBox=["'][^"']*?[\d.-]+\s+[\d.-]+\s+([\d.-]+)\s+([\d.-]+)["']/i) || 
+                                svgString.match(/viewBox=["']([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)["']/i);
+                                
+                if (vbMatch) {
+                    const w = parseFloat(vbMatch[vbMatch.length - 2]);
+                    const h = parseFloat(vbMatch[vbMatch.length - 1]);
+                    if (w > 0 && h > 0 && (nativeWidth <= 300 || w > nativeWidth)) {
+                        nativeWidth = w;
+                        nativeHeight = h;
+                    }
+                }
+                
+                // Increase resolution multiplier
+                const scale = 3;
                 const canvas = document.createElement("canvas");
-                canvas.width = img.width || 800; // Fallback width if missing
-                canvas.height = img.height || 600;
+                canvas.width = nativeWidth * scale;
+                canvas.height = nativeHeight * scale;
                 const ctx = canvas.getContext("2d");
                 
                 // Add a white background since SVG is transparent
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 URL.revokeObjectURL(url);
 
                 canvas.toBlob(function(pngBlob) {
