@@ -63,7 +63,7 @@ HYWE separates user-facing architectural concepts from internal computational mo
 | Architectural Stage | Domain Concept | Implementation Component | Computational Transformation | Output Representation |
 | :--- | :--- | :--- | :--- | :--- |
 | **Intent & Scope** | Programmatic Hierarchy & Boundary Rules | `NodeTree` & `BoundaryEditor` | User input graph construction & polygon boundary capture | Abstract Design Intent |
-| **Encoding** | Symbolic Rule Representation | **HYWE Syntax** | Compact, deterministic serialization | Canonical `.hyw` String |
+| **Encoding** | Symbolic Rule Representation | HYWE Syntax | Compact, deterministic serialization | Canonical `.hyw` String |
 | **Parsing** | Programmatic Flow Tokenization | `Lexel` | AST parsing, token extraction, and hierarchy validation | `TreeNode` Tree |
 | **Quantization** | Lattice Coordinate Allocation | `Hexel` | Spatial discretization on the discrete integer Hygrid | Integer Coordinate Lattice |
 | **Clustering** | Emergent Spatial Grouping | `Coxel` | Synchronous outward growth and collision resolution | Spatial Cluster Fabric |
