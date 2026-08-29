@@ -6,43 +6,51 @@ open Microsoft.JSInterop
 open Graphics
 
 module Mat4 =
-    let create() = Array.zeroCreate<float> 16 |> fun a -> a.[0]<-1.0; a.[5]<-1.0; a.[10]<-1.0; a.[15]<-1.0; a
+    let create() = 
+        [|
+            1.0; 0.0; 0.0; 0.0
+            0.0; 1.0; 0.0; 0.0
+            0.0; 0.0; 1.0; 0.0
+            0.0; 0.0; 0.0; 1.0
+        |]
     
     let perspective (fovy: float) (aspect: float) (near: float) (far: float) =
-        let out = Array.zeroCreate<float> 16
         let f = 1.0 / System.Math.Tan(fovy / 2.0)
-        out.[0] <- f / aspect
-        out.[5] <- f
-        out.[10] <- (far + near) / (near - far)
-        out.[11] <- -1.0
-        out.[14] <- (2.0 * far * near) / (near - far)
-        out
+        let nf = 1.0 / (near - far)
+        [|
+            f / aspect; 0.0; 0.0; 0.0
+            0.0; f; 0.0; 0.0
+            0.0; 0.0; (far + near) * nf; -1.0
+            0.0; 0.0; (2.0 * far * near) * nf; 0.0
+        |]
         
     let lookAt (eye: float[]) (target: float[]) (up: float[]) =
-        let out = Array.zeroCreate<float> 16
         let ex, ey, ez = eye.[0], eye.[1], eye.[2]
         let tx, ty, tz = target.[0], target.[1], target.[2]
         let ux, uy, uz = up.[0], up.[1], up.[2]
         
-        let mutable zx, zy, zz = ex - tx, ey - ty, ez - tz
-        let lenZ = System.Math.Sqrt(zx*zx + zy*zy + zz*zz)
-        zx <- zx / lenZ; zy <- zy / lenZ; zz <- zz / lenZ
+        let dx, dy, dz = ex - tx, ey - ty, ez - tz
+        let lenZ = System.Math.Sqrt(dx * dx + dy * dy + dz * dz)
+        let zx, zy, zz = dx / lenZ, dy / lenZ, dz / lenZ
         
-        let mutable xx, xy, xz = uy * zz - uz * zy, uz * zx - ux * zz, ux * zy - uy * zx
-        let lenX = System.Math.Sqrt(xx*xx + xy*xy + xz*xz)
-        if lenX = 0.0 then xx <- 1.0; xy <- 0.0; xz <- 0.0
-        else xx <- xx / lenX; xy <- xy / lenX; xz <- xz / lenX
+        let cx, cy, cz = uy * zz - uz * zy, uz * zx - ux * zz, ux * zy - uy * zx
+        let lenX = System.Math.Sqrt(cx * cx + cy * cy + cz * cz)
+        let xx, xy, xz = 
+            match lenX with
+            | 0.0 -> 1.0, 0.0, 0.0
+            | l -> cx / l, cy / l, cz / l
         
         let yx, yy, yz = zy * xz - zz * xy, zz * xx - zx * xz, zx * xy - zy * xx
         
-        out.[0] <- xx; out.[1] <- yx; out.[2] <- zx; out.[3] <- 0.0
-        out.[4] <- xy; out.[5] <- yy; out.[6] <- zy; out.[7] <- 0.0
-        out.[8] <- xz; out.[9] <- yz; out.[10] <- zz; out.[11] <- 0.0
-        out.[12] <- -(xx * ex + xy * ey + xz * ez)
-        out.[13] <- -(yx * ex + yy * ey + yz * ez)
-        out.[14] <- -(zx * ex + zy * ey + zz * ez)
-        out.[15] <- 1.0
-        out
+        [|
+            xx; yx; zx; 0.0
+            xy; yy; zy; 0.0
+            xz; yz; zz; 0.0
+            -(xx * ex + xy * ey + xz * ez)
+            -(yx * ex + yy * ey + yz * ez)
+            -(zx * ex + zy * ey + zz * ez)
+            1.0
+        |]
 
 /// <summary>
 /// Simple ear-clipping triangulation for concave, non-self-intersecting polygons.
@@ -50,25 +58,25 @@ module Mat4 =
 /// <param name="points">The 2D points forming the polygon boundary.</param>
 /// <returns>An array of triangles (each defined by 3 points).</returns>
 let triangulatePolygon (points: (float * float)[]) : (float * float)[][] =
-    if points = null || points.Length < 3 then [||]
-    else
-        let n = points.Length
-        let indices = Array.init n id
-        
+    match points with
+    | null -> [||]
+    | pts when pts.Length < 3 -> [||]
+    | pts ->
+        let n = pts.Length
         let cross (ax, ay) (bx, by) (cx, cy) =
             (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
 
         let area = 
-            let mutable a = 0.0
-            for i = 0 to n - 1 do
-                let (x1, y1) = points.[i]
-                let (x2, y2) = points.[(i + 1) % n]
-                a <- a + (x1 * y2 - x2 * y1)
-            a
+            [ 0 .. n - 1 ]
+            |> List.sumBy (fun i ->
+                let (x1, y1) = pts.[i]
+                let (x2, y2) = pts.[(i + 1) % n]
+                x1 * y2 - x2 * y1)
 
-        let workingIndices = 
-            if area < 0.0 then indices |> Array.rev |> ResizeArray
-            else indices |> ResizeArray
+        let initialIndices = 
+            match area < 0.0 with
+            | true -> [ n - 1 .. -1 .. 0 ]
+            | false -> [ 0 .. n - 1 ]
 
         let pointInTriangle (ax, ay) (bx, by) (cx, cy) (px, py) =
             let c1 = cross (ax, ay) (bx, by) (px, py)
@@ -76,39 +84,34 @@ let triangulatePolygon (points: (float * float)[]) : (float * float)[][] =
             let c3 = cross (cx, cy) (ax, ay) (px, py)
             (c1 >= 0.0 && c2 >= 0.0 && c3 >= 0.0) || (c1 <= 0.0 && c2 <= 0.0 && c3 <= 0.0)
 
-        let result = ResizeArray<(float * float)[]>()
-        let mutable attempts = 0
-        while workingIndices.Count > 3 && attempts < workingIndices.Count do
-            let i = 0
-            let prev = workingIndices.[(if i = 0 then workingIndices.Count - 1 else i - 1)]
-            let curr = workingIndices.[i]
-            let next = workingIndices.[(i + 1) % workingIndices.Count]
-            
-            let p1, p2, p3 = points.[prev], points.[curr], points.[next]
-            
-            let mutable isEar = cross p1 p2 p3 > 0.0
-            if isEar then
-                for j = 0 to workingIndices.Count - 1 do
-                    let idx = workingIndices.[j]
-                    if idx <> prev && idx <> curr && idx <> next then
-                        if pointInTriangle p1 p2 p3 points.[idx] then
-                            isEar <- false
-            
-            if isEar then
-                result.Add([| p1; p2; p3 |])
-                workingIndices.RemoveAt(i)
-                attempts <- 0
-            else
-                // Rotate
-                let head = workingIndices.[0]
-                workingIndices.RemoveAt(0)
-                workingIndices.Add(head)
-                attempts <- attempts + 1
-        
-        if workingIndices.Count = 3 then
-            result.Add([| points.[workingIndices.[0]]; points.[workingIndices.[1]]; points.[workingIndices.[2]] |])
-        
-        result.ToArray()
+        let rec clip (ring: int list) (attempts: int) (acc: (float * float)[] list) : (float * float)[][] =
+            match ring with
+            | [ i0; i1; i2 ] ->
+                [| pts.[i0]; pts.[i1]; pts.[i2] |] :: acc
+                |> List.rev
+                |> List.toArray
+            | curr :: next :: rest when attempts < ring.Length ->
+                let prev = List.last rest
+                let p1, p2, p3 = pts.[prev], pts.[curr], pts.[next]
+                let isConvex = cross p1 p2 p3 > 0.0
+                let hasNoInternalPoints =
+                    rest
+                    |> List.take (rest.Length - 1)
+                    |> List.forall (fun idx -> not (pointInTriangle p1 p2 p3 pts.[idx]))
+
+                match isConvex && hasNoInternalPoints with
+                | true ->
+                    let triangle = [| p1; p2; p3 |]
+                    clip (next :: rest) 0 (triangle :: acc)
+                | false ->
+                    let rotated = next :: rest @ [ curr ]
+                    clip rotated (attempts + 1) acc
+            | _ ->
+                acc
+                |> List.rev
+                |> List.toArray
+
+        clip initialIndices 0 []
 
 /// <summary>
 /// Triangulates a polygon, providing fallback coordinates for invalid input.
@@ -120,13 +123,12 @@ let polygonMesh
     : (float * float)[][] =
 
     let basePoly = 
-        match poly2D.Length with
-        | n when n < 3 -> [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |]
-        | _ -> poly2D
+        match poly2D with
+        | null -> [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |]
+        | pts when pts.Length < 3 -> [| (-2.0, -2.0); (-1.0, -2.0); (-1.0, -1.0); (-2.0, -1.0) |]
+        | pts -> pts
 
-    match triangulatePolygon basePoly with
-    | [||] -> [||]
-    | tris -> tris
+    triangulatePolygon basePoly
 
 /// <summary>
 /// Prepares coxel layout geometry and dispatches it to the WebGPU rendering pipeline.
@@ -159,11 +161,12 @@ let extrudePolygons
             let (_, _, z) = Hexel.hxlCrd x.Base
             svgCxlPrm x z
             |> svgCleanPolygon x.Seqn
-            |> Array.map (fun p -> svgToCartesian x.Seqn p)
+            |> Array.map (svgToCartesian x.Seqn)
             |> fun pts -> 
-                if pts.Length > 0 && pts.[0] = pts.[pts.Length - 1] then 
-                    pts.[0 .. pts.Length - 2] 
-                else pts
+                match pts with
+                | [||] -> [||]
+                | _ when pts.[0] = pts.[pts.Length - 1] -> pts.[0 .. pts.Length - 2]
+                | _ -> pts
 
         // 2. Helper: Color normalization
         let normalizeColor (rgba: string) =
@@ -183,70 +186,63 @@ let extrudePolygons
             cxl 
             |> Array.mapi (fun i c -> 
                 let poly = toPoly c
-                let clr = if i < colors.Length then colors.[i] else "rgba(200,200,200,1)"
+                let clr = colors |> Array.tryItem i |> Option.defaultValue "rgba(200,200,200,1)"
                 (c, poly, clr))
             |> Array.filter (fun (_, poly, _) -> poly.Length >= 3)
 
-        let polygonsFinal = processedData |> Array.map (fun (_, p, _) -> p)
-        let colorsFinal = processedData |> Array.map (fun (_, _, c) -> c)
-        let cxlsFinal = processedData |> Array.map (fun (c, _, _) -> c)
-
         // Calculate heights for each level
         let diffs = 
-            if levelElevations.Length < 2 then [| 3.0 |]
-            else 
-                [| 0 .. levelElevations.Length - 2 |]
-                |> Array.map (fun i -> levelElevations.[i+1] - levelElevations.[i])
+            match levelElevations with
+            | null | [||] | [| _ |] -> [| 3.0 |]
+            | elevations ->
+                elevations
+                |> Array.pairwise
+                |> Array.map (fun (curr, next) -> next - curr)
         
-        let avgHeight = if Array.isEmpty diffs then 3.0 else Array.average diffs
+        let avgHeight = 
+            match diffs with
+            | [||] -> 3.0
+            | ds -> Array.average ds
 
-        // 4. Loop-free Mesh Assembler (Tail Recursive)
-        let rec buildMeshes i accMeshes accEdges accHeights accBaseHeights accCentroids =
-            match i < polygonsFinal.Length with
-            | false -> 
-                (List.rev accMeshes |> List.toArray, 
-                 List.rev accEdges |> List.toArray, 
-                 List.rev accHeights |> List.toArray,
-                 List.rev accBaseHeights |> List.toArray,
-                 List.rev accCentroids |> List.toArray)
-            | true ->
-                let c = cxlsFinal.[i]
+        // 4. Functional Mesh Assembly
+        let geometries =
+            processedData
+            |> Array.map (fun (c, (poly: (float * float)[]), _) ->
                 let (_, _, z) = Hexel.hxlCrd c.Base
-                
-                let baseH = if z < levelElevations.Length then levelElevations.[z] else float z * avgHeight
-                let h = 
-                    (if z < diffs.Length then diffs.[z]
-                     else avgHeight) - 0.05
-                
-                let poly = polygonsFinal.[i]
-                
-                // Generate mesh and transform for WebGL (Flipping Y)
-                let mesh = 
-                    polygonMesh poly 
-                    |> Array.map (Array.map (fun (x, y) -> 
-                        let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
-                        [| cx; -cy |]))
-                
-                let edge = 
-                    poly |> Array.map (fun (x, y) -> 
-                        let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
-                        [| cx; -cy |])
-                
-                let rawCx = if poly.Length > 0 then poly |> Array.averageBy fst else 0.0
-                let rawCy = if poly.Length > 0 then poly |> Array.averageBy snd else 0.0
-                let cx, cy = toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
+                let baseH = levelElevations |> Array.tryItem z |> Option.defaultValue (float z * avgHeight)
+                let h = (diffs |> Array.tryItem z |> Option.defaultValue avgHeight) - 0.05
+
+                let toCanvasPoint (x: float, y: float) =
+                    let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(x)), int (System.Math.Round(y)))
+                    [| cx; -cy |]
+
+                let mesh =
+                    polygonMesh poly
+                    |> Array.map (Array.map toCanvasPoint)
+
+                let edge = poly |> Array.map toCanvasPoint
+
+                let rawCx = match poly with [||] -> 0.0 | pts -> Array.averageBy fst pts
+                let rawCy = match poly with [||] -> 0.0 | pts -> Array.averageBy snd pts
+                let (cx, cy) = toCartesian c.Seqn (int (System.Math.Round(rawCx)), int (System.Math.Round(rawCy)))
                 let centroid = [| cx; -cy; baseH + h / 2.0 |]
-                
-                buildMeshes (i + 1) (mesh :: accMeshes) (edge :: accEdges) (h :: accHeights) (baseH :: accBaseHeights) (centroid :: accCentroids)
+
+                {| Mesh = mesh; Edge = edge; Height = h; BaseHeight = baseH; Centroid = centroid |})
 
         do! Async.Sleep 30
-        
-        let colorsJs = colorsFinal |> Array.map normalizeColor
-        let meshes, edges, heights, baseHeights, centroids = buildMeshes 0 [] [] [] [] []
-        
-        let projMatrix = Mat4.perspective (System.Math.PI / 4.0) (1.5) 0.1 100.0 // Aspect 3/2 matches container
 
-        if meshes.Length > 0 then
+        let meshes = geometries |> Array.map (fun g -> g.Mesh)
+        let edges = geometries |> Array.map (fun g -> g.Edge)
+        let heights = geometries |> Array.map (fun g -> g.Height)
+        let baseHeights = geometries |> Array.map (fun g -> g.BaseHeight)
+        let centroids = geometries |> Array.map (fun g -> g.Centroid)
+        let colorsJs = processedData |> Array.map (fun (_, _, clr) -> normalizeColor clr)
+        
+        let projMatrix = Mat4.perspective (System.Math.PI / 4.0) 1.5 0.1 100.0 // Aspect 3/2 matches container
+
+        match meshes with
+        | [||] -> ()
+        | _ ->
             do! js.InvokeVoidAsync("initWebGPUExtrudedPolygons", 
                                     canvasId, meshes, colorsJs, heights, baseHeights, edges, centroids, 
                                     projMatrix, viewLocked).AsTask()
