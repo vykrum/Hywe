@@ -210,14 +210,14 @@
             }
         }
 
-        /* Mirrored right-edge Drawer Handle Button (mirroring Waggle Exchange) */
+        /* Mirrored right-edge Drawer Handle Button (matching Waggle Exchange) */
         .specs-drawer-handle {
             position: fixed;
             top: 65px;
             right: 0;
             z-index: 1802;
             width: 16px;
-            height: 156px;
+            height: 184px;
             background: #ffffff;
             border: 1px solid #eeeeee;
             border-right: none;
@@ -227,7 +227,7 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease;
+            transition: background 0.2s ease;
             user-select: none;
             outline: none;
             box-sizing: border-box;
@@ -235,7 +235,6 @@
 
         .specs-drawer-handle:hover {
             background: #fafafa;
-            box-shadow: -3px 0 14px rgba(0, 0, 0, 0.08);
         }
 
         .specs-drawer-handle span {
@@ -248,11 +247,6 @@
             letter-spacing: 1.2px;
             white-space: pre;
             transform: rotate(180deg);
-            transition: color 0.2s ease;
-        }
-
-        .specs-drawer-handle:hover span {
-            color: #222222;
         }
 
         .hywe-modal-overlay {
@@ -574,7 +568,7 @@
         </section>
     </div>
 
-    <!-- Modal helper scripts -->
+    <!-- Modal helper scripts and height sync -->
     <script>
         function openAboutModal() {
             var modal = document.getElementById('about-hywe-modal');
@@ -593,6 +587,29 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeAboutModal();
         });
+
+        // Pixel-perfect height sync with Waggle Exchange drawer
+        function syncDrawerHeight() {
+            var preset = document.querySelector('.preset-drawer');
+            var specs = document.getElementById('specs-drawer-btn');
+            if (preset && specs) {
+                var h = preset.offsetHeight;
+                if (h > 40) {
+                    specs.style.height = h + 'px';
+                }
+            }
+        }
+        window.addEventListener('resize', syncDrawerHeight);
+        var syncInterval = setInterval(function() {
+            var preset = document.querySelector('.preset-drawer');
+            if (preset) {
+                syncDrawerHeight();
+                if (window.ResizeObserver) {
+                    new ResizeObserver(syncDrawerHeight).observe(preset);
+                }
+                clearInterval(syncInterval);
+            }
+        }, 150);
     </script>
 
     <!--Scripts-->
