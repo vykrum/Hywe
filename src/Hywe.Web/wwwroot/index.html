@@ -43,7 +43,7 @@
     <meta name="keywords"
         content="computational spatial design, computational design, spatial design, architectural generative design, computational architecture, procedural space planning, topology-driven architectural design, deterministic spatial synthesis, endogenous space planning, How to automate architectural programming, Software for spatial adjacency matrix to floor plan, Floor layout generation without adjacency matrix, Floor layout generation based on flow of activity, Alternative to generative AI for floor layouts, Browser based Programmatic stacking diagrams, rule-based spatial design, building massing from program, architectural feasibility tool, wasm architectural layout engine, architecture, topology, deterministic-geometry, spatial-computation, architectural-ai, procedural-generation, graph-topology" />
     <meta property="article:published_time" content="2022-08-15T00:00:00Z" />
-    <meta property="article:modified_time" content="2026-08-30T05:35:28Z" />
+    <meta property="article:modified_time" content="2026-08-30T06:05:09Z" />
 
     <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
@@ -83,9 +83,9 @@
       "isAccessibleForFree": true,
       "browserRequirements": "Requires a modern browser with WebAssembly and WebGPU support.",
       "operatingSystem": "All",
-      "codeRepository": "https://github.com/vykrum/Hywe",
+      "codeRepository": "https://repo.hywe.in",
       "datePublished": "2022-08-15T00:00:00Z",
-      "dateModified": "2026-08-30T05:35:28Z"
+      "dateModified": "2026-08-30T06:05:09Z"
     }
     </script>
 
@@ -210,44 +210,49 @@
             }
         }
 
-        /* Bottom-corner About HYWE trigger & Modal */
-        .about-corner-trigger {
+        /* Mirrored right-edge Drawer Handle Button (mirroring Waggle Exchange) */
+        .specs-drawer-handle {
             position: fixed;
-            bottom: 12px;
-            right: 12px;
-            z-index: 10000;
-            display: inline-flex;
+            top: 65px;
+            right: 0;
+            z-index: 1802;
+            width: 16px;
+            height: 156px;
+            background: #ffffff;
+            border: 1px solid #eeeeee;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+            display: flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(54, 54, 54, 0.88);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
+            justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
             user-select: none;
-            text-decoration: none;
+            outline: none;
+            box-sizing: border-box;
         }
 
-        .about-corner-trigger:hover {
-            background: #1f1f1f;
-            border-color: rgba(255, 255, 255, 0.45);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        .specs-drawer-handle:hover {
+            background: #fafafa;
+            box-shadow: -3px 0 14px rgba(0, 0, 0, 0.08);
         }
 
-        .about-corner-trigger svg {
-            width: 14px;
-            height: 14px;
-            fill: currentColor;
+        .specs-drawer-handle span {
+            writing-mode: vertical-rl;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-size: 8px;
+            font-weight: 600;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            white-space: pre;
+            transform: rotate(180deg);
+            transition: color 0.2s ease;
+        }
+
+        .specs-drawer-handle:hover span {
+            color: #222222;
         }
 
         .hywe-modal-overlay {
@@ -408,13 +413,10 @@
             </section>
         </div>
     </div>
-    <!-- Bottom-corner button to access About & Documentation -->
-    <button id="about-trigger-btn" class="about-corner-trigger" onclick="openAboutModal()" aria-label="Open About HYWE dialog">
-        <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-        </svg>
-        About HYWE
-    </button>
+    <!-- Mirrored right-side handle button to access About HYWE -->
+    <div id="specs-drawer-btn" class="specs-drawer-handle" onclick="openAboutModal()" onkeydown="if(event.key==='Enter'||event.key===' '){openAboutModal();event.preventDefault();}" role="button" tabindex="0" aria-label="Open About HYWE dialog" title="About HYWE">
+        <span>About  Hywe</span>
+    </div>
 
     <!-- Accessible About & Technical Specifications Modal Overlay -->
     <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" onclick="if(event.target===this)closeAboutModal()">
@@ -428,7 +430,7 @@
                 intent resolves into spatial configurations through deterministic topological logic. HYWE and the HYWE
                 Architectural Training Data repository form an active, deterministic data collection ecosystem.</p>
             <p><strong>Note on Scope:</strong> HYWE is strictly a computational layout engine focused on spatial topology. It is <strong>not a comprehensive architectural modeling or lifecycle management platform</strong> and does not aspire to replicate the detailed parametric modeling, structural documentation, or construction-level detailing of industry-standard drafting suites. Its purpose lies purely in early-stage spatial exploration, and any evaluative comparison between HYWE's deliverables and fully-featured, production-ready modeling platforms falls outside its intended operational domain.</p>
-            <p>For comprehensive technical documentation regarding the core engine, formal model, benchmarks, and computational design theory, explore the <a href="https://github.com/vykrum/Hywe/wiki" target="_blank" rel="noopener noreferrer">HYWE Documentation Wiki</a> and the <a href="https://github.com/vykrum/Hywe" target="_blank" rel="noopener noreferrer">HYWE GitHub Repository</a>.
+            <p>For comprehensive technical documentation regarding the core engine, formal model, benchmarks, and computational design theory, explore the <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer">HYWE Documentation Wiki</a> and the <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer">HYWE GitHub Repository</a>.
             </p>
 
             <h3>Ecosystem Components &amp; Sync</h3>
@@ -439,7 +441,7 @@
                     <strong>HYWE Engine (Core &amp; Client Sandbox):</strong> The F#-driven client interface compiling to
                     WebAssembly via Bolero. Resolves discrete spatial topologies and generates real-time SVG 2D plans and
                     WebGPU 3D volumes.
-                    Learn more in the <a href="https://github.com/vykrum/Hywe/wiki" target="_blank" rel="noopener noreferrer">HYWE Documentation Wiki</a> and the <a href="https://github.com/vykrum/Hywe" target="_blank" rel="noopener noreferrer">GitHub Repository</a>.
+                    Learn more in the <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer">HYWE Documentation Wiki</a> and the <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer">GitHub Repository</a>.
                 </li>
                 <li>
                     <strong>Hynteract (Ecosystem Data Layer):</strong> The private serverless JavaScript/Node.js API
@@ -451,8 +453,8 @@
                     synthetic architectural layouts currently in its active data collection phase. This token-efficient
                     dataset will provide the foundation for training custom, layout-aware AI models.
                     Access the database, schema definition, and licensing on the <a
-                        href="https://huggingface.co/datasets/vykrum/hywe-training-data" target="_blank" rel="noopener noreferrer">Hugging Face
-                        Datacard</a>.
+                        href="https://data.hywe.in" target="_blank" rel="noopener noreferrer">Hugging Face
+                        Datacard (data.hywe.in)</a>.
                 </li>
             </ul>
 
@@ -556,13 +558,13 @@
 
             <h3>Repository &amp; Ecosystem Links</h3>
             <ul>
-                <li><strong>HYWE GitHub Repository:</strong> <a href="https://github.com/vykrum/Hywe"
-                        target="_blank" rel="noopener noreferrer">github.com/vykrum/Hywe</a></li>
-                <li><strong>HYWE Documentation Wiki:</strong> <a href="https://github.com/vykrum/Hywe/wiki"
-                        target="_blank" rel="noopener noreferrer">github.com/vykrum/Hywe/wiki</a></li>
-                <li><strong>Hugging Face Dataset Card:</strong> <a
-                        href="https://huggingface.co/datasets/vykrum/hywe-training-data"
-                        target="_blank" rel="noopener noreferrer">huggingface.co/datasets/vykrum/hywe-training-data</a></li>
+                <li><strong>HYWE Engine Repository:</strong> <a href="https://repo.hywe.in"
+                        target="_blank" rel="noopener noreferrer">repo.hywe.in</a></li>
+                <li><strong>HYWE Documentation Wiki:</strong> <a href="https://wiki.hywe.in"
+                        target="_blank" rel="noopener noreferrer">wiki.hywe.in</a></li>
+                <li><strong>HYWE Training Dataset:</strong> <a
+                        href="https://data.hywe.in"
+                        target="_blank" rel="noopener noreferrer">data.hywe.in</a></li>
                 <li><strong>Author:</strong> <a href="https://github.com/vykrum" target="_blank" rel="noopener noreferrer">Vikram Subbaiah
                         (vykrum)</a></li>
                 <li><strong>LinkedIn Page:</strong> <a href="https://www.linkedin.com/company/hywein/"
