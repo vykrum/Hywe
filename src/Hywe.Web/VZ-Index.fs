@@ -319,7 +319,7 @@ let siteFooter (current: AppScreen) =
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/message.svg"; attr.alt "Email"; attr.style "display: block;" }
             }
             a {
-                attr.href "https://www.linkedin.com/company/hywein/"
+                attr.href "https://linkedin.hywe.in"
                 attr.target "_blank"
                 attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/linkedin.svg"; attr.alt "LinkedIn"; attr.style "display: block;" }
@@ -331,13 +331,13 @@ let siteFooter (current: AppScreen) =
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/X.svg"; attr.alt "X (Twitter)"; attr.style "display: block;" }
             }
             a {
-                attr.href "https://github.com/vykrum/Hywe"
+                attr.href "https://repo.hywe.in"
                 attr.target "_blank"
                 attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/github.svg"; attr.alt "GitHub"; attr.style "display: block;" }
             }
             a {
-                attr.href "https://huggingface.co/datasets/vykrum/hywe-training-data"
+                attr.href "https://data.hywe.in"
                 attr.target "_blank"
                 attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/hugging-face.svg"; attr.alt "HuggingFace"; attr.style "display: block;" }

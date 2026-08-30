@@ -43,7 +43,7 @@
     <meta name="keywords"
         content="computational spatial design, computational design, spatial design, architectural generative design, computational architecture, procedural space planning, topology-driven architectural design, deterministic spatial synthesis, endogenous space planning, How to automate architectural programming, Software for spatial adjacency matrix to floor plan, Floor layout generation without adjacency matrix, Floor layout generation based on flow of activity, Alternative to generative AI for floor layouts, Browser based Programmatic stacking diagrams, rule-based spatial design, building massing from program, architectural feasibility tool, wasm architectural layout engine, architecture, topology, deterministic-geometry, spatial-computation, architectural-ai, procedural-generation, graph-topology" />
     <meta property="article:published_time" content="2022-08-15T00:00:00Z" />
-    <meta property="article:modified_time" content="2026-08-30T06:05:09Z" />
+    <meta property="article:modified_time" content="2026-08-30T06:16:43Z" />
 
     <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
@@ -85,7 +85,7 @@
       "operatingSystem": "All",
       "codeRepository": "https://repo.hywe.in",
       "datePublished": "2022-08-15T00:00:00Z",
-      "dateModified": "2026-08-30T06:05:09Z"
+      "dateModified": "2026-08-30T06:16:43Z"
     }
     </script>
 
@@ -210,14 +210,14 @@
             }
         }
 
-        /* Mirrored right-edge Drawer Handle Button (mirroring Waggle Exchange) */
+        /* Mirrored right-edge Drawer Handle Button (matching Waggle Exchange) */
         .specs-drawer-handle {
             position: fixed;
             top: 65px;
             right: 0;
             z-index: 1802;
             width: 16px;
-            height: 156px;
+            height: 184px;
             background: #ffffff;
             border: 1px solid #eeeeee;
             border-right: none;
@@ -227,7 +227,7 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease;
+            transition: background 0.2s ease;
             user-select: none;
             outline: none;
             box-sizing: border-box;
@@ -235,7 +235,6 @@
 
         .specs-drawer-handle:hover {
             background: #fafafa;
-            box-shadow: -3px 0 14px rgba(0, 0, 0, 0.08);
         }
 
         .specs-drawer-handle span {
@@ -248,11 +247,6 @@
             letter-spacing: 1.2px;
             white-space: pre;
             transform: rotate(180deg);
-            transition: color 0.2s ease;
-        }
-
-        .specs-drawer-handle:hover span {
-            color: #222222;
         }
 
         .hywe-modal-overlay {
@@ -567,14 +561,14 @@
                         target="_blank" rel="noopener noreferrer">data.hywe.in</a></li>
                 <li><strong>Author:</strong> <a href="https://github.com/vykrum" target="_blank" rel="noopener noreferrer">Vikram Subbaiah
                         (vykrum)</a></li>
-                <li><strong>LinkedIn Page:</strong> <a href="https://www.linkedin.com/company/hywein/"
-                        target="_blank" rel="noopener noreferrer">linkedin.com/company/hywein</a></li>
+                <li><strong>LinkedIn Page:</strong> <a href="https://linkedin.hywe.in"
+                        target="_blank" rel="noopener noreferrer">linkedin.hywe.in</a></li>
                 <li><strong>X (Twitter) Profile:</strong> <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer">@_hywe_</a></li>
             </ul>
         </section>
     </div>
 
-    <!-- Modal helper scripts -->
+    <!-- Modal helper scripts and height sync -->
     <script>
         function openAboutModal() {
             var modal = document.getElementById('about-hywe-modal');
@@ -593,6 +587,29 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeAboutModal();
         });
+
+        // Pixel-perfect height sync with Waggle Exchange drawer
+        function syncDrawerHeight() {
+            var preset = document.querySelector('.preset-drawer');
+            var specs = document.getElementById('specs-drawer-btn');
+            if (preset && specs) {
+                var h = preset.offsetHeight;
+                if (h > 40) {
+                    specs.style.height = h + 'px';
+                }
+            }
+        }
+        window.addEventListener('resize', syncDrawerHeight);
+        var syncInterval = setInterval(function() {
+            var preset = document.querySelector('.preset-drawer');
+            if (preset) {
+                syncDrawerHeight();
+                if (window.ResizeObserver) {
+                    new ResizeObserver(syncDrawerHeight).observe(preset);
+                }
+                clearInterval(syncInterval);
+            }
+        }, 150);
     </script>
 
     <!--Scripts-->
