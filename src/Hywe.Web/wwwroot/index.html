@@ -415,24 +415,27 @@
         }
 
         .about-links-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 14px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin: 16px 0 8px 0;
         }
 
         .about-link-chip {
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            background: #f7f7f7;
-            color: #363636;
-            padding: 7px 14px;
+            justify-content: space-between;
+            background: #f8f8f8;
+            color: #333333;
+            padding: 10px 14px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: 500;
-            border: 1px solid #ddd;
+            border: 1px solid #e0e0e0;
             text-decoration: none !important;
             transition: all 0.15s ease;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .about-link-chip:hover {
@@ -524,19 +527,24 @@
             <p>Explore the formal mathematical theory, integer lattice specifications, source code, and community channels:</p>
             <div class="about-links-grid">
                 <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    Documentation Wiki (wiki.hywe.in) &rarr;
+                    <span>Documentation Wiki</span>
+                    <span>&rarr;</span>
                 </a>
                 <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    GitHub Repository (repo.hywe.in) &rarr;
+                    <span>GitHub Repository</span>
+                    <span>&rarr;</span>
                 </a>
                 <a href="https://data.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    Training Dataset (data.hywe.in) &rarr;
+                    <span>Training Dataset</span>
+                    <span>&rarr;</span>
                 </a>
                 <a href="https://linkedin.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    LinkedIn Page (linkedin.hywe.in) &rarr;
+                    <span>LinkedIn Page</span>
+                    <span>&rarr;</span>
                 </a>
                 <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    X Profile (@_hywe_) &rarr;
+                    <span>X (Twitter) Profile</span>
+                    <span>&rarr;</span>
                 </a>
             </div>
         </section>
