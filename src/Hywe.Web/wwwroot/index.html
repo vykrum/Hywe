@@ -210,13 +210,170 @@
             }
         }
 
-        .offscreen-hidden {
-            position: absolute;
-            left: -9999px;
-            top: auto;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
+        /* Bottom-corner About HYWE trigger & Modal */
+        .about-corner-trigger {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 10000;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(54, 54, 54, 0.88);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            text-decoration: none;
+        }
+
+        .about-corner-trigger:hover {
+            background: #1f1f1f;
+            border-color: rgba(255, 255, 255, 0.45);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        }
+
+        .about-corner-trigger svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .hywe-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .hywe-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .hywe-modal-content {
+            background: #ffffff;
+            color: #333333;
+            width: 100%;
+            max-width: 820px;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+            position: relative;
+            overflow-y: auto;
+            padding: 32px 36px;
+            box-sizing: border-box;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            font-size: 14px;
+            font-weight: 300;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hywe-modal-overlay.active .hywe-modal-content {
+            transform: scale(1);
+        }
+
+        .hywe-modal-close {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #555;
+            transition: background 0.2s, color 0.2s;
+            margin-top: -10px;
+            margin-right: -10px;
+            z-index: 10;
+        }
+
+        .hywe-modal-close:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .hywe-modal-content h1 {
+            margin-top: 0;
+            font-size: 22px;
+            font-weight: 600;
+            color: #222;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .hywe-modal-content h2 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .hywe-modal-content h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 18px;
+            color: #444;
+        }
+
+        .hywe-modal-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .hywe-modal-content th,
+        .hywe-modal-content td {
+            border: 1px solid #e0e0e0;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .hywe-modal-content th {
+            background-color: #f7f7f7;
+            font-weight: 600;
+        }
+
+        .hywe-modal-content a {
+            color: #2E86C1;
+            text-decoration: underline;
+        }
+
+        .hywe-modal-content a:hover {
+            color: #1a5276;
         }
     </style>
 </head>
@@ -251,157 +408,190 @@
             </section>
         </div>
     </div>
-    <!-- Offscreen hidden metadata and about content (SEO friendly) -->
-    <section id="about-hywe" class="offscreen-hidden">
-        <h1>HYWE – Hygrid Woven Ensemble</h1>
+    <!-- Bottom-corner button to access About & Documentation -->
+    <button id="about-trigger-btn" class="about-corner-trigger" onclick="openAboutModal()" aria-label="Open About HYWE dialog">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        About HYWE
+    </button>
 
-        <h2>About HYWE</h2>
-        <p><em>HYWE - <strong>Hygrid Woven Ensemble</strong></em></p>
-        <p><strong>HYWE</strong> is a experimental computational environment where the core engine is dependency-free, and structured
-            intent resolves into spatial configurations through deterministic topological logic. HYWE and the HYWE
-            Architectural Training Data repository form an active, deterministic data collection ecosystem.</p>
-        <p><strong>Note on Scope:</strong> HYWE is strictly a computational layout engine focused on spatial topology. It is <strong>not a comprehensive architectural modeling or lifecycle management platform</strong> and does not aspire to replicate the detailed parametric modeling, structural documentation, or construction-level detailing of industry-standard drafting suites. Its purpose lies purely in early-stage spatial exploration, and any evaluative comparison between HYWE's deliverables and fully-featured, production-ready modeling platforms falls outside its intended operational domain.</p>
-        <p>For more detailed information regarding the core engine, design computation logic, and layout features, refer
-            directly to the <a href="https://github.com/vykrum/Hywe" target="_blank">HYWE GitHub Repository README</a>.
-        </p>
+    <!-- Accessible About & Technical Specifications Modal Overlay -->
+    <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" onclick="if(event.target===this)closeAboutModal()">
+        <section id="about-hywe" class="hywe-modal-content">
+            <button class="hywe-modal-close" onclick="closeAboutModal()" aria-label="Close dialog">✕</button>
+            <h1>HYWE – Hygrid Woven Ensemble</h1>
 
-        <h3>Ecosystem Components & Sync</h3>
-        <p>The HYWE ecosystem operates as a closed-loop data curation and design pipeline across three distinct
-            components:</p>
-        <ul>
-            <li>
-                <strong>HYWE Engine (Core &amp; Client Sandbox):</strong> The F#-driven client interface compiling to
-                WebAssembly via Bolero. Resolves discrete spatial topologies and generates real-time SVG 2D plans and
-                WebGPU 3D volumes.
-                Learn more in the <a href="https://github.com/vykrum/Hywe" target="_blank">HYWE GitHub Repository</a>.
-            </li>
-            <li>
-                <strong>Hynteract (Ecosystem Data Layer):</strong> The private serverless JavaScript/Node.js API
-                ingestion layer deployed via Vercel. It secures client sessions, maps linguistic architectural prompts,
-                captures Base34 spatial tokens, and formats structured JSON Lines (.jsonl) payloads.
-            </li>
-            <li>
-                <strong>HYWE Architectural Training Data (ML Dataset):</strong> The public repository hosting structured
-                synthetic architectural layouts currently in its active data collection phase. This token-efficient
-                dataset will provide the foundation for training custom, layout-aware AI models.
-                Access the database, schema definition, and licensing on the <a
-                    href="https://huggingface.co/datasets/vykrum/hywe-training-data" target="_blank">Hugging Face
-                    Datacard</a>.
-            </li>
-        </ul>
+            <h2>About HYWE</h2>
+            <p><em>HYWE - <strong>Hygrid Woven Ensemble</strong></em></p>
+            <p><strong>HYWE</strong> is a experimental computational environment where the core engine is dependency-free, and structured
+                intent resolves into spatial configurations through deterministic topological logic. HYWE and the HYWE
+                Architectural Training Data repository form an active, deterministic data collection ecosystem.</p>
+            <p><strong>Note on Scope:</strong> HYWE is strictly a computational layout engine focused on spatial topology. It is <strong>not a comprehensive architectural modeling or lifecycle management platform</strong> and does not aspire to replicate the detailed parametric modeling, structural documentation, or construction-level detailing of industry-standard drafting suites. Its purpose lies purely in early-stage spatial exploration, and any evaluative comparison between HYWE's deliverables and fully-featured, production-ready modeling platforms falls outside its intended operational domain.</p>
+            <p>For comprehensive technical documentation regarding the core engine, formal model, benchmarks, and computational design theory, explore the <a href="https://github.com/vykrum/Hywe/wiki" target="_blank" rel="noopener noreferrer">HYWE Documentation Wiki</a> and the <a href="https://github.com/vykrum/Hywe" target="_blank" rel="noopener noreferrer">HYWE GitHub Repository</a>.
+            </p>
 
-        <h3>The 8-Stage Core Pipeline</h3>
-        <p>The HYWE computational engine processes designer intents through eight deterministic compilation stages:</p>
-        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;">
-            <thead>
-                <tr>
-                    <th>Stage</th>
-                    <th>Component</th>
-                    <th>Logic</th>
-                    <th>Output</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>1. Intent</strong></td>
-                    <td>Interactive Node Tree &amp; Boundary Editor</td>
-                    <td>Defining spatial relationships and site bounds.</td>
-                    <td>Design Intent / Constraints</td>
-                </tr>
-                <tr>
-                    <td><strong>2. Encoding</strong></td>
-                    <td>HYWE Syntax</td>
-                    <td>Compact, deterministic Base34 alphanumeric serialization.</td>
-                    <td>.hyw State String</td>
-                </tr>
-                <tr>
-                    <td><strong>3. Parsing</strong></td>
-                    <td>Lexel</td>
-                    <td>Flow parsing and architectural program extraction.</td>
-                    <td>TreeNode Hierarchy</td>
-                </tr>
-                <tr>
-                    <td><strong>4. Formation</strong></td>
-                    <td>Hexel &amp; Coxel</td>
-                    <td>Atomic units and simultaneously evolving layout clusters.</td>
-                    <td>Geometric Fabric</td>
-                </tr>
-                <tr>
-                    <td><strong>5. Distribution</strong></td>
-                    <td>Xyxel</td>
-                    <td>Planar Coxel configuration and 2D spatial layout.</td>
-                    <td>SVG Plan View</td>
-                </tr>
-                <tr>
-                    <td><strong>6. Massing</strong></td>
-                    <td>Zaxel</td>
-                    <td>Multi-level Xyxel stacking and 3D volumetric extrusion.</td>
-                    <td>WebGPU Volumetric Model</td>
-                </tr>
-                <tr>
-                    <td><strong>7. Expansion</strong></td>
-                    <td>Batch &amp; Teach</td>
-                    <td>Procedural permutation processing and active data collection.</td>
-                    <td>Dataset Ingestion (via Hynteract)</td>
-                </tr>
-                <tr>
-                    <td><strong>8. Insight</strong></td>
-                    <td>Analyze &amp; Report</td>
-                    <td>Spatial adjacency metrics and automated layout audit.</td>
-                    <td>PDF Design Report</td>
-                </tr>
-            </tbody>
-        </table>
+            <h3>Ecosystem Components &amp; Sync</h3>
+            <p>The HYWE ecosystem operates as a closed-loop data curation and design pipeline across three distinct
+                components:</p>
+            <ul>
+                <li>
+                    <strong>HYWE Engine (Core &amp; Client Sandbox):</strong> The F#-driven client interface compiling to
+                    WebAssembly via Bolero. Resolves discrete spatial topologies and generates real-time SVG 2D plans and
+                    WebGPU 3D volumes.
+                    Learn more in the <a href="https://github.com/vykrum/Hywe/wiki" target="_blank" rel="noopener noreferrer">HYWE Documentation Wiki</a> and the <a href="https://github.com/vykrum/Hywe" target="_blank" rel="noopener noreferrer">GitHub Repository</a>.
+                </li>
+                <li>
+                    <strong>Hynteract (Ecosystem Data Layer):</strong> The private serverless JavaScript/Node.js API
+                    ingestion layer deployed via Vercel. It secures client sessions, maps linguistic architectural prompts,
+                    captures Base34 spatial tokens, and formats structured JSON Lines (.jsonl) payloads.
+                </li>
+                <li>
+                    <strong>HYWE Architectural Training Data (ML Dataset):</strong> The public repository hosting structured
+                    synthetic architectural layouts currently in its active data collection phase. This token-efficient
+                    dataset will provide the foundation for training custom, layout-aware AI models.
+                    Access the database, schema definition, and licensing on the <a
+                        href="https://huggingface.co/datasets/vykrum/hywe-training-data" target="_blank" rel="noopener noreferrer">Hugging Face
+                        Datacard</a>.
+                </li>
+            </ul>
 
-        <h3>The 6 Core Topological Concepts</h3>
-        <ul>
-            <li>
-                <strong>1. Deterministic Topology:</strong> Adjacency resolves strictly through procedural topological
-                rules rather than probabilistic drafting, ensuring math-precise layout repeatability.
-            </li>
-            <li>
-                <strong>2. Architectural Programming:</strong> Abstract building programs (hierarchical trees,
-                circulation weight, boundary limits) compile directly into resolved geometries.
-            </li>
-            <li>
-                <strong>3. Spatial Hierarchy:</strong> Recursive, self-similar space partitioning distributes nested
-                child spaces (L1, L2, etc.) dynamically within parent Coxel hosts.
-            </li>
-            <li>
-                <strong>4. Base34 Topology Encoding (HYWE Syntax):</strong> High-efficiency serialization format that
-                compresses layout relationships into standard text tokens, allowing stateless sharing via URL fragment
-                hashes.
-            </li>
-            <li>
-                <strong>5. Integer-Based Partitioning (Hygrid):</strong> A custom integer hybrid lattice replaces floating-point geometry. By sacrificing geometric isotropy for arithmetic determinism, it ensures strict integer closure and allows for dependency-free, kernel-free WebAssembly execution without browser-specific rounding bugs.
-            </li>
-            <li>
-                <strong>6. Semantic Architectural Intent:</strong> Declarative natural language design prompts are
-                mapped directly to discrete spatial coordinates via the Hynteract pipeline, building rich dataset cards.
-            </li>
-        </ul>
+            <h3>The 8-Stage Core Pipeline</h3>
+            <p>The HYWE computational engine processes designer intents through eight deterministic compilation stages:</p>
+            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th>Stage</th>
+                        <th>Component</th>
+                        <th>Logic</th>
+                        <th>Output</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Intent</strong></td>
+                        <td>Interactive Node Tree &amp; Boundary Editor</td>
+                        <td>Defining spatial relationships and site bounds.</td>
+                        <td>Design Intent / Constraints</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Encoding</strong></td>
+                        <td>HYWE Syntax</td>
+                        <td>Compact, deterministic Base34 alphanumeric serialization.</td>
+                        <td>.hyw State String</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Parsing</strong></td>
+                        <td>Lexel</td>
+                        <td>Flow parsing and architectural program extraction.</td>
+                        <td>TreeNode Hierarchy</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Formation</strong></td>
+                        <td>Hexel &amp; Coxel</td>
+                        <td>Atomic units and simultaneously evolving layout clusters.</td>
+                        <td>Geometric Fabric</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Distribution</strong></td>
+                        <td>Xyxel</td>
+                        <td>Planar Coxel configuration and 2D spatial layout.</td>
+                        <td>SVG Plan View</td>
+                    </tr>
+                    <tr>
+                        <td><strong>6. Massing</strong></td>
+                        <td>Zaxel</td>
+                        <td>Multi-level Xyxel stacking and 3D volumetric extrusion.</td>
+                        <td>WebGPU Volumetric Model</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7. Expansion</strong></td>
+                        <td>Batch &amp; Teach</td>
+                        <td>Procedural permutation processing and active data collection.</td>
+                        <td>Dataset Ingestion (via Hynteract)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>8. Insight</strong></td>
+                        <td>Analyze &amp; Report</td>
+                        <td>Spatial adjacency metrics and automated layout audit.</td>
+                        <td>PDF Design Report</td>
+                    </tr>
+                </tbody>
+            </table>
 
-        <h3>Technical Stack</h3>
-        <ul>
-            <li><strong>Core Language:</strong> F# (Functional-first design)</li>
-            <li><strong>Web Framework:</strong> Bolero (Blazor running client-side WebAssembly)</li>
-            <li><strong>Graphics Layer:</strong> WebGPU (Native hardware-accelerated 3D massing)</li>
-        </ul>
+            <h3>The 6 Core Topological Concepts</h3>
+            <ul>
+                <li>
+                    <strong>1. Deterministic Topology:</strong> Adjacency resolves strictly through procedural topological
+                    rules rather than probabilistic drafting, ensuring math-precise layout repeatability.
+                </li>
+                <li>
+                    <strong>2. Architectural Programming:</strong> Abstract building programs (hierarchical trees,
+                    circulation weight, boundary limits) compile directly into resolved geometries.
+                </li>
+                <li>
+                    <strong>3. Spatial Hierarchy:</strong> Recursive, self-similar space partitioning distributes nested
+                    child spaces (L1, L2, etc.) dynamically within parent Coxel hosts.
+                </li>
+                <li>
+                    <strong>4. Base34 Topology Encoding (HYWE Syntax):</strong> High-efficiency serialization format that
+                    compresses layout relationships into standard text tokens, allowing stateless sharing via URL fragment
+                    hashes.
+                </li>
+                <li>
+                    <strong>5. Integer-Based Partitioning (Hygrid):</strong> A custom integer hybrid lattice replaces floating-point geometry. By sacrificing geometric isotropy for arithmetic determinism, it ensures strict integer closure and allows for dependency-free, kernel-free WebAssembly execution without browser-specific rounding bugs.
+                </li>
+                <li>
+                    <strong>6. Semantic Architectural Intent:</strong> Declarative natural language design prompts are
+                    mapped directly to discrete spatial coordinates via the Hynteract pipeline, building rich dataset cards.
+                </li>
+            </ul>
 
-        <h3>Repository &amp; Ecosystem Links</h3>
-        <ul>
-            <li><strong>HYWE GitHub Repository:</strong> <a href="https://github.com/vykrum/Hywe"
-                    target="_blank">github.com/vykrum/Hywe</a></li>
-            <li><strong>Hugging Face Dataset Card:</strong> <a
-                    href="https://huggingface.co/datasets/vykrum/hywe-training-data"
-                    target="_blank">huggingface.co/datasets/vykrum/hywe-training-data</a></li>
-            <li><strong>Author:</strong> <a href="https://github.com/vykrum" target="_blank">Vikram Subbaiah
-                    (vykrum)</a></li>
-            <li><strong>LinkedIn Page:</strong> <a href="https://www.linkedin.com/company/hywein/"
-                    target="_blank">linkedin.com/company/hywein</a></li>
-            <li><strong>X (Twitter) Profile:</strong> <a href="https://x.com/_hywe_" target="_blank">@_hywe_</a></li>
-        </ul>
-    </section>
+            <h3>Technical Stack</h3>
+            <ul>
+                <li><strong>Core Language:</strong> F# (Functional-first design)</li>
+                <li><strong>Web Framework:</strong> Bolero (Blazor running client-side WebAssembly)</li>
+                <li><strong>Graphics Layer:</strong> WebGPU (Native hardware-accelerated 3D massing)</li>
+            </ul>
+
+            <h3>Repository &amp; Ecosystem Links</h3>
+            <ul>
+                <li><strong>HYWE GitHub Repository:</strong> <a href="https://github.com/vykrum/Hywe"
+                        target="_blank" rel="noopener noreferrer">github.com/vykrum/Hywe</a></li>
+                <li><strong>HYWE Documentation Wiki:</strong> <a href="https://github.com/vykrum/Hywe/wiki"
+                        target="_blank" rel="noopener noreferrer">github.com/vykrum/Hywe/wiki</a></li>
+                <li><strong>Hugging Face Dataset Card:</strong> <a
+                        href="https://huggingface.co/datasets/vykrum/hywe-training-data"
+                        target="_blank" rel="noopener noreferrer">huggingface.co/datasets/vykrum/hywe-training-data</a></li>
+                <li><strong>Author:</strong> <a href="https://github.com/vykrum" target="_blank" rel="noopener noreferrer">Vikram Subbaiah
+                        (vykrum)</a></li>
+                <li><strong>LinkedIn Page:</strong> <a href="https://www.linkedin.com/company/hywein/"
+                        target="_blank" rel="noopener noreferrer">linkedin.com/company/hywein</a></li>
+                <li><strong>X (Twitter) Profile:</strong> <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer">@_hywe_</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Modal helper scripts -->
+    <script>
+        function openAboutModal() {
+            var modal = document.getElementById('about-hywe-modal');
+            if (modal) {
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+        }
+        function closeAboutModal() {
+            var modal = document.getElementById('about-hywe-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeAboutModal();
+        });
+    </script>
 
     <!--Scripts-->
     <script>
