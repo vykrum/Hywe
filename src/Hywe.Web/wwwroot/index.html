@@ -423,14 +423,11 @@
 
         .about-link-chip {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            justify-content: center;
             background: #f8f8f8;
-            color: #333333;
             padding: 10px 14px;
             border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
             border: 1px solid #e0e0e0;
             text-decoration: none !important;
             transition: all 0.15s ease;
@@ -438,10 +435,31 @@
             width: 100%;
         }
 
+        .about-link-chip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #222222;
+            margin-bottom: 2px;
+        }
+
+        .about-link-chip-url {
+            font-size: 11.5px;
+            font-family: 'Outfit', system-ui, sans-serif;
+            color: #777777;
+            letter-spacing: 0.2px;
+        }
+
         .about-link-chip:hover {
             background: #363636;
-            color: #ffffff !important;
             border-color: #363636;
+        }
+
+        .about-link-chip:hover .about-link-chip-header,
+        .about-link-chip:hover .about-link-chip-url {
+            color: #ffffff !important;
         }
     </style>
 </head>
@@ -527,24 +545,39 @@
             <p>Explore the formal mathematical theory, integer lattice specifications, source code, and community channels:</p>
             <div class="about-links-grid">
                 <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <span>Documentation Wiki</span>
-                    <span>&rarr;</span>
+                    <div class="about-link-chip-header">
+                        <span>Documentation Wiki</span>
+                        <span>&rarr;</span>
+                    </div>
+                    <div class="about-link-chip-url">wiki.hywe.in</div>
                 </a>
                 <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <span>GitHub Repository</span>
-                    <span>&rarr;</span>
+                    <div class="about-link-chip-header">
+                        <span>GitHub Repository</span>
+                        <span>&rarr;</span>
+                    </div>
+                    <div class="about-link-chip-url">repo.hywe.in</div>
                 </a>
                 <a href="https://data.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <span>Training Dataset</span>
-                    <span>&rarr;</span>
+                    <div class="about-link-chip-header">
+                        <span>Training Dataset</span>
+                        <span>&rarr;</span>
+                    </div>
+                    <div class="about-link-chip-url">data.hywe.in</div>
                 </a>
                 <a href="https://linkedin.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <span>LinkedIn Page</span>
-                    <span>&rarr;</span>
+                    <div class="about-link-chip-header">
+                        <span>LinkedIn Page</span>
+                        <span>&rarr;</span>
+                    </div>
+                    <div class="about-link-chip-url">linkedin.hywe.in</div>
                 </a>
                 <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <span>X (Twitter) Profile</span>
-                    <span>&rarr;</span>
+                    <div class="about-link-chip-header">
+                        <span>X (Twitter) Profile</span>
+                        <span>&rarr;</span>
+                    </div>
+                    <div class="about-link-chip-url">x.com/_hywe_</div>
                 </a>
             </div>
         </section>
