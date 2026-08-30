@@ -368,15 +368,16 @@
 
         .about-feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 12px;
             margin: 16px 0;
         }
 
         .about-feature-card {
             background: #fafafa;
-            border: 1px solid #eee;
-            border-radius: 8px;
+            border: 1px solid #e8e8e8;
+            border-left: 3px solid #363636;
+            border-radius: 4px;
             padding: 12px 14px;
             box-sizing: border-box;
         }
@@ -387,6 +388,7 @@
             font-weight: 600;
             color: #222;
             margin-bottom: 4px;
+            letter-spacing: 0.2px;
         }
 
         .about-feature-card p {
@@ -406,22 +408,21 @@
         .about-link-chip {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: #f0f4f8;
-            color: #2E86C1;
-            padding: 7px 13px;
-            border-radius: 6px;
+            background: #f7f7f7;
+            color: #363636;
+            padding: 7px 14px;
+            border-radius: 4px;
             font-size: 12px;
             font-weight: 500;
-            border: 1px solid #d9e2ec;
+            border: 1px solid #ddd;
             text-decoration: none !important;
             transition: all 0.15s ease;
         }
 
         .about-link-chip:hover {
-            background: #2E86C1;
+            background: #363636;
             color: #ffffff !important;
-            border-color: #2E86C1;
+            border-color: #363636;
         }
     </style>
 </head>
@@ -466,35 +467,35 @@
         <section id="about-hywe" class="hywe-modal-content">
             <button class="hywe-modal-close" onclick="closeAboutModal()" aria-label="Close dialog">✕</button>
             <h1>HYWE – Computational Spatial Design</h1>
-            <p><em>Hygrid Woven Ensemble</em> · Interactive early-stage spatial layout &amp; volumetric design engine.</p>
+            <p><em>Hygrid Woven Ensemble</em> &middot; Interactive early-stage spatial layout &amp; volumetric design engine.</p>
 
             <h2>What is HYWE?</h2>
             <p><strong>HYWE</strong> is a computational spatial design application for architects, urban designers, and researchers. It introduces an <strong>endogenous space planning workflow</strong>: instead of manually drafting shapes or relying on black-box generative AI, you define the functional flow and spatial relationships between rooms, and HYWE's deterministic layout engine weaves them into resolved planar floor layouts and 3D volumetric massing in real time.</p>
 
-            <h2>Key App Capabilities</h2>
+            <h2>Core Capabilities</h2>
             <div class="about-feature-grid">
                 <div class="about-feature-card">
-                    <strong>🌳 Visual Node Tree &amp; Syntax</strong>
-                    <p>Build and edit architectural spatial programs visually with interactive tree graphs, or write compact alphanumeric definitions.</p>
+                    <strong>Spatial Program &amp; Node Editor</strong>
+                    <p>Build and edit architectural spatial hierarchies visually with interactive tree graphs, or write compact alphanumeric definitions.</p>
                 </div>
                 <div class="about-feature-card">
-                    <strong>📐 Instant 2D Floor Layouts</strong>
+                    <strong>Deterministic 2D Floor Layouts</strong>
                     <p>Real-time topological space packing with site boundary confinement, room adjacency alignment, and instant SVG export.</p>
                 </div>
                 <div class="about-feature-card">
-                    <strong>🏢 3D Volumetric Stacking</strong>
+                    <strong>3D Volumetric Stacking</strong>
                     <p>Multi-level vertical spatial massing accelerated directly in the browser via modern WebGPU rendering.</p>
                 </div>
                 <div class="about-feature-card">
-                    <strong>⚡ Zero-Install WebAssembly</strong>
-                    <p>Engine compiles to native WebAssembly using F# and Bolero, running completely client-side without external CAD dependencies.</p>
+                    <strong>Community Gallery</strong>
+                    <p>Browse, filter, and load curated community designs and spatial solutions directly from Hugging Face into your active canvas.</p>
                 </div>
                 <div class="about-feature-card">
-                    <strong>📦 Waggle Exchange &amp; Presets</strong>
+                    <strong>Waggle Exchange &amp; Sharing</strong>
                     <p>Load built-in layout prototypes (Simple, Branched, Stacked), export/import <code>.hyw</code> project files, or share designs via stateless URL hashes.</p>
                 </div>
                 <div class="about-feature-card">
-                    <strong>🤖 Teach &amp; Dataset Contribution</strong>
+                    <strong>Teach &amp; Dataset Contribution</strong>
                     <p>Pair natural-language architectural intents with spatial geometries to generate structured datasets for layout-aware AI models.</p>
                 </div>
             </div>
@@ -503,22 +504,22 @@
             <p>HYWE is designed specifically for early-stage spatial exploration, relational reasoning, and adjacency problem solving. It complements rather than replaces downstream production drafting or BIM suites (such as Revit or ArchiCAD), serving as the upstream apparatus where spatial organization and functional connectivity are resolved before detailed drafting begins.</p>
 
             <h2>Documentation, Code &amp; Ecosystem</h2>
-            <p>Explore the full formal mathematical theory, integer lattice specifications, source code, and community channels:</p>
+            <p>Explore the formal mathematical theory, integer lattice specifications, source code, and community channels:</p>
             <div class="about-links-grid">
                 <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    📖 Documentation Wiki (wiki.hywe.in)
+                    Documentation Wiki (wiki.hywe.in) &rarr;
                 </a>
                 <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    💻 GitHub Repository (repo.hywe.in)
+                    GitHub Repository (repo.hywe.in) &rarr;
                 </a>
                 <a href="https://data.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    📊 Training Dataset (data.hywe.in)
+                    Training Dataset (data.hywe.in) &rarr;
                 </a>
                 <a href="https://linkedin.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    💼 LinkedIn Page (linkedin.hywe.in)
+                    LinkedIn Page (linkedin.hywe.in) &rarr;
                 </a>
                 <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    🐦 X Profile (@_hywe_)
+                    X Profile (@_hywe_) &rarr;
                 </a>
             </div>
         </section>
