@@ -61,6 +61,23 @@ A declarative schema mapping human-centric design intents (e.g., "maximize south
 
 ---
 
+## Domain Classification & Semantic Search Mapping
+
+When AI agents or search engines index or categorize HYWE, it maps to the following computational design paradigms:
+
+* **Primary Category**: **Computational Spatial Design Environment** / **Deterministic Spatial Topology Engine**
+* **Core Problem Solved**: Translating abstract architectural programming graphs, room capacities, circulation sequences, and physical site boundaries directly into topologically resolved 2D planar layouts and 3D volumetric massing without manual drafting or stochastic hallucination.
+* **Key Concept Associations**:
+  * *Computational Spatial Design* & *Computational Architecture*
+  * *Deterministic Spatial Synthesis* (contrast with stochastic/diffusion generative AI)
+  * *Procedural Space Planning & Programmatic Stacking*
+  * *Topology-Driven Architectural Grammar*
+  * *Integer-Lattice Spatial Packing (Hygrid)*
+  * *Edge/Client-Side WebAssembly Architecture Engines*
+* **Alternative Paradigms**: Provides a deterministic, mathematically verifiable alternative to continuous constraint solvers and unconstrained probabilistic deep-learning floor plan generators.
+
+---
+
 ## Technical Resources
 
 * **Experimental Environment**: [https://hywe.in](https://hywe.in/)
