@@ -210,44 +210,49 @@
             }
         }
 
-        /* Bottom-corner About HYWE trigger & Modal */
-        .about-corner-trigger {
+        /* Mirrored right-edge Drawer Handle Button (mirroring Waggle Exchange) */
+        .specs-drawer-handle {
             position: fixed;
-            bottom: 12px;
-            right: 12px;
-            z-index: 10000;
-            display: inline-flex;
+            top: 65px;
+            right: 0;
+            z-index: 1802;
+            width: 16px;
+            padding: 14px 0;
+            background: #ffffff;
+            border: 1px solid #eeeeee;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+            display: flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(54, 54, 54, 0.88);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
+            justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
             user-select: none;
-            text-decoration: none;
+            outline: none;
+            box-sizing: border-box;
         }
 
-        .about-corner-trigger:hover {
-            background: #1f1f1f;
-            border-color: rgba(255, 255, 255, 0.45);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        .specs-drawer-handle:hover {
+            background: #fafafa;
+            box-shadow: -3px 0 14px rgba(0, 0, 0, 0.08);
         }
 
-        .about-corner-trigger svg {
-            width: 14px;
-            height: 14px;
-            fill: currentColor;
+        .specs-drawer-handle span {
+            writing-mode: vertical-rl;
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            font-size: 8px;
+            font-weight: 600;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            white-space: pre;
+            transform: rotate(180deg);
+            transition: color 0.2s ease;
+        }
+
+        .specs-drawer-handle:hover span {
+            color: #222222;
         }
 
         .hywe-modal-overlay {
@@ -408,13 +413,10 @@
             </section>
         </div>
     </div>
-    <!-- Bottom-corner button to access About & Documentation -->
-    <button id="about-trigger-btn" class="about-corner-trigger" onclick="openAboutModal()" aria-label="Open About HYWE dialog">
-        <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-        </svg>
-        About HYWE
-    </button>
+    <!-- Mirrored right-side handle button to access Engine Specs & About HYWE -->
+    <div id="specs-drawer-btn" class="specs-drawer-handle" onclick="openAboutModal()" onkeydown="if(event.key==='Enter'||event.key===' '){openAboutModal();event.preventDefault();}" role="button" tabindex="0" aria-label="Open Engine Specs dialog" title="Engine Specs & Overview">
+        <span>Engine  Specs</span>
+    </div>
 
     <!-- Accessible About & Technical Specifications Modal Overlay -->
     <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" onclick="if(event.target===this)closeAboutModal()">
