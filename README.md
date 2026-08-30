@@ -1,4 +1,4 @@
-**HYWE** is a **research project and experimental computational environment** where **structured intent** metamorphoses into **spatial configurations** through **deterministic design computation**.
+**HYWE** is a **computational spatial design environment and experimental research project** where **structured intent** metamorphoses into **spatial configurations** through **deterministic design computation**.
 
 ---
 
@@ -7,7 +7,7 @@
 ---
 # H Y W E
 
-**Hy**grid **W**oven **E**nsemble
+**Hy**grid **W**oven **E**nsemble — *Computational Spatial Design Environment*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
 
