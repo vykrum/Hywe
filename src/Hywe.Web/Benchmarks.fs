@@ -54,7 +54,7 @@ module Benchmarks =
             layout
         | None -> failwithf "Failed to generate base hexel for %s" (sqnToString sqn)
 
-    let appendMarkdownHeader (sb: System.Text.StringBuilder) (title: string) (description: string) =
+    let appendMarkdownHeader (sb: System.Text.StringBuilder) (title: string) (description: string) (clientInfo: string) =
         sb.AppendLine(sprintf "### %s" title) |> ignore
         sb.AppendLine(description) |> ignore
         sb.AppendLine("") |> ignore
@@ -62,6 +62,8 @@ module Benchmarks =
         sb.AppendLine("- **Runtime**: WebAssembly (Mono / " + RuntimeInformation.FrameworkDescription + ")") |> ignore
         sb.AppendLine("- **Architecture**: " + RuntimeInformation.ProcessArchitecture.ToString()) |> ignore
         sb.AppendLine("- **Build Configuration**: Release") |> ignore
+        if not (String.IsNullOrWhiteSpace(clientInfo)) then
+            sb.AppendLine("- **Client / Browser Engine**: " + clientInfo) |> ignore
         sb.AppendLine("- **Timing Scope**: Core layout engine compilation (`runCompilation`), excluding DOM manipulation, SVG formatting, and WebGPU rendering.") |> ignore
         sb.AppendLine("- **Warm-up Policy**: 2 warm-up cycles executed prior to steady-state measurement (eliminating JIT/WASM compilation and static dispatch latency).") |> ignore
         sb.AppendLine("- **Memory Isolation**: Forced generation garbage collection (`GC.Collect()`) executed between operator batches.") |> ignore
@@ -69,9 +71,9 @@ module Benchmarks =
 
     type BenchmarkRunner() =
         [<JSInvokable("RunPerformanceBenchmark")>]
-        static member RunPerformanceBenchmark () =
+        static member RunPerformanceBenchmark ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Performance Benchmark — Production / WebAssembly" "Latency and standard deviation metrics for generating canonical topological presets."
+            appendMarkdownHeader sb "Performance Benchmark — Production / WebAssembly" "Latency and standard deviation metrics for generating canonical topological presets." clientInfo
             sb.AppendLine("| Layout | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) | Total Warm (ms) |") |> ignore
             sb.AppendLine("|--------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|-----------------|") |> ignore
 
@@ -116,9 +118,9 @@ module Benchmarks =
             sb.ToString()
             
         [<JSInvokable("RunConformanceTests")>]
-        static member RunConformanceTests () =
+        static member RunConformanceTests ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Repeatability & Conformance Benchmark" "Empirical verification of topology signature consistency for canonical inputs across repeated executions under the same engine build."
+            appendMarkdownHeader sb "Repeatability & Conformance Benchmark" "Empirical verification of topology signature consistency for canonical inputs across repeated executions under the same engine build." clientInfo
             sb.AppendLine("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |") |> ignore
             sb.AppendLine("|--------|----------|------------|------------------|--------------|-------------------------|") |> ignore
             
@@ -155,9 +157,9 @@ module Benchmarks =
             sb.ToString()
 
         [<JSInvokable("RunQualityBenchmarks")>]
-        static member RunQualityBenchmarks () =
+        static member RunQualityBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Quality Benchmark — Adjacency & Compactness" "Empirical evaluation of emergent topological adjacency and bounding box compactness across canonical presets."
+            appendMarkdownHeader sb "Quality Benchmark — Adjacency & Compactness" "Empirical evaluation of emergent topological adjacency and bounding box compactness across canonical presets." clientInfo
             sb.AppendLine("| Layout | Operator | Compactness (Bounding Box Area) | Adjacency Score (%) |") |> ignore
             sb.AppendLine("|--------|----------|---------------------------------|---------------------|") |> ignore
             
@@ -202,9 +204,9 @@ module Benchmarks =
             sb.ToString()
 
         [<JSInvokable("RunScalingBenchmarks")>]
-        static member RunScalingBenchmarks () =
+        static member RunScalingBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
             let sb = System.Text.StringBuilder()
-            appendMarkdownHeader sb "Scaling Benchmark" "Algorithmic scaling latency metrics from 10 to 1,000 architectural nodes under branching tree topologies."
+            appendMarkdownHeader sb "Scaling Benchmark" "Algorithmic scaling latency metrics from 10 to 1,000 architectural nodes under branching tree topologies." clientInfo
             sb.AppendLine("| Scale (Nodes) | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) |") |> ignore
             sb.AppendLine("|---------------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|") |> ignore
             printfn "Starting Scaling Benchmark..."
