@@ -20,7 +20,7 @@
 > **HYWE** is the application and research environment. This repository contains the **HYWE Engine** — the computational core and open-source implementation that powers it.
 >
 > - **[HYWE Web App](https://hywe.in)** (`hywe.in`) — Interactive spatial design environment.
-> - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Deterministic spatial computation, Hygrid topology, layout packing, volumetric massing, analysis, and rendering.
+> - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Deterministic computational core and open-source implementation.
 > - **[HYWE Wiki](https://wiki.hywe.in)** (`wiki.hywe.in`) — Documentation, theory, specifications, tutorials, and research reference.
 > - **[HYWE Dataset](https://data.hywe.in)** (`data.hywe.in`) — Structured spatial training data generated from the system.
 >
