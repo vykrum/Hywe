@@ -17,7 +17,7 @@
 
 ---
 
-> **HYWE** is the application and research environment. This repository contains the **HYWE Engine** — the computational core and open-source implementation that powers it.
+> **HYWE** is the application and research environment. This repository contains the open-source implementation of the **HYWE Engine** and its browser-based application.
 >
 > - **[HYWE Web App](https://hywe.in)** (`hywe.in`) — Interactive spatial design environment.
 > - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Computational engine and open-source implementation.
