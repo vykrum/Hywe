@@ -22,7 +22,7 @@
 > - **[HYWE Web App](https://hywe.in)** (`hywe.in`) — Interactive spatial design environment.
 > - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Computational engine and open-source implementation.
 > - **[HYWE Wiki](https://wiki.hywe.in)** (`wiki.hywe.in`) — Technical documentation and research reference.
-> - **[HYWE Dataset](https://data.hywe.in)** (`data.hywe.in`) — Structured spatial training data.
+> - **[HYWE Data](https://data.hywe.in)** (`data.hywe.in`) — Structured spatial training data.
 >
 > *If you are here to use HYWE, start with the **Web App** and the **Wiki**. If you are here to understand, extend, or reproduce the computational logic, explore this repository.*
 
