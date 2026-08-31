@@ -170,8 +170,6 @@ type ConfirmAction =
 
 
 
-let elv = 0
-
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
 let MODIFIED_DATE = "2026-08-31T20:02:26Z"
 
