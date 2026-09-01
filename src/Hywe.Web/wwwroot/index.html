@@ -501,46 +501,79 @@
     <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" onclick="if(event.target===this)closeAboutModal()">
         <section id="about-hywe" class="hywe-modal-content">
             <button class="hywe-modal-close" onclick="closeAboutModal()" aria-label="Close dialog">✕</button>
-            <h1>HYWE</h1>
-            <p style="font-size: 13px; color: #777; margin: -4px 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid #eee;">
-                <em>Hygrid Woven Ensemble</em> &mdash; Computational Spatial Design Environment
-            </p>
+            <h1>HYWE <span style="font-size: 15px; font-weight: 400; color: #666; margin-left: 8px;">Hygrid Woven Ensemble</span></h1>
 
-            <p style="font-size: 15px; line-height: 1.6; color: #222; margin-bottom: 12px;">
+            <p style="font-size: 15px; line-height: 1.6; color: #1a1a1a; margin: 16px 0 12px 0;">
                 HYWE is a computational spatial design environment for exploring architecture from <strong>relationships rather than geometry</strong>.
             </p>
-            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 20px;">
-                Instead of beginning by drawing spaces and then defining how they connect, HYWE lets you describe hierarchy, sequence, adjacency, and spatial intent first. Its deterministic engine then translates those relationships into resolved spatial configurations.
+            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 12px;">
+                Instead of beginning by drawing rooms and then deciding how they connect, HYWE begins with spatial intent: hierarchy, sequence, adjacency, containment, boundaries, and flow.
+            </p>
+            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 22px;">
+                These relationships are compiled into spatial configurations through a deterministic computational process. The result is not a single prescribed solution, but a spatial system that can be generated, inspected, modified, compared, and explored.
             </p>
 
-            <h2>What HYWE Does</h2>
+            <h2>Define &rarr; Generate &rarr; Explore</h2>
             <div class="about-feature-grid">
                 <div class="about-feature-card">
                     <strong>Define</strong>
-                    <p>Express architectural intent through hierarchical structure, spatial relationships, sequence, and constraints &mdash; visually or through compact syntax.</p>
+                    <p>Express architectural intent through hierarchical structure, spatial relationships, sequence, boundaries, and constraints.</p>
+                    <p style="margin-top: 8px; color: #777; font-size: 12px;">Intent can be constructed visually or represented through HYWE's compact spatial syntax.</p>
                 </div>
                 <div class="about-feature-card">
                     <strong>Generate</strong>
-                    <p>Translate that relational structure into deterministic planar layouts, site-bounded configurations, and volumetric massing using the Hygrid spatial model.</p>
+                    <p>HYWE translates this relational structure into spatial configurations using its discrete Hygrid model.</p>
+                    <p style="margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #555;">The same underlying relationships can resolve into:</p>
+                    <ul style="margin: 0 0 8px 16px; padding: 0; font-size: 12px; color: #666; line-height: 1.5;">
+                        <li>planar spatial layouts</li>
+                        <li>site-bounded configurations</li>
+                        <li>hierarchical spatial arrangements</li>
+                        <li>volumetric massing</li>
+                    </ul>
+                    <p style="margin: 0; color: #777; font-size: 12px;">Because the process is deterministic, the same encoded intent produces the same configuration.</p>
                 </div>
                 <div class="about-feature-card">
                     <strong>Explore</strong>
-                    <p>Inspect, modify, compare, analyze, export, and systematically investigate the resulting spatial configurations.</p>
+                    <p>The generated configurations become a space for investigation.</p>
+                    <p style="margin-top: 8px; color: #666; font-size: 12px;">Inspect relationships, modify constraints, compare alternatives, analyse spatial properties, and explore permutations of the same underlying intent.</p>
+                    <p style="margin-top: 8px; color: #777; font-size: 12px;">HYWE therefore treats early-stage design not simply as drawing, but as exploring a structured space of possibilities.</p>
                 </div>
             </div>
 
-            <h2>What HYWE is Exploring</h2>
-            <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 10px;">
-                HYWE is an experimental research project investigating whether architectural spatial reasoning can be represented and executed computationally as relational structure before geometry.
+            <h2>Why HYWE?</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 10px;">
+                Most architectural computational tools begin with geometry: points, curves, surfaces, solids, or predefined components.
             </p>
-            <p style="font-size: 13px; line-height: 1.5; color: #666; margin-bottom: 20px;">
-                It is deliberately focused on the early, exploratory stages of design. It is not a replacement for comprehensive architectural modeling, structural coordination, or construction documentation software.
+            <p style="font-size: 14.5px; line-height: 1.6; color: #1a1a1a; margin-bottom: 10px; background: #fafafa; border-left: 3px solid #111; padding: 10px 14px; border-radius: 0 4px 4px 0;">
+                <strong>HYWE asks a different question:</strong><br>
+                <em>Can architectural intent be represented as relationships first, and can those relationships be computationally resolved into geometry?</em>
+            </p>
+            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 14px;">
+                This shifts the emphasis from drawing a solution toward defining a system from which solutions can emerge.
+            </p>
+            <p style="font-size: 13.5px; line-height: 1.5; color: #333; margin-bottom: 6px; font-weight: 500;">
+                HYWE is an experimental investigation into:
+            </p>
+            <ul style="margin: 0 0 22px 20px; padding: 0; font-size: 13.5px; color: #555; line-height: 1.65;">
+                <li>relational and flow-based spatial design</li>
+                <li>deterministic generative systems</li>
+                <li>computational architectural programming</li>
+                <li>discrete spatial topology</li>
+                <li>hierarchical space formation</li>
+                <li>systematic exploration of spatial permutations</li>
+            </ul>
+
+            <h2>An Evolving Research Environment</h2>
+            <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 10px;">
+                HYWE is not intended to replace comprehensive architectural modelling, structural coordination, or construction documentation.
+            </p>
+            <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 12px;">
+                It focuses deliberately on the early and exploratory stages of architectural design &mdash; where relationships are established, alternatives are generated, and the boundaries of a design problem are still being discovered.
+            </p>
+            <p style="font-size: 13.5px; line-height: 1.6; color: #555; margin-bottom: 18px;">
+                The application, computational engine, documentation, and growing dataset form parts of the same ongoing research.
             </p>
 
-            <h2>Explore HYWE</h2>
-            <p style="font-size: 13.5px; line-height: 1.5; color: #555; margin-bottom: 12px;">
-                HYWE is an evolving research environment. The application, engine, documentation, and datasets are parts of the same ongoing exploration:
-            </p>
             <div class="about-links-grid">
                 <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
                     <div class="about-link-chip-header">
