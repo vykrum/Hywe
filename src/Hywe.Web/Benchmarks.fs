@@ -65,7 +65,7 @@ module Benchmarks =
         if not (String.IsNullOrWhiteSpace(clientInfo)) then
             sb.AppendLine("- **Client / Browser Engine**: " + clientInfo) |> ignore
         sb.AppendLine("- **Timing Scope**: Core layout engine compilation (`runCompilation`), excluding DOM manipulation, SVG formatting, and WebGPU rendering.") |> ignore
-        sb.AppendLine("- **Warm-up Policy**: 2 warm-up cycles executed prior to steady-state measurement (eliminating JIT/WASM compilation and static dispatch latency).") |> ignore
+        sb.AppendLine("- **Warm-up Policy**: 2 warm-up cycles executed prior to steady-state measurement (reducing the influence of JIT/WASM compilation and static dispatch latency).") |> ignore
         sb.AppendLine("- **Memory Isolation**: Forced generation garbage collection (`GC.Collect()`) executed between operator batches.") |> ignore
         sb.AppendLine("") |> ignore
 
