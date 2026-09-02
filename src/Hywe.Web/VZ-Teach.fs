@@ -11,6 +11,7 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Node
 open Page
+open Hywe.Site
 
 // --- UTILITIES & TRANSCRIPTION ---
 
@@ -106,19 +107,36 @@ let generateSuggestion (model: Model) =
         else sprintf " for the '%s' project" (meta.ProjectTitle.Trim())
 
     let boundaryPart =
-        let firstConfig = 
-            model.LayoutCache 
-            |> Map.toSeq
-            |> Seq.tryPick (fun (_, configs) -> configs |> Array.tryPick id)
-            
-        match firstConfig with
-        | Some cfg ->
-            if cfg.cxOuIl.Length = 0 then "The layout is unbound."
-            else
-                let islandText = if cfg.cxOuIl.Length > 1 then "with islands" else "without islands"
-                let scaleText = if cfg.mapScale <> 1.0 then sprintf " with a map scale of 1:%d" (int cfg.mapScale) else ""
-                sprintf "The layout is bound at %dx%d%s, %s." model.PolygonExport.Width model.PolygonExport.Height scaleText islandText
-        | None -> "The layout is unbound."
+        let isBoundaryActive =
+            let poly = 
+                match model.PolygonEditor with
+                | Stable p | FreshlyImported p -> p
+            poly.UseBoundary
+
+        if not isBoundaryActive then
+            "The layout is unbound."
+        else
+            let firstConfig = 
+                model.LayoutCache 
+                |> Map.toSeq
+                |> Seq.tryPick (fun (_, configs) -> configs |> Array.tryPick id)
+                
+            match firstConfig with
+            | Some cfg ->
+                let activeBoundaries = cfg.cxOuIl |> Array.filter (fun poly -> poly.Length > 0)
+                if activeBoundaries.Length = 0 then
+                    "The layout is unbound."
+                else
+                    let islandText = if activeBoundaries.Length > 1 then "with islands" else "without islands"
+                    let scaleText = if cfg.mapScale <> 1.0 then sprintf " with a map scale of 1:%d" (int cfg.mapScale) else ""
+                    sprintf "The layout is bound at %dx%d%s, %s." model.PolygonExport.Width model.PolygonExport.Height scaleText islandText
+            | None ->
+                if String.IsNullOrWhiteSpace model.PolygonExport.OuterStr then
+                    "The layout is unbound."
+                else
+                    let islandText = if String.IsNullOrWhiteSpace model.PolygonExport.IslandsStr then "without islands" else "with islands"
+                    let scaleText = if model.PolygonExport.MapScale <> 1.0 then sprintf " with a map scale of 1:%d" (int model.PolygonExport.MapScale) else ""
+                    sprintf "The layout is bound at %dx%d%s, %s." model.PolygonExport.Width model.PolygonExport.Height scaleText islandText
 
     let intro = sprintf "This is a %s stage %s %s project%s%s with a %s flow and %s ambience. %s" 
                     (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) authorPart projectPart (meta.Flow.ToLower()) (meta.Ambience.ToLower()) boundaryPart

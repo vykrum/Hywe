@@ -248,5 +248,10 @@ module Xyxel =
             | true -> [| rootCxl |]
             | false -> buildTree ctx.ScaledTree [| rootCxl |] nextOcc
 
-        result, Array.append [|ctx.Boundary|] ctx.Islands, ctx.Ratio
+        let bounds =
+            match Array.isEmpty ctx.Boundary with
+            | true -> ctx.Islands
+            | false -> Array.append [|ctx.Boundary|] ctx.Islands
+
+        result, bounds, ctx.Ratio
 
