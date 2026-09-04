@@ -196,7 +196,8 @@ module Elements =
             attr.``class`` "hywe-footer"
             div {
                 attr.``class`` "hywe-scale-info"
-                text (sprintf "Scale: %s | Elevation: %d" model.TeachMetadata.Scale model.Elevation)
+                let scaleStr = if String.IsNullOrWhiteSpace model.TeachMetadata.Scale then "N/A" else model.TeachMetadata.Scale
+                text (sprintf "Scale: %s | Elevation: %d" scaleStr model.Elevation)
             }
         }
 

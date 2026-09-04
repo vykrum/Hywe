@@ -171,7 +171,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-02T17:16:04Z"
+let MODIFIED_DATE = "2026-09-04T17:36:39Z"
 
 type PolygonExportData = {
     OuterStr: string
@@ -213,7 +213,7 @@ type UndoSnapshot = {
 
 type TeachMetadata = {
     Author: string
-    ProjectTitle: string
+    ExplorationDescription: string
     SessionId: string
     Scale: string
     Typology: string
@@ -253,17 +253,20 @@ type ReportOptions = {
 
 type LayoutCache = Map<string, BatchConfgrtns option []>
 
-/// <summary> Central application state for the interface. </summary>
 type GalleryEntry = {
     Id: string
-    Name: string
+    ExplorationDescription: string
     Author: string
-    ProjectTitle: string
-    Stage: string
-    Scale: string
+    Description: string
+    SvgThumbnail: string
+    LevelsCount: int
+    SpacesCount: int
     Typology: string
+    Scale: string
+    Stage: string
     Flow: string
     Ambience: string
+    CreatedAt: string
 }
 
 type Model =
