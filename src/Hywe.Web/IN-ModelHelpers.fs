@@ -1,5 +1,6 @@
 module ModelHelpers
 
+open System
 open Microsoft.JSInterop
 open Layout
 open Hywe
@@ -788,23 +789,28 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                             let filteredEntries = 
                                 if filterText = "" then entries
                                 else entries |> List.filter (fun e -> 
-                                    (not (System.String.IsNullOrWhiteSpace e.Name) && e.Name.ToLower().Contains(filterText)) || 
-                                    (not (System.String.IsNullOrWhiteSpace e.Author) && e.Author.ToLower().Contains(filterText)))
+                                    (not (System.String.IsNullOrWhiteSpace e.ExplorationDescription) && e.ExplorationDescription.ToLower().Contains(filterText)) || 
+                                    (not (System.String.IsNullOrWhiteSpace e.Author) && e.Author.ToLower().Contains(filterText)) ||
+                                    (not (System.String.IsNullOrWhiteSpace e.Description) && e.Description.ToLower().Contains(filterText)) ||
+                                    (not (System.String.IsNullOrWhiteSpace e.Typology) && e.Typology.ToLower().Contains(filterText)) ||
+                                    (not (System.String.IsNullOrWhiteSpace e.Flow) && e.Flow.ToLower().Contains(filterText)) ||
+                                    (not (System.String.IsNullOrWhiteSpace e.Stage) && e.Stage.ToLower().Contains(filterText)) ||
+                                    (not (System.String.IsNullOrWhiteSpace e.Scale) && e.Scale.ToLower().Contains(filterText)))
                                     
                             let pagedEntries = 
                                 filteredEntries 
                                 |> List.skip (min model.GalleryOffset (max 0 (filteredEntries.Length - 1))) 
-                                |> List.truncate 10
+                                |> List.truncate 8
 
                             div {
                                 attr.style "width: 100%; display: flex; flex-direction: column;"
                                 
                                 input {
                                     attr.``class`` "hywe-input"
-                                    attr.style "margin-bottom: 10px; width: 100%; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;"
+                                    attr.style "margin-bottom: 12px; width: 100%; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;"
                                     "onclick:stopPropagation" => true
                                     "onpointerdown:stopPropagation" => true
-                                    attr.placeholder "Search by Project Name or Author..."
+                                    attr.placeholder "Search by exploration, author, typology, flow..."
                                     attr.value model.GalleryFilter
                                     on.input (fun e -> dispatch (UpdateGalleryFilter (unbox<string> e.Value)))
                                 }
@@ -815,28 +821,78 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         text "No configurations match your search."
                                     }
                                 else
-                                    for entry in pagedEntries do
-                                        div {
-                                        attr.style "display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee;"
-                                        
-                                        div {
-                                            attr.style "display: flex; flex-direction: column; overflow: hidden; padding-right: 10px;"
+                                    div {
+                                        attr.style "display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; margin-bottom: 8px;"
+                                        for entry in pagedEntries do
                                             div {
-                                                attr.style "font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1rem;"
-                                                text entry.Name
+                                                attr.style "display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid #e9ecef; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: border-color 0.15s ease;"
+                                                
+                                                // Left: 60x60 SVG Thumbnail
+                                                div {
+                                                    attr.style "width: 60px; height: 60px; min-width: 60px; border-radius: 6px; overflow: hidden; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; padding: 2px;"
+                                                    if not (String.IsNullOrWhiteSpace entry.SvgThumbnail) then
+                                                        rawHtml entry.SvgThumbnail
+                                                    else
+                                                        rawHtml """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>"""
+                                                }
+
+                                                // Middle: Content Column
+                                                div {
+                                                    attr.style "flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-width: 0;"
+                                                    
+                                                    // Exploration Description (Title)
+                                                    div {
+                                                        attr.style "font-weight: 600; color: #1a1a1a; font-size: 0.92rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                                        attr.title entry.ExplorationDescription
+                                                        text (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "Untitled Exploration" else entry.ExplorationDescription)
+                                                    }
+
+                                                    // Author and Badges row
+                                                    div {
+                                                        attr.style "display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.75rem;"
+                                                        let dateSuffix =
+                                                            if String.IsNullOrWhiteSpace entry.CreatedAt then ""
+                                                            else
+                                                                match DateTime.TryParse entry.CreatedAt with
+                                                                | true, dt ->
+                                                                    let span = DateTime.UtcNow - dt.ToUniversalTime()
+                                                                    if span.TotalMinutes < 1.0 then " • just now"
+                                                                    elif span.TotalHours < 1.0 then sprintf " • %dm ago" (int span.TotalMinutes)
+                                                                    elif span.TotalDays < 1.0 then sprintf " • %dh ago" (int span.TotalHours)
+                                                                    elif span.TotalDays < 30.0 then sprintf " • %dd ago" (int span.TotalDays)
+                                                                    else sprintf " • %s" (dt.ToString("MMM d"))
+                                                                | false, _ -> ""
+                                                        span {
+                                                            attr.style "color: #6c757d; white-space: nowrap; margin-right: 2px;"
+                                                            text (sprintf "by %s%s" (if String.IsNullOrWhiteSpace entry.Author then "Anonymous" else entry.Author) dateSuffix)
+                                                        }
+                                                        if entry.LevelsCount > 0 then
+                                                            span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount (if entry.LevelsCount = 1 then "Level" else "Levels")) }
+                                                        if entry.SpacesCount > 0 then
+                                                            span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.SpacesCount (if entry.SpacesCount = 1 then "Node" else "Nodes")) }
+                                                        if not (String.IsNullOrWhiteSpace entry.Typology) && entry.Typology <> "N/A" then
+                                                            span { attr.style "background: #e7f1ff; color: #0d6efd; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Typology }
+                                                        if not (String.IsNullOrWhiteSpace entry.Flow) && entry.Flow <> "N/A" then
+                                                            span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Flow }
+                                                    }
+
+                                                    // Spatial summary snippet
+                                                    if not (String.IsNullOrWhiteSpace entry.Description) then
+                                                        div {
+                                                            attr.style "font-size: 0.76rem; color: #6c757d; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;"
+                                                            attr.title entry.Description
+                                                            text entry.Description
+                                                        }
+                                                }
+
+                                                // Right: Dedicated Load Button (Safe against accidental touches while scrolling)
+                                                button {
+                                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
+                                                    attr.style "flex-shrink: 0; padding: 4px 10px; font-size: 0.8rem; border-radius: 4px;"
+                                                    on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.ExplorationDescription, entry.Id)))))
+                                                    text "Load"
+                                                }
                                             }
-                                            div {
-                                                attr.style "font-size: 0.8rem; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;"
-                                                text entry.Author
-                                            }
-                                        }
-                                        
-                                        button {
-                                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
-                                            attr.style "flex-shrink: 0;"
-                                            on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.Name, entry.Id)))))
-                                            text "Load"
-                                        }
                                     }
                             }
                             
@@ -856,11 +912,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                 span {
                                     attr.style "font-size: 0.85rem; color: #777;"
                                     let currentStart = if filteredEntries.IsEmpty then 0 else model.GalleryOffset + 1
-                                    text (sprintf "Showing %d - %d of %d" currentStart (model.GalleryOffset + pagedEntries.Length) filteredEntries.Length)
+                                    text (sprintf "Showing %d - %d of %d" currentStart (min filteredEntries.Length (model.GalleryOffset + pagedEntries.Length)) filteredEntries.Length)
                                 }
                                 button {
                                     attr.``class`` "hywe-btn hywe-btn-sm"
-                                    if model.GalleryOffset + 10 >= filteredEntries.Length then
+                                    if model.GalleryOffset + 8 >= filteredEntries.Length then
                                         attr.disabled true
                                         attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
                                     else

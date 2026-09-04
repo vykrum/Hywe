@@ -213,7 +213,7 @@ type UndoSnapshot = {
 
 type TeachMetadata = {
     Author: string
-    ProjectTitle: string
+    ExplorationDescription: string
     SessionId: string
     Scale: string
     Typology: string
@@ -253,17 +253,20 @@ type ReportOptions = {
 
 type LayoutCache = Map<string, BatchConfgrtns option []>
 
-/// <summary> Central application state for the interface. </summary>
 type GalleryEntry = {
     Id: string
-    Name: string
+    ExplorationDescription: string
     Author: string
-    ProjectTitle: string
-    Stage: string
-    Scale: string
+    Description: string
+    SvgThumbnail: string
+    LevelsCount: int
+    SpacesCount: int
     Typology: string
+    Scale: string
+    Stage: string
     Flow: string
     Ambience: string
+    CreatedAt: string
 }
 
 type Model =

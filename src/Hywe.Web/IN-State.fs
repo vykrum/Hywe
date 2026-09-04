@@ -50,13 +50,13 @@ let initModel =
         UserDescription = ""
         TeachMetadata = {
             Author = ""
-            ProjectTitle = ""
+            ExplorationDescription = ""
             SessionId = System.Guid.NewGuid().ToString()
-            Scale = "Layout"
-            Typology = "Residential"
-            Flow = "Sequential"
-            Ambience = "Organic"
-            Stage = "Ideation"
+            Scale = ""
+            Typology = ""
+            Flow = ""
+            Ambience = ""
+            Stage = ""
         }
         ReportOptions = {
             ProjectTitle = "Spatial Design Exploration"
@@ -793,17 +793,25 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     let safeGetString (prop: string) =
                         match e.TryGetProperty(prop) with
                         | true, p when p.ValueKind = System.Text.Json.JsonValueKind.String -> p.GetString()
-                        | _ -> "N/A"
+                        | _ -> ""
+                    let safeGetInt (prop: string) =
+                        match e.TryGetProperty(prop) with
+                        | true, p when p.ValueKind = System.Text.Json.JsonValueKind.Number -> p.GetInt32()
+                        | _ -> 0
                     
                     { Id = safeGetString "id"
-                      Name = safeGetString "name"
+                      ExplorationDescription = safeGetString "explorationDescription"
                       Author = safeGetString "author"
-                      ProjectTitle = safeGetString "projectTitle"
-                      Stage = safeGetString "stage"
-                      Scale = safeGetString "scale"
+                      Description = safeGetString "description"
+                      SvgThumbnail = safeGetString "svgThumbnail"
+                      LevelsCount = safeGetInt "levelsCount"
+                      SpacesCount = safeGetInt "spacesCount"
                       Typology = safeGetString "typology"
+                      Scale = safeGetString "scale"
+                      Stage = safeGetString "stage"
                       Flow = safeGetString "flow"
-                      Ambience = safeGetString "ambience" })
+                      Ambience = safeGetString "ambience"
+                      CreatedAt = safeGetString "createdAt" })
                 |> Seq.toList
             return results
         }
@@ -813,11 +821,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsLoadingGallery = false; GalleryEntries = Some entries }, Cmd.none
 
     | NextGalleryPage ->
-        let newOffset = model.GalleryOffset + 10
+        let newOffset = model.GalleryOffset + 8
         { model with GalleryOffset = newOffset }, Cmd.none
         
     | PrevGalleryPage ->
-        let newOffset = max 0 (model.GalleryOffset - 10)
+        let newOffset = max 0 (model.GalleryOffset - 8)
         { model with GalleryOffset = newOffset }, Cmd.none
 
     | LoadGalleryDefinition (name, rowId) ->

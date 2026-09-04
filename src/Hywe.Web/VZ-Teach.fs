@@ -12,6 +12,8 @@ open Hywe.Core.Coxel
 open Hywe.Node
 open Page
 open Hywe.Site
+open Graphics
+open Layout
 
 // --- UTILITIES & TRANSCRIPTION ---
 
@@ -102,9 +104,9 @@ let generateSuggestion (model: Model) =
         if String.IsNullOrWhiteSpace meta.Author then ""
         else sprintf " by %s" (meta.Author.Trim())
 
-    let projectPart = 
-        if String.IsNullOrWhiteSpace meta.ProjectTitle then ""
-        else sprintf " for the '%s' project" (meta.ProjectTitle.Trim())
+    let explorationPart = 
+        if String.IsNullOrWhiteSpace meta.ExplorationDescription then ""
+        else sprintf " exploring '%s'" (meta.ExplorationDescription.Trim())
 
     let boundaryPart =
         let isBoundaryActive =
@@ -138,8 +140,22 @@ let generateSuggestion (model: Model) =
                     let scaleText = if model.PolygonExport.MapScale <> 1.0 then sprintf " with a map scale of 1:%d" (int model.PolygonExport.MapScale) else ""
                     sprintf "The layout is bound at %dx%d%s, %s." model.PolygonExport.Width model.PolygonExport.Height scaleText islandText
 
-    let intro = sprintf "This is a %s stage %s %s project%s%s with a %s flow and %s ambience. %s" 
-                    (meta.Stage.ToLower()) (meta.Scale.ToLower()) (meta.Typology.ToLower()) authorPart projectPart (meta.Flow.ToLower()) (meta.Ambience.ToLower()) boundaryPart
+    let descTerms = [
+        if not (String.IsNullOrWhiteSpace meta.Stage) then meta.Stage.ToLower() + " stage"
+        if not (String.IsNullOrWhiteSpace meta.Scale) then meta.Scale.ToLower()
+        if not (String.IsNullOrWhiteSpace meta.Typology) && meta.Typology <> "Other" then meta.Typology.ToLower()
+    ]
+    let descPart = if descTerms.IsEmpty then "project" else (String.concat " " descTerms) + " project"
+
+    let flowAmbienceTerms = [
+        if not (String.IsNullOrWhiteSpace meta.Flow) then meta.Flow.ToLower() + " flow"
+        if not (String.IsNullOrWhiteSpace meta.Ambience) then meta.Ambience.ToLower() + " ambience"
+    ]
+    let flowAmbiencePart = 
+        if flowAmbienceTerms.IsEmpty then "" 
+        else " with a " + (String.concat " and " flowAmbienceTerms)
+
+    let intro = sprintf "This is a %s%s%s%s. %s" descPart authorPart explorationPart flowAmbiencePart boundaryPart
 
     let levelsContent = 
         tree.Levels 
@@ -237,6 +253,36 @@ let generateHynteractPayload (model: Model) : string[] =
         
     results.ToArray()
 
+let generateThumbnailSvg (cfg: BatchConfgrtns) =
+    let scl = 1.0
+    let padd = 4.0
+    let wdt = max 20.0 (cfg.w * scl + padd * 2.0)
+    let hgt = max 20.0 (cfg.h * scl + padd * 2.0)
+    
+    let sb = System.Text.StringBuilder()
+    sb.Append(sprintf "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"100%%\" height=\"100%%\">" (int wdt) (int hgt)) |> ignore
+    
+    let sqn = match Page.Elements.parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
+    for poly in cfg.cxOuIl do
+        let xy = 
+            poly 
+            |> Array.map (fun (x,y) -> Graphics.svgToCartesian sqn (float x, float y))
+            |> Array.map (fun (x,y) -> sprintf "%.1f,%.1f" (x * scl + padd) (y * scl + padd))
+            |> String.concat " "
+        sb.Append(sprintf "<polygon points=\"%s\" fill=\"none\" stroke=\"#2c3e50\" stroke-width=\"1.5\" opacity=\"0.3\" />" xy) |> ignore
+
+    for s in cfg.shapes do
+        if not (Array.isEmpty s.points) then
+            let xy = 
+                s.points 
+                |> Array.chunkBySize 2 
+                |> Array.map (fun p -> sprintf "%.1f,%.1f" (p.[0] * scl + padd) (p.[1] * scl + padd)) 
+                |> String.concat " "
+            sb.Append(sprintf "<polygon points=\"%s\" fill=\"%s\" opacity=\"0.85\" />" xy s.color) |> ignore
+    
+    sb.Append("</svg>") |> ignore
+    sb.ToString()
+
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
     match msg with
     | SetDescription d -> Some ({ model with UserDescription = d }, Cmd.none)
@@ -328,7 +374,53 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                     let updatedModel = { model with LayoutCache = currentCache }
                     let payloadArray = generateHynteractPayload updatedModel
                     
-                    let payload = {| definition = currentSrc; description = currentDesc; configuration = payloadArray; projectName = model.TeachMetadata.ProjectTitle; author = model.TeachMetadata.Author |}
+                    let thumbSvg =
+                        match Cache.get "L0" 0 currentCache with
+                        | Some cfg -> generateThumbnailSvg cfg
+                        | None -> ""
+
+                    let levelsCount = levels.Length
+                    let spacesCount = 
+                        levels 
+                        |> List.sumBy (fun l -> l.Tree |> List.collect id |> List.length)
+
+                    let rawDesc = model.TeachMetadata.ExplorationDescription.Trim()
+                    let repeatIter =
+                        match model.GalleryEntries with
+                        | Some entries when not (String.IsNullOrWhiteSpace rawDesc) && not (String.IsNullOrWhiteSpace model.TeachMetadata.Author) ->
+                            let cleanDesc = rawDesc.ToLowerInvariant()
+                            let cleanAuthor = model.TeachMetadata.Author.Trim().ToLowerInvariant()
+                            let count =
+                                entries
+                                |> List.filter (fun e ->
+                                    e.Author.Trim().ToLowerInvariant() = cleanAuthor &&
+                                    let eDesc = e.ExplorationDescription.Trim().ToLowerInvariant()
+                                    eDesc = cleanDesc || eDesc.StartsWith(cleanDesc + " #"))
+                                |> List.length
+                            if count > 0 then Some (count + 1) else None
+                        | _ -> None
+
+                    let finalDesc =
+                        match repeatIter with
+                        | Some iter when not (rawDesc.EndsWith(sprintf "#%d" iter)) -> sprintf "%s #%d" rawDesc iter
+                        | _ -> rawDesc
+
+                    let payload = {| 
+                        definition = currentSrc
+                        description = currentDesc
+                        configuration = payloadArray
+                        explorationDescription = finalDesc
+                        author = model.TeachMetadata.Author
+                        svgThumbnail = thumbSvg
+                        typology = model.TeachMetadata.Typology
+                        scale = model.TeachMetadata.Scale
+                        stage = model.TeachMetadata.Stage
+                        flow = model.TeachMetadata.Flow
+                        ambience = model.TeachMetadata.Ambience
+                        levelsCount = levelsCount
+                        spacesCount = spacesCount
+                        createdAt = DateTime.UtcNow.ToString("o")
+                    |}
                     let! success = js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
                     return success, currentCache
                 with e ->
@@ -338,16 +430,24 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         Some (newModel, cmd)
     | _ -> None
 
-// --- UI COMPONENTS ---
+// --- UI HELPERS & COMPONENTS ---
+
+let private countWords (s: string) =
+    if String.IsNullOrWhiteSpace s then 0
+    else s.Split([| ' '; '\t'; '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries).Length
 
 let private selectField (model: Model) dispatch (label: string) (current: string) (options: string list) (descriptions: Map<string, string>) updater =
     let isPredefined = options |> List.contains current
+    let isCustom = not (String.IsNullOrWhiteSpace current) && not isPredefined
     let rowTips = descriptions |> Map.toSeq |> Seq.map snd |> Set.ofSeq
     let currentTip = 
         match model.HoveredInfo with
         | Some (tip: string) when rowTips.Contains tip -> Some tip
         | Some (tip: string) when tip.Contains(label.ToLower()) -> Some tip
-        | _ -> if isPredefined then descriptions |> Map.tryFind current else Some $"Custom {label.ToLower()} tag applied."
+        | _ -> 
+            if isPredefined then descriptions |> Map.tryFind current 
+            elif isCustom && current <> "Other" then Some $"Custom {label.ToLower()} tag applied."
+            else None
     div {
         attr.``class`` "teach-select-row"
         span { attr.``class`` "hywe-label"; text label }
@@ -359,24 +459,28 @@ let private selectField (model: Model) dispatch (label: string) (current: string
                     attr.``class`` ("hywe-btn hywe-btn-sm " + activeClass)
                     on.mouseover (fun _ -> dispatch (SetHoveredInfo (descriptions |> Map.tryFind opt)))
                     on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
-                    on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m opt)))
+                    on.click (fun _ -> 
+                        let nextVal = if current = opt then "" else opt
+                        dispatch (UpdateMetadata (fun m -> updater m nextVal)))
                     text opt
                 }
-            let otherActiveClass = if not isPredefined then "hywe-btn-gray active teach-option" else "hywe-btn-light teach-option"
+            let otherActiveClass = if isCustom then "hywe-btn-gray active teach-option" else "hywe-btn-light teach-option"
             button {
                 attr.``class`` ("hywe-btn hywe-btn-sm " + otherActiveClass)
                 on.mouseover (fun _ -> dispatch (SetHoveredInfo (Some $"Enter a custom {label.ToLower()} tag.")))
                 on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
-                on.click (fun _ -> dispatch (UpdateMetadata (fun m -> updater m "")))
+                on.click (fun _ -> 
+                    let nextVal = if isCustom then "" else "Other"
+                    dispatch (UpdateMetadata (fun m -> updater m nextVal)))
                 text "Other..."
             }
         }
         match currentTip with | Some tip -> div { attr.``class`` "teach-row-tip"; text tip } | None -> ()
-        if not isPredefined then
+        if isCustom then
             input {
                 attr.``class`` "hywe-input"
                 attr.placeholder (sprintf "Enter custom %s..." (label.ToLower()))
-                attr.value current
+                attr.value (if current = "Other" then "" else current)
                 on.input (fun e -> dispatch (UpdateMetadata (fun m -> updater m (unbox<string> e.Value))))
             }
     }
@@ -387,6 +491,26 @@ let view model dispatch =
     let stageDescs = Map [ "Ideation", "Initial loose clustering and spatial relationship mapping."; "Zoning", "Structured grouping of distinct functional areas."; "Massing", "Defined volumetric proportions and 3D stacking logic." ]
     let scaleDescs = Map [ "Layout", "Single-level spatial arrangement or individual unit logic."; "Building", "Multi-level structure with vertical hierarchical dependencies."; "Masterplan", "Large-scale arrangement or multi-building planning." ]
     let typoDescs = Map [ "Residential", "Homes, apartments, or private living quarters."; "Commercial", "Workspaces, retail, or corporate environments."; "Institutional", "Healthcare, educational, or civic facilities." ]
+    let expWords = countWords model.TeachMetadata.ExplorationDescription
+    let repeatIter =
+        match model.GalleryEntries with
+        | Some entries when not (String.IsNullOrWhiteSpace model.TeachMetadata.ExplorationDescription) && not (String.IsNullOrWhiteSpace model.TeachMetadata.Author) ->
+            let cleanDesc = model.TeachMetadata.ExplorationDescription.Trim().ToLowerInvariant()
+            let cleanAuthor = model.TeachMetadata.Author.Trim().ToLowerInvariant()
+            let count =
+                entries
+                |> List.filter (fun e ->
+                    e.Author.Trim().ToLowerInvariant() = cleanAuthor &&
+                    let eDesc = e.ExplorationDescription.Trim().ToLowerInvariant()
+                    eDesc = cleanDesc || eDesc.StartsWith(cleanDesc + " #"))
+                |> List.length
+            if count > 0 then Some (count + 1) else None
+        | _ -> None
+
+    let currentBlocks = Lexel.processFullString model.SrcOfTrth
+    let currentLevels = currentBlocks |> List.choose (function Lexel.Level l -> Some l | _ -> None)
+    let currentLevelsCount = max 1 currentLevels.Length
+    let currentNodesCount = currentLevels |> List.sumBy (fun l -> l.Tree |> List.collect id |> List.length)
 
     div {
         attr.``class`` "u-flex-col u-items-center u-gap-xl u-p-lg u-w-full u-max-w-800"
@@ -394,6 +518,17 @@ let view model dispatch =
             attr.``class`` "teach-intro-section"
             h2 { attr.``class`` "teach-intro-title"; text "Architectural Data Collection" }
             p { attr.``class`` "teach-intro-text"; text "Help generate a robust architectural dataset by tagging your design intent. The fields below should be filled with respect to your currently defined workflow, training the underlying spatial logic to learn complex hierarchical layouts." }
+            div {
+                attr.style "display: flex; gap: 8px; justify-content: center; margin-top: 8px;"
+                span {
+                    attr.style "background: #f1f3f5; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;"
+                    text (sprintf "%d %s" currentLevelsCount (if currentLevelsCount = 1 then "Level" else "Levels"))
+                }
+                span {
+                    attr.style "background: #f1f3f5; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;"
+                    text (sprintf "%d %s" currentNodesCount (if currentNodesCount = 1 then "Node" else "Nodes"))
+                }
+            }
         }
         div {
             attr.``class`` "teach-objective-section"
@@ -409,16 +544,28 @@ let view model dispatch =
             }
             div {
                 attr.``class`` "teach-select-row"
-                span { attr.``class`` "hywe-label"; text "Project*" }
+                div {
+                    attr.style "display: flex; justify-content: space-between; align-items: center;"
+                    span { attr.``class`` "hywe-label"; text "Exploration Description*" }
+                    if expWords > 0 && expWords < 3 then
+                        span { attr.style "font-size: 0.75rem; color: #e67e22; font-style: italic;"; text (sprintf "%d/3 words" expWords) }
+                }
                 input {
                     attr.``class`` "hywe-input"
-                    attr.placeholder "Project title..."
-                    attr.value model.TeachMetadata.ProjectTitle
-                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with ProjectTitle = unbox<string> e.Value })))
+                    attr.placeholder "Describe your design idea (at least 3 words, e.g. Courtyard villa with pool)..."
+                    attr.value model.TeachMetadata.ExplorationDescription
+                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with ExplorationDescription = unbox<string> e.Value })))
                 }
+                match repeatIter with
+                | Some iter ->
+                    div {
+                        attr.style "font-size: 0.76rem; color: #2980b9; margin-top: 3px;"
+                        text (sprintf "ℹ Existing exploration found for this author — will be recorded as iteration #%d." iter)
+                    }
+                | None -> ()
             }
+            selectField model dispatch "Typology*" model.TeachMetadata.Typology [ "Residential"; "Commercial"; "Institutional" ] typoDescs (fun m v -> { m with Typology = v })
             selectField model dispatch "Scale" model.TeachMetadata.Scale [ "Layout"; "Building"; "Masterplan" ] scaleDescs (fun m v -> { m with Scale = v })
-            selectField model dispatch "Typology" model.TeachMetadata.Typology [ "Residential"; "Commercial"; "Institutional" ] typoDescs (fun m v -> { m with Typology = v })
             selectField model dispatch "Flow" model.TeachMetadata.Flow [ "Sequential"; "Radial"; "Hierarchical" ] flowDescs (fun m v -> { m with Flow = v })
             selectField model dispatch "Ambience" model.TeachMetadata.Ambience [ "Organic"; "Structured"; "Intimate" ] ambiDescs (fun m v -> { m with Ambience = v })
             selectField model dispatch "Stage" model.TeachMetadata.Stage [ "Ideation"; "Zoning"; "Massing" ] stageDescs (fun m v -> { m with Stage = v })
@@ -461,14 +608,22 @@ let view model dispatch =
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-top: 0.8rem;"
             let hasSummary = not (String.IsNullOrWhiteSpace model.UserDescription)
             let hasAuthor = not (String.IsNullOrWhiteSpace model.TeachMetadata.Author)
-            let hasProject = not (String.IsNullOrWhiteSpace model.TeachMetadata.ProjectTitle)
-            let canCommit = hasSummary && hasAuthor && hasProject
+            let hasExploration = expWords >= 3
+            let hasTypology = not (String.IsNullOrWhiteSpace model.TeachMetadata.Typology) && model.TeachMetadata.Typology <> "Other"
+            let canCommit = hasSummary && hasAuthor && hasExploration && hasTypology
             let isBusy = model.IsSavingToHynteract
             p { 
                 attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
                 if canCommit then text "Review summary and add any relevant input/details" 
-                else if not hasAuthor || not hasProject then text "Author and Project title are required to enable commitment"
-                else text "A spatial summary is required to enable commitment"
+                else
+                    let missing = [
+                        if not hasAuthor then "Author"
+                        if expWords = 0 then "Exploration Description"
+                        elif expWords < 3 then sprintf "Exploration Description (min 3 words, currently %d)" expWords
+                        if not hasTypology then "Typology"
+                        if not hasSummary then "Spatial Summary"
+                    ]
+                    text (sprintf "%s required to enable commitment" (String.concat ", " missing))
             }
             button {
                 attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
