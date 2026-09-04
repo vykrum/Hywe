@@ -171,7 +171,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-04T17:48:15Z"
+let MODIFIED_DATE = "2026-09-04T18:01:07Z"
 
 type PolygonExportData = {
     OuterStr: string
