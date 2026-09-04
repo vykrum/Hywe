@@ -311,7 +311,6 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | OnVoiceResult -> Some ({ model with IsRecording = false }, Cmd.none)
     | RecordToHynteract ->
         let currentSrc = model.SrcOfTrth
-        let currentDesc = model.UserDescription
         let newModel = { model with IsSavingToHynteract = true }
         let cmd = 
             Cmd.OfAsync.perform (fun () -> async {
@@ -405,9 +404,17 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                         | Some iter when not (rawDesc.EndsWith(sprintf "#%d" iter)) -> sprintf "%s #%d" rawDesc iter
                         | _ -> rawDesc
 
+                    let userDesc = if String.IsNullOrWhiteSpace model.UserDescription then "" else model.UserDescription.Trim()
+                    let genSummary = generateSuggestion updatedModel
+                    let combinedDesc =
+                        if String.IsNullOrWhiteSpace userDesc then
+                            sprintf "Described:\n\nGenerated:\n%s" genSummary
+                        else
+                            sprintf "Described:\n%s\n\nGenerated:\n%s" userDesc genSummary
+
                     let payload = {| 
                         definition = currentSrc
-                        description = currentDesc
+                        description = combinedDesc
                         configuration = payloadArray
                         explorationDescription = finalDesc
                         author = model.TeachMetadata.Author
@@ -571,64 +578,70 @@ let view model dispatch =
             selectField model dispatch "Stage" model.TeachMetadata.Stage [ "Ideation"; "Zoning"; "Massing" ] stageDescs (fun m v -> { m with Stage = v })
         }
         div {
-            attr.style "width: 100%; margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem;"
+            attr.style "width: 100%; margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.35rem;"
             div {
-                attr.style "display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 0.5rem; width: 100%;"
-                button {
-                    attr.``class`` (match model.IsRecording with | true -> "mic-button recording" | false -> "mic-button")
-                    attr.style "justify-self: start;"
-                    attr.title "Start Voice Capture"
-                    on.click (fun _ -> dispatch StartVoiceCapture)
-                    rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>"""
+                attr.style "display: flex; justify-content: space-between; align-items: center; width: 100%;"
+                div {
+                    attr.style "display: flex; align-items: baseline; gap: 0.5rem;"
+                    label { 
+                        attr.style "font-size: 0.85rem; font-weight: 600; color: #2c3e50;"
+                        text "Spatial Description" 
+                    }
+                    span { 
+                        attr.style "font-size: 0.75rem; color: #7f8c8d; font-style: italic;"
+                        text "(Optional — auto summary attached on commit)" 
+                    }
                 }
-                button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
-                    attr.style "justify-self: center;"
-                    attr.title "Generate Summary"
-                    on.click (fun _ -> dispatch SuggestDescription)
-                    text "Generate Summary"
-                }
-                button {
-                    attr.``class`` "mic-button"
-                    attr.style "justify-self: end; color: #e74c3c;"
-                    attr.title "Clear Description"
-                    on.click (fun _ -> dispatch (SetDescription ""))
-                    rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>"""
+                div {
+                    attr.style "display: flex; align-items: center; gap: 0.4rem;"
+                    button {
+                        attr.``class`` (match model.IsRecording with | true -> "mic-button recording" | false -> "mic-button")
+                        attr.title "Start Voice Capture"
+                        on.click (fun _ -> dispatch StartVoiceCapture)
+                        rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>"""
+                    }
+                    if not (String.IsNullOrWhiteSpace model.UserDescription) then
+                        button {
+                            attr.``class`` "mic-button"
+                            attr.style "color: #e74c3c;"
+                            attr.title "Clear Description"
+                            on.click (fun _ -> dispatch (SetDescription ""))
+                            rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>"""
+                        }
                 }
             }
             textarea {
                 attr.id "hynteract-desc-input"
                 attr.``class`` "hywe-input"
-                attr.placeholder "Enter spatial narrative or unique design nuances..."
+                attr.style "min-height: 75px; resize: vertical;"
+                attr.placeholder "Describe your design nuances, circulation intent, or spatial experience in your own words (or use voice capture)..."
                 attr.value model.UserDescription
                 on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
             }
         }
         div {
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-top: 0.8rem;"
-            let hasSummary = not (String.IsNullOrWhiteSpace model.UserDescription)
             let hasAuthor = not (String.IsNullOrWhiteSpace model.TeachMetadata.Author)
             let hasExploration = expWords >= 3
             let hasTypology = not (String.IsNullOrWhiteSpace model.TeachMetadata.Typology) && model.TeachMetadata.Typology <> "Other"
-            let canCommit = hasSummary && hasAuthor && hasExploration && hasTypology
+            let canCommit = hasAuthor && hasExploration && hasTypology
             let isBusy = model.IsSavingToHynteract
             p { 
                 attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
-                if canCommit then text "Review summary and add any relevant input/details" 
+                if canCommit then text "Ready to commit. Add your own spatial notes above if desired (generated summary will be attached automatically)." 
                 else
                     let missing = [
                         if not hasAuthor then "Author"
                         if expWords = 0 then "Exploration Description"
                         elif expWords < 3 then sprintf "Exploration Description (min 3 words, currently %d)" expWords
                         if not hasTypology then "Typology"
-                        if not hasSummary then "Spatial Summary"
                     ]
                     text (sprintf "%s required to enable commitment" (String.concat ", " missing))
             }
             button {
                 attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
                 attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
-                attr.title (if not canCommit then "Please fill required fields and generate a summary first" else "Commit this intent to the dataset")
+                attr.title (if not canCommit then "Please fill required fields (Author, Exploration Description, Typology)" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not canCommit)
                 on.click (fun _ -> dispatch RecordToHynteract)
                 match isBusy with | true -> text "Committing..." | false -> text "Commit to Dataset"
