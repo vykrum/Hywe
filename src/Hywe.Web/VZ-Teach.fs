@@ -585,11 +585,7 @@ let view model dispatch =
                     attr.style "display: flex; align-items: baseline; gap: 0.5rem;"
                     label { 
                         attr.style "font-size: 0.85rem; font-weight: 600; color: #2c3e50;"
-                        text "Spatial Description" 
-                    }
-                    span { 
-                        attr.style "font-size: 0.75rem; color: #7f8c8d; font-style: italic;"
-                        text "(Optional — auto summary attached on commit)" 
+                        text "Architectural Intent & Spatial Narrative" 
                     }
                 }
                 div {
@@ -614,7 +610,7 @@ let view model dispatch =
                 attr.id "hynteract-desc-input"
                 attr.``class`` "hywe-input"
                 attr.style "min-height: 75px; resize: vertical;"
-                attr.placeholder "Describe your design nuances, circulation intent, or spatial experience in your own words (or use voice capture)..."
+                attr.placeholder "Describe your design nuances, circulation logic, or spatial atmosphere in your own words (or use voice capture to dictate)..."
                 attr.value model.UserDescription
                 on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
             }
@@ -628,7 +624,11 @@ let view model dispatch =
             let isBusy = model.IsSavingToHynteract
             p { 
                 attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
-                if canCommit then text "Ready to commit. Add your own spatial notes above if desired (generated summary will be attached automatically)." 
+                if canCommit then 
+                    if String.IsNullOrWhiteSpace model.UserDescription then
+                        text "Ready to commit. Sharing your spatial insights above greatly enriches the dataset."
+                    else
+                        text "Ready to commit. Your spatial narrative will be paired with the structural breakdown."
                 else
                     let missing = [
                         if not hasAuthor then "Author"
