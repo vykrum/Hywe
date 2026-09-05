@@ -691,12 +691,12 @@ let view model dispatch =
                 if cachedLayoutsCount = totalLayouts then
                     span {
                         attr.style "color: #27ae60; font-size: 0.78rem; font-weight: 600;"
-                        text (sprintf "⚡ All %d level layouts cached & ready (24 × %d %s)" totalLayouts currentLevelsCount levelLabel)
+                        text (sprintf "⚡ All %d configurations cached & ready (24 × %d %s)" totalLayouts currentLevelsCount levelLabel)
                     }
                 else
                     span {
                         attr.style "color: #7f8c8d; font-size: 0.78rem;"
-                        text (sprintf "⚙ %d/%d level layouts cached (24 × %d %s — remaining will compute on commit)" cachedLayoutsCount totalLayouts currentLevelsCount levelLabel)
+                        text (sprintf "⚙ %d/%d configurations cached (24 × %d %s), remaining will compute on commit" cachedLayoutsCount totalLayouts currentLevelsCount levelLabel)
                     }
             }
             button {
