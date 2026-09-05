@@ -651,12 +651,16 @@ let view model dispatch =
                 containsClientUrl model.TeachMetadata.Stage ||
                 containsClientUrl model.UserDescription
 
-            let cachedVariationsCount =
+            let levelLabel = if currentLevelsCount = 1 then "level" else "levels"
+            let totalLayouts = currentLevelsCount * 24
+            let cachedLayoutsCount =
                 if currentLevels.IsEmpty then 0
                 else
-                    [ 0 .. 23 ]
-                    |> List.filter (fun i -> currentLevels |> List.forall (fun lvl -> Cache.get lvl.Marker i model.LayoutCache |> Option.isSome))
-                    |> List.length
+                    currentLevels
+                    |> List.sumBy (fun lvl ->
+                        [ 0 .. 23 ]
+                        |> List.filter (fun i -> Cache.get lvl.Marker i model.LayoutCache |> Option.isSome)
+                        |> List.length)
 
             let hasAuthor = not (String.IsNullOrWhiteSpace model.TeachMetadata.Author)
             let hasExploration = expWords >= 3 && model.TeachMetadata.ExplorationDescription.Trim().Length >= 8
@@ -684,15 +688,15 @@ let view model dispatch =
             }
             div {
                 attr.style "display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;"
-                if cachedVariationsCount = 24 then
+                if cachedLayoutsCount = totalLayouts then
                     span {
                         attr.style "color: #27ae60; font-size: 0.78rem; font-weight: 600;"
-                        text "⚡ All 24 spatial variations cached & ready"
+                        text (sprintf "⚡ All %d level layouts cached & ready (24 × %d %s)" totalLayouts currentLevelsCount levelLabel)
                     }
                 else
                     span {
                         attr.style "color: #7f8c8d; font-size: 0.78rem;"
-                        text (sprintf "⚙ %d/24 variations cached (remaining will compute on commit)" cachedVariationsCount)
+                        text (sprintf "⚙ %d/%d level layouts cached (24 × %d %s — remaining will compute on commit)" cachedLayoutsCount totalLayouts currentLevelsCount levelLabel)
                     }
             }
             button {
