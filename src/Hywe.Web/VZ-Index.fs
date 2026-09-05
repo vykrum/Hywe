@@ -244,10 +244,10 @@ let loadingScreen (current: AppScreen) =
             strong { text " H Y W E " }
             br {}
             br {}
-            text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
+            text "A relational, flow-based spatial design environment for early-stage architecture."
             br {}
             br {}
-            text "Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections."
+            text "Outline the intended hierarchy to generate spatial configurations defined by sequence and connections."
             div {
                 attr.``class`` "loadingText"
                 text "Loading"
@@ -288,10 +288,10 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             strong { text " H Y W E " }
             br {}
             br {}
-            text "An endogenous space planning concept that introduces a novel and distinctive approach to early-stage design."
+            text "A relational, flow-based spatial design environment for early-stage architecture."
             br {}
             br {}
-            text "Outline the intended flow-based hierarchy to generate spatial configurations defined by sequence and connections."
+            text "Outline the intended hierarchy to generate spatial configurations defined by sequence and connections."
             
             div {
                 attr.``class`` ("tapText" + (if isVisible then " visible" else ""))
