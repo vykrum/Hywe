@@ -75,6 +75,7 @@ let initModel =
         HoveredInfo = None
         IsSavingToHynteract = false
         ShowSuccessMessage = false
+        TeachErrorMessage = None
         IsRecording = false
         PolygonExport = initialPolygonExport
         Onboarding = {

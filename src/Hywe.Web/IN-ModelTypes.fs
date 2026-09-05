@@ -295,6 +295,7 @@ type Model =
         HoveredInfo: string option
         IsSavingToHynteract : bool
         ShowSuccessMessage : bool
+        TeachErrorMessage : string option
         IsRecording : bool
         PolygonExport: PolygonExportData
         Onboarding: OnboardingState
@@ -368,7 +369,7 @@ type Message =
     | UpdateMetadata of (TeachMetadata -> TeachMetadata)
     | SetHoveredInfo of string option
     | RecordToHynteract
-    | RecordResult of success: bool * cache: LayoutCache
+    | RecordResult of success: bool * errorMsg: string option * cache: LayoutCache
     | StartVoiceCapture
     | OnVoiceResult
     | NextOnboardingStep

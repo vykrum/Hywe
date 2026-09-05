@@ -283,21 +283,29 @@ let generateThumbnailSvg (cfg: BatchConfgrtns) =
     sb.Append("</svg>") |> ignore
     sb.ToString()
 
+[<CLIMutable>]
+type HynteractResponse = {
+    ok: bool
+    error: string
+    code: string
+}
+
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
     match msg with
-    | SetDescription d -> Some ({ model with UserDescription = d }, Cmd.none)
-    | SuggestDescription -> Some ({ model with UserDescription = generateSuggestion model }, Cmd.none)
-    | RecordResult (success, cache) ->
+    | SetDescription d -> Some ({ model with UserDescription = d; TeachErrorMessage = None }, Cmd.none)
+    | SuggestDescription -> Some ({ model with UserDescription = generateSuggestion model; TeachErrorMessage = None }, Cmd.none)
+    | RecordResult (success, errorOpt, cache) ->
         let newModel = 
             { model with 
                 IsSavingToHynteract = false
                 ShowSuccessMessage = success
+                TeachErrorMessage = if success then None else errorOpt
                 UserDescription = if success then "" else model.UserDescription 
                 LayoutCache = cache
             }
         let cmd = if success then Cmd.OfAsync.perform (fun () -> Async.Sleep 3000) () (fun _ -> StartHyweave) else Cmd.none
         Some (newModel, cmd)
-    | UpdateMetadata f -> Some ({ model with TeachMetadata = f model.TeachMetadata }, Cmd.none)
+    | UpdateMetadata f -> Some ({ model with TeachMetadata = f model.TeachMetadata; TeachErrorMessage = None }, Cmd.none)
     | SetHoveredInfo info -> Some ({ model with HoveredInfo = info }, Cmd.none)
     | StartVoiceCapture -> 
         let newModel = { model with IsRecording = true }
@@ -428,11 +436,12 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                         spacesCount = spacesCount
                         createdAt = DateTime.UtcNow.ToString("o")
                     |}
-                    let! success = js.InvokeAsync<bool>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
-                    return success, currentCache
+                    let! res = js.InvokeAsync<HynteractResponse>("recordToHynteract", "https://hynteract.vercel.app/api/record", payload).AsTask() |> Async.AwaitTask
+                    let errorOpt = if res.ok then None else Some (if String.IsNullOrWhiteSpace res.error then "Submission was rejected by the server." else res.error)
+                    return res.ok, errorOpt, currentCache
                 with e ->
                     do! js.InvokeVoidAsync("console.error", "Error recording to Hynteract: " + e.Message).AsTask() |> Async.AwaitTask
-                    return false, model.LayoutCache
+                    return false, Some ("Submission failed: " + e.Message), model.LayoutCache
             }) () RecordResult
         Some (newModel, cmd)
     | _ -> None
@@ -484,11 +493,19 @@ let private selectField (model: Model) dispatch (label: string) (current: string
         }
         match currentTip with | Some tip -> div { attr.``class`` "teach-row-tip"; text tip } | None -> ()
         if isCustom then
-            input {
-                attr.``class`` "hywe-input"
-                attr.placeholder (sprintf "Enter custom %s..." (label.ToLower()))
-                attr.value (if current = "Other" then "" else current)
-                on.input (fun e -> dispatch (UpdateMetadata (fun m -> updater m (unbox<string> e.Value))))
+            div {
+                attr.style "width: 100%; display: flex; flex-direction: column; gap: 2px;"
+                input {
+                    attr.``class`` "hywe-input"
+                    attr.placeholder (sprintf "Enter custom %s..." (label.ToLower()))
+                    attr.value (if current = "Other" then "" else current)
+                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> updater m (unbox<string> e.Value))))
+                }
+                if not (label.StartsWith("Typology")) then
+                    span {
+                        attr.style "font-size: 0.72rem; color: #95a5a6; font-style: italic; margin-left: 2px;"
+                        text "Leave blank to record as N/A, or enter your custom classification."
+                    }
             }
     }
 
@@ -617,14 +634,40 @@ let view model dispatch =
         }
         div {
             attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-top: 0.8rem;"
+            let containsClientUrl (s: string) =
+                if String.IsNullOrWhiteSpace s then false
+                else
+                    let lower = s.ToLowerInvariant()
+                    lower.Contains("http://") || lower.Contains("https://") || lower.Contains("www.") || 
+                    lower.Contains(".com") || lower.Contains(".org") || lower.Contains(".net") || lower.Contains(".io")
+
+            let hasUrlWarning = 
+                containsClientUrl model.TeachMetadata.Author || 
+                containsClientUrl model.TeachMetadata.ExplorationDescription || 
+                containsClientUrl model.TeachMetadata.Typology ||
+                containsClientUrl model.TeachMetadata.Scale ||
+                containsClientUrl model.TeachMetadata.Flow ||
+                containsClientUrl model.TeachMetadata.Ambience ||
+                containsClientUrl model.TeachMetadata.Stage ||
+                containsClientUrl model.UserDescription
+
+            let cachedVariationsCount =
+                if currentLevels.IsEmpty then 0
+                else
+                    [ 0 .. 23 ]
+                    |> List.filter (fun i -> currentLevels |> List.forall (fun lvl -> Cache.get lvl.Marker i model.LayoutCache |> Option.isSome))
+                    |> List.length
+
             let hasAuthor = not (String.IsNullOrWhiteSpace model.TeachMetadata.Author)
-            let hasExploration = expWords >= 3
+            let hasExploration = expWords >= 3 && model.TeachMetadata.ExplorationDescription.Trim().Length >= 8
             let hasTypology = not (String.IsNullOrWhiteSpace model.TeachMetadata.Typology) && model.TeachMetadata.Typology <> "Other"
-            let canCommit = hasAuthor && hasExploration && hasTypology
+            let canCommit = hasAuthor && hasExploration && hasTypology && not hasUrlWarning
             let isBusy = model.IsSavingToHynteract
             p { 
                 attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
-                if canCommit then 
+                if hasUrlWarning then
+                    text "⚠ External URLs and links are prohibited in training dataset submissions."
+                elif canCommit then 
                     if String.IsNullOrWhiteSpace model.UserDescription then
                         text "Ready to commit. Sharing your spatial insights above greatly enriches the dataset."
                     else
@@ -634,9 +677,23 @@ let view model dispatch =
                         if not hasAuthor then "Author"
                         if expWords = 0 then "Exploration Description"
                         elif expWords < 3 then sprintf "Exploration Description (min 3 words, currently %d)" expWords
+                        elif model.TeachMetadata.ExplorationDescription.Trim().Length < 8 then "Exploration Description (min 8 characters)"
                         if not hasTypology then "Typology"
                     ]
                     text (sprintf "%s required to enable commitment" (String.concat ", " missing))
+            }
+            div {
+                attr.style "display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;"
+                if cachedVariationsCount = 24 then
+                    span {
+                        attr.style "color: #27ae60; font-size: 0.78rem; font-weight: 600;"
+                        text "⚡ All 24 spatial variations cached & ready"
+                    }
+                else
+                    span {
+                        attr.style "color: #7f8c8d; font-size: 0.78rem;"
+                        text (sprintf "⚙ %d/24 variations cached (remaining will compute on commit)" cachedVariationsCount)
+                    }
             }
             button {
                 attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
@@ -646,5 +703,25 @@ let view model dispatch =
                 on.click (fun _ -> dispatch RecordToHynteract)
                 match isBusy with | true -> text "Committing..." | false -> text "Commit to Dataset"
             }
+            match model.TeachErrorMessage with
+            | Some errMsg ->
+                div {
+                    attr.style "background: #fdf2f2; border: 1px solid #f8b4b4; border-radius: 6px; padding: 8px 14px; margin-top: 8px; width: 100%; max-width: 600px; text-align: center;"
+                    span {
+                        attr.style "color: #c81e1e; font-size: 0.85rem; font-weight: 600;"
+                        text (sprintf "✕ %s" errMsg)
+                    }
+                }
+            | None ->
+                match model.ShowSuccessMessage with
+                | true ->
+                    div {
+                        attr.style "background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 14px; margin-top: 8px; width: 100%; max-width: 600px; text-align: center;"
+                        span {
+                            attr.style "color: #166534; font-size: 0.85rem; font-weight: 600;"
+                            text "✓ Spatial intent successfully submitted for review."
+                        }
+                    }
+                | false -> ()
         }
     }
