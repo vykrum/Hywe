@@ -720,19 +720,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
 
         | TeachPanel ->
-            concat {
-                Teach.view model dispatch
-                match model.ShowSuccessMessage with
-                | false -> empty()
-                | true ->
-                    div {
-                        attr.style "margin-top: 1rem; text-align: center;"
-                        span { 
-                            attr.style "color: #27ae60; font-size: 0.9em; font-weight: 600;"
-                            text "✓ Spatial intent successfully submitted for review." 
-                        }
-                    }
-            }
+            Teach.view model dispatch
             
         | ReportPanel ->
             Hywe.Report.viewReport model dispatch

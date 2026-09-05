@@ -179,20 +179,19 @@ window.recordToHynteract = async (apiUri, payload) => {
         if (!response.ok) {
             const rawErr = await response.text();
             console.error("API Error:", rawErr);
+            let errMsg = response.statusText;
+            let errCode = "UNKNOWN_ERROR";
             try {
                 const parsed = JSON.parse(rawErr);
-                if (parsed.error) {
-                    alert(parsed.error);
-                }
-            } catch (_) {
-                alert("Submission rejected: " + response.statusText);
-            }
+                if (parsed.error) errMsg = parsed.error;
+                if (parsed.code) errCode = parsed.code;
+            } catch (_) {}
+            return { ok: false, error: errMsg, code: errCode };
         }
-        return response.ok;
+        return { ok: true, error: "", code: "" };
     } catch (e) {
         console.error("Network/Fetch Error:", e);
-        alert("Network error while submitting to dataset. Please try again.");
-        return false;
+        return { ok: false, error: "Network error while submitting to dataset. Please check your connection and try again.", code: "NETWORK_ERROR" };
     }
 };
 

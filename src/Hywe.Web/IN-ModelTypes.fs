@@ -171,7 +171,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-05T14:04:12Z"
+let MODIFIED_DATE = "2026-09-05T15:37:49Z"
 
 type PolygonExportData = {
     OuterStr: string
@@ -295,6 +295,7 @@ type Model =
         HoveredInfo: string option
         IsSavingToHynteract : bool
         ShowSuccessMessage : bool
+        TeachErrorMessage : string option
         IsRecording : bool
         PolygonExport: PolygonExportData
         Onboarding: OnboardingState
@@ -368,7 +369,7 @@ type Message =
     | UpdateMetadata of (TeachMetadata -> TeachMetadata)
     | SetHoveredInfo of string option
     | RecordToHynteract
-    | RecordResult of success: bool * cache: LayoutCache
+    | RecordResult of success: bool * errorMsg: string option * cache: LayoutCache
     | StartVoiceCapture
     | OnVoiceResult
     | NextOnboardingStep
