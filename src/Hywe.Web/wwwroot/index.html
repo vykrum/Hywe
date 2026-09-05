@@ -8,7 +8,7 @@
     <!-- Title and SEO -->
     <title>HYWE – Computational Spatial Design & Deterministic Layout Engine</title>
     <meta name="description"
-        content="A computational spatial design environment for generating and exploring architectural spatial configurations from relational graphs, rules, and constraints." />
+        content="A computational spatial design environment for generating and exploring architectural spatial configurations from relational graphs, rules and constraints." />
     <link rel="canonical" href="https://hywe.in/" />
     <meta name="author" content="Vikram Subbaiah" />
 
@@ -60,7 +60,7 @@
         "name": "Vikram Subbaiah",
         "url": "https://github.com/vykrum"
       },
-      "description": "HYWE is a computational spatial design environment and research apparatus for generating and exploring architectural spatial configurations from relational graphs, rules, and circulation flow.",
+      "description": "HYWE is a computational spatial design environment and research apparatus for generating and exploring architectural spatial configurations from relational graphs, rules and circulation flow.",
       "inLanguage": "en",
       "about": [
         "Computational Spatial Design",
@@ -493,63 +493,83 @@
         </div>
     </div>
     <!-- Mirrored right-side handle button to access About HYWE -->
-    <div id="specs-drawer-btn" class="specs-drawer-handle" onclick="openAboutModal()" onkeydown="if(event.key==='Enter'||event.key===' '){openAboutModal();event.preventDefault();}" role="button" tabindex="0" aria-label="Open About HYWE dialog" title="About HYWE">
-        <span>About  Hywe</span>
+    <div id="specs-drawer-btn" class="specs-drawer-handle" onclick="openAboutModal()"
+        onkeydown="if(event.key==='Enter'||event.key===' '){openAboutModal();event.preventDefault();}" role="button"
+        tabindex="0" aria-label="Open About HYWE dialog" title="About HYWE">
+        <span>About Hywe</span>
     </div>
 
     <!-- Accessible About HYWE Modal Overlay -->
-    <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" onclick="if(event.target===this)closeAboutModal()">
+    <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true"
+        onclick="if(event.target===this)closeAboutModal()">
         <section id="about-hywe" class="hywe-modal-content">
             <button class="hywe-modal-close" onclick="closeAboutModal()" aria-label="Close dialog">✕</button>
-            <h1>HYWE <span style="font-size: 15px; font-weight: 400; color: #666; margin-left: 8px;">Hygrid Woven Ensemble</span></h1>
+            <h1>HYWE <span style="font-size: 15px; font-weight: 400; color: #666; margin-left: 8px;">Hygrid Woven
+                    Ensemble</span></h1>
 
             <p style="font-size: 15px; line-height: 1.6; color: #1a1a1a; margin: 16px 0 12px 0;">
-                HYWE is a computational spatial design environment for exploring architecture from <strong>relationships rather than geometry</strong>.
+                HYWE is a computational spatial design environment for exploring architecture from <strong>relationships
+                    rather than geometry</strong>.
             </p>
             <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 12px;">
-                Instead of beginning by drawing rooms and then deciding how they connect, HYWE begins with spatial intent: hierarchy, sequence, adjacency, containment, boundaries, and flow.
+                Instead of beginning by drawing rooms and then deciding how they connect, HYWE begins with spatial
+                intent: hierarchy, sequence, adjacency, containment, boundaries, and flow.
             </p>
             <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 22px;">
-                These relationships are compiled into spatial configurations through a deterministic computational process. The result is not a single prescribed solution, but a spatial system that can be generated, inspected, modified, compared, and explored.
+                These relationships are compiled into spatial configurations through a deterministic computational
+                process. The result is not a single prescribed solution, but a spatial system that can be generated,
+                inspected, modified, compared, and explored.
             </p>
 
             <h2>Define &rarr; Generate &rarr; Explore</h2>
             <div class="about-feature-grid">
                 <div class="about-feature-card">
                     <strong>Define</strong>
-                    <p>Express architectural intent through hierarchical structure, spatial relationships, sequence, boundaries, and constraints.</p>
-                    <p style="margin-top: 8px; color: #777; font-size: 12px;">Intent can be constructed visually or represented through HYWE's compact spatial syntax.</p>
+                    <p>Express architectural intent through hierarchical structure, spatial relationships, sequence,
+                        boundaries, and constraints.</p>
+                    <p style="margin-top: 8px; color: #777; font-size: 12px;">Intent can be constructed visually or
+                        represented through HYWE's compact spatial syntax.</p>
                 </div>
                 <div class="about-feature-card">
                     <strong>Generate</strong>
-                    <p>HYWE translates this relational structure into spatial configurations using its discrete Hygrid model.</p>
-                    <p style="margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #555;">The same underlying relationships can resolve into:</p>
+                    <p>HYWE translates this relational structure into spatial configurations using its discrete Hygrid
+                        model.</p>
+                    <p style="margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #555;">The
+                        same underlying relationships can resolve into:</p>
                     <ul style="margin: 0 0 8px 16px; padding: 0; font-size: 12px; color: #666; line-height: 1.5;">
                         <li>planar spatial layouts</li>
                         <li>site-bounded configurations</li>
                         <li>hierarchical spatial arrangements</li>
                         <li>volumetric massing</li>
                     </ul>
-                    <p style="margin: 0; color: #777; font-size: 12px;">Because the process is deterministic, the same encoded intent produces the same configuration.</p>
+                    <p style="margin: 0; color: #777; font-size: 12px;">Because the process is deterministic, the same
+                        encoded intent produces the same configuration.</p>
                 </div>
                 <div class="about-feature-card">
                     <strong>Explore</strong>
                     <p>The generated configurations become a space for investigation.</p>
-                    <p style="margin-top: 8px; color: #666; font-size: 12px;">Inspect relationships, modify constraints, compare alternatives, analyse spatial properties, and explore permutations of the same underlying intent.</p>
-                    <p style="margin-top: 8px; color: #777; font-size: 12px;">HYWE therefore treats early-stage design not simply as drawing, but as exploring a structured space of possibilities.</p>
+                    <p style="margin-top: 8px; color: #666; font-size: 12px;">Inspect relationships, modify constraints,
+                        compare alternatives, analyse spatial properties, and explore permutations of the same
+                        underlying intent.</p>
+                    <p style="margin-top: 8px; color: #777; font-size: 12px;">HYWE therefore treats early-stage design
+                        not simply as drawing, but as exploring a structured space of possibilities.</p>
                 </div>
             </div>
 
             <h2>Why HYWE?</h2>
             <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 10px;">
-                Most architectural computational tools begin with geometry: points, curves, surfaces, solids, or predefined components.
+                Most architectural computational tools begin with geometry: points, curves, surfaces, solids, or
+                predefined components.
             </p>
-            <p style="font-size: 14.5px; line-height: 1.6; color: #1a1a1a; margin-bottom: 10px; background: #fafafa; border-left: 3px solid #111; padding: 10px 14px; border-radius: 0 4px 4px 0;">
+            <p
+                style="font-size: 14.5px; line-height: 1.6; color: #1a1a1a; margin-bottom: 10px; background: #fafafa; border-left: 3px solid #111; padding: 10px 14px; border-radius: 0 4px 4px 0;">
                 <strong>HYWE asks a different question:</strong><br>
-                <em>Can architectural intent be represented as relationships first, and can those relationships be computationally resolved into geometry?</em>
+                <em>Can architectural intent be represented as relationships first, and can those relationships be
+                    computationally resolved into geometry?</em>
             </p>
             <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 14px;">
-                This shifts the emphasis from drawing a solution toward defining a system from which solutions can emerge.
+                This shifts the emphasis from drawing a solution toward defining a system from which solutions can
+                emerge.
             </p>
             <p style="font-size: 13.5px; line-height: 1.5; color: #333; margin-bottom: 6px; font-weight: 500;">
                 HYWE is an experimental investigation into:
@@ -565,13 +585,17 @@
 
             <h2>An Evolving Research Environment</h2>
             <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 10px;">
-                HYWE is not intended to replace comprehensive architectural modelling, structural coordination, or construction documentation.
+                HYWE is not intended to replace comprehensive architectural modelling, structural coordination, or
+                construction documentation.
             </p>
             <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 12px;">
-                It focuses deliberately on the early and exploratory stages of architectural design &mdash; where relationships are established, alternatives are generated, and the boundaries of a design problem are still being discovered.
+                It focuses deliberately on the early and exploratory stages of architectural design &mdash; where
+                relationships are established, alternatives are generated, and the boundaries of a design problem are
+                still being discovered.
             </p>
             <p style="font-size: 13.5px; line-height: 1.6; color: #555; margin-bottom: 18px;">
-                The application, computational engine, documentation, and growing dataset form parts of the same ongoing research.
+                The application, computational engine, documentation, and growing dataset form parts of the same ongoing
+                research.
             </p>
 
             <div class="about-links-grid">
@@ -630,7 +654,7 @@
                 modal.setAttribute('aria-hidden', 'true');
             }
         }
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeAboutModal();
         });
 
@@ -646,7 +670,7 @@
             }
         }
         window.addEventListener('resize', syncDrawerHeight);
-        var syncInterval = setInterval(function() {
+        var syncInterval = setInterval(function () {
             var preset = document.querySelector('.preset-drawer');
             if (preset) {
                 syncDrawerHeight();
@@ -663,15 +687,15 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js');
         }
-        
+
         console.log("%cHYWE WebAssembly Test Suite", "color: #3498db; font-size: 16px; font-weight: bold;");
         console.log("To run the test suite natively in the browser and save the results as a Markdown file, copy and paste any of the following commands:");
         console.log("%c  runAndDownloadBenchmark('RunPerformanceBenchmark', 'PerformanceBenchmark.md');", "color: #e67e22; font-family: monospace;");
         console.log("%c  runAndDownloadBenchmark('RunConformanceTests', 'ConformanceTests.md');", "color: #e67e22; font-family: monospace;");
         console.log("%c  runAndDownloadBenchmark('RunQualityBenchmarks', 'QualityBenchmarks.md');", "color: #e67e22; font-family: monospace;");
         console.log("%c  runAndDownloadBenchmark('RunScalingBenchmarks', 'ScalingBenchmarks.md');", "color: #e67e22; font-family: monospace;");
-        
-        window.runAndDownloadBenchmark = async function(methodName, filename) {
+
+        window.runAndDownloadBenchmark = async function (methodName, filename) {
             console.log("%cStarting " + methodName + "... (The browser may freeze for a few minutes while computing)", "color: #f39c12; font-style: italic;");
             try {
                 let clientDetails = navigator.userAgent || "Unknown Browser";
