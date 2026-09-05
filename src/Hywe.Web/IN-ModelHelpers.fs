@@ -825,72 +825,74 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         attr.style "display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; margin-bottom: 8px;"
                                         for entry in pagedEntries do
                                             div {
-                                                attr.style "display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid #e9ecef; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: border-color 0.15s ease;"
+                                                attr.style "display: flex; align-items: stretch; border-radius: 8px; border: 1px solid #e9ecef; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden; transition: border-color 0.15s ease;"
                                                 
-                                                // Left: 60x60 SVG Thumbnail
+                                                // Content Container (Thumbnail + Information)
                                                 div {
-                                                    attr.style "width: 60px; height: 60px; min-width: 60px; border-radius: 6px; overflow: hidden; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; padding: 2px;"
-                                                    if not (String.IsNullOrWhiteSpace entry.SvgThumbnail) then
-                                                        rawHtml entry.SvgThumbnail
-                                                    else
-                                                        rawHtml """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>"""
-                                                }
+                                                    attr.style "flex: 1; display: flex; gap: 10px; align-items: center; padding: 8px 10px; min-width: 0;"
 
-                                                // Middle: Content Column
-                                                div {
-                                                    attr.style "flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-width: 0;"
-                                                    
-                                                    // Exploration Description (Title)
+                                                    // Left: 60x60 SVG Thumbnail
                                                     div {
-                                                        attr.style "font-weight: 600; color: #1a1a1a; font-size: 0.92rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-                                                        attr.title entry.ExplorationDescription
-                                                        text (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "Untitled Exploration" else entry.ExplorationDescription)
+                                                        attr.style "width: 60px; height: 60px; min-width: 60px; border-radius: 6px; overflow: hidden; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; padding: 2px;"
+                                                        if not (String.IsNullOrWhiteSpace entry.SvgThumbnail) then
+                                                            rawHtml entry.SvgThumbnail
+                                                        else
+                                                            rawHtml """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>"""
                                                     }
 
-                                                    // Author and Badges row
+                                                    // Middle: Content Column
                                                     div {
-                                                        attr.style "display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.75rem;"
-                                                        let dateSuffix =
-                                                            if String.IsNullOrWhiteSpace entry.CreatedAt then ""
-                                                            else
-                                                                match DateTime.TryParse entry.CreatedAt with
-                                                                | true, dt ->
-                                                                    let span = DateTime.UtcNow - dt.ToUniversalTime()
-                                                                    if span.TotalMinutes < 1.0 then " • just now"
-                                                                    elif span.TotalHours < 1.0 then sprintf " • %dm ago" (int span.TotalMinutes)
-                                                                    elif span.TotalDays < 1.0 then sprintf " • %dh ago" (int span.TotalHours)
-                                                                    elif span.TotalDays < 30.0 then sprintf " • %dd ago" (int span.TotalDays)
-                                                                    else sprintf " • %s" (dt.ToString("MMM d"))
-                                                                | false, _ -> ""
-                                                        span {
-                                                            attr.style "color: #6c757d; white-space: nowrap; margin-right: 2px;"
-                                                            text (sprintf "by %s%s" (if String.IsNullOrWhiteSpace entry.Author then "Anonymous" else entry.Author) dateSuffix)
-                                                        }
-                                                        if entry.LevelsCount > 0 then
-                                                            span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount (if entry.LevelsCount = 1 then "Level" else "Levels")) }
-                                                        if entry.SpacesCount > 0 then
-                                                            span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.SpacesCount (if entry.SpacesCount = 1 then "Node" else "Nodes")) }
-                                                        if not (String.IsNullOrWhiteSpace entry.Typology) && entry.Typology <> "N/A" then
-                                                            span { attr.style "background: #e7f1ff; color: #0d6efd; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Typology }
-                                                        if not (String.IsNullOrWhiteSpace entry.Flow) && entry.Flow <> "N/A" then
-                                                            span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Flow }
-                                                    }
-
-                                                    // Spatial summary snippet
-                                                    if not (String.IsNullOrWhiteSpace entry.Description) then
+                                                        attr.style "flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden; min-width: 0;"
+                                                        
+                                                        // Exploration Description (Title)
                                                         div {
-                                                            attr.style "font-size: 0.76rem; color: #6c757d; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;"
-                                                            attr.title entry.Description
-                                                            text entry.Description
+                                                            attr.style "font-weight: 600; color: #1a1a1a; font-size: 0.92rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                                            attr.title entry.ExplorationDescription
+                                                            text (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "Untitled Exploration" else entry.ExplorationDescription)
                                                         }
+
+                                                        // Author and Badges row
+                                                        div {
+                                                            attr.style "display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.75rem;"
+                                                            let dateSuffix =
+                                                                if String.IsNullOrWhiteSpace entry.CreatedAt then ""
+                                                                else
+                                                                    match DateTime.TryParse entry.CreatedAt with
+                                                                    | true, dt ->
+                                                                        let span = DateTime.UtcNow - dt.ToUniversalTime()
+                                                                        if span.TotalMinutes < 1.0 then " • just now"
+                                                                        elif span.TotalHours < 1.0 then sprintf " • %dm ago" (int span.TotalMinutes)
+                                                                        elif span.TotalDays < 1.0 then sprintf " • %dh ago" (int span.TotalHours)
+                                                                        elif span.TotalDays < 30.0 then sprintf " • %dd ago" (int span.TotalDays)
+                                                                        else sprintf " • %s" (dt.ToString("MMM d"))
+                                                                    | false, _ -> ""
+                                                            span {
+                                                                attr.style "color: #6c757d; white-space: nowrap; margin-right: 2px;"
+                                                                text (sprintf "by %s%s" (if String.IsNullOrWhiteSpace entry.Author then "Anonymous" else entry.Author) dateSuffix)
+                                                            }
+                                                            if entry.LevelsCount > 0 then
+                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount (if entry.LevelsCount = 1 then "Level" else "Levels")) }
+                                                            if entry.SpacesCount > 0 then
+                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.SpacesCount (if entry.SpacesCount = 1 then "Node" else "Nodes")) }
+                                                            if not (String.IsNullOrWhiteSpace entry.Typology) && entry.Typology <> "N/A" then
+                                                                span { attr.style "background: #e7f1ff; color: #0d6efd; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Typology }
+                                                            if not (String.IsNullOrWhiteSpace entry.Flow) && entry.Flow <> "N/A" then
+                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Flow }
+                                                        }
+                                                    }
                                                 }
 
-                                                // Right: Dedicated Load Button (Safe against accidental touches while scrolling)
+                                                // Right: Vertical Full-Height Load Button (16px width matching Waggle & About handles)
                                                 button {
-                                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
-                                                    attr.style "flex-shrink: 0; padding: 4px 10px; font-size: 0.8rem; border-radius: 4px;"
+                                                    attr.``class`` "hywe-btn hywe-btn-dark"
+                                                    attr.style "align-self: stretch; width: 16px; min-width: 16px; border: none; border-left: 1px solid #dee2e6; border-radius: 0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: background 0.15s ease; box-sizing: border-box;"
+                                                    attr.title "Load configuration into workspace"
+                                                    "aria-label" => sprintf "Load %s" (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "configuration" else entry.ExplorationDescription)
                                                     on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.ExplorationDescription, entry.Id)))))
-                                                    text "Load"
+                                                    span {
+                                                        attr.style "writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;"
+                                                        text "LOAD"
+                                                    }
                                                 }
                                             }
                                     }
