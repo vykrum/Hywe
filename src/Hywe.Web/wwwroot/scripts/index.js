@@ -167,18 +167,31 @@ window.readHywFile = (fileInputId) => {
 
 window.recordToHynteract = async (apiUri, payload) => {
     try {
+        const enrichedPayload = { ...(payload || {}), website: "" };
         const response = await fetch(apiUri, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'X-Hywe-Key': 'hywe-hynteract' // IMPORTANT: Replace this with your actual key
+                'X-Hywe-Key': 'hywe-hynteract'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(enrichedPayload)
         });
-        if (!response.ok) console.error("API Error:", await response.text());
+        if (!response.ok) {
+            const rawErr = await response.text();
+            console.error("API Error:", rawErr);
+            try {
+                const parsed = JSON.parse(rawErr);
+                if (parsed.error) {
+                    alert(parsed.error);
+                }
+            } catch (_) {
+                alert("Submission rejected: " + response.statusText);
+            }
+        }
         return response.ok;
     } catch (e) {
         console.error("Network/Fetch Error:", e);
+        alert("Network error while submitting to dataset. Please try again.");
         return false;
     }
 };

@@ -729,7 +729,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         attr.style "margin-top: 1rem; text-align: center;"
                         span { 
                             attr.style "color: #27ae60; font-size: 0.9em; font-weight: 600;"
-                            text "✓ Spatial intent successfully committed to dataset." 
+                            text "✓ Spatial intent successfully submitted for review." 
                         }
                     }
             }
