@@ -22,7 +22,7 @@
 > - **[HYWE Web App](https://hywe.in)** (`hywe.in`) — Interactive spatial design environment.
 > - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Computational engine and open-source implementation.
 > - **[HYWE Wiki](https://wiki.hywe.in)** (`wiki.hywe.in`) — Technical documentation and research reference.
-> - **[HYWE Data](https://data.hywe.in)** (`data.hywe.in`) — Structured spatial training data.
+> - **[HYWE Data](https://data.hywe.in)** (`data.hywe.in`) — Structured spatial configuration dataset.
 >
 > *If you are here to use HYWE, start with the **Web App** and the **Wiki**. If you are here to understand, extend, or reproduce the computational logic, explore this repository.*
 
@@ -90,7 +90,7 @@ HYWE separates user-facing architectural concepts from internal computational mo
 
 ### Downstream Application: Structured Data Serialization
 
-As a downstream capability of its discrete, syntax-first architecture, HYWE provides an automated export pipeline to generate the **[HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Rather than relying on heavyweight or ambiguous 3D file formats, the system pairs natural-language spatial intent with compact, deterministic HYWE syntax strings and Base34 grid encodings.
+As a downstream capability of its discrete, syntax-first architecture, HYWE provides an automated export pipeline to generate the **[HYWE Spatial Configuration Dataset](https://huggingface.co/datasets/vykrum/hywe-training-data)**. Rather than relying on heavyweight or ambiguous 3D file formats, the system pairs natural-language spatial intent with compact, deterministic HYWE syntax strings and Base34 grid encodings.
 
 #### System Flow
 `Design Intent` ➔ `HYWE Syntax` ➔ `24-Operator Sequence Sweeps` ➔ `Hynteract Ingestion` ➔ `JSONL Dataset Commit`

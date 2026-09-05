@@ -670,7 +670,7 @@ let view model dispatch =
             p { 
                 attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
                 if hasUrlWarning then
-                    text "⚠ External URLs and links are prohibited in training dataset submissions."
+                    text "⚠ External URLs and links are prohibited in dataset submissions."
                 elif canCommit then 
                     if String.IsNullOrWhiteSpace model.UserDescription then
                         text "Ready to commit. Sharing your spatial insights above greatly enriches the dataset."
