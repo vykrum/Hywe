@@ -2,7 +2,7 @@
 
 > The HYWE core spatial engine is dependency-free; the browser application uses Bolero/Blazor and Elmish for its interface layer for procedural spatial layout generation, architectural dataset curation, and deterministic topological modeling.
 
-HYWE and the HYWE Architectural Training Data repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for AI workflows. This ecosystem bridges abstract architectural intent with bit-precise spatial configurations, acting as a deterministic foundation for machine learning pipelines in architectural design.
+HYWE and the HYWE Spatial Configuration Dataset repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for spatial reasoning and AI workflows. This ecosystem bridges abstract architectural intent with bit-precise spatial configurations, acting as a deterministic foundation for computational pipelines in architectural design.
 
 ---
 
@@ -30,10 +30,10 @@ The HYWE ecosystem consists of three distinct, non-overlapping components that f
 * **Privacy Status**: Private repository (`github.com/vykrum/Hynteract`). Accessible only to authorized system instances via secure API keys (`X-Hywe-Key`).
 * **Operational Flow**: Receives `HYWE Syntax` from client sessions, pairs it with validated linguistic descriptions and session metadata, and commits structured JSON Lines (`.jsonl`) to Hugging Face.
 
-### 3. [HYWE Architectural Training Data](https://huggingface.co/datasets/vykrum/hywe-training-data) (ML Dataset)
-* **Role**: Public repository of synthetic architectural programming states.
-* **Format**: Structured `.jsonl` database files mapping design intent, spatial boundaries, and F#-resolved layouts.
-* **Usage**: Provides a clean, highly curated, and token-efficient dataset for training custom generative AI transformers in spatial planning and AEC (Architecture, Engineering, and Construction) domains.
+### 3. [HYWE Spatial Configuration Dataset](https://huggingface.co/datasets/vykrum/hywe-training-data) (ML Dataset)
+* **Role**: Public repository of synthetic architectural programming states and deterministic spatial configurations.
+* **Format**: Structured `.jsonl` database files mapping design intent, spatial boundaries, and F#-resolved layouts across 24 canonical sequence sweeps.
+* **Usage**: Provides a clean, highly curated, and token-efficient dataset for spatial reasoning and custom generative models in spatial planning and AEC domains.
 
 ---
 
