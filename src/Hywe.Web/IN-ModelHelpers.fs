@@ -788,7 +788,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                             let pagedEntries = 
                                 filteredEntries 
                                 |> List.skip (min model.GalleryOffset (max 0 (filteredEntries.Length - 1))) 
-                                |> List.truncate 8
+                                |> List.truncate GALLERY_PAGE_SIZE
 
                             div {
                                 attr.style "width: 100%; display: flex; flex-direction: column;"
@@ -906,7 +906,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                 }
                                 button {
                                     attr.``class`` "hywe-btn hywe-btn-sm"
-                                    if model.GalleryOffset + 8 >= filteredEntries.Length then
+                                    if model.GalleryOffset + GALLERY_PAGE_SIZE >= filteredEntries.Length then
                                         attr.disabled true
                                         attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
                                     else

@@ -172,6 +172,7 @@ type ConfirmAction =
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
 let MODIFIED_DATE = "2026-09-06T04:43:16Z"
+let GALLERY_PAGE_SIZE = 9
 
 type PolygonExportData = {
     OuterStr: string
