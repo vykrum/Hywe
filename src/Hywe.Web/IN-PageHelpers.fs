@@ -35,7 +35,19 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
             model', Cmd.ofMsg (GenerateNextBatchItem 0)
         | false -> 
             { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
-    | BoundaryPanel | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
+    | BoundaryPanel ->
+        let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let newState = FileManager.importFromHyw model.SrcOfTrth inner
+        let finalPoly = match newState with Stable m | FreshlyImported m -> m
+        let newExport = syncPolygonState finalPoly
+        { model with 
+            ActivePanel = BoundaryPanel
+            PolygonEditor = newState
+            PolygonExport = newExport
+            IsPresetsCollapsed = true
+            IsWorkspaceCollapsed = true 
+        }, Cmd.none
+    | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
         { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
 
 let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
@@ -50,21 +62,27 @@ let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
 
         match maybeSubModel with
         | Some subModel ->
+            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newState = FileManager.importFromHyw model.SrcOfTrth inner
+            let finalPoly = match newState with Stable m | FreshlyImported m -> m
+            let newExport = syncPolygonState finalPoly
             let newOutput =
                 Serialization.getOutput
                     subModel
                     model.Sequences
-                    model.PolygonExport.Width
-                    model.PolygonExport.Height
-                    model.PolygonExport.AbsStr
-                    model.PolygonExport.BaseStr
-                    model.PolygonExport.OuterStr
-                    model.PolygonExport.IslandsStr
+                    newExport.Width
+                    newExport.Height
+                    newExport.AbsStr
+                    newExport.BaseStr
+                    newExport.OuterStr
+                    newExport.IslandsStr
 
             { model with
                 Tree = subModel
                 SrcOfTrth = newOutput
                 LastValidTree = subModel
+                PolygonEditor = newState
+                PolygonExport = newExport
                 EditorMode = Interactive
                 ParseError = false
             }, Cmd.none
