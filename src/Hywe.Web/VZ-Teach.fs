@@ -559,8 +559,8 @@ let view model dispatch =
         attr.``class`` "u-flex-col u-items-center u-gap-xl u-p-lg u-w-full u-max-w-800"
         div {
             attr.``class`` "teach-intro-section"
-            h2 { attr.``class`` "teach-intro-title"; text "Architectural Data Collection" }
-            p { attr.``class`` "teach-intro-text"; text "Help generate a robust architectural dataset by tagging your design intent. The fields below should be filled with respect to your currently defined workflow, training the underlying spatial logic to learn complex hierarchical layouts." }
+            h2 { attr.``class`` "teach-intro-title"; text "Teach HYWE" }
+            p { attr.``class`` "teach-intro-text"; text "Contribute an architectural exploration to the dataset by describing your design intent. The fields below capture spatial characteristics and rationale from your active workspace, helping HYWE learn complex hierarchical arrangements." }
             div {
                 attr.style "display: flex; gap: 8px; justify-content: center; margin-top: 8px;"
                 span {
@@ -813,12 +813,12 @@ let view model dispatch =
                 if cachedLayoutsCount = totalLayouts then
                     span {
                         attr.style "color: #27ae60; font-size: 0.78rem; font-weight: 600;"
-                        text (sprintf "⚡ All %d configurations cached & ready (24 × %d %s)" totalLayouts currentLevelsCount levelLabel)
+                        text (sprintf "⚡ All %d spatial configurations explored & ready (24 variations × %d %s)" totalLayouts currentLevelsCount levelLabel)
                     }
                 else
                     span {
                         attr.style "color: #7f8c8d; font-size: 0.78rem;"
-                        text (sprintf "⚙ %d/%d configurations cached (24 × %d %s), remaining will compute on commit" cachedLayoutsCount totalLayouts currentLevelsCount levelLabel)
+                        text (sprintf "⚙ %d/%d spatial configurations explored (24 variations × %d %s), remaining will compute on commit" cachedLayoutsCount totalLayouts currentLevelsCount levelLabel)
                     }
             }
             button {
