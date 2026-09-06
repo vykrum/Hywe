@@ -802,8 +802,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         | true, p when p.ValueKind = System.Text.Json.JsonValueKind.Number -> p.GetInt32()
                         | _ -> 0
                     
+                    let expDesc = safeGetString "explorationDescription"
+                    let isFeatured =
+                        FEATURED_EXEMPLARS
+                        |> List.exists (fun keyword ->
+                            not (System.String.IsNullOrWhiteSpace keyword) &&
+                            expDesc.IndexOf(keyword, System.StringComparison.OrdinalIgnoreCase) >= 0)
+
                     { Id = safeGetString "id"
-                      ExplorationDescription = safeGetString "explorationDescription"
+                      ExplorationDescription = expDesc
                       Author = safeGetString "author"
                       Description = safeGetString "description"
                       SvgThumbnail = safeGetString "svgThumbnail"
@@ -814,9 +821,35 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                       Stage = safeGetString "stage"
                       Flow = safeGetString "flow"
                       Ambience = safeGetString "ambience"
-                      CreatedAt = safeGetString "createdAt" })
+                      CreatedAt = safeGetString "createdAt"
+                      IsFeatured = isFeatured })
                 |> Seq.toList
-            return results
+
+            // Curated distribution:
+            // Top 3 featured exemplars are shuffled within the top 5-6 items,
+            // preserving a fair chance for the newest community submission to appear at position 1.
+            let (featured, regular) = results |> List.partition (fun e -> e.IsFeatured)
+            let curatedFeatured = featured |> List.truncate 3
+            let topPoolSize = min 6 results.Length
+            let regularNeeded = max 0 (topPoolSize - curatedFeatured.Length)
+            let topRegular = regular |> List.truncate regularNeeded
+            let remainingRegular = regular |> List.skip regularNeeded
+
+            let rnd = System.Random()
+            let shuffle (xs: 'T list) =
+                let arr = xs |> Array.ofList
+                for i = arr.Length - 1 downto 1 do
+                    let j = rnd.Next(i + 1)
+                    let tmp = arr.[i]
+                    arr.[i] <- arr.[j]
+                    arr.[j] <- tmp
+                arr |> Array.toList
+
+            let shuffledTopPool = shuffle (curatedFeatured @ topRegular)
+            let remainingFeatured = featured |> List.skip (min 3 featured.Length)
+            let finalOrderedEntries = shuffledTopPool @ remainingFeatured @ remainingRegular
+
+            return finalOrderedEntries
         }
         { model with IsLoadingGallery = true }, Cmd.OfAsync.either fetchGallery () GalleryEntriesLoaded (fun _ -> GalleryEntriesLoaded [])
 
