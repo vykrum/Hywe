@@ -409,6 +409,7 @@ type Message =
     | LoadGalleryEntries
     | NextGalleryPage
     | PrevGalleryPage
+    | GoToGalleryPage of page: int
     | GalleryEntriesLoaded of GalleryEntry list
     | LoadGalleryDefinition of name: string * rowId: string
     | LoadGalleryDefinitionSuccess of name: string * definition: string

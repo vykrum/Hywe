@@ -888,31 +888,113 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                             
                             // Pagination Footer
                             div {
-                                attr.style "display: flex; justify-content: space-between; align-items: center; padding-top: 15px; margin-top: auto;"
-                                button {
-                                    attr.``class`` "hywe-btn hywe-btn-sm"
-                                    if model.GalleryOffset = 0 then
-                                        attr.disabled true
-                                        attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
-                                    else
-                                        attr.style "background: #eee; color: #333;"
-                                        on.click (fun _ -> dispatch PrevGalleryPage)
-                                    text "Previous"
-                                }
-                                span {
-                                    attr.style "font-size: 0.85rem; color: #777;"
+                                attr.style "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 14px; margin-top: auto; border-top: 1px solid #f1f3f5;"
+                                
+                                let totalItems = filteredEntries.Length
+                                let totalPages = max 1 ((totalItems + GALLERY_PAGE_SIZE - 1) / GALLERY_PAGE_SIZE)
+                                let currentPage = min totalPages ((model.GalleryOffset / GALLERY_PAGE_SIZE) + 1)
+                                
+                                // Left: Item & Page Summary
+                                div {
+                                    attr.style "font-size: 0.82rem; color: #6c757d; display: flex; align-items: center; gap: 6px;"
                                     let currentStart = if filteredEntries.IsEmpty then 0 else model.GalleryOffset + 1
-                                    text (sprintf "Showing %d - %d of %d" currentStart (min filteredEntries.Length (model.GalleryOffset + pagedEntries.Length)) filteredEntries.Length)
+                                    let currentEnd = min totalItems (model.GalleryOffset + pagedEntries.Length)
+                                    text (sprintf "Showing %d - %d of %d" currentStart currentEnd totalItems)
+                                    if totalPages > 1 then
+                                        span {
+                                            attr.style "color: #adb5bd;"
+                                            text "•"
+                                        }
+                                        span {
+                                            text (sprintf "Page %d of %d" currentPage totalPages)
+                                        }
                                 }
-                                button {
-                                    attr.``class`` "hywe-btn hywe-btn-sm"
-                                    if model.GalleryOffset + GALLERY_PAGE_SIZE >= filteredEntries.Length then
-                                        attr.disabled true
-                                        attr.style "opacity: 0.5; cursor: not-allowed; background: #eee; color: #aaa;"
-                                    else
-                                        attr.style "background: #eee; color: #333;"
-                                        on.click (fun _ -> dispatch NextGalleryPage)
-                                    text "Next"
+
+                                // Right: Numbered Navigation Controls
+                                div {
+                                    attr.style "display: flex; align-items: center; gap: 4px;"
+
+                                    // First Page Button
+                                    button {
+                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.title "First page"
+                                        if currentPage <= 1 then
+                                            attr.disabled true
+                                            attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                        else
+                                            attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                            on.click (fun _ -> dispatch (GoToGalleryPage 1))
+                                        text "«"
+                                    }
+
+                                    // Previous Page Button
+                                    button {
+                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.title "Previous page"
+                                        if currentPage <= 1 then
+                                            attr.disabled true
+                                            attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                        else
+                                            attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                            on.click (fun _ -> dispatch (GoToGalleryPage (currentPage - 1)))
+                                        text "‹"
+                                    }
+
+                                    // Page Number Buttons with Ellipses
+                                    let paginationItems =
+                                        if totalPages <= 7 then
+                                            [ 1 .. totalPages ] |> List.map Some
+                                        elif currentPage <= 4 then
+                                            ([ 1 .. 5 ] |> List.map Some) @ [ None; Some totalPages ]
+                                        elif currentPage >= totalPages - 3 then
+                                            [ Some 1; None ] @ ([ totalPages - 4 .. totalPages ] |> List.map Some)
+                                        else
+                                            [ Some 1; None; Some (currentPage - 1); Some currentPage; Some (currentPage + 1); None; Some totalPages ]
+
+                                    for item in paginationItems do
+                                        match item with
+                                        | Some pageNum ->
+                                            button {
+                                                attr.``class`` "hywe-btn hywe-btn-sm"
+                                                if pageNum = currentPage then
+                                                    attr.disabled true
+                                                    attr.style "background: #212529; border: 1px solid #212529; color: #ffffff; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; font-weight: 600; cursor: default; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"
+                                                else
+                                                    attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; justify-content: center;"
+                                                    on.click (fun _ -> dispatch (GoToGalleryPage pageNum))
+                                                text (string pageNum)
+                                            }
+                                        | None ->
+                                            span {
+                                                attr.style "min-width: 22px; height: 30px; display: inline-flex; align-items: center; justify-content: center; color: #868e96; font-size: 0.85rem; user-select: none;"
+                                                text "…"
+                                            }
+
+                                    // Next Page Button
+                                    button {
+                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.title "Next page"
+                                        if currentPage >= totalPages then
+                                            attr.disabled true
+                                            attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                        else
+                                            attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                            on.click (fun _ -> dispatch (GoToGalleryPage (currentPage + 1)))
+                                        text "›"
+                                    }
+
+                                    // Last Page Button
+                                    button {
+                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.title "Last page"
+                                        if currentPage >= totalPages then
+                                            attr.disabled true
+                                            attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                        else
+                                            attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
+                                            on.click (fun _ -> dispatch (GoToGalleryPage totalPages))
+                                        text "»"
+                                    }
                                 }
                             }
                 }
