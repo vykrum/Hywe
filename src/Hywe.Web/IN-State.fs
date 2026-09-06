@@ -824,11 +824,15 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with IsLoadingGallery = false; GalleryEntries = Some entries }, Cmd.none
 
     | NextGalleryPage ->
-        let newOffset = model.GalleryOffset + 8
+        let newOffset = model.GalleryOffset + GALLERY_PAGE_SIZE
         { model with GalleryOffset = newOffset }, Cmd.none
         
     | PrevGalleryPage ->
-        let newOffset = max 0 (model.GalleryOffset - 8)
+        let newOffset = max 0 (model.GalleryOffset - GALLERY_PAGE_SIZE)
+        { model with GalleryOffset = newOffset }, Cmd.none
+
+    | GoToGalleryPage page ->
+        let newOffset = max 0 ((page - 1) * GALLERY_PAGE_SIZE)
         { model with GalleryOffset = newOffset }, Cmd.none
 
     | LoadGalleryDefinition (name, rowId) ->
@@ -886,4 +890,4 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         nextModel, Cmd.none
 
     | UpdateGalleryFilter filter ->
-        { model with GalleryFilter = filter }, Cmd.none
+        { model with GalleryFilter = filter; GalleryOffset = 0 }, Cmd.none

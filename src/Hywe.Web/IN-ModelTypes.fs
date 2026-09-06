@@ -171,7 +171,8 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-06T04:43:16Z"
+let MODIFIED_DATE = "2026-09-06T05:26:01Z"
+let GALLERY_PAGE_SIZE = 12
 
 type PolygonExportData = {
     OuterStr: string
@@ -408,6 +409,7 @@ type Message =
     | LoadGalleryEntries
     | NextGalleryPage
     | PrevGalleryPage
+    | GoToGalleryPage of page: int
     | GalleryEntriesLoaded of GalleryEntry list
     | LoadGalleryDefinition of name: string * rowId: string
     | LoadGalleryDefinitionSuccess of name: string * definition: string
