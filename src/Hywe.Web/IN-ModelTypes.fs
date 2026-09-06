@@ -176,9 +176,9 @@ let GALLERY_PAGE_SIZE = 12
 
 /// <summary> Curated keywords / titles for featured community exemplars (up to 3) </summary>
 let FEATURED_EXEMPLARS = [
-    "International Space Station"
-    "Bangalore Metro"
-    "Courtyard"
+    "Healthcare Facility Wards"
+    "Bangalore Metro Phase 1"
+    "13 Story Tower"
 ]
 
 type PolygonExportData = {
