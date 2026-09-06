@@ -171,7 +171,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-05T17:08:23Z"
+let MODIFIED_DATE = "2026-09-06T04:43:16Z"
 
 type PolygonExportData = {
     OuterStr: string
@@ -220,6 +220,8 @@ type TeachMetadata = {
     Flow: string
     Ambience: string
     Stage: string
+    ThumbnailLevel: string
+    ThumbnailVariation: int
 }
 
 type AppScreen =

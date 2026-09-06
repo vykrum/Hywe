@@ -57,6 +57,8 @@ let initModel =
             Flow = ""
             Ambience = ""
             Stage = ""
+            ThumbnailLevel = ""
+            ThumbnailVariation = 11
         }
         ReportOptions = {
             ProjectTitle = "Spatial Design Exploration"
