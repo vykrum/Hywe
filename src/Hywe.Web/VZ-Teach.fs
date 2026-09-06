@@ -381,10 +381,29 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                     let updatedModel = { model with LayoutCache = currentCache }
                     let payloadArray = generateHynteractPayload updatedModel
                     
+                    let baseLevelMarker = 
+                        match levels with
+                        | [] -> "L0"
+                        | _ -> levels |> List.minBy (fun l -> l.Attributes.Level) |> fun l -> l.Marker
+
+                    let selectedLevelMarker = 
+                        levels
+                        |> List.tryFind (fun l -> l.Marker = model.TeachMetadata.ThumbnailLevel)
+                        |> Option.map (fun l -> l.Marker)
+                        |> Option.defaultValue baseLevelMarker
+
+                    let selectedVar = 
+                        if model.TeachMetadata.ThumbnailVariation >= 0 && model.TeachMetadata.ThumbnailVariation <= 23 then
+                            model.TeachMetadata.ThumbnailVariation
+                        else
+                            11
+
                     let thumbSvg =
-                        match Cache.get "L0" 0 currentCache with
-                        | Some cfg -> generateThumbnailSvg cfg
-                        | None -> ""
+                        Cache.get selectedLevelMarker selectedVar currentCache
+                        |> Option.orElseWith (fun () -> Cache.get baseLevelMarker selectedVar currentCache)
+                        |> Option.orElseWith (fun () -> Cache.get "L0" 11 currentCache)
+                        |> Option.map generateThumbnailSvg
+                        |> Option.defaultValue ""
 
                     let levelsCount = levels.Length
                     let spacesCount = 
@@ -593,6 +612,109 @@ let view model dispatch =
             selectField model dispatch "Flow" model.TeachMetadata.Flow [ "Sequential"; "Radial"; "Hierarchical" ] flowDescs (fun m v -> { m with Flow = v })
             selectField model dispatch "Ambience" model.TeachMetadata.Ambience [ "Organic"; "Structured"; "Intimate" ] ambiDescs (fun m v -> { m with Ambience = v })
             selectField model dispatch "Stage" model.TeachMetadata.Stage [ "Ideation"; "Zoning"; "Massing" ] stageDescs (fun m v -> { m with Stage = v })
+
+            let baseLevelMarker = 
+                match currentLevels with
+                | [] -> "L0"
+                | _ -> currentLevels |> List.minBy (fun l -> l.Attributes.Level) |> fun l -> l.Marker
+
+            let activeLevelMarker = 
+                currentLevels
+                |> List.tryFind (fun l -> l.Marker = model.TeachMetadata.ThumbnailLevel)
+                |> Option.map (fun l -> l.Marker)
+                |> Option.defaultValue baseLevelMarker
+
+            let activeVarIdx = 
+                if model.TeachMetadata.ThumbnailVariation >= 0 && model.TeachMetadata.ThumbnailVariation <= 23 then
+                    model.TeachMetadata.ThumbnailVariation
+                else
+                    11
+
+            let levelOptions =
+                match currentLevels with
+                | [] -> [ "L0", "L0" ]
+                | lvls ->
+                    lvls 
+                    |> List.map (fun lvl -> lvl.Marker, sprintf "L%d" lvl.Attributes.Level)
+
+            let previewCfgOpt =
+                Cache.get activeLevelMarker activeVarIdx model.LayoutCache
+                |> Option.orElseWith (fun () ->
+                    try
+                        let sqn = Hexel.sqnArray.[activeVarIdx]
+                        let srcForBatch = ensureCategory model.SrcOfTrth activeVarIdx
+                        let rootLevel = 
+                            currentLevels 
+                            |> List.tryFind (fun l -> l.Marker = activeLevelMarker)
+                            |> Option.map (fun l -> l.Attributes.Level)
+                            |> Option.defaultValue 0
+                        let lvlIdx =
+                            currentLevels
+                            |> List.tryFindIndex (fun l -> l.Marker = activeLevelMarker)
+                            |> Option.defaultValue 0
+                        let fullData = Cache.computeFullLayout srcForBatch sqn model.PolygonExport rootLevel
+                        Some (Cache.fromFullLayout fullData sqn lvlIdx model.PolygonExport)
+                    with _ -> None
+                )
+
+            let previewSvg =
+                previewCfgOpt
+                |> Option.map generateThumbnailSvg
+                |> Option.defaultValue ""
+
+            div {
+                attr.``class`` "teach-select-row"
+                div {
+                    attr.style "display: flex; justify-content: space-between; align-items: center; width: 100%;"
+                    span { attr.``class`` "hywe-label"; text "Thumbnail" }
+                    span {
+                        attr.style "font-size: 0.72rem; color: #868e96; font-style: italic;"
+                        text "Matches 60×60 community gallery card"
+                    }
+                }
+                div {
+                    attr.``class`` "teach-thumbnail-card"
+                    div {
+                        attr.``class`` "teach-thumbnail-preview"
+                        attr.title (sprintf "Gallery Thumbnail: %s (%s)" activeLevelMarker (indexToSqn activeVarIdx))
+                        if not (String.IsNullOrWhiteSpace previewSvg) then
+                            rawHtml previewSvg
+                    }
+                    div {
+                        attr.``class`` "teach-thumbnail-controls"
+                        div {
+                            attr.``class`` "teach-thumbnail-header"
+                            div {
+                                attr.style "display: flex; align-items: center; gap: 6px;"
+                                span {
+                                    attr.style "font-size: 0.72rem; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"
+                                    text "Level"
+                                }
+                                elt "select" {
+                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light"
+                                    attr.style "width: auto; min-width: 60px; height: 24px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid #dee2e6; background-color: #ffffff; color: #333; cursor: pointer; flex-shrink: 0; outline: none;"
+                                    attr.value activeLevelMarker
+                                    on.change (fun e -> dispatch (UpdateMetadata (fun m -> { m with ThumbnailLevel = unbox<string> e.Value })))
+                                    forEach levelOptions <| fun (marker, lbl) ->
+                                        elt "option" {
+                                            attr.value marker
+                                            text lbl
+                                        }
+                                }
+                            }
+                            span {
+                                attr.style "font-size: 0.72rem; color: #495057; font-weight: 600; font-family: monospace; background: #f1f3f5; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.3px;"
+                                text (sprintf "%s · %s" (labelPhrase.[activeVarIdx].ToString()) (indexToSqn activeVarIdx))
+                            }
+                        }
+                        div {
+                            attr.``class`` "teach-thumbnail-slider"
+                            sequenceSlider (indexToSqn activeVarIdx) 0 23 (fun i -> 
+                                dispatch (UpdateMetadata (fun m -> { m with ThumbnailVariation = i })))
+                        }
+                    }
+                }
+            }
         }
         div {
             attr.style "width: 100%; margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.35rem;"

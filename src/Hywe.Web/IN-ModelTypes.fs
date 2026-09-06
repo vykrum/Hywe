@@ -220,6 +220,8 @@ type TeachMetadata = {
     Flow: string
     Ambience: string
     Stage: string
+    ThumbnailLevel: string
+    ThumbnailVariation: int
 }
 
 type AppScreen =

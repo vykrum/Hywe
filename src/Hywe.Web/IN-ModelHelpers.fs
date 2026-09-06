@@ -763,7 +763,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                     if model.IsLoadingGallery then
                         div {
                             attr.style "text-align: center; padding: 30px; color: #777; font-style: italic;"
-                            text "Loading latest configurations from Hugging Face..."
+                            text "Loading latest HYWE configurations..."
                         }
                     else
                         match model.GalleryEntries with
