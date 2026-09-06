@@ -813,13 +813,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         attr.style "display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; margin-bottom: 8px;"
                                         for entry in pagedEntries do
                                             div {
-                                                attr.style (
-                                                    "display: flex; align-items: stretch; border-radius: 8px; overflow: hidden; transition: all 0.15s ease;" +
-                                                    if entry.IsFeatured then
-                                                        " border: 1px solid #fcd34d; background: #fffdfa; box-shadow: 0 1px 4px rgba(245, 158, 11, 0.08);"
-                                                    else
-                                                        " border: 1px solid #e9ecef; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03);"
-                                                )
+                                                attr.style "display: flex; align-items: stretch; border-radius: 8px; border: 1px solid #e9ecef; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden; transition: border-color 0.15s ease;"
                                                 
                                                 // Content Container (Thumbnail + Information)
                                                 div {
@@ -827,13 +821,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                                     // Left: 60x60 SVG Thumbnail
                                                     div {
-                                                        attr.style (
-                                                            "width: 60px; height: 60px; min-width: 60px; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 2px;" +
-                                                            if entry.IsFeatured then
-                                                                " background: #fffbeb; border: 1px solid #fde68a;"
-                                                            else
-                                                                " background: #f8f9fa; border: 1px solid #dee2e6;"
-                                                        )
+                                                        attr.style "width: 60px; height: 60px; min-width: 60px; border-radius: 6px; overflow: hidden; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; padding: 2px;"
                                                         if not (String.IsNullOrWhiteSpace entry.SvgThumbnail) then
                                                             rawHtml entry.SvgThumbnail
                                                         else
@@ -870,11 +858,6 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                                 attr.style "color: #6c757d; white-space: nowrap; margin-right: 2px;"
                                                                 text (sprintf "by %s%s" (if String.IsNullOrWhiteSpace entry.Author then "Anonymous" else entry.Author) dateSuffix)
                                                             }
-                                                            if entry.IsFeatured then
-                                                                span { 
-                                                                    attr.style "background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;"
-                                                                    text "✦ Featured" 
-                                                                }
                                                             if entry.LevelsCount > 0 then
                                                                 span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount (if entry.LevelsCount = 1 then "Level" else "Levels")) }
                                                             if entry.SpacesCount > 0 then
