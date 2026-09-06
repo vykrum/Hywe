@@ -870,16 +870,16 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                     }
                                                 }
 
-                                                // Right: Vertical Full-Height Load Button (16px width matching Waggle & About handles)
+                                                // Right: Vertical Full-Height Load Button
                                                 button {
                                                     attr.``class`` "hywe-btn hywe-btn-dark"
-                                                    attr.style "align-self: stretch; width: 16px; min-width: 16px; border: none; border-left: 1px solid #dee2e6; border-radius: 0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: background 0.15s ease; box-sizing: border-box;"
-                                                    attr.title "Load configuration into workspace"
-                                                    "aria-label" => sprintf "Load %s" (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "configuration" else entry.ExplorationDescription)
+                                                    attr.style "align-self: stretch; width: 18px; min-width: 18px; border: none; border-left: 1px solid #dee2e6; border-radius: 0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: background 0.15s ease; box-sizing: border-box;"
+                                                    attr.title "Load this configuration into workspace"
+                                                    "aria-label" => sprintf "Load %s into workspace" (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "configuration" else entry.ExplorationDescription)
                                                     on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.ExplorationDescription, entry.Id)))))
                                                     span {
                                                         attr.style "writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;"
-                                                        text "LOAD"
+                                                        text "LOAD ↵"
                                                     }
                                                 }
                                             }
