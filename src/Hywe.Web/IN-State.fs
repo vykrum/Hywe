@@ -223,9 +223,45 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
         let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
         let newSqns = Lexel.extractSequences value
+
+        let newTreeOpt =
+            try
+                let processed = Serialization.preprocessCode value
+                let tree = Serialization.initModel processed
+                if tree.Levels.IsEmpty then None else Some tree
+            with _ -> None
+
+        let currentInner = match model.PolygonEditor with Stable p | FreshlyImported p -> p
+        let newPolyState =
+            try
+                Some (FileManager.importFromHyw value currentInner)
+            with _ -> None
+
+        let finalPoly =
+            match newPolyState with
+            | Some (Stable p | FreshlyImported p) -> p
+            | None -> currentInner
+
+        let newExport = syncPolygonState finalPoly
+        let newTree = defaultArg newTreeOpt m.Tree
+        let isErr = newTreeOpt.IsNone
+
+        let newDerived =
+            try
+                Cache.deriveFromSource value newSqns newExport newTree.ActiveLevel
+            with _ -> m.Derived
+
         { m with 
             SrcOfTrth = value
+            Tree = newTree
+            LastValidTree = match newTreeOpt with Some t -> t | None -> m.LastValidTree
+            PolygonEditor = match newPolyState with Some s -> s | None -> m.PolygonEditor
+            PolygonExport = newExport
             Sequences = newSqns
+            Derived = newDerived
+            LayoutCache = Map.empty
+            ParseError = isErr
+            NeedsHyweave = true
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
             IsWorkspaceCollapsed = nextWorkspaceCollapse
@@ -261,6 +297,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         Protocol.sync js updatedSrcOfTrth model.ActivePanel
 
+        let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let polyState = FileManager.importFromHyw updatedSrcOfTrth currentInner
+        let finalPoly = match polyState with Stable m | FreshlyImported m -> m
+        let currentExport = syncPolygonState finalPoly
+
         let currentLevel = max 0 model.Tree.ActiveLevel
         let currentSqnIdx = 
             model.Sequences 
@@ -269,22 +310,22 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             |> Option.defaultValue 11
         let currentSqn = Hexel.sqnArray.[currentSqnIdx]
         
-        model, Cmd.OfAsync.perform (fun () -> async {
+        { model with PolygonEditor = polyState; PolygonExport = currentExport }, Cmd.OfAsync.perform (fun () -> async {
             let mutable updatedCache = Map.empty // Clear cache because source text or boundary changed
             
             // 1. Handle current orientation (might be different from 11)
             let srcForCurrent = ensureCategory updatedSrcOfTrth currentSqnIdx
-            let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn model.PolygonExport currentLevel
+            let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn currentExport currentLevel
             for lvl in model.Tree.Levels.Keys do
-                let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl model.PolygonExport
+                let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl currentExport
                 updatedCache <- Cache.update (toMarker lvl) currentSqnIdx c updatedCache
             
             // 2. Handle orientation 11 (standard default) if current orientation is different
             if currentSqnIdx <> 11 then
                 let srcFor11 = ensureCategory updatedSrcOfTrth 11
-                let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] model.PolygonExport 0
+                let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] currentExport 0
                 for lvl in model.Tree.Levels.Keys do
-                    let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl model.PolygonExport
+                    let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl currentExport
                     updatedCache <- Cache.update (toMarker lvl) 11 c updatedCache
 
             return updatedSrcOfTrth, updatedCache

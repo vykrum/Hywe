@@ -94,19 +94,20 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
     let processSegment state segment =
         let attrs = match segment with | Level l -> l.Attributes | Nest n -> n.Attributes
         let multiplier = 10.0
+        let hasPolygons = not (String.IsNullOrWhiteSpace attrs.OuterBoundary) || not (String.IsNullOrWhiteSpace attrs.Islands)
         
         let state1 = 
             { state with
                 LogicalWidth = attrs.Width |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue state.LogicalWidth
                 LogicalHeight = attrs.Height |> Option.map (fun num -> (max 10.0 num) * multiplier) |> Option.defaultValue state.LogicalHeight
                 Elevation = attrs.Level
-                UseAbsolute = (attrs.Scale = 1.0)
-                UseBoundary = (attrs.Scale <> 1.0)
+                UseAbsolute = if hasPolygons then false else (attrs.Scale = 1.0)
+                UseBoundary = if hasPolygons then true else (attrs.Scale <> 1.0)
                 UseMapBase = (attrs.Scale = 2.0)
             }
 
         let state2 = match parsePoint multiplier attrs.Entry with | Ok pt -> { state1 with EntryPoint = pt } | _ -> state1
-        let state3 = match parsePoly multiplier attrs.OuterBoundary with | Ok pts -> { state2 with Outer = pts } | _ -> state2
+        let state3 = match parsePoly multiplier attrs.OuterBoundary with | Ok pts when pts.Length > 0 -> { state2 with Outer = pts } | _ -> state2
         let state4 = match parseIslands multiplier attrs.Islands with | Ok pts -> { state3 with Islands = pts } | _ -> state3
         state4
 
@@ -115,8 +116,14 @@ let importFromHyw (content: string) (current: PolygonEditorModel) : EditorState 
         | Some segment -> processSegment current segment
         | None -> current
     
+    let hasExplicitPolygons =
+        match List.tryHead parsed with
+        | Some (Level l) -> not (String.IsNullOrWhiteSpace l.Attributes.OuterBoundary) || not (String.IsNullOrWhiteSpace l.Attributes.Islands)
+        | Some (Nest n) -> not (String.IsNullOrWhiteSpace n.Attributes.OuterBoundary) || not (String.IsNullOrWhiteSpace n.Attributes.Islands)
+        | None -> false
+
     let isZeroBoundary = baseState.LogicalWidth <= 0.0 || baseState.LogicalHeight <= 0.0
-    let isBoundary = not baseState.UseAbsolute && not isZeroBoundary
+    let isBoundary = (not baseState.UseAbsolute || hasExplicitPolygons) && not isZeroBoundary
     
     let finalStateWithBoundary = 
         { baseState with 

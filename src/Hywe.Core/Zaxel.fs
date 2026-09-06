@@ -41,8 +41,8 @@ module Zaxel =
                     let a = a_block.Attributes
                     let curW = a.Width |> Option.map int |> Option.filter (fun v -> v > 0) |> Option.orElse w
                     let curH = a.Height |> Option.map int |> Option.orElse h
-                    let curO = ouStrOverride |> Option.orElse (match a.OuterBoundary <> "" with true -> Some a.OuterBoundary | false -> None) |> Option.orElse ou
-                    let curI = ilStrOverride |> Option.orElse (match a.Islands <> "" with true -> Some a.Islands | false -> None) |> Option.orElse il
+                    let curO = ouStrOverride |> Option.filter (fun s -> s <> "") |> Option.orElse (match a.OuterBoundary <> "" with true -> Some a.OuterBoundary | false -> None) |> Option.orElse ou
+                    let curI = ilStrOverride |> Option.filter (fun s -> s <> "") |> Option.orElse (match a.Islands <> "" with true -> Some a.Islands | false -> None) |> Option.orElse il
                     
                     let rawTree = a_block.Tree |> List.map (fun g -> g |> List.map (fun n -> (n.Id, n.Area, n.Label)) |> List.toArray) |> List.toArray
                     let treeObj = LayoutTree.Create rawTree

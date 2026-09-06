@@ -47,14 +47,16 @@ module Cache
     /// Computes the full layout data for all levels recursively until nested dependencies are resolved.
     /// </summary>
     let rec computeFullLayout (src: string) (sqn: Hexel.Sqn) (polyExport: PolygonExportData) (elv: int) =
+        let ouOpt = match String.IsNullOrWhiteSpace polyExport.OuterStr with true -> None | false -> Some polyExport.OuterStr
+        let ilOpt = match String.IsNullOrWhiteSpace polyExport.IslandsStr with true -> None | false -> Some polyExport.IslandsStr
         let fullData = 
             Zaxel.generateMultiLevelLayout 
                 src 
                 polyExport.EntryStr 
                 [||] 
                 (Some (elv, sqn)) 
-                (Some polyExport.OuterStr) 
-                (Some polyExport.IslandsStr)
+                ouOpt 
+                ilOpt
         let cxls, _, _, _ = fullData
         let newSrc = populateNestBoundaries src cxls
         match newSrc <> src with
