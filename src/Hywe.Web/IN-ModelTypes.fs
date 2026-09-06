@@ -174,12 +174,6 @@ let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
 let MODIFIED_DATE = "2026-09-06T11:45:14Z"
 let GALLERY_PAGE_SIZE = 12
 
-/// <summary> Curated keywords / titles for featured community exemplars (up to 3) </summary>
-let FEATURED_EXEMPLARS = [
-    "Healthcare Facility Wards"
-    "Bangalore Metro Phase 1"
-    "13 Story Tower"
-]
 
 type PolygonExportData = {
     OuterStr: string

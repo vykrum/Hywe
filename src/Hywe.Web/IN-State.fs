@@ -801,13 +801,16 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         match e.TryGetProperty(prop) with
                         | true, p when p.ValueKind = System.Text.Json.JsonValueKind.Number -> p.GetInt32()
                         | _ -> 0
+                    let safeGetBool (prop: string) =
+                        match e.TryGetProperty(prop) with
+                        | true, p when p.ValueKind = System.Text.Json.JsonValueKind.True -> true
+                        | true, p when p.ValueKind = System.Text.Json.JsonValueKind.False -> false
+                        | true, p when p.ValueKind = System.Text.Json.JsonValueKind.String ->
+                            System.String.Equals(p.GetString(), "true", System.StringComparison.OrdinalIgnoreCase)
+                        | _ -> false
                     
                     let expDesc = safeGetString "explorationDescription"
-                    let isFeatured =
-                        FEATURED_EXEMPLARS
-                        |> List.exists (fun keyword ->
-                            not (System.String.IsNullOrWhiteSpace keyword) &&
-                            expDesc.IndexOf(keyword, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    let isFeatured = safeGetBool "isFeatured"
 
                     { Id = safeGetString "id"
                       ExplorationDescription = expDesc
@@ -826,14 +829,16 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 |> Seq.toList
 
             // Curated distribution:
-            // Top 3 featured exemplars are shuffled within the top 5-6 items,
+            // The 3 most recent featured ones appear shuffled within the top 5-6 items,
             // preserving a fair chance for the newest community submission to appear at position 1.
-            let (featured, regular) = results |> List.partition (fun e -> e.IsFeatured)
+            let featured = results |> List.filter (fun e -> e.IsFeatured)
             let curatedFeatured = featured |> List.truncate 3
+
+            let otherItems = results |> List.filter (fun e -> not (curatedFeatured |> List.exists (fun f -> f.Id = e.Id)))
             let topPoolSize = min 6 results.Length
-            let regularNeeded = max 0 (topPoolSize - curatedFeatured.Length)
-            let topRegular = regular |> List.truncate regularNeeded
-            let remainingRegular = regular |> List.skip regularNeeded
+            let neededFromOther = max 0 (topPoolSize - curatedFeatured.Length)
+            let topOther = otherItems |> List.truncate neededFromOther
+            let remainingOther = otherItems |> List.skip neededFromOther
 
             let rnd = System.Random()
             let shuffle (xs: 'T list) =
@@ -845,9 +850,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     arr.[j] <- tmp
                 arr |> Array.toList
 
-            let shuffledTopPool = shuffle (curatedFeatured @ topRegular)
-            let remainingFeatured = featured |> List.skip (min 3 featured.Length)
-            let finalOrderedEntries = shuffledTopPool @ remainingFeatured @ remainingRegular
+            let shuffledTopPool = shuffle (curatedFeatured @ topOther)
+            let finalOrderedEntries = shuffledTopPool @ remainingOther
 
             return finalOrderedEntries
         }
