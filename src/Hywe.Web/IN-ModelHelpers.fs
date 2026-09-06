@@ -777,6 +777,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                             let filteredEntries = 
                                 if filterText = "" then entries
                                 else entries |> List.filter (fun e -> 
+                                    (e.IsFeatured && ("featured".Contains(filterText) || filterText.Contains("featured") || filterText = "is:featured")) ||
                                     (not (System.String.IsNullOrWhiteSpace e.ExplorationDescription) && e.ExplorationDescription.ToLower().Contains(filterText)) || 
                                     (not (System.String.IsNullOrWhiteSpace e.Author) && e.Author.ToLower().Contains(filterText)) ||
                                     (not (System.String.IsNullOrWhiteSpace e.Description) && e.Description.ToLower().Contains(filterText)) ||
@@ -798,7 +799,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     attr.style "margin-bottom: 12px; width: 100%; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;"
                                     "onclick:stopPropagation" => true
                                     "onpointerdown:stopPropagation" => true
-                                    attr.placeholder "Search by exploration, author, typology, flow..."
+                                    attr.placeholder "Search by exploration, author, typology, flow, featured..."
                                     attr.value model.GalleryFilter
                                     on.input (fun e -> dispatch (UpdateGalleryFilter (unbox<string> e.Value)))
                                 }
@@ -858,6 +859,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                                 attr.style "color: #6c757d; white-space: nowrap; margin-right: 2px;"
                                                                 text (sprintf "by %s%s" (if String.IsNullOrWhiteSpace entry.Author then "Anonymous" else entry.Author) dateSuffix)
                                                             }
+                                                            if entry.IsFeatured then
+                                                                span { 
+                                                                    attr.style "background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;"
+                                                                    text "Featured" 
+                                                                }
                                                             if entry.LevelsCount > 0 then
                                                                 span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount (if entry.LevelsCount = 1 then "Level" else "Levels")) }
                                                             if entry.SpacesCount > 0 then
