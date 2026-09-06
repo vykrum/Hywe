@@ -37,15 +37,6 @@ $$\text{Programmatic Intent} \longrightarrow \text{Relational Topology} \longrig
 
 ## The 30-Second Workflow
 
-```text
-Step 1: Declare Intent              Step 2: Choose Rules           Step 3: Generate           Step 4: Compare
-Entrance (Level 0)                 Sequence Operators (24)       Deterministic Planar       Compactness: 0.82
-├── Lobby                          Boundary Confinement          & 3D Massing Layouts       Graph Adjacency: 100%
-│   ├── Exhibition (Public)   ───► Keep-out Island Rules    ───► Across All Canonical  ───► Boundary Spill: 0%
-│   └── Admin (Restricted)         Growth Direction              Permutations               Export SVG / PDF / Data
-└── Services
-```
-
 1. **Declare Intent**: Construct an architectural hierarchy in the Interactive Node Tree or via compact syntax `(1/15/Lobby)`.
 2. **Define Constraints**: Sketch site boundaries or internal courtyard/void islands in the Polygon Boundary Editor.
 3. **Generate Configurations**: The engine sweeps through 24 canonical sequence operators, computing bit-exact planar packings and 3D massings.
