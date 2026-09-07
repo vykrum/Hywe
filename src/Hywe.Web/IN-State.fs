@@ -61,9 +61,9 @@ let initModel =
             ThumbnailVariation = 11
         }
         ReportOptions = {
-            ProjectTitle = "Spatial Design Exploration"
+            ProjectTitle = ""
             ProjectNumber = "HY-001"
-            Author = "Hywe Designer"
+            Author = ""
             ClientName = "Creative Partner"
             Description = "An automated architectural layout study derived from hierarchical spatial requirements, multi-level flow charts, and adjacency matrices."
             IncludeCover = true
@@ -73,7 +73,7 @@ let initModel =
         Captured3DImage = None
         ReportBatch = Map.empty
         IsGeneratingReport = false
-        SelectedPreset = Some "Simple"
+        SelectedPreset = None
         HoveredInfo = None
         IsSavingToHynteract = false
         ShowSuccessMessage = false
@@ -106,6 +106,8 @@ let initModel =
         GalleryEntries = None
         GalleryOffset = 0
         GalleryFilter = ""
+        LoadedCommunityAuthor = None
+        HasAppendedModSuffix = false
     }
 
 let updateMetadata (js: IJSRuntime) =
@@ -133,7 +135,35 @@ let pushUndo (model: Model) : Model =
         let newStack = snap :: model.UndoStack |> List.truncate maxUndoDepth
         { model with UndoStack = newStack; RedoStack = [] }
 
+let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
+    let modelWithoutCommunity = 
+        if Option.isSome model.LoadedCommunityAuthor then 
+            js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+            { model with LoadedCommunityAuthor = None } 
+        else model
 
+    if modelWithoutCommunity.HasAppendedModSuffix then modelWithoutCommunity
+    else
+        let currentTitle = 
+            if not (System.String.IsNullOrWhiteSpace modelWithoutCommunity.TeachMetadata.ExplorationDescription) then 
+                modelWithoutCommunity.TeachMetadata.ExplorationDescription
+            elif not (System.String.IsNullOrWhiteSpace modelWithoutCommunity.ReportOptions.ProjectTitle) then 
+                modelWithoutCommunity.ReportOptions.ProjectTitle
+            else ""
+            
+        if System.String.IsNullOrWhiteSpace currentTitle then modelWithoutCommunity
+        else
+            let dateStr = System.DateTime.Now.ToString("MMdd")
+            if currentTitle.Contains(sprintf "(%s)" dateStr) || currentTitle.Contains("(mod ") then
+                { modelWithoutCommunity with HasAppendedModSuffix = true }
+            else
+                let suffixedTitle = sprintf "%s (%s)" currentTitle dateStr
+                js.InvokeVoidAsync("localStorage.setItem", "hywe_title", suffixedTitle) |> ignore
+                { modelWithoutCommunity with
+                    HasAppendedModSuffix = true
+                    TeachMetadata = { modelWithoutCommunity.TeachMetadata with ExplorationDescription = suffixedTitle }
+                    ReportOptions = { modelWithoutCommunity.ReportOptions with ProjectTitle = suffixedTitle }
+                }
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
@@ -144,7 +174,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | TransitionToIntro | TransitionToMain 
             | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
             | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
-            | UpdateMetadata _ | Undo | Redo
+            | UpdateMetadata _ | Undo | Redo | SetAuthor _ | SetExplorationTitle _ | AuthorCachedLoaded _
+            | TitleCachedLoaded _ | CommunityAuthorCachedLoaded _
             | SetIsStandalone _ | SetPrivacyAlert _ | SetInstallPromptAvailable _
             | CacheResult _ | HyweaveResult _ | RecordResult _ | ReportGenerated _
             | HideLinkCopied -> model
@@ -218,7 +249,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             }) () CacheResult
 
     | SetSrcOfTrth value ->
-        let m = pushUndo model
+        let m = pushUndo model |> applyAlterationSuffix js
         let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
         let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
@@ -410,13 +441,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let isLevelSwitch = match subMsg with SubMsg.SetLevel _ | SubMsg.SetNest _ -> true | _ -> false
             let isAction = match subMsg with SubMsg.ExecuteAction _ -> true | _ -> false
 
-            let isIncrementalEdit = not (isMoving || isLevelSwitch)
+            let isIncrementalEdit = shouldPush
             let nextCount = if isIncrementalEdit then model.EditsCount + 1 else model.EditsCount
             let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
             let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
             
+            let modelToUse = if isIncrementalEdit then applyAlterationSuffix js model else model
             let modelWithTree = 
-                { model with 
+                { modelToUse with 
                     Tree = updatedTree 
                     Sequences = newSqns
                     SrcOfTrth = newOutput 
@@ -451,8 +483,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             PolygonEditorUpdated
 
     | PolygonEditorUpdated newModel ->
-        let model = pushUndo model
         let newExport = syncPolygonState newModel
+        let isBoundaryChanged = 
+            model.EditsCount > 0 && 
+            (newExport.OuterStr <> model.PolygonExport.OuterStr || 
+             newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
+             newExport.EntryStr <> model.PolygonExport.EntryStr)
+        let model = pushUndo model
+        let model = if isBoundaryChanged then applyAlterationSuffix js model else model
         let newOutput = Serialization.getOutput
                              model.Tree
                              model.Sequences
@@ -631,6 +669,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         NeedsHyweave = true
                         IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
+                        EditsCount = 0
+                        HasAppendedModSuffix = false
                     }
                 
                 // Validate that the loaded state actually results in a layout, 
@@ -645,6 +685,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | HardReset ->
         Protocol.purgeLocalBackup js
         Protocol.sync js "" model.ActivePanel
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
         let model = pushUndo model
         let resetSyntax = start
         let resetTree = Serialization.initModel resetSyntax
@@ -664,6 +706,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             EditsCount = 0
             SelectedPreset = None
             PendingConfirm = None
+            LoadedCommunityAuthor = None
+            HasAppendedModSuffix = false
+            TeachMetadata = { model.TeachMetadata with ExplorationDescription = "" }
+            ReportOptions = { model.ReportOptions with ProjectTitle = "" }
+            UserDescription = ""
         }, Cmd.none
 
     | Undo ->
@@ -913,18 +960,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newOffset = max 0 ((page - 1) * GALLERY_PAGE_SIZE)
         { model with GalleryOffset = newOffset }, Cmd.none
 
-    | LoadGalleryDefinition (name, rowId) ->
+    | LoadGalleryDefinition (name, rowId, author) ->
         let loadAsync () = async {
             let! def = js.InvokeAsync<string>("fetchGalleryDefinition", rowId).AsTask() |> Async.AwaitTask
-            return (name, def)
+            return (name, def, author)
         }
-        let successHandler (loadedName, loadedDef) =
+        let successHandler (loadedName, loadedDef, loadedAuthor) =
             if System.String.IsNullOrWhiteSpace(loadedDef) then NoOp
-            else LoadGalleryDefinitionSuccess (loadedName, loadedDef)
+            else LoadGalleryDefinitionSuccess (loadedName, loadedDef, loadedAuthor)
             
         { model with PendingConfirm = None; ShowGallery = false }, Cmd.OfAsync.perform loadAsync () successHandler
 
-    | LoadGalleryDefinitionSuccess (name, def) ->
+    | LoadGalleryDefinitionSuccess (name, def, author) ->
         let clean = def.Trim()
         let newTree = 
             clean 
@@ -953,10 +1000,19 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 UserDescription = name
                 ShowGallery = false
                 PendingConfirm = None
+                EditsCount = 0
+                LoadedCommunityAuthor = if System.String.IsNullOrWhiteSpace author then None else Some author
+                HasAppendedModSuffix = false
+                TeachMetadata = { model.TeachMetadata with ExplorationDescription = name }
+                ReportOptions = { model.ReportOptions with ProjectTitle = name }
             }
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_title", name) |> ignore
+        if System.String.IsNullOrWhiteSpace author then
+            js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+        else
+            js.InvokeVoidAsync("localStorage.setItem", "hywe_community_author", author) |> ignore
         pushUndo newModel, Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
-            Cmd.ofMsg (UpdateReportOptions (fun o -> { o with ProjectTitle = name }))
             Cmd.ofMsg StartHyweave
         ]
 
@@ -969,3 +1025,52 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | UpdateGalleryFilter filter ->
         { model with GalleryFilter = filter; GalleryOffset = 0 }, Cmd.none
+
+    | SetAuthor newAuthor ->
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_author", newAuthor) |> ignore
+        let newModel = 
+            { model with 
+                TeachMetadata = { model.TeachMetadata with Author = newAuthor }
+                ReportOptions = { model.ReportOptions with Author = newAuthor }
+            }
+        newModel, Cmd.none
+
+    | AuthorCachedLoaded cachedAuthor ->
+        if System.String.IsNullOrWhiteSpace cachedAuthor then model, Cmd.none
+        else
+            let newModel = 
+                { model with 
+                    TeachMetadata = { model.TeachMetadata with Author = cachedAuthor }
+                    ReportOptions = { model.ReportOptions with Author = cachedAuthor }
+                }
+            newModel, Cmd.none
+
+    | SetExplorationTitle newTitle ->
+        if System.String.IsNullOrWhiteSpace newTitle then
+            js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
+        else
+            js.InvokeVoidAsync("localStorage.setItem", "hywe_title", newTitle) |> ignore
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+        let newModel = 
+            { model with 
+                TeachMetadata = { model.TeachMetadata with ExplorationDescription = newTitle }
+                ReportOptions = { model.ReportOptions with ProjectTitle = newTitle }
+                LoadedCommunityAuthor = None
+                HasAppendedModSuffix = false
+            }
+        newModel, Cmd.none
+
+    | TitleCachedLoaded cachedTitle ->
+        if System.String.IsNullOrWhiteSpace cachedTitle then model, Cmd.none
+        else
+            let newModel = 
+                { model with 
+                    TeachMetadata = { model.TeachMetadata with ExplorationDescription = cachedTitle }
+                    ReportOptions = { model.ReportOptions with ProjectTitle = cachedTitle }
+                }
+            newModel, Cmd.none
+
+    | CommunityAuthorCachedLoaded cachedAuthor ->
+        if System.String.IsNullOrWhiteSpace cachedAuthor then model, Cmd.none
+        else
+            { model with LoadedCommunityAuthor = Some cachedAuthor }, Cmd.none

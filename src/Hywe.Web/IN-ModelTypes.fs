@@ -165,7 +165,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string
-    | LoadGallery of name: string * rowId: string
+    | LoadGallery of name: string * rowId: string * author: string
     | SwitchTo of EditorTab
 
 
@@ -329,6 +329,8 @@ type Model =
         GalleryEntries: GalleryEntry list option
         GalleryOffset: int
         GalleryFilter: string
+        LoadedCommunityAuthor: string option
+        HasAppendedModSuffix: bool
     }
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
@@ -413,9 +415,14 @@ type Message =
     | PrevGalleryPage
     | GoToGalleryPage of page: int
     | GalleryEntriesLoaded of GalleryEntry list
-    | LoadGalleryDefinition of name: string * rowId: string
-    | LoadGalleryDefinitionSuccess of name: string * definition: string
+    | LoadGalleryDefinition of name: string * rowId: string * author: string
+    | LoadGalleryDefinitionSuccess of name: string * definition: string * author: string
     | UpdateGalleryFilter of string
+    | SetAuthor of string
+    | SetExplorationTitle of string
+    | AuthorCachedLoaded of string
+    | TitleCachedLoaded of string
+    | CommunityAuthorCachedLoaded of string
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

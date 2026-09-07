@@ -21,8 +21,8 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 "Reset Layout?", ["Current layout will be replaced."], "Reset", HardReset
             | ConfirmAction.LoadPreset (name, label) ->
                 (sprintf "Load %s preset?" label), ["Current layout will be replaced."], "Load", SelectPreset name
-            | ConfirmAction.LoadGallery (name, rowId) ->
-                (sprintf "Load %s?" name), ["Current layout will be replaced."], "Load", LoadGalleryDefinition (name, rowId)
+            | ConfirmAction.LoadGallery (name, rowId, author) ->
+                (sprintf "Load %s?" name), ["Current layout will be replaced."], "Load", LoadGalleryDefinition (name, rowId, author)
             | ConfirmAction.SwitchTo tab ->
                 "Switch View", ["Switch to this view?"], "Switch", SetActivePanel (match tab with Boundary -> BoundaryPanel | _ -> LayoutPanel)
 
@@ -316,26 +316,70 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
     }
 
-let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
-    match model.EditorMode with
-    | Syntax ->
+let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
+    div {
+        attr.``class`` "workspace-meta-bar"
+        
         div {
-            attr.id "hywe-input-syntax"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px 5px 30px;"
-            textarea {
-                attr.``class`` "hyweSyntax"
-                attr.style "min-height: 185px;"
-                attr.key (model.SrcOfTrth.GetHashCode().ToString())
-                attr.value model.SrcOfTrth
-                on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
+            attr.``class`` "workspace-meta-title-wrapper"
+            input {
+                attr.``class`` "workspace-meta-title"
+                attr.placeholder "Exploration Title..."
+                attr.title "Exploration Title (synced with Teach & Report)"
+                attr.value model.TeachMetadata.ExplorationDescription
+                on.input (fun e -> dispatch (SetExplorationTitle (unbox<string> e.Value)))
             }
         }
-    | Interactive ->
+
         div {
-            attr.id "hywe-input-interactive"
-            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
-            NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
+            attr.``class`` "workspace-meta-right"
+            match model.LoadedCommunityAuthor with
+            | Some origAuthor when not (System.String.IsNullOrWhiteSpace origAuthor) ->
+                span {
+                    attr.``class`` "workspace-meta-badge"
+                    attr.title (sprintf "Based on exploration by %s" origAuthor)
+                    text (sprintf "from %s" origAuthor)
+                }
+            | _ -> ()
+
+            span {
+                attr.``class`` "workspace-meta-by"
+                text "by"
+            }
+
+            div {
+                attr.``class`` "workspace-meta-author-wrapper"
+                input {
+                    attr.``class`` "workspace-meta-author"
+                    attr.placeholder "Author..."
+                    attr.title "Author name (cached across sessions, synced with Teach & Report)"
+                    attr.value model.TeachMetadata.Author
+                    on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
+                }
+            }
         }
+    }
+
+let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
+    match model.EditorMode with
+        | Syntax ->
+            div {
+                attr.id "hywe-input-syntax"
+                attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px 5px 30px;"
+                textarea {
+                    attr.``class`` "hyweSyntax"
+                    attr.style "min-height: 185px;"
+                    attr.key (model.SrcOfTrth.GetHashCode().ToString())
+                    attr.value model.SrcOfTrth
+                    on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
+                }
+            }
+        | Interactive ->
+            div {
+                attr.id "hywe-input-interactive"
+                attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
+                NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
+            }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
@@ -882,7 +926,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                     attr.style "align-self: stretch; width: 18px; min-width: 18px; border: none; border-left: 1px solid #dee2e6; border-radius: 0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: background 0.15s ease; box-sizing: border-box;"
                                                     attr.title "Load this configuration into workspace"
                                                     "aria-label" => sprintf "Load %s into workspace" (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "configuration" else entry.ExplorationDescription)
-                                                    on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.ExplorationDescription, entry.Id)))))
+                                                    on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.ExplorationDescription, entry.Id, entry.Author)))))
                                                     span {
                                                         attr.style "writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;"
                                                         text "LOAD ↵"
@@ -1011,6 +1055,7 @@ let view model dispatch (js: IJSRuntime) =
     concat {
         viewNodeCodeButtons model dispatch js
         viewEditorPanel model dispatch
+        viewSessionMetadataBar model dispatch
         viewHyweButton model dispatch
         viewHyweTabs model dispatch 
         viewHywePanels model dispatch js

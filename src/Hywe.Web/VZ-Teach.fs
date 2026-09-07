@@ -582,7 +582,7 @@ let view model dispatch =
                     attr.``class`` "hywe-input"
                     attr.placeholder "Author name..."
                     attr.value model.TeachMetadata.Author
-                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with Author = unbox<string> e.Value })))
+                    on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
                 }
             }
             div {
@@ -597,7 +597,7 @@ let view model dispatch =
                     attr.``class`` "hywe-input"
                     attr.placeholder "Describe your design idea (at least 3 words, e.g. Courtyard villa with pool)..."
                     attr.value model.TeachMetadata.ExplorationDescription
-                    on.input (fun e -> dispatch (UpdateMetadata (fun m -> { m with ExplorationDescription = unbox<string> e.Value })))
+                    on.input (fun e -> dispatch (SetExplorationTitle (unbox<string> e.Value)))
                 }
                 match repeatIter with
                 | Some iter ->

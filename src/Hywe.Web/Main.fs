@@ -63,6 +63,24 @@ type MyApp() =
             (fun _ -> initModel, Cmd.batch [
                 Cmd.OfAsync.perform (fun () -> Protocol.resolveStartupState this.JSRuntime) () (fun (res, panel, isFromUrl) -> 
                         LoadState (res, panel, isFromUrl))
+                Cmd.OfAsync.perform (fun () -> async {
+                    try
+                        let! author = this.JSRuntime.InvokeAsync<string>("localStorage.getItem", "hywe_author").AsTask() |> Async.AwaitTask
+                        return author
+                    with _ -> return ""
+                }) () (fun author -> AuthorCachedLoaded author)
+                Cmd.OfAsync.perform (fun () -> async {
+                    try
+                        let! title = this.JSRuntime.InvokeAsync<string>("localStorage.getItem", "hywe_title").AsTask() |> Async.AwaitTask
+                        return title
+                    with _ -> return ""
+                }) () (fun title -> TitleCachedLoaded title)
+                Cmd.OfAsync.perform (fun () -> async {
+                    try
+                        let! cAuthor = this.JSRuntime.InvokeAsync<string>("localStorage.getItem", "hywe_community_author").AsTask() |> Async.AwaitTask
+                        return cAuthor
+                    with _ -> return ""
+                }) () (fun cAuthor -> CommunityAuthorCachedLoaded cAuthor)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 1000 }) () (fun _ -> TransitionToIntro)
                 Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 3000 }) () (fun _ -> TransitionToMain)
                 Cmd.OfAsync.perform (fun () -> async { updateMetadata this.JSRuntime; return () }) () (fun _ -> NoOp)
