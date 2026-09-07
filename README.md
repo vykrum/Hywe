@@ -158,8 +158,8 @@ Contributions to the HYWE engine and spatial research tools are welcome. Please 
 If you utilize HYWE or the HYWE Spatial Configuration Dataset in academic or computational design research, please cite:
 
 ```bibtex
-@software{krum_hywe_2026,
-  author = {Vykrum},
+@software{subbaiah_hywe_2026,
+  author = {Subbaiah, Vikram},
   title = {HYWE: Computational Spatial Design Environment},
   year = {2026},
   publisher = {GitHub},
