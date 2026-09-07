@@ -130,6 +130,8 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
         let newExport = syncPolygonState finalPoly
         let newSqns = extractSequences clean
 
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
         { model with 
             SrcOfTrth = clean
             Tree = newTree
@@ -142,6 +144,11 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
             Sequences = newSqns
             EditsCount = 0
             PendingConfirm = None
+            LoadedCommunityAuthor = None
+            HasAppendedModSuffix = false
+            TeachMetadata = { model.TeachMetadata with ExplorationDescription = "" }
+            ReportOptions = { model.ReportOptions with ProjectTitle = "" }
+            UserDescription = ""
         }, 
         Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
@@ -163,8 +170,26 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             | "Branched" -> beedroom 
             | "Stacked" -> stacked 
             | _ -> ""
+        let presetTitle =
+            match name with
+            | "Simple" -> "Simple Layout"
+            | "Branched" -> "Branched Hierarchy"
+            | "Stacked" -> "Stacked Multilevel"
+            | "Nest" -> "Nested Circulation"
+            | other -> other
         let (nextModel, cmd) = handleFileImported model content js
-        Some ({ nextModel with SelectedPreset = Some name; EditsCount = 0 }, cmd)
+        js.InvokeVoidAsync("localStorage.setItem", "hywe_title", presetTitle) |> ignore
+        js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+        let updatedModel =
+            { nextModel with 
+                SelectedPreset = Some name
+                EditsCount = 0
+                LoadedCommunityAuthor = None
+                HasAppendedModSuffix = false
+                TeachMetadata = { nextModel.TeachMetadata with ExplorationDescription = presetTitle }
+                ReportOptions = { nextModel.ReportOptions with ProjectTitle = presetTitle }
+            }
+        Some (updatedModel, cmd)
     
     | FileImported content -> Some (handleFileImported model content js)
     

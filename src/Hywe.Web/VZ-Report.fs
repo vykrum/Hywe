@@ -576,7 +576,7 @@ let viewReport (model: Model) dispatch =
                         input {
                             attr.``class`` "hywe-input"
                             attr.value opts.ProjectTitle
-                            on.input (fun e -> updateOpts (fun o -> { o with ProjectTitle = e.Value :?> string }))
+                            on.input (fun e -> dispatch (SetExplorationTitle (e.Value :?> string)))
                         }
                     }
                     div {
@@ -597,7 +597,7 @@ let viewReport (model: Model) dispatch =
                         input {
                             attr.``class`` "hywe-input"
                             attr.value opts.Author
-                            on.input (fun e -> updateOpts (fun o -> { o with Author = e.Value :?> string }))
+                            on.input (fun e -> dispatch (SetAuthor (e.Value :?> string)))
                         }
                     }
                     div {

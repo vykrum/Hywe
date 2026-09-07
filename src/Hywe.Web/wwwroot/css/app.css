@@ -2146,5 +2146,122 @@ video.fullscreen-bg {
     body  { font-family: 'Outfit', system-ui, sans-serif; }
 }
 
+/* ==========================================================================
+   WORKSPACE SESSION METADATA BAR
+   ========================================================================== */
+.workspace-meta-bar {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 14px;
+    background: #fafbfc;
+    border-top: 1px solid #edf0f2;
+    border-bottom: 1px solid #edf0f2;
+    font-size: 0.82rem;
+}
+
+.workspace-meta-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+}
+
+.workspace-meta-icon {
+    display: inline-flex;
+    align-items: center;
+    color: #8c959f;
+    flex-shrink: 0;
+}
+
+.workspace-meta-title {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #24292f;
+    padding: 2px 6px;
+    outline: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.workspace-meta-title:hover {
+    background: #ffffff;
+    border-color: #d0d7de;
+}
+
+.workspace-meta-title:focus {
+    background: #ffffff;
+    border-color: #0969da;
+    box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.15);
+}
+
+.workspace-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.workspace-meta-by {
+    font-size: 0.75rem;
+    color: #8c959f;
+    user-select: none;
+}
+
+.workspace-meta-author-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.workspace-meta-author {
+    width: 100px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #57606a;
+    padding: 2px 5px;
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.workspace-meta-author:hover {
+    background: #ffffff;
+    border-color: #d0d7de;
+}
+
+.workspace-meta-author:focus {
+    background: #ffffff;
+    border-color: #0969da;
+    box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.15);
+}
+
+.workspace-meta-badge {
+    background: #eef2f6;
+    color: #4b5563;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 10px;
+    border: 1px solid #d8e0e8;
+    white-space: nowrap;
+    user-select: none;
+}
+
+
 
 
