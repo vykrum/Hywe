@@ -48,8 +48,9 @@ module Zaxel =
                     let treeObj = LayoutTree.Create rawTree
                     let attrMap = Map.ofList [ "Q", a.Sequence; "L", string a.Level; "X", string a.Scale; "O", a.OuterBoundary; "I", a.Islands ]
                     
+                    let targetSeq = seqOverride |> Option.map snd
                     let ratio = calculateTargetRatio attrMap treeObj { 
-                        EntryFallback = entryAtrFallback; InitialOcc = initialOcc; Seq = None
+                        EntryFallback = entryAtrFallback; InitialOcc = initialOcc; Seq = targetSeq
                         Width = curW; Height = curH; OuterStr = curO; IslandsStr = curI
                         ParentCxl = None; Ratio = None; Elevation = Some lvlIdx 
                     }
@@ -80,9 +81,29 @@ module Zaxel =
                             let targetId = attrs.Entry
                             state.Cxls |> Array.filter (fun c -> let (_, _, z) = hxlCrd c.Base in z = lvlIdx - 1) |> Array.tryFind (fun c -> let id = prpVlu c.Rfid in id = targetId || id.EndsWith("." + targetId))
 
+                    // When generating configurations for upper levels, the base level (and intermediate levels)
+                    // also generates a matching configuration so the root coxel gets its parent from HR if HR and VR if VR.
+                    let targetSeq = 
+                        match seqOverride with
+                        | Some (_, s) -> Some s
+                        | None ->
+                            if lvlIdx = 0 then
+                                let hasUpperHR = 
+                                    resolvedLevels 
+                                    |> List.exists (fun (seg, _, _, _, _, _, lIdx) -> 
+                                        if lIdx > 0 then
+                                            match seg with
+                                            | Level l -> match tryParseUnion<Sqn> l.Attributes.Sequence with Some Hexel.Horizontal -> true | _ -> false
+                                            | Nest n -> match tryParseUnion<Sqn> n.Attributes.Sequence with Some Hexel.Horizontal -> true | _ -> false
+                                        else false)
+                                match hasUpperHR, tryParseUnion<Sqn> attrs.Sequence with
+                                | true, Some Hexel.Vertical -> Some HRCWNN
+                                | _ -> None
+                            else None
+
                     let ctx = prepareLayoutContext attrMap treeObj { 
                         EntryFallback = entryAtrFallback; InitialOcc = initialOcc; Ratio = state.Ratio
-                        Seq = match seqOverride with Some (l, s) when l = lvlIdx -> Some s | _ -> None
+                        Seq = targetSeq
                         Width = w; Height = h; OuterStr = o; IslandsStr = iStr; ParentCxl = bsHx; Elevation = Some lvlIdx 
                     }
                     

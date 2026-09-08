@@ -180,7 +180,19 @@ module Lexel =
             markers 
             |> Array.mapi (fun i m ->
                 match i = lvl with
-                | true -> Regex.Replace(m, @"Q=[^/)]*", "Q=" + sqn)
+                | true -> 
+                    if Regex.IsMatch(m, @"Q=[^/)]*") then
+                        Regex.Replace(m, @"Q=[^/)]*", "Q=" + sqn)
+                    elif Regex.IsMatch(m, @"^([LN]\d+)\(([^)]*)\)") then
+                        Regex.Replace(m, @"^([LN]\d+)\(([^)]*)\)", fun (matched: Match) ->
+                            let marker = matched.Groups.[1].Value
+                            let inner = matched.Groups.[2].Value
+                            if String.IsNullOrWhiteSpace inner then $"{marker}(Q={sqn})"
+                            else $"{marker}(Q={sqn}/{inner})"
+                        )
+                    elif Regex.IsMatch(m, @"^([LN]\d+)") then
+                        Regex.Replace(m, @"^([LN]\d+)", $"$1(Q={sqn})")
+                    else m
                 | false -> m
             )
             |> String.concat ""

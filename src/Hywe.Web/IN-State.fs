@@ -190,11 +190,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let currentLevel = model.Tree.ActiveLevel
         let targetIsVR = i < 12
 
-        // Enforce category consistency: All levels must share the same category (VR or HR)
+        // Enforce category consistency: When generating for upper levels, the base level should also match.
         let newSqns = 
             model.Sequences 
             |> Map.map (fun lvl sqn ->
-                if lvl = currentLevel then newSqn
+                if lvl = currentLevel || (currentLevel > 0 && lvl < currentLevel) then newSqn
                 else
                     let currentIsVR = sqnToIndex sqn < 12
                     if currentIsVR <> targetIsVR then 
