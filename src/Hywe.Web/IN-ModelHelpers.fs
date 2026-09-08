@@ -317,6 +317,10 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
     }
 
 let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
+    let expWords = 
+        if System.String.IsNullOrWhiteSpace model.TeachMetadata.ExplorationDescription then 0
+        else model.TeachMetadata.ExplorationDescription.Split([| ' '; '\t'; '\n'; '\r' |], System.StringSplitOptions.RemoveEmptyEntries).Length
+
     div {
         attr.``class`` "workspace-meta-bar"
         
@@ -325,10 +329,15 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
             input {
                 attr.``class`` "workspace-meta-title"
                 attr.placeholder "Weave name..."
-                attr.title "Weave name (synced with Teach & Report)"
+                attr.title "Weave name (at least 3 words, required before committing to dataset or generating report)"
                 attr.value model.TeachMetadata.ExplorationDescription
                 on.input (fun e -> dispatch (SetExplorationTitle (unbox<string> e.Value)))
             }
+            if not (System.String.IsNullOrWhiteSpace model.TeachMetadata.ExplorationDescription) && expWords < 3 then
+                span {
+                    attr.style "font-size: 0.68rem; color: #d97706; background: #fff8eb; border: 1px solid #fbd38d; border-radius: 10px; padding: 1px 7px; white-space: nowrap; font-weight: 600; user-select: none; flex-shrink: 0;"
+                    text (sprintf "min 3 words (%d/3)" expWords)
+                }
         }
 
         div {
@@ -347,7 +356,7 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
                 input {
                     attr.``class`` "workspace-meta-author"
                     attr.placeholder "Woven by..."
-                    attr.title "Woven by (cached across sessions, synced with Teach & Report)"
+                    attr.title "Woven by (required before committing to dataset or generating report)"
                     attr.value model.TeachMetadata.Author
                     on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
                 }
@@ -1050,8 +1059,8 @@ let view model dispatch (js: IJSRuntime) =
     concat {
         viewNodeCodeButtons model dispatch js
         viewEditorPanel model dispatch
-        viewSessionMetadataBar model dispatch
         viewHyweButton model dispatch
+        viewSessionMetadataBar model dispatch
         viewHyweTabs model dispatch 
         viewHywePanels model dispatch js
         viewConfirmOverlay model dispatch

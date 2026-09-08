@@ -332,17 +332,14 @@ let tFooter : Printf.StringFormat<string -> int -> string> = """<div class="foot
     <span>Page %d</span>
 </div>"""
 
-let tCover : Printf.StringFormat<string -> string -> string -> string -> string -> string -> string -> string -> string> = """<div class="page"><div class="cover-page" style="height:100%%;">
+let tCover : Printf.StringFormat<string -> string -> string -> string -> string -> string> = """<div class="page"><div class="cover-page" style="height:100%%;">
     <div class="cover-left" style="flex: 1; padding: 30mm; background: #f8f8f8; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid #eee;">
         <div>
             <h1 class="cover-title">%s</h1>
-            <div class="cover-number">%s</div>
-            <div style="font-size: 16px; line-height: 1.6; color: #444; max-width: 400px;">%s</div>
         </div>
         <div class="cover-meta">
             <table>
                 <tr><td>Woven by</td><td>%s</td></tr>
-                <tr><td>Client</td><td>%s</td></tr>
                 <tr><td>Date</td><td>%s</td></tr>
             </table>
         </div>
@@ -407,7 +404,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                 match opts.Captured3DImage with
                 | Some url -> sprintf """<img src="%s" style="width: 100%%; height: 100%%; object-fit: contain;" />""" url
                 | None -> ""
-            [sprintf tCover opts.ProjectTitle opts.ProjectNumber opts.Description opts.Author opts.ClientName d captureHtml (renderFooter 1)], 2
+            [sprintf tCover opts.ProjectTitle opts.Author d captureHtml (renderFooter 1)], 2
         | false -> [], 1
 
     let flowChartMaxW, flowChartMaxH =
@@ -532,9 +529,17 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
 
 // --- UI COMPONENTS ---
 
+let private countWords (s: string) =
+    if String.IsNullOrWhiteSpace s then 0
+    else s.Split([| ' '; '\t'; '\n'; '\r' |], StringSplitOptions.RemoveEmptyEntries).Length
+
 let viewReport (model: Model) dispatch =
     let opts = model.ReportOptions
     let updateOpts f = dispatch (UpdateReportOptions f)
+    let expWords = countWords opts.ProjectTitle
+    let hasTitle = expWords >= 3 && opts.ProjectTitle.Trim().Length >= 8
+    let hasAuthor = not (String.IsNullOrWhiteSpace opts.Author)
+    let canGenerate = hasTitle && hasAuthor
     
     let renderToggleRow textLabel isChecked onChange =
         elt "label" {
@@ -557,76 +562,6 @@ let viewReport (model: Model) dispatch =
                 attr.``class`` "teach-intro-text"
                 text "Consolidates all generated configurations in a single compilation."
             }
-        }
-        
-        div {
-            attr.``class`` "report-section-title"
-            text "1. Project Details"
-        }
-        
-        div {
-            attr.style "width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 8px;"
-            div {
-                attr.style "display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"
-                div {
-                    attr.style "display: flex; flex-direction: column; gap: 8px;"
-                    div {
-                        attr.``class`` "report-field"
-                        elt "label" { text "Weave Title" }
-                        input {
-                            attr.``class`` "hywe-input"
-                            attr.value opts.ProjectTitle
-                            on.input (fun e -> dispatch (SetExplorationTitle (e.Value :?> string)))
-                        }
-                    }
-                    div {
-                        attr.``class`` "report-field"
-                        elt "label" { text "Project Number" }
-                        input {
-                            attr.``class`` "hywe-input"
-                            attr.value opts.ProjectNumber
-                            on.input (fun e -> updateOpts (fun o -> { o with ProjectNumber = e.Value :?> string }))
-                        }
-                    }
-                }
-                div {
-                    attr.style "display: flex; flex-direction: column; gap: 8px;"
-                    div {
-                        attr.``class`` "report-field"
-                        elt "label" { text "Woven by" }
-                        input {
-                            attr.``class`` "hywe-input"
-                            attr.value opts.Author
-                            on.input (fun e -> dispatch (SetAuthor (e.Value :?> string)))
-                        }
-                    }
-                    div {
-                        attr.``class`` "report-field"
-                        elt "label" { text "Client Name" }
-                        input {
-                            attr.``class`` "hywe-input"
-                            attr.value opts.ClientName
-                            on.input (fun e -> updateOpts (fun o -> { o with ClientName = e.Value :?> string }))
-                        }
-                    }
-                }
-            }
-            div {
-                attr.``class`` "report-field"
-                elt "label" { text "Description" }
-                textarea {
-                    attr.``class`` "hywe-input"
-                    attr.rows 2
-                    attr.value opts.Description
-                    on.input (fun e -> updateOpts (fun o -> { o with Description = e.Value :?> string }))
-                }
-            }
-        }
-        
-        div {
-            attr.style "margin-top: 10px;"
-            attr.``class`` "report-section-title"
-            text "2. Project Content"
         }
         
         renderToggleRow "Cover Page" opts.IncludeCover (fun v -> updateOpts (fun o -> { o with IncludeCover = v }))
@@ -699,21 +634,29 @@ let viewReport (model: Model) dispatch =
                     }
             }
 
-        div {
-            attr.style "margin-top: 10px;"
-            attr.``class`` "report-section-title"
-            text "3. Generate"
-        }
-        
         let reportPages = buildPageManifest opts (getOrderedMarkers model.Tree)
         div {
             attr.``class`` "report-page-count"
             text (sprintf "Report ready — %d pages" reportPages.Length)
         }
         
+        if not canGenerate then
+            let missing = [
+                if not hasAuthor then "Woven by"
+                if expWords = 0 then "Weave name (min 3 words)"
+                elif expWords < 3 then sprintf "Weave name (min 3 words, currently %d)" expWords
+                elif opts.ProjectTitle.Trim().Length < 8 then "Weave name (min 8 characters)"
+            ]
+            div {
+                attr.style "color: #dc2626; font-size: 0.85rem; font-weight: 500; text-align: center; margin-top: 4px;"
+                text (sprintf "Missing: %s" (String.concat ", " missing))
+            }
+        
         button {
-            attr.``class`` "hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md"
-            attr.disabled model.IsGeneratingReport
+            attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if model.IsGeneratingReport || not canGenerate then " disabled" else " active"))
+            attr.style (if not canGenerate then "opacity: 0.5; cursor: not-allowed;" else "")
+            attr.title (if not canGenerate then "Please set Weave name (at least 3 words) and Woven by above" else "Generate Report (PDF)")
+            attr.disabled (model.IsGeneratingReport || not canGenerate)
             on.click (fun _ -> dispatch GenerateReport)
             text (if model.IsGeneratingReport then "Generating..." else "Generate Report (PDF)")
         }

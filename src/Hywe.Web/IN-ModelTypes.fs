@@ -171,7 +171,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-08T11:23:20Z"
+let MODIFIED_DATE = "2026-09-08T12:37:02Z"
 let GALLERY_PAGE_SIZE = 12
 
 
@@ -246,10 +246,7 @@ type LevelReportSections = {
 
 type ReportOptions = {
     ProjectTitle  : string
-    ProjectNumber : string
     Author        : string
-    ClientName    : string
-    Description   : string
     IncludeCover  : bool
     LevelSections : Map<string, LevelReportSections>
     Captured3DImage: string option
