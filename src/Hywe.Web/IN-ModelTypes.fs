@@ -246,10 +246,7 @@ type LevelReportSections = {
 
 type ReportOptions = {
     ProjectTitle  : string
-    ProjectNumber : string
     Author        : string
-    ClientName    : string
-    Description   : string
     IncludeCover  : bool
     LevelSections : Map<string, LevelReportSections>
     Captured3DImage: string option

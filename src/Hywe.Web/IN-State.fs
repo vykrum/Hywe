@@ -62,10 +62,7 @@ let initModel =
         }
         ReportOptions = {
             ProjectTitle = ""
-            ProjectNumber = "HY-001"
             Author = ""
-            ClientName = "Creative Partner"
-            Description = "An automated architectural layout study derived from hierarchical spatial requirements, multi-level flow charts, and adjacency matrices."
             IncludeCover = true
             LevelSections = Map.empty
             Captured3DImage = None

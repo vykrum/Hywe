@@ -575,38 +575,6 @@ let view model dispatch =
         }
         div {
             attr.``class`` "teach-objective-section"
-            div {
-                attr.``class`` "teach-select-row"
-                span { attr.``class`` "hywe-label"; text "Woven by*" }
-                input {
-                    attr.``class`` "hywe-input"
-                    attr.placeholder "Weaver name..."
-                    attr.value model.TeachMetadata.Author
-                    on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
-                }
-            }
-            div {
-                attr.``class`` "teach-select-row"
-                div {
-                    attr.style "display: flex; justify-content: space-between; align-items: center;"
-                    span { attr.``class`` "hywe-label"; text "Weave Description*" }
-                    if expWords > 0 && expWords < 3 then
-                        span { attr.style "font-size: 0.75rem; color: #e67e22; font-style: italic;"; text (sprintf "%d/3 words" expWords) }
-                }
-                input {
-                    attr.``class`` "hywe-input"
-                    attr.placeholder "Describe your weave idea (at least 3 words, e.g. Courtyard villa with pool)..."
-                    attr.value model.TeachMetadata.ExplorationDescription
-                    on.input (fun e -> dispatch (SetExplorationTitle (unbox<string> e.Value)))
-                }
-                match repeatIter with
-                | Some iter ->
-                    div {
-                        attr.style "font-size: 0.76rem; color: #2980b9; margin-top: 3px;"
-                        text (sprintf "ℹ Existing weave found for this weaver — will be recorded as iteration #%d." iter)
-                    }
-                | None -> ()
-            }
             selectField model dispatch "Typology*" model.TeachMetadata.Typology [ "Residential"; "Commercial"; "Institutional" ] typoDescs (fun m v -> { m with Typology = v })
             selectField model dispatch "Scale" model.TeachMetadata.Scale [ "Layout"; "Building"; "Masterplan" ] scaleDescs (fun m v -> { m with Scale = v })
             selectField model dispatch "Flow" model.TeachMetadata.Flow [ "Sequential"; "Radial"; "Hierarchical" ] flowDescs (fun m v -> { m with Flow = v })
@@ -789,25 +757,39 @@ let view model dispatch =
             let hasTypology = not (String.IsNullOrWhiteSpace model.TeachMetadata.Typology) && model.TeachMetadata.Typology <> "Other"
             let canCommit = hasAuthor && hasExploration && hasTypology && not hasUrlWarning
             let isBusy = model.IsSavingToHynteract
-            p { 
-                attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
-                if hasUrlWarning then
+            match repeatIter with
+            | Some iter ->
+                div {
+                    attr.style "font-size: 0.78rem; color: #2563eb; text-align: center; margin-bottom: 4px;"
+                    text (sprintf "ℹ Existing weave found for this weaver — will be recorded as iteration #%d." iter)
+                }
+            | None -> ()
+
+            if hasUrlWarning then
+                div {
+                    attr.style "font-size: 0.85rem; color: #dc2626; font-weight: 500; text-align: center; margin: 0; max-width: 80%;"
                     text "⚠ External URLs and links are prohibited in dataset submissions."
-                elif canCommit then 
+                }
+            elif not canCommit then
+                let missing = [
+                    if not hasAuthor then "Woven by"
+                    if expWords = 0 then "Weave name (min 3 words)"
+                    elif expWords < 3 then sprintf "Weave name (min 3 words, currently %d)" expWords
+                    elif model.TeachMetadata.ExplorationDescription.Trim().Length < 8 then "Weave name (min 8 characters)"
+                    if not hasTypology then "Typology"
+                ]
+                div {
+                    attr.style "color: #dc2626; font-size: 0.85rem; font-weight: 500; text-align: center; margin: 0; max-width: 80%;"
+                    text (sprintf "Missing: %s" (String.concat ", " missing))
+                }
+            else
+                p { 
+                    attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
                     if String.IsNullOrWhiteSpace model.UserDescription then
                         text "Ready to commit. Sharing your spatial insights above greatly enriches the dataset."
                     else
                         text "Ready to commit. Your spatial narrative will be paired with the structural breakdown."
-                else
-                    let missing = [
-                        if not hasAuthor then "Woven by"
-                        if expWords = 0 then "Weave Description"
-                        elif expWords < 3 then sprintf "Weave Description (min 3 words, currently %d)" expWords
-                        elif model.TeachMetadata.ExplorationDescription.Trim().Length < 8 then "Weave Description (min 8 characters)"
-                        if not hasTypology then "Typology"
-                    ]
-                    text (sprintf "%s required to enable commitment" (String.concat ", " missing))
-            }
+                }
             div {
                 attr.style "display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;"
                 if cachedLayoutsCount = totalLayouts then
@@ -824,7 +806,7 @@ let view model dispatch =
             button {
                 attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
                 attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
-                attr.title (if not canCommit then "Please fill required fields (Woven by, Weave Description, Typology)" else "Commit this intent to the dataset")
+                attr.title (if not canCommit then "Please set Weave name (at least 3 words) and Woven by above, and select Typology" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not canCommit)
                 on.click (fun _ -> dispatch RecordToHynteract)
                 match isBusy with | true -> text "Committing..." | false -> text "Commit to Dataset"
