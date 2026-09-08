@@ -251,7 +251,7 @@ module Serialization =
                         | true ->
                             let fullEVal = match eVal.Contains(".") || eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
                             match guidMap |> Map.tryFind (lvl - 1, fullEVal) with
-                            | Some parentGuid -> parentGuid, guidMap
+                            | Some parentGuid -> parentGuid, guidMap |> Map.add (lvl, fullPathStr) parentGuid
                             | None -> 
                                 let g = Guid.NewGuid()
                                 g, guidMap |> Map.add (lvl, fullPathStr) g
@@ -283,7 +283,8 @@ module Serialization =
             allParts |> Array.choose (fun (lvl, _, _, _, eVal) ->
                 match lvl > 0 && eVal <> "0" with
                 | true ->
-                    match finalGuidMap |> Map.tryFind (lvl - 1, eVal) with
+                    let fullEVal = match eVal.Contains(".") || eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
+                    match finalGuidMap |> Map.tryFind (lvl - 1, fullEVal) |> Option.orElse (finalGuidMap |> Map.tryFind (lvl - 1, eVal)) with
                     | Some guid -> Some (lvl, guid)
                     | None -> None
                 | false -> None

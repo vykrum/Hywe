@@ -22,6 +22,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
         match isStale with
         | true -> 
             let cts = new System.Threading.CancellationTokenSource()
+            let markers = model.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
             let model' = 
                 { model with 
                     ActivePanel = panel
@@ -29,6 +30,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                     IsCancelling = false 
                     CancelToken = Some cts
                     BatchProgress = 0
+                    LayoutCache = Cache.init markers
                     IsPresetsCollapsed = true
                     IsWorkspaceCollapsed = true
                 }
