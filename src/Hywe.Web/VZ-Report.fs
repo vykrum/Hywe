@@ -341,7 +341,7 @@ let tCover : Printf.StringFormat<string -> string -> string -> string -> string 
         </div>
         <div class="cover-meta">
             <table>
-                <tr><td>Author</td><td>%s</td></tr>
+                <tr><td>Woven by</td><td>%s</td></tr>
                 <tr><td>Client</td><td>%s</td></tr>
                 <tr><td>Date</td><td>%s</td></tr>
             </table>
@@ -572,7 +572,7 @@ let viewReport (model: Model) dispatch =
                     attr.style "display: flex; flex-direction: column; gap: 8px;"
                     div {
                         attr.``class`` "report-field"
-                        elt "label" { text "Project Title" }
+                        elt "label" { text "Weave Title" }
                         input {
                             attr.``class`` "hywe-input"
                             attr.value opts.ProjectTitle
@@ -593,7 +593,7 @@ let viewReport (model: Model) dispatch =
                     attr.style "display: flex; flex-direction: column; gap: 8px;"
                     div {
                         attr.``class`` "report-field"
-                        elt "label" { text "Author" }
+                        elt "label" { text "Woven by" }
                         input {
                             attr.``class`` "hywe-input"
                             attr.value opts.Author

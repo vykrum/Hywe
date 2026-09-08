@@ -102,11 +102,11 @@ let generateSuggestion (model: Model) =
 
     let authorPart = 
         if String.IsNullOrWhiteSpace meta.Author then ""
-        else sprintf " by %s" (meta.Author.Trim())
+        else sprintf " woven by %s" (meta.Author.Trim())
 
     let explorationPart = 
         if String.IsNullOrWhiteSpace meta.ExplorationDescription then ""
-        else sprintf " exploring '%s'" (meta.ExplorationDescription.Trim())
+        else sprintf " weaving '%s'" (meta.ExplorationDescription.Trim())
 
     let boundaryPart =
         let isBoundaryActive =
@@ -577,10 +577,10 @@ let view model dispatch =
             attr.``class`` "teach-objective-section"
             div {
                 attr.``class`` "teach-select-row"
-                span { attr.``class`` "hywe-label"; text "Author*" }
+                span { attr.``class`` "hywe-label"; text "Woven by*" }
                 input {
                     attr.``class`` "hywe-input"
-                    attr.placeholder "Author name..."
+                    attr.placeholder "Weaver name..."
                     attr.value model.TeachMetadata.Author
                     on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
                 }
@@ -589,13 +589,13 @@ let view model dispatch =
                 attr.``class`` "teach-select-row"
                 div {
                     attr.style "display: flex; justify-content: space-between; align-items: center;"
-                    span { attr.``class`` "hywe-label"; text "Exploration Description*" }
+                    span { attr.``class`` "hywe-label"; text "Weave Description*" }
                     if expWords > 0 && expWords < 3 then
                         span { attr.style "font-size: 0.75rem; color: #e67e22; font-style: italic;"; text (sprintf "%d/3 words" expWords) }
                 }
                 input {
                     attr.``class`` "hywe-input"
-                    attr.placeholder "Describe your design idea (at least 3 words, e.g. Courtyard villa with pool)..."
+                    attr.placeholder "Describe your weave idea (at least 3 words, e.g. Courtyard villa with pool)..."
                     attr.value model.TeachMetadata.ExplorationDescription
                     on.input (fun e -> dispatch (SetExplorationTitle (unbox<string> e.Value)))
                 }
@@ -603,7 +603,7 @@ let view model dispatch =
                 | Some iter ->
                     div {
                         attr.style "font-size: 0.76rem; color: #2980b9; margin-top: 3px;"
-                        text (sprintf "ℹ Existing exploration found for this author — will be recorded as iteration #%d." iter)
+                        text (sprintf "ℹ Existing weave found for this weaver — will be recorded as iteration #%d." iter)
                     }
                 | None -> ()
             }
@@ -800,10 +800,10 @@ let view model dispatch =
                         text "Ready to commit. Your spatial narrative will be paired with the structural breakdown."
                 else
                     let missing = [
-                        if not hasAuthor then "Author"
-                        if expWords = 0 then "Exploration Description"
-                        elif expWords < 3 then sprintf "Exploration Description (min 3 words, currently %d)" expWords
-                        elif model.TeachMetadata.ExplorationDescription.Trim().Length < 8 then "Exploration Description (min 8 characters)"
+                        if not hasAuthor then "Woven by"
+                        if expWords = 0 then "Weave Description"
+                        elif expWords < 3 then sprintf "Weave Description (min 3 words, currently %d)" expWords
+                        elif model.TeachMetadata.ExplorationDescription.Trim().Length < 8 then "Weave Description (min 8 characters)"
                         if not hasTypology then "Typology"
                     ]
                     text (sprintf "%s required to enable commitment" (String.concat ", " missing))
@@ -824,7 +824,7 @@ let view model dispatch =
             button {
                 attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
                 attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
-                attr.title (if not canCommit then "Please fill required fields (Author, Exploration Description, Typology)" else "Commit this intent to the dataset")
+                attr.title (if not canCommit then "Please fill required fields (Woven by, Weave Description, Typology)" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not canCommit)
                 on.click (fun _ -> dispatch RecordToHynteract)
                 match isBusy with | true -> text "Committing..." | false -> text "Commit to Dataset"

@@ -324,8 +324,8 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
             attr.``class`` "workspace-meta-title-wrapper"
             input {
                 attr.``class`` "workspace-meta-title"
-                attr.placeholder "Exploration Title..."
-                attr.title "Exploration Title (synced with Teach & Report)"
+                attr.placeholder "Weave name..."
+                attr.title "Weave name (synced with Teach & Report)"
                 attr.value model.TeachMetadata.ExplorationDescription
                 on.input (fun e -> dispatch (SetExplorationTitle (unbox<string> e.Value)))
             }
@@ -337,22 +337,17 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
             | Some origAuthor when not (System.String.IsNullOrWhiteSpace origAuthor) ->
                 span {
                     attr.``class`` "workspace-meta-badge"
-                    attr.title (sprintf "Based on exploration by %s" origAuthor)
-                    text (sprintf "from %s" origAuthor)
+                    attr.title (sprintf "Based on weave by %s" origAuthor)
+                    text (sprintf "woven by %s" origAuthor)
                 }
             | _ -> ()
-
-            span {
-                attr.``class`` "workspace-meta-by"
-                text "by"
-            }
 
             div {
                 attr.``class`` "workspace-meta-author-wrapper"
                 input {
                     attr.``class`` "workspace-meta-author"
-                    attr.placeholder "Author..."
-                    attr.title "Author name (cached across sessions, synced with Teach & Report)"
+                    attr.placeholder "Woven by..."
+                    attr.title "Woven by (cached across sessions, synced with Teach & Report)"
                     attr.value model.TeachMetadata.Author
                     on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
                 }
