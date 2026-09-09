@@ -121,6 +121,8 @@ module View =
 
                 // Guide Button
                 button {
+                    attr.id "hywe-boundary-guide-btn"
+                    attr.``type`` "button"
                     attr.``class`` (if model.ShowInstructions then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
                     attr.style "padding: 2px 10px; font-weight: 500;"
                     on.click (fun _ -> dispatch ToggleInstructions)
@@ -151,43 +153,52 @@ module View =
                     }
                 }
             }
+        }
 
-            // Instructions Modal / Card (Text-only, no icons)
-            if model.ShowInstructions then
+    // Instructions Modal / Card (Text-only, strictly zero icons)
+    let instructionsModal model dispatch (js: IJSRuntime) =
+        if model.ShowInstructions then
+            let closeGuide () =
+                dispatch ToggleInstructions
+                js.InvokeVoidAsync("eval", "var b = document.getElementById('hywe-boundary-guide-btn'); if(b){b.focus({preventScroll:true});}else if(document.activeElement){document.activeElement.blur();}") |> ignore
+
+            div {
+                attr.``class`` "boundary-instructions-overlay"
+                attr.style "position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;"
+                on.click (fun _ -> closeGuide ())
+
                 div {
-                    attr.``class`` "boundary-instructions-overlay"
-                    attr.style "position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;"
-                    on.click (fun _ -> dispatch ToggleInstructions)
+                    attr.``class`` "boundary-instructions-card"
+                    attr.style "width: 100%; max-width: 380px; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
+                    "onclick:stopPropagation" => true
+                    "onpointerdown:stopPropagation" => true
 
                     div {
-                        attr.``class`` "boundary-instructions-card"
-                        attr.style "width: 100%; max-width: 380px; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
-                        "onclick:stopPropagation" => true
-
-                        div {
-                            attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
-                            h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Controls Guide" }
-                            button {
-                                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                                attr.style "padding: 2px 8px; font-size: 0.85rem;"
-                                on.click (fun _ -> dispatch ToggleInstructions)
-                                text "Close"
-                            }
-                        }
-
-                        div {
-                            attr.style "display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; color: #444; line-height: 1.45;"
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Press Delete / Backspace, or double-click / double-tap" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near edge and click / tap" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
+                        attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
+                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Controls Guide" }
+                        button {
+                            attr.``type`` "button"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                            attr.style "padding: 2px 8px; font-size: 0.85rem;"
+                            on.click (fun _ -> closeGuide ())
+                            text "Close"
                         }
                     }
+
+                    div {
+                        attr.style "display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; color: #444; line-height: 1.45;"
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex" }
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Press Delete / Backspace, or double-click / double-tap" }
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near edge and click / tap" }
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
+                        div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
+                    }
                 }
-        }
+            }
+        else
+            empty()
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch (js: IJSRuntime) =
@@ -232,7 +243,7 @@ module View =
                 svg {
                 attr.id "polygon-editor-svg"
                 attr.``class`` "polygon-editor-svg"
-                attr.tabindex 0
+                attr.tabindex -1
                 "data-padding-ratio" => (((2.0 * padding) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
                 attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
@@ -491,4 +502,7 @@ module View =
                 }
             else
                 empty()
+
+            // Instructions Modal / Card (rendered cleanly at boundary view root level)
+            instructionsModal model dispatch js
         }
