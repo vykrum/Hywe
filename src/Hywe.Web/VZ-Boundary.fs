@@ -2,6 +2,7 @@ namespace Hywe.Site
 
 open Bolero
 open Bolero.Html
+open Microsoft.AspNetCore.Components.Web
 open Microsoft.JSInterop
 open State
 
@@ -10,12 +11,8 @@ module View =
     // ---------- View ----------
     type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
     type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
-    type bdcrPh = Template<"""<path id="${pathid}" fill="none" letter-spacing="0.1" d="M ${sx},${sy} A ${r},${r} 0 1,1 ${ex},${ey} A ${r},${r} 0 1,1 ${sx},${sy}" />""">
-    type bdcrTx = Template<"""
-        <text id="${pth}" class="${tc}" font-size="${tf}" fill="#808080" text-anchor="middle">
-          <textPath href="#${pth}" letter-spacing="0.1px" startOffset="50%">${nm}</textPath>
-        </text>
-        """>
+    type vtxTxt = Template<"""<text class="${tc}" x="${x}" y="${y}" font-size="${tf}" text-anchor="middle" dominant-baseline="auto">${nm}</text>""">
+    type ghstVtx = Template<"""<g style="pointer-events: none;"><circle class="ghostVertex" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3"/><circle cx="${cx}" cy="${cy}" r="3" fill="#2563eb"/><text x="${cx}" y="${ty}" font-size="${tf}" font-weight="bold" fill="#2563eb" text-anchor="middle">+</text></g>""">
 
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
@@ -151,42 +148,36 @@ module View =
             // Col 3: Editor Instructions
             div {
                 attr.``class`` "polygon-editor-instructions"
-                attr.style (match model.UseBoundary with | true -> "flex: 1 1 0px; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; align-items: flex-start;" | _ -> "flex: 1 1 0px; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: #555; align-items: flex-start; opacity: 0.3; pointer-events: none;")
-                p { attr.style "margin: 0;"; text "Click edge to add vertex" }
-                p { attr.style "margin: 0;"; text "Dbl-clk Vertex to delete" }
-                p { attr.style "margin: 0;"; text "Dbl-clk inside adds Island" }
-                p { attr.style "margin: 0;"; text "Dbl-clk island to delete" }
+                p { attr.style "margin: 0;"; text "Hover edge & click: add vertex" }
+                p { attr.style "margin: 0;"; text "Dbl-clk Vertex: delete" }
+                p { attr.style "margin: 0;"; text "Dbl-clk inside: add Island" }
+                p { attr.style "margin: 0;"; text "Drag inside Island: move" }
+                p { attr.style "margin: 0;"; text "Dbl-clk Island: delete" }
             }
             
 
         }
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
-    let polygonEditorSvg model dispatch =
+    let polygonEditorSvg model dispatch (js: IJSRuntime) =
                 let boundScale = match model.LogicalWidth with
                                     | w when w <> fst initBound -> w / fst initBound
                                     | _ -> 1.0            
                 let boundRadius = max 1 (int (float model.VertexRadius * boundScale))
                 let boundLabel = max 1(int (float (model.VertexRadius + 4) * boundScale))  
-                let bndTxtRr = max 1(int(float (model.VertexRadius + 6) * boundScale))
                 let bndStWdO = max 1 (int (6.0 * boundScale))
                 let bndStWdI = max 1 (int (4.0 * boundScale))            
                 
                 let boundingBoxWithLogical =
                     let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
-                    if allPoints.Length = 0 then
-                        (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
-                    else
-                        let mutable minX = System.Double.MaxValue
-                        let mutable maxX = System.Double.MinValue
-                        let mutable minY = System.Double.MaxValue
-                        let mutable maxY = System.Double.MinValue
-                        for i = 0 to allPoints.Length - 1 do
-                            let p = allPoints.[i]
-                            if p.X < minX then minX <- p.X
-                            if p.X > maxX then maxX <- p.X
-                            if p.Y < minY then minY <- p.Y
-                            if p.Y > maxY then maxY <- p.Y
+                    match allPoints.Length with
+                    | 0 -> (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
+                    | _ ->
+                        let minX, maxX, minY, maxY =
+                            allPoints
+                            |> Array.fold (fun (mnX, mxX, mnY, mxY) p ->
+                                (min mnX p.X, max mxX p.X, min mnY p.Y, max mxY p.Y)
+                            ) (System.Double.MaxValue, System.Double.MinValue, System.Double.MaxValue, System.Double.MinValue)
                         
                         let minX' = min 0.0 minX
                         let minY' = min 0.0 minY
@@ -214,10 +205,18 @@ module View =
                 attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
 
-                // Pointer events
-                on.pointerdown (fun ev -> dispatch (PointerDown ev))
-                on.pointerup (fun _ -> dispatch PointerUp)
-                on.pointermove (fun ev -> if model.Dragging.IsSome || model.DraggingEntry then dispatch (PointerMove ev))
+                // Pointer events with pointer capture for unbreakable dragging
+                on.pointerdown (fun ev ->
+                    let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
+                    js.InvokeVoidAsync("capturePointer", "polygon-editor-svg", ptrId) |> ignore
+                    dispatch (PointerDown ev)
+                )
+                on.pointerup (fun ev ->
+                    let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
+                    js.InvokeVoidAsync("releasePointer", "polygon-editor-svg", ptrId) |> ignore
+                    dispatch PointerUp
+                )
+                on.pointermove (fun ev -> dispatch (PointerMove ev))
                 on.dblclick (fun ev -> dispatch (DoubleClick ev))
 
                 // Outer polygon
@@ -249,18 +248,10 @@ module View =
                         .cl("#333")
                         .Elt()
 
-                    bdcrPh()
-                        .pathid(sprintf "outerVertex-%d" i)
-                        .sx($"{rawPt.X}")
-                        .sy($"{rawPt.Y + float bndTxtRr}")
-                        .r($"{bndTxtRr}")
-                        .ex($"{rawPt.X}")
-                        .ey($"{rawPt.Y - float bndTxtRr}")
-                        .Elt()
-
-                    bdcrTx()
-                        .pth(sprintf "outerVertex-%d" i)
+                    vtxTxt()
                         .tc("outerVertexLabel")
+                        .x(sprintf "%.1f" rawPt.X)
+                        .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
                         .tf(boundLabel)
                         .nm(sprintf "(%d, %d)" cartX cartY)
                         .Elt()
@@ -273,28 +264,33 @@ module View =
                         let cartX = int (System.Math.Round(dispPt.X))
                         let cartY = int (System.Math.Round(dispPt.Y))
                         
-                        bdrCrl()    .cs("islandVertex")
+                        bdrCrl()
+                            .cs("islandVertex")
                             .cx(sprintf "%.1f" rawPt.X)
                             .cy(sprintf "%.1f" rawPt.Y)
                             .cr(string boundRadius)
                             .cl("#333")
                             .Elt()
 
-                        bdcrPh()
-                            .pathid(sprintf "islandVertex-%d-%d" i j)
-                            .sx($"{rawPt.X}")
-                            .sy($"{rawPt.Y + float bndTxtRr}")
-                            .r($"{bndTxtRr}")
-                            .ex($"{rawPt.X}")
-                            .ey($"{rawPt.Y - float bndTxtRr}")
-                            .Elt()
-
-                        bdcrTx()
-                            .pth(sprintf "islandVertex-%d-%d" i j) 
+                        vtxTxt()
                             .tc("islandVertexLabel")
+                            .x(sprintf "%.1f" rawPt.X)
+                            .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
                             .tf(boundLabel)
                             .nm(sprintf "(%d, %d)" cartX cartY)
                             .Elt()
+
+                // Ghost vertex preview on edge hover
+                match model.GhostVertex with
+                | Some ghost ->
+                    ghstVtx()
+                        .cx(sprintf "%.1f" ghost.Point.X)
+                        .cy(sprintf "%.1f" ghost.Point.Y)
+                        .ty(sprintf "%.1f" (ghost.Point.Y + float boundLabel * 0.35))
+                        .cr(string (boundRadius + 2))
+                        .tf(boundLabel)
+                        .Elt()
+                | None -> ()
 
                 // --- Entry point ---
                 let scale = boundScale * 0.3
@@ -388,10 +384,10 @@ module View =
                 div {
                     attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" (match model.UseMapBase && not model.IsMapLocked with | true -> "none" | false -> "auto"))
                     match model.PolygonEnabled with
-                    | true -> polygonEditorSvg model dispatch
+                    | true -> polygonEditorSvg model dispatch js
                     | false ->     div {
                                         attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
-                                        polygonEditorSvg model dispatch}
+                                        polygonEditorSvg model dispatch js}
                 }
 
                 // Lock Icon Overlay (Top Right)

@@ -489,7 +489,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match State.updateSync subMsg currentInnerModel with
             | Some updatedInner ->
                 // Drag completed! Check if an actual drag occurred.
-                let wasDragging = currentInnerModel.Dragging.IsSome || currentInnerModel.DraggingEntry
+                let wasDragging = currentInnerModel.Dragging.IsSome || currentInnerModel.DraggingEntry || currentInnerModel.DraggingIsland.IsSome
                 let newExport = syncPolygonState updatedInner
                 let isBoundaryChanged = 
                     model.EditsCount > 0 && 
@@ -518,6 +518,29 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     SrcOfTrth = newOutput
                     NeedsHyweave = if wasDragging then true else model.NeedsHyweave },
                     Cmd.none
+            | None -> model, Cmd.none
+
+        | CommitGhostVertex ->
+            match State.updateSync subMsg currentInnerModel with
+            | Some updatedInner ->
+                let newExport = syncPolygonState updatedInner
+                let model = pushUndo model
+                let model = applyAlterationSuffix js model
+                let newOutput = Serialization.getOutput
+                                     model.Tree
+                                     model.Sequences
+                                     newExport.Width
+                                     newExport.Height
+                                     newExport.AbsStr
+                                     newExport.BaseStr
+                                     newExport.OuterStr
+                                     newExport.IslandsStr
+                Protocol.sync js newOutput model.ActivePanel
+                { model with
+                    PolygonEditor = Stable updatedInner
+                    PolygonExport = newExport
+                    SrcOfTrth = newOutput
+                    NeedsHyweave = true }, Cmd.none
             | None -> model, Cmd.none
 
         | _ ->

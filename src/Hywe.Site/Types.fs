@@ -6,6 +6,7 @@ open Microsoft.AspNetCore.Components.Web
 // ---------- Types ----------
 type Point = { X: float; Y: float }
 type DragInfo = { PolyIndex: int; VertexIndex: int }
+type GhostCandidate = { PolyIndex: int; EdgeIndex: int; Point: Point }
 
 type SvgInfo =
     { ViewBoxX: float; ViewBoxY: float; ViewBoxW: float; ViewBoxH: float
@@ -28,11 +29,13 @@ type PolygonEditorModel =
         Islands: Point[][]
         VertexRadius: int
         Dragging: DragInfo option
-        DragOffset: Point option      // offset between pointer svg point and vertex so dragging doesn't jump
+        DraggingIsland: int option
+        DragOffset: Point option      // offset between pointer svg point and vertex/shape so dragging doesn't jump
         SvgInfo: SvgInfo option       // cached transform info so we don't call JS on every mousemove
         LastMoveMs: float option      // for simple throttling
         EntryPoint: Point
         DraggingEntry: bool
+        GhostVertex: GhostCandidate option
         OuterPointsStr: string        // Cached for performance
         IslandPointsStrs: string[]    // Cached for performance
         DisplayWidth: float
@@ -60,6 +63,7 @@ type PolygonEditorMessage =
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
     | RemoveVertex of int * int
+    | CommitGhostVertex
     | StartDragEntry of MouseEventArgs
     | MoveDragEntry of MouseEventArgs
     | EndDragEntry

@@ -32,6 +32,20 @@ let coreScript =
             }
         };
 
+        window.capturePointer = function(elemId, ptrId) {
+            try {
+                var el = document.getElementById(elemId);
+                if (el && el.setPointerCapture) el.setPointerCapture(ptrId);
+            } catch (e) {}
+        };
+
+        window.releasePointer = function(elemId, ptrId) {
+            try {
+                var el = document.getElementById(elemId);
+                if (el && el.releasePointerCapture) el.releasePointerCapture(ptrId);
+            } catch (e) {}
+        };
+
         window.copyToClipboard = function(text) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
