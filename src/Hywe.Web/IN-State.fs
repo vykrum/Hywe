@@ -473,38 +473,101 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | PolygonEditorMsg subMsg ->
         let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        model,
-        Cmd.OfAsync.perform
-            (State.update js subMsg)
-            currentInnerModel
-            PolygonEditorUpdated
+        match subMsg with
+        | PointerMove _ ->
+            match State.updateSync subMsg currentInnerModel with
+            | Some updatedInner ->
+                // Fast path: synchronous move update during dragging.
+                // Do NOT push undo, do NOT run heavy Protocol.sync/LZString, do NOT re-serialize.
+                let newExport = syncPolygonState updatedInner
+                { model with
+                    PolygonEditor = Stable updatedInner
+                    PolygonExport = newExport }, Cmd.none
+            | None -> model, Cmd.none
+
+        | PointerUp ->
+            match State.updateSync subMsg currentInnerModel with
+            | Some updatedInner ->
+                // Drag completed! Check if an actual drag occurred.
+                let wasDragging = currentInnerModel.Dragging.IsSome || currentInnerModel.DraggingEntry
+                let newExport = syncPolygonState updatedInner
+                let isBoundaryChanged = 
+                    model.EditsCount > 0 && 
+                    (newExport.OuterStr <> model.PolygonExport.OuterStr || 
+                     newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
+                     newExport.EntryStr <> model.PolygonExport.EntryStr)
+                
+                let model = if wasDragging then pushUndo model else model
+                let model = if isBoundaryChanged then applyAlterationSuffix js model else model
+                let newOutput = Serialization.getOutput
+                                     model.Tree
+                                     model.Sequences
+                                     newExport.Width
+                                     newExport.Height
+                                     newExport.AbsStr
+                                     newExport.BaseStr
+                                     newExport.OuterStr
+                                     newExport.IslandsStr
+
+                if wasDragging then
+                    Protocol.sync js newOutput model.ActivePanel
+
+                { model with 
+                    PolygonEditor = Stable updatedInner
+                    PolygonExport = newExport
+                    SrcOfTrth = newOutput
+                    NeedsHyweave = if wasDragging then true else model.NeedsHyweave },
+                    Cmd.none
+            | None -> model, Cmd.none
+
+        | _ ->
+            model,
+            Cmd.OfAsync.perform
+                (State.update js subMsg)
+                currentInnerModel
+                PolygonEditorUpdated
 
     | PolygonEditorUpdated newModel ->
         let newExport = syncPolygonState newModel
-        let isBoundaryChanged = 
-            model.EditsCount > 0 && 
-            (newExport.OuterStr <> model.PolygonExport.OuterStr || 
-             newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
-             newExport.EntryStr <> model.PolygonExport.EntryStr)
-        let model = pushUndo model
-        let model = if isBoundaryChanged then applyAlterationSuffix js model else model
-        let newOutput = Serialization.getOutput
-                             model.Tree
-                             model.Sequences
-                             newExport.Width
-                             newExport.Height
-                             newExport.AbsStr
-                             newExport.BaseStr
-                             newExport.OuterStr
-                             newExport.IslandsStr
-        Protocol.sync js newOutput model.ActivePanel
+        let hasGeometryChanged =
+            newExport.OuterStr <> model.PolygonExport.OuterStr || 
+            newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
+            newExport.EntryStr <> model.PolygonExport.EntryStr ||
+            newExport.Width <> model.PolygonExport.Width ||
+            newExport.Height <> model.PolygonExport.Height ||
+            newExport.BaseStr <> model.PolygonExport.BaseStr ||
+            newExport.AbsStr <> model.PolygonExport.AbsStr
 
-        { model with 
-            PolygonEditor = Stable newModel
-            PolygonExport = newExport
-            SrcOfTrth = newOutput
-            NeedsHyweave = true        },
-            Cmd.none
+        if hasGeometryChanged then
+            let isBoundaryChanged = 
+                model.EditsCount > 0 && 
+                (newExport.OuterStr <> model.PolygonExport.OuterStr || 
+                 newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
+                 newExport.EntryStr <> model.PolygonExport.EntryStr)
+            let model = pushUndo model
+            let model = if isBoundaryChanged then applyAlterationSuffix js model else model
+            let newOutput = Serialization.getOutput
+                                 model.Tree
+                                 model.Sequences
+                                 newExport.Width
+                                 newExport.Height
+                                 newExport.AbsStr
+                                 newExport.BaseStr
+                                 newExport.OuterStr
+                                 newExport.IslandsStr
+            Protocol.sync js newOutput model.ActivePanel
+
+            { model with 
+                PolygonEditor = Stable newModel
+                PolygonExport = newExport
+                SrcOfTrth = newOutput
+                NeedsHyweave = true },
+                Cmd.none
+        else
+            { model with 
+                PolygonEditor = Stable newModel
+                PolygonExport = newExport },
+                Cmd.none
 
     | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv | DownloadBatchMetricsCsv | DownloadBatchAdjCsv | ToggleCoords as msg ->
         let model = 

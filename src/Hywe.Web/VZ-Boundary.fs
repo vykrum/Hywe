@@ -217,7 +217,7 @@ module View =
                 // Pointer events
                 on.pointerdown (fun ev -> dispatch (PointerDown ev))
                 on.pointerup (fun _ -> dispatch PointerUp)
-                on.pointermove (fun ev -> dispatch (PointerMove ev))
+                on.pointermove (fun ev -> if model.Dragging.IsSome || model.DraggingEntry then dispatch (PointerMove ev))
                 on.dblclick (fun ev -> dispatch (DoubleClick ev))
 
                 // Outer polygon
