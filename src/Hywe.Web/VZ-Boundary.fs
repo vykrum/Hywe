@@ -20,7 +20,7 @@ module View =
         let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
-                attr.style "display: inline-flex; align-items: center; gap: 6px;"
+                attr.style "display: flex; align-items: center; justify-content: space-between; gap: 8px;"
                 label { attr.``class`` "hywe-label"; text labelText }
                 input {
                     attr.``class`` "boundaryInput"
@@ -40,18 +40,18 @@ module View =
 
         div {
             attr.``class`` "boundary-toolbar"
-            attr.style "display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 820px; margin: 0 auto; padding: 12px 10px; box-sizing: border-box;"
+            attr.style "display: flex; flex-flow: row wrap; gap: 24px; align-items: center; justify-content: center; width: 100%; max-width: 680px; margin: 0 auto; padding: 10px 12px 6px; box-sizing: border-box;"
 
-            // Row 1: Segmented Toggles + Guide Button
+            // Col 1: Segmented Pill Toggles + Help Button
             div {
-                attr.``class`` "boundary-row-toggles"
-                attr.style "display: flex; flex-flow: row wrap; gap: 16px; align-items: center; justify-content: center; width: 100%;"
+                attr.``class`` "toggle-column"
+                attr.style "display: flex; flex-direction: column; gap: 8px;"
 
                 // Site
                 div {
                     attr.``class`` "hywe-row"
-                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
-                    span { attr.``class`` "hywe-label"; text "Site:" }
+                    attr.style "display: flex; align-items: center; gap: 8px;"
+                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Site:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
@@ -67,13 +67,25 @@ module View =
                             text "Boundary"
                         }
                     }
+
+                    // Help Button (?)
+                    button {
+                        attr.id "hywe-boundary-guide-btn"
+                        attr.``type`` "button"
+                        attr.title "Boundary Controls Help"
+                        "aria-label" => "Boundary Controls Help"
+                        attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
+                        attr.style "width: 24px; height: 24px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-transform: none; line-height: 1; margin-left: 4px;"
+                        on.click (fun _ -> dispatch ToggleInstructions)
+                        text "?"
+                    }
                 }
 
                 // Count
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
-                    span { attr.``class`` "hywe-label"; text "Count:" }
+                    attr.style "display: flex; align-items: center; gap: 8px;"
+                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Count:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
@@ -94,8 +106,8 @@ module View =
                 // Base
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
-                    span { attr.``class`` "hywe-label"; text "Base:" }
+                    attr.style "display: flex; align-items: center; gap: 8px;"
+                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Base:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
@@ -118,28 +130,16 @@ module View =
                         }
                     }
                 }
-
-                // Help Button (?)
-                button {
-                    attr.id "hywe-boundary-guide-btn"
-                    attr.``type`` "button"
-                    attr.title "Boundary Controls Help"
-                    "aria-label" => "Boundary Controls Help"
-                    attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
-                    attr.style "width: 24px; height: 24px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-transform: none; line-height: 1;"
-                    on.click (fun _ -> dispatch ToggleInstructions)
-                    text "?"
-                }
             }
 
-            // Row 2: Dimensions & Scale
+            // Col 2: Dimensions & Scale
             div {
-                attr.``class`` "boundary-row-dimensions"
+                attr.``class`` "dimension-fields"
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "display: flex; flex-flow: row wrap; gap: 20px; align-items: center; justify-content: center; width: 100%; opacity: 0.3; pointer-events: none;"
+                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; padding-left: 20px; opacity: 0.3; pointer-events: none;"
                     else
-                        "display: flex; flex-flow: row wrap; gap: 20px; align-items: center; justify-content: center; width: 100%;"
+                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; padding-left: 20px;"
                 )
 
                 renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
@@ -147,10 +147,10 @@ module View =
 
                 div {
                     attr.``class`` "field-group"
-                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
+                    attr.style "display: flex; align-items: center; justify-content: space-between; gap: 8px;"
                     span { attr.``class`` "hywe-label"; text "Scale:" }
                     span { 
-                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif;"
+                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right; padding-right: 4px;"
                         text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
                     }
                 }

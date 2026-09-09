@@ -1813,43 +1813,39 @@ video.fullscreen-bg {
     user-select: none;
 }
 
-/* Transposed Boundary Toolbar: 2 compact rows */
+/* Boundary Toolbar: 2 neat columns (toggles + dimensions) */
 .boundary-toolbar {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-flow: row wrap;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    max-width: 820px;
-    margin: 0 auto;
+    gap: 24px;
     padding: 10px 12px 6px;
+    margin: 0 auto;
     box-sizing: border-box;
 }
 
-.boundary-row-toggles {
+/* Column 1: Toggles */
+.toggle-column {
     display: flex;
-    flex-flow: row wrap;
-    gap: 16px;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.boundary-row-dimensions {
+/* Column 2: Dimensions */
+.dimension-fields {
     display: flex;
-    flex-flow: row wrap;
-    gap: 20px;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 20px;
+    border-left: 1px solid #e0e0e0;
 }
 
 .field-group {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: 8px;
 }
 
 /* Boundary Instructions Modal */
