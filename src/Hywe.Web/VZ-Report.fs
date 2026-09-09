@@ -26,6 +26,30 @@ let getOrderedMarkers (tree: SubModel) =
         levelMarker :: nests
     )
 
+let getIdToLabelMap (tree: SubModel) : Map<string, string> =
+    let rec traverse (m: string) (prefix: string) (node: TreeNode) =
+        seq {
+            yield $"{m}.{prefix}", node.Name
+            yield prefix, node.Name
+            yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
+        }
+    seq {
+        for kvp in tree.Levels do
+            yield! traverse $"L{kvp.Key}" "1" kvp.Value
+        for kvp in tree.Nests do
+            yield! traverse $"N{kvp.Key}" "1" kvp.Value
+    } |> Map.ofSeq
+
+let resolveLabel (idToLabel: Map<string, string>) (rfid: string) (currentName: string) =
+    if not (String.IsNullOrWhiteSpace currentName) && currentName <> rfid then
+        currentName
+    else
+        let stripped = if rfid.Contains(".") then rfid.Substring(rfid.IndexOf('.') + 1) else rfid
+        idToLabel
+        |> Map.tryFind rfid
+        |> Option.orElse (idToLabel |> Map.tryFind stripped)
+        |> Option.defaultValue (if not (String.IsNullOrWhiteSpace currentName) then currentName else rfid)
+
 let getMarkerTitle (marker: string) =
     match marker.StartsWith("N") with
     | true -> sprintf "Nest %s" (marker.Substring(1))
@@ -174,7 +198,7 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (wtmkShapes: BatchComponent[] 
 let renderFlowchartSvg (root: TreeNode) (colorMap: Map<string, string>) (maxW: float option) (maxH: float option) : string =
     Visualization.renderSvgToString root colorMap maxW maxH
 
-let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) (elv: int) : string =
+let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) (elv: int) (idToLabelMap: Map<string, string>) : string =
     let fontSize = 
         match cxls.Length with
         | l when l > 25 -> "7.5px"
@@ -192,7 +216,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
             let achSz = (Array.length cxl.Hxls) * hxlAreaX
             let opnSz = avl * hxlAreaX
             let rfid = prpVlu cxl.Rfid
-            let rawName = prpVlu cxl.Name
+            let rawName = resolveLabel idToLabelMap rfid (prpVlu cxl.Name)
             let safeName = rawName.Replace("<", "&lt;").Replace(">", "&gt;")
             
             let clr = Map.tryFind rfid colorMap |> Option.defaultValue "#eee"
@@ -203,9 +227,10 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
         
     header + rows + "</tbody></table>\n"
 
-let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) : string =
-    let names, matrix = Coxel.cxlAdj cxls
+let renderAdjacencyMatrix (cxls: Cxl[]) (colorMap: Map<string, string>) (idToLabelMap: Map<string, string>) : string =
     let rfids = cxls |> Array.map (fun c -> prpVlu c.Rfid)
+    let names = cxls |> Array.map (fun c -> resolveLabel idToLabelMap (prpVlu c.Rfid) (prpVlu c.Name))
+    let _, matrix = Coxel.cxlAdj cxls
     let fontSize = 
         match names.Length with
         | l when l > 25 -> "6px"
@@ -377,6 +402,7 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
     let d = DateTime.Now.ToString("dd MMM yyyy")
     let baseHtml = sprintf tBase opts.ProjectTitle
     let markers = getOrderedMarkers tree
+    let idToLabelMap = getIdToLabelMap tree
     
     let renderHeader title subtitle = sprintf tHeader title subtitle
     let renderFooter page = sprintf tFooter d page
@@ -474,7 +500,8 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                             |> Seq.collect (fun i ->
                                 batchInfo.[i].shapes
                                 |> Array.choose (fun s ->
-                                    let name = s.name.Trim()
+                                    let resolved = resolveLabel idToLabelMap s.name s.name
+                                    let name = resolved.Trim()
                                     if String.IsNullOrWhiteSpace(name) then None
                                     else Some (name, s.color)))
                             |> Seq.distinctBy fst
@@ -508,12 +535,13 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                         | false ->
                             match Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
                             
-                    let areaTable = renderAreaTable levelCxls conf.cxlAvl cxlColorMap baseLevel
-                    let adjMatrix = renderAdjacencyMatrix levelCxls cxlColorMap
+                    let areaTable = renderAreaTable levelCxls conf.cxlAvl cxlColorMap baseLevel idToLabelMap
+                    let adjMatrix = renderAdjacencyMatrix levelCxls cxlColorMap idToLabelMap
                     let varLegendItems =
                         levelShapes
                         |> Array.choose (fun s ->
-                            let name = s.name.Trim()
+                            let resolved = resolveLabel idToLabelMap s.name s.name
+                            let name = resolved.Trim()
                             if String.IsNullOrWhiteSpace(name) then None
                             else Some (name, s.color))
                         |> Array.distinctBy fst
