@@ -8,22 +8,57 @@ module Geometry =
     let distanceSq (a: Point) (b: Point) = sqr (a.X - b.X) + sqr (a.Y - b.Y)
     let withinRadiusSq (a: Point) (b: Point) (r: float) = distanceSq a b <= r*r
 
-    let distancePointToSegmentSq p a b =
+    let projectPointToSegment (p: Point) (a: Point) (b: Point) : Point =
         let vx = b.X - a.X
         let vy = b.Y - a.Y
         let wx = p.X - a.X
         let wy = p.Y - a.Y
         let c1 = wx * vx + wy * vy
         match c1 <= 0.0 with
-        | true -> distanceSq p a
+        | true -> a
         | false ->
             let c2 = vx * vx + vy * vy
             match c2 <= c1 with
-            | true -> distanceSq p b
+            | true -> b
             | false ->
                 let t = c1 / c2
-                let proj = { X = a.X + t*vx; Y = a.Y + t*vy }
-                distanceSq p proj
+                { X = a.X + t * vx; Y = a.Y + t * vy }
+
+    let distancePointToSegmentSq p a b =
+        distanceSq p (projectPointToSegment p a b)
+
+    let findClosestEdge (p: Point) (threshold: float) (outer: Point[]) (islands: Point[][]) : GhostCandidate option =
+        let thresholdSq = threshold * threshold
+        
+        let outerEdges =
+            outer
+            |> Array.mapi (fun i pt ->
+                let next = outer.[(i + 1) % outer.Length]
+                let proj = projectPointToSegment p pt next
+                let distSq = distanceSq p proj
+                (0, i, proj, distSq)
+            )
+
+        let islandEdges =
+            islands
+            |> Array.mapi (fun islIdx isl ->
+                isl
+                |> Array.mapi (fun i pt ->
+                    let next = isl.[(i + 1) % isl.Length]
+                    let proj = projectPointToSegment p pt next
+                    let distSq = distanceSq p proj
+                    (islIdx + 1, i, proj, distSq)
+                )
+            )
+            |> Array.concat
+
+        Array.append outerEdges islandEdges
+        |> Array.filter (fun (_, _, _, dSq) -> dSq <= thresholdSq)
+        |> Array.sortBy (fun (_, _, _, dSq) -> dSq)
+        |> Array.tryHead
+        |> Option.map (fun (polyIdx, edgeIdx, proj, _) ->
+            { PolyIndex = polyIdx; EdgeIndex = edgeIdx; Point = proj }
+        )
 
     /// <summary> 
     /// Ray-casting algorithm to determine if a point is inside a polygon.
@@ -161,8 +196,9 @@ module Geometry =
             { X = sx / float outer.Length; Y = sy / float outer.Length }
 
         // Fast-path: If centroid is valid, return it immediately without searching
-        if isEntryPointValid outer islands centroid then centroid
-        else
+        match isEntryPointValid outer islands centroid with
+        | true -> centroid
+        | false ->
             let step = 15.0
             let maxSearch = 400.0
 

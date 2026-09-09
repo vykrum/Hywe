@@ -1739,12 +1739,25 @@ video.fullscreen-bg {
 .islandPolygon {
     stroke: #E3DCCC;
     fill: #f0f0f0;
-    pointer-events: stroke;
-    cursor: cell;
+    pointer-events: visiblePainted;
+    cursor: grab;
 }
 
 .islandPolygon:hover {
     stroke: #D6CFAF;
+}
+
+.islandPolygon:active {
+    cursor: grabbing;
+}
+
+.ghostVertex {
+    transition: r 0.15s ease-out;
+}
+
+.ghostVertexGroup {
+    pointer-events: none;
+    user-select: none;
 }
 
 .mapModeOpacity {

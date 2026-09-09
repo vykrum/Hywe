@@ -69,7 +69,7 @@ module State =
         }
 
     let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
-        { model with Dragging = None; DragOffset = None }
+        { model with Dragging = None; DraggingIsland = None; DragOffset = None; GhostVertex = None }
 
     let polyToSvgPoints (poly: Point[]) =
         poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
@@ -221,12 +221,14 @@ module State =
             Outer = initOuter
             Islands = initIslands
             Dragging = None
+            DraggingIsland = None
             DragOffset = None
             SvgInfo = None
             LastMoveMs = None
             VertexRadius = initRadius
             EntryPoint = initEntry
             DraggingEntry = false
+            GhostVertex = None
             OuterPointsStr = ""
             IslandPointsStrs = [||]
             DisplayWidth = 0.0
@@ -238,72 +240,152 @@ module State =
         |> refreshCachedStrings
 
     let handlePointerUp (model: PolygonEditorModel) : PolygonEditorModel =
-        { model with Dragging = None; DraggingEntry = false; DragOffset = None; LastMoveMs = None }
+        { model with Dragging = None; DraggingEntry = false; DraggingIsland = None; DragOffset = None; LastMoveMs = None }
+
+    let commitGhost (ghost: GhostCandidate) (model: PolygonEditorModel) : PolygonEditorModel option =
+        match ghost.PolyIndex = 0 with
+        | true ->
+            let insertIdx = ghost.EdgeIndex + 1
+            let newOuter =
+                Array.append
+                    (Array.append model.Outer.[0 .. ghost.EdgeIndex] [| ghost.Point |])
+                    model.Outer.[insertIdx ..]
+            let ok =
+                not (Geometry.polygonSelfIntersects newOuter) &&
+                not (model.Islands |> Array.exists (fun island -> Geometry.polygonsIntersect newOuter island)) &&
+                (model.Islands |> Array.forall (fun island -> Geometry.isPolygonInside newOuter island))
+            match ok with
+            | true ->
+                let updated = { model with Outer = newOuter; GhostVertex = None }
+                Some (updated |> refreshCachedStrings)
+            | false -> None
+        | false ->
+            let islandIdx = ghost.PolyIndex - 1
+            let island = model.Islands.[islandIdx]
+            let insertIdx = ghost.EdgeIndex + 1
+            let newIsland =
+                Array.append
+                    (Array.append island.[0 .. ghost.EdgeIndex] [| ghost.Point |])
+                    island.[insertIdx ..]
+            let ok =
+                Geometry.isPolygonInside model.Outer newIsland &&
+                not (Geometry.polygonSelfIntersects newIsland) &&
+                not (model.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.exists (fun (i, isl) -> i <> islandIdx && Geometry.polygonsIntersect newIsland isl))
+            match ok with
+            | true ->
+                let newIslands =
+                    model.Islands
+                    |> Array.mapi (fun i isl -> match i = islandIdx with true -> newIsland | false -> isl)
+                let updated = { model with Islands = newIslands; GhostVertex = None }
+                Some (updated |> refreshCachedStrings)
+            | false -> None
 
     let handlePointerMove (ev: MouseEventArgs) (model: PolygonEditorModel) : PolygonEditorModel =
         match model.PolygonEnabled with
         | false -> model
         | true ->
-            match model.Dragging, model.DraggingEntry with
-            | None, false -> model
-            | _ ->
-                let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
-                match model.LastMoveMs with
-                | Some last when nowMs - last < 16.0 -> model
-                | _ -> 
-                    match model.Dragging, model.DragOffset, model.SvgInfo with
-                    // -------------------------------------------------------
-                    // 1) Dragging the entry point
-                    // -------------------------------------------------------
-                    | None, Some offset, Some info when model.DraggingEntry ->
-                        let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                        let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+            let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
+            match model.LastMoveMs with
+            | Some last when nowMs - last < 16.0 -> model
+            | _ -> 
+                match model.Dragging, model.DraggingEntry, model.DraggingIsland, model.DragOffset, model.SvgInfo with
+                // -------------------------------------------------------
+                // 1) Dragging the entry point
+                // -------------------------------------------------------
+                | None, true, None, Some offset, Some info ->
+                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                    let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
 
-                        match Geometry.isEntryPointValid model.Outer model.Islands newEntry with
-                        | true -> { model with EntryPoint = newEntry; LastMoveMs = Some nowMs }
-                        | false -> model
+                    match Geometry.isEntryPointValid model.Outer model.Islands newEntry with
+                    | true -> { model with EntryPoint = newEntry; LastMoveMs = Some nowMs; GhostVertex = None }
+                    | false -> { model with LastMoveMs = Some nowMs; GhostVertex = None }
 
-                    // -------------------------------------------------------
-                    // 2) Dragging a polygon vertex (outer or island)
-                    // -------------------------------------------------------
-                    | Some drag, Some offset, Some info ->
-                        let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                        let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+                // -------------------------------------------------------
+                // 2) Dragging a polygon vertex (outer or island)
+                // -------------------------------------------------------
+                | Some drag, false, None, Some offset, Some info ->
+                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                    let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
 
-                        // Generate the proposed state based on what is being dragged
-                        let proposedModel = 
-                            match drag.PolyIndex = 0 with
-                            | true ->
-                                let newOuter = Array.copy model.Outer
-                                newOuter.[drag.VertexIndex] <- newPt
-                                { model with Outer = newOuter }
-                            | false ->
-                                let islandIdx = drag.PolyIndex - 1
-                                let newIslands = Array.copy model.Islands
-                                let poly = Array.copy newIslands.[islandIdx]
-                                poly.[drag.VertexIndex] <- newPt
-                                newIslands.[islandIdx] <- poly
-                                { model with Islands = newIslands }
-
-                        // Validate the entire configuration using the pipeline helper
-                        match Geometry.isConfigurationValid proposedModel.Outer proposedModel.Islands with
-                        | false -> model
+                    let proposedModel = 
+                        match drag.PolyIndex = 0 with
                         | true ->
-                            let isEntryValid = Geometry.isEntryPointValid proposedModel.Outer proposedModel.Islands proposedModel.EntryPoint
-                            let finalModel = 
-                                match isEntryValid with
-                                | true -> { proposedModel with LastMoveMs = Some nowMs }
-                                | false -> 
-                                     { proposedModel with 
-                                         EntryPoint = Geometry.closestValidEntryPoint proposedModel.Outer proposedModel.Islands
-                                         LastMoveMs = Some nowMs }
-                            finalModel |> refreshCachedStrings
-                    | _ -> model
+                            let newOuter =
+                                model.Outer
+                                |> Array.mapi (fun i pt -> match i = drag.VertexIndex with true -> newPt | false -> pt)
+                            { model with Outer = newOuter }
+                        | false ->
+                            let islandIdx = drag.PolyIndex - 1
+                            let newIslands =
+                                model.Islands
+                                |> Array.mapi (fun i island ->
+                                    match i = islandIdx with
+                                    | true -> island |> Array.mapi (fun j pt -> match j = drag.VertexIndex with true -> newPt | false -> pt)
+                                    | false -> island)
+                            { model with Islands = newIslands }
+
+                    match Geometry.isConfigurationValid proposedModel.Outer proposedModel.Islands with
+                    | false -> { model with LastMoveMs = Some nowMs; GhostVertex = None }
+                    | true ->
+                        let isEntryValid = Geometry.isEntryPointValid proposedModel.Outer proposedModel.Islands proposedModel.EntryPoint
+                        let finalModel = 
+                            match isEntryValid with
+                            | true -> { proposedModel with LastMoveMs = Some nowMs; GhostVertex = None }
+                            | false -> 
+                                 { proposedModel with 
+                                     EntryPoint = Geometry.closestValidEntryPoint proposedModel.Outer proposedModel.Islands
+                                     LastMoveMs = Some nowMs
+                                     GhostVertex = None }
+                        finalModel |> refreshCachedStrings
+
+                // -------------------------------------------------------
+                // 3) Dragging an entire island
+                // -------------------------------------------------------
+                | None, false, Some islIdx, Some startPt, Some info ->
+                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                    let dx = svgPt.X - startPt.X
+                    let dy = svgPt.Y - startPt.Y
+
+                    let targetIsland = model.Islands.[islIdx]
+                    let translatedIsland = targetIsland |> Array.map (fun pt -> { X = pt.X + dx; Y = pt.Y + dy })
+
+                    let insideOuter = Geometry.isPolygonInside model.Outer translatedIsland
+                    let noIntersectionWithOthers =
+                        model.Islands
+                        |> Array.mapi (fun i isl -> i, isl)
+                        |> Array.forall (fun (i, isl) -> i = islIdx || not (Geometry.polygonsIntersect translatedIsland isl))
+                    let notEncloseEntry = not (Geometry.isInsidePolygon translatedIsland model.EntryPoint)
+
+                    match insideOuter && noIntersectionWithOthers && notEncloseEntry with
+                    | true ->
+                        let newIslands =
+                            model.Islands
+                            |> Array.mapi (fun i isl -> match i = islIdx with true -> translatedIsland | false -> isl)
+                        let updated = { model with Islands = newIslands; DragOffset = Some svgPt; LastMoveMs = Some nowMs; GhostVertex = None }
+                        updated |> refreshCachedStrings
+                    | false ->
+                        { model with LastMoveMs = Some nowMs; GhostVertex = None }
+
+                // -------------------------------------------------------
+                // 4) Hovering (not dragging): Detect closest edge for ghost vertex preview
+                // -------------------------------------------------------
+                | None, false, None, _, Some info ->
+                    let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                    let boundScale = match model.LogicalWidth with | w when w <> fst initBound -> w / fst initBound | _ -> 1.0
+                    let ghostThreshold = max 15.0 (20.0 * boundScale)
+                    let ghostCandidate = Geometry.findClosestEdge svgPt ghostThreshold model.Outer model.Islands
+                    { model with GhostVertex = ghostCandidate; LastMoveMs = Some nowMs }
+
+                | _ -> model
 
     let updateSync (msg: PolygonEditorMessage) (model: PolygonEditorModel) : PolygonEditorModel option =
         match msg with
         | PointerMove ev -> Some (handlePointerMove ev model)
         | PointerUp -> Some (handlePointerUp model)
+        | CommitGhostVertex ->
+            match model.GhostVertex with
+            | Some ghost -> commitGhost ghost model
+            | None -> None
         | _ -> None
 
     // ---------- Update ----------
@@ -522,21 +604,50 @@ module State =
                         | Some _ -> false
                         | None -> Geometry.withinRadiusSq model.EntryPoint svgPt rEntryHit
 
-                    match drag, entryDrag with
-                    | Some d, _ ->
+                    let ghostHit =
+                        match drag, entryDrag, model.GhostVertex with
+                        | None, false, Some ghost ->
+                            match Geometry.withinRadiusSq ghost.Point svgPt (rHit + 4.0) with
+                            | true -> Some ghost
+                            | false -> None
+                        | _ -> None
+
+                    match drag, entryDrag, ghostHit with
+                    | Some d, _, _ ->
                         let v =
                             match d.PolyIndex = 0 with
                             | true -> model.Outer.[d.VertexIndex]
                             | false -> model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
                         let offset = { X = svgPt.X - v.X; Y = svgPt.Y - v.Y }
                         let newModel = snapshot model
-                        return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info }
-                    | None, true ->
+                        return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info; GhostVertex = None }
+
+                    | None, true, _ ->
                         let offset = { X = svgPt.X - model.EntryPoint.X; Y = svgPt.Y - model.EntryPoint.Y }
                         let newModel = snapshot model
-                        return { newModel with DraggingEntry = true; DragOffset = Some offset; SvgInfo = Some info }
-                    | None, false ->
-                        return { model with SvgInfo = Some info }
+                        return { newModel with DraggingEntry = true; DragOffset = Some offset; SvgInfo = Some info; GhostVertex = None }
+
+                    | None, false, Some ghost ->
+                        match commitGhost ghost model with
+                        | Some committed ->
+                            let insertIdx = ghost.EdgeIndex + 1
+                            let dragInfo = { PolyIndex = ghost.PolyIndex; VertexIndex = insertIdx }
+                            return { committed with Dragging = Some dragInfo; DragOffset = Some { X = 0.0; Y = 0.0 }; SvgInfo = Some info; GhostVertex = None }
+                        | None ->
+                            return { model with SvgInfo = Some info; GhostVertex = None }
+
+                    | None, false, None ->
+                        // Check if click was inside an island to drag whole island
+                        let dragIslandBody =
+                            model.Islands
+                            |> Array.tryFindIndex (fun isl -> Geometry.isInsidePolygon isl svgPt)
+
+                        match dragIslandBody with
+                        | Some islIdx ->
+                            let newModel = snapshot model
+                            return { newModel with DraggingIsland = Some islIdx; DragOffset = Some svgPt; SvgInfo = Some info; GhostVertex = None }
+                        | None ->
+                            return { model with SvgInfo = Some info }
             }
 
 
@@ -578,8 +689,9 @@ module State =
                             |> Array.tryPick (fun i ->
                                 match tryDeleteVertex model.Islands.[i] with
                                 | Some newIsland ->
-                                    let newIslands = Array.copy model.Islands
-                                    newIslands.[i] <- newIsland
+                                    let newIslands =
+                                        model.Islands
+                                        |> Array.mapi (fun idx isl -> match idx = i with true -> newIsland | false -> isl)
                                     Some { snapshot model with Islands = newIslands }
                                 | None -> None
                             )
@@ -633,8 +745,9 @@ module State =
                                              not (model.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.exists (fun (i, isl) -> i <> islandIdx && Geometry.polygonsIntersect newIsland isl))
                                     match ok with
                                     | true ->
-                                        let newIslands = Array.copy model.Islands
-                                        newIslands.[islandIdx] <- newIsland
+                                        let newIslands =
+                                            model.Islands
+                                            |> Array.mapi (fun idx isl -> match idx = islandIdx with true -> newIsland | false -> isl)
                                         Some { newModel with Islands = newIslands }
                                     | false -> None
                             | None -> None
@@ -720,6 +833,13 @@ module State =
         | EndDragEntry ->
             async {
                 return { model with DraggingEntry = false; DragOffset = None }
+            }
+
+        | CommitGhostVertex ->
+            async {
+                match updateSync CommitGhostVertex model with
+                | Some m -> return m
+                | None -> return model
             }
 
         | ImportFromSyntax (outer, islands, abs, entry, w, h) ->
