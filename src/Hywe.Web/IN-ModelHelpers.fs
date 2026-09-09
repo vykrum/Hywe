@@ -2,7 +2,6 @@ module ModelHelpers
 
 open System
 open Microsoft.JSInterop
-open Graphics
 open Layout
 open Hywe
 open Page
@@ -557,35 +556,6 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
                     svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
                 }
-
-                let uniqueSpaces =
-                    if Array.length filteredCxls = Array.length filteredClrs then
-                        Array.zip filteredCxls filteredClrs
-                        |> Array.distinctBy (fun (c, _) -> Hywe.Core.Coxel.prpVlu c.Name)
-                    else
-                        [||]
-
-                if not (Array.isEmpty uniqueSpaces) then
-                    div {
-                        attr.``class`` "layout-legend"
-                        forEach uniqueSpaces <| fun (c, clr) ->
-                            let fullName = Hywe.Core.Coxel.prpVlu c.Name
-                            let abbr = abbreviateName fullName
-                            div {
-                                attr.``class`` "layout-legend-item"
-                                attr.title fullName
-                                span {
-                                    attr.``class`` "layout-legend-pill"
-                                    attr.style $"border-color: {clr};"
-                                    text abbr
-                                }
-                                span {
-                                    attr.``class`` "layout-legend-label"
-                                    text fullName
-                                }
-                            }
-                    }
-
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
                     button {

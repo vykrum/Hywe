@@ -252,16 +252,20 @@ let svgCoxels
                         | [||] -> -10.0, -10.0
                         | _ -> (lx, ly)
 
-                    let abbr = abbreviateName fullName
+                    let truncated = truncateName fullName
 
-                    cxlBadge()
-                        .rx($"{x - 16.0}")
-                        .ry($"{y - 8.0}")
-                        .tx($"{x}")
-                        .ty($"{y}")
-                        .st(color)
-                        .txt(abbr)
-                        .tip(fullName)
+                    hzTx()
+                        .x($"{x}")
+                        .y($"{y - 8.0}")
+                        .fw(if i = 0 then "700" else "400")
+                        .fl(if i = 0 then "#333333" else "#666666")
+                        .nm(truncated)
+                        .Elt()
+
+                    crCl()
+                        .cx($"{x}")
+                        .cy($"{y}")
+                        .cl(color)
                         .Elt()
             
             }
@@ -375,12 +379,13 @@ let generateSvgString
                     | [||] -> -10.0, -10.0
                     | _ -> (lx, ly)
 
-                let abbr = abbreviateName fullName
-                append $"""    <g class="layout-cxl-badge">
-        <rect x="{x - 16.0}" y="{y - 8.0}" width="32" height="16" rx="8" ry="8" fill="#ffffff" stroke="{color}" stroke-width="1.5" />
-        <text x="{x}" y="{y}" font-size="9px" font-weight="700" font-family="'Outfit', system-ui, sans-serif" fill="#222222" text-anchor="middle" dominant-baseline="central">{abbr}</text>
-        <title>{fullName}</title>
-    </g>
+                let truncated = truncateName fullName
+                let fw = if i = 0 then "700" else "400"
+                let fl = if i = 0 then "#333333" else "#666666"
+
+                append $"""    <text x="{x}" y="{y - 8.0}" font-weight="{fw}" fill="{fl}" font-size="10px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
+"""
+                append $"""    <circle cx="{x}" cy="{y}" r="5" fill="{color}" />
 """
             append "</svg>"
             sb.ToString()
@@ -423,7 +428,7 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
     | None -> ()
 
     // Shapes
-    for s in cfg.shapes do
+    for i, s in cfg.shapes |> Array.indexed do
         if not (Array.isEmpty s.points) then
             let xy = 
                 s.points 
@@ -435,13 +440,13 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
             // Labels
             let tx = s.lx * scl + padd
             let ty = s.ly * scl + padd
-            let abbr = abbreviateName s.name
+            let truncated = truncateName s.name
+            let fw = if i = 0 then "700" else "400"
+            let fl = if i = 0 then "#333333" else "#666666"
             
-            append $"""    <g class="layout-cxl-badge">
-        <rect x="{tx - 16.0}" y="{ty - 8.0}" width="32" height="16" rx="8" ry="8" fill="#ffffff" stroke="{s.color}" stroke-width="1.5" />
-        <text x="{tx}" y="{ty}" font-size="9px" font-weight="700" font-family="'Outfit', system-ui, sans-serif" fill="#222222" text-anchor="middle" dominant-baseline="central">{abbr}</text>
-        <title>{s.name}</title>
-    </g>
+            append $"""    <text x="{tx}" y="{ty - 8.0}" font-weight="{fw}" fill="{fl}" font-size="10px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
+"""
+            append $"""    <circle cx="{tx}" cy="{ty}" r="5" fill="{s.color}" />
 """
     
     append "</svg>"
@@ -690,14 +695,20 @@ let alternateConfigurations
                                 if isSelected then
                                     let tx = ox + (s.lx * scale)
                                     let ty = oy + (s.ly * scale)
-                                    cxlBadge()
-                                        .rx($"{tx - 16.0}")
-                                        .ry($"{ty - 8.0}")
-                                        .tx($"{tx}")
-                                        .ty($"{ty}")
-                                        .st(s.color)
-                                        .txt(abbreviateName s.name)
-                                        .tip(s.name)
+                                    let truncated = truncateName s.name
+
+                                    hzTx()
+                                        .x($"{tx}")
+                                        .y($"{ty - 8.0}")
+                                        .fw(if j = 0 then "700" else "400")
+                                        .fl(if j = 0 then "#333333" else "#666666")
+                                        .nm(truncated)
+                                        .Elt()
+
+                                    crCl()
+                                        .cx($"{tx}")
+                                        .cy($"{ty}")
+                                        .cl(s.color)
                                         .Elt()
                             }
 

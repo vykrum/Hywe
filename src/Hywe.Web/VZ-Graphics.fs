@@ -57,27 +57,27 @@ type crTx = Template<
         </textPath>
     </text>""">
 
-let abbreviateName (name: string) : string =
+let truncateLabel (maxLen: int) (name: string) : string =
     let trimmed = if isNull name then "" else name.Trim()
-    if String.length trimmed <= 4 then trimmed
-    elif trimmed.Contains("-") then
-        let parts = trimmed.Split('-')
-        if parts.Length >= 2 then
-            let p0 = parts.[0]
-            let prefix = if p0.Length > 3 then p0.Substring(0, 3) else p0
-            let combined = prefix + parts.[1]
-            if combined.Length <= 4 then combined
-            else (p0.Substring(0, min 2 p0.Length) + parts.[1])
-        else trimmed.Substring(0, 3)
+    if String.length trimmed <= maxLen then trimmed
     else
-        trimmed.Substring(0, 3)
+        let prefixLen = max 1 (maxLen - 2)
+        trimmed.Substring(0, min prefixLen (String.length trimmed)) + "..."
 
-type cxlBadge = Template<
-    """<g class="layout-cxl-badge" style="cursor: pointer;">
-        <rect x="${rx}" y="${ry}" width="32" height="16" rx="8" ry="8" fill="#ffffff" stroke="${st}" stroke-width="1.5" />
-        <text x="${tx}" y="${ty}" font-size="9px" font-weight="700" font-family="'Outfit', system-ui, sans-serif" fill="#222222" text-anchor="middle" dominant-baseline="central">${txt}</text>
-        <title>${tip}</title>
-    </g>""">
+let truncateName (name: string) : string =
+    truncateLabel 8 name
+
+type hzTx = Template<
+    """<text 
+        x="${x}" 
+        y="${y}"
+        font-weight="${fw}"
+        fill="${fl}"
+        font-size="10px"
+        font-family="Outfit, system-ui, sans-serif"
+        text-anchor="middle"
+        style="text-transform: lowercase; pointer-events: none;"
+    >${nm}</text>""">
 
 type svtx = Template<
         """<text 
