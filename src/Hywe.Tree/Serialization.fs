@@ -70,7 +70,7 @@ module Serialization =
 
             match rootNode with
             | None ->
-                { Id = Guid.NewGuid(); Name = sprintf "Level %d" lvlIdx; Weight = "0"; X = 0.0; Y = 0.0; Children = []; Level = lvlIdx; Extrusion = 3.0; Base = None }
+                { Id = Guid.NewGuid(); Name = sprintf "Level %d" lvlIdx; Weight = "0"; X = 0.0; Y = 0.0; Children = []; Level = lvlIdx; Extrusion = 3.0; Base = None; Color = None }
             | Some root ->
                 let rec build (n: LexelNode) =
                     let children = 
@@ -87,6 +87,7 @@ module Serialization =
                         Level = lvlIdx
                         Extrusion = n.Extrusion |> Option.defaultValue 3.0
                         Base = n.Base
+                        Color = None
                     }
                 build root
         )
@@ -95,7 +96,7 @@ module Serialization =
         let maxLevel = match model.Levels.IsEmpty with | true -> 0 | false -> model.Levels.Keys |> Seq.max
         let bases = 
             [0 .. maxLevel - 1] |> List.scan (fun currentSum lvl ->
-                let tree = model.Levels |> Map.tryFind lvl |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
+                let tree = model.Levels |> Map.tryFind lvl |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None; Color = None }
                 let extrusion = 
                     match model.LevelAnchors |> Map.tryFind (lvl + 1) with
                     | Some anchorId ->
@@ -247,15 +248,13 @@ module Serialization =
                     match lvl > 0 && prefix = [] && not isNest with
                     | true ->
                         let _, _, _, _, eVal = allParts.[lvl]
-                        match eVal <> "0" with
-                        | true ->
-                            let fullEVal = match eVal.Contains(".") || eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
-                            match guidMap |> Map.tryFind (lvl - 1, fullEVal) with
-                            | Some parentGuid -> parentGuid, guidMap |> Map.add (lvl, fullPathStr) parentGuid
-                            | None -> 
-                                let g = Guid.NewGuid()
-                                g, guidMap |> Map.add (lvl, fullPathStr) g
-                        | false -> 
+                        let fullEVal = 
+                            match eVal with
+                            | "0" -> sprintf "L%d.1" (lvl - 1)
+                            | _ -> match eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
+                        match guidMap |> Map.tryFind (lvl - 1, fullEVal) |> Option.orElse (guidMap |> Map.tryFind (lvl - 1, sprintf "L%d.1" (lvl - 1))) with
+                        | Some parentGuid -> parentGuid, guidMap |> Map.add (lvl, fullPathStr) parentGuid
+                        | None -> 
                             let g = Guid.NewGuid()
                             g, guidMap |> Map.add (lvl, fullPathStr) g
                     | false -> 
@@ -263,7 +262,7 @@ module Serialization =
                         g, guidMap |> Map.add (lvl, fullPathStr) g
                 
                 let children, guidMapAfterChildren = build lvl path guidMapAfterId srcData isNest
-                let node = { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = children; Level = lvl; Extrusion = extrusion; Base = bVal }
+                let node = { Id = id; Name = name; Weight = weight; X = 0.0; Y = 0.0; Children = children; Level = lvl; Extrusion = extrusion; Base = bVal; Color = None }
                 nodes @ [node], guidMapAfterChildren
             ) ([], currentGuidMap)
 
@@ -272,7 +271,7 @@ module Serialization =
         let levelsList, finalGuidMap = 
             [0 .. maxLvl] |> List.fold (fun (acc, currentGuidMap) lvl ->
                 let rootNodes, nextGuidMap = build lvl [] currentGuidMap nodeData false
-                let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None }
+                let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "Root"; Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = lvl; Extrusion = 3.0; Base = None; Color = None }
                 let laidOut = fst (TreeOps.layoutTree root 0 50.0)
                 acc @ [lvl, laidOut], nextGuidMap
             ) ([], Map.empty)
@@ -281,10 +280,15 @@ module Serialization =
 
         let levelAnchors = 
             allParts |> Array.choose (fun (lvl, _, _, _, eVal) ->
-                match lvl > 0 && eVal <> "0" with
+                match lvl > 0 with
                 | true ->
-                    let fullEVal = match eVal.Contains(".") || eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
-                    match finalGuidMap |> Map.tryFind (lvl - 1, fullEVal) |> Option.orElse (finalGuidMap |> Map.tryFind (lvl - 1, eVal)) with
+                    let fullEVal = 
+                        match eVal with
+                        | "0" -> sprintf "L%d.1" (lvl - 1)
+                        | _ -> match eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
+                    match finalGuidMap |> Map.tryFind (lvl - 1, fullEVal) 
+                          |> Option.orElse (finalGuidMap |> Map.tryFind (lvl - 1, eVal)) 
+                          |> Option.orElse (finalGuidMap |> Map.tryFind (lvl - 1, sprintf "L%d.1" (lvl - 1))) with
                     | Some guid -> Some (lvl, guid)
                     | None -> None
                 | false -> None
@@ -325,9 +329,9 @@ module Serialization =
         let nestsMapAndAnchors, finalGuidMapWithNests =
             nestDataList |> List.fold (fun (acc, currentGuidMap) (nId, bVal, parentLvl, nodesData) ->
                 let rootNodes, nextGuidMap = build parentLvl [] currentGuidMap nodesData true
-                let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = parentLvl; Extrusion = 3.0; Base = None }
+                let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = parentLvl; Extrusion = 3.0; Base = None; Color = None }
                 let laidOut = fst (TreeOps.layoutTree root 0 50.0)
-                let fullBVal = match bVal.Contains(".") || bVal.StartsWith("L") || bVal.StartsWith("N") with true -> bVal | false -> sprintf "L%d.%s" parentLvl bVal
+                let fullBVal = match bVal.StartsWith("L") || bVal.StartsWith("N") with true -> bVal | false -> sprintf "L%d.%s" parentLvl bVal
                 let anchorId = 
                     match currentGuidMap |> Map.tryFind (parentLvl, fullBVal) with
                     | Some g -> g
@@ -362,3 +366,4 @@ module Serialization =
           PointerDownPos = None
           LastMoveMs = None
           TopExtrusion = topExtrusion }
+        |> Coloring.colorModel

@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <Compile Include="Types.fs" />
+    <Compile Include="Coloring.fs" />
     <Compile Include="Operations.fs" />
     <Compile Include="Actions.fs" />
     <Compile Include="Serialization.fs" />

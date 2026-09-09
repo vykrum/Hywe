@@ -62,9 +62,11 @@ module Actions =
                 | Some nId ->
                     let newNests = model.Nests |> Map.add nId laidOut
                     { model with Nests = newNests; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
+                    |> Coloring.colorModel
                 | None ->
                     let newLevels = model.Levels |> Map.add model.ActiveLevel laidOut
                     { model with Levels = newLevels; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
+                    |> Coloring.colorModel
                     
             match node.Id = currentTree.Id with
             | true ->
@@ -72,13 +74,16 @@ module Actions =
                 | Some nId ->
                     let newNests = model.Nests |> Map.remove nId
                     let newNestAnchors = model.NestAnchors |> Map.remove nId
-                    { model with 
-                        Nests = newNests
-                        NestAnchors = newNestAnchors
-                        ActiveNest = None
-                        ConfirmingId = None
-                        ActiveActionId = ActionIds.NoAction
-                        ActiveMenuId = None }, Cmd.none
+                    let newModel = 
+                        { model with 
+                            Nests = newNests
+                            NestAnchors = newNestAnchors
+                            ActiveNest = None
+                            ConfirmingId = None
+                            ActiveActionId = ActionIds.NoAction
+                            ActiveMenuId = None }
+                        |> Coloring.colorModel
+                    newModel, Cmd.none
                 | None ->
                     match model.ActiveLevel = 0 with
                     | true -> model, Cmd.none
@@ -98,13 +103,16 @@ module Actions =
                                     |> Map.remove model.ActiveLevel 
                                     |> Map.add parentLvl laidOutParent
                                 let newAnchors = model.LevelAnchors |> Map.remove model.ActiveLevel
-                                { model with 
-                                    Levels = newLevels
-                                    LevelAnchors = newAnchors
-                                    ActiveLevel = parentLvl
-                                    ConfirmingId = None
-                                    ActiveActionId = ActionIds.NoAction
-                                    ActiveMenuId = None }, Cmd.none
+                                let newModel = 
+                                    { model with 
+                                        Levels = newLevels
+                                        LevelAnchors = newAnchors
+                                        ActiveLevel = parentLvl
+                                        ConfirmingId = None
+                                        ActiveActionId = ActionIds.NoAction
+                                        ActiveMenuId = None }
+                                    |> Coloring.colorModel
+                                newModel, Cmd.none
                             | _ -> model, Cmd.none
             | false ->
                 match node.Level > model.ActiveLevel && model.ActiveNest.IsNone with
@@ -133,9 +141,9 @@ module Actions =
             let freshRoot = 
                 match model.Levels |> Map.tryFind nextLvlForNode with
                 | Some existingRoot ->
-                    fst (TreeOps.layoutTree { existingRoot with Id = node.Id; Name = node.Name; Weight = node.Weight } 0 50.0)
+                    fst (TreeOps.layoutTree { existingRoot with Id = node.Id; Name = node.Name; Weight = node.Weight; Color = node.Color } 0 50.0)
                 | None ->
-                    { node with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0 }
+                    { node with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0; Color = node.Color }
             
             let treeWithResets = TreeOps.resetElevatedNodes model.ActiveLevel currentTree
             let updatedCurrentTree = TreeOps.updateNodeById node.Id (fun n -> { n with Level = nextLvlForNode }) treeWithResets
@@ -144,7 +152,10 @@ module Actions =
                 |> Map.add nextLvlForNode freshRoot
                 |> Map.add model.ActiveLevel updatedCurrentTree
             
-            { model with Levels = finalLevels; LevelAnchors = newAnchors; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }, Cmd.none
+            let newModel = 
+                { model with Levels = finalLevels; LevelAnchors = newAnchors; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
+                |> Coloring.colorModel
+            newModel, Cmd.none
         HandleInput = Some (fun model node newVal ->
             let extrusion = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> node.Extrusion
             let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
@@ -163,17 +174,20 @@ module Actions =
         IsDisabled = fun model node -> node.Level > model.ActiveLevel
         Execute = fun model node ->
             let newNestId = match model.Nests.IsEmpty with true -> 1 | false -> (model.Nests.Keys |> Seq.max) + 1
-            let newNestRoot = { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
+            let newNestRoot = { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None; Color = node.Color }
             let laidOut = fst (TreeOps.layoutTree newNestRoot 0 50.0)
             let newNests = model.Nests |> Map.add newNestId laidOut
             let newNestAnchors = model.NestAnchors |> Map.add newNestId node.Id
-            { model with 
-                Nests = newNests
-                NestAnchors = newNestAnchors
-                ActiveNest = Some newNestId
-                ConfirmingId = None
-                ActiveActionId = ActionIds.NoAction
-                ActiveMenuId = None }, Cmd.none
+            let newModel = 
+                { model with 
+                    Nests = newNests
+                    NestAnchors = newNestAnchors
+                    ActiveNest = Some newNestId
+                    ConfirmingId = None
+                    ActiveActionId = ActionIds.NoAction
+                    ActiveMenuId = None }
+                |> Coloring.colorModel
+            newModel, Cmd.none
         HandleInput = None
     }
 

@@ -342,14 +342,6 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
 
         div {
             attr.``class`` "workspace-meta-right"
-            match model.LoadedCommunityAuthor with
-            | Some origAuthor when not (System.String.IsNullOrWhiteSpace origAuthor) ->
-                span {
-                    attr.``class`` "workspace-meta-badge"
-                    attr.title (sprintf "Based on weave by %s" origAuthor)
-                    text (sprintf "woven by %s" origAuthor)
-                }
-            | _ -> ()
 
             div {
                 attr.``class`` "workspace-meta-author-wrapper"

@@ -12,7 +12,8 @@ type TreeNode =
       Children: TreeNode list
       Level: int
       Extrusion: float
-      Base: string option }
+      Base: string option
+      Color: string option }
 
 type SvgInfo =
     { ViewBoxX: float; ViewBoxY: float; ViewBoxW: float; ViewBoxH: float
