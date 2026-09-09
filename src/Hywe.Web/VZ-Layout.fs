@@ -244,39 +244,24 @@ let svgCoxels
                         .op("0.1")
                         .Elt()
 
-                let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
-                let prp1 = Array.zip crd2 clr
-                let prp2 = Array.zip lbl pth
-                let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+                let prp = Array.map2 (fun (crd, col) lblItem -> crd, col, lblItem) (Array.zip crd2 clr) lbl
 
-                for i, (xxyy, label, color, path) in prp |> Array.indexed do
+                for i, (xxyy, color, (fullName, (lx, ly))) in prp |> Array.indexed do
                     let x, y =
                         match xxyy with
                         | [||] -> -10.0, -10.0
-                        | _ -> snd label
+                        | _ -> (lx, ly)
 
-                    let r = 20.0
-                    crPh()
-                        .pathid(path)
-                        .sx($"{x}")
-                        .sy($"{y + r}")
-                        .r($"{r}")
-                        .ex($"{x}")
-                        .ey($"{y - r}")
-                        .Elt()
+                    let abbr = abbreviateName fullName
 
-                    crTx()
-                        .pth(path)
-                        .nm(label |> fst)
-                        .fw("normal")
-                        .fl("#333")
-                        .td("none")
-                        .Elt()
-
-                    crCl()
-                        .cx($"{x}")
-                        .cy($"{y}")
-                        .cl(color)
+                    cxlBadge()
+                        .rx($"{x - 16.0}")
+                        .ry($"{y - 8.0}")
+                        .tx($"{x}")
+                        .ty($"{y}")
+                        .st(color)
+                        .txt(abbr)
+                        .tip(fullName)
                         .Elt()
             
             }
@@ -382,25 +367,20 @@ let generateSvgString
                 append $"""    <polygon points="{xy}" stroke="#000000" fill="none" stroke-width="2" opacity="0.1" />
 """
 
-            let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
-            let prp1 = Array.zip crd2 clr
-            let prp2 = Array.zip lbl pth
-            let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+            let prp = Array.map2 (fun (crd, col) lblItem -> crd, col, lblItem) (Array.zip crd2 clr) lbl
 
-            for i, (xxyy, label, color, path) in prp |> Array.indexed do
+            for i, (xxyy, color, (fullName, (lx, ly))) in prp |> Array.indexed do
                 let x, y =
                     match xxyy with
                     | [||] -> -10.0, -10.0
-                    | _ -> snd label
+                    | _ -> (lx, ly)
 
-                let r = 20.0
-                append $"""    <path id="{path}" fill="none" d="M {x},{y + r} A {r},{r} 0 1,1 {x},{y - r} A {r},{r} 0 1,1 {x},{y + r}" />
-"""
-                append $"""    <text font-weight="normal" fill="#333" text-decoration="none" font-size="20px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase">
-        <textPath href="#{path}" letter-spacing="0.5px" startOffset="50%%">{label |> fst}</textPath>
-    </text>
-"""
-                append $"""    <circle cx="{x}" cy="{y}" r="5" fill="{color}" />
+                let abbr = abbreviateName fullName
+                append $"""    <g class="layout-cxl-badge">
+        <rect x="{x - 16.0}" y="{y - 8.0}" width="32" height="16" rx="8" ry="8" fill="#ffffff" stroke="{color}" stroke-width="1.5" />
+        <text x="{x}" y="{y}" font-size="9px" font-weight="700" font-family="'Outfit', system-ui, sans-serif" fill="#222222" text-anchor="middle" dominant-baseline="central">{abbr}</text>
+        <title>{fullName}</title>
+    </g>
 """
             append "</svg>"
             sb.ToString()
@@ -455,19 +435,13 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
             // Labels
             let tx = s.lx * scl + padd
             let ty = s.ly * scl + padd
-            let r = 20.0
+            let abbr = abbreviateName s.name
             
-            // Randomish ID for path to avoid collisions
-            let guidStr = System.Guid.NewGuid().ToString("N").Substring(0,8)
-            let pathId = $"path_{guidStr}"
-            
-            append $"""    <path id="{pathId}" fill="none" d="M {tx},{ty + r} A {r},{r} 0 1,1 {tx},{ty - r} A {r},{r} 0 1,1 {tx},{ty + r}" />
-"""
-            append $"""    <text font-weight="normal" fill="#333" text-decoration="none" font-size="20px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase">
-        <textPath href="#{pathId}" letter-spacing="0.5px" startOffset="50%%">{s.name}</textPath>
-    </text>
-"""
-            append $"""    <circle cx="{tx}" cy="{ty}" r="5" fill="{s.color}" />
+            append $"""    <g class="layout-cxl-badge">
+        <rect x="{tx - 16.0}" y="{ty - 8.0}" width="32" height="16" rx="8" ry="8" fill="#ffffff" stroke="{s.color}" stroke-width="1.5" />
+        <text x="{tx}" y="{ty}" font-size="9px" font-weight="700" font-family="'Outfit', system-ui, sans-serif" fill="#222222" text-anchor="middle" dominant-baseline="central">{abbr}</text>
+        <title>{s.name}</title>
+    </g>
 """
     
     append "</svg>"
@@ -716,36 +690,15 @@ let alternateConfigurations
                                 if isSelected then
                                     let tx = ox + (s.lx * scale)
                                     let ty = oy + (s.ly * scale)
-                                    let pathId = $"batch_path_{i}_{j}"
-                                    let r = 10.0
-                                    
-                                    elt "path" {
-                                        "id" => pathId
-                                        "fill" => "none"
-                                        "d" => $"M {tx},{ty + r} A {r},{r} 0 1,1 {tx},{ty - r} A {r},{r} 0 1,1 {tx},{ty + r}"
-                                    }
-                                    
-                                    elt "text" {
-                                        "font-weight" => if j = 0 then "700" else "400"
-                                        "fill" => if j = 0 then "#333333" else "#666666"
-                                        "font-size" => "10px"
-                                        "font-family" => "Outfit, system-ui, sans-serif"
-                                        "text-anchor" => "middle"
-                                        attr.style "text-transform: lowercase; pointer-events: none;"
-                                        elt "textPath" {
-                                            "href" => $"#{pathId}"
-                                            "startOffset" => "50%"
-                                            "letter-spacing" => "0.5px"
-                                            text s.name
-                                        }
-                                    }
-                                    
-                                    elt "circle" {
-                                        "cx" => tx
-                                        "cy" => ty
-                                        "r" => 5.0
-                                        "fill" => s.color
-                                    }
+                                    cxlBadge()
+                                        .rx($"{tx - 16.0}")
+                                        .ry($"{ty - 8.0}")
+                                        .tx($"{tx}")
+                                        .ty($"{ty}")
+                                        .st(s.color)
+                                        .txt(abbreviateName s.name)
+                                        .tip(s.name)
+                                        .Elt()
                             }
 
                     // Permanent label below
