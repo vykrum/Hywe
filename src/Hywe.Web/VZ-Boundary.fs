@@ -119,14 +119,16 @@ module View =
                     }
                 }
 
-                // Guide Button
+                // Help Button (?)
                 button {
                     attr.id "hywe-boundary-guide-btn"
                     attr.``type`` "button"
-                    attr.``class`` (if model.ShowInstructions then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                    attr.style "padding: 2px 10px; font-weight: 500;"
+                    attr.title "Boundary Controls Help"
+                    "aria-label" => "Boundary Controls Help"
+                    attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
+                    attr.style "width: 24px; height: 24px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-transform: none; line-height: 1;"
                     on.click (fun _ -> dispatch ToggleInstructions)
-                    text "Guide"
+                    text "?"
                 }
             }
 
