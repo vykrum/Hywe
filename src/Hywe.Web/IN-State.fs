@@ -547,6 +547,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let updatedInner = { currentInnerModel with SelectedVertex = sel }
             { model with PolygonEditor = Stable updatedInner }, Cmd.none
 
+        | ToggleInstructions ->
+            let updatedInner = { currentInnerModel with ShowInstructions = not currentInnerModel.ShowInstructions }
+            { model with PolygonEditor = Stable updatedInner }, Cmd.none
+
         | _ ->
             model,
             Cmd.OfAsync.perform

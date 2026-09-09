@@ -15,11 +15,12 @@ module View =
     type ghstVtx = Template<"""<g style="pointer-events: none;"><circle class="ghostVertex" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3"/><circle cx="${cx}" cy="${cy}" r="3" fill="#2563eb"/><text x="${cx}" y="${ty}" font-size="${tf}" font-weight="bold" fill="#2563eb" text-anchor="middle">+</text></g>""">
     type selHlo = Template<"""<circle class="selectedVertexHalo" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="3,3" style="pointer-events: none;" />""">
 
-    // Control and Instructions panel with numeric inputs and checkboxes
+    // Control panel with transposed horizontal rows for toggles and dimensions
     let controlAndInstructions model dispatch (js: IJSRuntime) =
         let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
+                attr.style "display: inline-flex; align-items: center; gap: 6px;"
                 label { attr.``class`` "hywe-label"; text labelText }
                 input {
                     attr.``class`` "boundaryInput"
@@ -38,18 +39,19 @@ module View =
             }
 
         div {
-            attr.``class`` "control-and-instructions"
-            attr.style "display: flex; flex-flow: row wrap; gap: 14px; align-items: stretch; justify-content: center; width: 100%; max-width: 960px; margin: 0 auto; padding: 10px; box-sizing: border-box;"
+            attr.``class`` "boundary-toolbar"
+            attr.style "display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 820px; margin: 0 auto; padding: 12px 10px; box-sizing: border-box;"
 
-            // Col 1: Segmented Pill Toggles
+            // Row 1: Segmented Toggles + Guide Button
             div {
-                attr.``class`` "toggle-column"
-                attr.style "flex: 1 1 180px; min-width: 170px; max-width: 260px; display: flex; flex-direction: column; gap: 8px;"
+                attr.``class`` "boundary-row-toggles"
+                attr.style "display: flex; flex-flow: row wrap; gap: 16px; align-items: center; justify-content: center; width: 100%;"
 
-                // Boundary
+                // Site
                 div {
                     attr.``class`` "hywe-row"
-                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Site:" }
+                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
+                    span { attr.``class`` "hywe-label"; text "Site:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
@@ -70,7 +72,8 @@ module View =
                 // Count
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Count:" }
+                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
+                    span { attr.``class`` "hywe-label"; text "Count:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
@@ -91,7 +94,8 @@ module View =
                 // Base
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Base:" }
+                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
+                    span { attr.``class`` "hywe-label"; text "Base:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
@@ -114,50 +118,75 @@ module View =
                         }
                     }
                 }
+
+                // Guide Button
+                button {
+                    attr.``class`` (if model.ShowInstructions then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
+                    attr.style "padding: 2px 10px; font-weight: 500;"
+                    on.click (fun _ -> dispatch ToggleInstructions)
+                    text "Guide"
+                }
             }
 
-            // Col 2: Dimensions & Scale
+            // Row 2: Dimensions & Scale
             div {
-                attr.``class`` "control-panel"
+                attr.``class`` "boundary-row-dimensions"
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "flex: 1 1 180px; min-width: 170px; max-width: 260px; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px; opacity: 0.3; pointer-events: none;"
+                        "display: flex; flex-flow: row wrap; gap: 20px; align-items: center; justify-content: center; width: 100%; opacity: 0.3; pointer-events: none;"
                     else
-                        "flex: 1 1 180px; min-width: 170px; max-width: 260px; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px;"
+                        "display: flex; flex-flow: row wrap; gap: 20px; align-items: center; justify-content: center; width: 100%;"
                 )
 
-                // Width
-                div {
-                    renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
-                }
-                // Height
-                div {
-                    renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
-                }
-                // Scale
+                renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
+                renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+
                 div {
                     attr.``class`` "field-group"
+                    attr.style "display: inline-flex; align-items: center; gap: 6px;"
                     span { attr.``class`` "hywe-label"; text "Scale:" }
                     span { 
-                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right;"
+                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif;"
                         text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
                     }
                 }
             }
 
-            // Col 3: Editor Instructions
-            div {
-                attr.``class`` "polygon-editor-instructions"
-                attr.style "flex: 1 1 200px; min-width: 190px; max-width: 320px; display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #555; align-items: flex-start; justify-content: center;"
-                p { attr.style "margin: 0;"; text "Click/tap vertex: select (Del to remove)" }
-                p { attr.style "margin: 0;"; text "Dbl-clk/tap vertex: delete" }
-                p { attr.style "margin: 0;"; text "Hover edge & click: add vertex" }
-                p { attr.style "margin: 0;"; text "Drag inside Island: move" }
-                p { attr.style "margin: 0;"; text "Drag Entry icon: relocate start" }
-                p { attr.style "margin: 0;"; text "Dbl-clk canvas: add Island" }
-            }
-            
+            // Instructions Modal / Card (Text-only, no icons)
+            if model.ShowInstructions then
+                div {
+                    attr.``class`` "boundary-instructions-overlay"
+                    attr.style "position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;"
+                    on.click (fun _ -> dispatch ToggleInstructions)
 
+                    div {
+                        attr.``class`` "boundary-instructions-card"
+                        attr.style "width: 100%; max-width: 380px; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
+                        "onclick:stopPropagation" => true
+
+                        div {
+                            attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
+                            h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Controls Guide" }
+                            button {
+                                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                                attr.style "padding: 2px 8px; font-size: 0.85rem;"
+                                on.click (fun _ -> dispatch ToggleInstructions)
+                                text "Close"
+                            }
+                        }
+
+                        div {
+                            attr.style "display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; color: #444; line-height: 1.45;"
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Press Delete / Backspace, or double-click / double-tap" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near edge and click / tap" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
+                        }
+                    }
+                }
         }
 
     // Polygon Editor SVG with polygons, vertices, and event handlers

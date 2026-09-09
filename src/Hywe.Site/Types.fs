@@ -44,6 +44,7 @@ type PolygonEditorModel =
         DisplayOuter: Point[]
         DisplayIslands: Point[][]
         MapScale: float
+        ShowInstructions: bool
     }
 
 type EditorState =
@@ -55,6 +56,7 @@ type PolygonEditorMessage =
     | ToggleAbsolute of bool
     | ToggleMapBase of bool
     | ToggleMapLock of bool
+    | ToggleInstructions
     | MapTopographyReceived of float * float * string
     | UpdateLogicalWidth of float
     | UpdateLogicalHeight of float

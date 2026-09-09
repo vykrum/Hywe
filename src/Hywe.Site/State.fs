@@ -237,6 +237,7 @@ module State =
             DisplayOuter = [||]
             DisplayIslands = [||]
             MapScale = 1.0
+            ShowInstructions = false
         }
         |> refreshCachedStrings
 
@@ -435,6 +436,7 @@ module State =
             | Some ghost -> commitGhost ghost model
             | None -> None
         | SelectVertex sel -> Some { model with SelectedVertex = sel }
+        | ToggleInstructions -> Some { model with ShowInstructions = not model.ShowInstructions }
         | DeleteSelectedVertex ->
             match model.SelectedVertex with
             | Some sel -> deleteVertexAt sel.PolyIndex sel.VertexIndex model
@@ -490,62 +492,69 @@ module State =
                     return { updated with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands } |> refreshCachedStrings
             }
 
-        | ToggleMapLock isLocked -> async {
-                                                let updated = { model with IsMapLocked = isLocked }
-                                                return updated
-                                            }
+        | ToggleMapLock isLocked ->
+            async {
+                let updated = { model with IsMapLocked = isLocked }
+                return updated
+            }
 
-        | MapTopographyReceived (w, h, topoJson) -> async {
-                                                // Hymap sends exact physical width/height in Meters.
-                                                let rec findScaleFactor width height factor =
-                                                    match width <= 100.0 && height <= 100.0 with
-                                                    | true -> factor
-                                                    | false -> findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
-                                                let sf = findScaleFactor w h 1.0
-                                                
-                                                let floorW = System.Math.Floor((w / sf) + 0.001)
-                                                let floorH = System.Math.Floor((h / sf) + 0.001)
+        | ToggleInstructions ->
+            async {
+                return { model with ShowInstructions = not model.ShowInstructions }
+            }
 
-                                                let hyweInternalScale = 10.0
-                                                let scaledW = floorW * hyweInternalScale
-                                                let scaledH = floorH * hyweInternalScale
+        | MapTopographyReceived (w, h, topoJson) ->
+            async {
+                // Hymap sends exact physical width/height in Meters.
+                let rec findScaleFactor width height factor =
+                    match width <= 100.0 && height <= 100.0 with
+                    | true -> factor
+                    | false -> findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
+                let sf = findScaleFactor w h 1.0
+                
+                let floorW = System.Math.Floor((w / sf) + 0.001)
+                let floorH = System.Math.Floor((h / sf) + 0.001)
 
-                                                let (|ParsedJson|_|) (json: string) =
-                                                    try Some (JsonNode.Parse(json))
-                                                    with _ -> None
+                let hyweInternalScale = 10.0
+                let scaledW = floorW * hyweInternalScale
+                let scaledH = floorH * hyweInternalScale
 
-                                                // Scale topography data X and Y points to match internal decimeter scale
-                                                let scaledTopoJson = 
-                                                    match topoJson with
-                                                    | ParsedJson (:? JsonArray as arr) ->
-                                                        let newArr = JsonArray()
-                                                        arr |> Seq.iter (fun item ->
-                                                            match item with
-                                                            | :? JsonObject as obj ->
-                                                                let cloned = obj.DeepClone().AsObject()
-                                                                let x = cloned.["X"].GetValue<float>()
-                                                                let y = cloned.["Y"].GetValue<float>()
-                                                                cloned.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
-                                                                cloned.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
-                                                                newArr.Add(cloned)
-                                                            | other -> newArr.Add(match other with null -> null | x -> x.DeepClone())
-                                                        )
-                                                        newArr.ToJsonString()
-                                                    | _ -> topoJson
+                let (|ParsedJson|_|) (json: string) =
+                    try Some (JsonNode.Parse(json))
+                    with _ -> None
 
-                                                let safeW = max 1.0 (scaledW)
-                                                let safeH = max 1.0 (scaledH) 
-                                                
-                                                // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
-                                                let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
-                                                let scaleY = match model.LogicalHeight <= 0.0 with | true -> 1.0 | false -> safeH / model.LogicalHeight
-                                                
-                                                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
-                                                let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
-                                                
-                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson; MapScale = sf * 10.0 }
-                                                return updated |> refreshCachedStrings
-                                            }
+                // Scale topography data X and Y points to match internal decimeter scale
+                let scaledTopoJson = 
+                    match topoJson with
+                    | ParsedJson (:? JsonArray as arr) ->
+                        let newArr = JsonArray()
+                        arr |> Seq.iter (fun item ->
+                            match item with
+                            | :? JsonObject as obj ->
+                                let cloned = obj.DeepClone().AsObject()
+                                let x = cloned.["X"].GetValue<float>()
+                                let y = cloned.["Y"].GetValue<float>()
+                                cloned.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
+                                cloned.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
+                                newArr.Add(cloned)
+                            | other -> newArr.Add(match other with null -> null | x -> x.DeepClone())
+                        )
+                        newArr.ToJsonString()
+                    | _ -> topoJson
+
+                let safeW = max 1.0 (scaledW)
+                let safeH = max 1.0 (scaledH) 
+                
+                // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
+                let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
+                let scaleY = match model.LogicalHeight <= 0.0 with | true -> 1.0 | false -> safeH / model.LogicalHeight
+                
+                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+                let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+                
+                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson; MapScale = sf * 10.0 }
+                return updated |> refreshCachedStrings
+            }
 
         | UpdateLogicalWidth newW -> async {
             let oldW = model.LogicalWidth

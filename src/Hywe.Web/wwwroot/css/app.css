@@ -1813,35 +1813,36 @@ video.fullscreen-bg {
     user-select: none;
 }
 
-/* Controls bar above the polygon SVG: toggles + dimensions + instructions */
-.control-and-instructions {
+/* Transposed Boundary Toolbar: 2 compact rows */
+.boundary-toolbar {
     display: flex;
-    flex-flow: row nowrap;
+    flex-direction: column;
+    gap: 10px;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 10px 12px 6px;
+    box-sizing: border-box;
+}
+
+.boundary-row-toggles {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.boundary-row-dimensions {
+    display: flex;
+    flex-flow: row wrap;
     gap: 20px;
-    padding: 10px 0;
-    margin-top: 5px;
-}
-
-/* Column 1: Toggles */
-.toggle-column {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-left: 20px;
-    /* Stronger than padding for shifting the block */
-}
-
-
-/* Column 2: Dimensions */
-.dimension-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 0 12px;
-    border-left: 1px solid #e0e0e0;
-    border-right: 1px solid #e0e0e0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
 .field-group {
@@ -1851,20 +1852,31 @@ video.fullscreen-bg {
     gap: 6px;
 }
 
-
-/* Column 3: Narrow Instructions */
-.polygon-editor-instructions {
-    font-size: 0.85rem;
-    color: #888;
-    line-height: 1.2;
-    max-width: 140px;
-    /* Aggressively narrow */
+/* Boundary Instructions Modal */
+.boundary-instructions-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: fadeIn 0.2s ease;
 }
 
-.polygon-editor-instructions p {
-    margin: 0;
-    white-space: nowrap;
-    /* Prevents awkward wrapping */
+.boundary-instructions-card {
+    width: 100%;
+    max-width: 380px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    box-sizing: border-box;
 }
 
 
