@@ -40,9 +40,27 @@ module View =
 
         div {
             attr.``class`` "boundary-toolbar"
-            attr.style "display: flex; flex-flow: row wrap; gap: 24px; align-items: center; justify-content: center; width: 100%; max-width: 680px; margin: 0 auto; padding: 10px 12px 6px; box-sizing: border-box;"
+            attr.style "position: relative; display: flex; flex-flow: row wrap; gap: 24px; align-items: center; justify-content: center; width: 100%; max-width: 680px; margin: 0 auto; padding: 10px 40px 6px 16px; box-sizing: border-box;"
 
-            // Col 1: Segmented Pill Toggles + Help Button
+            // Help Button with sleek Help SVG icon (positioned at toolbar top-right to preserve two-column alignment)
+            button {
+                attr.id "hywe-boundary-guide-btn"
+                attr.``type`` "button"
+                attr.title "Boundary Controls & Mode Help"
+                "aria-label" => "Boundary Controls & Mode Help"
+                attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
+                attr.style "position: absolute; top: 10px; right: 12px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0; z-index: 2;"
+                on.click (fun _ -> dispatch ToggleInstructions)
+                svg {
+                    "viewBox" => "0 0 24 24"
+                    attr.style "width: 15px; height: 15px; display: block;"
+                    elt "circle" { "cx" => "12"; "cy" => "12"; "r" => "10"; "stroke" => "currentColor"; "stroke-width" => "1.8"; "fill" => "none" }
+                    elt "path" { "d" => "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"; "stroke" => "currentColor"; "stroke-width" => "1.8"; "stroke-linecap" => "round"; "stroke-linejoin" => "round"; "fill" => "none" }
+                    elt "circle" { "cx" => "12"; "cy" => "17"; "r" => "1.1"; "fill" => "currentColor" }
+                }
+            }
+
+            // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
                 attr.style "display: flex; flex-direction: column; gap: 8px;"
@@ -66,18 +84,6 @@ module View =
                             on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
                             text "Boundary"
                         }
-                    }
-
-                    // Help Button (?)
-                    button {
-                        attr.id "hywe-boundary-guide-btn"
-                        attr.``type`` "button"
-                        attr.title "Boundary Controls Help"
-                        "aria-label" => "Boundary Controls Help"
-                        attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
-                        attr.style "width: 24px; height: 24px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-transform: none; line-height: 1; margin-left: 4px;"
-                        on.click (fun _ -> dispatch ToggleInstructions)
-                        text "?"
                     }
                 }
 
@@ -171,13 +177,13 @@ module View =
 
                 div {
                     attr.``class`` "boundary-instructions-card"
-                    attr.style "width: 100%; max-width: 380px; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
+                    attr.style "width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px 22px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
                     "onclick:stopPropagation" => true
                     "onpointerdown:stopPropagation" => true
 
                     div {
                         attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
-                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Controls Guide" }
+                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary & Controls Guide" }
                         button {
                             attr.``type`` "button"
                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
@@ -188,14 +194,50 @@ module View =
                     }
 
                     div {
-                        attr.style "display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; color: #444; line-height: 1.45;"
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex" }
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Press Delete / Backspace, or double-click / double-tap" }
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near edge and click / tap" }
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
-                        div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
+                        attr.style "display: flex; flex-direction: column; gap: 14px; font-size: 0.86rem; color: #444; line-height: 1.45;"
+
+                        // Section 1: Modes & Toggles
+                        div {
+                            attr.style "display: flex; flex-direction: column; gap: 8px;"
+                            div {
+                                attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
+                                text "Toolbar Modes"
+                            }
+
+                            div {
+                                span { attr.style "font-weight: 600; color: #111;"; text "Site (None / Boundary): " }
+                                text "None generates unconstrained layouts without perimeter boundaries. Boundary constrains space generation strictly within your custom perimeter and interior islands."
+                            }
+
+                            div {
+                                span { attr.style "font-weight: 600; color: #111;"; text "Count (Relative / Absolute): " }
+                                text "Relative dynamically reproportions space area weights to fit the available site area. Absolute allocates exact specified module/hexel counts."
+                            }
+
+                            div {
+                                span { attr.style "font-weight: 600; color: #111;"; text "Base (None / Map): " }
+                                text "None uses a blank canvas with manual dimensions (Width, Height, Scale). Map loads an interactive OpenStreetMap underlay with geographic scaling."
+                            }
+                        }
+
+                        div { attr.style "border-top: 1px solid #eee; margin: 2px 0;" }
+
+                        // Section 2: Canvas & Vertex Controls
+                        div {
+                            attr.style "display: flex; flex-direction: column; gap: 8px;"
+                            div {
+                                attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
+                                text "Canvas Controls"
+                            }
+
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex (press Delete / Backspace to remove)" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Double-click / double-tap, or press Delete / Backspace when selected" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near boundary edge and click / tap" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
+                        }
                     }
                 }
             }
