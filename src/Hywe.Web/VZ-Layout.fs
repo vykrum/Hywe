@@ -594,22 +594,26 @@ let alternateConfigurations
     let maxH = if allBounds.Length > 0 then allBounds |> Array.map snd |> Array.max else 1.0
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
-    // 3. LEGEND MATH
+    // 3. CANVAS & LEGEND MATH
+    let totalWidth = (float cols * cellW)
+    let headerHeight = 60.0 
+    let borderColor = "#444"
+
     let uniqueShapes = 
         match configs.Length with
         | 0 -> [||]
         | _ -> configs.[0].shapes |> Array.filter (fun s -> not (Array.isEmpty s.points)) |> Array.distinctBy (fun s -> s.name)
 
-    let legendItemsPerRow = 8 
+    let maxNameLen =
+        if Array.isEmpty uniqueShapes then 10
+        else uniqueShapes |> Array.map (fun s -> s.name.Length) |> Array.max
+    let colWidth = max 130.0 (float maxNameLen * 7.5 + 35.0)
+    let legendItemsPerRow = max 1 (min 8 (int (totalWidth / colWidth)))
     let legendItemHeight = 25.0
     let legendRows = ceil (float uniqueShapes.Length / float legendItemsPerRow)
     let legendTotalHeight = (max 1.0 legendRows) * legendItemHeight
 
-    // 4. HEADER & TOTAL CANVAS MATH
-    let headerHeight = 60.0 
-    let totalWidth = (float cols * cellW)
     let totalHeight = (float rows * cellH) + headerHeight + legendTotalHeight + 40.0
-    let borderColor = "#444"
 
     div {
         attr.id "pdf-export-container"
@@ -723,21 +727,22 @@ let alternateConfigurations
             let legendStartY = (float rows * cellH) + 55.0
             svln().x1("0").y1($"{legendStartY - 25.0}").x2($"{totalWidth}").y2($"{legendStartY - 25.0}").cl("#f0f0f0").Elt()
 
+            let actualColWidth = totalWidth / float legendItemsPerRow
             for i in 0 .. uniqueShapes.Length - 1 do
                 let s = uniqueShapes.[i]
                 let currR = int (floor (float i / float legendItemsPerRow))
                 
                 // Calculate centering for this specific row
                 let itemsInThisRow = Math.Min(legendItemsPerRow, uniqueShapes.Length - (currR * legendItemsPerRow))
-                let rowWidth = float itemsInThisRow * (totalWidth / float legendItemsPerRow)
+                let rowWidth = float itemsInThisRow * actualColWidth
                 let rowStartX = (totalWidth - rowWidth) / 2.0
                 
                 let currC = float (i % legendItemsPerRow)
-                let lx = rowStartX + (currC * (totalWidth / float legendItemsPerRow))
+                let lx = rowStartX + (currC * actualColWidth)
                 let ly = legendStartY + (float currR * legendItemHeight)
     
                 elt "g" {
-                    "transform" => $"translate({lx+30.0}, {ly})"
+                    "transform" => $"translate({lx+15.0}, {ly})"
                     elt "rect" { 
                         "y" => -11.0; "width" => 12; "height" => 12; "fill" => s.color 
                         "rx" => 2; "ry" => 2
