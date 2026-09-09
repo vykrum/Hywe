@@ -249,7 +249,7 @@ module Serialization =
                         let _, _, _, _, eVal = allParts.[lvl]
                         match eVal <> "0" with
                         | true ->
-                            let fullEVal = match eVal.Contains(".") || eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
+                            let fullEVal = match eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
                             match guidMap |> Map.tryFind (lvl - 1, fullEVal) with
                             | Some parentGuid -> parentGuid, guidMap |> Map.add (lvl, fullPathStr) parentGuid
                             | None -> 
@@ -283,7 +283,7 @@ module Serialization =
             allParts |> Array.choose (fun (lvl, _, _, _, eVal) ->
                 match lvl > 0 && eVal <> "0" with
                 | true ->
-                    let fullEVal = match eVal.Contains(".") || eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
+                    let fullEVal = match eVal.StartsWith("L") || eVal.StartsWith("N") with true -> eVal | false -> sprintf "L%d.%s" (lvl - 1) eVal
                     match finalGuidMap |> Map.tryFind (lvl - 1, fullEVal) |> Option.orElse (finalGuidMap |> Map.tryFind (lvl - 1, eVal)) with
                     | Some guid -> Some (lvl, guid)
                     | None -> None
@@ -327,7 +327,7 @@ module Serialization =
                 let rootNodes, nextGuidMap = build parentLvl [] currentGuidMap nodesData true
                 let root = rootNodes |> List.tryHead |> Option.defaultValue { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = parentLvl; Extrusion = 3.0; Base = None }
                 let laidOut = fst (TreeOps.layoutTree root 0 50.0)
-                let fullBVal = match bVal.Contains(".") || bVal.StartsWith("L") || bVal.StartsWith("N") with true -> bVal | false -> sprintf "L%d.%s" parentLvl bVal
+                let fullBVal = match bVal.StartsWith("L") || bVal.StartsWith("N") with true -> bVal | false -> sprintf "L%d.%s" parentLvl bVal
                 let anchorId = 
                     match currentGuidMap |> Map.tryFind (parentLvl, fullBVal) with
                     | Some g -> g
