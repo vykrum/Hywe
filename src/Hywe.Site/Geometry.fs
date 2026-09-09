@@ -114,7 +114,7 @@ module Geometry =
                 edgesIntersect a1 a2 b1 b2))
 
     let isEntryPointValid (outer: Point[]) (islands: Point[][]) (pt: Point) =
-        let clearanceSq = 40.0 * 40.0 // Increased clearance
+        let clearanceSq = 5.0 * 5.0 // Sensible clearance so entry point can move freely near edges
 
         let tooClose (poly: Point[]) =
             let n = poly.Length
@@ -160,29 +160,32 @@ module Geometry =
             let sx, sy = outer |> Array.fold (fun (ax, ay) p -> (ax + p.X, ay + p.Y)) (0.0, 0.0)
             { X = sx / float outer.Length; Y = sy / float outer.Length }
 
-        let step = 10.0
-        let maxSearch = 400.0
+        // Fast-path: If centroid is valid, return it immediately without searching
+        if isEntryPointValid outer islands centroid then centroid
+        else
+            let step = 15.0
+            let maxSearch = 400.0
 
-        let rec searchR r =
-            match r > maxSearch with
-            | true -> centroid
-            | false ->
-                let steps = max 8 (int (r / 2.0))
-                let rec searchAngle i =
-                    match i >= steps with
-                    | true -> None
-                    | false ->
-                        let angle = 2.0 * Math.PI * float i / float steps
-                        let pt = { X = centroid.X + r * Math.Cos(angle); Y = centroid.Y + r * Math.Sin(angle) }
-                        match isEntryPointValid outer islands pt with
-                        | true -> Some pt
-                        | false -> searchAngle (i + 1)
-                
-                match searchAngle 0 with
-                | Some pt -> pt
-                | None -> searchR (r + step)
+            let rec searchR r =
+                match r > maxSearch with
+                | true -> centroid
+                | false ->
+                    let steps = min 24 (max 8 (int (r / 5.0)))
+                    let rec searchAngle i =
+                        match i >= steps with
+                        | true -> None
+                        | false ->
+                            let angle = 2.0 * Math.PI * float i / float steps
+                            let pt = { X = centroid.X + r * Math.Cos(angle); Y = centroid.Y + r * Math.Sin(angle) }
+                            match isEntryPointValid outer islands pt with
+                            | true -> Some pt
+                            | false -> searchAngle (i + 1)
+                    
+                    match searchAngle 0 with
+                    | Some pt -> pt
+                    | None -> searchR (r + step)
 
-        searchR 0.0
+            searchR 15.0
 
     let isConfigurationValid (outer: Point[]) (islands: Point[][]) =
         let allIslandsValid = 

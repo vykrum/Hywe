@@ -237,6 +237,75 @@ module State =
         }
         |> refreshCachedStrings
 
+    let handlePointerUp (model: PolygonEditorModel) : PolygonEditorModel =
+        { model with Dragging = None; DraggingEntry = false; DragOffset = None; LastMoveMs = None }
+
+    let handlePointerMove (ev: MouseEventArgs) (model: PolygonEditorModel) : PolygonEditorModel =
+        match model.PolygonEnabled with
+        | false -> model
+        | true ->
+            match model.Dragging, model.DraggingEntry with
+            | None, false -> model
+            | _ ->
+                let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
+                match model.LastMoveMs with
+                | Some last when nowMs - last < 16.0 -> model
+                | _ -> 
+                    match model.Dragging, model.DragOffset, model.SvgInfo with
+                    // -------------------------------------------------------
+                    // 1) Dragging the entry point
+                    // -------------------------------------------------------
+                    | None, Some offset, Some info when model.DraggingEntry ->
+                        let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                        let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+
+                        match Geometry.isEntryPointValid model.Outer model.Islands newEntry with
+                        | true -> { model with EntryPoint = newEntry; LastMoveMs = Some nowMs }
+                        | false -> model
+
+                    // -------------------------------------------------------
+                    // 2) Dragging a polygon vertex (outer or island)
+                    // -------------------------------------------------------
+                    | Some drag, Some offset, Some info ->
+                        let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
+                        let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
+
+                        // Generate the proposed state based on what is being dragged
+                        let proposedModel = 
+                            match drag.PolyIndex = 0 with
+                            | true ->
+                                let newOuter = Array.copy model.Outer
+                                newOuter.[drag.VertexIndex] <- newPt
+                                { model with Outer = newOuter }
+                            | false ->
+                                let islandIdx = drag.PolyIndex - 1
+                                let newIslands = Array.copy model.Islands
+                                let poly = Array.copy newIslands.[islandIdx]
+                                poly.[drag.VertexIndex] <- newPt
+                                newIslands.[islandIdx] <- poly
+                                { model with Islands = newIslands }
+
+                        // Validate the entire configuration using the pipeline helper
+                        match Geometry.isConfigurationValid proposedModel.Outer proposedModel.Islands with
+                        | false -> model
+                        | true ->
+                            let isEntryValid = Geometry.isEntryPointValid proposedModel.Outer proposedModel.Islands proposedModel.EntryPoint
+                            let finalModel = 
+                                match isEntryValid with
+                                | true -> { proposedModel with LastMoveMs = Some nowMs }
+                                | false -> 
+                                     { proposedModel with 
+                                         EntryPoint = Geometry.closestValidEntryPoint proposedModel.Outer proposedModel.Islands
+                                         LastMoveMs = Some nowMs }
+                            finalModel |> refreshCachedStrings
+                    | _ -> model
+
+    let updateSync (msg: PolygonEditorMessage) (model: PolygonEditorModel) : PolygonEditorModel option =
+        match msg with
+        | PointerMove ev -> Some (handlePointerMove ev model)
+        | PointerUp -> Some (handlePointerUp model)
+        | _ -> None
+
     // ---------- Update ----------
     let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
         match msg with
@@ -420,8 +489,9 @@ module State =
                     let! info = getSvgInfo js
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
 
-                    let rHit = float model.VertexRadius + 4.0
-                    let rEntryHit = float model.VertexRadius + 4.0 // hit radius for entry point
+                    let boundScale = match model.LogicalWidth with | w when w <> fst initBound -> w / fst initBound | _ -> 1.0
+                    let rHit = max 12.0 (float (model.VertexRadius + 6) * boundScale)
+                    let rEntryHit = max 18.0 (25.0 * boundScale) // generous hit radius for entry point
 
                     // Check vertices in outer polygon
                     let dragOuter =
@@ -470,73 +540,9 @@ module State =
             }
 
 
-        | PointerUp -> async { return { model with Dragging = None; DragOffset = None; LastMoveMs = None;} }
+        | PointerUp -> async { return handlePointerUp model }
 
-        | PointerMove ev ->
-            async {
-                match model.PolygonEnabled with
-                | false -> return model
-                | true ->
-                    let nowMs = DateTime.UtcNow.Subtract(DateTime(1970,1,1)).TotalMilliseconds
-                
-                    // Throttling check using pattern matching
-                    return! match model.LastMoveMs with
-                            | Some last when nowMs - last < 16.0 -> async { return model }
-                            | _ -> 
-                                match model.Dragging, model.DragOffset, model.SvgInfo with
-                                // -------------------------------------------------------
-                                // 1) Dragging the entry point
-                                // -------------------------------------------------------
-                                | None, Some offset, Some info when model.DraggingEntry ->
-                                    async {
-                                        let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                                        let newEntry = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
-
-                                        return match Geometry.isEntryPointValid model.Outer model.Islands newEntry with
-                                               | true -> { model with EntryPoint = newEntry; LastMoveMs = Some nowMs }
-                                               | false -> model
-                                    }
-
-                                // -------------------------------------------------------
-                                // 2) Dragging a polygon vertex (outer or island)
-                                // -------------------------------------------------------
-                                | Some drag, Some offset, Some info ->
-                                    async {
-                                        let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                                        let newPt = clampPt model { X = svgPt.X - offset.X; Y = svgPt.Y - offset.Y }
-
-                                        // Generate the proposed state based on what is being dragged
-                                        let proposedModel = 
-                                            match drag.PolyIndex = 0 with
-                                            | true ->
-                                                let newOuter = Array.copy model.Outer
-                                                newOuter.[drag.VertexIndex] <- newPt
-                                                { model with Outer = newOuter }
-                                            | false ->
-                                                let islandIdx = drag.PolyIndex - 1
-                                                let newIslands = Array.copy model.Islands
-                                                let poly = Array.copy newIslands.[islandIdx]
-                                                poly.[drag.VertexIndex] <- newPt
-                                                newIslands.[islandIdx] <- poly
-                                                { model with Islands = newIslands }
-
-                                        // Validate the entire configuration using the pipeline helper
-                                        return match Geometry.isConfigurationValid proposedModel.Outer proposedModel.Islands with
-                                               | false -> model
-                                               | true ->
-                                                   let isEntryValid = Geometry.isEntryPointValid proposedModel.Outer proposedModel.Islands proposedModel.EntryPoint
-                                               
-                                                   let finalModel = 
-                                                       match isEntryValid with
-                                                       | true -> { proposedModel with LastMoveMs = Some nowMs }
-                                                       | false -> 
-                                                            { proposedModel with 
-                                                                EntryPoint = Geometry.closestValidEntryPoint proposedModel.Outer proposedModel.Islands
-                                                                LastMoveMs = Some nowMs }
-                                                   finalModel |> refreshCachedStrings
-                                    }
-                                | _ -> async { return model }
-            }
+        | PointerMove ev -> async { return handlePointerMove ev model }
 
         | DoubleClick ev ->
             async {
