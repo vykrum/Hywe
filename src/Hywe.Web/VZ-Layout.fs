@@ -604,16 +604,7 @@ let alternateConfigurations
         | 0 -> [||]
         | _ -> configs.[0].shapes |> Array.filter (fun s -> not (Array.isEmpty s.points)) |> Array.distinctBy (fun s -> s.name)
 
-    let maxNameLen =
-        if Array.isEmpty uniqueShapes then 10
-        else uniqueShapes |> Array.map (fun s -> s.name.Length) |> Array.max
-    let colWidth = max 130.0 (float maxNameLen * 7.5 + 35.0)
-    let legendItemsPerRow = max 1 (min 8 (int (totalWidth / colWidth)))
-    let legendItemHeight = 25.0
-    let legendRows = ceil (float uniqueShapes.Length / float legendItemsPerRow)
-    let legendTotalHeight = (max 1.0 legendRows) * legendItemHeight
-
-    let totalHeight = (float rows * cellH) + headerHeight + legendTotalHeight + 40.0
+    let totalHeight = (float rows * cellH) + headerHeight + 25.0
 
     div {
         attr.id "pdf-export-container"
@@ -723,37 +714,12 @@ let alternateConfigurations
                     svtx().xx(string labelX).yy(string labelY).nm($"{letter} [{cfg.sqnName}]").Elt()
                 }
 
-            // --- SEPARATOR & CENTERED LEGEND ---
-            let legendStartY = (float rows * cellH) + 55.0
-            svln().x1("0").y1($"{legendStartY - 25.0}").x2($"{totalWidth}").y2($"{legendStartY - 25.0}").cl("#f0f0f0").Elt()
-
-            let actualColWidth = totalWidth / float legendItemsPerRow
-            for i in 0 .. uniqueShapes.Length - 1 do
-                let s = uniqueShapes.[i]
-                let currR = int (floor (float i / float legendItemsPerRow))
-                
-                // Calculate centering for this specific row
-                let itemsInThisRow = Math.Min(legendItemsPerRow, uniqueShapes.Length - (currR * legendItemsPerRow))
-                let rowWidth = float itemsInThisRow * actualColWidth
-                let rowStartX = (totalWidth - rowWidth) / 2.0
-                
-                let currC = float (i % legendItemsPerRow)
-                let lx = rowStartX + (currC * actualColWidth)
-                let ly = legendStartY + (float currR * legendItemHeight)
-    
-                elt "g" {
-                    "transform" => $"translate({lx+15.0}, {ly})"
-                    elt "rect" { 
-                        "y" => -11.0; "width" => 12; "height" => 12; "fill" => s.color 
-                        "rx" => 2; "ry" => 2
-                    }
-                    elt "text" { 
-                        "x" => 18.0 
-                        attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 11px; fill: #666;"
-                        text s.name 
-                    }
-                }
         }
+
+        // --- UNIFIED LEGEND ---
+        let batchLegendItems = uniqueShapes |> Array.map (fun s -> s.name, s.color)
+        viewLegend batchLegendItems
+
         // --- DOWNLOAD GROUP ---
         div {
             attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"

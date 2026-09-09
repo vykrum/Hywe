@@ -7,6 +7,7 @@ open System.Text
 open Hywe.Core
 open Hywe.Core.Coxel
 open Hywe.Node
+open Graphics
 
 // --- DATA TYPES ---
 
@@ -173,27 +174,6 @@ let renderFloorPlanSvg (shapes: BatchComponent[]) (wtmkShapes: BatchComponent[] 
 let renderFlowchartSvg (root: TreeNode) (colorMap: Map<string, string>) (maxW: float option) (maxH: float option) : string =
     Visualization.renderSvgToString root colorMap maxW maxH
 
-let renderLegend (shapes: {| color: string; points: float[]; name: string; lx: float; ly: float |}[]) (validNames: Set<string>) : string =
-    let uniqueRooms = 
-        shapes 
-        |> Array.filter (fun s -> validNames.Contains s.name || validNames.Contains (s.name.Trim()))
-        |> Array.distinctBy (fun s -> s.name.Trim(), s.color)
-        |> Array.sortBy (fun s -> s.name.Trim())
-    
-    let items = 
-        uniqueRooms 
-        |> Array.map (fun s -> 
-            let safeName = s.name.Replace("<", "&lt;").Replace(">", "&gt;")
-            sprintf """<div style="display: flex; align-items: center; gap: 6px; font-size: 9px; white-space: nowrap;">
-                <div style="width: 10px; height: 10px; background: %s; border: 1px solid #eee; border-radius: 2px;"></div>
-                <span>%s</span>
-            </div>""" s.color safeName)
-        |> String.concat ""
-    
-    match uniqueRooms.Length with
-    | 0 -> ""
-    | _ -> sprintf """<div class="legend" style="display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 10px; background: #fafafa; border-radius: 4px; margin-top: 20px; margin-bottom: 10px;">%s</div>""" items
-    
 let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>) (elv: int) : string =
     let fontSize = 
         match cxls.Length with
@@ -312,6 +292,10 @@ body { font-family: 'Outfit', system-ui, -apple-system, sans-serif; margin: 0; p
 .batch-cell svg { flex: 1; min-height: 0; }
 .batch-label { font-size: 9px; text-align: center; color: #888; margin-top: 5px; }
 .flow-chart { width: 100%%; height: 100%%; }
+.layout-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; width: 100%%; margin: 8px auto 0 auto; box-sizing: border-box; }
+.layout-legend-item { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; box-sizing: border-box; }
+.layout-legend-dot { width: 8px; height: 8px; border-radius: 50%%; flex-shrink: 0; border: 1px solid rgba(0, 0, 0, 0.15); display: inline-block; }
+.layout-legend-label { font-size: 8px; font-weight: 500; color: #334155; line-height: 1.2; word-break: break-word; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -485,7 +469,18 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                                 sprintf tBatchCell svg (labelPhrase.[i].ToString())
                             ) |> String.concat ""
                             
-                        let grid2 = sprintf tBatchGrid2 "" (renderFooter pg)
+                        let chunkLegendItems =
+                            [chunkStart .. chunkEnd]
+                            |> Seq.collect (fun i ->
+                                batchInfo.[i].shapes
+                                |> Array.choose (fun s ->
+                                    let name = s.name.Trim()
+                                    if String.IsNullOrWhiteSpace(name) then None
+                                    else Some (name, s.color)))
+                            |> Seq.distinctBy fst
+                            |> Seq.sortBy fst
+                        let batchLegendHtml = Graphics.renderLegendHtml chunkLegendItems
+                        let grid2 = sprintf tBatchGrid2 batchLegendHtml (renderFooter pg)
                         (grid1 + cells + grid2) :: acc, pg + 1
                     ) (html1, page1)
                     
@@ -515,7 +510,16 @@ let generateReportHtml (opts: ReportOptions) (tree: SubModel) (batches: Map<stri
                             
                     let areaTable = renderAreaTable levelCxls conf.cxlAvl cxlColorMap baseLevel
                     let adjMatrix = renderAdjacencyMatrix levelCxls cxlColorMap
-                    let varHtml = sprintf tVariation (renderHeader (sprintf "%s — %s" (labelPhrase.[i].ToString()) title) "") svg "" areaTable adjMatrix (renderFooter pg)
+                    let varLegendItems =
+                        levelShapes
+                        |> Array.choose (fun s ->
+                            let name = s.name.Trim()
+                            if String.IsNullOrWhiteSpace(name) then None
+                            else Some (name, s.color))
+                        |> Array.distinctBy fst
+                        |> Array.sortBy fst
+                    let varLegendHtml = Graphics.renderLegendHtml varLegendItems
+                    let varHtml = sprintf tVariation (renderHeader (sprintf "%s — %s" (labelPhrase.[i].ToString()) title) "") svg varLegendHtml areaTable adjMatrix (renderFooter pg)
                     varHtml :: acc, pg + 1
                 ) (html2, page2)
             | false -> html2, page2

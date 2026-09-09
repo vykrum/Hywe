@@ -557,31 +557,14 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
                 }
 
-                let uniqueSpaces =
+                let legendItems =
                     if Array.length filteredCxls = Array.length filteredClrs then
                         Array.zip filteredCxls filteredClrs
-                        |> Array.distinctBy (fun (c, _) -> Hywe.Core.Coxel.prpVlu c.Name)
+                        |> Array.map (fun (c, clr) -> Hywe.Core.Coxel.prpVlu c.Name, clr)
                     else
                         [||]
 
-                if not (Array.isEmpty uniqueSpaces) then
-                    div {
-                        attr.``class`` "layout-legend"
-                        forEach uniqueSpaces <| fun (c, clr) ->
-                            let fullName = Hywe.Core.Coxel.prpVlu c.Name
-                            div {
-                                attr.``class`` "layout-legend-item"
-                                attr.title fullName
-                                span {
-                                    attr.``class`` "layout-legend-dot"
-                                    attr.style $"background-color: {clr}; border-color: {clr};"
-                                }
-                                span {
-                                    attr.``class`` "layout-legend-label"
-                                    text fullName
-                                }
-                            }
-                    }
+                Graphics.viewLegend legendItems
 
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
@@ -729,20 +712,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
 
               
-                div {
-                    attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 15px 10px; width: 100%; border-top: 1px solid #f0f0f0; margin-top: 5px;"
-                    forEach [0 .. (min model.Derived.cxCxl1.Length model.Derived.cxClr1.Length - 1)] (fun i ->
-                        let name = Coxel.prpVlu model.Derived.cxCxl1.[i].Name
-                        let color = model.Derived.cxClr1.[i]
-                        div {
-                            attr.style "display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Outfit', system-ui, sans-serif; color: #666;"
-                            div {
-                                attr.style (sprintf "width: 12px; height: 12px; border-radius: 2px; background: %s;" color)
-                            }
-                            text name
-                        }
-                    )
-                }
+                let d3LegendItems =
+                    Array.zip model.Derived.cxCxl1 model.Derived.cxClr1
+                    |> Array.map (fun (c, clr) -> Coxel.prpVlu c.Name, clr)
+                Graphics.viewLegend d3LegendItems
             }
 
         | BatchPanel ->
