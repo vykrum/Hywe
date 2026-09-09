@@ -247,11 +247,11 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     }
 
                     div {
-                        attr.style "margin-top: 6px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
+                        attr.style "margin-top: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
                         
                         // Header row with Presets
                         div {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 4px; width: 100%;"
+                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 3px; width: 100%;"
                             text "Presets"
                         }
                         
@@ -278,7 +278,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         }
                         
                         a {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; cursor: pointer; text-decoration: none; margin-top: 4px; padding-top: 4px; border-top: 1px solid #e0e0e0; width: 100%; display: block;"
+                            attr.``class`` "drawer-gallery-link"
                             "onclick:stopPropagation" => true
                             on.click (fun _ -> 
                                 dispatch ToggleGallery
