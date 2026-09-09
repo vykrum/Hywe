@@ -244,13 +244,14 @@ module NodeTree =
         match msg with
         | OpenMenu id -> { model with ActiveMenuId = Some id; ConfirmingId = None }, Cmd.none
         | CloseMenu -> { model with ActiveMenuId = None }, Cmd.none
-        | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveNest = None; ActiveMenuId = None }, Cmd.none
+        | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveNest = None; ActiveMenuId = None } |> Coloring.colorModel, Cmd.none
         | SetNest nId -> 
             let parentLvl = 
                 match model.Nests |> Map.tryFind nId with
                 | Some nestNode -> nestNode.Level
                 | None -> model.ActiveLevel
-            { model with ActiveLevel = parentLvl; ActiveNest = Some nId; ActiveMenuId = None }, Cmd.none
+            let newModel = { model with ActiveLevel = parentLvl; ActiveNest = Some nId; ActiveMenuId = None } |> Coloring.colorModel
+            newModel, Cmd.none
         | SetTopExtrusion newVal ->
             let extr = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> model.TopExtrusion
             { model with TopExtrusion = extr }, Cmd.none
@@ -260,10 +261,11 @@ module NodeTree =
         | ExecuteAction (id, actionId) -> handleExecuteAction id actionId model
         | AddChild parentId ->
             let currentTree = getCurrentTree model
-            let newChild = { Id = Guid.NewGuid(); Name = TreeOps.getRandomName(); Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None }
+            let newChild = { Id = Guid.NewGuid(); Name = TreeOps.getRandomName(); Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None; Color = None }
             let newRoot = TreeOps.updateNodeById parentId (fun n -> { n with Children = n.Children @ [newChild] }) currentTree
             let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-            updateCurrentTree model laidOut, Cmd.none
+            let updated = updateCurrentTree model laidOut |> Coloring.colorModel
+            updated, Cmd.none
         | UpdateName _ | UpdateWeight _ | UpdateExtrusion _ | ActionInput _ -> handleNodeUpdate msg model
         | PointerDown _ | PointerMove _ | PointerUp | DragStartInternal _ | PointerUpInternal -> handlePointerEvent msg js model
 
@@ -276,10 +278,15 @@ module NodeTree =
         let isConfirmingThis = model.ConfirmingId = Some node.Id
         let isMenuOpen = model.ActiveMenuId = Some node.Id
         let isDropTarget = model.DropTargetId = Some node.Id
-        let hasHalo = node.Level > model.ActiveLevel
+        let isAnchorForThisView = 
+            model.ActiveLevel > 0 && 
+            (model.LevelAnchors |> Map.tryFind model.ActiveLevel = Some node.Id)
+        let isElevatedAnchor = 
+            model.LevelAnchors |> Map.exists (fun lvl anchorId -> lvl > model.ActiveLevel && anchorId = node.Id)
+        let isElevated = (node.Level > model.ActiveLevel) || isElevatedAnchor || isAnchorForThisView || (node.Color = Some "#3498db")
         
         let nestIdOpt = model.NestAnchors |> Map.tryPick (fun k v -> match v = node.Id with true -> Some k | false -> None)
-        let isNestAnchor = nestIdOpt.IsSome
+        let isNestAnchor = nestIdOpt.IsSome || (node.Color = Some "#2ecc71")
         
         let outerClasses = 
             [ "node-outer"
@@ -288,35 +295,41 @@ module NodeTree =
               | true -> 
                     match model.ActiveActionId with
                     | ActionIds.Delete -> "is-confirming"
-                    | ActionIds.Elevate -> "is-elevating"
-                    | ActionIds.Nest -> "is-nesting"
+                    | ActionIds.Elevate -> "is-elevating is-elevated"
+                    | ActionIds.Nest -> "is-nesting is-nested"
                     | _ -> ""
               | false -> ""
-              match isNestAnchor && not isRoot with true -> "is-nesting" | false -> ""
+              match isNestAnchor with true -> "is-nesting is-nested" | false -> ""
               match model.DraggingId = Some node.Id && not isRoot with true -> "is-dragging" | false -> ""
               match isDropTarget && not isRoot with true -> "is-drop-target" | false -> ""
-              match hasHalo with true -> "is-elevated" | false -> "" ]
+              match isElevated with true -> "is-elevated is-elevating" | false -> "" ]
             |> List.filter (fun s -> s <> "")
             |> String.concat " "
+
+        let outerStyle =
+            if isElevated then "pointer-events:auto; background-color: #3498db !important; filter: drop-shadow(0 0 4px rgba(52, 152, 219, 0.5));"
+            elif isNestAnchor then "pointer-events:auto; background-color: #2ecc71 !important; filter: drop-shadow(0 0 4px rgba(46, 204, 113, 0.5));"
+            elif isConfirmingThis && model.ActiveActionId = ActionIds.Delete then "pointer-events:auto; background-color: #e74c3c !important; filter: drop-shadow(0 0 4px rgba(231, 76, 60, 0.5));"
+            elif isAffected && model.ActiveActionId = ActionIds.Delete && not isRoot then "pointer-events:auto; background-color: #E67E22 !important; filter: drop-shadow(0 0 4px rgba(230, 126, 34, 0.5));"
+            else "pointer-events:auto;"
+
+        let innerStyle =
+            if isElevated then "background-color: #ebf5fb !important;"
+            elif isNestAnchor then "background-color: #eafaf1 !important;"
+            elif isConfirmingThis && model.ActiveActionId = ActionIds.Delete then "background-color: #fdedec !important;"
+            elif isAffected && model.ActiveActionId = ActionIds.Delete && not isRoot then "background-color: #fef5ee !important;"
+            else "background-color: white;"
 
         div {
             attr.style $"position:absolute; left:{node.X - 30.0}px; top:{node.Y - 35.0}px; width:60px; height:60px; pointer-events:none;"
             
             div {
                 attr.``class`` outerClasses
-                attr.style "pointer-events:auto;" 
+                attr.style outerStyle 
                 
                 div {
                     attr.``class`` "node-inner"
-                    
-                    let nodeIndex = allNodes |> List.tryFindIndex (fun n -> n.Id = node.Id) |> Option.defaultValue -1
-                    let nodeColor = 
-                        match nodeIndex >= 0 && nodeIndex < colorList.Length with
-                        | true -> colorList.[nodeIndex]
-                        | false -> "white"
-                    
-                    let nodeStyle = match nodeColor <> "white" with true -> sprintf "background-color: %s !important;" nodeColor | false -> ""
-                    attr.style nodeStyle
+                    attr.style innerStyle
 
 
                     match isConfirmingThis with
@@ -333,10 +346,6 @@ module NodeTree =
                                 
                                 text "☰"
                             }
-
-                            let isAnchorForThisView = 
-                                model.ActiveLevel > 0 && 
-                                (model.LevelAnchors |> Map.tryFind model.ActiveLevel = Some node.Id)
 
                             input {
                                 attr.``class`` "nodename"

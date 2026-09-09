@@ -86,15 +86,24 @@ module Visualization =
                 |> List.mapi (fun i node ->
                     let safeName = node.Name.Replace("<", "&lt;").Replace(">", "&gt;")
                     let fill = 
-                        match Map.tryFind node.Name colorMap with
+                        match node.Color with
+                        | Some "#3498db" -> "#ebf5fb"
+                        | Some "#2ecc71" -> "#eafaf1"
                         | Some color -> color
-                        | None -> "white"
+                        | None ->
+                            match Map.tryFind node.Name colorMap with
+                            | Some color -> color
+                            | None -> "white"
 
-                    let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01
+                    let isElevated = Math.Abs(node.Extrusion - 3.0) > 0.01 || node.Color = Some "#3498db"
+                    let isNested = node.Color = Some "#2ecc71"
                     let hasBase = node.Base.IsSome
                     
-                    let stroke = match isElevated with | true -> "#4a90e2" | false -> "none"
-                    let strokeWidth = match isElevated with | true -> "2" | false -> "0"
+                    let stroke = 
+                        if isElevated then "#4a90e2"
+                        elif isNested then "#2ecc71"
+                        else "none"
+                    let strokeWidth = if stroke <> "none" then "2" else "0"
                     
                     let w, h = 50.0, 40.0
                     let cx, cy = node.X, node.Y

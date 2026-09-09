@@ -25,7 +25,7 @@ module TreeOps =
     let rec addChildToNodeById (node: TreeNode) parentId =
         match node.Id = parentId with
         | true ->
-            let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = node.Level; Extrusion = 3.0; Base = None }
+            let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = node.Level; Extrusion = 3.0; Base = None; Color = None }
             { node with Children = node.Children @ [newChild] }
         | false -> { node with Children = node.Children |> List.map (fun c -> addChildToNodeById c parentId) }
 
@@ -52,7 +52,7 @@ module TreeOps =
             | Some anchorNode ->
                 match levels |> Map.tryFind (lvl + 1) with
                 | Some childTree ->
-                    let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight }
+                    let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight; Color = anchorNode.Color }
                     let nextLevels = levels |> Map.add (lvl + 1) updatedChildTree
                     syncHierarchy nextLevels anchors (lvl + 1)
                 | None -> levels

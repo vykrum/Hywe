@@ -1032,38 +1032,71 @@ video.fullscreen-bg {
     padding: 2px;
 }
 
-/* Branch Highlighting (The Orange Glow) */
+/* Branch Highlighting (Orange for delete subtree, Red for delete confirming) */
 .node-outer.is-affected {
-    background-color: #E67E22;
+    background-color: #E67E22 !important;
+    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.4);
+    filter: drop-shadow(0 0 4px rgba(230, 126, 34, 0.5));
 }
 
 .node-outer.is-affected .node-inner {
-    background-color: #fef5ee;
-    /* Very light orange tint */
+    background-color: #fef5ee !important;
+}
+
+.node-outer.is-confirming {
+    background-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.4);
+    filter: drop-shadow(0 0 4px rgba(231, 76, 60, 0.5));
 }
 
 .node-outer.is-confirming .node-inner {
-    background-color: #fdf2e9;
-    /* Slightly deeper tint for the source */
+    background-color: #fdedec !important;
 }
 
-.node-outer.is-elevating .node-inner {
-    background-color: #ebf5fb;
-    /* Light blue tint for elevation preview */
-}
-
+/* Elevated Nodes (Blue) */
+.node-outer.is-elevated,
 .node-outer.is-elevating {
-    background-color: #3498db;
+    background-color: #3498db !important;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
+    filter: drop-shadow(0 0 4px rgba(52, 152, 219, 0.5));
 }
 
-.node-outer.is-nesting .node-inner {
-    background-color: #eafaf1;
+.node-outer.is-elevated .node-inner,
+.node-outer.is-elevating .node-inner {
+    background-color: #ebf5fb !important;
 }
 
+.node-outer.is-elevated .nodename,
+.node-outer.is-elevating .nodename {
+    color: #2980b9;
+}
+
+.node-outer.is-elevated .nodeweight,
+.node-outer.is-elevating .nodeweight {
+    color: #2471a3;
+}
+
+/* Nested Nodes (Green) */
+.node-outer.is-nested,
 .node-outer.is-nesting {
-    background-color: #2ecc71;
+    background-color: #2ecc71 !important;
     box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.4);
-    border: 1px solid #2ecc71;
+    filter: drop-shadow(0 0 4px rgba(46, 204, 113, 0.5));
+}
+
+.node-outer.is-nested .node-inner,
+.node-outer.is-nesting .node-inner {
+    background-color: #eafaf1 !important;
+}
+
+.node-outer.is-nested .nodename,
+.node-outer.is-nesting .nodename {
+    color: #27ae60;
+}
+
+.node-outer.is-nested .nodeweight,
+.node-outer.is-nesting .nodeweight {
+    color: #1e8449;
 }
 
 .node-outer.is-dragging {

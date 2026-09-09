@@ -50,39 +50,9 @@ let indexToLabel (i: int) =
         let second = labelPhrase.[i % 24]
         $"{first}{second}"
 
-// Consistent Pastel Color
-let hexToRgb (hex: string) =
-    let hex = hex.TrimStart('#')
-    let r = Convert.ToInt32(hex.Substring(0, 2), 16)
-    let g = Convert.ToInt32(hex.Substring(2, 2), 16)
-    let b = Convert.ToInt32(hex.Substring(4, 2), 16)
-    (r, g, b)
-
-let private clamp value = min 255 (max 0 value)
-
-/// Deterministic pastel generator — first color is base color
-let generatePastels (rootHex: string) (count: int) (opacity: float) : string[] =
-    let (baseR, baseG, baseB) = hexToRgb rootHex
-
-    [| 0 .. count - 1 |]
-    |> Array.map (fun i ->
-        match i = 0 with
-        | true ->
-            $"rgba({baseR}, {baseG}, {baseB}, {opacity})"
-        | false ->
-            let hueShift = (i * 137) % 360
-            let angleRad = float hueShift * Math.PI / 180.0
-
-            let vary cmpnent phase =
-                let offset = int (40.0 * Math.Sin(angleRad + phase))
-                clamp ((cmpnent + offset + 255) >>> 1)
-
-            let r = vary baseR 0.0
-            let g = vary baseG 2.0
-            let b = vary baseB 4.0
-
-            $"rgba({r}, {g}, {b}, {opacity})"
-    )
+// Consistent Pastel Color from Hywe.Node.Coloring
+let hexToRgb = Coloring.hexToRgb
+let generatePastels = Coloring.generatePastels
 
 let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[]) (cxRto1: float[]) (elv: int) (latitude: float option) : DerivedData =
     let fallbackSqn = Hywe.Core.Hexel.VRCCNE 
