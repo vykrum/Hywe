@@ -543,6 +543,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     NeedsHyweave = true }, Cmd.none
             | None -> model, Cmd.none
 
+        | SelectVertex sel ->
+            let updatedInner = { currentInnerModel with SelectedVertex = sel }
+            { model with PolygonEditor = Stable updatedInner }, Cmd.none
+
         | _ ->
             model,
             Cmd.OfAsync.perform

@@ -13,6 +13,7 @@ module View =
     type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
     type vtxTxt = Template<"""<text class="${tc}" x="${x}" y="${y}" font-size="${tf}" text-anchor="middle" dominant-baseline="auto">${nm}</text>""">
     type ghstVtx = Template<"""<g style="pointer-events: none;"><circle class="ghostVertex" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3"/><circle cx="${cx}" cy="${cy}" r="3" fill="#2563eb"/><text x="${cx}" y="${ty}" font-size="${tf}" font-weight="bold" fill="#2563eb" text-anchor="middle">+</text></g>""">
+    type selHlo = Template<"""<circle class="selectedVertexHalo" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="3,3" style="pointer-events: none;" />""">
 
     // Control and Instructions panel with numeric inputs and checkboxes
     let controlAndInstructions model dispatch (js: IJSRuntime) =
@@ -38,12 +39,12 @@ module View =
 
         div {
             attr.``class`` "control-and-instructions"
-            attr.style "zoom: 0.75; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 16px; align-items: flex-start; justify-content: center; width: fit-content; max-width: 100%; margin: 0 auto; padding: 10px; box-sizing: border-box;"
+            attr.style "display: flex; flex-flow: row wrap; gap: 14px; align-items: stretch; justify-content: center; width: 100%; max-width: 960px; margin: 0 auto; padding: 10px; box-sizing: border-box;"
 
             // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                attr.style "flex: 1; display: flex; flex-direction: column; gap: 8px;"
+                attr.style "flex: 1 1 180px; min-width: 170px; max-width: 260px; display: flex; flex-direction: column; gap: 8px;"
 
                 // Boundary
                 div {
@@ -120,9 +121,9 @@ module View =
                 attr.``class`` "control-panel"
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "flex: 0.5; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px; opacity: 0.3; pointer-events: none;"
+                        "flex: 1 1 180px; min-width: 170px; max-width: 260px; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px; opacity: 0.3; pointer-events: none;"
                     else
-                        "flex: 0.5; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px;"
+                        "flex: 1 1 180px; min-width: 170px; max-width: 260px; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px;"
                 )
 
                 // Width
@@ -133,7 +134,6 @@ module View =
                 div {
                     renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
                 }
-                // Scale
                 // Scale
                 div {
                     attr.``class`` "field-group"
@@ -148,11 +148,13 @@ module View =
             // Col 3: Editor Instructions
             div {
                 attr.``class`` "polygon-editor-instructions"
+                attr.style "flex: 1 1 200px; min-width: 190px; max-width: 320px; display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #555; align-items: flex-start; justify-content: center;"
+                p { attr.style "margin: 0;"; text "Click/tap vertex: select (Del to remove)" }
+                p { attr.style "margin: 0;"; text "Dbl-clk/tap vertex: delete" }
                 p { attr.style "margin: 0;"; text "Hover edge & click: add vertex" }
-                p { attr.style "margin: 0;"; text "Dbl-clk Vertex: delete" }
-                p { attr.style "margin: 0;"; text "Dbl-clk inside: add Island" }
                 p { attr.style "margin: 0;"; text "Drag inside Island: move" }
-                p { attr.style "margin: 0;"; text "Dbl-clk Island: delete" }
+                p { attr.style "margin: 0;"; text "Drag Entry icon: relocate start" }
+                p { attr.style "margin: 0;"; text "Dbl-clk canvas: add Island" }
             }
             
 
@@ -201,6 +203,7 @@ module View =
                 svg {
                 attr.id "polygon-editor-svg"
                 attr.``class`` "polygon-editor-svg"
+                attr.tabindex 0
                 "data-padding-ratio" => (((2.0 * padding) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
                 attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
@@ -218,6 +221,7 @@ module View =
                 )
                 on.pointermove (fun ev -> dispatch (PointerMove ev))
                 on.dblclick (fun ev -> dispatch (DoubleClick ev))
+                on.keydown (fun ev -> dispatch (KeyDown ev))
 
                 // Outer polygon
                 bdrPgn()
@@ -227,58 +231,87 @@ module View =
                     .Elt()
 
                 // Islands
-                for i = 0 to model.DisplayIslands.Length - 1 do
+                forEach (Array.indexed model.IslandPointsStrs) (fun (i, islandPtsStr) ->
                     bdrPgn()
                         .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
-                        .pt(model.IslandPointsStrs.[i])
+                        .pt(islandPtsStr)
                         .sw(string bndStWdI)
                         .Elt()
+                )
 
                 // Outer vertices
-                for i = 0 to model.Outer.Length - 1 do
-                    let rawPt = model.Outer.[i]
+                forEach (Array.indexed model.Outer) (fun (i, rawPt) ->
                     let dispPt = model.DisplayOuter.[i]
                     let cartX = int (System.Math.Round(dispPt.X))
                     let cartY = int (System.Math.Round(dispPt.Y))
-                    bdrCrl()
-                        .cs("outerVertex")
-                        .cx(sprintf "%.1f" rawPt.X)
-                        .cy(sprintf "%.1f" rawPt.Y)
-                        .cr(string boundRadius)
-                        .cl("#333")
-                        .Elt()
+                    let isSelected =
+                        match model.SelectedVertex with
+                        | Some sel -> sel.PolyIndex = 0 && sel.VertexIndex = i
+                        | None -> false
 
-                    vtxTxt()
-                        .tc("outerVertexLabel")
-                        .x(sprintf "%.1f" rawPt.X)
-                        .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
-                        .tf(boundLabel)
-                        .nm(sprintf "(%d, %d)" cartX cartY)
-                        .Elt()
+                    concat {
+                        if isSelected then
+                            selHlo()
+                                .cx(sprintf "%.1f" rawPt.X)
+                                .cy(sprintf "%.1f" rawPt.Y)
+                                .cr(string (boundRadius + 5))
+                                .Elt()
 
-                // Island vertices
-                for i = 0 to model.Islands.Length - 1 do
-                    for j = 0 to model.Islands.[i].Length - 1 do
-                        let rawPt = model.Islands.[i].[j]
-                        let dispPt = model.DisplayIslands.[i].[j]
-                        let cartX = int (System.Math.Round(dispPt.X))
-                        let cartY = int (System.Math.Round(dispPt.Y))
-                        
                         bdrCrl()
-                            .cs("islandVertex")
+                            .cs(match isSelected with true -> "outerVertex selected" | false -> "outerVertex")
                             .cx(sprintf "%.1f" rawPt.X)
                             .cy(sprintf "%.1f" rawPt.Y)
                             .cr(string boundRadius)
-                            .cl("#333")
+                            .cl(match isSelected with true -> "#2563eb" | false -> "#333")
                             .Elt()
 
                         vtxTxt()
-                            .tc("islandVertexLabel")
+                            .tc("outerVertexLabel")
                             .x(sprintf "%.1f" rawPt.X)
                             .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
                             .tf(boundLabel)
                             .nm(sprintf "(%d, %d)" cartX cartY)
                             .Elt()
+                    }
+                )
+
+                // Island vertices
+                forEach (Array.indexed model.Islands) (fun (i, isl) ->
+                    forEach (Array.indexed isl) (fun (j, rawPt) ->
+                        let dispPt = model.DisplayIslands.[i].[j]
+                        let cartX = int (System.Math.Round(dispPt.X))
+                        let cartY = int (System.Math.Round(dispPt.Y))
+                        let isSelected =
+                            match model.SelectedVertex with
+                            | Some sel -> sel.PolyIndex = i + 1 && sel.VertexIndex = j
+                            | None -> false
+
+                        concat {
+                            if isSelected then
+                                selHlo()
+                                    .cx(sprintf "%.1f" rawPt.X)
+                                    .cy(sprintf "%.1f" rawPt.Y)
+                                    .cr(string (boundRadius + 5))
+                                    .Elt()
+
+                            bdrCrl()
+                                .cs(match isSelected with true -> "islandVertex selected" | false -> "islandVertex")
+                                .cx(sprintf "%.1f" rawPt.X)
+                                .cy(sprintf "%.1f" rawPt.Y)
+                                .cr(string boundRadius)
+                                .cl(match isSelected with true -> "#2563eb" | false -> "#333")
+                                .Elt()
+
+                            vtxTxt()
+                                .tc("islandVertexLabel")
+                                .x(sprintf "%.1f" rawPt.X)
+                                .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
+                                .tf(boundLabel)
+                                .nm(sprintf "(%d, %d)" cartX cartY)
+                                .Elt()
+                        }
+                    )
+                )
 
                 // Ghost vertex preview on edge hover
                 match model.GhostVertex with

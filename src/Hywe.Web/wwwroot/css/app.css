@@ -1724,6 +1724,10 @@ video.fullscreen-bg {
     fill: #B3B3B3;
 }
 
+.entryPoint:active {
+    cursor: grabbing;
+}
+
 /* Polygon Fills */
 .outerPolygon {
     stroke: #E3DCCC;
@@ -1749,6 +1753,30 @@ video.fullscreen-bg {
 
 .islandPolygon:active {
     cursor: grabbing;
+}
+
+.polygon-editor-svg {
+    touch-action: none;
+    outline: none;
+}
+
+.polygon-editor-svg:focus {
+    outline: none;
+}
+
+.selectedVertexHalo {
+    animation: haloPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes haloPulse {
+    0% { stroke-opacity: 0.9; stroke-width: 2.5px; }
+    50% { stroke-opacity: 0.4; stroke-width: 3.5px; }
+    100% { stroke-opacity: 0.9; stroke-width: 2.5px; }
+}
+
+.outerVertex.selected,
+.islandVertex.selected {
+    fill: #2563eb !important;
 }
 
 .ghostVertex {

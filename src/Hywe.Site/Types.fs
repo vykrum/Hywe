@@ -35,6 +35,7 @@ type PolygonEditorModel =
         LastMoveMs: float option      // for simple throttling
         EntryPoint: Point
         DraggingEntry: bool
+        SelectedVertex: DragInfo option
         GhostVertex: GhostCandidate option
         OuterPointsStr: string        // Cached for performance
         IslandPointsStrs: string[]    // Cached for performance
@@ -62,6 +63,9 @@ type PolygonEditorMessage =
     | PointerUp
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
+    | SelectVertex of DragInfo option
+    | DeleteSelectedVertex
+    | KeyDown of KeyboardEventArgs
     | RemoveVertex of int * int
     | CommitGhostVertex
     | StartDragEntry of MouseEventArgs
