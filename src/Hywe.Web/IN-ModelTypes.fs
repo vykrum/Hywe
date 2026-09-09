@@ -297,6 +297,7 @@ type Model =
         GalleryOffset: int
         GalleryFilter: string
         LoadedCommunityAuthor: string option
+        CachedAuthor: string option
         HasAppendedModSuffix: bool
     }
 
