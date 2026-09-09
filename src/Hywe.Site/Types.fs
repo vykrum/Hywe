@@ -35,6 +35,7 @@ type PolygonEditorModel =
         LastMoveMs: float option      // for simple throttling
         EntryPoint: Point
         DraggingEntry: bool
+        SelectedVertex: DragInfo option
         GhostVertex: GhostCandidate option
         OuterPointsStr: string        // Cached for performance
         IslandPointsStrs: string[]    // Cached for performance
@@ -43,6 +44,7 @@ type PolygonEditorModel =
         DisplayOuter: Point[]
         DisplayIslands: Point[][]
         MapScale: float
+        ShowInstructions: bool
     }
 
 type EditorState =
@@ -54,6 +56,7 @@ type PolygonEditorMessage =
     | ToggleAbsolute of bool
     | ToggleMapBase of bool
     | ToggleMapLock of bool
+    | ToggleInstructions
     | MapTopographyReceived of float * float * string
     | UpdateLogicalWidth of float
     | UpdateLogicalHeight of float
@@ -62,6 +65,9 @@ type PolygonEditorMessage =
     | PointerUp
     | PointerMove of MouseEventArgs
     | DoubleClick of MouseEventArgs
+    | SelectVertex of DragInfo option
+    | DeleteSelectedVertex
+    | KeyDown of KeyboardEventArgs
     | RemoveVertex of int * int
     | CommitGhostVertex
     | StartDragEntry of MouseEventArgs

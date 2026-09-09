@@ -441,16 +441,30 @@ module TreeFiltering =
             for id in validIdsSeq do
                 match idToIndex |> Map.tryFind id with
                 | Some i ->
-                    synthCxls.Add(config.cxCxl1.[i])
+                    let origCxl = config.cxCxl1.[i]
+                    let origShp = config.shapes.[i]
+                    let nodeOpt = idToNode |> Map.tryFind id
+                    let fixedCxl =
+                        match nodeOpt with
+                        | Some node when not (System.String.IsNullOrWhiteSpace node.Name) && (System.String.IsNullOrWhiteSpace (Hywe.Core.Coxel.prpVlu origCxl.Name) || Hywe.Core.Coxel.prpVlu origCxl.Name = id) ->
+                            { origCxl with Name = Hywe.Core.Coxel.Label node.Name }
+                        | _ -> origCxl
+                    let fixedShp =
+                        match nodeOpt with
+                        | Some node when not (System.String.IsNullOrWhiteSpace node.Name) && (System.String.IsNullOrWhiteSpace origShp.name || origShp.name = id) ->
+                            {| origShp with name = node.Name |}
+                        | _ -> origShp
+                    synthCxls.Add(fixedCxl)
                     synthClrs.Add(config.cxClr1.[i])
                     synthAvls.Add(config.cxlAvl.[i])
                     synthB36s.Add(config.cxB36.[i])
-                    synthShapes.Add(config.shapes.[i])
+                    synthShapes.Add(fixedShp)
                 | None ->
                     match idToNode |> Map.tryFind id with
                     | Some node ->
                         let count = match System.Int32.TryParse node.Weight with true, v -> v | _ -> 0
-                        let fakeCxl = { Hywe.Core.Coxel.Name = Hywe.Core.Coxel.Label node.Name
+                        let labelName = if System.String.IsNullOrWhiteSpace node.Name then id else node.Name
+                        let fakeCxl = { Hywe.Core.Coxel.Name = Hywe.Core.Coxel.Label labelName
                                         Hywe.Core.Coxel.Rfid = Hywe.Core.Coxel.Refid id
                                         Hywe.Core.Coxel.Size = Hywe.Core.Coxel.Count count
                                         Hywe.Core.Coxel.Seqn = fallbackSqn
@@ -460,7 +474,7 @@ module TreeFiltering =
                         synthClrs.Add("#eee")
                         synthAvls.Add(0)
                         synthB36s.Add("")
-                        synthShapes.Add({| name = id; points = [||]; color = "#eee"; lx = 0.0; ly = 0.0 |})
+                        synthShapes.Add({| name = labelName; points = [||]; color = "#eee"; lx = 0.0; ly = 0.0 |})
                     | None -> ()
             
             let cxls = synthCxls.ToArray()

@@ -141,7 +141,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-09T16:20:16Z"
+let MODIFIED_DATE = "2026-09-09T18:55:08Z"
 let GALLERY_PAGE_SIZE = 12
 
 
@@ -297,6 +297,7 @@ type Model =
         GalleryOffset: int
         GalleryFilter: string
         LoadedCommunityAuthor: string option
+        CachedAuthor: string option
         HasAppendedModSuffix: bool
     }
 

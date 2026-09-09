@@ -228,6 +228,7 @@ module State =
             VertexRadius = initRadius
             EntryPoint = initEntry
             DraggingEntry = false
+            SelectedVertex = None
             GhostVertex = None
             OuterPointsStr = ""
             IslandPointsStrs = [||]
@@ -236,6 +237,7 @@ module State =
             DisplayOuter = [||]
             DisplayIslands = [||]
             MapScale = 1.0
+            ShowInstructions = false
         }
         |> refreshCachedStrings
 
@@ -279,6 +281,53 @@ module State =
                 let updated = { model with Islands = newIslands; GhostVertex = None }
                 Some (updated |> refreshCachedStrings)
             | false -> None
+
+    let deleteVertexAt (polyIndex: int) (vertexIndex: int) (model: PolygonEditorModel) : PolygonEditorModel option =
+        match polyIndex = 0 with
+        | true ->
+            match model.Outer.Length > 3 with
+            | false -> None
+            | true ->
+                let newOuter =
+                    model.Outer
+                    |> Array.mapi (fun i pt -> i, pt)
+                    |> Array.filter (fun (i, _) -> i <> vertexIndex)
+                    |> Array.map snd
+                let ok =
+                    not (Geometry.polygonSelfIntersects newOuter) &&
+                    not (model.Islands |> Array.exists (fun island -> Geometry.polygonsIntersect newOuter island)) &&
+                    (model.Islands |> Array.forall (fun island -> Geometry.isPolygonInside newOuter island))
+                match ok with
+                | true ->
+                    let updated = { model with Outer = newOuter; SelectedVertex = None; GhostVertex = None }
+                    Some (updated |> refreshCachedStrings)
+                | false -> None
+        | false ->
+            let islandIdx = polyIndex - 1
+            match islandIdx >= 0 && islandIdx < model.Islands.Length with
+            | false -> None
+            | true ->
+                let island = model.Islands.[islandIdx]
+                match island.Length > 3 with
+                | false -> None
+                | true ->
+                    let newIsland =
+                        island
+                        |> Array.mapi (fun i pt -> i, pt)
+                        |> Array.filter (fun (i, _) -> i <> vertexIndex)
+                        |> Array.map snd
+                    let ok =
+                        Geometry.isPolygonInside model.Outer newIsland &&
+                        not (Geometry.polygonSelfIntersects newIsland) &&
+                        not (model.Islands |> Array.mapi (fun i isl -> i, isl) |> Array.exists (fun (i, isl) -> i <> islandIdx && Geometry.polygonsIntersect newIsland isl))
+                    match ok with
+                    | true ->
+                        let newIslands =
+                            model.Islands
+                            |> Array.mapi (fun idx isl -> match idx = islandIdx with true -> newIsland | false -> isl)
+                        let updated = { model with Islands = newIslands; SelectedVertex = None; GhostVertex = None }
+                        Some (updated |> refreshCachedStrings)
+                    | false -> None
 
     let handlePointerMove (ev: MouseEventArgs) (model: PolygonEditorModel) : PolygonEditorModel =
         match model.PolygonEnabled with
@@ -386,6 +435,19 @@ module State =
             match model.GhostVertex with
             | Some ghost -> commitGhost ghost model
             | None -> None
+        | SelectVertex sel -> Some { model with SelectedVertex = sel }
+        | ToggleInstructions -> Some { model with ShowInstructions = not model.ShowInstructions }
+        | DeleteSelectedVertex ->
+            match model.SelectedVertex with
+            | Some sel -> deleteVertexAt sel.PolyIndex sel.VertexIndex model
+            | None -> None
+        | KeyDown ev ->
+            match ev.Key = "Delete" || ev.Key = "Backspace" with
+            | true ->
+                match model.SelectedVertex with
+                | Some sel -> deleteVertexAt sel.PolyIndex sel.VertexIndex model
+                | None -> None
+            | false -> None
         | _ -> None
 
     // ---------- Update ----------
@@ -430,62 +492,69 @@ module State =
                     return { updated with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands } |> refreshCachedStrings
             }
 
-        | ToggleMapLock isLocked -> async {
-                                                let updated = { model with IsMapLocked = isLocked }
-                                                return updated
-                                            }
+        | ToggleMapLock isLocked ->
+            async {
+                let updated = { model with IsMapLocked = isLocked }
+                return updated
+            }
 
-        | MapTopographyReceived (w, h, topoJson) -> async {
-                                                // Hymap sends exact physical width/height in Meters.
-                                                let rec findScaleFactor width height factor =
-                                                    match width <= 100.0 && height <= 100.0 with
-                                                    | true -> factor
-                                                    | false -> findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
-                                                let sf = findScaleFactor w h 1.0
-                                                
-                                                let floorW = System.Math.Floor((w / sf) + 0.001)
-                                                let floorH = System.Math.Floor((h / sf) + 0.001)
+        | ToggleInstructions ->
+            async {
+                return { model with ShowInstructions = not model.ShowInstructions }
+            }
 
-                                                let hyweInternalScale = 10.0
-                                                let scaledW = floorW * hyweInternalScale
-                                                let scaledH = floorH * hyweInternalScale
+        | MapTopographyReceived (w, h, topoJson) ->
+            async {
+                // Hymap sends exact physical width/height in Meters.
+                let rec findScaleFactor width height factor =
+                    match width <= 100.0 && height <= 100.0 with
+                    | true -> factor
+                    | false -> findScaleFactor (width / 2.0) (height / 2.0) (factor * 2.0)
+                let sf = findScaleFactor w h 1.0
+                
+                let floorW = System.Math.Floor((w / sf) + 0.001)
+                let floorH = System.Math.Floor((h / sf) + 0.001)
 
-                                                let (|ParsedJson|_|) (json: string) =
-                                                    try Some (JsonNode.Parse(json))
-                                                    with _ -> None
+                let hyweInternalScale = 10.0
+                let scaledW = floorW * hyweInternalScale
+                let scaledH = floorH * hyweInternalScale
 
-                                                // Scale topography data X and Y points to match internal decimeter scale
-                                                let scaledTopoJson = 
-                                                    match topoJson with
-                                                    | ParsedJson (:? JsonArray as arr) ->
-                                                        let newArr = JsonArray()
-                                                        arr |> Seq.iter (fun item ->
-                                                            match item with
-                                                            | :? JsonObject as obj ->
-                                                                let cloned = obj.DeepClone().AsObject()
-                                                                let x = cloned.["X"].GetValue<float>()
-                                                                let y = cloned.["Y"].GetValue<float>()
-                                                                cloned.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
-                                                                cloned.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
-                                                                newArr.Add(cloned)
-                                                            | other -> newArr.Add(match other with null -> null | x -> x.DeepClone())
-                                                        )
-                                                        newArr.ToJsonString()
-                                                    | _ -> topoJson
+                let (|ParsedJson|_|) (json: string) =
+                    try Some (JsonNode.Parse(json))
+                    with _ -> None
 
-                                                let safeW = max 1.0 (scaledW)
-                                                let safeH = max 1.0 (scaledH) 
-                                                
-                                                // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
-                                                let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
-                                                let scaleY = match model.LogicalHeight <= 0.0 with | true -> 1.0 | false -> safeH / model.LogicalHeight
-                                                
-                                                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
-                                                let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
-                                                
-                                                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson; MapScale = sf * 10.0 }
-                                                return updated |> refreshCachedStrings
-                                            }
+                // Scale topography data X and Y points to match internal decimeter scale
+                let scaledTopoJson = 
+                    match topoJson with
+                    | ParsedJson (:? JsonArray as arr) ->
+                        let newArr = JsonArray()
+                        arr |> Seq.iter (fun item ->
+                            match item with
+                            | :? JsonObject as obj ->
+                                let cloned = obj.DeepClone().AsObject()
+                                let x = cloned.["X"].GetValue<float>()
+                                let y = cloned.["Y"].GetValue<float>()
+                                cloned.["X"] <- JsonValue.Create((x / sf) * hyweInternalScale)
+                                cloned.["Y"] <- JsonValue.Create((y / sf) * hyweInternalScale)
+                                newArr.Add(cloned)
+                            | other -> newArr.Add(match other with null -> null | x -> x.DeepClone())
+                        )
+                        newArr.ToJsonString()
+                    | _ -> topoJson
+
+                let safeW = max 1.0 (scaledW)
+                let safeH = max 1.0 (scaledH) 
+                
+                // Scale existing points to the new map bounds (similar to UpdateLogicalWidth)
+                let scaleX = match model.LogicalWidth <= 0.0 with | true -> 1.0 | false -> safeW / model.LogicalWidth
+                let scaleY = match model.LogicalHeight <= 0.0 with | true -> 1.0 | false -> safeH / model.LogicalHeight
+                
+                let newOuter = model.Outer |> Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY })
+                let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scaleX; Y = pt.Y * scaleY }))
+                
+                let updated = { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOuter; Islands = newIslands; TopographyData = Some scaledTopoJson; BaseStr = scaledTopoJson; MapScale = sf * 10.0 }
+                return updated |> refreshCachedStrings
+            }
 
         | UpdateLogicalWidth newW -> async {
             let oldW = model.LogicalWidth
@@ -572,8 +641,8 @@ module State =
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
 
                     let boundScale = match model.LogicalWidth with | w when w <> fst initBound -> w / fst initBound | _ -> 1.0
-                    let rHit = max 12.0 (float (model.VertexRadius + 6) * boundScale)
-                    let rEntryHit = max 18.0 (25.0 * boundScale) // generous hit radius for entry point
+                    let rHit = max 14.0 (float (model.VertexRadius + 8) * boundScale)
+                    let rEntryHit = max 20.0 (25.0 * boundScale) // generous hit radius for entry point
 
                     // Check vertices in outer polygon
                     let dragOuter =
@@ -620,19 +689,19 @@ module State =
                             | false -> model.Islands.[d.PolyIndex - 1].[d.VertexIndex]
                         let offset = { X = svgPt.X - v.X; Y = svgPt.Y - v.Y }
                         let newModel = snapshot model
-                        return { newModel with Dragging = Some d; DragOffset = Some offset; SvgInfo = Some info; GhostVertex = None }
+                        return { newModel with Dragging = Some d; SelectedVertex = Some d; DragOffset = Some offset; SvgInfo = Some info; GhostVertex = None }
 
                     | None, true, _ ->
                         let offset = { X = svgPt.X - model.EntryPoint.X; Y = svgPt.Y - model.EntryPoint.Y }
                         let newModel = snapshot model
-                        return { newModel with DraggingEntry = true; DragOffset = Some offset; SvgInfo = Some info; GhostVertex = None }
+                        return { newModel with DraggingEntry = true; SelectedVertex = None; DragOffset = Some offset; SvgInfo = Some info; GhostVertex = None }
 
                     | None, false, Some ghost ->
                         match commitGhost ghost model with
                         | Some committed ->
                             let insertIdx = ghost.EdgeIndex + 1
                             let dragInfo = { PolyIndex = ghost.PolyIndex; VertexIndex = insertIdx }
-                            return { committed with Dragging = Some dragInfo; DragOffset = Some { X = 0.0; Y = 0.0 }; SvgInfo = Some info; GhostVertex = None }
+                            return { committed with Dragging = Some dragInfo; SelectedVertex = Some dragInfo; DragOffset = Some { X = 0.0; Y = 0.0 }; SvgInfo = Some info; GhostVertex = None }
                         | None ->
                             return { model with SvgInfo = Some info; GhostVertex = None }
 
@@ -645,9 +714,9 @@ module State =
                         match dragIslandBody with
                         | Some islIdx ->
                             let newModel = snapshot model
-                            return { newModel with DraggingIsland = Some islIdx; DragOffset = Some svgPt; SvgInfo = Some info; GhostVertex = None }
+                            return { newModel with DraggingIsland = Some islIdx; SelectedVertex = None; DragOffset = Some svgPt; SvgInfo = Some info; GhostVertex = None }
                         | None ->
-                            return { model with SvgInfo = Some info }
+                            return { model with SvgInfo = Some info; SelectedVertex = None; GhostVertex = None }
             }
 
 
@@ -661,45 +730,37 @@ module State =
                 | false -> return model
                 | true ->
                     let! p = toSvgCoords js ev
-                    let rThreshold = float model.VertexRadius + 6.0
+                    let rThreshold = max 14.0 (float model.VertexRadius + 8.0)
                     
-                    let tryDeleteVertex (poly: Point[]) =
-                        poly
-                        |> Array.mapi (fun i pt -> (i, pt))
+                    let outerHit =
+                        model.Outer
+                        |> Array.mapi (fun i pt -> i, pt)
                         |> Array.tryFind (fun (_, pt) -> Geometry.withinRadiusSq pt p rThreshold)
-                        |> Option.bind (fun (vi, _) ->
-                            let newPoly = Array.init (poly.Length - 1) (fun idx -> match idx < vi with | true -> poly.[idx] | false -> poly.[idx + 1])
-                            match newPoly.Length >= 3 && not (Geometry.polygonSelfIntersects newPoly) with
-                            | true -> Some newPoly
-                            | false -> None
-                        )
 
-                    // Step 1: Try deleting vertex in outer polygon
-                    let afterOuterDelete =
-                        match tryDeleteVertex model.Outer with
-                        | Some newOuter -> Some { snapshot model with Outer = newOuter }
-                        | None -> None
-
-                    // Step 2: Try deleting vertex in islands
-                    let afterIslandDelete =
-                        match afterOuterDelete with
-                        | Some _ -> afterOuterDelete
+                    let islandHit =
+                        match outerHit with
+                        | Some _ -> None
                         | None ->
-                            [|0 .. model.Islands.Length - 1|]
-                            |> Array.tryPick (fun i ->
-                                match tryDeleteVertex model.Islands.[i] with
-                                | Some newIsland ->
-                                    let newIslands =
-                                        model.Islands
-                                        |> Array.mapi (fun idx isl -> match idx = i with true -> newIsland | false -> isl)
-                                    Some { snapshot model with Islands = newIslands }
-                                | None -> None
+                            model.Islands
+                            |> Array.mapi (fun pi isl ->
+                                isl
+                                |> Array.mapi (fun vi pt -> pi + 1, vi, pt)
+                                |> Array.tryFind (fun (_, _, pt) -> Geometry.withinRadiusSq pt p rThreshold)
                             )
+                            |> Array.tryPick id
+
+                    let afterVertexDelete =
+                        match outerHit with
+                        | Some (vi, _) -> deleteVertexAt 0 vi model
+                        | None ->
+                            match islandHit with
+                            | Some (pi, vi, _) -> deleteVertexAt pi vi model
+                            | None -> None
 
                     // Step 3: Insert vertex on edges
                     let afterInsert =
-                        match afterIslandDelete with
-                        | Some _ -> afterIslandDelete
+                        match afterVertexDelete with
+                        | Some m -> Some m
                         | None ->
                             let rThresholdInsert = 20.0
                             let edgesOuter =
@@ -838,6 +899,23 @@ module State =
         | CommitGhostVertex ->
             async {
                 match updateSync CommitGhostVertex model with
+                | Some m -> return m
+                | None -> return model
+            }
+
+        | SelectVertex sel ->
+            async { return { model with SelectedVertex = sel } }
+
+        | DeleteSelectedVertex ->
+            async {
+                match updateSync DeleteSelectedVertex model with
+                | Some m -> return m
+                | None -> return model
+            }
+
+        | KeyDown ev ->
+            async {
+                match updateSync (KeyDown ev) model with
                 | Some m -> return m
                 | None -> return model
             }

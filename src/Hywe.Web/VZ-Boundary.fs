@@ -13,12 +13,14 @@ module View =
     type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
     type vtxTxt = Template<"""<text class="${tc}" x="${x}" y="${y}" font-size="${tf}" text-anchor="middle" dominant-baseline="auto">${nm}</text>""">
     type ghstVtx = Template<"""<g style="pointer-events: none;"><circle class="ghostVertex" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3"/><circle cx="${cx}" cy="${cy}" r="3" fill="#2563eb"/><text x="${cx}" y="${ty}" font-size="${tf}" font-weight="bold" fill="#2563eb" text-anchor="middle">+</text></g>""">
+    type selHlo = Template<"""<circle class="selectedVertexHalo" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="3,3" style="pointer-events: none;" />""">
 
-    // Control and Instructions panel with numeric inputs and checkboxes
+    // Control panel with transposed horizontal rows for toggles and dimensions
     let controlAndInstructions model dispatch (js: IJSRuntime) =
         let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
+                attr.style "display: flex; align-items: center; justify-content: space-between; gap: 8px;"
                 label { attr.``class`` "hywe-label"; text labelText }
                 input {
                     attr.``class`` "boundaryInput"
@@ -37,17 +39,36 @@ module View =
             }
 
         div {
-            attr.``class`` "control-and-instructions"
-            attr.style "zoom: 0.75; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 16px; align-items: flex-start; justify-content: center; width: fit-content; max-width: 100%; margin: 0 auto; padding: 10px; box-sizing: border-box;"
+            attr.``class`` "boundary-toolbar"
+            attr.style "position: relative; display: flex; flex-flow: row wrap; gap: 24px; align-items: center; justify-content: center; width: 100%; max-width: 680px; margin: 0 auto; padding: 10px 40px 6px 16px; box-sizing: border-box;"
+
+            // Help Button with sleek Help SVG icon (positioned at toolbar top-right to preserve two-column alignment)
+            button {
+                attr.id "hywe-boundary-guide-btn"
+                attr.``type`` "button"
+                attr.title "Boundary Controls & Mode Help"
+                "aria-label" => "Boundary Controls & Mode Help"
+                attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
+                attr.style "position: absolute; top: 10px; right: 12px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0; z-index: 2;"
+                on.click (fun _ -> dispatch ToggleInstructions)
+                svg {
+                    "viewBox" => "0 0 24 24"
+                    attr.style "width: 15px; height: 15px; display: block;"
+                    elt "circle" { "cx" => "12"; "cy" => "12"; "r" => "10"; "stroke" => "currentColor"; "stroke-width" => "1.8"; "fill" => "none" }
+                    elt "path" { "d" => "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"; "stroke" => "currentColor"; "stroke-width" => "1.8"; "stroke-linecap" => "round"; "stroke-linejoin" => "round"; "fill" => "none" }
+                    elt "circle" { "cx" => "12"; "cy" => "17"; "r" => "1.1"; "fill" => "currentColor" }
+                }
+            }
 
             // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                attr.style "flex: 1; display: flex; flex-direction: column; gap: 8px;"
+                attr.style "display: flex; flex-direction: column; gap: 8px;"
 
-                // Boundary
+                // Site
                 div {
                     attr.``class`` "hywe-row"
+                    attr.style "display: flex; align-items: center; gap: 8px;"
                     span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Site:" }
                     div {
                         attr.``class`` "hywe-btn-group"
@@ -69,6 +90,7 @@ module View =
                 // Count
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
+                    attr.style "display: flex; align-items: center; gap: 8px;"
                     span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Count:" }
                     div {
                         attr.``class`` "hywe-btn-group"
@@ -90,6 +112,7 @@ module View =
                 // Base
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
+                    attr.style "display: flex; align-items: center; gap: 8px;"
                     span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Base:" }
                     div {
                         attr.``class`` "hywe-btn-group"
@@ -117,46 +140,109 @@ module View =
 
             // Col 2: Dimensions & Scale
             div {
-                attr.``class`` "control-panel"
+                attr.``class`` "dimension-fields"
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "flex: 0.5; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px; opacity: 0.3; pointer-events: none;"
+                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; padding-left: 20px; opacity: 0.3; pointer-events: none;"
                     else
-                        "flex: 0.5; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; padding: 0 12px;"
+                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; padding-left: 20px;"
                 )
 
-                // Width
-                div {
-                    renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
-                }
-                // Height
-                div {
-                    renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
-                }
-                // Scale
-                // Scale
+                renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
+                renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+
                 div {
                     attr.``class`` "field-group"
+                    attr.style "display: flex; align-items: center; justify-content: space-between; gap: 8px;"
                     span { attr.``class`` "hywe-label"; text "Scale:" }
                     span { 
-                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right;"
+                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right; padding-right: 4px;"
                         text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
                     }
                 }
             }
-
-            // Col 3: Editor Instructions
-            div {
-                attr.``class`` "polygon-editor-instructions"
-                p { attr.style "margin: 0;"; text "Hover edge & click: add vertex" }
-                p { attr.style "margin: 0;"; text "Dbl-clk Vertex: delete" }
-                p { attr.style "margin: 0;"; text "Dbl-clk inside: add Island" }
-                p { attr.style "margin: 0;"; text "Drag inside Island: move" }
-                p { attr.style "margin: 0;"; text "Dbl-clk Island: delete" }
-            }
-            
-
         }
+
+    // Instructions Modal / Card (Text-only, strictly zero icons)
+    let instructionsModal model dispatch (js: IJSRuntime) =
+        if model.ShowInstructions then
+            let closeGuide () =
+                dispatch ToggleInstructions
+                js.InvokeVoidAsync("eval", "var b = document.getElementById('hywe-boundary-guide-btn'); if(b){b.focus({preventScroll:true});}else if(document.activeElement){document.activeElement.blur();}") |> ignore
+
+            div {
+                attr.``class`` "boundary-instructions-overlay"
+                attr.style "position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;"
+                on.click (fun _ -> closeGuide ())
+
+                div {
+                    attr.``class`` "boundary-instructions-card"
+                    attr.style "width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px 22px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
+                    "onclick:stopPropagation" => true
+                    "onpointerdown:stopPropagation" => true
+
+                    div {
+                        attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
+                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary & Controls Guide" }
+                        button {
+                            attr.``type`` "button"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                            attr.style "padding: 2px 8px; font-size: 0.85rem;"
+                            on.click (fun _ -> closeGuide ())
+                            text "Close"
+                        }
+                    }
+
+                    div {
+                        attr.style "display: flex; flex-direction: column; gap: 14px; font-size: 0.86rem; color: #444; line-height: 1.45;"
+
+                        // Section 1: Modes & Toggles
+                        div {
+                            attr.style "display: flex; flex-direction: column; gap: 8px;"
+                            div {
+                                attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
+                                text "Toolbar Modes"
+                            }
+
+                            div {
+                                span { attr.style "font-weight: 600; color: #111;"; text "Site (None / Boundary): " }
+                                text "None generates unconstrained layouts without perimeter boundaries. Boundary constrains space generation strictly within your custom perimeter and interior islands."
+                            }
+
+                            div {
+                                span { attr.style "font-weight: 600; color: #111;"; text "Count (Relative / Absolute): " }
+                                text "Relative dynamically reproportions space area weights to fit the available site area. Absolute allocates exact specified module/hexel counts."
+                            }
+
+                            div {
+                                span { attr.style "font-weight: 600; color: #111;"; text "Base (None / Map): " }
+                                text "None uses a blank canvas with manual dimensions (Width, Height, Scale). Map loads an interactive OpenStreetMap underlay with geographic scaling."
+                            }
+                        }
+
+                        div { attr.style "border-top: 1px solid #eee; margin: 2px 0;" }
+
+                        // Section 2: Canvas & Vertex Controls
+                        div {
+                            attr.style "display: flex; flex-direction: column; gap: 8px;"
+                            div {
+                                attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
+                                text "Canvas Controls"
+                            }
+
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex (press Delete / Backspace to remove)" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Double-click / double-tap, or press Delete / Backspace when selected" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near boundary edge and click / tap" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
+                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
+                        }
+                    }
+                }
+            }
+        else
+            empty()
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch (js: IJSRuntime) =
@@ -201,6 +287,7 @@ module View =
                 svg {
                 attr.id "polygon-editor-svg"
                 attr.``class`` "polygon-editor-svg"
+                attr.tabindex -1
                 "data-padding-ratio" => (((2.0 * padding) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
                 attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
                 "viewBox" => viewBoxString
@@ -218,6 +305,7 @@ module View =
                 )
                 on.pointermove (fun ev -> dispatch (PointerMove ev))
                 on.dblclick (fun ev -> dispatch (DoubleClick ev))
+                on.keydown (fun ev -> dispatch (KeyDown ev))
 
                 // Outer polygon
                 bdrPgn()
@@ -227,58 +315,87 @@ module View =
                     .Elt()
 
                 // Islands
-                for i = 0 to model.DisplayIslands.Length - 1 do
+                forEach (Array.indexed model.IslandPointsStrs) (fun (i, islandPtsStr) ->
                     bdrPgn()
                         .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
-                        .pt(model.IslandPointsStrs.[i])
+                        .pt(islandPtsStr)
                         .sw(string bndStWdI)
                         .Elt()
+                )
 
                 // Outer vertices
-                for i = 0 to model.Outer.Length - 1 do
-                    let rawPt = model.Outer.[i]
+                forEach (Array.indexed model.Outer) (fun (i, rawPt) ->
                     let dispPt = model.DisplayOuter.[i]
                     let cartX = int (System.Math.Round(dispPt.X))
                     let cartY = int (System.Math.Round(dispPt.Y))
-                    bdrCrl()
-                        .cs("outerVertex")
-                        .cx(sprintf "%.1f" rawPt.X)
-                        .cy(sprintf "%.1f" rawPt.Y)
-                        .cr(string boundRadius)
-                        .cl("#333")
-                        .Elt()
+                    let isSelected =
+                        match model.SelectedVertex with
+                        | Some sel -> sel.PolyIndex = 0 && sel.VertexIndex = i
+                        | None -> false
 
-                    vtxTxt()
-                        .tc("outerVertexLabel")
-                        .x(sprintf "%.1f" rawPt.X)
-                        .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
-                        .tf(boundLabel)
-                        .nm(sprintf "(%d, %d)" cartX cartY)
-                        .Elt()
+                    concat {
+                        if isSelected then
+                            selHlo()
+                                .cx(sprintf "%.1f" rawPt.X)
+                                .cy(sprintf "%.1f" rawPt.Y)
+                                .cr(string (boundRadius + 5))
+                                .Elt()
 
-                // Island vertices
-                for i = 0 to model.Islands.Length - 1 do
-                    for j = 0 to model.Islands.[i].Length - 1 do
-                        let rawPt = model.Islands.[i].[j]
-                        let dispPt = model.DisplayIslands.[i].[j]
-                        let cartX = int (System.Math.Round(dispPt.X))
-                        let cartY = int (System.Math.Round(dispPt.Y))
-                        
                         bdrCrl()
-                            .cs("islandVertex")
+                            .cs(match isSelected with true -> "outerVertex selected" | false -> "outerVertex")
                             .cx(sprintf "%.1f" rawPt.X)
                             .cy(sprintf "%.1f" rawPt.Y)
                             .cr(string boundRadius)
-                            .cl("#333")
+                            .cl(match isSelected with true -> "#2563eb" | false -> "#333")
                             .Elt()
 
                         vtxTxt()
-                            .tc("islandVertexLabel")
+                            .tc("outerVertexLabel")
                             .x(sprintf "%.1f" rawPt.X)
                             .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
                             .tf(boundLabel)
                             .nm(sprintf "(%d, %d)" cartX cartY)
                             .Elt()
+                    }
+                )
+
+                // Island vertices
+                forEach (Array.indexed model.Islands) (fun (i, isl) ->
+                    forEach (Array.indexed isl) (fun (j, rawPt) ->
+                        let dispPt = model.DisplayIslands.[i].[j]
+                        let cartX = int (System.Math.Round(dispPt.X))
+                        let cartY = int (System.Math.Round(dispPt.Y))
+                        let isSelected =
+                            match model.SelectedVertex with
+                            | Some sel -> sel.PolyIndex = i + 1 && sel.VertexIndex = j
+                            | None -> false
+
+                        concat {
+                            if isSelected then
+                                selHlo()
+                                    .cx(sprintf "%.1f" rawPt.X)
+                                    .cy(sprintf "%.1f" rawPt.Y)
+                                    .cr(string (boundRadius + 5))
+                                    .Elt()
+
+                            bdrCrl()
+                                .cs(match isSelected with true -> "islandVertex selected" | false -> "islandVertex")
+                                .cx(sprintf "%.1f" rawPt.X)
+                                .cy(sprintf "%.1f" rawPt.Y)
+                                .cr(string boundRadius)
+                                .cl(match isSelected with true -> "#2563eb" | false -> "#333")
+                                .Elt()
+
+                            vtxTxt()
+                                .tc("islandVertexLabel")
+                                .x(sprintf "%.1f" rawPt.X)
+                                .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
+                                .tf(boundLabel)
+                                .nm(sprintf "(%d, %d)" cartX cartY)
+                                .Elt()
+                        }
+                    )
+                )
 
                 // Ghost vertex preview on edge hover
                 match model.GhostVertex with
@@ -429,4 +546,7 @@ module View =
                 }
             else
                 empty()
+
+            // Instructions Modal / Card (rendered cleanly at boundary view root level)
+            instructionsModal model dispatch js
         }

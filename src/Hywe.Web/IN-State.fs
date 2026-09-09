@@ -104,6 +104,7 @@ let initModel =
         GalleryOffset = 0
         GalleryFilter = ""
         LoadedCommunityAuthor = None
+        CachedAuthor = None
         HasAppendedModSuffix = false
     }
 
@@ -133,10 +134,20 @@ let pushUndo (model: Model) : Model =
         { model with UndoStack = newStack; RedoStack = [] }
 
 let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
+    let isCommunityLoaded = Option.isSome model.LoadedCommunityAuthor
+    let userAuthor = 
+        match model.CachedAuthor with
+        | Some a when not (System.String.IsNullOrWhiteSpace a) -> a
+        | _ -> ""
+
     let modelWithoutCommunity = 
-        if Option.isSome model.LoadedCommunityAuthor then 
+        if isCommunityLoaded then 
             js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
-            { model with LoadedCommunityAuthor = None } 
+            { model with 
+                LoadedCommunityAuthor = None
+                TeachMetadata = { model.TeachMetadata with Author = userAuthor }
+                ReportOptions = { model.ReportOptions with Author = userAuthor }
+            } 
         else model
 
     if modelWithoutCommunity.HasAppendedModSuffix then modelWithoutCommunity
@@ -542,6 +553,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     SrcOfTrth = newOutput
                     NeedsHyweave = true }, Cmd.none
             | None -> model, Cmd.none
+
+        | SelectVertex sel ->
+            let updatedInner = { currentInnerModel with SelectedVertex = sel }
+            { model with PolygonEditor = Stable updatedInner }, Cmd.none
+
+        | ToggleInstructions ->
+            let updatedInner = { currentInnerModel with ShowInstructions = not currentInnerModel.ShowInstructions }
+            { model with PolygonEditor = Stable updatedInner }, Cmd.none
 
         | _ ->
             model,
@@ -1068,6 +1087,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let finalPoly = match newState with Stable m | FreshlyImported m -> m
         let newExport = syncPolygonState finalPoly
         let newSqns = Lexel.extractSequences clean
+        let loadedAuthorOpt = if System.String.IsNullOrWhiteSpace author then None else Some author
+        let loadedAuthorStr = defaultArg loadedAuthorOpt ""
         
         let newModel = 
             { model with 
@@ -1084,10 +1105,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ShowGallery = false
                 PendingConfirm = None
                 EditsCount = 0
-                LoadedCommunityAuthor = if System.String.IsNullOrWhiteSpace author then None else Some author
+                LoadedCommunityAuthor = loadedAuthorOpt
                 HasAppendedModSuffix = false
-                TeachMetadata = { model.TeachMetadata with ExplorationDescription = name }
-                ReportOptions = { model.ReportOptions with ProjectTitle = name }
+                TeachMetadata = { model.TeachMetadata with ExplorationDescription = name; Author = loadedAuthorStr }
+                ReportOptions = { model.ReportOptions with ProjectTitle = name; Author = loadedAuthorStr }
             }
         js.InvokeVoidAsync("localStorage.setItem", "hywe_title", name) |> ignore
         if System.String.IsNullOrWhiteSpace author then
@@ -1110,21 +1131,35 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with GalleryFilter = filter; GalleryOffset = 0 }, Cmd.none
 
     | SetAuthor newAuthor ->
-        js.InvokeVoidAsync("localStorage.setItem", "hywe_author", newAuthor) |> ignore
+        if not (System.String.IsNullOrWhiteSpace newAuthor) then
+            js.InvokeVoidAsync("localStorage.setItem", "hywe_author", newAuthor) |> ignore
+        else
+            js.InvokeVoidAsync("localStorage.removeItem", "hywe_author") |> ignore
+        let authorOpt = if System.String.IsNullOrWhiteSpace newAuthor then None else Some newAuthor
         let newModel = 
             { model with 
+                CachedAuthor = authorOpt
                 TeachMetadata = { model.TeachMetadata with Author = newAuthor }
                 ReportOptions = { model.ReportOptions with Author = newAuthor }
+                LoadedCommunityAuthor = None
             }
         newModel, Cmd.none
 
     | AuthorCachedLoaded cachedAuthor ->
         if System.String.IsNullOrWhiteSpace cachedAuthor then model, Cmd.none
         else
+            let authorOpt = Some cachedAuthor
             let newModel = 
                 { model with 
-                    TeachMetadata = { model.TeachMetadata with Author = cachedAuthor }
-                    ReportOptions = { model.ReportOptions with Author = cachedAuthor }
+                    CachedAuthor = authorOpt
+                    TeachMetadata = 
+                        if Option.isNone model.LoadedCommunityAuthor then
+                            { model.TeachMetadata with Author = cachedAuthor }
+                        else model.TeachMetadata
+                    ReportOptions = 
+                        if Option.isNone model.LoadedCommunityAuthor then
+                            { model.ReportOptions with Author = cachedAuthor }
+                        else model.ReportOptions
                 }
             newModel, Cmd.none
 
@@ -1133,11 +1168,20 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
         else
             js.InvokeVoidAsync("localStorage.setItem", "hywe_title", newTitle) |> ignore
-        js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+        let isCommunityLoaded = Option.isSome model.LoadedCommunityAuthor
+        let userAuthor = 
+            match model.CachedAuthor with
+            | Some a when not (System.String.IsNullOrWhiteSpace a) -> a
+            | _ -> ""
+        if isCommunityLoaded then
+            js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+        let newAuthor = 
+            if isCommunityLoaded then userAuthor
+            else model.TeachMetadata.Author
         let newModel = 
             { model with 
-                TeachMetadata = { model.TeachMetadata with ExplorationDescription = newTitle }
-                ReportOptions = { model.ReportOptions with ProjectTitle = newTitle }
+                TeachMetadata = { model.TeachMetadata with ExplorationDescription = newTitle; Author = newAuthor }
+                ReportOptions = { model.ReportOptions with ProjectTitle = newTitle; Author = newAuthor }
                 LoadedCommunityAuthor = None
                 HasAppendedModSuffix = false
             }
@@ -1156,4 +1200,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | CommunityAuthorCachedLoaded cachedAuthor ->
         if System.String.IsNullOrWhiteSpace cachedAuthor then model, Cmd.none
         else
-            { model with LoadedCommunityAuthor = Some cachedAuthor }, Cmd.none
+            let newModel = 
+                { model with 
+                    LoadedCommunityAuthor = Some cachedAuthor
+                    TeachMetadata = { model.TeachMetadata with Author = cachedAuthor }
+                    ReportOptions = { model.ReportOptions with Author = cachedAuthor }
+                }
+            newModel, Cmd.none

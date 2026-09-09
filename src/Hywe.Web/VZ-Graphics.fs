@@ -1,6 +1,7 @@
 module Graphics
 
 open Bolero
+open Bolero.Html
 open Hywe.Core
 
 type plgn = Template<
@@ -57,6 +58,28 @@ type crTx = Template<
         </textPath>
     </text>""">
 
+let truncateLabel (maxLen: int) (name: string) : string =
+    let trimmed = if isNull name then "" else name.Trim()
+    if String.length trimmed <= maxLen then trimmed
+    else
+        let prefixLen = max 1 (maxLen - 2)
+        trimmed.Substring(0, min prefixLen (String.length trimmed)) + "..."
+
+let truncateName (name: string) : string =
+    truncateLabel 8 name
+
+type hzTx = Template<
+    """<text 
+        x="${x}" 
+        y="${y}"
+        font-weight="${fw}"
+        fill="${fl}"
+        font-size="10px"
+        font-family="Outfit, system-ui, sans-serif"
+        text-anchor="middle"
+        style="text-transform: lowercase; pointer-events: none;"
+    >${nm}</text>""">
+
 type svtx = Template<
         """<text 
         x="${xx}" 
@@ -69,6 +92,53 @@ type svtx = Template<
         fill = "#808080"
         opacity = "1"
         >${nm}</text> """>
+
+let viewLegend (items: (string * string) seq) : Node =
+    let uniqueItems = 
+        items 
+        |> Seq.filter (fun (name, _) -> not (System.String.IsNullOrWhiteSpace name))
+        |> Seq.distinctBy (fun (name, _) -> name.Trim())
+        |> Seq.toArray
+
+    if Array.isEmpty uniqueItems then empty()
+    else
+        div {
+            attr.``class`` "layout-legend"
+            forEach uniqueItems <| fun (name, clr) ->
+                let trimmed = name.Trim()
+                div {
+                    attr.``class`` "layout-legend-item"
+                    attr.title trimmed
+                    span {
+                        attr.``class`` "layout-legend-dot"
+                        attr.style $"background-color: {clr}; border-color: {clr};"
+                    }
+                    span {
+                        attr.``class`` "layout-legend-label"
+                        text trimmed
+                    }
+                }
+        }
+
+let renderLegendHtml (items: (string * string) seq) : string =
+    let uniqueItems = 
+        items 
+        |> Seq.filter (fun (name, _) -> not (System.String.IsNullOrWhiteSpace name))
+        |> Seq.distinctBy (fun (name, _) -> name.Trim())
+        |> Seq.toArray
+
+    if Array.isEmpty uniqueItems then ""
+    else
+        let sb = System.Text.StringBuilder()
+        sb.Append("""<div class="layout-legend">""") |> ignore
+        for (name, clr) in uniqueItems do
+            let safeName = name.Trim().Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;")
+            sb.AppendFormat(
+                """<div class="layout-legend-item" title="{0}"><span class="layout-legend-dot" style="background-color: {1}; border-color: {1};"></span><span class="layout-legend-label">{0}</span></div>""",
+                safeName, clr
+            ) |> ignore
+        sb.Append("""</div>""") |> ignore
+        sb.ToString()
 
 let (|SvgCollinear|SvgTurning|) (p1: float * float, p2: float * float, p3: float * float) =
     let (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3

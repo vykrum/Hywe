@@ -244,33 +244,22 @@ let svgCoxels
                         .op("0.1")
                         .Elt()
 
-                let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
-                let prp1 = Array.zip crd2 clr
-                let prp2 = Array.zip lbl pth
-                let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+                let prp = Array.map2 (fun (crd, col) lblItem -> crd, col, lblItem) (Array.zip crd2 clr) lbl
 
-                for i, (xxyy, label, color, path) in prp |> Array.indexed do
+                for i, (xxyy, color, (fullName, (lx, ly))) in prp |> Array.indexed do
                     let x, y =
                         match xxyy with
                         | [||] -> -10.0, -10.0
-                        | _ -> snd label
+                        | _ -> (lx, ly)
 
-                    let r = 20.0
-                    crPh()
-                        .pathid(path)
-                        .sx($"{x}")
-                        .sy($"{y + r}")
-                        .r($"{r}")
-                        .ex($"{x}")
-                        .ey($"{y - r}")
-                        .Elt()
+                    let truncated = truncateName fullName
 
-                    crTx()
-                        .pth(path)
-                        .nm(label |> fst)
-                        .fw("normal")
-                        .fl("#333")
-                        .td("none")
+                    hzTx()
+                        .x($"{x}")
+                        .y($"{y - 8.0}")
+                        .fw(if i = 0 then "700" else "400")
+                        .fl(if i = 0 then "#333333" else "#666666")
+                        .nm(truncated)
                         .Elt()
 
                     crCl()
@@ -382,23 +371,19 @@ let generateSvgString
                 append $"""    <polygon points="{xy}" stroke="#000000" fill="none" stroke-width="2" opacity="0.1" />
 """
 
-            let pth = Array.map (fun x -> $"path{x}") [|1..Array.length lbl|]
-            let prp1 = Array.zip crd2 clr
-            let prp2 = Array.zip lbl pth
-            let prp = Array.map2 (fun x y -> fst x, fst y, snd x, snd y) prp1 prp2
+            let prp = Array.map2 (fun (crd, col) lblItem -> crd, col, lblItem) (Array.zip crd2 clr) lbl
 
-            for i, (xxyy, label, color, path) in prp |> Array.indexed do
+            for i, (xxyy, color, (fullName, (lx, ly))) in prp |> Array.indexed do
                 let x, y =
                     match xxyy with
                     | [||] -> -10.0, -10.0
-                    | _ -> snd label
+                    | _ -> (lx, ly)
 
-                let r = 20.0
-                append $"""    <path id="{path}" fill="none" d="M {x},{y + r} A {r},{r} 0 1,1 {x},{y - r} A {r},{r} 0 1,1 {x},{y + r}" />
-"""
-                append $"""    <text font-weight="normal" fill="#333" text-decoration="none" font-size="20px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase">
-        <textPath href="#{path}" letter-spacing="0.5px" startOffset="50%%">{label |> fst}</textPath>
-    </text>
+                let truncated = truncateName fullName
+                let fw = if i = 0 then "700" else "400"
+                let fl = if i = 0 then "#333333" else "#666666"
+
+                append $"""    <text x="{x}" y="{y - 8.0}" font-weight="{fw}" fill="{fl}" font-size="10px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
 """
                 append $"""    <circle cx="{x}" cy="{y}" r="5" fill="{color}" />
 """
@@ -443,7 +428,7 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
     | None -> ()
 
     // Shapes
-    for s in cfg.shapes do
+    for i, s in cfg.shapes |> Array.indexed do
         if not (Array.isEmpty s.points) then
             let xy = 
                 s.points 
@@ -455,17 +440,11 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
             // Labels
             let tx = s.lx * scl + padd
             let ty = s.ly * scl + padd
-            let r = 20.0
+            let truncated = truncateName s.name
+            let fw = if i = 0 then "700" else "400"
+            let fl = if i = 0 then "#333333" else "#666666"
             
-            // Randomish ID for path to avoid collisions
-            let guidStr = System.Guid.NewGuid().ToString("N").Substring(0,8)
-            let pathId = $"path_{guidStr}"
-            
-            append $"""    <path id="{pathId}" fill="none" d="M {tx},{ty + r} A {r},{r} 0 1,1 {tx},{ty - r} A {r},{r} 0 1,1 {tx},{ty + r}" />
-"""
-            append $"""    <text font-weight="normal" fill="#333" text-decoration="none" font-size="20px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase">
-        <textPath href="#{pathId}" letter-spacing="0.5px" startOffset="50%%">{s.name}</textPath>
-    </text>
+            append $"""    <text x="{tx}" y="{ty - 8.0}" font-weight="{fw}" fill="{fl}" font-size="10px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
 """
             append $"""    <circle cx="{tx}" cy="{ty}" r="5" fill="{s.color}" />
 """
@@ -615,22 +594,17 @@ let alternateConfigurations
     let maxH = if allBounds.Length > 0 then allBounds |> Array.map snd |> Array.max else 1.0
     let scale = Math.Min((cellW * 0.85) / maxW, (cellH * 0.85) / maxH)
 
-    // 3. LEGEND MATH
+    // 3. CANVAS & LEGEND MATH
+    let totalWidth = (float cols * cellW)
+    let headerHeight = 60.0 
+    let borderColor = "#444"
+
     let uniqueShapes = 
         match configs.Length with
         | 0 -> [||]
         | _ -> configs.[0].shapes |> Array.filter (fun s -> not (Array.isEmpty s.points)) |> Array.distinctBy (fun s -> s.name)
 
-    let legendItemsPerRow = 8 
-    let legendItemHeight = 25.0
-    let legendRows = ceil (float uniqueShapes.Length / float legendItemsPerRow)
-    let legendTotalHeight = (max 1.0 legendRows) * legendItemHeight
-
-    // 4. HEADER & TOTAL CANVAS MATH
-    let headerHeight = 60.0 
-    let totalWidth = (float cols * cellW)
-    let totalHeight = (float rows * cellH) + headerHeight + legendTotalHeight + 40.0
-    let borderColor = "#444"
+    let totalHeight = (float rows * cellH) + headerHeight + 25.0
 
     div {
         attr.id "pdf-export-container"
@@ -716,36 +690,21 @@ let alternateConfigurations
                                 if isSelected then
                                     let tx = ox + (s.lx * scale)
                                     let ty = oy + (s.ly * scale)
-                                    let pathId = $"batch_path_{i}_{j}"
-                                    let r = 10.0
-                                    
-                                    elt "path" {
-                                        "id" => pathId
-                                        "fill" => "none"
-                                        "d" => $"M {tx},{ty + r} A {r},{r} 0 1,1 {tx},{ty - r} A {r},{r} 0 1,1 {tx},{ty + r}"
-                                    }
-                                    
-                                    elt "text" {
-                                        "font-weight" => if j = 0 then "700" else "400"
-                                        "fill" => if j = 0 then "#333333" else "#666666"
-                                        "font-size" => "10px"
-                                        "font-family" => "Outfit, system-ui, sans-serif"
-                                        "text-anchor" => "middle"
-                                        attr.style "text-transform: lowercase; pointer-events: none;"
-                                        elt "textPath" {
-                                            "href" => $"#{pathId}"
-                                            "startOffset" => "50%"
-                                            "letter-spacing" => "0.5px"
-                                            text s.name
-                                        }
-                                    }
-                                    
-                                    elt "circle" {
-                                        "cx" => tx
-                                        "cy" => ty
-                                        "r" => 5.0
-                                        "fill" => s.color
-                                    }
+                                    let truncated = truncateName s.name
+
+                                    hzTx()
+                                        .x($"{tx}")
+                                        .y($"{ty - 8.0}")
+                                        .fw(if j = 0 then "700" else "400")
+                                        .fl(if j = 0 then "#333333" else "#666666")
+                                        .nm(truncated)
+                                        .Elt()
+
+                                    crCl()
+                                        .cx($"{tx}")
+                                        .cy($"{ty}")
+                                        .cl(s.color)
+                                        .Elt()
                             }
 
                     // Permanent label below
@@ -755,36 +714,12 @@ let alternateConfigurations
                     svtx().xx(string labelX).yy(string labelY).nm($"{letter} [{cfg.sqnName}]").Elt()
                 }
 
-            // --- SEPARATOR & CENTERED LEGEND ---
-            let legendStartY = (float rows * cellH) + 55.0
-            svln().x1("0").y1($"{legendStartY - 25.0}").x2($"{totalWidth}").y2($"{legendStartY - 25.0}").cl("#f0f0f0").Elt()
-
-            for i in 0 .. uniqueShapes.Length - 1 do
-                let s = uniqueShapes.[i]
-                let currR = int (floor (float i / float legendItemsPerRow))
-                
-                // Calculate centering for this specific row
-                let itemsInThisRow = Math.Min(legendItemsPerRow, uniqueShapes.Length - (currR * legendItemsPerRow))
-                let rowWidth = float itemsInThisRow * (totalWidth / float legendItemsPerRow)
-                let rowStartX = (totalWidth - rowWidth) / 2.0
-                
-                let currC = float (i % legendItemsPerRow)
-                let lx = rowStartX + (currC * (totalWidth / float legendItemsPerRow))
-                let ly = legendStartY + (float currR * legendItemHeight)
-    
-                elt "g" {
-                    "transform" => $"translate({lx+30.0}, {ly})"
-                    elt "rect" { 
-                        "y" => -11.0; "width" => 12; "height" => 12; "fill" => s.color 
-                        "rx" => 2; "ry" => 2
-                    }
-                    elt "text" { 
-                        "x" => 18.0 
-                        attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 11px; fill: #666;"
-                        text s.name 
-                    }
-                }
         }
+
+        // --- UNIFIED LEGEND ---
+        let batchLegendItems = uniqueShapes |> Array.map (fun s -> s.name, s.color)
+        viewLegend batchLegendItems
+
         // --- DOWNLOAD GROUP ---
         div {
             attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"

@@ -247,11 +247,11 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     }
 
                     div {
-                        attr.style "margin-top: 6px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
+                        attr.style "margin-top: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
                         
                         // Header row with Presets
                         div {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 4px; width: 100%;"
+                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 3px; width: 100%;"
                             text "Presets"
                         }
                         
@@ -278,7 +278,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         }
                         
                         a {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; cursor: pointer; text-decoration: none; margin-top: 4px; padding-top: 4px; border-top: 1px solid #e0e0e0; width: 100%; display: block;"
+                            attr.``class`` "drawer-gallery-link"
                             "onclick:stopPropagation" => true
                             on.click (fun _ -> 
                                 dispatch ToggleGallery
@@ -556,6 +556,16 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
                     svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output")
                 }
+
+                let legendItems =
+                    if Array.length filteredCxls = Array.length filteredClrs then
+                        Array.zip filteredCxls filteredClrs
+                        |> Array.map (fun (c, clr) -> Hywe.Core.Coxel.prpVlu c.Name, clr)
+                    else
+                        [||]
+
+                Graphics.viewLegend legendItems
+
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
                     button {
@@ -702,20 +712,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
 
               
-                div {
-                    attr.style "display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 15px 10px; width: 100%; border-top: 1px solid #f0f0f0; margin-top: 5px;"
-                    forEach [0 .. (min model.Derived.cxCxl1.Length model.Derived.cxClr1.Length - 1)] (fun i ->
-                        let name = Coxel.prpVlu model.Derived.cxCxl1.[i].Name
-                        let color = model.Derived.cxClr1.[i]
-                        div {
-                            attr.style "display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Outfit', system-ui, sans-serif; color: #666;"
-                            div {
-                                attr.style (sprintf "width: 12px; height: 12px; border-radius: 2px; background: %s;" color)
-                            }
-                            text name
-                        }
-                    )
-                }
+                let d3LegendItems =
+                    Array.zip model.Derived.cxCxl1 model.Derived.cxClr1
+                    |> Array.map (fun (c, clr) -> Coxel.prpVlu c.Name, clr)
+                Graphics.viewLegend d3LegendItems
             }
 
         | BatchPanel ->
