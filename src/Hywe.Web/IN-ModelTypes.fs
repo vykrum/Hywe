@@ -137,6 +137,7 @@ type ConfirmAction =
     | LoadPreset of name: string * label: string
     | LoadGallery of name: string * rowId: string * author: string
     | SwitchTo of EditorTab
+    | ResetBoundaryAction
 
 
 
@@ -286,6 +287,7 @@ type Model =
         PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
         RedoStack: UndoSnapshot list
+        PreDragSnapshot: UndoSnapshot option
         InstallPromptAvailable: bool
         ShowPrivacyAlert: bool
         IsStandalone: bool

@@ -252,6 +252,7 @@ module State =
             DisplayIslands = [||]
             MapScale = 1.0
             ShowInstructions = false
+            IsLocked = false
         }
         |> refreshCachedStrings
 
@@ -443,25 +444,36 @@ module State =
 
     let updateSync (msg: PolygonEditorMessage) (model: PolygonEditorModel) : PolygonEditorModel option =
         match msg with
-        | PointerMove ev -> Some (handlePointerMove ev model)
+        | ToggleLock -> Some { model with IsLocked = not model.IsLocked; SelectedVertex = None; GhostVertex = None }
+        | PointerMove ev ->
+            if model.IsLocked then Some { model with GhostVertex = None }
+            else Some (handlePointerMove ev model)
         | PointerUp -> Some (handlePointerUp model)
         | CommitGhostVertex ->
-            match model.GhostVertex with
-            | Some ghost -> commitGhost ghost model
-            | None -> None
-        | SelectVertex sel -> Some { model with SelectedVertex = sel }
+            if model.IsLocked then None
+            else
+                match model.GhostVertex with
+                | Some ghost -> commitGhost ghost model
+                | None -> None
+        | SelectVertex sel ->
+            if model.IsLocked then None
+            else Some { model with SelectedVertex = sel }
         | ToggleInstructions -> Some { model with ShowInstructions = not model.ShowInstructions }
         | DeleteSelectedVertex ->
-            match model.SelectedVertex with
-            | Some sel -> deleteVertexAt sel.PolyIndex sel.VertexIndex model
-            | None -> None
-        | KeyDown ev ->
-            match ev.Key = "Delete" || ev.Key = "Backspace" with
-            | true ->
+            if model.IsLocked then None
+            else
                 match model.SelectedVertex with
                 | Some sel -> deleteVertexAt sel.PolyIndex sel.VertexIndex model
                 | None -> None
-            | false -> None
+        | KeyDown ev ->
+            if model.IsLocked then None
+            else
+                match ev.Key = "Delete" || ev.Key = "Backspace" with
+                | true ->
+                    match model.SelectedVertex with
+                    | Some sel -> deleteVertexAt sel.PolyIndex sel.VertexIndex model
+                    | None -> None
+                | false -> None
         | _ -> None
 
     // ---------- Update ----------
@@ -517,8 +529,15 @@ module State =
                 return { model with ShowInstructions = not model.ShowInstructions }
             }
 
+        | ToggleLock ->
+            async {
+                return { model with IsLocked = not model.IsLocked; SelectedVertex = None; GhostVertex = None }
+            }
+
         | ResetBoundary ->
             async {
+                if model.IsLocked then return model
+                else
                 let w = model.LogicalWidth
                 let h = model.LogicalHeight
                 let resetOuter = [| { X = 0.0; Y = 0.0 }
@@ -670,7 +689,7 @@ module State =
 
         | PointerDown ev ->
             async {
-                match model.PolygonEnabled with
+                match model.PolygonEnabled && not model.IsLocked with
                 | false -> return model
                 | true ->
                     // Get svg transform info once per drag (cheap JS call)
@@ -763,7 +782,7 @@ module State =
 
         | DoubleClick ev ->
             async {
-                match model.PolygonEnabled with
+                match model.PolygonEnabled && not model.IsLocked with
                 | false -> return model
                 | true ->
                     let! p = toSvgCoords js ev
@@ -903,6 +922,8 @@ module State =
      
         | StartDragEntry ev ->
             async {
+                if model.IsLocked then return model
+                else
                 match model.SvgInfo with
                 | Some info ->
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
@@ -965,3 +986,6 @@ module State =
                 | Ok m -> return snapshot m
                 | Error _ -> return model
             }
+
+        | RequestResetBoundary | UndoBoundary | RedoBoundary ->
+            async { return model }

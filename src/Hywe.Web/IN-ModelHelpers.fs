@@ -25,6 +25,8 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 (sprintf "Load %s?" name), ["Current layout will be replaced."], "Load", LoadGalleryDefinition (name, rowId, author)
             | ConfirmAction.SwitchTo tab ->
                 "Switch View", ["Switch to this view?"], "Switch", SetActivePanel (match tab with Boundary -> BoundaryPanel | _ -> LayoutPanel)
+            | ConfirmAction.ResetBoundaryAction ->
+                "Reset Boundary?", [ "Boundary will be reset to default rectangle."; "All cutouts will be cleared." ], "Reset", PolygonEditorMsg ResetBoundary
 
         div {
             attr.style "position: fixed; inset: 0; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;"
@@ -526,10 +528,12 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         attr.style "padding: 10px; min-height: 400px;"
         
         let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let canUndo = model.UndoStack <> []
+        let canRedo = model.RedoStack <> []
         div { 
             attr.id "hywe-polygon-editor"
             attr.style (match model.ActivePanel = BoundaryPanel with true -> "display: block;" | false -> "display: none;")
-            View.view currentInner (PolygonEditorMsg >> dispatch) js 
+            View.view currentInner (PolygonEditorMsg >> dispatch) js canUndo canRedo
         }
 
         match model.ActivePanel with

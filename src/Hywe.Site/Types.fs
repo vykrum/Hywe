@@ -45,6 +45,7 @@ type PolygonEditorModel =
         DisplayIslands: Point[][]
         MapScale: float
         ShowInstructions: bool
+        IsLocked: bool
     }
 
 type EditorState =
@@ -57,6 +58,7 @@ type PolygonEditorMessage =
     | ToggleMapBase of bool
     | ToggleMapLock of bool
     | ToggleInstructions
+    | ToggleLock
     | MapTopographyReceived of float * float * string
     | UpdateLogicalWidth of float
     | UpdateLogicalHeight of float
@@ -74,4 +76,7 @@ type PolygonEditorMessage =
     | MoveDragEntry of MouseEventArgs
     | EndDragEntry
     | ResetBoundary
+    | RequestResetBoundary
+    | UndoBoundary
+    | RedoBoundary
     | ImportFromSyntax of string * string * string * string * int * int
