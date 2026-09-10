@@ -94,6 +94,20 @@ module State =
             OuterPointsStr = polyToSvgPoints displayUpdated.Outer
             IslandPointsStrs = displayUpdated.Islands |> Array.map polyToSvgPoints }
 
+    /// Conversion scale factor from SVG viewBox units to physical screen pixels
+    let getSvgScale (model: PolygonEditorModel) (info: SvgInfo option) =
+        let w = model.LogicalWidth
+        let h = model.LogicalHeight
+        let padX = max 25.0 (w * 0.12)
+        let padY = max 25.0 (h * 0.12)
+        let padRatio = max (padX / w) (padY / h)
+        let safeW = max 1.0 (w * (1.0 + 2.0 * padRatio))
+        let clientW =
+            match info with
+            | Some i when i.ClientW > 0.0 -> i.ClientW
+            | _ -> 400.0
+        safeW / max 200.0 clientW
+
     // ---------- JS interop helpers ----------
     let getSvgInfo (js: IJSRuntime) =
         async {
@@ -420,8 +434,8 @@ module State =
                 // -------------------------------------------------------
                 | None, false, None, _, Some info ->
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
-                    let boundScale = match model.LogicalWidth with | w when w <> fst initBound -> w / fst initBound | _ -> 1.0
-                    let ghostThreshold = max 15.0 (20.0 * boundScale)
+                    let svgScale = getSvgScale model (Some info)
+                    let ghostThreshold = max 16.0 (22.0 * svgScale)
                     let ghostCandidate = Geometry.findClosestEdge svgPt ghostThreshold model.Outer model.Islands
                     { model with GhostVertex = ghostCandidate; LastMoveMs = Some nowMs }
 
@@ -640,9 +654,9 @@ module State =
                     let! info = getSvgInfo js
                     let svgPt = toSvgCoordsFromInfo info (float ev.ClientX) (float ev.ClientY)
 
-                    let boundScale = match model.LogicalWidth with | w when w <> fst initBound -> w / fst initBound | _ -> 1.0
-                    let rHit = max 14.0 (float (model.VertexRadius + 8) * boundScale)
-                    let rEntryHit = max 20.0 (25.0 * boundScale) // generous hit radius for entry point
+                    let svgScale = getSvgScale model (Some info)
+                    let rHit = max 16.0 (24.0 * svgScale)
+                    let rEntryHit = max 20.0 (28.0 * svgScale) // generous hit radius for entry point
 
                     // Check vertices in outer polygon
                     let dragOuter =
@@ -730,7 +744,9 @@ module State =
                 | false -> return model
                 | true ->
                     let! p = toSvgCoords js ev
-                    let rThreshold = max 14.0 (float model.VertexRadius + 8.0)
+                    let! info = getSvgInfo js
+                    let svgScale = getSvgScale model (Some info)
+                    let rThreshold = max 16.0 (24.0 * svgScale)
                     
                     let outerHit =
                         model.Outer
@@ -762,7 +778,7 @@ module State =
                         match afterVertexDelete with
                         | Some m -> Some m
                         | None ->
-                            let rThresholdInsert = 20.0
+                            let rThresholdInsert = max 16.0 (22.0 * svgScale)
                             let edgesOuter =
                                 [|0 .. model.Outer.Length - 1|]
                                 |> Array.map (fun i -> 0, i, model.Outer.[i], model.Outer.[(i + 1) % model.Outer.Length])

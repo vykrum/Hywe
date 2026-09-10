@@ -40,7 +40,6 @@ module View =
 
         div {
             attr.``class`` "boundary-toolbar"
-            attr.style "position: relative; display: flex; flex-flow: row wrap; gap: 24px; align-items: center; justify-content: center; width: 100%; max-width: 680px; margin: 0 auto; padding: 10px 40px 6px 16px; box-sizing: border-box;"
 
             // Help Button with sleek Help SVG icon (positioned at toolbar top-right to preserve two-column alignment)
             button {
@@ -63,12 +62,10 @@ module View =
             // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
-                attr.style "display: flex; flex-direction: column; gap: 8px;"
 
                 // Site
                 div {
                     attr.``class`` "hywe-row"
-                    attr.style "display: flex; align-items: center; gap: 8px;"
                     span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Site:" }
                     div {
                         attr.``class`` "hywe-btn-group"
@@ -90,7 +87,6 @@ module View =
                 // Count
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    attr.style "display: flex; align-items: center; gap: 8px;"
                     span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Count:" }
                     div {
                         attr.``class`` "hywe-btn-group"
@@ -112,7 +108,6 @@ module View =
                 // Base
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    attr.style "display: flex; align-items: center; gap: 8px;"
                     span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Base:" }
                     div {
                         attr.``class`` "hywe-btn-group"
@@ -140,12 +135,12 @@ module View =
 
             // Col 2: Dimensions & Scale
             div {
-                attr.``class`` "dimension-fields"
+                attr.``class`` ("dimension-fields" + (if not model.UseBoundary || model.UseMapBase then " disabled" else ""))
                 attr.style (
                     if not model.UseBoundary || model.UseMapBase then
-                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; padding-left: 20px; opacity: 0.3; pointer-events: none;"
+                        "opacity: 0.3; pointer-events: none;"
                     else
-                        "display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #e0e0e0; padding-left: 20px;"
+                        ""
                 )
 
                 renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
@@ -153,7 +148,6 @@ module View =
 
                 div {
                     attr.``class`` "field-group"
-                    attr.style "display: flex; align-items: center; justify-content: space-between; gap: 8px;"
                     span { attr.``class`` "hywe-label"; text "Scale:" }
                     span { 
                         attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right; padding-right: 4px;"
@@ -246,91 +240,144 @@ module View =
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch (js: IJSRuntime) =
-                let boundScale = match model.LogicalWidth with
-                                    | w when w <> fst initBound -> w / fst initBound
-                                    | _ -> 1.0            
-                let boundRadius = max 1 (int (float model.VertexRadius * boundScale))
-                let boundLabel = max 1(int (float (model.VertexRadius + 4) * boundScale))  
-                let bndStWdO = max 1 (int (6.0 * boundScale))
-                let bndStWdI = max 1 (int (4.0 * boundScale))            
+        let boundingBoxWithLogical =
+            let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
+            match allPoints.Length with
+            | 0 -> (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
+            | _ ->
+                let minX, maxX, minY, maxY =
+                    allPoints
+                    |> Array.fold (fun (mnX, mxX, mnY, mxY) p ->
+                        (min mnX p.X, max mxX p.X, min mnY p.Y, max mxY p.Y)
+                    ) (System.Double.MaxValue, System.Double.MinValue, System.Double.MaxValue, System.Double.MinValue)
                 
-                let boundingBoxWithLogical =
-                    let allPoints = Array.append model.Outer (model.Islands |> Array.collect id)
-                    match allPoints.Length with
-                    | 0 -> (0.0, 0.0, model.LogicalWidth, model.LogicalHeight)
-                    | _ ->
-                        let minX, maxX, minY, maxY =
-                            allPoints
-                            |> Array.fold (fun (mnX, mxX, mnY, mxY) p ->
-                                (min mnX p.X, max mxX p.X, min mnY p.Y, max mxY p.Y)
-                            ) (System.Double.MaxValue, System.Double.MinValue, System.Double.MaxValue, System.Double.MinValue)
-                        
-                        let minX' = min 0.0 minX
-                        let minY' = min 0.0 minY
-                        let maxX' = max model.LogicalWidth maxX
-                        let maxY' = max model.LogicalHeight maxY
-                        (minX', minY', maxX' - minX', maxY' - minY')
+                let minX' = min 0.0 minX
+                let minY' = min 0.0 minY
+                let maxX' = max model.LogicalWidth maxX
+                let maxY' = max model.LogicalHeight maxY
+                (minX', minY', maxX' - minX', maxY' - minY')
 
-                let (x, y, w, h) = boundingBoxWithLogical
-                let padding = 50.0 * boundScale
+        let (x, y, w, h) = boundingBoxWithLogical
+        let padX = max 25.0 (w * 0.12)
+        let padY = max 25.0 (h * 0.12)
+        let padRatio = max (padX / w) (padY / h)
+        let padX' = w * padRatio
+        let padY' = h * padRatio
 
-                // Allow min-x / min-y to go negative
-                let minX = x - padding
-                let minY = y - padding
+        let minX = x - padX'
+        let minY = y - padY'
+        let safeW = max 1.0 (w + 2.0 * padX')
+        let safeH = max 1.0 (h + 2.0 * padY')
 
-                // Ensure width / height never negative or zero
-                let safeW = max 1.0 (w + 2.0 * padding)
-                let safeH = max 1.0 (h + 2.0 * padding)
+        let clientW =
+            match model.SvgInfo with
+            | Some info when info.ClientW > 0.0 -> info.ClientW
+            | _ ->
+                try
+                    match box js with
+                    | :? Microsoft.JSInterop.IJSInProcessRuntime as inProc ->
+                        let cw = inProc.Invoke<float>("getSvgWidth", "polygon-editor-svg")
+                        if cw > 0.0 then cw else 400.0
+                    | _ -> 400.0
+                with _ -> 400.0
 
-                let viewBoxString = sprintf "%f %f %f %f" minX minY safeW safeH
+        let svgScale = safeW / max 200.0 clientW
+        let boundRadius = max 4.0 (10.5 * svgScale)
+        let boundLabel = max 6.0 (12.5 * svgScale)
+        let boundLabelInt = max 1 (int (System.Math.Round(boundLabel)))
+        let bndStWdO = max 1 (int (System.Math.Round(max 1.0 (3.5 * svgScale))))
+        let bndStWdI = max 1 (int (System.Math.Round(max 1.0 (2.5 * svgScale))))
+        let entryScale = 0.8 * svgScale
+        let haloCr = sprintf "%.1f" (boundRadius + 5.0 * svgScale)
+        let boundRadiusStr = sprintf "%.1f" boundRadius
+        let textYOffset = boundRadius + 6.0 * svgScale
 
-                svg {
-                attr.id "polygon-editor-svg"
-                attr.``class`` "polygon-editor-svg"
-                attr.tabindex -1
-                "data-padding-ratio" => (((2.0 * padding) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
-                attr.style (match model.UseMapBase with | true -> "margin: 0; background-color: transparent; width: 100%; height: 100%;" | false -> "")
-                "viewBox" => viewBoxString
+        let viewBoxString = sprintf "%f %f %f %f" minX minY safeW safeH
 
-                // Pointer events with pointer capture for unbreakable dragging
-                on.pointerdown (fun ev ->
-                    let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
-                    js.InvokeVoidAsync("capturePointer", "polygon-editor-svg", ptrId) |> ignore
-                    dispatch (PointerDown ev)
-                )
-                on.pointerup (fun ev ->
-                    let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
-                    js.InvokeVoidAsync("releasePointer", "polygon-editor-svg", ptrId) |> ignore
-                    dispatch PointerUp
-                )
-                on.pointermove (fun ev -> dispatch (PointerMove ev))
-                on.dblclick (fun ev -> dispatch (DoubleClick ev))
-                on.keydown (fun ev -> dispatch (KeyDown ev))
+        svg {
+            attr.id "polygon-editor-svg"
+            attr.``class`` "polygon-editor-svg"
+            attr.tabindex -1
+            "data-padding-ratio" => (((2.0 * padX') / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
+            attr.style (match model.UseMapBase with | true -> "background-color: transparent;" | false -> "")
+            "viewBox" => viewBoxString
 
-                // Outer polygon
+            // Pointer events with pointer capture for unbreakable dragging
+            on.pointerdown (fun ev ->
+                let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
+                js.InvokeVoidAsync("capturePointer", "polygon-editor-svg", ptrId) |> ignore
+                dispatch (PointerDown ev)
+            )
+            on.pointerup (fun ev ->
+                let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
+                js.InvokeVoidAsync("releasePointer", "polygon-editor-svg", ptrId) |> ignore
+                dispatch PointerUp
+            )
+            on.pointermove (fun ev -> dispatch (PointerMove ev))
+            on.dblclick (fun ev -> dispatch (DoubleClick ev))
+            on.keydown (fun ev -> dispatch (KeyDown ev))
+
+            // Outer polygon
+            bdrPgn()
+                .cs(match model.UseMapBase with | true -> "outerPolygon mapModeOpacity" | false -> "outerPolygon")
+                .pt(model.OuterPointsStr)
+                .sw(string bndStWdO)
+                .Elt()
+
+            // Islands
+            forEach (Array.indexed model.IslandPointsStrs) (fun (i, islandPtsStr) ->
                 bdrPgn()
-                    .cs(match model.UseMapBase with | true -> "outerPolygon mapModeOpacity" | false -> "outerPolygon")
-                    .pt(model.OuterPointsStr)
-                    .sw(string bndStWdO)
+                    .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
+                    .pt(islandPtsStr)
+                    .sw(string bndStWdI)
                     .Elt()
+            )
 
-                // Islands
-                forEach (Array.indexed model.IslandPointsStrs) (fun (i, islandPtsStr) ->
-                    bdrPgn()
-                        .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
-                        .pt(islandPtsStr)
-                        .sw(string bndStWdI)
+            // Outer vertices
+            forEach (Array.indexed model.Outer) (fun (i, rawPt) ->
+                let dispPt = model.DisplayOuter.[i]
+                let cartX = int (System.Math.Round(dispPt.X))
+                let cartY = int (System.Math.Round(dispPt.Y))
+                let isSelected =
+                    match model.SelectedVertex with
+                    | Some sel -> sel.PolyIndex = 0 && sel.VertexIndex = i
+                    | None -> false
+
+                concat {
+                    if isSelected then
+                        selHlo()
+                            .cx(sprintf "%.1f" rawPt.X)
+                            .cy(sprintf "%.1f" rawPt.Y)
+                            .cr(haloCr)
+                            .Elt()
+
+                    bdrCrl()
+                        .cs(match isSelected with true -> "outerVertex selected" | false -> "outerVertex")
+                        .cx(sprintf "%.1f" rawPt.X)
+                        .cy(sprintf "%.1f" rawPt.Y)
+                        .cr(boundRadiusStr)
+                        .cl(match isSelected with true -> "#2563eb" | false -> "#333")
                         .Elt()
-                )
 
-                // Outer vertices
-                forEach (Array.indexed model.Outer) (fun (i, rawPt) ->
-                    let dispPt = model.DisplayOuter.[i]
+                    vtxTxt()
+                        .tc("outerVertexLabel")
+                        .x(sprintf "%.1f" rawPt.X)
+                        .y(sprintf "%.1f" (rawPt.Y - textYOffset))
+                        .tf(boundLabelInt)
+                        .nm(sprintf "(%d, %d)" cartX cartY)
+                        .Elt()
+                }
+            )
+
+            // Island vertices
+            forEach (Array.indexed model.Islands) (fun (i, isl) ->
+                forEach (Array.indexed isl) (fun (j, rawPt) ->
+                    let dispPt = model.DisplayIslands.[i].[j]
                     let cartX = int (System.Math.Round(dispPt.X))
                     let cartY = int (System.Math.Round(dispPt.Y))
                     let isSelected =
                         match model.SelectedVertex with
-                        | Some sel -> sel.PolyIndex = 0 && sel.VertexIndex = i
+                        | Some sel -> sel.PolyIndex = i + 1 && sel.VertexIndex = j
                         | None -> false
 
                     concat {
@@ -338,88 +385,50 @@ module View =
                             selHlo()
                                 .cx(sprintf "%.1f" rawPt.X)
                                 .cy(sprintf "%.1f" rawPt.Y)
-                                .cr(string (boundRadius + 5))
+                                .cr(haloCr)
                                 .Elt()
 
                         bdrCrl()
-                            .cs(match isSelected with true -> "outerVertex selected" | false -> "outerVertex")
+                            .cs(match isSelected with true -> "islandVertex selected" | false -> "islandVertex")
                             .cx(sprintf "%.1f" rawPt.X)
                             .cy(sprintf "%.1f" rawPt.Y)
-                            .cr(string boundRadius)
+                            .cr(boundRadiusStr)
                             .cl(match isSelected with true -> "#2563eb" | false -> "#333")
                             .Elt()
 
                         vtxTxt()
-                            .tc("outerVertexLabel")
+                            .tc("islandVertexLabel")
                             .x(sprintf "%.1f" rawPt.X)
-                            .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
-                            .tf(boundLabel)
+                            .y(sprintf "%.1f" (rawPt.Y - textYOffset))
+                            .tf(boundLabelInt)
                             .nm(sprintf "(%d, %d)" cartX cartY)
                             .Elt()
                     }
                 )
+            )
 
-                // Island vertices
-                forEach (Array.indexed model.Islands) (fun (i, isl) ->
-                    forEach (Array.indexed isl) (fun (j, rawPt) ->
-                        let dispPt = model.DisplayIslands.[i].[j]
-                        let cartX = int (System.Math.Round(dispPt.X))
-                        let cartY = int (System.Math.Round(dispPt.Y))
-                        let isSelected =
-                            match model.SelectedVertex with
-                            | Some sel -> sel.PolyIndex = i + 1 && sel.VertexIndex = j
-                            | None -> false
+            // Ghost vertex preview on edge hover
+            match model.GhostVertex with
+            | Some ghost ->
+                ghstVtx()
+                    .cx(sprintf "%.1f" ghost.Point.X)
+                    .cy(sprintf "%.1f" ghost.Point.Y)
+                    .ty(sprintf "%.1f" (ghost.Point.Y + boundLabel * 0.35))
+                    .cr(sprintf "%.1f" (boundRadius + 2.0 * svgScale))
+                    .tf(boundLabelInt)
+                    .Elt()
+            | None -> ()
 
-                        concat {
-                            if isSelected then
-                                selHlo()
-                                    .cx(sprintf "%.1f" rawPt.X)
-                                    .cy(sprintf "%.1f" rawPt.Y)
-                                    .cr(string (boundRadius + 5))
-                                    .Elt()
-
-                            bdrCrl()
-                                .cs(match isSelected with true -> "islandVertex selected" | false -> "islandVertex")
-                                .cx(sprintf "%.1f" rawPt.X)
-                                .cy(sprintf "%.1f" rawPt.Y)
-                                .cr(string boundRadius)
-                                .cl(match isSelected with true -> "#2563eb" | false -> "#333")
-                                .Elt()
-
-                            vtxTxt()
-                                .tc("islandVertexLabel")
-                                .x(sprintf "%.1f" rawPt.X)
-                                .y(sprintf "%.1f" (rawPt.Y - float boundRadius - 5.0))
-                                .tf(boundLabel)
-                                .nm(sprintf "(%d, %d)" cartX cartY)
-                                .Elt()
-                        }
-                    )
-                )
-
-                // Ghost vertex preview on edge hover
-                match model.GhostVertex with
-                | Some ghost ->
-                    ghstVtx()
-                        .cx(sprintf "%.1f" ghost.Point.X)
-                        .cy(sprintf "%.1f" ghost.Point.Y)
-                        .ty(sprintf "%.1f" (ghost.Point.Y + float boundLabel * 0.35))
-                        .cr(string (boundRadius + 2))
-                        .tf(boundLabel)
-                        .Elt()
-                | None -> ()
-
-                // --- Entry point ---
-                let scale = boundScale * 0.3
-                elt "g" {
-                    attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y scale)
-                    bdrPgn()
-                        .cs("entryPoint")
-                        .pt("-15,25 15,25 15,15 -5,15 -5,5 15,5 15,-5 -5,-5 -5,-15 15,-15 15,-25 -15,-25")
-                        .sw("0")
-                        .Elt()
-                }
+            // --- Entry point ---
+            elt "g" {
+                attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y entryScale)
+                bdrPgn()
+                    .cs("entryPoint")
+                    .pt("-15,25 15,25 15,15 -5,15 -5,5 15,5 15,-5 -5,-5 -5,-15 15,-15 15,-25 -15,-25")
+                    .sw("0")
+                    .Elt()
             }
+        }
 
     let view model dispatch (js: IJSRuntime) =
         div {
@@ -470,6 +479,8 @@ module View =
             // Map and SVG Container
             div {
                 attr.key "map-and-svg-container"
+                attr.id "map-and-svg-container"
+                attr.``class`` "boundary-svg-container"
                 attr.style (
                     let aspectRatio =
                         if model.UseBoundary && not model.UseMapBase && model.LogicalHeight > 0.0 then
@@ -477,8 +488,8 @@ module View =
                         else
                             "1"
                     match model.UseBoundary, model.UseMapBase with
-                    | false, false -> "position: relative; width: 100%; max-width: 800px; aspect-ratio: 1 / 1; margin: 20px auto; border: none; background: transparent;"
-                    | _ -> sprintf "position: relative; width: 100%%; max-width: 800px; aspect-ratio: %s; margin: 20px auto; border: 1px solid #e0e0e0; background: #f0f0f0;" aspectRatio
+                    | false, false -> "aspect-ratio: 1 / 1; border: none; background: transparent;"
+                    | _ -> sprintf "aspect-ratio: %s; border: 1px solid #e0e0e0; background: #f0f0f0;" aspectRatio
                 )
                 
                 // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
@@ -506,6 +517,30 @@ module View =
                                         attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
                                         polygonEditorSvg model dispatch js}
                 }
+
+                // Selection action chip (especially convenient on mobile touchscreens without Delete/Backspace key)
+                match model.SelectedVertex with
+                | Some sel ->
+                    div {
+                        attr.``class`` "selected-vertex-actions"
+                        attr.style "position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); border: 1px solid #e0e0e0; pointer-events: auto;"
+                        button {
+                            attr.``type`` "button"
+                            attr.``class`` "hywe-btn hywe-btn-sm"
+                            attr.style "background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; font-weight: 600; border-radius: 12px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem;"
+                            on.click (fun _ -> dispatch DeleteSelectedVertex)
+                            rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>"""
+                            text "Delete Vertex"
+                        }
+                        button {
+                            attr.``type`` "button"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                            attr.style "font-size: 0.8rem; padding: 4px 8px; color: #666;"
+                            on.click (fun _ -> dispatch (SelectVertex None))
+                            text "Deselect"
+                        }
+                    }
+                | None -> empty()
 
                 // Lock Icon Overlay (Top Right)
                 if model.UseMapBase then
