@@ -54,6 +54,20 @@ window.getSvgInfo = function (svgId) {
     };
 };
 
+window.getSvgWidth = function (svgId) {
+    const el = document.getElementById(svgId);
+    if (el) {
+        const r = el.getBoundingClientRect();
+        if (r && r.width > 0) return r.width;
+    }
+    const container = document.getElementById('map-and-svg-container') || document.querySelector('.boundary-svg-container');
+    if (container) {
+        const r = container.getBoundingClientRect();
+        if (r && r.width > 0) return r.width;
+    }
+    return Math.min(800, Math.max(280, (window.innerWidth || 360) - 32));
+};
+
 window.getSvgCoords = function (svgId, clientX, clientY) {
     const svg = document.getElementById(svgId);
     if (!svg || !svg.createSVGPoint) return { x: clientX, y: clientY };

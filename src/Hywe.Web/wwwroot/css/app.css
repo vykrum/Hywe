@@ -1710,18 +1710,16 @@ video.fullscreen-bg {
 /* SVG drawing canvas for the polygon editor */
 .polygon-editor-svg {
     background-color: #f0f0f0;
-    margin: 40px;
-    touch-action: pinch-zoom;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    display: block;
+    touch-action: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-}
-
-@supports (-moz-appearance: none) {
-    .polygon-editor-svg {
-        touch-action: none;
-    }
+    outline: none;
 }
 
 /* Vertex Colors */
@@ -1762,6 +1760,7 @@ video.fullscreen-bg {
     fill: #CDDFE1;
     pointer-events: stroke;
     cursor: cell;
+    vector-effect: non-scaling-stroke;
 }
 
 .outerPolygon:hover {
@@ -1773,6 +1772,7 @@ video.fullscreen-bg {
     fill: #f0f0f0;
     pointer-events: visiblePainted;
     cursor: grab;
+    vector-effect: non-scaling-stroke;
 }
 
 .islandPolygon:hover {
@@ -1794,6 +1794,7 @@ video.fullscreen-bg {
 
 .selectedVertexHalo {
     animation: haloPulse 1.5s infinite ease-in-out;
+    vector-effect: non-scaling-stroke;
 }
 
 @keyframes haloPulse {
@@ -1836,21 +1837,34 @@ video.fullscreen-bg {
 
 .outerVertexLabel,
 .islandVertexLabel {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-weight: 600;
     pointer-events: none;
     user-select: none;
 }
 
+/* Boundary SVG Container */
+.boundary-svg-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 18px auto;
+    box-sizing: border-box;
+}
+
 /* Boundary Toolbar: 2 neat columns (toggles + dimensions) */
 .boundary-toolbar {
+    position: relative;
     display: flex;
     flex-flow: row wrap;
     align-items: center;
     justify-content: center;
-    gap: 24px;
-    padding: 10px 12px 6px;
+    gap: 16px 24px;
+    padding: 10px 42px 6px 16px;
     margin: 0 auto;
     box-sizing: border-box;
+    width: 100%;
+    max-width: 680px;
 }
 
 /* Column 1: Toggles */
@@ -1874,6 +1888,60 @@ video.fullscreen-bg {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+}
+
+@media (max-width: 580px) {
+    .boundary-svg-container {
+        margin: 8px auto 14px;
+        border-radius: 6px;
+    }
+    .boundary-toolbar {
+        gap: 10px 16px;
+        padding: 8px 36px 6px 10px;
+    }
+    .toggle-column {
+        gap: 6px;
+    }
+    .dimension-fields {
+        padding-left: 14px;
+        border-left: 1px solid #e0e0e0;
+        gap: 6px;
+    }
+}
+
+@media (max-width: 440px) {
+    .boundary-toolbar {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 8px 12px;
+        padding: 8px 34px 6px 8px;
+        align-items: start;
+    }
+    .toggle-column {
+        grid-column: 1;
+        gap: 6px;
+    }
+    .dimension-fields {
+        grid-column: 2;
+        padding-left: 10px;
+        border-left: 1px solid #e0e0e0;
+        gap: 6px;
+    }
+    .boundary-toolbar .hywe-row {
+        gap: 4px;
+    }
+    .boundary-toolbar .hywe-label {
+        font-size: 0.8rem;
+        min-width: 38px !important;
+    }
+    .boundary-toolbar .hywe-btn-sm {
+        padding: 2px 6px !important;
+        font-size: 0.76rem;
+    }
+    .boundaryInput {
+        width: 36px;
+        font-size: 0.85rem;
+    }
 }
 
 /* Boundary Instructions Modal */
@@ -1903,6 +1971,17 @@ video.fullscreen-bg {
     padding: 20px 22px;
     font-family: 'Segoe UI', system-ui, sans-serif;
     box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .boundary-instructions-overlay {
+        padding: 12px;
+    }
+    .boundary-instructions-card {
+        padding: 16px 14px;
+        max-height: 90vh;
+        font-size: 0.82rem;
+    }
 }
 
 
