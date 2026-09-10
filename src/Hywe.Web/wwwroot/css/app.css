@@ -1742,15 +1742,17 @@ video.fullscreen-bg {
 }
 
 .entryPoint {
-    fill: #8F8F8F;
+    color: #475569;
     cursor: grab;
+    transition: color 0.15s ease;
 }
 
 .entryPoint:hover {
-    fill: #B3B3B3;
+    color: #2563eb;
 }
 
 .entryPoint:active {
+    color: #1d4ed8;
     cursor: grabbing;
 }
 
@@ -1860,7 +1862,7 @@ video.fullscreen-bg {
     align-items: center;
     justify-content: center;
     gap: 16px 24px;
-    padding: 10px 42px 6px 16px;
+    padding: 10px 16px 6px 16px;
     margin: 0 auto;
     box-sizing: border-box;
     width: 100%;
@@ -1874,13 +1876,19 @@ video.fullscreen-bg {
     gap: 8px;
 }
 
-/* Column 2: Dimensions */
+/* Column 2: Dimensions & Instructions */
 .dimension-fields {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding-left: 20px;
     border-left: 1px solid #e0e0e0;
+}
+
+.dimension-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .field-group {
@@ -1890,6 +1898,33 @@ video.fullscreen-bg {
     gap: 8px;
 }
 
+.instructions-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 4px;
+}
+
+.boundary-instructions-link {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+}
+
+.boundary-instructions-link:hover,
+.boundary-instructions-link.active {
+    color: #111;
+}
+
 @media (max-width: 580px) {
     .boundary-svg-container {
         margin: 8px auto 14px;
@@ -1897,7 +1932,7 @@ video.fullscreen-bg {
     }
     .boundary-toolbar {
         gap: 10px 16px;
-        padding: 8px 36px 6px 10px;
+        padding: 8px 10px 6px 10px;
     }
     .toggle-column {
         gap: 6px;
@@ -1907,6 +1942,9 @@ video.fullscreen-bg {
         border-left: 1px solid #e0e0e0;
         gap: 6px;
     }
+    .dimension-inputs {
+        gap: 6px;
+    }
 }
 
 @media (max-width: 440px) {
@@ -1914,7 +1952,7 @@ video.fullscreen-bg {
         display: grid;
         grid-template-columns: auto 1fr;
         gap: 8px 12px;
-        padding: 8px 34px 6px 8px;
+        padding: 8px 8px 6px 8px;
         align-items: start;
     }
     .toggle-column {
@@ -1925,6 +1963,9 @@ video.fullscreen-bg {
         grid-column: 2;
         padding-left: 10px;
         border-left: 1px solid #e0e0e0;
+        gap: 6px;
+    }
+    .dimension-inputs {
         gap: 6px;
     }
     .boundary-toolbar .hywe-row {
@@ -1941,6 +1982,9 @@ video.fullscreen-bg {
     .boundaryInput {
         width: 36px;
         font-size: 0.85rem;
+    }
+    .boundary-instructions-link {
+        font-size: 0.78rem;
     }
 }
 
