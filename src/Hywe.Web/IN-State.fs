@@ -180,6 +180,90 @@ let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
                     ReportOptions = { modelWithoutCommunity.ReportOptions with ProjectTitle = suffixedTitle }
                 }
 
+let performUndo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
+    match model.UndoStack with
+    | [] -> model, Cmd.none
+    | snap :: rest ->
+        let currentPolyInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let redoSnap = { 
+            SrcOfTrth = model.SrcOfTrth
+            Tree = model.Tree
+            PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
+            Sequences = model.Sequences 
+        }
+        let restoredPolyInner = 
+            match snap.PolygonEditor with Stable m | FreshlyImported m -> m
+            |> State.snapshot
+            |> State.refreshCachedStrings
+        let newExport = syncPolygonState restoredPolyInner
+
+        // Fast path: if in BoundaryPanel or if source of truth didn't change, reuse current Derived.
+        // Avoid running the heavy multi-level layout solver (deriveFromSource) on the UI thread!
+        let newDerived =
+            if model.ActivePanel = BoundaryPanel || snap.SrcOfTrth = model.SrcOfTrth then
+                model.Derived
+            else
+                Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
+
+        let restored = { model with
+                            SrcOfTrth    = snap.SrcOfTrth
+                            Tree         = snap.Tree
+                            PolygonEditor = Stable restoredPolyInner
+                            PolygonExport = newExport
+                            Sequences     = snap.Sequences
+                            Derived      = newDerived
+                            LayoutCache  = Map.empty
+                            UndoStack    = rest
+                            RedoStack    = redoSnap :: model.RedoStack
+                            PreDragSnapshot = None
+                            NeedsHyweave = true }
+
+        let syncCmd = 
+            Cmd.OfAsync.perform (fun () -> async { Protocol.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
+
+        restored, syncCmd
+
+let performRedo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
+    match model.RedoStack with
+    | [] -> model, Cmd.none
+    | snap :: rest ->
+        let currentPolyInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let undoSnap = { 
+            SrcOfTrth = model.SrcOfTrth
+            Tree = model.Tree
+            PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
+            Sequences = model.Sequences 
+        }
+        let restoredPolyInner = 
+            match snap.PolygonEditor with Stable m | FreshlyImported m -> m
+            |> State.snapshot
+            |> State.refreshCachedStrings
+        let newExport = syncPolygonState restoredPolyInner
+
+        let newDerived =
+            if model.ActivePanel = BoundaryPanel || snap.SrcOfTrth = model.SrcOfTrth then
+                model.Derived
+            else
+                Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
+
+        let restored = { model with
+                            SrcOfTrth    = snap.SrcOfTrth
+                            Tree         = snap.Tree
+                            PolygonEditor = Stable restoredPolyInner
+                            PolygonExport = newExport
+                            Sequences     = snap.Sequences
+                            Derived      = newDerived
+                            LayoutCache  = Map.empty
+                            RedoStack    = rest
+                            UndoStack    = undoSnap :: model.UndoStack
+                            PreDragSnapshot = None
+                            NeedsHyweave = true }
+
+        let syncCmd = 
+            Cmd.OfAsync.perform (fun () -> async { Protocol.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
+
+        restored, syncCmd
+
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     let modelBefore = 
@@ -571,8 +655,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                      newExport.OuterStr
                                      newExport.IslandsStr
 
-                if wasDragging && isChanged then
-                    Protocol.sync js newOutput model.ActivePanel
+                let syncCmd =
+                    if wasDragging && isChanged then
+                        Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
+                    else Cmd.none
 
                 { model with 
                     PolygonEditor = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
@@ -582,7 +668,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     RedoStack = newRedoStack
                     PreDragSnapshot = None
                     NeedsHyweave = if wasDragging && isChanged then true else model.NeedsHyweave },
-                    Cmd.none
+                    syncCmd
             | None -> { model with PreDragSnapshot = None }, Cmd.none
 
         | CommitGhostVertex ->
@@ -600,13 +686,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                      newExport.BaseStr
                                      newExport.OuterStr
                                      newExport.IslandsStr
-                Protocol.sync js newOutput model.ActivePanel
+                let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
                 { model with
                     PolygonEditor = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
                     PolygonExport = newExport
                     SrcOfTrth = newOutput
                     PreDragSnapshot = None
-                    NeedsHyweave = true }, Cmd.none
+                    NeedsHyweave = true }, syncCmd
             | None -> model, Cmd.none
 
         | SelectVertex sel ->
@@ -625,10 +711,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             { model with PendingConfirm = Some ConfirmAction.ResetBoundaryAction }, Cmd.none
 
         | UndoBoundary ->
-            model, Cmd.ofMsg Undo
+            performUndo js model
 
         | RedoBoundary ->
-            model, Cmd.ofMsg Redo
+            performRedo js model
 
         | _ ->
             model,
@@ -665,7 +751,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                                  newExport.BaseStr
                                  newExport.OuterStr
                                  newExport.IslandsStr
-            Protocol.sync js newOutput model.ActivePanel
+            let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
 
             { model with 
                 PolygonEditor = Stable (newModel |> State.snapshot |> State.refreshCachedStrings)
@@ -673,7 +759,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 SrcOfTrth = newOutput
                 PreDragSnapshot = None
                 NeedsHyweave = true },
-                Cmd.none
+                syncCmd
         else
             { model with 
                 PolygonEditor = Stable newModel
@@ -885,66 +971,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.none
 
     | Undo ->
-        match model.UndoStack with
-        | [] -> model, Cmd.none
-        | snap :: rest ->
-            let currentPolyInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let redoSnap = { 
-                SrcOfTrth = model.SrcOfTrth
-                Tree = model.Tree
-                PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
-                Sequences = model.Sequences 
-            }
-            let restoredPolyInner = 
-                match snap.PolygonEditor with Stable m | FreshlyImported m -> m
-                |> State.snapshot
-                |> State.refreshCachedStrings
-            let newExport = syncPolygonState restoredPolyInner
-            Protocol.sync js snap.SrcOfTrth model.ActivePanel
-            let restored = { model with
-                                SrcOfTrth    = snap.SrcOfTrth
-                                Tree         = snap.Tree
-                                PolygonEditor = Stable restoredPolyInner
-                                PolygonExport = newExport
-                                Sequences     = snap.Sequences
-                                Derived      = Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
-                                LayoutCache  = Map.empty
-                                UndoStack    = rest
-                                RedoStack    = redoSnap :: model.RedoStack
-                                PreDragSnapshot = None
-                                NeedsHyweave = true }
-            restored, Cmd.none
+        performUndo js model
 
     | Redo ->
-        match model.RedoStack with
-        | [] -> model, Cmd.none
-        | snap :: rest ->
-            let currentPolyInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let undoSnap = { 
-                SrcOfTrth = model.SrcOfTrth
-                Tree = model.Tree
-                PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
-                Sequences = model.Sequences 
-            }
-            let restoredPolyInner = 
-                match snap.PolygonEditor with Stable m | FreshlyImported m -> m
-                |> State.snapshot
-                |> State.refreshCachedStrings
-            let newExport = syncPolygonState restoredPolyInner
-            Protocol.sync js snap.SrcOfTrth model.ActivePanel
-            let restored = { model with
-                                SrcOfTrth    = snap.SrcOfTrth
-                                Tree         = snap.Tree
-                                PolygonEditor = Stable restoredPolyInner
-                                PolygonExport = newExport
-                                Sequences     = snap.Sequences
-                                Derived      = Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
-                                LayoutCache  = Map.empty
-                                RedoStack    = rest
-                                UndoStack    = undoSnap :: model.UndoStack
-                                PreDragSnapshot = None
-                                NeedsHyweave = true }
-            restored, Cmd.none
+        performRedo js model
 
     | NextOnboardingStep ->
         if not model.Onboarding.IsActive then model, Cmd.none
