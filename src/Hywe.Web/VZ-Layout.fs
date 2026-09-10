@@ -105,7 +105,8 @@ let svgCoxels
     (elv : int)
     (clr : string[])
     (scl : int)
-    (svgId : string option) = 
+    (svgId : string option)
+    (js : IJSRuntime option) = 
     
     match cxl with
     | [||] -> div { attr.style "padding: 20px; color: #888; font-family: 'Outfit', system-ui, sans-serif;"; text "No layout generated for this level." }
@@ -171,6 +172,24 @@ let svgCoxels
             
             let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
             let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
+
+            let clientW =
+                match js with
+                | Some runtime ->
+                    try
+                        match box runtime with
+                        | :? Microsoft.JSInterop.IJSInProcessRuntime as inProc ->
+                            let cw = inProc.Invoke<float>("getSvgWidth", svgId |> Option.defaultValue "layout-svg-output")
+                            if cw > 0.0 then cw else 800.0
+                        | _ -> 800.0
+                    with _ -> 800.0
+                | None -> 800.0
+
+            // Responsive scale factor to guarantee consistent readable text size on screen
+            let svgScale = float wdt / max 200.0 clientW
+            let labelFontSize = sprintf "%.1fpx" (max 10.0 (13.0 * svgScale))
+            let dotRadius = sprintf "%.1f" (max 3.5 (4.5 * svgScale))
+            let textYOffset = max 7.0 (9.0 * svgScale)
             
             // Labels
             let lPs = Array.map(fun a -> 
@@ -256,15 +275,17 @@ let svgCoxels
 
                     hzTx()
                         .x($"{x}")
-                        .y($"{y - 8.0}")
+                        .y(sprintf "%.1f" (y - textYOffset))
                         .fw(if i = 0 then "700" else "400")
                         .fl(if i = 0 then "#333333" else "#666666")
+                        .fs(labelFontSize)
                         .nm(truncated)
                         .Elt()
 
                     crCl()
                         .cx($"{x}")
                         .cy($"{y}")
+                        .cr(dotRadius)
                         .cl(color)
                         .Elt()
             
@@ -373,6 +394,11 @@ let generateSvgString
 
             let prp = Array.map2 (fun (crd, col) lblItem -> crd, col, lblItem) (Array.zip crd2 clr) lbl
 
+            let svgScale = float wdt / 800.0
+            let labelFontSize = sprintf "%.1fpx" (max 10.0 (13.0 * svgScale))
+            let dotRadius = sprintf "%.1f" (max 3.5 (4.5 * svgScale))
+            let textYOffset = max 7.0 (9.0 * svgScale)
+
             for i, (xxyy, color, (fullName, (lx, ly))) in prp |> Array.indexed do
                 let x, y =
                     match xxyy with
@@ -383,9 +409,9 @@ let generateSvgString
                 let fw = if i = 0 then "700" else "400"
                 let fl = if i = 0 then "#333333" else "#666666"
 
-                append $"""    <text x="{x}" y="{y - 8.0}" font-weight="{fw}" fill="{fl}" font-size="10px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
+                append $"""    <text x="{x}" y="{y - textYOffset}" font-weight="{fw}" fill="{fl}" font-size="{labelFontSize}" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
 """
-                append $"""    <circle cx="{x}" cy="{y}" r="5" fill="{color}" />
+                append $"""    <circle cx="{x}" cy="{y}" r="{dotRadius}" fill="{color}" />
 """
             append "</svg>"
             sb.ToString()
@@ -427,6 +453,11 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
 """
     | None -> ()
 
+    let svgScale = float wdt / 800.0
+    let labelFontSize = sprintf "%.1fpx" (max 10.0 (13.0 * svgScale))
+    let dotRadius = sprintf "%.1f" (max 3.5 (4.5 * svgScale))
+    let textYOffset = max 7.0 (9.0 * svgScale)
+
     // Shapes
     for i, s in cfg.shapes |> Array.indexed do
         if not (Array.isEmpty s.points) then
@@ -444,9 +475,9 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
             let fw = if i = 0 then "700" else "400"
             let fl = if i = 0 then "#333333" else "#666666"
             
-            append $"""    <text x="{tx}" y="{ty - 8.0}" font-weight="{fw}" fill="{fl}" font-size="10px" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
+            append $"""    <text x="{tx}" y="{ty - textYOffset}" font-weight="{fw}" fill="{fl}" font-size="{labelFontSize}" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
 """
-            append $"""    <circle cx="{tx}" cy="{ty}" r="5" fill="{s.color}" />
+            append $"""    <circle cx="{tx}" cy="{ty}" r="{dotRadius}" fill="{s.color}" />
 """
     
     append "</svg>"
@@ -606,6 +637,23 @@ let alternateConfigurations
 
     let totalHeight = (float rows * cellH) + headerHeight + 25.0
 
+    let totalVbW = totalWidth + (svgPadding * 2.0)
+    let clientW =
+        try
+            match box js with
+            | :? Microsoft.JSInterop.IJSInProcessRuntime as inProc ->
+                let cw = inProc.Invoke<float>("getSvgWidth", "variation-svg-output")
+                if cw > 0.0 then cw else 840.0
+            | _ -> 840.0
+        with _ -> 840.0
+
+    let gridScale = totalVbW / max 200.0 clientW
+    let cellFontSize = sprintf "%.1fpx" (max 9.0 (12.0 * gridScale))
+    let cellCircleR = sprintf "%.1f" (max 3.5 (4.5 * gridScale))
+    let cellTextYOffset = max 6.0 (8.5 * gridScale)
+    let permFontSize = sprintf "%.1fpx" (max 9.0 (11.0 * gridScale))
+    let permLabelOffset = max 8.0 (12.0 * gridScale)
+
     div {
         attr.id "pdf-export-container"
         attr.style "background: #ffffff; padding: 0px 40px; width: 100%; display: flex; flex-direction: column; align-items: center;"
@@ -694,24 +742,26 @@ let alternateConfigurations
 
                                     hzTx()
                                         .x($"{tx}")
-                                        .y($"{ty - 8.0}")
+                                        .y(sprintf "%.1f" (ty - cellTextYOffset))
                                         .fw(if j = 0 then "700" else "400")
                                         .fl(if j = 0 then "#333333" else "#666666")
+                                        .fs(cellFontSize)
                                         .nm(truncated)
                                         .Elt()
 
                                     crCl()
                                         .cx($"{tx}")
                                         .cy($"{ty}")
+                                        .cr(cellCircleR)
                                         .cl(s.color)
                                         .Elt()
                             }
 
                     // Permanent label below
                     let labelX = ox + (maxW * scale / 2.0)
-                    let labelY = oy + (maxH * scale) + 12.0
+                    let labelY = oy + (maxH * scale) + permLabelOffset
                     let letter = if i < labelPhrase.Length then string labelPhrase.[i] else ""
-                    svtx().xx(string labelX).yy(string labelY).nm($"{letter} [{cfg.sqnName}]").Elt()
+                    svtx().xx(string labelX).yy(string labelY).fs(permFontSize).nm($"{letter} [{cfg.sqnName}]").Elt()
                 }
 
         }

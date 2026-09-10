@@ -41,24 +41,6 @@ module View =
         div {
             attr.``class`` "boundary-toolbar"
 
-            // Help Button with sleek Help SVG icon (positioned at toolbar top-right to preserve two-column alignment)
-            button {
-                attr.id "hywe-boundary-guide-btn"
-                attr.``type`` "button"
-                attr.title "Boundary Controls & Mode Help"
-                "aria-label" => "Boundary Controls & Mode Help"
-                attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-sm " + (if model.ShowInstructions then "hywe-btn-dark active" else "hywe-btn-flat"))
-                attr.style "position: absolute; top: 10px; right: 12px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0; z-index: 2;"
-                on.click (fun _ -> dispatch ToggleInstructions)
-                svg {
-                    "viewBox" => "0 0 24 24"
-                    attr.style "width: 15px; height: 15px; display: block;"
-                    elt "circle" { "cx" => "12"; "cy" => "12"; "r" => "10"; "stroke" => "currentColor"; "stroke-width" => "1.8"; "fill" => "none" }
-                    elt "path" { "d" => "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"; "stroke" => "currentColor"; "stroke-width" => "1.8"; "stroke-linecap" => "round"; "stroke-linejoin" => "round"; "fill" => "none" }
-                    elt "circle" { "cx" => "12"; "cy" => "17"; "r" => "1.1"; "fill" => "currentColor" }
-                }
-            }
-
             // Col 1: Segmented Pill Toggles
             div {
                 attr.``class`` "toggle-column"
@@ -133,25 +115,41 @@ module View =
                 }
             }
 
-            // Col 2: Dimensions & Scale
+            // Col 2: Dimensions, Scale & Instructions
             div {
-                attr.``class`` ("dimension-fields" + (if not model.UseBoundary || model.UseMapBase then " disabled" else ""))
-                attr.style (
-                    if not model.UseBoundary || model.UseMapBase then
-                        "opacity: 0.3; pointer-events: none;"
-                    else
-                        ""
-                )
-
-                renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
-                renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+                attr.``class`` "dimension-fields"
 
                 div {
-                    attr.``class`` "field-group"
-                    span { attr.``class`` "hywe-label"; text "Scale:" }
-                    span { 
-                        attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right; padding-right: 4px;"
-                        text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
+                    attr.``class`` ("dimension-inputs" + (if not model.UseBoundary || model.UseMapBase then " disabled" else ""))
+                    attr.style (
+                        if not model.UseBoundary || model.UseMapBase then
+                            "opacity: 0.3; pointer-events: none;"
+                        else
+                            ""
+                    )
+
+                    renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
+                    renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+
+                    div {
+                        attr.``class`` "field-group"
+                        span { attr.``class`` "hywe-label"; text "Scale:" }
+                        span { 
+                            attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right; padding-right: 4px;"
+                            text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
+                        }
+                    }
+                }
+
+                // Textual button below to instructions modal
+                div {
+                    attr.``class`` "instructions-link-row"
+                    button {
+                        attr.id "hywe-boundary-guide-btn"
+                        attr.``type`` "button"
+                        attr.``class`` ("boundary-instructions-link" + (if model.ShowInstructions then " active" else ""))
+                        on.click (fun _ -> dispatch ToggleInstructions)
+                        text "Controls Guide"
                     }
                 }
             }
@@ -419,14 +417,80 @@ module View =
                     .Elt()
             | None -> ()
 
-            // --- Entry point ---
+            // --- Entry point (Architectural Plan Double Door Symbol) ---
             elt "g" {
-                attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y entryScale)
-                bdrPgn()
-                    .cs("entryPoint")
-                    .pt("-15,25 15,25 15,15 -5,15 -5,5 15,5 15,-5 -5,-5 -5,-15 15,-15 15,-25 -15,-25")
-                    .sw("0")
-                    .Elt()
+                attr.``class`` "entryPoint"
+                attr.style (sprintf "transform: translate(%.1fpx, %.1fpx) scale(%.3f);" model.EntryPoint.X model.EntryPoint.Y (1.0 * svgScale))
+
+                // Invisible hit circle for effortless grabbing on touch and mouse
+                elt "circle" {
+                    "cx" => "0"
+                    "cy" => "0"
+                    "r" => "18"
+                    attr.style "fill: transparent; stroke: none; pointer-events: all;"
+                }
+
+                // Wall jambs on both sides of the door opening
+                elt "line" {
+                    attr.``class`` "entryJambLeft"
+                    "x1" => "-12"
+                    "y1" => "4"
+                    "x2" => "-9"
+                    "y2" => "4"
+                    attr.style "stroke: currentColor; stroke-width: 3; stroke-linecap: square; vector-effect: non-scaling-stroke;"
+                }
+                elt "line" {
+                    attr.``class`` "entryJambRight"
+                    "x1" => "9"
+                    "y1" => "4"
+                    "x2" => "12"
+                    "y2" => "4"
+                    attr.style "stroke: currentColor; stroke-width: 3; stroke-linecap: square; vector-effect: non-scaling-stroke;"
+                }
+
+                // Threshold line connecting the jambs
+                elt "line" {
+                    attr.``class`` "entryThreshold"
+                    "x1" => "-9"
+                    "y1" => "4"
+                    "x2" => "9"
+                    "y2" => "4"
+                    attr.style "stroke: currentColor; stroke-width: 1.2; stroke-linecap: butt; opacity: 0.5; vector-effect: non-scaling-stroke;"
+                }
+
+                // Left door leaf (open at 90 degrees into space)
+                elt "line" {
+                    attr.``class`` "entryDoorLeafLeft"
+                    "x1" => "-9"
+                    "y1" => "4"
+                    "x2" => "-9"
+                    "y2" => "-5"
+                    attr.style "stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke;"
+                }
+
+                // Right door leaf (open at 90 degrees into space)
+                elt "line" {
+                    attr.``class`` "entryDoorLeafRight"
+                    "x1" => "9"
+                    "y1" => "4"
+                    "x2" => "9"
+                    "y2" => "-5"
+                    attr.style "stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke;"
+                }
+
+                // Left door swing arc (quarter circle)
+                elt "path" {
+                    attr.``class`` "entryDoorArcLeft"
+                    "d" => "M 0,4 A 9 9 0 0 0 -9,-5"
+                    attr.style "fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 2.5,2; opacity: 0.85; vector-effect: non-scaling-stroke;"
+                }
+
+                // Right door swing arc (quarter circle)
+                elt "path" {
+                    attr.``class`` "entryDoorArcRight"
+                    "d" => "M 0,4 A 9 9 0 0 1 9,-5"
+                    attr.style "fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 2.5,2; opacity: 0.85; vector-effect: non-scaling-stroke;"
+                }
             }
         }
 
@@ -517,30 +581,6 @@ module View =
                                         attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
                                         polygonEditorSvg model dispatch js}
                 }
-
-                // Selection action chip (especially convenient on mobile touchscreens without Delete/Backspace key)
-                match model.SelectedVertex with
-                | Some sel ->
-                    div {
-                        attr.``class`` "selected-vertex-actions"
-                        attr.style "position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); border: 1px solid #e0e0e0; pointer-events: auto;"
-                        button {
-                            attr.``type`` "button"
-                            attr.``class`` "hywe-btn hywe-btn-sm"
-                            attr.style "background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; font-weight: 600; border-radius: 12px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem;"
-                            on.click (fun _ -> dispatch DeleteSelectedVertex)
-                            rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>"""
-                            text "Delete Vertex"
-                        }
-                        button {
-                            attr.``type`` "button"
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
-                            attr.style "font-size: 0.8rem; padding: 4px 8px; color: #666;"
-                            on.click (fun _ -> dispatch (SelectVertex None))
-                            text "Deselect"
-                        }
-                    }
-                | None -> empty()
 
                 // Lock Icon Overlay (Top Right)
                 if model.UseMapBase then

@@ -37,7 +37,7 @@ type crCl = Template<
     """<circle
         cx="${cx}" 
         cy="${cy}" 
-        r="5" 
+        r="${cr}" 
         fill="${cl}" />""">
 
 type crTx = Template<
@@ -74,7 +74,7 @@ type hzTx = Template<
         y="${y}"
         font-weight="${fw}"
         fill="${fl}"
-        font-size="10px"
+        font-size="${fs}"
         font-family="Outfit, system-ui, sans-serif"
         text-anchor="middle"
         style="text-transform: lowercase; pointer-events: none;"
@@ -84,13 +84,13 @@ type svtx = Template<
         """<text 
         x="${xx}" 
         y="${yy}"
-        width = "50px"
-        font-size = "10px"
+        width="50px"
+        font-size="${fs}"
         font-family="Outfit, system-ui, sans-serif"
         text-anchor="middle"
         dominant-baseline="middle"
-        fill = "#808080"
-        opacity = "1"
+        fill="#808080"
+        opacity="1"
         >${nm}</text> """>
 
 let viewLegend (items: (string * string) seq) : Node =

@@ -60,7 +60,7 @@ window.getSvgWidth = function (svgId) {
         const r = el.getBoundingClientRect();
         if (r && r.width > 0) return r.width;
     }
-    const container = document.getElementById('map-and-svg-container') || document.querySelector('.boundary-svg-container');
+    const container = document.getElementById('hywe-svg-wrapper') || document.getElementById('map-and-svg-container') || document.querySelector('.boundary-svg-container');
     if (container) {
         const r = container.getBoundingClientRect();
         if (r && r.width > 0) return r.width;
