@@ -352,45 +352,18 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let nextCount = m.EditsCount + 1
         let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
         let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
-        let newSqns = Lexel.extractSequences value
 
-        let newTreeOpt =
-            try
-                let processed = Serialization.preprocessCode value
-                let tree = Serialization.initModel processed
-                if tree.Levels.IsEmpty then None else Some tree
-            with _ -> None
-
-        let currentInner = match model.PolygonEditor with Stable p | FreshlyImported p -> p
-        let newPolyState =
-            try
-                Some (FileManager.importFromHyw value currentInner)
-            with _ -> None
-
-        let finalPoly =
-            match newPolyState with
-            | Some (Stable p | FreshlyImported p) -> p
-            | None -> currentInner
-
-        let newExport = syncPolygonState finalPoly
-        let newTree = defaultArg newTreeOpt m.Tree
-        let isErr = newTreeOpt.IsNone
-
+        let synced = PageHelpers.syncSyntaxToModel value m
+        let currentLevel = max 0 synced.Tree.ActiveLevel
         let newDerived =
             try
-                Cache.deriveFromSource value newSqns newExport newTree.ActiveLevel
+                Cache.deriveFromSource value synced.Sequences synced.PolygonExport currentLevel
             with _ -> m.Derived
 
-        { m with 
+        { synced with 
             SrcOfTrth = value
-            Tree = newTree
-            LastValidTree = match newTreeOpt with Some t -> t | None -> m.LastValidTree
-            PolygonEditor = match newPolyState with Some s -> s | None -> m.PolygonEditor
-            PolygonExport = newExport
-            Sequences = newSqns
             Derived = newDerived
             LayoutCache = Map.empty
-            ParseError = isErr
             NeedsHyweave = true
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
@@ -398,9 +371,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js value m.ActivePanel }) () (fun _ -> NoOp)
 
     | StartHyweave ->
-        let markers = model.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
+        let modelWithSyntax =
+            match model.EditorMode with
+            | Syntax -> PageHelpers.syncSyntaxToModel model.SrcOfTrth model
+            | Interactive -> model
+
+        let markers = modelWithSyntax.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
         let newCache = Cache.init markers
-        let model2 = { model with 
+        let model2 = { modelWithSyntax with 
                         IsHyweaving = true
                         NeedsHyweave = false
                         LayoutCache = newCache }
@@ -411,42 +389,42 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ]
 
     | RunHyweave ->
-        let updatedSrcOfTrth =
+        let modelWithSyntax, updatedSrcOfTrth =
             match model.EditorMode with
-            | Syntax -> model.SrcOfTrth
+            | Syntax ->
+                let synced = PageHelpers.syncSyntaxToModel model.SrcOfTrth model
+                synced, synced.SrcOfTrth
             | Interactive ->
-                Serialization.getOutput
-                    model.Tree
-                    model.Sequences
-                    model.PolygonExport.Width
-                    model.PolygonExport.Height
-                    model.PolygonExport.AbsStr
-                    model.PolygonExport.BaseStr
-                    model.PolygonExport.OuterStr
-                    model.PolygonExport.IslandsStr
+                let out =
+                    Serialization.getOutput
+                        model.Tree
+                        model.Sequences
+                        model.PolygonExport.Width
+                        model.PolygonExport.Height
+                        model.PolygonExport.AbsStr
+                        model.PolygonExport.BaseStr
+                        model.PolygonExport.OuterStr
+                        model.PolygonExport.IslandsStr
+                model, out
 
-        Protocol.sync js updatedSrcOfTrth model.ActivePanel
+        Protocol.sync js updatedSrcOfTrth modelWithSyntax.ActivePanel
 
-        let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        let polyState = FileManager.importFromHyw updatedSrcOfTrth currentInner
-        let finalPoly = match polyState with Stable m | FreshlyImported m -> m
-        let currentExport = syncPolygonState finalPoly
-
-        let currentLevel = max 0 model.Tree.ActiveLevel
+        let currentExport = modelWithSyntax.PolygonExport
+        let currentLevel = max 0 modelWithSyntax.Tree.ActiveLevel
         let currentSqnIdx = 
-            model.Sequences 
+            modelWithSyntax.Sequences 
             |> Map.tryFind currentLevel 
             |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
             |> Option.defaultValue 11
         let currentSqn = Hexel.sqnArray.[currentSqnIdx]
         
-        { model with PolygonEditor = polyState; PolygonExport = currentExport }, Cmd.OfAsync.perform (fun () -> async {
+        modelWithSyntax, Cmd.OfAsync.perform (fun () -> async {
             let mutable updatedCache = Map.empty // Clear cache because source text or boundary changed
             
             // 1. Handle current orientation (might be different from 11)
             let srcForCurrent = ensureCategory updatedSrcOfTrth currentSqnIdx
             let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn currentExport currentLevel
-            for lvl in model.Tree.Levels.Keys do
+            for lvl in modelWithSyntax.Tree.Levels.Keys do
                 let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl currentExport
                 updatedCache <- Cache.update (toMarker lvl) currentSqnIdx c updatedCache
             
@@ -454,7 +432,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             if currentSqnIdx <> 11 then
                 let srcFor11 = ensureCategory updatedSrcOfTrth 11
                 let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] currentExport 0
-                for lvl in model.Tree.Levels.Keys do
+                for lvl in modelWithSyntax.Tree.Levels.Keys do
                     let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl currentExport
                     updatedCache <- Cache.update (toMarker lvl) 11 c updatedCache
 

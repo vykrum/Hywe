@@ -52,44 +52,55 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
     | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
         { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
 
+let syncSyntaxToModel (code: string) (model: Model) : Model =
+    let maybeSubModel =
+        code
+        |> Serialization.preprocessCode
+        |> fun processed ->
+            try 
+                let tree = Serialization.initModel processed
+                if tree.Levels.IsEmpty then None else Some tree
+            with _ -> None
+
+    match maybeSubModel with
+    | Some subModel ->
+        let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let polyState = FileManager.importFromHyw code inner
+        let finalPoly = match polyState with Stable m | FreshlyImported m -> m
+        let newExport = syncPolygonState finalPoly
+        let newSqns = extractSequences code
+        let mergedSqns =
+            newSqns |> Map.fold (fun acc k v -> Map.add k v acc) model.Sequences
+        let newOutput =
+            Serialization.getOutput
+                subModel
+                mergedSqns
+                newExport.Width
+                newExport.Height
+                newExport.AbsStr
+                newExport.BaseStr
+                newExport.OuterStr
+                newExport.IslandsStr
+
+        { model with
+            Tree = subModel
+            LastValidTree = subModel
+            PolygonEditor = polyState
+            PolygonExport = newExport
+            Sequences = mergedSqns
+            SrcOfTrth = newOutput
+            ParseError = false
+        }
+    | None ->
+        { model with ParseError = true }
+
 let handleToggleEditorMode (model: Model) : Model * Cmd<Message> =
     match model.EditorMode with
     | Syntax ->
-        let maybeSubModel =
-            model.SrcOfTrth
-            |> Serialization.preprocessCode
-            |> fun processed ->
-                try Some (Serialization.initModel processed)
-                with _ -> None
-
-        match maybeSubModel with
-        | Some subModel ->
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = FileManager.importFromHyw model.SrcOfTrth inner
-            let finalPoly = match newState with Stable m | FreshlyImported m -> m
-            let newExport = syncPolygonState finalPoly
-            let newOutput =
-                Serialization.getOutput
-                    subModel
-                    model.Sequences
-                    newExport.Width
-                    newExport.Height
-                    newExport.AbsStr
-                    newExport.BaseStr
-                    newExport.OuterStr
-                    newExport.IslandsStr
-
-            { model with
-                Tree = subModel
-                SrcOfTrth = newOutput
-                LastValidTree = subModel
-                PolygonEditor = newState
-                PolygonExport = newExport
-                EditorMode = Interactive
-                ParseError = false
-            }, Cmd.none
-        | None ->
-            { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
+        let synced = syncSyntaxToModel model.SrcOfTrth model
+        match synced.ParseError with
+        | false -> { synced with EditorMode = Interactive }, Cmd.none
+        | true -> { model with Tree = model.LastValidTree; ParseError = true }, Cmd.none
 
     | Interactive ->
         let newOutput =
