@@ -16,11 +16,10 @@ module View =
     type selHlo = Template<"""<circle class="selectedVertexHalo" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="3,3" style="pointer-events: none;" />""">
 
     // Control panel with transposed horizontal rows for toggles and dimensions
-    let controlAndInstructions model dispatch (js: IJSRuntime) =
+    let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
         let renderNumericInput labelText (value: float) msg isHeight =
             div {
                 attr.``class`` "field-group"
-                attr.style "display: flex; align-items: center; justify-content: space-between; gap: 8px;"
                 label { attr.``class`` "hywe-label"; text labelText }
                 input {
                     attr.``class`` "boundaryInput"
@@ -48,18 +47,16 @@ module View =
                 // Site
                 div {
                     attr.``class`` "hywe-row"
-                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Site:" }
+                    span { attr.``class`` "hywe-label"; text "Site:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
                             attr.``class`` (if not model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
                             text "None"
                         }
                         button {
                             attr.``class`` (if model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
                             text "Boundary"
                         }
@@ -69,18 +66,16 @@ module View =
                 // Count
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Count:" }
+                    span { attr.``class`` "hywe-label"; text "Count:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
                             attr.``class`` (if not model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if model.UseAbsolute then dispatch (ToggleAbsolute false))
                             text "Relative"
                         }
                         button {
                             attr.``class`` (if model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ -> if not model.UseAbsolute then dispatch (ToggleAbsolute true))
                             text "Absolute"
                         }
@@ -90,12 +85,11 @@ module View =
                 // Base
                 div {
                     attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; attr.style "flex-shrink: 0; min-width: 45px;"; text "Base:" }
+                    span { attr.``class`` "hywe-label"; text "Base:" }
                     div {
                         attr.``class`` "hywe-btn-group"
                         button {
                             attr.``class`` (if not model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ ->
                                 if model.UseMapBase then dispatch (ToggleMapBase false)
                             )
@@ -103,7 +97,6 @@ module View =
                         }
                         button {
                             attr.``class`` (if model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            attr.style "padding-left: 8px; padding-right: 8px;"
                             on.click (fun _ ->
                                 if not model.UseMapBase then
                                     dispatch (ToggleMapBase true)
@@ -115,7 +108,7 @@ module View =
                 }
             }
 
-            // Col 2: Dimensions, Scale & Instructions
+            // Col 2: Dimensions & Scale
             div {
                 attr.``class`` "dimension-fields"
 
@@ -135,21 +128,55 @@ module View =
                         attr.``class`` "field-group"
                         span { attr.``class`` "hywe-label"; text "Scale:" }
                         span { 
-                            attr.style "font-size: 0.95rem; font-weight: 600; color: #666; font-family: 'Segoe UI', sans-serif; text-align: right; padding-right: 4px;"
+                            attr.``class`` "boundary-scale-text"
                             text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
                         }
                     }
                 }
+            }
 
-                // Textual button below to instructions modal
+            // Col 3: Actions
+            div {
+                attr.``class`` "action-column"
+                button {
+                    attr.id "hywe-boundary-guide-btn"
+                    attr.``type`` "button"
+                    attr.``class`` ("boundary-instructions-link" + (if model.ShowInstructions then " active" else ""))
+                    on.click (fun _ -> dispatch ToggleInstructions)
+                    text "Boundary Guide"
+                }
+                button {
+                    attr.``type`` "button"
+                    attr.``class`` "boundary-instructions-link"
+                    attr.disabled (not model.UseBoundary || model.UseMapBase || model.IsLocked)
+                    on.click (fun _ -> dispatch RequestResetBoundary)
+                    text "Reset Boundary"
+                }
                 div {
-                    attr.``class`` "instructions-link-row"
+                    attr.``class`` "action-trio-row"
                     button {
-                        attr.id "hywe-boundary-guide-btn"
                         attr.``type`` "button"
-                        attr.``class`` ("boundary-instructions-link" + (if model.ShowInstructions then " active" else ""))
-                        on.click (fun _ -> dispatch ToggleInstructions)
-                        text "Controls Guide"
+                        attr.``class`` "boundary-trio-btn"
+                        attr.title "Undo last action (Ctrl+Z)"
+                        attr.disabled (not canUndo || model.IsLocked || not model.UseBoundary)
+                        on.click (fun _ -> dispatch UndoBoundary)
+                        text "Undo"
+                    }
+                    button {
+                        attr.``type`` "button"
+                        attr.``class`` "boundary-trio-btn"
+                        attr.title "Redo last action (Ctrl+Y)"
+                        attr.disabled (not canRedo || model.IsLocked || not model.UseBoundary)
+                        on.click (fun _ -> dispatch RedoBoundary)
+                        text "Redo"
+                    }
+                    button {
+                        attr.``type`` "button"
+                        attr.``class`` ("boundary-trio-btn" + (if model.IsLocked then " active-locked" else ""))
+                        attr.title (if model.IsLocked then "Unlock boundary editor" else "Lock boundary editor to prevent accidental changes")
+                        attr.disabled (not model.UseBoundary)
+                        on.click (fun _ -> dispatch ToggleLock)
+                        text (if model.IsLocked then "Locked" else "Lock")
                     }
                 }
             }
@@ -175,7 +202,7 @@ module View =
 
                     div {
                         attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
-                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary & Controls Guide" }
+                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Guide" }
                         button {
                             attr.``type`` "button"
                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
@@ -294,7 +321,7 @@ module View =
 
         svg {
             attr.id "polygon-editor-svg"
-            attr.``class`` "polygon-editor-svg"
+            attr.``class`` ("polygon-editor-svg" + (if model.IsLocked then " editor-locked" else ""))
             attr.tabindex -1
             "data-padding-ratio" => (((2.0 * padX') / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
             attr.style (match model.UseMapBase with | true -> "background-color: transparent;" | false -> "")
@@ -406,16 +433,17 @@ module View =
             )
 
             // Ghost vertex preview on edge hover
-            match model.GhostVertex with
-            | Some ghost ->
-                ghstVtx()
-                    .cx(sprintf "%.1f" ghost.Point.X)
-                    .cy(sprintf "%.1f" ghost.Point.Y)
-                    .ty(sprintf "%.1f" (ghost.Point.Y + boundLabel * 0.35))
-                    .cr(sprintf "%.1f" (boundRadius + 2.0 * svgScale))
-                    .tf(boundLabelInt)
-                    .Elt()
-            | None -> ()
+            if not model.IsLocked then
+                match model.GhostVertex with
+                | Some ghost ->
+                    ghstVtx()
+                        .cx(sprintf "%.1f" ghost.Point.X)
+                        .cy(sprintf "%.1f" ghost.Point.Y)
+                        .ty(sprintf "%.1f" (ghost.Point.Y + boundLabel * 0.35))
+                        .cr(sprintf "%.1f" (boundRadius + 2.0 * svgScale))
+                        .tf(boundLabelInt)
+                        .Elt()
+                | None -> ()
 
             // --- Entry point (Architectural Plan Double Door Symbol) ---
             elt "g" {
@@ -494,9 +522,9 @@ module View =
             }
         }
 
-    let view model dispatch (js: IJSRuntime) =
+    let view model dispatch (js: IJSRuntime) canUndo canRedo =
         div {
-            controlAndInstructions model dispatch js
+            controlAndInstructions model dispatch js canUndo canRedo
 
             // Hidden fields for JS interop callback
             input { attr.id "hymap-data"; attr.``type`` "hidden" }

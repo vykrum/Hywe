@@ -1854,19 +1854,20 @@ video.fullscreen-bg {
     box-sizing: border-box;
 }
 
-/* Boundary Toolbar: 2 neat columns (toggles + dimensions) */
+/* Boundary Toolbar: 3 columns strictly on 1 line (toggles + dimensions + actions) */
 .boundary-toolbar {
     position: relative;
     display: flex;
-    flex-flow: row wrap;
+    flex-flow: row nowrap !important;
     align-items: center;
     justify-content: center;
-    gap: 16px 24px;
-    padding: 10px 16px 6px 16px;
+    gap: 12px 20px;
+    padding: 10px 14px 6px 14px;
     margin: 0 auto;
     box-sizing: border-box;
     width: 100%;
-    max-width: 680px;
+    max-width: 760px;
+    overflow: hidden;
 }
 
 /* Column 1: Toggles */
@@ -1874,15 +1875,43 @@ video.fullscreen-bg {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex-shrink: 0;
 }
 
-/* Column 2: Dimensions & Instructions */
+.toggle-column .hywe-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.boundary-toolbar .hywe-label {
+    min-width: 42px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #666;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+    white-space: nowrap;
+    text-align: left;
+    margin: 0;
+}
+
+.boundary-toolbar .hywe-btn-sm {
+    padding: 3px 8px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Column 2: Dimensions & Scale */
 .dimension-fields {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding-left: 20px;
+    padding-left: 18px;
     border-left: 1px solid #e0e0e0;
+    flex-shrink: 0;
 }
 
 .dimension-inputs {
@@ -1895,96 +1924,291 @@ video.fullscreen-bg {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
 }
 
-.instructions-link-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 4px;
-}
-
-.boundary-instructions-link {
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 0.85rem;
+.boundary-scale-text {
+    font-size: 0.95rem;
     font-weight: 600;
     color: #666;
-    text-decoration: none;
-    cursor: pointer;
-    transition: color 0.15s ease;
+    font-family: 'Segoe UI', sans-serif;
+    text-align: right;
+    padding-right: 4px;
     white-space: nowrap;
 }
 
-.boundary-instructions-link:hover,
-.boundary-instructions-link.active {
+/* Column 3: Actions */
+.action-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding-left: 18px;
+    border-left: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.boundary-instructions-link {
+    background: #f8f9fa;
+    border: 1px solid #dcdfe4;
+    border-radius: 4px;
+    padding: 4px 10px;
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.80rem;
+    font-weight: 600;
+    color: #555;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.boundary-instructions-link:hover:not(:disabled) {
+    background: #f1f3f5;
+    border-color: #cbd2d9;
     color: #111;
 }
 
-@media (max-width: 580px) {
-    .boundary-svg-container {
-        margin: 8px auto 14px;
-        border-radius: 6px;
-    }
-    .boundary-toolbar {
-        gap: 10px 16px;
-        padding: 8px 10px 6px 10px;
-    }
-    .toggle-column {
-        gap: 6px;
-    }
-    .dimension-fields {
-        padding-left: 14px;
-        border-left: 1px solid #e0e0e0;
-        gap: 6px;
-    }
-    .dimension-inputs {
-        gap: 6px;
-    }
+.boundary-instructions-link:active:not(:disabled) {
+    background: #e9ecef;
+    transform: translateY(1px);
 }
 
-@media (max-width: 440px) {
+.boundary-instructions-link.active:not(:disabled) {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.boundary-instructions-link:disabled {
+    opacity: 0.35;
+    background: transparent;
+    border-color: #eee;
+    color: #aaa;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+/* Action Trio: Undo / Redo / Lock */
+.action-trio-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.boundary-trio-btn {
+    flex: 1;
+    background: #f8f9fa;
+    border: 1px solid #dcdfe4;
+    border-radius: 4px;
+    padding: 3px 4px;
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #555;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-sizing: border-box;
+}
+
+.boundary-trio-btn:hover:not(:disabled) {
+    background: #f1f3f5;
+    border-color: #cbd2d9;
+    color: #111;
+}
+
+.boundary-trio-btn:active:not(:disabled) {
+    background: #e9ecef;
+    transform: translateY(1px);
+}
+
+.boundary-trio-btn.active-locked {
+    background: #333;
+    border-color: #222;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.boundary-trio-btn.active-locked:hover {
+    background: #111;
+    border-color: #000;
+    color: #fff;
+}
+
+.boundary-trio-btn:disabled {
+    opacity: 0.35;
+    background: transparent;
+    border-color: #eee;
+    color: #aaa;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+/* Locked Canvas Cursor */
+.polygon-editor-svg.editor-locked {
+    cursor: default !important;
+}
+
+.polygon-editor-svg.editor-locked .outerVertex,
+.polygon-editor-svg.editor-locked .islandVertex,
+.polygon-editor-svg.editor-locked .entryPoint {
+    cursor: default !important;
+    pointer-events: none !important;
+}
+
+/* Tablet & Moderate Mobile: Preserve 1 line strictly */
+@media (max-width: 600px) {
     .boundary-toolbar {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 8px 12px;
-        padding: 8px 8px 6px 8px;
-        align-items: start;
+        gap: 6px 12px;
+        padding: 8px 8px 5px 8px;
     }
     .toggle-column {
-        grid-column: 1;
         gap: 6px;
     }
+    .boundary-toolbar .hywe-label {
+        font-size: 0.82rem;
+        min-width: 36px;
+    }
+    .boundary-toolbar .hywe-btn-sm {
+        font-size: 0.68rem;
+        padding: 2px 6px;
+    }
     .dimension-fields {
-        grid-column: 2;
-        padding-left: 10px;
-        border-left: 1px solid #e0e0e0;
+        padding-left: 12px;
         gap: 6px;
     }
     .dimension-inputs {
         gap: 6px;
-    }
-    .boundary-toolbar .hywe-row {
-        gap: 4px;
-    }
-    .boundary-toolbar .hywe-label {
-        font-size: 0.8rem;
-        min-width: 38px !important;
-    }
-    .boundary-toolbar .hywe-btn-sm {
-        padding: 2px 6px !important;
-        font-size: 0.76rem;
     }
     .boundaryInput {
         width: 36px;
         font-size: 0.85rem;
     }
+    .boundary-scale-text {
+        font-size: 0.85rem;
+    }
+    .action-column {
+        padding-left: 12px;
+        gap: 6px;
+    }
     .boundary-instructions-link {
-        font-size: 0.78rem;
+        font-size: 0.74rem;
+        padding: 3px 6px;
+    }
+    .boundary-trio-btn {
+        font-size: 0.70rem;
+        padding: 2px 4px;
+    }
+}
+
+/* Narrow Mobile: All 3 columns stay strictly on 1 line with zero scroll */
+@media (max-width: 440px) {
+    .boundary-toolbar {
+        gap: 3px 6px;
+        padding: 6px 4px 4px 4px;
+        justify-content: center;
+    }
+    .toggle-column {
+        gap: 4px;
+    }
+    .toggle-column .hywe-row {
+        gap: 2px;
+    }
+    .boundary-toolbar .hywe-label {
+        font-size: 0.72rem;
+        min-width: 28px !important;
+    }
+    .boundary-toolbar .hywe-btn-sm {
+        font-size: 0.65rem !important;
+        padding: 2px 4px !important;
+        letter-spacing: 0;
+    }
+    .dimension-fields {
+        padding-left: 6px;
+        gap: 4px;
+        border-left: 1px solid #e5e5e5;
+    }
+    .dimension-inputs {
+        gap: 4px;
+    }
+    .field-group {
+        gap: 2px;
+    }
+    .boundaryInput {
+        width: 28px;
+        font-size: 0.75rem;
+    }
+    .boundary-scale-text {
+        font-size: 0.75rem !important;
+    }
+    .action-column {
+        padding-left: 6px;
+        gap: 4px;
+        border-left: 1px solid #e5e5e5;
+    }
+    .boundary-instructions-link {
+        font-size: 0.68rem;
+        padding: 2px 4px;
+    }
+    .action-trio-row {
+        gap: 2px;
+    }
+    .boundary-trio-btn {
+        font-size: 0.64rem;
+        padding: 2px 3px;
+    }
+}
+
+/* Ultra-narrow devices (<= 360px) */
+@media (max-width: 360px) {
+    .boundary-toolbar {
+        gap: 2px 4px;
+        padding: 5px 2px 3px 2px;
+    }
+    .boundary-toolbar .hywe-label {
+        font-size: 0.66rem;
+        min-width: 24px !important;
+    }
+    .boundary-toolbar .hywe-btn-sm {
+        font-size: 0.60rem !important;
+        padding: 1px 3px !important;
+    }
+    .dimension-fields {
+        padding-left: 4px;
+    }
+    .action-column {
+        padding-left: 4px;
+    }
+    .boundaryInput {
+        width: 24px;
+        font-size: 0.70rem;
+    }
+    .boundary-scale-text {
+        font-size: 0.70rem !important;
+    }
+    .boundary-instructions-link {
+        font-size: 0.63rem;
+        padding: 1px 3px;
+    }
+    .boundary-trio-btn {
+        font-size: 0.58rem;
+        padding: 1px 2px;
     }
 }
 

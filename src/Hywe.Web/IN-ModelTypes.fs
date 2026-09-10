@@ -137,11 +137,12 @@ type ConfirmAction =
     | LoadPreset of name: string * label: string
     | LoadGallery of name: string * rowId: string * author: string
     | SwitchTo of EditorTab
+    | ResetBoundaryAction
 
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-10T04:10:03Z"
+let MODIFIED_DATE = "2026-09-10T05:46:59Z"
 let GALLERY_PAGE_SIZE = 12
 
 
@@ -286,6 +287,7 @@ type Model =
         PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
         RedoStack: UndoSnapshot list
+        PreDragSnapshot: UndoSnapshot option
         InstallPromptAvailable: bool
         ShowPrivacyAlert: bool
         IsStandalone: bool
