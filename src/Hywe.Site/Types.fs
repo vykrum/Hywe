@@ -73,4 +73,5 @@ type PolygonEditorMessage =
     | StartDragEntry of MouseEventArgs
     | MoveDragEntry of MouseEventArgs
     | EndDragEntry
+    | ResetBoundary
     | ImportFromSyntax of string * string * string * string * int * int

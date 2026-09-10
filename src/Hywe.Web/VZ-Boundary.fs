@@ -141,15 +141,22 @@ module View =
                     }
                 }
 
-                // Textual button below to instructions modal
+                // Textual action buttons below dimensions
                 div {
                     attr.``class`` "instructions-link-row"
+                    button {
+                        attr.``type`` "button"
+                        attr.``class`` "boundary-instructions-link"
+                        attr.disabled (not model.UseBoundary || model.UseMapBase)
+                        on.click (fun _ -> dispatch ResetBoundary)
+                        text "Reset Boundary"
+                    }
                     button {
                         attr.id "hywe-boundary-guide-btn"
                         attr.``type`` "button"
                         attr.``class`` ("boundary-instructions-link" + (if model.ShowInstructions then " active" else ""))
                         on.click (fun _ -> dispatch ToggleInstructions)
-                        text "Controls Guide"
+                        text "Boundary Guide"
                     }
                 }
             }
@@ -175,7 +182,7 @@ module View =
 
                     div {
                         attr.style "display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;"
-                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary & Controls Guide" }
+                        h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Guide" }
                         button {
                             attr.``type`` "button"
                             attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"

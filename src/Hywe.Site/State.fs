@@ -517,6 +517,29 @@ module State =
                 return { model with ShowInstructions = not model.ShowInstructions }
             }
 
+        | ResetBoundary ->
+            async {
+                let w = model.LogicalWidth
+                let h = model.LogicalHeight
+                let resetOuter = [| { X = 0.0; Y = 0.0 }
+                                    { X = w; Y = 0.0 }
+                                    { X = w; Y = h }
+                                    { X = 0.0; Y = h } |]
+                let resetEntry = { X = w / 2.0; Y = min (h / 2.0) 50.0 }
+                let updated =
+                    { model with
+                        Outer = resetOuter
+                        Islands = [||]
+                        EntryPoint = resetEntry
+                        SelectedVertex = None
+                        GhostVertex = None
+                        Dragging = None
+                        DraggingIsland = None
+                        DragOffset = None
+                        DraggingEntry = false }
+                return updated |> refreshCachedStrings
+            }
+
         | MapTopographyReceived (w, h, topoJson) ->
             async {
                 // Hymap sends exact physical width/height in Meters.

@@ -1901,7 +1901,8 @@ video.fullscreen-bg {
 .instructions-link-row {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
+    gap: 12px;
     padding-right: 4px;
 }
 
@@ -1911,18 +1912,24 @@ video.fullscreen-bg {
     padding: 0;
     margin: 0;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: #666;
     text-decoration: none;
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: color 0.15s ease, opacity 0.15s ease;
     white-space: nowrap;
 }
 
-.boundary-instructions-link:hover,
-.boundary-instructions-link.active {
+.boundary-instructions-link:hover:not(:disabled),
+.boundary-instructions-link.active:not(:disabled) {
     color: #111;
+}
+
+.boundary-instructions-link:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 @media (max-width: 580px) {
@@ -1983,8 +1990,11 @@ video.fullscreen-bg {
         width: 36px;
         font-size: 0.85rem;
     }
+    .instructions-link-row {
+        gap: 6px;
+    }
     .boundary-instructions-link {
-        font-size: 0.78rem;
+        font-size: 0.74rem;
     }
 }
 
