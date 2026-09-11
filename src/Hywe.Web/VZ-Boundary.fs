@@ -283,16 +283,12 @@ module View =
                 (minX', minY', maxX' - minX', maxY' - minY')
 
         let (x, y, w, h) = boundingBoxWithLogical
-        let padX = max 25.0 (w * 0.12)
-        let padY = max 25.0 (h * 0.12)
-        let padRatio = max (padX / w) (padY / h)
-        let padX' = w * padRatio
-        let padY' = h * padRatio
+        let standardPad = State.standardPad
 
-        let minX = x - padX'
-        let minY = y - padY'
-        let safeW = max 1.0 (w + 2.0 * padX')
-        let safeH = max 1.0 (h + 2.0 * padY')
+        let minX = x - standardPad
+        let minY = y - standardPad
+        let safeW = max 1.0 (w + 2.0 * standardPad)
+        let safeH = max 1.0 (h + 2.0 * standardPad)
 
         let clientW =
             match model.SvgInfo with
@@ -323,7 +319,7 @@ module View =
             attr.id "polygon-editor-svg"
             attr.``class`` ("polygon-editor-svg" + (if model.IsLocked then " editor-locked" else ""))
             attr.tabindex -1
-            "data-padding-ratio" => (((2.0 * padX') / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
+            "data-padding-ratio" => (((2.0 * standardPad) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
             attr.style (match model.UseMapBase with | true -> "background-color: transparent;" | false -> "")
             "viewBox" => viewBoxString
 
@@ -576,7 +572,7 @@ module View =
                 attr.style (
                     let aspectRatio =
                         if model.UseBoundary && not model.UseMapBase && model.LogicalHeight > 0.0 then
-                            sprintf "%.6f" (model.LogicalWidth / model.LogicalHeight)
+                            sprintf "%.6f" ((model.LogicalWidth + 2.0 * State.standardPad) / (model.LogicalHeight + 2.0 * State.standardPad))
                         else
                             "1"
                     match model.UseBoundary, model.UseMapBase with
