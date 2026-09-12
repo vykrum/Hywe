@@ -95,12 +95,16 @@ module State =
             IslandPointsStrs = displayUpdated.Islands |> Array.map polyToSvgPoints }
 
     /// Standard padding around polygon boundary in logical units
-    let standardPad = 50.0
+    let standardPad (w: float) (h: float) =
+        let maxDim = max w h
+        max 60.0 (maxDim * 0.16)
 
     /// Conversion scale factor from SVG viewBox units to physical screen pixels
     let getSvgScale (model: PolygonEditorModel) (info: SvgInfo option) =
         let w = model.LogicalWidth
-        let safeW = max 1.0 (w + 2.0 * standardPad)
+        let h = model.LogicalHeight
+        let pad = standardPad w h
+        let safeW = max 1.0 (w + 2.0 * pad)
         let clientW =
             match info with
             | Some i when i.ClientW > 0.0 -> i.ClientW

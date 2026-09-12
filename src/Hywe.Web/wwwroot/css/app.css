@@ -1714,6 +1714,7 @@ video.fullscreen-bg {
     height: 100%;
     margin: 0;
     display: block;
+    overflow: visible;
     touch-action: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -2772,4 +2773,103 @@ video.fullscreen-bg {
     line-height: 1.3;
     word-break: break-word;
     overflow-wrap: anywhere;
+}
+
+/* Hymap Map Mode Controls - Compact & Corner Positioned */
+.hymap-lock-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2000;
+    cursor: pointer;
+    background: #ffffff;
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.hymap-lock-btn:hover {
+    background: #f4f4f5;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+
+/* Push Leaflet controls closer to the corners */
+#hymap-container .leaflet-top .leaflet-control {
+    margin-top: 6px !important;
+}
+
+#hymap-container .leaflet-left .leaflet-control {
+    margin-left: 6px !important;
+}
+
+#hymap-container .leaflet-right .leaflet-control {
+    margin-right: 6px !important;
+}
+
+#hymap-container .leaflet-bottom .leaflet-control {
+    margin-bottom: 6px !important;
+}
+
+/* Smaller Leaflet Geocoder (Search) in top-left */
+#hymap-container .leaflet-control-geocoder.leaflet-bar {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border-radius: 3px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+    border: none !important;
+}
+
+#hymap-container .leaflet-control-geocoder-icon {
+    width: 22px !important;
+    height: 22px !important;
+    background-size: 13px 13px !important;
+    border-radius: 3px !important;
+}
+
+#hymap-container .leaflet-control-geocoder-form input {
+    height: 22px !important;
+    font-size: 11px !important;
+    padding: 0 4px !important;
+}
+
+/* Smaller Leaflet Zoom (+ / -) in bottom-right */
+#hymap-container .leaflet-control-zoom.leaflet-bar {
+    border-radius: 3px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+    border: none !important;
+}
+
+#hymap-container .leaflet-control-zoom.leaflet-bar a {
+    width: 22px !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    font-size: 13px !important;
+    border-radius: 0 !important;
+}
+
+#hymap-container .leaflet-control-zoom.leaflet-bar a:first-child {
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+}
+
+#hymap-container .leaflet-control-zoom.leaflet-bar a:last-child {
+    border-bottom-left-radius: 3px !important;
+    border-bottom-right-radius: 3px !important;
+}
+
+/* Leaflet Attribution at bottom-left */
+#hymap-container .leaflet-control-attribution {
+    font-size: 9px !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    padding: 0 4px !important;
+    line-height: 14px !important;
+    border-radius: 2px !important;
+    margin: 0 0 4px 6px !important;
 }
