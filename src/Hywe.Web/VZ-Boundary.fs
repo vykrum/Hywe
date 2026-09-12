@@ -283,7 +283,7 @@ module View =
                 (minX', minY', maxX' - minX', maxY' - minY')
 
         let (x, y, w, h) = boundingBoxWithLogical
-        let standardPad = State.standardPad
+        let standardPad = State.standardPad w h
 
         let minX = x - standardPad
         let minY = y - standardPad
@@ -572,7 +572,8 @@ module View =
                 attr.style (
                     let aspectRatio =
                         if model.UseBoundary && not model.UseMapBase && model.LogicalHeight > 0.0 then
-                            sprintf "%.6f" ((model.LogicalWidth + 2.0 * State.standardPad) / (model.LogicalHeight + 2.0 * State.standardPad))
+                            let pad = State.standardPad model.LogicalWidth model.LogicalHeight
+                            sprintf "%.6f" ((model.LogicalWidth + 2.0 * pad) / (model.LogicalHeight + 2.0 * pad))
                         else
                             "1"
                     match model.UseBoundary, model.UseMapBase with
@@ -609,7 +610,8 @@ module View =
                 // Lock Icon Overlay (Top Right)
                 if model.UseMapBase then
                     div {
-                        attr.style "position: absolute; top: 10px; right: 10px; z-index: 2000; cursor: pointer; background: white; width: 34px; height: 34px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; transition: background 0.2s;"
+                        attr.``class`` "hymap-lock-btn"
+                        attr.title (if model.IsMapLocked then "Map is locked. Click to unlock" else "Map is active. Click to lock")
                         on.click (fun _ ->
                             let newState = not model.IsMapLocked
                             dispatch (ToggleMapLock newState)
@@ -621,10 +623,10 @@ module View =
                         
                         if model.IsMapLocked then
                             // Locked Icon
-                            rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
+                            rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
                         else
                             // Unlocked Icon
-                            rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+                            rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
                     }
             }
 

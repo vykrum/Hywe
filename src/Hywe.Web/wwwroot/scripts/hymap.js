@@ -28,6 +28,7 @@ window.Hymap = {
             this.map = L.map('hymap-container', { 
                 maxZoom: 24, 
                 zoomControl: false,
+                attributionControl: false,
                 zoomSnap: 0.1,
                 zoomDelta: 0.1
             }).setView([12.9716, 77.5946], 13);
@@ -39,6 +40,9 @@ window.Hymap = {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(this.map);
             
+            // Add attribution control at bottom-left
+            L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(this.map);
+
             // Add custom zoom control
             L.control.zoom({ position: 'bottomright' }).addTo(this.map);
             
@@ -107,7 +111,7 @@ window.Hymap = {
         if (!label) {
             label = document.createElement('div');
             label.id = 'hymap-distance-label';
-            label.style.cssText = "position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 13px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;";
+            label.style.cssText = "position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 12px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;";
             const container = document.getElementById('hymap-container');
             if (container) container.parentElement.appendChild(label);
         }
