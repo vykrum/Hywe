@@ -8,35 +8,64 @@ open State
 
 module View =
 
-    // ---------- View ----------
+    // ---------- View Templates ----------
     type bdrPgn = Template<"""<polygon class="${cs}" points="${pt}" stroke-width="${sw}"/>""">
     type bdrCrl = Template<"""<circle class="${cs}" cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
     type vtxTxt = Template<"""<text class="${tc}" x="${x}" y="${y}" font-size="${tf}" text-anchor="middle" dominant-baseline="auto">${nm}</text>""">
     type ghstVtx = Template<"""<g style="pointer-events: none;"><circle class="ghostVertex" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3"/><circle cx="${cx}" cy="${cy}" r="3" fill="#2563eb"/><text x="${cx}" y="${ty}" font-size="${tf}" font-weight="bold" fill="#2563eb" text-anchor="middle">+</text></g>""">
     type selHlo = Template<"""<circle class="selectedVertexHalo" cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="3,3" style="pointer-events: none;" />""">
 
+    // ---------- Functional UI Combinators ----------
+    let concatNodes (nodes: seq<Node>) : Node = forEach nodes id
+
+    let classList (classes: (string * bool) list) =
+        classes
+        |> List.choose (fun (cls, enabled) -> match enabled with true -> Some cls | false -> None)
+        |> String.concat " "
+
+    let toggleBtn label isActive onSelect =
+        button {
+            attr.``class`` (classList [ "hywe-btn hywe-btn-sm", true; "hywe-btn-dark active", isActive; "hywe-btn-flat", not isActive ])
+            on.click (fun _ -> match isActive with false -> onSelect () | true -> ())
+            text label
+        }
+
+    let toggleRow label isEnabled options =
+        div {
+            attr.``class`` (classList [ "hywe-row", true; "disabled", not isEnabled ])
+            span { attr.``class`` "hywe-label"; text label }
+            div {
+                attr.``class`` "hywe-btn-group"
+                options
+                |> List.map (fun (optLabel, isActive, onSelect) ->
+                    toggleBtn optLabel isActive onSelect
+                )
+                |> concatNodes
+            }
+        }
+
+    let renderNumericInput labelText (value: float) isDisabled msg =
+        div {
+            attr.``class`` "field-group"
+            label { attr.``class`` "hywe-label"; text labelText }
+            input {
+                attr.``class`` "boundaryInput"
+                attr.``type`` "number"
+                attr.min "10"
+                attr.max "100"
+                attr.value (string (System.Math.Round value))
+                attr.disabled isDisabled
+                on.change (fun ev ->
+                    let factor = 10.0 // Inputs are disabled in Map Mode, so edits are only manual (factor 10.0)
+                    match System.Double.TryParse (string ev.Value) with
+                    | true, v -> msg (v * factor)
+                    | _ -> ()
+                )
+            }
+        }
+
     // Control panel with transposed horizontal rows for toggles and dimensions
     let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
-        let renderNumericInput labelText (value: float) msg isHeight =
-            div {
-                attr.``class`` "field-group"
-                label { attr.``class`` "hywe-label"; text labelText }
-                input {
-                    attr.``class`` "boundaryInput"
-                    attr.``type`` "number"
-                    attr.min "10"
-                    attr.max "100"
-                    attr.value (string (System.Math.Round(value)))
-                    attr.disabled (not model.UseBoundary || model.UseMapBase)
-                    on.change (fun ev ->
-                        let factor = 10.0 // Inputs are disabled in Map Mode, so edits are only manual (factor 10.0)
-                        match System.Double.TryParse (string ev.Value) with
-                        | (true, v) -> dispatch (msg (v * factor))
-                        | _ -> ()
-                    )
-                }
-            }
-
         div {
             attr.``class`` "boundary-toolbar"
 
@@ -44,92 +73,49 @@ module View =
             div {
                 attr.``class`` "toggle-column"
 
-                // Site
-                div {
-                    attr.``class`` "hywe-row"
-                    span { attr.``class`` "hywe-label"; text "Site:" }
-                    div {
-                        attr.``class`` "hywe-btn-group"
-                        button {
-                            attr.``class`` (if not model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            on.click (fun _ -> if model.UseBoundary then dispatch (ToggleBoundary false))
-                            text "None"
-                        }
-                        button {
-                            attr.``class`` (if model.UseBoundary then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            on.click (fun _ -> if not model.UseBoundary then dispatch (ToggleBoundary true))
-                            text "Boundary"
-                        }
-                    }
-                }
+                let siteOptions = [
+                    "None", not model.UseBoundary, (fun () -> dispatch (ToggleBoundary false))
+                    "Boundary", model.UseBoundary, (fun () -> dispatch (ToggleBoundary true))
+                ]
+                let countOptions = [
+                    "Relative", not model.UseAbsolute, (fun () -> dispatch (ToggleAbsolute false))
+                    "Absolute", model.UseAbsolute, (fun () -> dispatch (ToggleAbsolute true))
+                ]
+                let baseOptions = [
+                    "None", not model.UseMapBase, (fun () -> dispatch (ToggleMapBase false))
+                    "Map", model.UseMapBase, (fun () ->
+                        dispatch (ToggleMapBase true)
+                        js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
+                    )
+                ]
 
-                // Count
-                div {
-                    attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; text "Count:" }
-                    div {
-                        attr.``class`` "hywe-btn-group"
-                        button {
-                            attr.``class`` (if not model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            on.click (fun _ -> if model.UseAbsolute then dispatch (ToggleAbsolute false))
-                            text "Relative"
-                        }
-                        button {
-                            attr.``class`` (if model.UseAbsolute then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            on.click (fun _ -> if not model.UseAbsolute then dispatch (ToggleAbsolute true))
-                            text "Absolute"
-                        }
-                    }
-                }
-
-                // Base
-                div {
-                    attr.``class`` ("hywe-row" + (if model.UseBoundary then "" else " disabled"))
-                    span { attr.``class`` "hywe-label"; text "Base:" }
-                    div {
-                        attr.``class`` "hywe-btn-group"
-                        button {
-                            attr.``class`` (if not model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            on.click (fun _ ->
-                                if model.UseMapBase then dispatch (ToggleMapBase false)
-                            )
-                            text "None"
-                        }
-                        button {
-                            attr.``class`` (if model.UseMapBase then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-flat")
-                            on.click (fun _ ->
-                                if not model.UseMapBase then
-                                    dispatch (ToggleMapBase true)
-                                    js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
-                            )
-                            text "Map"
-                        }
-                    }
-                }
+                toggleRow "Site:" true siteOptions
+                toggleRow "Count:" model.UseBoundary countOptions
+                toggleRow "Base:" model.UseBoundary baseOptions
             }
 
             // Col 2: Dimensions & Scale
             div {
                 attr.``class`` "dimension-fields"
 
-                div {
-                    attr.``class`` ("dimension-inputs" + (if not model.UseBoundary || model.UseMapBase then " disabled" else ""))
-                    attr.style (
-                        if not model.UseBoundary || model.UseMapBase then
-                            "opacity: 0.3; pointer-events: none;"
-                        else
-                            ""
-                    )
+                let areDimensionsDisabled = not model.UseBoundary || model.UseMapBase
+                let dimInputsClass = classList [ "dimension-inputs", true; "disabled", areDimensionsDisabled ]
+                let dimInputsStyle = match areDimensionsDisabled with true -> "opacity: 0.3; pointer-events: none;" | false -> ""
+                let scaleRatio = match model.UseMapBase with true -> model.MapScale | false -> 1.0
 
-                    renderNumericInput "Width:" model.DisplayWidth UpdateLogicalWidth false
-                    renderNumericInput "Height:" model.DisplayHeight UpdateLogicalHeight true
+                div {
+                    attr.``class`` dimInputsClass
+                    attr.style dimInputsStyle
+
+                    renderNumericInput "Width:" model.DisplayWidth areDimensionsDisabled (UpdateLogicalWidth >> dispatch)
+                    renderNumericInput "Height:" model.DisplayHeight areDimensionsDisabled (UpdateLogicalHeight >> dispatch)
 
                     div {
                         attr.``class`` "field-group"
                         span { attr.``class`` "hywe-label"; text "Scale:" }
                         span { 
                             attr.``class`` "boundary-scale-text"
-                            text (sprintf "%d : 1" (int (if model.UseMapBase then model.MapScale else 1.0))) 
+                            text (sprintf "%d : 1" (int scaleRatio))
                         }
                     }
                 }
@@ -141,7 +127,7 @@ module View =
                 button {
                     attr.id "hywe-boundary-guide-btn"
                     attr.``type`` "button"
-                    attr.``class`` ("boundary-instructions-link" + (if model.ShowInstructions then " active" else ""))
+                    attr.``class`` (classList [ "boundary-instructions-link", true; "active", model.ShowInstructions ])
                     on.click (fun _ -> dispatch ToggleInstructions)
                     text "Boundary Guide"
                 }
@@ -154,40 +140,69 @@ module View =
                 }
                 div {
                     attr.``class`` "action-trio-row"
-                    button {
-                        attr.``type`` "button"
-                        attr.``class`` "boundary-trio-btn"
-                        attr.title "Undo last action (Ctrl+Z)"
-                        attr.disabled (not canUndo || model.IsLocked || not model.UseBoundary)
-                        on.click (fun _ -> dispatch UndoBoundary)
-                        text "Undo"
-                    }
-                    button {
-                        attr.``type`` "button"
-                        attr.``class`` "boundary-trio-btn"
-                        attr.title "Redo last action (Ctrl+Y)"
-                        attr.disabled (not canRedo || model.IsLocked || not model.UseBoundary)
-                        on.click (fun _ -> dispatch RedoBoundary)
-                        text "Redo"
-                    }
-                    button {
-                        attr.``type`` "button"
-                        attr.``class`` ("boundary-trio-btn" + (if model.IsLocked then " active-locked" else ""))
-                        attr.title (if model.IsLocked then "Unlock boundary editor" else "Lock boundary editor to prevent accidental changes")
-                        attr.disabled (not model.UseBoundary)
-                        on.click (fun _ -> dispatch ToggleLock)
-                        text (if model.IsLocked then "Locked" else "Lock")
-                    }
+                    let (lockTitle, lockText) =
+                        match model.IsLocked with
+                        | true -> "Unlock boundary editor", "Locked"
+                        | false -> "Lock boundary editor to prevent accidental changes", "Lock"
+
+                    let trioBtn title disabled isActive onClick content =
+                        button {
+                            attr.``type`` "button"
+                            attr.``class`` (classList [ "boundary-trio-btn", true; "active-locked", isActive ])
+                            attr.title title
+                            attr.disabled disabled
+                            on.click (fun _ -> onClick ())
+                            text content
+                        }
+
+                    trioBtn "Undo last action (Ctrl+Z)" (not canUndo || model.IsLocked || not model.UseBoundary) false (fun () -> dispatch UndoBoundary) "Undo"
+                    trioBtn "Redo last action (Ctrl+Y)" (not canRedo || model.IsLocked || not model.UseBoundary) false (fun () -> dispatch RedoBoundary) "Redo"
+                    trioBtn lockTitle (not model.UseBoundary) model.IsLocked (fun () -> dispatch ToggleLock) lockText
                 }
             }
         }
 
     // Instructions Modal / Card (Text-only, strictly zero icons)
     let instructionsModal model dispatch (js: IJSRuntime) =
-        if model.ShowInstructions then
+        match model.ShowInstructions with
+        | false -> empty()
+        | true ->
             let closeGuide () =
                 dispatch ToggleInstructions
                 js.InvokeVoidAsync("eval", "var b = document.getElementById('hywe-boundary-guide-btn'); if(b){b.focus({preventScroll:true});}else if(document.activeElement){document.activeElement.blur();}") |> ignore
+
+            let renderGuideSection title items =
+                div {
+                    attr.style "display: flex; flex-direction: column; gap: 8px;"
+                    div {
+                        attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
+                        text title
+                    }
+                    items
+                    |> List.map (fun (label, desc) ->
+                        div {
+                            span { attr.style "font-weight: 600; color: #111;"; text label }
+                            text desc
+                        }
+                    )
+                    |> concatNodes
+                }
+
+            let toolbarModes = [
+                "Site (None / Boundary): ", "None generates unconstrained layouts without perimeter boundaries. Boundary constrains space generation strictly within your custom perimeter and interior islands."
+                "Count (Relative / Absolute): ", "Relative dynamically reproportions space area weights to fit the available site area. Absolute allocates exact specified module/hexel counts."
+                "Base (None / Map): ", "None uses a blank canvas with manual dimensions (Width, Height, Scale). Map loads an interactive OpenStreetMap underlay with geographic scaling."
+            ]
+
+            let canvasControls = [
+                "Select vertex: ", "Click or tap vertex (press Delete / Backspace to remove)"
+                "Delete vertex: ", "Double-click / double-tap, or press Delete / Backspace when selected"
+                "Add vertex: ", "Hover near boundary edge and click / tap"
+                "Move island: ", "Drag inside island body"
+                "Relocate entrance: ", "Drag entrance marker"
+                "Add island: ", "Double-click empty canvas area"
+                "Delete island: ", "Double-click inside island body"
+            ]
 
             div {
                 attr.``class`` "boundary-instructions-overlay"
@@ -214,54 +229,12 @@ module View =
 
                     div {
                         attr.style "display: flex; flex-direction: column; gap: 14px; font-size: 0.86rem; color: #444; line-height: 1.45;"
-
-                        // Section 1: Modes & Toggles
-                        div {
-                            attr.style "display: flex; flex-direction: column; gap: 8px;"
-                            div {
-                                attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
-                                text "Toolbar Modes"
-                            }
-
-                            div {
-                                span { attr.style "font-weight: 600; color: #111;"; text "Site (None / Boundary): " }
-                                text "None generates unconstrained layouts without perimeter boundaries. Boundary constrains space generation strictly within your custom perimeter and interior islands."
-                            }
-
-                            div {
-                                span { attr.style "font-weight: 600; color: #111;"; text "Count (Relative / Absolute): " }
-                                text "Relative dynamically reproportions space area weights to fit the available site area. Absolute allocates exact specified module/hexel counts."
-                            }
-
-                            div {
-                                span { attr.style "font-weight: 600; color: #111;"; text "Base (None / Map): " }
-                                text "None uses a blank canvas with manual dimensions (Width, Height, Scale). Map loads an interactive OpenStreetMap underlay with geographic scaling."
-                            }
-                        }
-
+                        renderGuideSection "Toolbar Modes" toolbarModes
                         div { attr.style "border-top: 1px solid #eee; margin: 2px 0;" }
-
-                        // Section 2: Canvas & Vertex Controls
-                        div {
-                            attr.style "display: flex; flex-direction: column; gap: 8px;"
-                            div {
-                                attr.style "font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #777;"
-                                text "Canvas Controls"
-                            }
-
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Select vertex: " }; text "Click or tap vertex (press Delete / Backspace to remove)" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete vertex: " }; text "Double-click / double-tap, or press Delete / Backspace when selected" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add vertex: " }; text "Hover near boundary edge and click / tap" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Move island: " }; text "Drag inside island body" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Relocate entrance: " }; text "Drag entrance marker" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Add island: " }; text "Double-click empty canvas area" }
-                            div { span { attr.style "font-weight: 600; color: #111;"; text "Delete island: " }; text "Double-click inside island body" }
-                        }
+                        renderGuideSection "Canvas Controls" canvasControls
                     }
                 }
             }
-        else
-            empty()
 
     // Polygon Editor SVG with polygons, vertices, and event handlers
     let polygonEditorSvg model dispatch (js: IJSRuntime) =
@@ -298,40 +271,92 @@ module View =
                     match box js with
                     | :? Microsoft.JSInterop.IJSInProcessRuntime as inProc ->
                         let cw = inProc.Invoke<float>("getSvgWidth", "polygon-editor-svg")
-                        if cw > 0.0 then cw else 400.0
+                        match cw > 0.0 with true -> cw | false -> 400.0
                     | _ -> 400.0
                 with _ -> 400.0
 
         let svgScale = safeW / max 200.0 clientW
         let boundRadius = max 4.0 (10.5 * svgScale)
         let boundLabel = max 6.0 (12.5 * svgScale)
-        let boundLabelInt = max 1 (int (System.Math.Round(boundLabel)))
-        let bndStWdO = max 1 (int (System.Math.Round(max 1.0 (3.5 * svgScale))))
-        let bndStWdI = max 1 (int (System.Math.Round(max 1.0 (2.5 * svgScale))))
-        let entryScale = 0.8 * svgScale
+        let boundLabelInt = max 1 (int (System.Math.Round boundLabel))
+        let bndStWdO = max 1 (int (System.Math.Round (max 1.0 (3.5 * svgScale))))
+        let bndStWdI = max 1 (int (System.Math.Round (max 1.0 (2.5 * svgScale))))
         let haloCr = sprintf "%.1f" (boundRadius + 5.0 * svgScale)
         let boundRadiusStr = sprintf "%.1f" boundRadius
         let textYOffset = boundRadius + 6.0 * svgScale
 
         let viewBoxString = sprintf "%f %f %f %f" minX minY safeW safeH
 
+        let getPointerId ev =
+            match box ev with
+            | :? PointerEventArgs as pev -> pev.PointerId
+            | _ -> 1L
+
+        let invokePointerCapture action ev =
+            js.InvokeVoidAsync(action, "polygon-editor-svg", getPointerId ev) |> ignore
+
+        let polygonClass baseClass =
+            classList [ baseClass, true; "mapModeOpacity", model.UseMapBase ]
+
+        let renderPolygon baseClass pointsStr strokeWidth =
+            bdrPgn()
+                .cs(polygonClass baseClass)
+                .pt(pointsStr)
+                .sw(string strokeWidth)
+                .Elt()
+
+        let renderVertex polyIdx vtxIdx (rawPt: Point) (dispPt: Point) vtxClass labelClass =
+            let isSelected =
+                match model.SelectedVertex with
+                | Some sel -> sel.PolyIndex = polyIdx && sel.VertexIndex = vtxIdx
+                | None -> false
+
+            let cartX = int (System.Math.Round dispPt.X)
+            let cartY = int (System.Math.Round dispPt.Y)
+            let xStr = sprintf "%.1f" rawPt.X
+            let yStr = sprintf "%.1f" rawPt.Y
+            let labelYStr = sprintf "%.1f" (rawPt.Y - textYOffset)
+            let labelText = sprintf "(%d, %d)" cartX cartY
+            let circleClass = classList [ vtxClass, true; "selected", isSelected ]
+            let fillColor = match isSelected with true -> "#2563eb" | false -> "#333"
+
+            concat {
+                match isSelected with
+                | true -> selHlo().cx(xStr).cy(yStr).cr(haloCr).Elt()
+                | false -> ()
+
+                bdrCrl()
+                    .cs(circleClass)
+                    .cx(xStr)
+                    .cy(yStr)
+                    .cr(boundRadiusStr)
+                    .cl(fillColor)
+                    .Elt()
+
+                vtxTxt()
+                    .tc(labelClass)
+                    .x(xStr)
+                    .y(labelYStr)
+                    .tf(boundLabelInt)
+                    .nm(labelText)
+                    .Elt()
+            }
+
         svg {
             attr.id "polygon-editor-svg"
-            attr.``class`` ("polygon-editor-svg" + (if model.IsLocked then " editor-locked" else ""))
+            attr.``class`` (classList [ "polygon-editor-svg", true; "editor-locked", model.IsLocked ])
             attr.tabindex -1
             "data-padding-ratio" => (((2.0 * standardPad) / safeW).ToString(System.Globalization.CultureInfo.InvariantCulture))
-            attr.style (match model.UseMapBase with | true -> "background-color: transparent;" | false -> "")
+            attr.style (match model.UseMapBase with true -> "background-color: transparent;" | false -> "")
             "viewBox" => viewBoxString
 
             // Pointer events with pointer capture for unbreakable dragging
             on.pointerdown (fun ev ->
-                let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
-                js.InvokeVoidAsync("capturePointer", "polygon-editor-svg", ptrId) |> ignore
+                invokePointerCapture "capturePointer" ev
                 dispatch (PointerDown ev)
             )
             on.pointerup (fun ev ->
-                let ptrId = match box ev with | :? PointerEventArgs as pev -> pev.PointerId | _ -> 1L
-                js.InvokeVoidAsync("releasePointer", "polygon-editor-svg", ptrId) |> ignore
+                invokePointerCapture "releasePointer" ev
                 dispatch PointerUp
             )
             on.pointermove (fun ev -> dispatch (PointerMove ev))
@@ -339,107 +364,44 @@ module View =
             on.keydown (fun ev -> dispatch (KeyDown ev))
 
             // Outer polygon
-            bdrPgn()
-                .cs(match model.UseMapBase with | true -> "outerPolygon mapModeOpacity" | false -> "outerPolygon")
-                .pt(model.OuterPointsStr)
-                .sw(string bndStWdO)
-                .Elt()
+            renderPolygon "outerPolygon" model.OuterPointsStr bndStWdO
 
             // Islands
-            forEach (Array.indexed model.IslandPointsStrs) (fun (i, islandPtsStr) ->
-                bdrPgn()
-                    .cs(match model.UseMapBase with | true -> "islandPolygon mapModeOpacity" | false -> "islandPolygon")
-                    .pt(islandPtsStr)
-                    .sw(string bndStWdI)
-                    .Elt()
+            model.IslandPointsStrs
+            |> Array.map (fun islandPtsStr ->
+                renderPolygon "islandPolygon" islandPtsStr bndStWdI
             )
+            |> concatNodes
 
             // Outer vertices
-            forEach (Array.indexed model.Outer) (fun (i, rawPt) ->
-                let dispPt = model.DisplayOuter.[i]
-                let cartX = int (System.Math.Round(dispPt.X))
-                let cartY = int (System.Math.Round(dispPt.Y))
-                let isSelected =
-                    match model.SelectedVertex with
-                    | Some sel -> sel.PolyIndex = 0 && sel.VertexIndex = i
-                    | None -> false
-
-                concat {
-                    if isSelected then
-                        selHlo()
-                            .cx(sprintf "%.1f" rawPt.X)
-                            .cy(sprintf "%.1f" rawPt.Y)
-                            .cr(haloCr)
-                            .Elt()
-
-                    bdrCrl()
-                        .cs(match isSelected with true -> "outerVertex selected" | false -> "outerVertex")
-                        .cx(sprintf "%.1f" rawPt.X)
-                        .cy(sprintf "%.1f" rawPt.Y)
-                        .cr(boundRadiusStr)
-                        .cl(match isSelected with true -> "#2563eb" | false -> "#333")
-                        .Elt()
-
-                    vtxTxt()
-                        .tc("outerVertexLabel")
-                        .x(sprintf "%.1f" rawPt.X)
-                        .y(sprintf "%.1f" (rawPt.Y - textYOffset))
-                        .tf(boundLabelInt)
-                        .nm(sprintf "(%d, %d)" cartX cartY)
-                        .Elt()
-                }
+            model.Outer
+            |> Array.mapi (fun i rawPt ->
+                renderVertex 0 i rawPt model.DisplayOuter.[i] "outerVertex" "outerVertexLabel"
             )
+            |> concatNodes
 
             // Island vertices
-            forEach (Array.indexed model.Islands) (fun (i, isl) ->
-                forEach (Array.indexed isl) (fun (j, rawPt) ->
-                    let dispPt = model.DisplayIslands.[i].[j]
-                    let cartX = int (System.Math.Round(dispPt.X))
-                    let cartY = int (System.Math.Round(dispPt.Y))
-                    let isSelected =
-                        match model.SelectedVertex with
-                        | Some sel -> sel.PolyIndex = i + 1 && sel.VertexIndex = j
-                        | None -> false
-
-                    concat {
-                        if isSelected then
-                            selHlo()
-                                .cx(sprintf "%.1f" rawPt.X)
-                                .cy(sprintf "%.1f" rawPt.Y)
-                                .cr(haloCr)
-                                .Elt()
-
-                        bdrCrl()
-                            .cs(match isSelected with true -> "islandVertex selected" | false -> "islandVertex")
-                            .cx(sprintf "%.1f" rawPt.X)
-                            .cy(sprintf "%.1f" rawPt.Y)
-                            .cr(boundRadiusStr)
-                            .cl(match isSelected with true -> "#2563eb" | false -> "#333")
-                            .Elt()
-
-                        vtxTxt()
-                            .tc("islandVertexLabel")
-                            .x(sprintf "%.1f" rawPt.X)
-                            .y(sprintf "%.1f" (rawPt.Y - textYOffset))
-                            .tf(boundLabelInt)
-                            .nm(sprintf "(%d, %d)" cartX cartY)
-                            .Elt()
-                    }
+            model.Islands
+            |> Array.mapi (fun i isl ->
+                isl
+                |> Array.mapi (fun j rawPt ->
+                    renderVertex (i + 1) j rawPt model.DisplayIslands.[i].[j] "islandVertex" "islandVertexLabel"
                 )
+                |> concatNodes
             )
+            |> concatNodes
 
             // Ghost vertex preview on edge hover
-            if not model.IsLocked then
-                match model.GhostVertex with
-                | Some ghost ->
-                    ghstVtx()
-                        .cx(sprintf "%.1f" ghost.Point.X)
-                        .cy(sprintf "%.1f" ghost.Point.Y)
-                        .ty(sprintf "%.1f" (ghost.Point.Y + boundLabel * 0.35))
-                        .cr(sprintf "%.1f" (boundRadius + 2.0 * svgScale))
-                        .tf(boundLabelInt)
-                        .Elt()
-                | None -> ()
+            match model.IsLocked, model.GhostVertex with
+            | false, Some ghost ->
+                ghstVtx()
+                    .cx(sprintf "%.1f" ghost.Point.X)
+                    .cy(sprintf "%.1f" ghost.Point.Y)
+                    .ty(sprintf "%.1f" (ghost.Point.Y + boundLabel * 0.35))
+                    .cr(sprintf "%.1f" (boundRadius + 2.0 * svgScale))
+                    .tf(boundLabelInt)
+                    .Elt()
+            | _ -> ()
 
             // --- Entry point (Architectural Plan Double Door Symbol) ---
             elt "g" {
@@ -523,24 +485,27 @@ module View =
             controlAndInstructions model dispatch js canUndo canRedo
 
             // Hidden fields for JS interop callback
+            let handleMapJsonTrigger elementId onParsed =
+                async {
+                    let! dataStr = js.InvokeAsync<string>("eval", [| box $"document.getElementById('{elementId}').value" |]).AsTask() |> Async.AwaitTask
+                    match System.String.IsNullOrWhiteSpace dataStr with
+                    | true -> ()
+                    | false ->
+                        try
+                            use doc = System.Text.Json.JsonDocument.Parse dataStr
+                            let root = doc.RootElement
+                            let w = root.GetProperty("widthMeters").GetDouble()
+                            let h = root.GetProperty("heightMeters").GetDouble()
+                            onParsed (w, h, dataStr)
+                        with ex ->
+                            printfn "Error parsing map JSON from %s: %s" elementId ex.Message
+                } |> Async.StartImmediate
+
             input { attr.id "hymap-data"; attr.``type`` "hidden" }
             button {
                 attr.id "hymap-trigger"
                 attr.style "display:none;"
-                on.click (fun _ -> 
-                    async {
-                        let! dataStr = js.InvokeAsync<string>("eval", [| box "document.getElementById('hymap-data').value" |]).AsTask() |> Async.AwaitTask
-                        if not (System.String.IsNullOrWhiteSpace(dataStr)) then
-                            try
-                                let doc = System.Text.Json.JsonDocument.Parse(dataStr)
-                                let root = doc.RootElement
-                                let w = root.GetProperty("widthMeters").GetDouble()
-                                let h = root.GetProperty("heightMeters").GetDouble()
-                                dispatch (MapTopographyReceived (w, h, dataStr))
-                            with ex ->
-                                printfn "Error parsing topography: %s" ex.Message
-                    } |> Async.StartImmediate
-                )
+                on.click (fun _ -> handleMapJsonTrigger "hymap-data" (fun (w, h, raw) -> dispatch (MapTopographyReceived (w, h, raw))))
             }
 
             // Hidden fields for live dimension updates
@@ -548,46 +513,43 @@ module View =
             button {
                 attr.id "hymap-live-trigger"
                 attr.style "display:none;"
-                on.click (fun _ -> 
-                    async {
-                        let! dataStr = js.InvokeAsync<string>("eval", [| box "document.getElementById('hymap-live-data').value" |]).AsTask() |> Async.AwaitTask
-                        if not (System.String.IsNullOrWhiteSpace(dataStr)) then
-                            try
-                                let doc = System.Text.Json.JsonDocument.Parse(dataStr)
-                                let root = doc.RootElement
-                                let w = root.GetProperty("widthMeters").GetDouble()
-                                let h = root.GetProperty("heightMeters").GetDouble()
-                                dispatch (UpdateLogicalDimensions (w, h))
-                            with ex ->
-                                printfn "Error parsing live dimensions: %s" ex.Message
-                    } |> Async.StartImmediate
-                )
+                on.click (fun _ -> handleMapJsonTrigger "hymap-live-data" (fun (w, h, _) -> dispatch (UpdateLogicalDimensions (w, h))))
             }
 
             // Map and SVG Container
+            let containerAspectRatio =
+                match model.UseBoundary, model.UseMapBase, model.LogicalHeight > 0.0 with
+                | true, false, true ->
+                    let pad = State.standardPad model.LogicalWidth model.LogicalHeight
+                    sprintf "%.6f" ((model.LogicalWidth + 2.0 * pad) / (model.LogicalHeight + 2.0 * pad))
+                | _ -> "1"
+
+            let containerStyle =
+                match model.UseBoundary, model.UseMapBase with
+                | false, false -> "aspect-ratio: 1 / 1; border: none; background: transparent;"
+                | _ -> sprintf "aspect-ratio: %s; border: 1px solid #e0e0e0; background: #f0f0f0;" containerAspectRatio
+
+            let hymapPointerEvents =
+                match model.UseMapBase, model.IsMapLocked with
+                | false, _ -> "visibility: hidden;"
+                | true, true -> "pointer-events: none;"
+                | true, false -> "pointer-events: auto;"
+
+            let svgPointerEvents =
+                match model.UseMapBase, model.IsMapLocked with
+                | true, false -> "none"
+                | _ -> "auto"
+
             div {
                 attr.key "map-and-svg-container"
                 attr.id "map-and-svg-container"
                 attr.``class`` "boundary-svg-container"
-                attr.style (
-                    let aspectRatio =
-                        if model.UseBoundary && not model.UseMapBase && model.LogicalHeight > 0.0 then
-                            let pad = State.standardPad model.LogicalWidth model.LogicalHeight
-                            sprintf "%.6f" ((model.LogicalWidth + 2.0 * pad) / (model.LogicalHeight + 2.0 * pad))
-                        else
-                            "1"
-                    match model.UseBoundary, model.UseMapBase with
-                    | false, false -> "aspect-ratio: 1 / 1; border: none; background: transparent;"
-                    | _ -> sprintf "aspect-ratio: %s; border: 1px solid #e0e0e0; background: #f0f0f0;" aspectRatio
-                )
+                attr.style containerStyle
                 
                 // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
                 div {
                     attr.key "hymap-wrapper"
-                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" 
-                        (if model.UseMapBase then 
-                            (if model.IsMapLocked then "pointer-events: none;" else "pointer-events: auto;")
-                         else "visibility: hidden;"))
+                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" hymapPointerEvents)
                          
                     // Hymap Layer (Native) - Absolutely no children or dynamic attributes to ensure Leaflet DOM is fully preserved
                     div {
@@ -598,55 +560,61 @@ module View =
                 }
 
                 // SVG Editor Layer
+                let editorContent = polygonEditorSvg model dispatch js
                 div {
-                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" (match model.UseMapBase && not model.IsMapLocked with | true -> "none" | false -> "auto"))
+                    attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" svgPointerEvents)
                     match model.PolygonEnabled with
-                    | true -> polygonEditorSvg model dispatch js
-                    | false ->     div {
-                                        attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
-                                        polygonEditorSvg model dispatch js}
+                    | true -> editorContent
+                    | false ->
+                        div {
+                            attr.style "pointer-events:none; opacity:0.5; width: 100%; height: 100%;"
+                            editorContent
+                        }
                 }
 
                 // Lock Icon Overlay (Top Right)
-                if model.UseMapBase then
+                match model.UseMapBase with
+                | false -> ()
+                | true ->
+                    let (lockTitle, iconSvg) =
+                        match model.IsMapLocked with
+                        | true ->
+                            "Map is locked. Click to unlock",
+                            """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
+                        | false ->
+                            "Map is active. Click to lock",
+                            """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+
                     div {
                         attr.``class`` "hymap-lock-btn"
-                        attr.title (if model.IsMapLocked then "Map is locked. Click to unlock" else "Map is active. Click to lock")
+                        attr.title lockTitle
                         on.click (fun _ ->
                             let newState = not model.IsMapLocked
                             dispatch (ToggleMapLock newState)
-                            if newState then
-                                js.InvokeVoidAsync("Hymap.lockMap").AsTask() |> ignore
-                            else
-                                js.InvokeVoidAsync("Hymap.unlockMap").AsTask() |> ignore
+                            let jsAction = match newState with true -> "Hymap.lockMap" | false -> "Hymap.unlockMap"
+                            js.InvokeVoidAsync(jsAction).AsTask() |> ignore
                         )
-                        
-                        if model.IsMapLocked then
-                            // Locked Icon
-                            rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e63946" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>"""
-                        else
-                            // Unlocked Icon
-                            rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
+                        rawHtml iconSvg
                     }
             }
 
             // Bottom Action Bar
-            if model.UseMapBase && model.IsMapLocked && model.TopographyData.IsSome then
+            match model.UseMapBase, model.IsMapLocked, model.TopographyData with
+            | true, true, Some topoData ->
                 div {
                     attr.style "display: flex; justify-content: center; gap: 12px; margin-top: 10px; padding-bottom: 30px;"
-                    button { // Download Map Image
+                    button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
                         on.click (fun _ -> FileManager.exportMapImage js)
                         text "Download Map Image"
                     }
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                        on.click (fun _ -> FileManager.exportMapData js model.TopographyData.Value "terrain")
+                        on.click (fun _ -> FileManager.exportMapData js topoData "terrain")
                         text "Download Terrain Grid"
                     }
                 }
-            else
-                empty()
+            | _ -> empty()
 
             // Instructions Modal / Card (rendered cleanly at boundary view root level)
             instructionsModal model dispatch js
