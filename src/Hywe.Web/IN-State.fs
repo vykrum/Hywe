@@ -11,21 +11,57 @@ open Hywe
 open Hywe.Core
 open FileManager
 
+// Active Patterns & Pure Helpers
+let (|BlankString|ValidString|) (s: string) =
+    if String.IsNullOrWhiteSpace s then BlankString
+    else ValidString (s.Trim())
+
+let (|NonEmptyString|_|) (s: string) =
+    match s with
+    | BlankString -> None
+    | ValidString trimmed -> Some trimmed
+
+let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
+
+let getInnerPolygonEditor = function
+    | Stable m | FreshlyImported m -> m
+
+let getSequenceIndex level sequences =
+    sequences
+    |> Map.tryFind level
+    |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s))
+    |> Option.defaultValue 11
+
+let serializeModelTree (tree: SubModel) sequences (export: PolygonExportData) =
+    Serialization.getOutput
+        tree
+        sequences
+        export.Width
+        export.Height
+        export.AbsStr
+        export.BaseStr
+        export.OuterStr
+        export.IslandsStr
+
+let hasGeometryChanged (a: PolygonExportData) (b: PolygonExportData) =
+    a.OuterStr <> b.OuterStr || 
+    a.IslandsStr <> b.IslandsStr ||
+    a.EntryStr <> b.EntryStr ||
+    a.Width <> b.Width ||
+    a.Height <> b.Height ||
+    a.BaseStr <> b.BaseStr ||
+    a.AbsStr <> b.AbsStr
+
+let hasBoundaryChanged (a: PolygonExportData) (b: PolygonExportData) =
+    a.OuterStr <> b.OuterStr || 
+    a.IslandsStr <> b.IslandsStr ||
+    a.EntryStr <> b.EntryStr
+
 // Defaults / init 
-let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
 let initialTree = Serialization.initModel beeyond
 let initialSequence = allSqns.[11]
 let initialPolygonExport = syncPolygonState State.initModel
-
-let initialOutput = Serialization.getOutput
-                        initialTree
-                        (Map.ofList [0, initialSequence])
-                        initialPolygonExport.Width
-                        initialPolygonExport.Height
-                        initialPolygonExport.AbsStr
-                        initialPolygonExport.BaseStr
-                        initialPolygonExport.OuterStr
-                        initialPolygonExport.IslandsStr
+let initialOutput = serializeModelTree initialTree (Map.ofList [0, initialSequence]) initialPolygonExport
 
 let initModel =
     {
@@ -122,56 +158,57 @@ let maxUndoDepth = 50
 /// Captures the current undoable state and prepends it to the undo stack.
 let pushUndo (model: Model) : Model =
     let cleanPolyInner = 
-        match model.PolygonEditor with 
-        | Stable m | FreshlyImported m -> 
-            m |> State.snapshot |> State.refreshCachedStrings
+        model.PolygonEditor
+        |> getInnerPolygonEditor
+        |> State.snapshot
+        |> State.refreshCachedStrings
     let snap = {
-        SrcOfTrth  = model.SrcOfTrth
-        Tree       = model.Tree
+        SrcOfTrth     = model.SrcOfTrth
+        Tree          = model.Tree
         PolygonEditor = Stable cleanPolyInner
-        Sequences   = model.Sequences
+        Sequences     = model.Sequences
     }
     match model.UndoStack with
     // Only skip if both source of truth and boundary geometry are identical
     | top :: _ when top.SrcOfTrth = snap.SrcOfTrth && 
-                    (syncPolygonState (match top.PolygonEditor with Stable m | FreshlyImported m -> m)) = (syncPolygonState cleanPolyInner) -> 
+                    syncPolygonState (getInnerPolygonEditor top.PolygonEditor) = syncPolygonState cleanPolyInner -> 
         model 
     | _ ->
         let newStack = snap :: model.UndoStack |> List.truncate maxUndoDepth
         { model with UndoStack = newStack; RedoStack = [] }
 
 let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
-    let isCommunityLoaded = Option.isSome model.LoadedCommunityAuthor
     let userAuthor = 
         match model.CachedAuthor with
-        | Some a when not (System.String.IsNullOrWhiteSpace a) -> a
+        | Some (NonEmptyString a) -> a
         | _ -> ""
 
     let modelWithoutCommunity = 
-        if isCommunityLoaded then 
+        match model.LoadedCommunityAuthor with
+        | Some _ ->
             js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
             { model with 
                 LoadedCommunityAuthor = None
                 TeachMetadata = { model.TeachMetadata with Author = userAuthor }
                 ReportOptions = { model.ReportOptions with Author = userAuthor }
             } 
-        else model
+        | None -> model
 
-    if modelWithoutCommunity.HasAppendedModSuffix then modelWithoutCommunity
-    else
-        let currentTitle = 
-            if not (System.String.IsNullOrWhiteSpace modelWithoutCommunity.TeachMetadata.ExplorationDescription) then 
-                modelWithoutCommunity.TeachMetadata.ExplorationDescription
-            elif not (System.String.IsNullOrWhiteSpace modelWithoutCommunity.ReportOptions.ProjectTitle) then 
-                modelWithoutCommunity.ReportOptions.ProjectTitle
-            else ""
+    match modelWithoutCommunity.HasAppendedModSuffix with
+    | true -> modelWithoutCommunity
+    | false ->
+        let currentTitleOpt = 
+            [ modelWithoutCommunity.TeachMetadata.ExplorationDescription
+              modelWithoutCommunity.ReportOptions.ProjectTitle ]
+            |> List.tryPick (function NonEmptyString s -> Some s | _ -> None)
             
-        if System.String.IsNullOrWhiteSpace currentTitle then modelWithoutCommunity
-        else
+        match currentTitleOpt with
+        | None -> modelWithoutCommunity
+        | Some currentTitle ->
             let dateStr = System.DateTime.Now.ToString("MMdd")
-            if currentTitle.Contains(sprintf "(%s)" dateStr) || currentTitle.Contains("(mod ") then
-                { modelWithoutCommunity with HasAppendedModSuffix = true }
-            else
+            match currentTitle.Contains(sprintf "(%s)" dateStr) || currentTitle.Contains("(mod ") with
+            | true -> { modelWithoutCommunity with HasAppendedModSuffix = true }
+            | false ->
                 let suffixedTitle = sprintf "%s (%s)" currentTitle dateStr
                 js.InvokeVoidAsync("localStorage.setItem", "hywe_title", suffixedTitle) |> ignore
                 { modelWithoutCommunity with
@@ -180,112 +217,97 @@ let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
                     ReportOptions = { modelWithoutCommunity.ReportOptions with ProjectTitle = suffixedTitle }
                 }
 
+let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (updateStacks: UndoSnapshot -> Model -> Model) : Model * Cmd<Message> =
+    let currentPolyInner = getInnerPolygonEditor model.PolygonEditor
+    let reverseSnap = { 
+        SrcOfTrth     = model.SrcOfTrth
+        Tree          = model.Tree
+        PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
+        Sequences     = model.Sequences 
+    }
+    let restoredPolyInner = 
+        getInnerPolygonEditor snap.PolygonEditor
+        |> State.snapshot
+        |> State.refreshCachedStrings
+    let newExport = syncPolygonState restoredPolyInner
+
+    // Fast path: if in BoundaryPanel or if source of truth didn't change, reuse current Derived.
+    // Avoid running the heavy multi-level layout solver (deriveFromSource) on the UI thread!
+    let newDerived =
+        match model.ActivePanel with
+        | BoundaryPanel -> model.Derived
+        | _ when snap.SrcOfTrth = model.SrcOfTrth -> model.Derived
+        | _ -> Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
+
+    let restored = 
+        { model with
+            SrcOfTrth       = snap.SrcOfTrth
+            Tree            = snap.Tree
+            PolygonEditor   = Stable restoredPolyInner
+            PolygonExport   = newExport
+            Sequences       = snap.Sequences
+            Derived         = newDerived
+            LayoutCache     = Map.empty
+            PreDragSnapshot = None
+            NeedsHyweave    = true }
+        |> updateStacks reverseSnap
+
+    let syncCmd = 
+        Cmd.OfAsync.perform (fun () -> async { Protocol.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
+
+    restored, syncCmd
+
 let performUndo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.UndoStack with
     | [] -> model, Cmd.none
     | snap :: rest ->
-        let currentPolyInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        let redoSnap = { 
-            SrcOfTrth = model.SrcOfTrth
-            Tree = model.Tree
-            PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
-            Sequences = model.Sequences 
-        }
-        let restoredPolyInner = 
-            match snap.PolygonEditor with Stable m | FreshlyImported m -> m
-            |> State.snapshot
-            |> State.refreshCachedStrings
-        let newExport = syncPolygonState restoredPolyInner
-
-        // Fast path: if in BoundaryPanel or if source of truth didn't change, reuse current Derived.
-        // Avoid running the heavy multi-level layout solver (deriveFromSource) on the UI thread!
-        let newDerived =
-            if model.ActivePanel = BoundaryPanel || snap.SrcOfTrth = model.SrcOfTrth then
-                model.Derived
-            else
-                Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
-
-        let restored = { model with
-                            SrcOfTrth    = snap.SrcOfTrth
-                            Tree         = snap.Tree
-                            PolygonEditor = Stable restoredPolyInner
-                            PolygonExport = newExport
-                            Sequences     = snap.Sequences
-                            Derived      = newDerived
-                            LayoutCache  = Map.empty
-                            UndoStack    = rest
-                            RedoStack    = redoSnap :: model.RedoStack
-                            PreDragSnapshot = None
-                            NeedsHyweave = true }
-
-        let syncCmd = 
-            Cmd.OfAsync.perform (fun () -> async { Protocol.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
-
-        restored, syncCmd
+        restoreSnapshot js model snap (fun revSnap m ->
+            { m with UndoStack = rest; RedoStack = revSnap :: m.RedoStack })
 
 let performRedo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.RedoStack with
     | [] -> model, Cmd.none
     | snap :: rest ->
-        let currentPolyInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        let undoSnap = { 
-            SrcOfTrth = model.SrcOfTrth
-            Tree = model.Tree
-            PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
-            Sequences = model.Sequences 
-        }
-        let restoredPolyInner = 
-            match snap.PolygonEditor with Stable m | FreshlyImported m -> m
-            |> State.snapshot
-            |> State.refreshCachedStrings
-        let newExport = syncPolygonState restoredPolyInner
+        restoreSnapshot js model snap (fun revSnap m ->
+            { m with RedoStack = rest; UndoStack = revSnap :: m.UndoStack })
 
-        let newDerived =
-            if model.ActivePanel = BoundaryPanel || snap.SrcOfTrth = model.SrcOfTrth then
-                model.Derived
-            else
-                Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
+let dismissOnboardingIfInteracting (message: Message) (model: Model) : Model =
+    match model.Onboarding.IsActive with
+    | false -> model
+    | true ->
+        match message with
+        | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp | ToggleCoords
+        | TransitionToIntro | TransitionToMain 
+        | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
+        | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
+        | UpdateMetadata _ | Undo | Redo | SetAuthor _ | SetExplorationTitle _ | AuthorCachedLoaded _
+        | TitleCachedLoaded _ | CommunityAuthorCachedLoaded _
+        | SetIsStandalone _ | SetPrivacyAlert _ | SetInstallPromptAvailable _
+        | CacheResult _ | HyweaveResult _ | RecordResult _ | ReportGenerated _
+        | HideLinkCopied
+        | TreeMsg (SubMsg.PointerMove _)
+        | PolygonEditorMsg (PointerMove _) -> model
+        | _ ->
+            { model with 
+                Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }
+                IsPresetsCollapsed = true
+                IsWorkspaceCollapsed = true }
 
-        let restored = { model with
-                            SrcOfTrth    = snap.SrcOfTrth
-                            Tree         = snap.Tree
-                            PolygonEditor = Stable restoredPolyInner
-                            PolygonExport = newExport
-                            Sequences     = snap.Sequences
-                            Derived      = newDerived
-                            LayoutCache  = Map.empty
-                            RedoStack    = rest
-                            UndoStack    = undoSnap :: model.UndoStack
-                            PreDragSnapshot = None
-                            NeedsHyweave = true }
-
-        let syncCmd = 
-            Cmd.OfAsync.perform (fun () -> async { Protocol.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
-
-        restored, syncCmd
+let handlePageHelperUpdate (js: IJSRuntime) (shouldPushUndo: bool) (msg: Message) (model: Model) : Model * Cmd<Message> =
+    let modelToUpdate = if shouldPushUndo then pushUndo model else model
+    match PageHelpers.update js msg modelToUpdate with
+    | Some (newModel, cmd) -> 
+        Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
+        newModel, cmd
+    | None -> model, Cmd.none
 
 /// Update
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
-    let modelBefore = 
-        if model.Onboarding.IsActive then
-            match message with
-            | NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp | ToggleCoords
-            | TransitionToIntro | TransitionToMain 
-            | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
-            | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
-            | UpdateMetadata _ | Undo | Redo | SetAuthor _ | SetExplorationTitle _ | AuthorCachedLoaded _
-            | TitleCachedLoaded _ | CommunityAuthorCachedLoaded _
-            | SetIsStandalone _ | SetPrivacyAlert _ | SetInstallPromptAvailable _
-            | CacheResult _ | HyweaveResult _ | RecordResult _ | ReportGenerated _
-            | HideLinkCopied -> model
-            | TreeMsg (SubMsg.PointerMove _) -> model
-            | PolygonEditorMsg (PointerMove _) -> model
-            | _ -> { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }
-        else model
-    
-    let model = modelBefore
+    let model = dismissOnboardingIfInteracting message model
+
     match message with
     | NoOp -> model, Cmd.none
+
     | SetSqnIndex i ->
         let model = pushUndo model
         let newSqn = indexToSqn i
@@ -296,35 +318,21 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newSqns = 
             model.Sequences 
             |> Map.map (fun lvl sqn ->
-                if lvl = currentLevel || (currentLevel > 0 && lvl < currentLevel) then newSqn
-                else
+                match lvl = currentLevel || (currentLevel > 0 && lvl < currentLevel) with
+                | true -> newSqn
+                | false ->
                     let currentIsVR = sqnToIndex sqn < 12
-                    if currentIsVR <> targetIsVR then 
-                        // Mismatch! Force it to match the new category.
-                        newSqn
-                    else sqn
+                    if currentIsVR <> targetIsVR then newSqn else sqn
             )
 
         let updatedSrc = 
             match model.EditorMode with
-            | Interactive -> 
-                Serialization.getOutput 
-                    model.Tree 
-                    newSqns 
-                    model.PolygonExport.Width
-                    model.PolygonExport.Height
-                    model.PolygonExport.AbsStr
-                    model.PolygonExport.BaseStr
-                    model.PolygonExport.OuterStr
-                    model.PolygonExport.IslandsStr
+            | Interactive -> serializeModelTree model.Tree newSqns model.PolygonExport
             | Syntax -> 
-                let mutable s = model.SrcOfTrth
-                // Inject changes for all levels that were updated
-                for KeyValue(lvl, sqn) in newSqns do
+                (model.SrcOfTrth, newSqns)
+                ||> Map.fold (fun s lvl sqn ->
                     let oldSqn = model.Sequences |> Map.tryFind lvl |> Option.defaultValue ""
-                    if sqn <> oldSqn then
-                        s <- Lexel.injectSqn s lvl sqn
-                s
+                    if sqn <> oldSqn then Lexel.injectSqn s lvl sqn else s)
 
         Protocol.sync js updatedSrc model.ActivePanel
 
@@ -350,14 +358,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetSrcOfTrth value ->
         let m = pushUndo model |> applyAlterationSuffix js
         let nextCount = m.EditsCount + 1
-        let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
-        let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
+        let isSecondEdit = nextCount = 2
+        let nextCollapse = isSecondEdit || model.IsPresetsCollapsed
+        let nextWorkspaceCollapse = isSecondEdit || model.IsWorkspaceCollapsed
 
         let synced = PageHelpers.syncSyntaxToModel value m
         let currentLevel = max 0 synced.Tree.ActiveLevel
         let newDerived =
-            try
-                Cache.deriveFromSource value synced.Sequences synced.PolygonExport currentLevel
+            try Cache.deriveFromSource value synced.Sequences synced.PolygonExport currentLevel
             with _ -> m.Derived
 
         { synced with 
@@ -384,9 +392,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         LayoutCache = newCache }
         model2,
         Cmd.batch [
-                    Cmd.map TreeMsg (Cmd.ofMsg CancelAction)
-                    Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 50 }) () (fun _ -> RunHyweave)
-                ]
+            Cmd.map TreeMsg (Cmd.ofMsg CancelAction)
+            Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 50 }) () (fun _ -> RunHyweave)
+        ]
 
     | RunHyweave ->
         let modelWithSyntax, updatedSrcOfTrth =
@@ -395,59 +403,38 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let synced = PageHelpers.syncSyntaxToModel model.SrcOfTrth model
                 synced, synced.SrcOfTrth
             | Interactive ->
-                let out =
-                    Serialization.getOutput
-                        model.Tree
-                        model.Sequences
-                        model.PolygonExport.Width
-                        model.PolygonExport.Height
-                        model.PolygonExport.AbsStr
-                        model.PolygonExport.BaseStr
-                        model.PolygonExport.OuterStr
-                        model.PolygonExport.IslandsStr
-                model, out
+                model, serializeModelTree model.Tree model.Sequences model.PolygonExport
 
         Protocol.sync js updatedSrcOfTrth modelWithSyntax.ActivePanel
 
         let currentExport = modelWithSyntax.PolygonExport
         let currentLevel = max 0 modelWithSyntax.Tree.ActiveLevel
-        let currentSqnIdx = 
-            modelWithSyntax.Sequences 
-            |> Map.tryFind currentLevel 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
-            |> Option.defaultValue 11
+        let currentSqnIdx = getSequenceIndex currentLevel modelWithSyntax.Sequences
         let currentSqn = Hexel.sqnArray.[currentSqnIdx]
         
-        modelWithSyntax, Cmd.OfAsync.perform (fun () -> async {
-            let mutable updatedCache = Map.empty // Clear cache because source text or boundary changed
-            
-            // 1. Handle current orientation (might be different from 11)
-            let srcForCurrent = ensureCategory updatedSrcOfTrth currentSqnIdx
-            let fullDataCurrent = Cache.computeFullLayout srcForCurrent currentSqn currentExport currentLevel
-            for lvl in modelWithSyntax.Tree.Levels.Keys do
-                let c = Cache.fromFullLayout fullDataCurrent currentSqn lvl currentExport
-                updatedCache <- Cache.update (toMarker lvl) currentSqnIdx c updatedCache
-            
-            // 2. Handle orientation 11 (standard default) if current orientation is different
-            if currentSqnIdx <> 11 then
-                let srcFor11 = ensureCategory updatedSrcOfTrth 11
-                let fullData11 = Cache.computeFullLayout srcFor11 Hexel.sqnArray.[11] currentExport 0
-                for lvl in modelWithSyntax.Tree.Levels.Keys do
-                    let c = Cache.fromFullLayout fullData11 Hexel.sqnArray.[11] lvl currentExport
-                    updatedCache <- Cache.update (toMarker lvl) 11 c updatedCache
+        let populateLevelsCache orientationIdx sqn layoutLevel cache =
+            let src = ensureCategory updatedSrcOfTrth orientationIdx
+            let fullData = Cache.computeFullLayout src sqn currentExport layoutLevel
+            (cache, modelWithSyntax.Tree.Levels.Keys)
+            ||> Seq.fold (fun acc lvl ->
+                let config = Cache.fromFullLayout fullData sqn lvl currentExport
+                Cache.update (toMarker lvl) orientationIdx config acc)
 
-            return updatedSrcOfTrth, updatedCache
+        modelWithSyntax, Cmd.OfAsync.perform (fun () -> async {
+            let initialCache = Map.empty // Clear cache because source text or boundary changed
+            let cacheWithCurrent = populateLevelsCache currentSqnIdx currentSqn currentLevel initialCache
+            let finalCache =
+                match currentSqnIdx with
+                | 11 -> cacheWithCurrent
+                | _ -> populateLevelsCache 11 Hexel.sqnArray.[11] 0 cacheWithCurrent
+
+            return updatedSrcOfTrth, finalCache
         }) () HyweaveResult
 
     | HyweaveResult (src, cache) ->
         let currentLevel = max 0 model.Tree.ActiveLevel
-        let currentSqnIdx = 
-            model.Sequences 
-            |> Map.tryFind currentLevel 
-            |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
-            |> Option.defaultValue 11
+        let currentSqnIdx = getSequenceIndex currentLevel model.Sequences
         let activeConfig = Cache.get (toMarker currentLevel) currentSqnIdx cache |> Option.get
-        
         let finalSrc = Cache.populateNestBoundaries src activeConfig.cxCxl1
 
         { model with 
@@ -461,108 +448,108 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | CacheResult (marker, lvl, idx, data) ->
         let newCache = Cache.update marker idx data model.LayoutCache
         let newModel = { model with LayoutCache = newCache }
-        if lvl = max 0 model.Tree.ActiveLevel then
-            let currentSqnIdx = 
-                model.Sequences 
-                |> Map.tryFind lvl 
-                |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s)) 
-                |> Option.defaultValue 11
-            if idx = currentSqnIdx then
-                let finalSrc = Cache.populateNestBoundaries newModel.SrcOfTrth data.cxCxl1
-                { newModel with Derived = Cache.toDerived data; SrcOfTrth = finalSrc; IsHyweaving = false }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
-            else newModel, Cmd.none
-        else newModel, Cmd.none
+        let currentLevel = max 0 model.Tree.ActiveLevel
+        let currentSqnIdx = getSequenceIndex lvl model.Sequences
+
+        match (lvl = currentLevel, idx = currentSqnIdx) with
+        | true, true ->
+            let finalSrc = Cache.populateNestBoundaries newModel.SrcOfTrth data.cxCxl1
+            { newModel with 
+                Derived = Cache.toDerived data
+                SrcOfTrth = finalSrc
+                IsHyweaving = false 
+            }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
+        | _ -> newModel, Cmd.none
 
     | FinishHyweave ->
-            { model with 
-                IsHyweaving = false
-                NeedsHyweave = false
-            }, Cmd.none
+        { model with 
+            IsHyweaving = false
+            NeedsHyweave = false
+        }, Cmd.none
 
     | TreeMsg subMsg ->
-            let isMoving = match subMsg with SubMsg.PointerMove _ -> true | _ -> false
-            let shouldPush = 
-                match subMsg with
-                | SubMsg.ExecuteAction _ | SubMsg.AddChild _ | SubMsg.UpdateName _ 
-                | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _ -> true
-                | SubMsg.PointerUp ->
-                    // Push only if a drag actually happened
-                    model.Tree.DraggingId.IsSome
-                | _ -> false
+        let isMoving = match subMsg with SubMsg.PointerMove _ -> true | _ -> false
+        let shouldPush = 
+            match subMsg with
+            | SubMsg.ExecuteAction _ | SubMsg.AddChild _ | SubMsg.UpdateName _ 
+            | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _ -> true
+            | SubMsg.PointerUp ->
+                // Push only if a drag actually happened
+                model.Tree.DraggingId.IsSome
+            | _ -> false
 
-            let model = if shouldPush then pushUndo model else model
-            let updatedTree, treeCmd = NodeTree.updateSub js subMsg model.Tree 
+        let model = if shouldPush then pushUndo model else model
+        let updatedTree, treeCmd = NodeTree.updateSub js subMsg model.Tree 
+    
+        // Synchronize sequences map with all levels in the tree
+        let newSqns = 
+            (model.Sequences, updatedTree.Levels.Keys)
+            ||> Seq.fold (fun m lvl ->
+                match Map.containsKey lvl m with
+                | true -> m
+                | false -> 
+                    // Inherit from parent (lvl-1) if possible, else default to 11 (VRCCNE)
+                    let parentSqn = m |> Map.tryFind (lvl - 1) |> Option.defaultValue "VRCCNE"
+                    Map.add lvl parentSqn m
+            )
+
+        let newOutput = serializeModelTree updatedTree newSqns model.PolygonExport
+
+        let isLevelSwitch = match subMsg with SubMsg.SetLevel _ | SubMsg.SetNest _ -> true | _ -> false
+        let isAction = match subMsg with SubMsg.ExecuteAction _ -> true | _ -> false
+        let isPointerUp = match subMsg with SubMsg.PointerUp -> true | _ -> false
+
+        let isIncrementalEdit = shouldPush
+        let nextCount = if isIncrementalEdit then model.EditsCount + 1 else model.EditsCount
+        let isSecondEdit = nextCount = 2
+        let nextCollapse = isSecondEdit || model.IsPresetsCollapsed
+        let nextWorkspaceCollapse = isSecondEdit || model.IsWorkspaceCollapsed
         
-            // Synchronize sequences map with all levels in the tree
-            let newSqns = 
-                (model.Sequences, updatedTree.Levels.Keys)
-                ||> Seq.fold (fun m lvl ->
-                    match Map.containsKey lvl m with
-                    | true -> m
-                    | false -> 
-                        // Inherit from parent (lvl-1) if possible, else default to 11 (VRCCNE)
-                        let parentSqn = m |> Map.tryFind (lvl - 1) |> Option.defaultValue "VRCCNE"
-                        Map.add lvl parentSqn m
-                )
+        let modelToUse = if isIncrementalEdit then applyAlterationSuffix js model else model
+        let modelWithTree = 
+            { modelToUse with 
+                Tree = updatedTree 
+                Sequences = newSqns
+                SrcOfTrth = newOutput 
+                NeedsHyweave = if isMoving then model.NeedsHyweave else true
+                EditsCount = nextCount
+                IsPresetsCollapsed = nextCollapse
+                IsWorkspaceCollapsed = nextWorkspaceCollapse }
 
-            let newOutput = Serialization.getOutput
-                                 updatedTree
-                                 newSqns
-                                 model.PolygonExport.Width
-                                 model.PolygonExport.Height
-                                 model.PolygonExport.AbsStr
-                                 model.PolygonExport.BaseStr
-                                 model.PolygonExport.OuterStr
-                                 model.PolygonExport.IslandsStr
+        if isIncrementalEdit || isPointerUp then
+            Protocol.sync js newOutput model.ActivePanel
 
-            let isLevelSwitch = match subMsg with SubMsg.SetLevel _ | SubMsg.SetNest _ -> true | _ -> false
-            let isAction = match subMsg with SubMsg.ExecuteAction _ -> true | _ -> false
-
-            let isIncrementalEdit = shouldPush
-            let nextCount = if isIncrementalEdit then model.EditsCount + 1 else model.EditsCount
-            let nextCollapse = if nextCount = 2 then true else model.IsPresetsCollapsed
-            let nextWorkspaceCollapse = if nextCount = 2 then true else model.IsWorkspaceCollapsed
-            
-            let modelToUse = if isIncrementalEdit then applyAlterationSuffix js model else model
-            let modelWithTree = 
-                { modelToUse with 
-                    Tree = updatedTree 
-                    Sequences = newSqns
-                    SrcOfTrth = newOutput 
-                    NeedsHyweave = if isMoving then model.NeedsHyweave else true
-                    EditsCount = nextCount
-                    IsPresetsCollapsed = nextCollapse
-                    IsWorkspaceCollapsed = nextWorkspaceCollapse }
-
-            if isIncrementalEdit || (match subMsg with SubMsg.PointerUp -> true | _ -> false) then
-                Protocol.sync js newOutput model.ActivePanel
-
-            let finalModel, finalCmd = 
-                if isLevelSwitch || isAction then
-                    let m = { modelWithTree with Derived = Cache.deriveFromSource newOutput model.Sequences model.PolygonExport updatedTree.ActiveLevel }
-                    if model.ActivePanel = BatchPanel then
-                        { m with 
-                            IsHyweaving = true
-                            BatchProgress = 0
-                        }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
-                    else
-                        m, Cmd.map TreeMsg treeCmd
-                else modelWithTree, Cmd.map TreeMsg treeCmd
-
-            finalModel, finalCmd
+        match isLevelSwitch || isAction with
+        | true ->
+            let m = { modelWithTree with Derived = Cache.deriveFromSource newOutput model.Sequences model.PolygonExport updatedTree.ActiveLevel }
+            match model.ActivePanel with
+            | BatchPanel ->
+                { m with 
+                    IsHyweaving = true
+                    BatchProgress = 0
+                }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
+            | _ ->
+                m, Cmd.map TreeMsg treeCmd
+        | false ->
+            modelWithTree, Cmd.map TreeMsg treeCmd
 
     | PolygonEditorMsg subMsg ->
-        let currentInnerModel = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let currentInnerModel = getInnerPolygonEditor model.PolygonEditor
+        let isDraggingAny = currentInnerModel.Dragging.IsSome || currentInnerModel.DraggingEntry || currentInnerModel.DraggingIsland.IsSome
+
         match subMsg with
         | PointerDown _ | StartDragEntry _ ->
             let cleanPolyInner = currentInnerModel |> State.snapshot |> State.refreshCachedStrings
             let preSnap = {
-                SrcOfTrth = model.SrcOfTrth
-                Tree = model.Tree
+                SrcOfTrth     = model.SrcOfTrth
+                Tree          = model.Tree
                 PolygonEditor = Stable cleanPolyInner
-                Sequences = model.Sequences
+                Sequences     = model.Sequences
             }
-            let modelWithSnap = if model.PreDragSnapshot.IsNone then { model with PreDragSnapshot = Some preSnap } else model
+            let modelWithSnap = 
+                match model.PreDragSnapshot with
+                | None -> { model with PreDragSnapshot = Some preSnap }
+                | Some _ -> model
             modelWithSnap,
             Cmd.OfAsync.perform
                 (State.update js subMsg)
@@ -576,18 +563,19 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 // Do NOT push undo, do NOT run heavy Protocol.sync/LZString, do NOT re-serialize.
                 let newExport = syncPolygonState updatedInner
                 let modelSnap =
-                    if model.PreDragSnapshot.IsNone && (currentInnerModel.Dragging.IsSome || currentInnerModel.DraggingEntry || currentInnerModel.DraggingIsland.IsSome) then
+                    match model.PreDragSnapshot with
+                    | None when isDraggingAny ->
                         let cleanPolyInner = currentInnerModel |> State.snapshot |> State.refreshCachedStrings
                         Some {
-                            SrcOfTrth = model.SrcOfTrth
-                            Tree = model.Tree
+                            SrcOfTrth     = model.SrcOfTrth
+                            Tree          = model.Tree
                             PolygonEditor = Stable cleanPolyInner
-                            Sequences = model.Sequences
+                            Sequences     = model.Sequences
                         }
-                    else model.PreDragSnapshot
+                    | existing -> existing
                 { model with
-                    PolygonEditor = Stable updatedInner
-                    PolygonExport = newExport
+                    PolygonEditor   = Stable updatedInner
+                    PolygonExport   = newExport
                     PreDragSnapshot = modelSnap }, Cmd.none
             | None -> model, Cmd.none
 
@@ -595,57 +583,46 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match State.updateSync subMsg currentInnerModel with
             | Some updatedInner ->
                 // Drag completed! Check if an actual drag occurred.
-                let wasDragging = currentInnerModel.Dragging.IsSome || currentInnerModel.DraggingEntry || currentInnerModel.DraggingIsland.IsSome
+                let wasDragging = isDraggingAny
                 let newExport = syncPolygonState updatedInner
-                let preSnapOpt = model.PreDragSnapshot
-
                 let isChanged =
-                    match preSnapOpt with
+                    match model.PreDragSnapshot with
                     | Some preSnap ->
-                        let preExport = syncPolygonState (match preSnap.PolygonEditor with Stable m | FreshlyImported m -> m)
-                        newExport.OuterStr <> preExport.OuterStr || 
-                        newExport.IslandsStr <> preExport.IslandsStr ||
-                        newExport.EntryStr <> preExport.EntryStr ||
-                        newExport.Width <> preExport.Width ||
+                        let preExport = syncPolygonState (getInnerPolygonEditor preSnap.PolygonEditor)
+                        hasBoundaryChanged newExport preExport || 
+                        newExport.Width <> preExport.Width || 
                         newExport.Height <> preExport.Height
                     | None -> false
 
-                let isBoundaryChanged = 
-                    model.EditsCount > 0 && isChanged
+                let isBoundaryChanged = model.EditsCount > 0 && isChanged
 
                 let newUndoStack =
-                    match preSnapOpt with
+                    match model.PreDragSnapshot with
                     | Some preSnap when wasDragging && isChanged ->
                         preSnap :: model.UndoStack |> List.truncate maxUndoDepth
                     | _ -> model.UndoStack
 
                 let newRedoStack =
-                    if wasDragging && isChanged then [] else model.RedoStack
+                    match wasDragging && isChanged with
+                    | true -> []
+                    | false -> model.RedoStack
 
                 let model = if isBoundaryChanged then applyAlterationSuffix js model else model
-                let newOutput = Serialization.getOutput
-                                     model.Tree
-                                     model.Sequences
-                                     newExport.Width
-                                     newExport.Height
-                                     newExport.AbsStr
-                                     newExport.BaseStr
-                                     newExport.OuterStr
-                                     newExport.IslandsStr
+                let newOutput = serializeModelTree model.Tree model.Sequences newExport
 
                 let syncCmd =
-                    if wasDragging && isChanged then
-                        Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
-                    else Cmd.none
+                    match wasDragging && isChanged with
+                    | true -> Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
+                    | false -> Cmd.none
 
                 { model with 
-                    PolygonEditor = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
-                    PolygonExport = newExport
-                    SrcOfTrth = newOutput
-                    UndoStack = newUndoStack
-                    RedoStack = newRedoStack
+                    PolygonEditor   = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
+                    PolygonExport   = newExport
+                    SrcOfTrth       = newOutput
+                    UndoStack       = newUndoStack
+                    RedoStack       = newRedoStack
                     PreDragSnapshot = None
-                    NeedsHyweave = if wasDragging && isChanged then true else model.NeedsHyweave },
+                    NeedsHyweave    = if wasDragging && isChanged then true else model.NeedsHyweave },
                     syncCmd
             | None -> { model with PreDragSnapshot = None }, Cmd.none
 
@@ -655,35 +632,24 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let model = pushUndo model
                 let newExport = syncPolygonState updatedInner
                 let model = applyAlterationSuffix js model
-                let newOutput = Serialization.getOutput
-                                     model.Tree
-                                     model.Sequences
-                                     newExport.Width
-                                     newExport.Height
-                                     newExport.AbsStr
-                                     newExport.BaseStr
-                                     newExport.OuterStr
-                                     newExport.IslandsStr
+                let newOutput = serializeModelTree model.Tree model.Sequences newExport
                 let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
                 { model with
-                    PolygonEditor = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
-                    PolygonExport = newExport
-                    SrcOfTrth = newOutput
+                    PolygonEditor   = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
+                    PolygonExport   = newExport
+                    SrcOfTrth       = newOutput
                     PreDragSnapshot = None
-                    NeedsHyweave = true }, syncCmd
+                    NeedsHyweave    = true }, syncCmd
             | None -> model, Cmd.none
 
         | SelectVertex sel ->
-            let updatedInner = { currentInnerModel with SelectedVertex = sel }
-            { model with PolygonEditor = Stable updatedInner }, Cmd.none
+            { model with PolygonEditor = Stable { currentInnerModel with SelectedVertex = sel } }, Cmd.none
 
         | ToggleInstructions ->
-            let updatedInner = { currentInnerModel with ShowInstructions = not currentInnerModel.ShowInstructions }
-            { model with PolygonEditor = Stable updatedInner }, Cmd.none
+            { model with PolygonEditor = Stable { currentInnerModel with ShowInstructions = not currentInnerModel.ShowInstructions } }, Cmd.none
 
         | ToggleLock ->
-            let updatedInner = { currentInnerModel with IsLocked = not currentInnerModel.IsLocked; SelectedVertex = None; GhostVertex = None }
-            { model with PolygonEditor = Stable updatedInner }, Cmd.none
+            { model with PolygonEditor = Stable { currentInnerModel with IsLocked = not currentInnerModel.IsLocked; SelectedVertex = None; GhostVertex = None } }, Cmd.none
 
         | RequestResetBoundary ->
             { model with PendingConfirm = Some ConfirmAction.ResetBoundaryAction }, Cmd.none
@@ -703,69 +669,41 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | PolygonEditorUpdated newModel ->
         let newExport = syncPolygonState newModel
-        let hasGeometryChanged =
-            newExport.OuterStr <> model.PolygonExport.OuterStr || 
-            newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
-            newExport.EntryStr <> model.PolygonExport.EntryStr ||
-            newExport.Width <> model.PolygonExport.Width ||
-            newExport.Height <> model.PolygonExport.Height ||
-            newExport.BaseStr <> model.PolygonExport.BaseStr ||
-            newExport.AbsStr <> model.PolygonExport.AbsStr
+        let isGeometryChanged = hasGeometryChanged newExport model.PolygonExport
 
-        if hasGeometryChanged then
+        match isGeometryChanged with
+        | true ->
             let isBoundaryChanged = 
-                model.EditsCount > 0 && 
-                (newExport.OuterStr <> model.PolygonExport.OuterStr || 
-                 newExport.IslandsStr <> model.PolygonExport.IslandsStr ||
-                 newExport.EntryStr <> model.PolygonExport.EntryStr)
+                model.EditsCount > 0 && hasBoundaryChanged newExport model.PolygonExport
             let model = pushUndo model
             let model = if isBoundaryChanged then applyAlterationSuffix js model else model
-            let newOutput = Serialization.getOutput
-                                 model.Tree
-                                 model.Sequences
-                                 newExport.Width
-                                 newExport.Height
-                                 newExport.AbsStr
-                                 newExport.BaseStr
-                                 newExport.OuterStr
-                                 newExport.IslandsStr
+            let newOutput = serializeModelTree model.Tree model.Sequences newExport
             let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
 
             { model with 
-                PolygonEditor = Stable (newModel |> State.snapshot |> State.refreshCachedStrings)
-                PolygonExport = newExport
-                SrcOfTrth = newOutput
+                PolygonEditor   = Stable (newModel |> State.snapshot |> State.refreshCachedStrings)
+                PolygonExport   = newExport
+                SrcOfTrth       = newOutput
                 PreDragSnapshot = None
-                NeedsHyweave = true },
+                NeedsHyweave    = true },
                 syncCmd
-        else
+        | false ->
             { model with 
                 PolygonEditor = Stable newModel
                 PolygonExport = newExport },
                 Cmd.none
 
-    | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv | DownloadBatchMetricsCsv | DownloadBatchAdjCsv | ToggleCoords as msg ->
-        let model = 
-            match msg with
-            | FileImported _ | SelectPreset _ -> pushUndo model
-            | _ -> model
-        match PageHelpers.update js msg model with
-        | Some (newModel, cmd) -> 
-            Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
-            newModel, cmd
-        | None -> model, Cmd.none
+    | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ 
+    | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv 
+    | DownloadBatchMetricsCsv | DownloadBatchAdjCsv | ToggleCoords as msg ->
+        let shouldPush = match msg with FileImported _ | SelectPreset _ -> true | _ -> false
+        handlePageHelperUpdate js shouldPush msg model
 
     | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DPng 
     | Download3DSvg | DownloadBatchSvg | DownloadBatchPng | GenerateReport as msg ->
-        let model = 
-            match msg with
-            | ToggleBoundary | ToggleEditorMode -> pushUndo model
-            | _ -> model
-        match PageHelpers.update js msg model with
-        | Some (newModel, cmd) -> 
-            Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
-            newModel, cmd
-        | None -> model, Cmd.none
+        let shouldPush = match msg with ToggleBoundary | ToggleEditorMode -> true | _ -> false
+        handlePageHelperUpdate js shouldPush msg model
+
     | SetBatchFinished ->
         { model with 
             LastBatchSrc = Some model.SrcOfTrth 
@@ -774,79 +712,85 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             ActivePanel = BatchPanel 
             BatchProgress = 24
         }, Cmd.none
+
     | SetBatchProgress p ->
         { model with BatchProgress = p }, Cmd.none
     
     // --- Recursive Batch Generation ---
-    | GenerateNextBatchItem i ->
-        if i >= 24 || model.IsCancelling then
-            { model with IsHyweaving = false; IsCancelling = false }, 
-            Cmd.ofMsg SetBatchFinished
-        else
-            model, Cmd.OfAsync.perform (fun () -> async {
-                try
-                    let mutable currentCache = model.LayoutCache
-                    let sqn = Hexel.sqnArray.[i]
-                    let marker = toMarker model.Tree.ActiveLevel
-                    
-                    match Cache.get marker i currentCache with
-                    | Some _ ->
-                        // Fill-in-the-blanks approach: skip if already computed
-                        do! Async.Sleep 1
-                        return currentCache
-                    | None ->
-                        // Force all levels in the source to match the current batch orientation 'sqn'
-                        let srcForBatch = ensureCategory model.SrcOfTrth i
+    | GenerateNextBatchItem i when i >= 24 || model.IsCancelling ->
+        { model with IsHyweaving = false; IsCancelling = false }, 
+        Cmd.ofMsg SetBatchFinished
 
-                        // Compute full layout once for this orientation
-                        let fullData = Cache.computeFullLayout srcForBatch sqn model.PolygonExport 0
-                        
-                        // Update cache for all levels
-                        for lvl in model.Tree.Levels.Keys do
+    | GenerateNextBatchItem i ->
+        model, Cmd.OfAsync.perform (fun () -> async {
+            try
+                let sqn = Hexel.sqnArray.[i]
+                let marker = toMarker model.Tree.ActiveLevel
+                
+                match Cache.get marker i model.LayoutCache with
+                | Some _ ->
+                    // Fill-in-the-blanks approach: skip if already computed
+                    do! Async.Sleep 1
+                    return model.LayoutCache
+                | None ->
+                    // Force all levels in the source to match the current batch orientation 'sqn'
+                    let srcForBatch = ensureCategory model.SrcOfTrth i
+                    let fullData = Cache.computeFullLayout srcForBatch sqn model.PolygonExport 0
+                    
+                    let updatedCache =
+                        (model.LayoutCache, model.Tree.Levels.Keys)
+                        ||> Seq.fold (fun cache lvl ->
                             let config = Cache.fromFullLayout fullData sqn lvl model.PolygonExport
-                            currentCache <- Cache.update (toMarker lvl) i config currentCache
-                        
-                        do! Async.Sleep 5
-                        return currentCache
-                with _ -> return model.LayoutCache
-            }) () AddBatchItem
+                            Cache.update (toMarker lvl) i config cache)
+                    
+                    do! Async.Sleep 5
+                    return updatedCache
+            with _ -> return model.LayoutCache
+        }) () AddBatchItem
 
     | AddBatchItem updatedCache ->
         let nextI = model.BatchProgress + 1
         { model with BatchProgress = nextI; LayoutCache = updatedCache }, Cmd.ofMsg (GenerateNextBatchItem nextI)
+
     | TapBatchPreview i ->
         let nextSelection = 
             match model.SelectedPreviewIndex with
             | Some current when current = i -> None
             | _ -> Some i
         { model with SelectedPreviewIndex = nextSelection }, Cmd.none
+
     | CloseBatch ->
         { model with ActivePanel = LayoutPanel; SelectedPreviewIndex = None }, Cmd.none
+
     | CancelBatch ->
         model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
         { model with IsCancelling = true }, Cmd.none
+
     | BatchCancelled ->
         { model with IsHyweaving = false; IsCancelling = false }, Cmd.none
+
     | SaveRequested ->
         FileManager.saveFile js model.SrcOfTrth |> ignore
         Protocol.sync js model.SrcOfTrth model.ActivePanel
         model, Cmd.none
+
     | ImportRequested ->
         let doClick () =
             task {
                 do! js.InvokeVoidAsync("clickElement", "hyw-import-hidden").AsTask()
             }
         model, Cmd.OfTask.perform doClick () (fun _ -> FinishHyweave)
+
     | ViewCaptured dataUrl ->
         { model with Captured3DImage = Some dataUrl }, Cmd.none
+
     | SetDescription _ | SuggestDescription | RecordResult _ | UpdateMetadata _ 
     | SetHoveredInfo _ | StartVoiceCapture | OnVoiceResult | RecordToHynteract as msg ->
-        match Teach.update js msg model with
-        | Some (newModel, cmd) -> newModel, cmd
-        | None -> model, Cmd.none
+        Teach.update js msg model
+        |> Option.defaultValue (model, Cmd.none)
 
     | ShareLink ->
-        let p = 
+        let panelParam = 
             match model.ActivePanel with
             | BoundaryPanel -> "boundary"
             | LayoutPanel -> "layout"
@@ -855,7 +799,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | TeachPanel -> "teach"
             | ReportPanel -> "report"
             | BatchPanel -> "batch"
-        let hash = sprintf "%s|P=%s" model.SrcOfTrth p
+        let hash = sprintf "%s|P=%s" model.SrcOfTrth panelParam
         { model with ShowLinkCopied = true }, 
         Cmd.batch [
             Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("shareCompressedHash", "Hywe Design", "", hash).AsTask()) () (fun _ -> NoOp)
@@ -868,7 +812,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | LoadState (content, panel, isFromUrl) ->
         let resolvedPanel = panel |> Option.defaultValue model.ActivePanel
         if isFromUrl then
-             async { do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Restoration successful. Panel: %A" panel).AsTask() |> Async.AwaitTask } |> Async.StartImmediate
+            async { do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Restoration successful. Panel: %A" panel).AsTask() |> Async.AwaitTask } |> Async.StartImmediate
 
         let modelWithPanel = 
             { model with 
@@ -876,30 +820,26 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 Onboarding = { model.Onboarding with IsActive = if isFromUrl then false else model.Onboarding.IsActive }
             }
 
-        if String.IsNullOrWhiteSpace content then modelWithPanel, Cmd.none
-        else
+        match content with
+        | BlankString -> modelWithPanel, Cmd.none
+        | ValidString cleanContent ->
             try
-                // Extract Sequences (Q=...)
-                let newSqns = Lexel.extractSequences content
-                
-                // Restore Tree
-                let newTree = Serialization.initModel content
-                
-                // Restore Polygon
-                let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                let newState = FileManager.importFromHyw content currentInner
-                let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                let newSqns = Lexel.extractSequences cleanContent
+                let newTree = Serialization.initModel cleanContent
+                let currentInner = getInnerPolygonEditor model.PolygonEditor
+                let newState = FileManager.importFromHyw cleanContent currentInner
+                let finalPoly = getInnerPolygonEditor newState
                 let newExport = syncPolygonState finalPoly
                 
                 let updatedModel = 
                     { modelWithPanel with 
-                        SrcOfTrth = content
+                        SrcOfTrth = cleanContent
                         Tree = newTree
                         LastValidTree = newTree
                         PolygonEditor = newState
                         PolygonExport = newExport
                         Sequences = newSqns
-                        Derived = Cache.deriveFromSource content newSqns newExport newTree.ActiveLevel
+                        Derived = Cache.deriveFromSource cleanContent newSqns newExport newTree.ActiveLevel
                         LayoutCache = Map.empty
                         NeedsHyweave = true
                         IsPresetsCollapsed = true
@@ -910,10 +850,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 
                 // Validate that the loaded state actually results in a layout, 
                 // but allow deep links to bypass this check so they can set the panel even on empty projects.
-                if not isFromUrl && Array.isEmpty updatedModel.Derived.cxCxl1 then
-                    modelWithPanel, Cmd.none 
-                else
-                    updatedModel, Cmd.none
+                match not isFromUrl && Array.isEmpty updatedModel.Derived.cxCxl1 with
+                | true -> modelWithPanel, Cmd.none 
+                | false -> updatedModel, Cmd.none
             with _ ->
                 modelWithPanel, Cmd.none
 
@@ -955,74 +894,63 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         performRedo js model
 
     | NextOnboardingStep ->
-        if not model.Onboarding.IsActive then model, Cmd.none
-        else
-        let nextStep = 
-            match model.Onboarding.CurrentStep with
-            | Welcome -> NodeGuide
-            | NodeGuide -> NodeMenuGuide
-            | NodeMenuGuide -> ElevateGuide
-            | ElevateGuide -> MoveNodeGuide
-            | MoveNodeGuide -> BoundaryGuide
-            | BoundaryGuide -> LayoutGuide
-            | LayoutGuide -> Finish
-            | Finish -> Finish
+        match model.Onboarding.IsActive with
+        | false -> model, Cmd.none
+        | true ->
+            let nextStep = 
+                match model.Onboarding.CurrentStep with
+                | Welcome -> NodeGuide
+                | NodeGuide -> NodeMenuGuide
+                | NodeMenuGuide -> ElevateGuide
+                | ElevateGuide -> MoveNodeGuide
+                | MoveNodeGuide -> BoundaryGuide
+                | BoundaryGuide -> LayoutGuide
+                | LayoutGuide | Finish -> Finish
 
-        let isFinished = nextStep = Finish && model.Onboarding.CurrentStep = Finish
-        let newActivePanel = 
-            match nextStep with
-            | NodeGuide -> LayoutPanel
-            | NodeMenuGuide -> LayoutPanel
-            | ElevateGuide -> LayoutPanel
-            | MoveNodeGuide -> LayoutPanel
-            | BoundaryGuide -> BoundaryPanel
-            | LayoutGuide -> LayoutPanel
-            | _ -> model.ActivePanel
+            let isFinished = nextStep = Finish && model.Onboarding.CurrentStep = Finish
+            let newActivePanel = 
+                match nextStep with
+                | BoundaryGuide -> BoundaryPanel
+                | NodeGuide | NodeMenuGuide | ElevateGuide | MoveNodeGuide | LayoutGuide -> LayoutPanel
+                | _ -> model.ActivePanel
 
-        let cmd = Cmd.none
-
-        { model with 
-            Onboarding = { model.Onboarding with 
-                            CurrentStep = nextStep
-                            IsActive = not isFinished
-                            SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
-            ActivePanel = newActivePanel
-            IsPresetsCollapsed = if isFinished then true else model.IsPresetsCollapsed
-            IsWorkspaceCollapsed = if isFinished then true else model.IsWorkspaceCollapsed
-        }, cmd
+            { model with 
+                Onboarding = { model.Onboarding with 
+                                CurrentStep = nextStep
+                                IsActive = not isFinished
+                                SeenSteps = model.Onboarding.SeenSteps.Add(model.Onboarding.CurrentStep) }
+                ActivePanel = newActivePanel
+                IsPresetsCollapsed = if isFinished then true else model.IsPresetsCollapsed
+                IsWorkspaceCollapsed = if isFinished then true else model.IsWorkspaceCollapsed
+            }, Cmd.none
 
     | PreviousOnboardingStep ->
-        if not model.Onboarding.IsActive then model, Cmd.none
-        else
-        let prevStep = 
-            match model.Onboarding.CurrentStep with
-            | Welcome -> Welcome
-            | NodeGuide -> Welcome
-            | NodeMenuGuide -> NodeGuide
-            | ElevateGuide -> NodeMenuGuide
-            | MoveNodeGuide -> ElevateGuide
-            | BoundaryGuide -> MoveNodeGuide
-            | LayoutGuide -> BoundaryGuide
-            | Finish -> LayoutGuide
+        match model.Onboarding.IsActive with
+        | false -> model, Cmd.none
+        | true ->
+            let prevStep = 
+                match model.Onboarding.CurrentStep with
+                | Welcome | NodeGuide -> Welcome
+                | NodeMenuGuide -> NodeGuide
+                | ElevateGuide -> NodeMenuGuide
+                | MoveNodeGuide -> ElevateGuide
+                | BoundaryGuide -> MoveNodeGuide
+                | LayoutGuide -> BoundaryGuide
+                | Finish -> LayoutGuide
 
-        let newActivePanel = 
-            match prevStep with
-            | NodeGuide -> LayoutPanel
-            | NodeMenuGuide -> LayoutPanel
-            | ElevateGuide -> LayoutPanel
-            | MoveNodeGuide -> LayoutPanel
-            | BoundaryGuide -> BoundaryPanel
-            | LayoutGuide -> LayoutPanel
-            | _ -> LayoutPanel
+            let newActivePanel = 
+                match prevStep with
+                | BoundaryGuide -> BoundaryPanel
+                | _ -> LayoutPanel
 
-        { model with 
-            Onboarding = { model.Onboarding with CurrentStep = prevStep }
-            ActivePanel = newActivePanel
-        }, Cmd.none
+            { model with 
+                Onboarding = { model.Onboarding with CurrentStep = prevStep }
+                ActivePanel = newActivePanel
+            }, Cmd.none
 
     | SkipOnboarding ->
         { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, 
-        Cmd.map TreeMsg (Cmd.ofMsg CancelAction) // Just in case
+        Cmd.map TreeMsg (Cmd.ofMsg CancelAction)
 
     | RestartOnboarding ->
         { model with 
@@ -1070,10 +998,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleGallery ->
         let newShow = not model.ShowGallery
-        let cmd = 
-            if newShow then
-                Cmd.ofMsg LoadGalleryEntries
-            else Cmd.none
+        let cmd = match newShow with true -> Cmd.ofMsg LoadGalleryEntries | false -> Cmd.none
         { model with ShowGallery = newShow; GalleryOffset = 0 }, cmd
 
     | LoadGalleryEntries ->
@@ -1097,12 +1022,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         | true, p when p.ValueKind = System.Text.Json.JsonValueKind.String ->
                             System.String.Equals(p.GetString(), "true", System.StringComparison.OrdinalIgnoreCase)
                         | _ -> false
-                    
-                    let expDesc = safeGetString "explorationDescription"
-                    let isFeatured = safeGetBool "isFeatured"
 
                     { Id = safeGetString "id"
-                      ExplorationDescription = expDesc
+                      ExplorationDescription = safeGetString "explorationDescription"
                       Author = safeGetString "author"
                       Description = safeGetString "description"
                       SvgThumbnail = safeGetString "svgThumbnail"
@@ -1114,7 +1036,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                       Flow = safeGetString "flow"
                       Ambience = safeGetString "ambience"
                       CreatedAt = safeGetString "createdAt"
-                      IsFeatured = isFeatured })
+                      IsFeatured = safeGetBool "isFeatured" })
                 |> Seq.toList
 
             // Curated distribution:
@@ -1130,16 +1052,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let remainingOther = otherItems |> List.skip neededFromOther
 
             let rnd = System.Random()
-            let shuffle (xs: 'T list) =
-                let arr = xs |> Array.ofList
-                for i = arr.Length - 1 downto 1 do
-                    let j = rnd.Next(i + 1)
-                    let tmp = arr.[i]
-                    arr.[i] <- arr.[j]
-                    arr.[j] <- tmp
-                arr |> Array.toList
-
-            let shuffledTopPool = shuffle (curatedFeatured @ topOther)
+            let shuffledTopPool = (curatedFeatured @ topOther) |> List.sortBy (fun _ -> rnd.Next())
             let finalOrderedEntries = shuffledTopPool @ remainingOther
 
             return finalOrderedEntries
@@ -1167,8 +1080,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             return (name, def, author)
         }
         let successHandler (loadedName, loadedDef, loadedAuthor) =
-            if System.String.IsNullOrWhiteSpace(loadedDef) then NoOp
-            else LoadGalleryDefinitionSuccess (loadedName, loadedDef, loadedAuthor)
+            match loadedDef with
+            | BlankString -> NoOp
+            | ValidString _ -> LoadGalleryDefinitionSuccess (loadedName, loadedDef, loadedAuthor)
             
         { model with PendingConfirm = None; ShowGallery = false }, Cmd.OfAsync.perform loadAsync () successHandler
 
@@ -1181,12 +1095,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 try Serialization.initModel processed
                 with _ -> model.Tree 
 
-        let currentInner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        let currentInner = getInnerPolygonEditor model.PolygonEditor
         let newState = FileManager.importFromHyw clean currentInner
-        let finalPoly = match newState with Stable m | FreshlyImported m -> m
+        let finalPoly = getInnerPolygonEditor newState
         let newExport = syncPolygonState finalPoly
         let newSqns = Lexel.extractSequences clean
-        let loadedAuthorOpt = if System.String.IsNullOrWhiteSpace author then None else Some author
+        let loadedAuthorOpt = match author with NonEmptyString a -> Some a | _ -> None
         let loadedAuthorStr = defaultArg loadedAuthorOpt ""
         
         let newModel = 
@@ -1210,10 +1124,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 ReportOptions = { model.ReportOptions with ProjectTitle = name; Author = loadedAuthorStr }
             }
         js.InvokeVoidAsync("localStorage.setItem", "hywe_title", name) |> ignore
-        if System.String.IsNullOrWhiteSpace author then
-            js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
-        else
-            js.InvokeVoidAsync("localStorage.setItem", "hywe_community_author", author) |> ignore
+        match loadedAuthorOpt with
+        | Some a -> js.InvokeVoidAsync("localStorage.setItem", "hywe_community_author", a) |> ignore
+        | None -> js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
+
         pushUndo newModel, Cmd.batch [
             Cmd.ofMsg (PolygonEditorUpdated finalPoly)
             Cmd.ofMsg StartHyweave
@@ -1230,79 +1144,84 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with GalleryFilter = filter; GalleryOffset = 0 }, Cmd.none
 
     | SetAuthor newAuthor ->
-        if not (System.String.IsNullOrWhiteSpace newAuthor) then
-            js.InvokeVoidAsync("localStorage.setItem", "hywe_author", newAuthor) |> ignore
-        else
-            js.InvokeVoidAsync("localStorage.removeItem", "hywe_author") |> ignore
-        let authorOpt = if System.String.IsNullOrWhiteSpace newAuthor then None else Some newAuthor
+        let authorOpt = match newAuthor with NonEmptyString a -> Some a | _ -> None
+        match authorOpt with
+        | Some a -> js.InvokeVoidAsync("localStorage.setItem", "hywe_author", a) |> ignore
+        | None -> js.InvokeVoidAsync("localStorage.removeItem", "hywe_author") |> ignore
+        
+        let authorStr = defaultArg authorOpt ""
         let newModel = 
             { model with 
                 CachedAuthor = authorOpt
-                TeachMetadata = { model.TeachMetadata with Author = newAuthor }
-                ReportOptions = { model.ReportOptions with Author = newAuthor }
+                TeachMetadata = { model.TeachMetadata with Author = authorStr }
+                ReportOptions = { model.ReportOptions with Author = authorStr }
                 LoadedCommunityAuthor = None
             }
         newModel, Cmd.none
 
     | AuthorCachedLoaded cachedAuthor ->
-        if System.String.IsNullOrWhiteSpace cachedAuthor then model, Cmd.none
-        else
-            let authorOpt = Some cachedAuthor
+        match cachedAuthor with
+        | BlankString -> model, Cmd.none
+        | ValidString author ->
             let newModel = 
                 { model with 
-                    CachedAuthor = authorOpt
+                    CachedAuthor = Some author
                     TeachMetadata = 
-                        if Option.isNone model.LoadedCommunityAuthor then
-                            { model.TeachMetadata with Author = cachedAuthor }
-                        else model.TeachMetadata
+                        match model.LoadedCommunityAuthor with
+                        | None -> { model.TeachMetadata with Author = author }
+                        | Some _ -> model.TeachMetadata
                     ReportOptions = 
-                        if Option.isNone model.LoadedCommunityAuthor then
-                            { model.ReportOptions with Author = cachedAuthor }
-                        else model.ReportOptions
+                        match model.LoadedCommunityAuthor with
+                        | None -> { model.ReportOptions with Author = author }
+                        | Some _ -> model.ReportOptions
                 }
             newModel, Cmd.none
 
     | SetExplorationTitle newTitle ->
-        if System.String.IsNullOrWhiteSpace newTitle then
-            js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
-        else
-            js.InvokeVoidAsync("localStorage.setItem", "hywe_title", newTitle) |> ignore
-        let isCommunityLoaded = Option.isSome model.LoadedCommunityAuthor
+        let titleOpt = match newTitle with NonEmptyString t -> Some t | _ -> None
+        match titleOpt with
+        | Some t -> js.InvokeVoidAsync("localStorage.setItem", "hywe_title", t) |> ignore
+        | None -> js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
+
         let userAuthor = 
             match model.CachedAuthor with
-            | Some a when not (System.String.IsNullOrWhiteSpace a) -> a
+            | Some (NonEmptyString a) -> a
             | _ -> ""
+
+        let isCommunityLoaded = Option.isSome model.LoadedCommunityAuthor
         if isCommunityLoaded then
             js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
-        let newAuthor = 
-            if isCommunityLoaded then userAuthor
-            else model.TeachMetadata.Author
+
+        let titleStr = defaultArg titleOpt ""
+        let newAuthor = if isCommunityLoaded then userAuthor else model.TeachMetadata.Author
         let newModel = 
             { model with 
-                TeachMetadata = { model.TeachMetadata with ExplorationDescription = newTitle; Author = newAuthor }
-                ReportOptions = { model.ReportOptions with ProjectTitle = newTitle; Author = newAuthor }
+                TeachMetadata = { model.TeachMetadata with ExplorationDescription = titleStr; Author = newAuthor }
+                ReportOptions = { model.ReportOptions with ProjectTitle = titleStr; Author = newAuthor }
                 LoadedCommunityAuthor = None
                 HasAppendedModSuffix = false
             }
         newModel, Cmd.none
 
     | TitleCachedLoaded cachedTitle ->
-        if System.String.IsNullOrWhiteSpace cachedTitle then model, Cmd.none
-        else
+        match cachedTitle with
+        | BlankString -> model, Cmd.none
+        | ValidString title ->
             let newModel = 
                 { model with 
-                    TeachMetadata = { model.TeachMetadata with ExplorationDescription = cachedTitle }
-                    ReportOptions = { model.ReportOptions with ProjectTitle = cachedTitle }
+                    TeachMetadata = { model.TeachMetadata with ExplorationDescription = title }
+                    ReportOptions = { model.ReportOptions with ProjectTitle = title }
                 }
             newModel, Cmd.none
 
     | CommunityAuthorCachedLoaded cachedAuthor ->
-        if System.String.IsNullOrWhiteSpace cachedAuthor then model, Cmd.none
-        else
+        match cachedAuthor with
+        | BlankString -> model, Cmd.none
+        | ValidString author ->
             let newModel = 
                 { model with 
-                    LoadedCommunityAuthor = Some cachedAuthor
-                    TeachMetadata = { model.TeachMetadata with Author = cachedAuthor }
-                    ReportOptions = { model.ReportOptions with Author = cachedAuthor }
+                    LoadedCommunityAuthor = Some author
+                    TeachMetadata = { model.TeachMetadata with Author = author }
+                    ReportOptions = { model.ReportOptions with Author = author }
                 }
             newModel, Cmd.none
