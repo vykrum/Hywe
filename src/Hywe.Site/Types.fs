@@ -1,4 +1,5 @@
-namespace Hywe.Site
+[<AutoOpen>]
+module Types
 
 open System
 open Microsoft.AspNetCore.Components.Web

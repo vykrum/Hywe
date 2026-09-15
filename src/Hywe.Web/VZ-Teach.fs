@@ -11,7 +11,7 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Node
 open Page
-open Hywe.Site
+open Types
 open Graphics
 open Layout
 

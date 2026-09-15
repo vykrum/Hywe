@@ -59,11 +59,16 @@ type crTx = Template<
     </text>""">
 
 let truncateLabel (maxLen: int) (name: string) : string =
-    let trimmed = if isNull name then "" else name.Trim()
-    if String.length trimmed <= maxLen then trimmed
-    else
+    let trimmed =
+        match Option.ofObj name with
+        | None -> ""
+        | Some n -> n.Trim()
+
+    match trimmed.Length with
+    | len when len <= maxLen -> trimmed
+    | len ->
         let prefixLen = max 1 (maxLen - 2)
-        trimmed.Substring(0, min prefixLen (String.length trimmed)) + "..."
+        trimmed.Substring(0, min prefixLen len) + "..."
 
 let truncateName (name: string) : string =
     truncateLabel 8 name
@@ -100,8 +105,9 @@ let viewLegend (items: (string * string) seq) : Node =
         |> Seq.distinctBy (fun (name, _) -> name.Trim())
         |> Seq.toArray
 
-    if Array.isEmpty uniqueItems then empty()
-    else
+    match uniqueItems with
+    | [||] -> empty()
+    | _ ->
         div {
             attr.``class`` "layout-legend"
             forEach uniqueItems <| fun (name, clr) ->
@@ -127,23 +133,31 @@ let renderLegendHtml (items: (string * string) seq) : string =
         |> Seq.distinctBy (fun (name, _) -> name.Trim())
         |> Seq.toArray
 
-    if Array.isEmpty uniqueItems then ""
-    else
-        let sb = System.Text.StringBuilder()
-        sb.Append("""<div class="layout-legend">""") |> ignore
-        for (name, clr) in uniqueItems do
-            let safeName = name.Trim().Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;")
-            sb.AppendFormat(
-                """<div class="layout-legend-item" title="{0}"><span class="layout-legend-dot" style="background-color: {1}; border-color: {1};"></span><span class="layout-legend-label">{0}</span></div>""",
-                safeName, clr
-            ) |> ignore
-        sb.Append("""</div>""") |> ignore
-        sb.ToString()
+    match uniqueItems with
+    | [||] -> ""
+    | _ ->
+        let renderItem (name: string, clr: string) =
+            let safeName =
+                name.Trim()
+                    .Replace("&", "&amp;")
+                    .Replace("<", "&lt;")
+                    .Replace(">", "&gt;")
+                    .Replace("\"", "&quot;")
+            $"<div class=\"layout-legend-item\" title=\"{safeName}\"><span class=\"layout-legend-dot\" style=\"background-color: {clr}; border-color: {clr};\"></span><span class=\"layout-legend-label\">{safeName}</span></div>"
+
+        let innerHtml =
+            uniqueItems
+            |> Array.map renderItem
+            |> String.concat ""
+
+        $"<div class=\"layout-legend\">{innerHtml}</div>"
 
 let (|SvgCollinear|SvgTurning|) (p1: float * float, p2: float * float, p3: float * float) =
     let (x1, y1), (x2, y2), (x3, y3) = p1, p2, p3
     let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-    if abs crossProduct < 0.0001 then SvgCollinear else SvgTurning
+    match crossProduct with
+    | cp when abs cp < 0.0001 -> SvgCollinear
+    | _ -> SvgTurning
 
 let svgCxlPrm (cxl : Coxel.Cxl) (elv : int) =
     let rec clean points =
@@ -163,9 +177,9 @@ let svgCxlPrm (cxl : Coxel.Cxl) (elv : int) =
         Hexel.adjacent cxl.Seqn hout 
         |> Array.choose (fun n -> 
             let (ix, iy, _) = Hexel.hxlCrd n
-            if insideSet.Contains(Hexel.AV(ix, iy, elv)) then
-                Some ( (float ox + float ix) / 2.0, (float oy + float iy) / 2.0 )
-            else None)
+            match insideSet.Contains(Hexel.AV(ix, iy, elv)) with
+            | true -> Some ((float ox + float ix) / 2.0, (float oy + float iy) / 2.0)
+            | false -> None)
     )
     |> Array.distinct
     |> Array.toList
@@ -173,57 +187,57 @@ let svgCxlPrm (cxl : Coxel.Cxl) (elv : int) =
     |> List.toArray
 
 let svgRemoveSawtooth (sqn : Hexel.Sqn) (arr : (float*float)[]) : (float*float)[] =
-    if arr.Length = 0 then [||] else
-    let (primary, secondary) = 
-        match sqn with
-        | Hexel.Vertical   -> (snd, fst)
-        | Hexel.Horizontal -> (fst, snd)
+    match arr with
+    | [||] -> [||]
+    | _ ->
+        let (primary, secondary) = 
+            match sqn with
+            | Hexel.Vertical   -> (snd, fst)
+            | Hexel.Horizontal -> (fst, snd)
 
-    let splitByDelta2 (points: (float*float)[]) =
-        match points.Length with
-        | 0 -> [||]
-        | _ -> 
-            let folder (acc: (float*float) list list) point =
-                match acc with
-                | [] -> [[point]]
-                | currentGroup :: rest ->
-                    let prev = List.head currentGroup
-                    match abs(primary point - primary prev) with
-                    | d when abs(d - 2.0) < 0.1 -> (point :: currentGroup) :: rest
-                    | _ -> [point] :: currentGroup :: rest
-            
-            points 
-            |> Array.fold folder [] 
-            |> List.map (List.rev >> Array.ofList)
-            |> List.rev
-            |> Array.ofList
+        let splitByDelta2 (points: (float*float)[]) =
+            match points with
+            | [||] -> [||]
+            | _ -> 
+                let folder (acc: (float*float) list list) point =
+                    match acc with
+                    | [] -> [[point]]
+                    | currentGroup :: rest ->
+                        let prev = List.head currentGroup
+                        match abs(primary point - primary prev) with
+                        | d when abs(d - 2.0) < 0.1 -> (point :: currentGroup) :: rest
+                        | _ -> [point] :: currentGroup :: rest
+                
+                points 
+                |> Array.fold folder [] 
+                |> List.map (List.rev >> Array.ofList)
+                |> List.rev
+                |> Array.ofList
 
-    let oscillates (values: float[]) =
-        if values.Length < 3 then false
-        else
-            let rec loop i =
-                if i >= values.Length - 2 then true
-                else
-                    let d1 = abs(values.[i+1] - values.[i])
-                    let d2 = abs(values.[i+2] - values.[i+1])
-                    if abs(d1 - 1.0) < 0.1 && abs(d2 - 1.0) < 0.1 then loop (i+1)
-                    else false
-            loop 0
+        let oscillates (values: float[]) =
+            match values.Length with
+            | len when len >= 3 ->
+                values
+                |> Array.pairwise
+                |> Array.forall (fun (a, b) -> abs (abs (b - a) - 1.0) < 0.1)
+            | _ -> false
 
-    let groups = splitByDelta2 arr
-    groups
-    |> Array.collect (fun g ->
-        if g.Length <= 3 then g
-        else
-            let secValues = g |> Array.map secondary
-            if oscillates secValues then
-                let f, l = g.[0], g.[g.Length-1]
-                let low = min (secondary f) (secondary l)
-                match sqn with
-                | Hexel.Vertical   -> [| (low, snd f); (low, snd l) |]
-                | Hexel.Horizontal -> [| (fst f, low); (fst l, low) |]
-            else g
-    )
+        let groups = splitByDelta2 arr
+        groups
+        |> Array.collect (fun g ->
+            match g with
+            | _ when g.Length <= 3 -> g
+            | _ ->
+                let secValues = g |> Array.map secondary
+                match oscillates secValues with
+                | true ->
+                    let f, l = Array.head g, Array.last g
+                    let low = min (secondary f) (secondary l)
+                    match sqn with
+                    | Hexel.Vertical   -> [| (low, snd f); (low, snd l) |]
+                    | Hexel.Horizontal -> [| (fst f, low); (fst l, low) |]
+                | false -> g
+        )
 
 let svgToCartesian (sqn: Hexel.Sqn) (x: float, y: float) =
     match sqn with
@@ -248,72 +262,79 @@ let toCartesian (sqn: Hexel.Sqn) (x: int, y: int) =
         (cartX, cartY)
 
 let svgDedupeSequential (pts: (float * float)[]) =
-    pts |> Array.fold (fun acc p -> 
+    pts
+    |> Array.fold (fun acc p -> 
         match acc with
         | [] -> [p]
-        | head :: _ -> 
-            let (hx, hy) = head
-            let (px, py) = p
-            if abs(hx - px) < 0.0001 && abs(hy - py) < 0.0001 then acc else p :: acc
-    ) [] |> List.rev |> Array.ofList
+        | (hx, hy) :: _ when abs (hx - fst p) < 0.0001 && abs (hy - snd p) < 0.0001 -> acc
+        | _ -> p :: acc
+    ) []
+    |> List.rev
+    |> Array.ofList
 
 let svgEnsureClosed (pts: (float * float)[]) =
-    match pts.Length < 2 with
-    | true -> pts
-    | false ->
-        let (fx, fy) = pts.[0]
-        let (lx, ly) = pts.[pts.Length - 1]
-        if abs(fx - lx) < 0.0001 && abs(fy - ly) < 0.0001 then pts
-        else Array.append pts [| pts.[0] |]
+    match pts with
+    | [||] | [| _ |] -> pts
+    | _ ->
+        let (fx, fy) = Array.head pts
+        let (lx, ly) = Array.last pts
+        match (abs (fx - lx), abs (fy - ly)) with
+        | dx, dy when dx < 0.0001 && dy < 0.0001 -> pts
+        | _ -> Array.append pts [| (fx, fy) |]
 
 let svgRemoveCollinear (pts: (float * float)[]) =
-    match pts.Length < 3 with
-    | true -> pts
-    | false ->
+    match pts.Length with
+    | len when len < 3 -> pts
+    | _ ->
         let midPoints = 
-            pts |> Array.windowed 3 |> Array.choose (fun win ->
-                let (x1, y1), (x2, y2), (x3, y3) = win.[0], win.[1], win.[2]
-                let cross = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
-                match abs cross > 0.0001 with true -> Some (x2, y2) | false -> None)
-        Array.concat [| [|pts.[0]|]; midPoints; [|pts.[pts.Length-1]|] |]
+            pts
+            |> Array.windowed 3
+            |> Array.choose (function
+                | [| p1; p2; p3 |] ->
+                    match (p1, p2, p3) with
+                    | SvgTurning   -> Some p2
+                    | SvgCollinear -> None
+                | _ -> None)
+        Array.concat [| [| Array.head pts |]; midPoints; [| Array.last pts |] |]
 
 let svgRemoveHooks (pts: (float * float)[]) =
-    if pts.Length < 4 then pts
-    else
-        let dist (x1, y1) (x2, y2) = sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2))
-        let rec loop (current: (float * float)[]) =
-            let n = current.Length
-            if n < 4 then current
-            else
-                let res = ResizeArray<float * float>()
-                let mutable hookFound = false
-                
-                for i = 0 to n - 1 do
+    let isHook (p1: float * float) (p2: float * float) (p3: float * float) =
+        let dist (x1, y1) (x2, y2) = sqrt ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
+        let d13 = dist p1 p3
+        match d13 with
+        | d when d < 0.1 -> true
+        | _ ->
+            let d12 = dist p1 p2
+            let d23 = dist p2 p3
+            match (d12, d23) with
+            | d1, d2 when d1 > 0.001 && d2 > 0.001 ->
+                let v1x, v1y = (fst p1 - fst p2) / d1, (snd p1 - snd p2) / d1
+                let v2x, v2y = (fst p3 - fst p2) / d2, (snd p3 - snd p2) / d2
+                let dot = v1x * v2x + v1y * v2y
+                dot > 0.97
+            | _ -> false
+
+    let rec loop (current: (float * float)[]) =
+        match current.Length with
+        | n when n < 4 -> current
+        | n ->
+            let kept =
+                current
+                |> Array.mapi (fun i p2 ->
                     let p1 = current.[(i + n - 1) % n]
-                    let p2 = current.[i]
                     let p3 = current.[(i + 1) % n]
-                    
-                    let d12 = dist p1 p2
-                    let d23 = dist p2 p3
-                    let d13 = dist p1 p3
-                    
-                    if d13 < 0.1 then
-                        hookFound <- true
-                    else
-                        if d12 > 0.001 && d23 > 0.001 then
-                            let v1x, v1y = (fst p1 - fst p2)/d12, (snd p1 - snd p2)/d12
-                            let v2x, v2y = (fst p3 - fst p2)/d23, (snd p3 - snd p2)/d23
-                            let dot = v1x * v2x + v1y * v2y
-                            if dot > 0.97 then
-                                hookFound <- true
-                            else
-                                res.Add(p2)
-                        else
-                            res.Add(p2)
-                            
-                if hookFound && res.Count >= 3 then loop (res.ToArray())
-                else current
-        loop pts
+                    p2, isHook p1 p2 p3
+                )
+                |> Array.choose (fun (p, hooked) ->
+                    match hooked with
+                    | true -> None
+                    | false -> Some p
+                )
+            match kept.Length < n && kept.Length >= 3 with
+            | true -> loop kept
+            | false -> current
+
+    loop pts
 
 let svgCleanPolygon (sqn: Hexel.Sqn) (pts: (float * float)[]) =
     pts
@@ -330,17 +351,15 @@ let polygonCentroid (poly: (float * float)[]) =
     | [||] -> 0.0, 0.0
     | [| p |] -> p
     | _ ->
-        let n = poly.Length
+        let nextPoly = Array.append (Array.tail poly) [| Array.head poly |]
         let (sx, sy, a) =
-            [| 0 .. n - 1 |]
-            |> Array.fold (fun (accSx, accSy, accA) i ->
-                let (x1, y1) = poly.[i]
-                let (x2, y2) = poly.[(i + 1) % n]
+            Array.zip poly nextPoly
+            |> Array.fold (fun (accSx, accSy, accA) ((x1, y1), (x2, y2)) ->
                 let cross = x1 * y2 - x2 * y1
                 (accSx + (x1 + x2) * cross,
                  accSy + (y1 + y2) * cross,
                  accA + cross)
             ) (0.0, 0.0, 0.0)
-        let area = a / 2.0
-        if abs area < 0.0001 then poly.[0]
-        else (sx / (6.0 * area), sy / (6.0 * area))
+        match a / 2.0 with
+        | area when abs area < 0.0001 -> Array.head poly
+        | area -> (sx / (6.0 * area), sy / (6.0 * area))

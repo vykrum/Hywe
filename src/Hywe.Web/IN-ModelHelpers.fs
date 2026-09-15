@@ -7,6 +7,7 @@ open Hywe
 open Page
 open Hywe.Node
 open Hywe.Site
+open Types
 open ModelTypes
 open Bolero.Html
 open Hywe.Core
@@ -767,7 +768,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             Teach.view model dispatch
             
         | ReportPanel ->
-            Hywe.Report.viewReport model dispatch
+            Report.viewReport model dispatch
     }
 
 
