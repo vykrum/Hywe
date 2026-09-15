@@ -1,9 +1,7 @@
 module ModelTypes
 
-
 open Hywe.Node
-
-open Hywe.Site
+open Types
 open Hywe.Core.Coxel
 open System
 

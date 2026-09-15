@@ -5,7 +5,8 @@ open Microsoft.JSInterop
 open Elmish
 open Page
 open Hywe.Node
-open Hywe.Site
+open Types
+open State
 open ModelTypes
 open Hywe
 open Hywe.Core

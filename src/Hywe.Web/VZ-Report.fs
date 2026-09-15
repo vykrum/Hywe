@@ -1,4 +1,4 @@
-module Hywe.Report
+module Report
 
 open Bolero.Html
 open ModelTypes

@@ -5,6 +5,7 @@ open Bolero.Html
 open Microsoft.AspNetCore.Components.Web
 open Microsoft.JSInterop
 open State
+open Types
 
 module View =
 
