@@ -1,4 +1,4 @@
-module PageTreeFiltering
+module TreeFilter
 
 open System
 open Hywe.Node
@@ -28,12 +28,13 @@ let rec getIds (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
     }
 
 let getValidIdsForMarkerSeq (tree: Hywe.Node.SubModel) (marker: string) =
-    if marker.StartsWith("N") then
+    match marker.StartsWith("N") with
+    | true ->
         let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
         match tree.Nests |> Map.tryFind nestId with
         | Some nestNode -> getIds marker "1" nestNode
         | None -> Seq.empty
-    else
+    | false ->
         let lvl = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 0
         match tree.Levels |> Map.tryFind lvl with
         | Some levelNode -> getIds marker "1" levelNode
@@ -63,8 +64,9 @@ let getIdToNodeMap (tree: Hywe.Node.SubModel) =
 let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubModel) (marker: string) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
     let validIdsSeq = getValidIdsForMarkerSeq tree marker |> Seq.toArray
     let validIds = validIdsSeq |> Set.ofArray
-    if validIds.IsEmpty then config
-    else
+    match validIds.IsEmpty with
+    | true -> config
+    | false ->
         let idToNode = getIdToNodeMap tree
         
         let idToIndex = 
@@ -72,67 +74,73 @@ let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubMode
             |> Array.indexed 
             |> Array.choose (fun (i, (c: Hywe.Core.Coxel.Cxl)) -> 
                 let id = Hywe.Core.Coxel.prpVlu c.Rfid
-                if validIds.Contains id then Some(id, i) else None)
+                match validIds.Contains id with
+                | true -> Some(id, i)
+                | false -> None)
             |> Map.ofArray
             
-        let fallbackSqn = if config.cxCxl1.Length > 0 then config.cxCxl1.[0].Seqn else Hywe.Core.Hexel.VRCCNE
-        let fallbackElv = if config.cxCxl1.Length > 0 then let (_, _, z) = Hywe.Core.Hexel.hxlCrd config.cxCxl1.[0].Base in z else 0
+        let fallbackSqn = 
+            match config.cxCxl1 with
+            | [||] -> Hywe.Core.Hexel.VRCCNE
+            | arr -> arr.[0].Seqn
+
+        let fallbackElv = 
+            match config.cxCxl1 with
+            | [||] -> 0
+            | arr -> 
+                let (_, _, z) = Hywe.Core.Hexel.hxlCrd arr.[0].Base 
+                z
         
-        let synthCxls = System.Collections.Generic.List<Hywe.Core.Coxel.Cxl>()
-        let synthClrs = System.Collections.Generic.List<string>()
-        let synthAvls = System.Collections.Generic.List<int>()
-        let synthB36s = System.Collections.Generic.List<string>()
-        let synthShapes = System.Collections.Generic.List<ModelTypes.BatchComponent>()
+        let items =
+            validIdsSeq
+            |> Array.choose (fun id ->
+                match idToIndex |> Map.tryFind id with
+                | Some i ->
+                    let origCxl = config.cxCxl1.[i]
+                    let origShp = config.shapes.[i]
+                    let nodeOpt = idToNode |> Map.tryFind id
+                    let fixedCxl =
+                        match nodeOpt with
+                        | Some node when not (System.String.IsNullOrWhiteSpace node.Name) && (System.String.IsNullOrWhiteSpace (Hywe.Core.Coxel.prpVlu origCxl.Name) || Hywe.Core.Coxel.prpVlu origCxl.Name = id) ->
+                            { origCxl with Name = Hywe.Core.Coxel.Label node.Name }
+                        | _ -> origCxl
+                    let fixedShp =
+                        match nodeOpt with
+                        | Some node when not (System.String.IsNullOrWhiteSpace node.Name) && (System.String.IsNullOrWhiteSpace origShp.name || origShp.name = id) ->
+                            {| origShp with name = node.Name |}
+                        | _ -> origShp
+                    Some (fixedCxl, config.cxClr1.[i], config.cxlAvl.[i], config.cxB36.[i], fixedShp)
+                | None ->
+                    match idToNode |> Map.tryFind id with
+                    | Some node ->
+                        let count = match System.Int32.TryParse node.Weight with true, v -> v | _ -> 0
+                        let labelName = 
+                            match System.String.IsNullOrWhiteSpace node.Name with
+                            | true -> id
+                            | false -> node.Name
+                        let fakeCxl = { Hywe.Core.Coxel.Name = Hywe.Core.Coxel.Label labelName
+                                        Hywe.Core.Coxel.Rfid = Hywe.Core.Coxel.Refid id
+                                        Hywe.Core.Coxel.Size = Hywe.Core.Coxel.Count count
+                                        Hywe.Core.Coxel.Seqn = fallbackSqn
+                                        Hywe.Core.Coxel.Base = Hywe.Core.Hexel.identity fallbackElv
+                                        Hywe.Core.Coxel.Hxls = [||] }
+                        Some (fakeCxl, "#eee", 0, "", {| name = labelName; points = [||]; color = "#eee"; lx = 0.0; ly = 0.0 |})
+                    | None -> None)
+
+        let cxls = items |> Array.map (fun (c, _, _, _, _) -> c)
+        let clrs = items |> Array.map (fun (_, cl, _, _, _) -> cl)
+        let avls = items |> Array.map (fun (_, _, a, _, _) -> a)
+        let b36s = items |> Array.map (fun (_, _, _, b, _) -> b)
+        let shapes = items |> Array.map (fun (_, _, _, _, s) -> s)
         
-        for id in validIdsSeq do
-            match idToIndex |> Map.tryFind id with
-            | Some i ->
-                let origCxl = config.cxCxl1.[i]
-                let origShp = config.shapes.[i]
-                let nodeOpt = idToNode |> Map.tryFind id
-                let fixedCxl =
-                    match nodeOpt with
-                    | Some node when not (System.String.IsNullOrWhiteSpace node.Name) && (System.String.IsNullOrWhiteSpace (Hywe.Core.Coxel.prpVlu origCxl.Name) || Hywe.Core.Coxel.prpVlu origCxl.Name = id) ->
-                        { origCxl with Name = Hywe.Core.Coxel.Label node.Name }
-                    | _ -> origCxl
-                let fixedShp =
-                    match nodeOpt with
-                    | Some node when not (System.String.IsNullOrWhiteSpace node.Name) && (System.String.IsNullOrWhiteSpace origShp.name || origShp.name = id) ->
-                        {| origShp with name = node.Name |}
-                    | _ -> origShp
-                synthCxls.Add(fixedCxl)
-                synthClrs.Add(config.cxClr1.[i])
-                synthAvls.Add(config.cxlAvl.[i])
-                synthB36s.Add(config.cxB36.[i])
-                synthShapes.Add(fixedShp)
-            | None ->
-                match idToNode |> Map.tryFind id with
-                | Some node ->
-                    let count = match System.Int32.TryParse node.Weight with true, v -> v | _ -> 0
-                    let labelName = if System.String.IsNullOrWhiteSpace node.Name then id else node.Name
-                    let fakeCxl = { Hywe.Core.Coxel.Name = Hywe.Core.Coxel.Label labelName
-                                    Hywe.Core.Coxel.Rfid = Hywe.Core.Coxel.Refid id
-                                    Hywe.Core.Coxel.Size = Hywe.Core.Coxel.Count count
-                                    Hywe.Core.Coxel.Seqn = fallbackSqn
-                                    Hywe.Core.Coxel.Base = Hywe.Core.Hexel.identity fallbackElv
-                                    Hywe.Core.Coxel.Hxls = [||] }
-                    synthCxls.Add(fakeCxl)
-                    synthClrs.Add("#eee")
-                    synthAvls.Add(0)
-                    synthB36s.Add("")
-                    synthShapes.Add({| name = labelName; points = [||]; color = "#eee"; lx = 0.0; ly = 0.0 |})
-                | None -> ()
-        
-        let cxls = synthCxls.ToArray()
-        let clrs = synthClrs.ToArray()
-        let avls = synthAvls.ToArray()
-        let b36s = synthB36s.ToArray()
-        let shapes = synthShapes.ToArray()
-        
-        let adj = if computeExpensive then Hywe.Core.Coxel.cxlAdj cxls else config.cxAdj1
+        let adj = 
+            match computeExpensive with
+            | true -> Hywe.Core.Coxel.cxlAdj cxls
+            | false -> config.cxAdj1
 
         let wtmkShapes = 
-            if marker.StartsWith("N") then
+            match marker.StartsWith("N") with
+            | true ->
                 let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
                 match tree.Nests |> Map.tryFind nestId with
                 | Some nestNode ->
@@ -160,7 +168,7 @@ let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubMode
 
                     Some (wtmkIndices |> Array.map (fun i -> config.shapes.[i]))
                 | None -> None
-            else
+            | false ->
                 None
 
         {| config with 

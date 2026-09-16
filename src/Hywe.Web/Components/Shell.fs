@@ -30,12 +30,14 @@ let siteHeader =
 
 /// The fullscreen loading screen shown before WASM is ready
 let loadingScreen (current: AppScreen) =
-    let isHidden = current <> LoadingScreen
     div {
         attr.id "loading-frame"
-        attr.style (if isHidden then "opacity: 0; pointer-events: none;" else "")
+        match current with
+        | LoadingScreen -> attr.empty()
+        | _ -> attr.style "opacity: 0; pointer-events: none;"
         
-        if not isHidden then
+        match current with
+        | LoadingScreen ->
             video {
                 attr.``class`` "fullscreen-bg"
                 attr.autoplay true
@@ -45,6 +47,8 @@ let loadingScreen (current: AppScreen) =
                 source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
                 source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
             }
+        | _ -> empty()
+        
         section {
             attr.id "intro-load"
             attr.``class`` "intro-section"
@@ -68,17 +72,22 @@ let loadingScreen (current: AppScreen) =
 
 /// The introduction splash screen shown after loading
 let introSplash (current: AppScreen) (dispatch: Message -> unit) =
-    let isVisible = current = IntroScreen
-    let isMain = current = MainScreen
-    
     div {
         attr.id "introduction"
-        attr.``class`` (if isVisible then "ready" else if isMain then "fade-out" else "")
-        attr.style (if isMain then "pointer-events: none; display: none;" else "")
+        match current with
+        | IntroScreen -> attr.``class`` "ready"
+        | MainScreen -> attr.``class`` "fade-out"
+        | LoadingScreen -> attr.empty()
+
+        match current with
+        | MainScreen -> attr.style "pointer-events: none; display: none;"
+        | _ -> attr.empty()
             
         on.click (fun _ -> dispatch TransitionToMain)
 
-        if not isMain then
+        match current with
+        | MainScreen -> empty()
+        | _ ->
             video {
                 attr.id "intro-video"
                 attr.``class`` "fullscreen-bg"
@@ -104,7 +113,8 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             text "Outline the intended hierarchy to generate spatial configurations defined by sequence and connections."
             
             div {
-                attr.``class`` ("tapText" + (if isVisible then " visible" else ""))
+                let tapCls = match current with IntroScreen -> "tapText visible" | _ -> "tapText"
+                attr.``class`` tapCls
                 attr.style "margin-top: 16px;"
                 text "Tap to Continue"
                 span {}
@@ -114,11 +124,17 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
 
 /// The site footer with social links and license
 let siteFooter (current: AppScreen) =
-    let isVisible = current = MainScreen
     footer {
         attr.id "footer"
-        attr.``class`` (if isVisible then "fade-in" else "")
-        attr.style (if isVisible then "flex-wrap: wrap; justify-content: center; display: flex; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; align-items: center;" else "display: none; opacity: 0;")
+        match current with
+        | MainScreen -> attr.``class`` "fade-in"
+        | _ -> attr.empty()
+
+        match current with
+        | MainScreen ->
+            attr.style "flex-wrap: wrap; justify-content: center; display: flex; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; align-items: center;"
+        | _ ->
+            attr.style "display: none; opacity: 0;"
         
         div {
             attr.style "display: flex; gap: 25px; padding: 20px;"
