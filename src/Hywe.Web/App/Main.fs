@@ -7,6 +7,8 @@ open Bolero
 open Bolero.Html
 open ModelTypes
 open ModelHelpers
+open Overlays
+open Shell
 open AppState
 open FileManager
 
@@ -91,15 +93,14 @@ type MyApp() =
                     | true -> PageHelp.viewHelp model.Onboarding dispatch
                     | false -> empty()
 
-                    Index.coreScript
-                    Index.siteHeader
+                    Shell.siteHeader
                     div {
                         attr.id "page-content"
                         match model.CurrentScreen <> LoadingScreen with
                         | true -> attr.``class`` "fade-container fade-in"
                         | false -> attr.``class`` "fade-container"
                         
-                        Index.introSplash model.CurrentScreen dispatch
+                        Shell.introSplash model.CurrentScreen dispatch
 
                         div {
                             attr.id "main"
@@ -148,8 +149,8 @@ type MyApp() =
                             }
                         | false -> empty()
 
-                        Index.siteFooter model.CurrentScreen
+                        Shell.siteFooter model.CurrentScreen
                     }
-                    Index.loadingScreen model.CurrentScreen
+                    Shell.loadingScreen model.CurrentScreen
                 }
             )
