@@ -32,10 +32,9 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 "onclick:stopPropagation" => true
                 
                 let baseTitle, suffix =
-                    if title.EndsWith("?") then
-                        title.Substring(0, title.Length - 1), "?"
-                    else
-                        title, ""
+                    match title.EndsWith("?") with
+                    | true -> title.Substring(0, title.Length - 1), "?"
+                    | false -> title, ""
                 
                 div {
                     attr.style "display: flex; justify-content: center; width: 100%; font-weight: 600; font-size: 1.1rem; color: #333;"
@@ -43,10 +42,12 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                         attr.style "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;"
                         text baseTitle
                     }
-                    if suffix <> "" then
+                    match suffix with
+                    | "" -> empty()
+                    | s ->
                         div {
                             attr.style "flex-shrink: 0;"
-                            text suffix
+                            text s
                         }
                 }
                 div {
@@ -71,8 +72,9 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
         }
 
 let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
-    if not model.ShowGallery then empty()
-    else
+    match model.ShowGallery with
+    | false -> empty()
+    | true ->
         div {
             attr.style "position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000; display: flex; align-items: center; justify-content: center;"
             
@@ -103,12 +105,13 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                 div {
                     attr.style "flex: 1; overflow-y: auto; padding: 15px 20px; display: flex; flex-direction: column; gap: 10px; background: #fdfdfd;"
                     
-                    if model.IsLoadingGallery then
+                    match model.IsLoadingGallery with
+                    | true ->
                         div {
                             attr.style "text-align: center; padding: 30px; color: #777; font-style: italic;"
                             text "Loading latest HYWE configurations..."
                         }
-                    else
+                    | false ->
                         match model.GalleryEntries with
                         | None | Some [] -> 
                             div {
@@ -116,10 +119,14 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                 text "Gallery is syncing... Please check back in a few minutes."
                             }
                         | Some entries ->
-                            let filterText = if System.String.IsNullOrWhiteSpace(model.GalleryFilter) then "" else model.GalleryFilter.ToLower()
+                            let filterText = 
+                                match System.String.IsNullOrWhiteSpace(model.GalleryFilter) with
+                                | true -> ""
+                                | false -> model.GalleryFilter.ToLower()
                             let filteredEntries = 
-                                if filterText = "" then entries
-                                else entries |> List.filter (fun e -> 
+                                match filterText with
+                                | "" -> entries
+                                | _ -> entries |> List.filter (fun e -> 
                                     (e.IsFeatured && ("featured".Contains(filterText) || filterText.Contains("featured") || filterText = "is:featured")) ||
                                     (not (System.String.IsNullOrWhiteSpace e.ExplorationDescription) && e.ExplorationDescription.ToLower().Contains(filterText)) || 
                                     (not (System.String.IsNullOrWhiteSpace e.Author) && e.Author.ToLower().Contains(filterText)) ||
@@ -147,12 +154,13 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     on.input (fun e -> dispatch (UpdateGalleryFilter (unbox<string> e.Value)))
                                 }
                                 
-                                if pagedEntries.IsEmpty then
+                                match pagedEntries.IsEmpty with
+                                | true ->
                                     div {
                                         attr.style "text-align: center; padding: 30px; color: #777;"
                                         text "No configurations match your search."
                                     }
-                                else
+                                | false ->
                                     div {
                                         attr.style "display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; margin-bottom: 8px;"
                                         for entry in pagedEntries do
@@ -166,10 +174,9 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                     // Left: 60x60 SVG Thumbnail
                                                     div {
                                                         attr.style "width: 60px; height: 60px; min-width: 60px; border-radius: 6px; overflow: hidden; background: #f8f9fa; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: center; padding: 2px;"
-                                                        if not (String.IsNullOrWhiteSpace entry.SvgThumbnail) then
-                                                            rawHtml entry.SvgThumbnail
-                                                        else
-                                                            rawHtml """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>"""
+                                                        match String.IsNullOrWhiteSpace entry.SvgThumbnail with
+                                                        | false -> rawHtml entry.SvgThumbnail
+                                                        | true -> rawHtml """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>"""
                                                     }
 
                                                     // Middle: Content Column
@@ -180,41 +187,65 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                         div {
                                                             attr.style "font-weight: 600; color: #1a1a1a; font-size: 0.92rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
                                                             attr.title entry.ExplorationDescription
-                                                            text (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "Untitled Exploration" else entry.ExplorationDescription)
+                                                            let desc = match String.IsNullOrWhiteSpace entry.ExplorationDescription with true -> "Untitled Exploration" | false -> entry.ExplorationDescription
+                                                            text desc
                                                         }
 
                                                         // Author and Badges row
                                                         div {
                                                             attr.style "display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.75rem;"
                                                             let dateSuffix =
-                                                                if String.IsNullOrWhiteSpace entry.CreatedAt then ""
-                                                                else
+                                                                match String.IsNullOrWhiteSpace entry.CreatedAt with
+                                                                | true -> ""
+                                                                | false ->
                                                                     match DateTime.TryParse entry.CreatedAt with
                                                                     | true, dt ->
                                                                         let span = DateTime.UtcNow - dt.ToUniversalTime()
-                                                                        if span.TotalMinutes < 1.0 then " • just now"
-                                                                        elif span.TotalHours < 1.0 then sprintf " • %dm ago" (int span.TotalMinutes)
-                                                                        elif span.TotalDays < 1.0 then sprintf " • %dh ago" (int span.TotalHours)
-                                                                        elif span.TotalDays < 30.0 then sprintf " • %dd ago" (int span.TotalDays)
-                                                                        else sprintf " • %s" (dt.ToString("MMM d"))
+                                                                        match span.TotalMinutes < 1.0 with
+                                                                        | true -> " • just now"
+                                                                        | false ->
+                                                                            match span.TotalHours < 1.0 with
+                                                                            | true -> sprintf " • %dm ago" (int span.TotalMinutes)
+                                                                            | false ->
+                                                                                match span.TotalDays < 1.0 with
+                                                                                | true -> sprintf " • %dh ago" (int span.TotalHours)
+                                                                                | false ->
+                                                                                    match span.TotalDays < 30.0 with
+                                                                                    | true -> sprintf " • %dd ago" (int span.TotalDays)
+                                                                                    | false -> sprintf " • %s" (dt.ToString("MMM d"))
                                                                     | false, _ -> ""
                                                             span {
                                                                 attr.style "color: #6c757d; white-space: nowrap; margin-right: 2px;"
-                                                                text (sprintf "by %s%s" (if String.IsNullOrWhiteSpace entry.Author then "Anonymous" else entry.Author) dateSuffix)
+                                                                let authorName = match String.IsNullOrWhiteSpace entry.Author with true -> "Anonymous" | false -> entry.Author
+                                                                text (sprintf "by %s%s" authorName dateSuffix)
                                                             }
-                                                            if entry.IsFeatured then
+                                                            match entry.IsFeatured with
+                                                            | true ->
                                                                 span { 
                                                                     attr.style "background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 600;"
                                                                     text "Featured" 
                                                                 }
-                                                            if entry.LevelsCount > 0 then
-                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount (if entry.LevelsCount = 1 then "Level" else "Levels")) }
-                                                            if entry.SpacesCount > 0 then
-                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.SpacesCount (if entry.SpacesCount = 1 then "Node" else "Nodes")) }
-                                                            if not (String.IsNullOrWhiteSpace entry.Typology) && entry.Typology <> "N/A" then
-                                                                span { attr.style "background: #e7f1ff; color: #0d6efd; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Typology }
-                                                            if not (String.IsNullOrWhiteSpace entry.Flow) && entry.Flow <> "N/A" then
-                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Flow }
+                                                            | false -> empty()
+                                                            
+                                                            match entry.LevelsCount > 0 with
+                                                            | true ->
+                                                                let lvlLabel = match entry.LevelsCount with 1 -> "Level" | _ -> "Levels"
+                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.LevelsCount lvlLabel) }
+                                                            | false -> empty()
+                                                            
+                                                            match entry.SpacesCount > 0 with
+                                                            | true ->
+                                                                let spcLabel = match entry.SpacesCount with 1 -> "Node" | _ -> "Nodes"
+                                                                span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text (sprintf "%d %s" entry.SpacesCount spcLabel) }
+                                                            | false -> empty()
+
+                                                            match not (String.IsNullOrWhiteSpace entry.Typology) && entry.Typology <> "N/A" with
+                                                            | true -> span { attr.style "background: #e7f1ff; color: #0d6efd; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Typology }
+                                                            | false -> empty()
+
+                                                            match not (String.IsNullOrWhiteSpace entry.Flow) && entry.Flow <> "N/A" with
+                                                            | true -> span { attr.style "background: #f1f3f5; color: #495057; padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; font-weight: 500;"; text entry.Flow }
+                                                            | false -> empty()
                                                         }
                                                     }
                                                 }
@@ -224,7 +255,8 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                                     attr.``class`` "hywe-btn hywe-btn-dark"
                                                     attr.style "align-self: stretch; width: 18px; min-width: 18px; border: none; border-left: 1px solid #dee2e6; border-radius: 0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: background 0.15s ease; box-sizing: border-box;"
                                                     attr.title "Load this configuration into workspace"
-                                                    "aria-label" => sprintf "Load %s into workspace" (if String.IsNullOrWhiteSpace entry.ExplorationDescription then "configuration" else entry.ExplorationDescription)
+                                                    let loadLabel = match String.IsNullOrWhiteSpace entry.ExplorationDescription with true -> "configuration" | false -> entry.ExplorationDescription
+                                                    "aria-label" => sprintf "Load %s into workspace" (match String.IsNullOrWhiteSpace entry.ExplorationDescription with true -> "configuration" | false -> entry.ExplorationDescription)
                                                     on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadGallery (entry.ExplorationDescription, entry.Id, entry.Author)))))
                                                     span {
                                                         attr.style "writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;"
@@ -246,10 +278,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                 // Left: Item & Page Summary
                                 div {
                                     attr.style "font-size: 0.82rem; color: #6c757d; display: flex; align-items: center; gap: 6px;"
-                                    let currentStart = if filteredEntries.IsEmpty then 0 else model.GalleryOffset + 1
+                                    let currentStart = match filteredEntries.IsEmpty with true -> 0 | false -> model.GalleryOffset + 1
                                     let currentEnd = min totalItems (model.GalleryOffset + pagedEntries.Length)
                                     text (sprintf "Showing %d - %d of %d" currentStart currentEnd totalItems)
-                                    if totalPages > 1 then
+                                    match totalPages > 1 with
+                                    | true ->
                                         span {
                                             attr.style "color: #adb5bd;"
                                             text "•"
@@ -257,6 +290,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         span {
                                             text (sprintf "Page %d of %d" currentPage totalPages)
                                         }
+                                    | false -> empty()
                                 }
 
                                 // Right: Numbered Navigation Controls
@@ -267,10 +301,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     button {
                                         attr.``class`` "hywe-btn hywe-btn-sm"
                                         attr.title "First page"
-                                        if currentPage <= 1 then
+                                        match currentPage <= 1 with
+                                        | true ->
                                             attr.disabled true
                                             attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
-                                        else
+                                        | false ->
                                             attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
                                             on.click (fun _ -> dispatch (GoToGalleryPage 1))
                                         text "«"
@@ -280,10 +315,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     button {
                                         attr.``class`` "hywe-btn hywe-btn-sm"
                                         attr.title "Previous page"
-                                        if currentPage <= 1 then
+                                        match currentPage <= 1 with
+                                        | true ->
                                             attr.disabled true
                                             attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
-                                        else
+                                        | false ->
                                             attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
                                             on.click (fun _ -> dispatch (GoToGalleryPage (currentPage - 1)))
                                         text "‹"
@@ -291,24 +327,26 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                     // Page Number Buttons with Ellipses
                                     let paginationItems =
-                                        if totalPages <= 7 then
-                                            [ 1 .. totalPages ] |> List.map Some
-                                        elif currentPage <= 4 then
-                                            ([ 1 .. 5 ] |> List.map Some) @ [ None; Some totalPages ]
-                                        elif currentPage >= totalPages - 3 then
-                                            [ Some 1; None ] @ ([ totalPages - 4 .. totalPages ] |> List.map Some)
-                                        else
-                                            [ Some 1; None; Some (currentPage - 1); Some currentPage; Some (currentPage + 1); None; Some totalPages ]
+                                        match totalPages <= 7 with
+                                        | true -> [ 1 .. totalPages ] |> List.map Some
+                                        | false ->
+                                            match currentPage <= 4 with
+                                            | true -> ([ 1 .. 5 ] |> List.map Some) @ [ None; Some totalPages ]
+                                            | false ->
+                                                match currentPage >= totalPages - 3 with
+                                                | true -> [ Some 1; None ] @ ([ totalPages - 4 .. totalPages ] |> List.map Some)
+                                                | false -> [ Some 1; None; Some (currentPage - 1); Some currentPage; Some (currentPage + 1); None; Some totalPages ]
 
                                     for item in paginationItems do
                                         match item with
                                         | Some pageNum ->
                                             button {
                                                 attr.``class`` "hywe-btn hywe-btn-sm"
-                                                if pageNum = currentPage then
+                                                match pageNum = currentPage with
+                                                | true ->
                                                     attr.disabled true
                                                     attr.style "background: #212529; border: 1px solid #212529; color: #ffffff; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; font-weight: 600; cursor: default; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"
-                                                else
+                                                | false ->
                                                     attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; justify-content: center;"
                                                     on.click (fun _ -> dispatch (GoToGalleryPage pageNum))
                                                 text (string pageNum)
@@ -323,10 +361,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     button {
                                         attr.``class`` "hywe-btn hywe-btn-sm"
                                         attr.title "Next page"
-                                        if currentPage >= totalPages then
+                                        match currentPage >= totalPages with
+                                        | true ->
                                             attr.disabled true
                                             attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
-                                        else
+                                        | false ->
                                             attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
                                             on.click (fun _ -> dispatch (GoToGalleryPage (currentPage + 1)))
                                         text "›"
@@ -336,10 +375,11 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                     button {
                                         attr.``class`` "hywe-btn hywe-btn-sm"
                                         attr.title "Last page"
-                                        if currentPage >= totalPages then
+                                        match currentPage >= totalPages with
+                                        | true ->
                                             attr.disabled true
                                             attr.style "opacity: 0.35; cursor: not-allowed; background: #f8f9fa; border: 1px solid #dee2e6; color: #adb5bd; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
-                                        else
+                                        | false ->
                                             attr.style "background: #ffffff; border: 1px solid #dee2e6; color: #495057; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 5px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center;"
                                             on.click (fun _ -> dispatch (GoToGalleryPage totalPages))
                                         text "»"

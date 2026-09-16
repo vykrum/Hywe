@@ -4,7 +4,7 @@ open System
 open Microsoft.JSInterop
 open Layout
 open PageElements
-open PageTreeFiltering
+open TreeFilter
 open Hywe.Node
 open Types
 open ModelTypes
@@ -562,7 +562,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             let fCxls, fClrs, fAvls, fAdj, fSol = 
                 match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
                 | Some cfg -> 
-                    let filtered = PageTreeFiltering.filterBatchConfig true model.Tree cfg
+                    let filtered = TreeFilter.filterBatchConfig true model.Tree cfg
                     filtered.cxCxl1, filtered.cxClr1, filtered.cxlAvl, filtered.cxAdj1, filtered.cxSol1
                 | None ->
                     // Fallback to on-the-fly filtering if not yet cached
@@ -585,7 +585,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             }
 
         | ViewPanel ->
-            let idMap = PageTreeFiltering.getHierarchicalIdMap model.Tree
+            let idMap = TreeFilter.getHierarchicalIdMap model.Tree
             let hostIds = 
                 model.Tree.NestAnchors 
                 |> Map.toSeq 
@@ -667,7 +667,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
                 match rawResults.Length > 0 && model.BatchProgress = 24 with
                 | true ->
-                    let results = rawResults |> Array.map (PageTreeFiltering.filterBatchConfig false model.Tree)
+                    let results = rawResults |> Array.map (TreeFilter.filterBatchConfig false model.Tree)
                     alternateConfigurations 
                         results 
                         model.SelectedPreviewIndex 

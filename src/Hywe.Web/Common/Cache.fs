@@ -118,15 +118,13 @@ module Cache
     /// Updates the cache with a new configuration.
     /// </summary>
     let update (marker: string) (sqnIdx: int) (data: BatchConfgrtns) (cache: LayoutCache) : LayoutCache =
-        match cache |> Map.tryFind marker with
-        | Some arr ->
-            let newArr = Array.copy arr
-            newArr.[sqnIdx] <- Some data
-            cache |> Map.add marker newArr
-        | None ->
-            let arr = Array.replicate 24 None
-            arr.[sqnIdx] <- Some data
-            cache |> Map.add marker arr
+        let targetArr = 
+            match cache |> Map.tryFind marker with
+            | Some arr -> arr
+            | None -> Array.replicate 24 None
+        let updatedArr =
+            targetArr |> Array.mapi (fun i item -> match i = sqnIdx with true -> Some data | false -> item)
+        cache |> Map.add marker updatedArr
 
     /// <summary>
     /// Finds the first missing configuration for a specific level.

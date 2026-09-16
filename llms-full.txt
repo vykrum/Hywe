@@ -27,13 +27,13 @@ The geometric and topological computation engine.
 
 ### 3. [Hywe.Web](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web)
 The client-side UI, rendering pipelines, and Bolero/Elmish runtime environment.
-*   [Main.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Main.fs): The primary application controller holding the Elmish Model-View-Update (MVU) loops.
-*   [IN-NodeTree.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/IN-NodeTree.fs): Interactive tree editor sidebar.
-*   [IN-PolygonEditor.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/IN-PolygonEditor.fs): Drawing canvas for complex, custom 2D site boundary polygons.
-*   [VZ-Layout.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Layout.fs): Combines modular panels and manages core viewport logic.
-*   [VZ-Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Graphics.fs): Renders procedural 2D plans in the browser using SVG vector graphics.
-*   [VZ-ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-ThreeD.fs) & [VZ-Shaders.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Shaders.fs): Interactive 3D rendering pipeline leveraging raw WebGPU buffers and vertex shaders.
-*   [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs): The core interactive interface for automated design variation processing and dataset curation.
+*   [Main.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/App/Main.fs): The primary application controller holding the Elmish Model-View-Update (MVU) loops.
+*   [NodeTree.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/NodeTree.fs): Interactive tree editor sidebar.
+*   [Boundary.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Boundary.fs): Drawing canvas for complex, custom 2D site boundary polygons.
+*   [Layout.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Layout.fs): Combines modular panels and manages core viewport logic.
+*   [Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Graphics.fs): Renders procedural 2D plans in the browser using SVG vector graphics.
+*   [ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/ThreeD.fs) & [Shaders.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Shaders.fs): Interactive 3D rendering pipeline leveraging raw WebGPU buffers and vertex shaders.
+*   [Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Teach.fs): The core interactive interface for automated design variation processing and dataset curation.
 
 ---
 
@@ -48,7 +48,7 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 
 ### 2. Architectural Programming
 *   **Concepts**: Converting architectural layout rules (circulation, floor areas, program designations) into functional boundaries.
-*   **Code Location**: [IN-NodeTree.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/IN-NodeTree.fs) registers user inputs, which are parsed and recursively handled via F# Pattern Matching in [Operations.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Operations.fs).
+*   **Code Location**: [NodeTree.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/NodeTree.fs) registers user inputs, which are parsed and recursively handled via F# Pattern Matching in [Operations.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Operations.fs).
 *   **Rules**: Maintain standard F# immutable programming. When executing modifications to trees, return a new structural state instead of mutating existing records.
 
 ### 3. Spatial Hierarchy
@@ -71,11 +71,11 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
     ```fsharp
     type HexelCoord = { Q: int; R: int }
     ```
-*   **Rules**: Do not use standard F# `float` or `double` math inside [Hexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Hexel.fs) or [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs). Use strict integer multiplication and division. Floating-point numbers are only permitted at the final rendering stage in [VZ-ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-ThreeD.fs) and [VZ-Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Graphics.fs).
+*   **Rules**: Do not use standard F# `float` or `double` math inside [Hexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Hexel.fs) or [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs). Use strict integer multiplication and division. Floating-point numbers are only permitted at the final rendering stage in [ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/ThreeD.fs) and [Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Graphics.fs).
 
 ### 6. Semantic Architectural Intent
 *   **Concepts**: Structuring generative dataset records by mapping architectural programming constraints and prompts with completed, functional layouts.
-*   **Code Location**: [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs) captures layout runs. When users commit designs, it calls `VZ-Teach.fs` to post JSON payloads containing `definition`, `description`, and `configuration` (as a 24-element string array of sweep layouts) to the private Hynteract serverless endpoint, which compiles them into `.jsonl` datasets for Hugging Face.
+*   **Code Location**: [Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Teach.fs) captures layout runs. When users commit designs, it calls `Teach.fs` to post JSON payloads containing `definition`, `description`, and `configuration` (as a 24-element string array of sweep layouts) to the private Hynteract serverless endpoint, which compiles them into `.jsonl` datasets for Hugging Face.
 
 ---
 
@@ -83,12 +83,12 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 
 The client-side F# engine executes a sequence-driven pipeline on every design change:
 
-1.  **State Management**: Bolero/Elmish registers user actions in [Main.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Main.fs).
+1.  **State Management**: Bolero/Elmish registers user actions in [Main.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/App/Main.fs).
 2.  **String Parsing**: If loading from a URL hash or import, [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs) parses the Base34 string into a `TreeNode` state.
 3.  **Adjacency Graphing**: [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs) builds spatial cell configurations based on the `TreeNode` structure.
 4.  **2D Layout (Xyxel)**: [Xyxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Xyxel.fs) executes integer-based boundary partitioning and produces 2D layout vectors.
 5.  **3D Extrusion (Zaxel)**: [Zaxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Zaxel.fs) reads thickness rules (`T` attribute) and layers these 2D layouts into stacked 3D coordinates.
 6.  **Graphics Dispatch**:
-    *   *SVG Viewport*: Renders vector plans via [VZ-Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Graphics.fs).
-    *   *WebGPU Viewport*: [VZ-ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-ThreeD.fs) maps the 3D meshes to GPU vertex buffers, rendering volumetric models.
-7.  **Data Export**: [VZ-Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/VZ-Teach.fs) serializes layout tokens, coordinates, and descriptions, and sends them to the serverless `Hynteract` endpoint.
+    *   *SVG Viewport*: Renders vector plans via [Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Graphics.fs).
+    *   *WebGPU Viewport*: [ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/ThreeD.fs) maps the 3D meshes to GPU vertex buffers, rendering volumetric models.
+7.  **Data Export**: [Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Teach.fs) serializes layout tokens, coordinates, and descriptions, and sends them to the serverless `Hynteract` endpoint.

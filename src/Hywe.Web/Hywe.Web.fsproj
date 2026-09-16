@@ -28,7 +28,7 @@
 		<Compile Include="Components/PageHelp.fs" />
 
 		<!-- Shared Domain & Infrastructure -->
-		<Compile Include="Common/PageTreeFiltering.fs" />
+		<Compile Include="Common/TreeFilter.fs" />
 		<Compile Include="Common/FileManager.fs" />
 
 		<!-- Feature Panels -->
