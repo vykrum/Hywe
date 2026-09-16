@@ -151,9 +151,9 @@ let extrudePolygons
     async {
         // Register shaders before initialization
         do! js.InvokeVoidAsync("registerWebGPUShaders", 
-                                Hywe.Shaders.computeWgsl, 
-                                Hywe.Shaders.renderWgsl, 
-                                Hywe.Shaders.postProcessWgsl).AsTask()
+                                Shaders.computeWgsl, 
+                                Shaders.renderWgsl, 
+                                Shaders.postProcessWgsl).AsTask()
             |> Async.AwaitTask
 
         // 1. Helper: Point conversion

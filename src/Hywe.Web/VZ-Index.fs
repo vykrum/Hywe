@@ -1,4 +1,4 @@
-module Hywe.Index
+module Index
 
 open Bolero.Html
 open ModelTypes

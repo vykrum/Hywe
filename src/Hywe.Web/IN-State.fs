@@ -3,12 +3,11 @@ module AppState
 open System
 open Microsoft.JSInterop
 open Elmish
-open Page
+open PageElements
 open Hywe.Node
 open Types
 open State
 open ModelTypes
-open Hywe
 open Hywe.Core
 open FileManager
 
