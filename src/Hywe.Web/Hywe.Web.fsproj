@@ -11,30 +11,45 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Include="VZ-Graphics.fs" />
-		<Compile Include="VZ-Shaders.fs" />
-		<Compile Include="VZ-ThreeD.fs" />
-		<Compile Include="IN-NodeActions.fs" />
-		<Compile Include="IN-NodeTree.fs" />
-		<Compile Include="IN-ModelTypes.fs" />
-		<Compile Include="IN-PageElements.fs" />
-		<Compile Include="IN-PageHelp.fs" />
-		<Compile Include="IN-PageTreeFiltering.fs" />
-		<Compile Include="IN-FileManager.fs" />
-		<Compile Include="VZ-Boundary.fs" />
-		<Compile Include="VZ-Analyze.fs" />
-		<Compile Include="VZ-Report.fs" />
-		<Compile Include="VZ-Layout.fs" />
-		<Compile Include="IN-Cache.fs" />
-		<Compile Include="IN-PageHelpers.fs" />
-		<Compile Include="VZ-Teach.fs" />
-		<Compile Include="IN-ModelHelpers.fs" />
+		<!-- Rendering Layer -->
+		<Compile Include="Rendering/Graphics.fs" />
+		<Compile Include="Rendering/Shaders.fs" />
+		<Compile Include="Rendering/ThreeD.fs" />
 
-		<Compile Include="VZ-Index.fs" />
-		<Compile Include="IN-State.fs" />
-		<Compile Include="Benchmarks.fs" />
-		<Compile Include="Main.fs" />
-		<Compile Include="Startup.fs" />
+		<!-- Core Panel Components -->
+		<Compile Include="Panels/NodeActions.fs" />
+		<Compile Include="Panels/NodeTree.fs" />
+
+		<!-- State & Model Types -->
+		<Compile Include="Common/ModelTypes.fs" />
+
+		<!-- Reusable UI Components -->
+		<Compile Include="Components/PageElements.fs" />
+		<Compile Include="Components/PageHelp.fs" />
+
+		<!-- Shared Domain & Infrastructure -->
+		<Compile Include="Common/PageTreeFiltering.fs" />
+		<Compile Include="Common/FileManager.fs" />
+
+		<!-- Feature Panels -->
+		<Compile Include="Panels/Boundary.fs" />
+		<Compile Include="Panels/Analyze.fs" />
+		<Compile Include="Panels/Report.fs" />
+		<Compile Include="Panels/Layout.fs" />
+
+		<!-- Utilities & Secondary Panels -->
+		<Compile Include="Common/Cache.fs" />
+		<Compile Include="Components/PageHelpers.fs" />
+		<Compile Include="Panels/Teach.fs" />
+
+		<!-- Application Composition & Shell -->
+		<Compile Include="App/Overlays.fs" />
+		<Compile Include="App/ModelHelpers.fs" />
+		<Compile Include="Components/Shell.fs" />
+		<Compile Include="App/AppState.fs" />
+		<Compile Include="App/Benchmarks.fs" />
+		<Compile Include="App/Main.fs" />
+		<Compile Include="App/Startup.fs" />
 	</ItemGroup>
 	
 	<ItemGroup>
