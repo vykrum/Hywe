@@ -1,4 +1,4 @@
-module Hywe.Shaders
+module Shaders
 
 /// <summary>
 /// Provides WGSL shader source code for the WebGPU rendering pipeline.

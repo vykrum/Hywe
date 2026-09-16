@@ -1,4 +1,4 @@
-module Hywe.Main
+module Main
 
 open Microsoft.AspNetCore.Components
 open Microsoft.JSInterop
@@ -7,7 +7,6 @@ open Bolero
 open Bolero.Html
 open ModelTypes
 open ModelHelpers
-open Hywe
 open AppState
 open FileManager
 
@@ -89,7 +88,7 @@ type MyApp() =
             (fun model dispatch -> 
                 concat {
                     match model.Onboarding.IsActive && model.CurrentScreen = MainScreen with
-                    | true -> Page.Help.viewHelp model.Onboarding dispatch
+                    | true -> PageHelp.viewHelp model.Onboarding dispatch
                     | false -> empty()
 
                     Index.coreScript

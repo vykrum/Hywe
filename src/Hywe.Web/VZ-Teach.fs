@@ -1,4 +1,4 @@
-module Hywe.Teach
+module Teach
 
 open System
 open Microsoft.JSInterop
@@ -10,7 +10,7 @@ open Hywe.Core.Lexel
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Node
-open Page
+open PageElements
 open Types
 open Graphics
 open Layout
@@ -262,7 +262,7 @@ let generateThumbnailSvg (cfg: BatchConfgrtns) =
     let sb = System.Text.StringBuilder()
     sb.Append(sprintf "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %d %d\" width=\"100%%\" height=\"100%%\">" (int wdt) (int hgt)) |> ignore
     
-    let sqn = match Page.Elements.parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
+    let sqn = match PageElements.parseSqn cfg.sqnName with | Some s -> s | None -> Hexel.VRCCNE
     for poly in cfg.cxOuIl do
         let xy = 
             poly 

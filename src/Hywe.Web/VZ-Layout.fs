@@ -11,7 +11,7 @@ open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Graphics
-open Page
+open PageElements
 
 /// Point-in-polygon
 let pointInPolygon 

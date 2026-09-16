@@ -8,7 +8,8 @@ open Hywe.Core
 open Hywe.Core.Coxel
 open Hywe.Core.Lexel
 open Types
-open Page
+open PageElements
+open PageTreeFiltering
 open Hywe.Node
 
 // --- Logic ---
@@ -246,7 +247,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
         match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
         | Some c -> 
-            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let activeConfig = PageTreeFiltering.filterBatchConfig true model.Tree c
             let level = model.Tree.ActiveLevel
             let levelIdx = 
                 activeConfig.cxCxl1 
@@ -265,7 +266,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
         match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
         | Some c -> 
-            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let activeConfig = PageTreeFiltering.filterBatchConfig true model.Tree c
             let activeCxls = activeConfig.cxCxl1 |> Array.filter (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z = model.Tree.ActiveLevel)
             let csv = FileManager.generateAreaMetricsCsv [| (sqnStr, model.Tree.ActiveLevel, activeCxls) |]
             let fileName = "Hywe_Metrics_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
@@ -278,7 +279,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let baseLevel = match model.Tree.ActiveNest with | Some n -> (Map.find n model.Tree.Nests).Level | None -> model.Tree.ActiveLevel
         match Cache.get (toMarker baseLevel) activeIndex model.LayoutCache with
         | Some c -> 
-            let activeConfig = Page.TreeFiltering.filterBatchConfig true model.Tree c
+            let activeConfig = PageTreeFiltering.filterBatchConfig true model.Tree c
             let csv = FileManager.generateAdjacencyCsv [| (sqnStr, model.Tree.ActiveLevel, activeConfig.cxAdj1) |]
             let fileName = "Hywe_Adjacency_" + DateTime.Now.ToString("yyMMddHHmm") + ".csv"
             Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
@@ -286,7 +287,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     
     | DownloadBatchCoordCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
-        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
+        let results = rawResults |> Array.map (PageTreeFiltering.filterBatchConfig true model.Tree)
             
         match results with
         | [||] -> Some (model, Cmd.none)
@@ -305,7 +306,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     
     | DownloadBatchMetricsCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
-        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
+        let results = rawResults |> Array.map (PageTreeFiltering.filterBatchConfig true model.Tree)
 
         match results with
         | [||] -> Some (model, Cmd.none)
@@ -321,7 +322,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     
     | DownloadBatchAdjCsv ->
         let rawResults = Cache.getAllVariations (toMarker model.Tree.ActiveLevel) model.LayoutCache
-        let results = rawResults |> Array.map (Page.TreeFiltering.filterBatchConfig true model.Tree)
+        let results = rawResults |> Array.map (PageTreeFiltering.filterBatchConfig true model.Tree)
 
         match results with
         | [||] -> Some (model, Cmd.none)
@@ -427,7 +428,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                                       let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] baseLevel model.PolygonExport
                                                       cfg, updatedCache
 
-                                              let filteredConfig = Page.TreeFiltering.filterBatchConfigForMarker true model.Tree marker config
+                                              let filteredConfig = PageTreeFiltering.filterBatchConfigForMarker true model.Tree marker config
                                               processRange restRange nextCache (filteredConfig :: acc)
                                           with _ ->
                                               processRange restRange c acc
