@@ -1,6 +1,6 @@
 module ModelTypes
 
-open Hywe.Node
+open TreeTypes
 open Types
 open Hywe.Core.Coxel
 open System

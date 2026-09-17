@@ -10,7 +10,7 @@ open Hywe.Core.Lexel
 open Types
 open PageElements
 open TreeFilter
-open Hywe.Node
+open TreeTypes
 
 // --- Logic ---
 

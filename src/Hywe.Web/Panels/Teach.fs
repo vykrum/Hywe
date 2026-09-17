@@ -9,7 +9,7 @@ open Hywe.Core
 open Hywe.Core.Lexel
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
-open Hywe.Node
+open TreeTypes
 open PageElements
 open Types
 open Graphics

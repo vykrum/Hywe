@@ -1,12 +1,21 @@
+/// <summary>
+/// Computational geometry functions for polygon operations, intersection detection,
+/// point projections, and boundary validation.
+/// </summary>
 module Geometry
 
 open System
 open Types
 
 let inline sqr x = x * x
+/// <summary> Calculates the squared Euclidean distance between two points. </summary>
 let distanceSq (a: Point) (b: Point) = sqr (a.X - b.X) + sqr (a.Y - b.Y)
+/// <summary> Checks if the distance between two points is within a specified radius. </summary>
 let withinRadiusSq (a: Point) (b: Point) (r: float) = distanceSq a b <= r*r
 
+/// <summary>
+/// Projects a point orthogonally onto a line segment, clamped between segment endpoints.
+/// </summary>
 let projectPointToSegment (p: Point) (a: Point) (b: Point) : Point =
     let vx = b.X - a.X
     let vy = b.Y - a.Y
@@ -23,9 +32,14 @@ let projectPointToSegment (p: Point) (a: Point) (b: Point) : Point =
             let t = c1 / c2
             { X = a.X + t * vx; Y = a.Y + t * vy }
 
+/// <summary> Calculates the squared distance from a point to a line segment. </summary>
 let distancePointToSegmentSq p a b =
     distanceSq p (projectPointToSegment p a b)
 
+/// <summary>
+/// Finds the closest polygon edge to a point within a threshold distance,
+/// returning a candidate ghost vertex if found.
+/// </summary>
 let findClosestEdge (p: Point) (threshold: float) (outer: Point[]) (islands: Point[][]) : GhostCandidate option =
     let thresholdSq = threshold * threshold
     
@@ -82,6 +96,7 @@ let isInsidePolygon (poly: Point[]) (pt: Point) =
             loop (i + 1) i newInside
     loop 0 (n - 1) false
 
+/// <summary> Checks if an inner polygon is entirely contained within an outer polygon. </summary>
 let isPolygonInside outer inner =
     inner |> Array.forall (isInsidePolygon outer)
 
@@ -100,6 +115,7 @@ let private onSegment (p: Point) (q: Point) (r: Point) =
     q.X <= max p.X r.X + eps && q.X >= min p.X r.X - eps &&
     q.Y <= max p.Y r.Y + eps && q.Y >= min p.Y r.Y - eps
 
+/// <summary> Determines whether two 2D line segments intersect. </summary>
 let edgesIntersect (p1: Point) (q1: Point) (p2: Point) (q2: Point) =
     let o1 = orient p1 q1 p2
     let o2 = orient p1 q1 q2
@@ -122,6 +138,7 @@ let edgesIntersect (p1: Point) (q1: Point) (p2: Point) (q2: Point) =
                     | true -> true
                     | false -> false
 
+/// <summary> Checks whether any non-consecutive edges of a polygon intersect. </summary>
 let polygonSelfIntersects (points: Point[]) =
     let n = points.Length
     let rec loop i j =
@@ -139,6 +156,7 @@ let polygonSelfIntersects (points: Point[]) =
                     | false -> loop i (j + 1)
     loop 0 2
 
+/// <summary> Determines whether the edges of two polygons intersect. </summary>
 let polygonsIntersect (polyA: Point[]) (polyB: Point[]) : bool =
     let edgesA = [| for i in 0 .. polyA.Length - 1 -> (polyA.[i], polyA.[(i + 1) % polyA.Length]) |]
     let edgesB = [| for i in 0 .. polyB.Length - 1 -> (polyB.[i], polyB.[(i + 1) % polyB.Length]) |]
@@ -147,6 +165,10 @@ let polygonsIntersect (polyA: Point[]) (polyB: Point[]) : bool =
         edgesB |> Array.exists (fun (b1,b2) ->
             edgesIntersect a1 a2 b1 b2))
 
+/// <summary>
+/// Validates that an entry point lies inside the outer boundary, outside all islands,
+/// and maintains minimum clearance from all polygon edges.
+/// </summary>
 let isEntryPointValid (outer: Point[]) (islands: Point[][]) (pt: Point) =
     let clearanceSq = 5.0 * 5.0 // Sensible clearance so entry point can move freely near edges
 
@@ -189,6 +211,9 @@ let isEntryPointValid (outer: Point[]) (islands: Point[][]) (pt: Point) =
                         | false -> checkIslandClose (idx + 1)
                 not (checkIslandClose 0)
 
+/// <summary>
+/// Finds a valid entry point, testing the centroid first before performing a radial search.
+/// </summary>
 let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
     let centroid = 
         let sx, sy = outer |> Array.fold (fun (ax, ay) p -> (ax + p.X, ay + p.Y)) (0.0, 0.0)
@@ -222,6 +247,10 @@ let closestValidEntryPoint (outer: Point[]) (islands: Point[][]) =
 
         searchR 15.0
 
+/// <summary>
+/// Validates that the outer boundary and islands do not self-intersect,
+/// islands are contained within outer, and islands do not overlap.
+/// </summary>
 let isConfigurationValid (outer: Point[]) (islands: Point[][]) =
     let allIslandsValid = 
         islands 

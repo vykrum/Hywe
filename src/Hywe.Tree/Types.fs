@@ -1,8 +1,13 @@
-namespace Hywe.Node
+[<AutoOpen>]
+module TreeTypes
 
 open System
 open Elmish
 
+/// <summary>
+/// Hierarchical node representing a spatial room/bubble with position, weight,
+/// extrusion, base shape, and child sub-nodes.
+/// </summary>
 type TreeNode =
     { Id: Guid
       Name: string
@@ -15,14 +20,20 @@ type TreeNode =
       Base: string option
       Color: string option }
 
+/// <summary>
+/// Cached SVG viewBox and client rect metrics for coordinate transformations.
+/// </summary>
 type SvgInfo =
     { ViewBoxX: float; ViewBoxY: float; ViewBoxW: float; ViewBoxH: float
       ClientLeft: float; ClientTop: float; ClientW: float; ClientH: float }
 
+/// <summary> 2D coordinates in SVG viewport space. </summary>
 type SvgPoint = { SvgX: float; SvgY: float }
 
+/// <summary> Unique identifier for a node action command. </summary>
 type ActionId = string
 
+/// <summary> Standard action identifier constants for node manipulation. </summary>
 [<RequireQualifiedAccess>]
 module ActionIds =
     [<Literal>]
@@ -34,9 +45,14 @@ module ActionIds =
     [<Literal>]
     let NoAction = "NoAction"
 
-/// Abstract pointer event data to decouple from AspNetCore.Components.Web
+/// <summary>
+/// Abstract pointer event data to decouple the tree model from AspNetCore.Components.Web.
+/// </summary>
 type PointerEventData = { ClientX: float; ClientY: float }
 
+/// <summary>
+/// State model for the node hierarchy tree, tracking levels, nests, dragging, and menus.
+/// </summary>
 type SubModel = 
     { Levels: Map<int, TreeNode>
       Nests: Map<int, TreeNode>
@@ -55,6 +71,7 @@ type SubModel =
       LastMoveMs: float option
       TopExtrusion: float }
 
+/// <summary> Messages representing user actions and updates within the tree view. </summary>
 type SubMsg =
     | OpenMenu of Guid
     | CloseMenu
@@ -75,7 +92,9 @@ type SubMsg =
     | DragStartInternal of Guid * SvgInfo * SvgPoint
     | PointerUpInternal
 
-/// Logical definition of a Node Action
+/// <summary>
+/// Encapsulates the execution logic, input handling, and applicability rules for a node action.
+/// </summary>
 type NodeActionLogic = {
     LogicId: ActionId
     LogicLabel: string

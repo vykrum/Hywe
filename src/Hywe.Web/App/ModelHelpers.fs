@@ -5,7 +5,7 @@ open Microsoft.JSInterop
 open Layout
 open PageElements
 open TreeFilter
-open Hywe.Node
+open TreeTypes
 open Types
 open ModelTypes
 open Bolero.Html
@@ -405,7 +405,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         | _, false -> 12, 23
 
     let getFilteredGeometries () =
-        let rec getIds (marker: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+        let rec getIds (marker: string) (prefix: string) (node: TreeNode) =
             seq {
                 yield $"{marker}.{prefix}"
                 yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds marker $"{prefix}.{i + 1}" child)
