@@ -5,7 +5,7 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Microsoft.JSInterop
-open Hywe.Node
+open TreeTypes
 open NodeActions
 
 // --------------------

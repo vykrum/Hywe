@@ -1,14 +1,14 @@
 module TreeFilter
 
 open System
-open Hywe.Node
 open Hywe.Core
 open Hywe.Core.Coxel
 open Hywe.Core.Hexel
 open ModelTypes
+open TreeTypes
 
-let getHierarchicalIdMap (tree: Hywe.Node.SubModel) =
-    let rec traverse (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+let getHierarchicalIdMap (tree: SubModel) =
+    let rec traverse (m: string) (prefix: string) (node: TreeNode) =
         seq {
             yield node.Id, $"{m}.{prefix}"
             yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
@@ -21,13 +21,13 @@ let getHierarchicalIdMap (tree: Hywe.Node.SubModel) =
             yield! traverse $"N{kvp.Key}" "1" kvp.Value
     } |> Map.ofSeq
 
-let rec getIds (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+let rec getIds (m: string) (prefix: string) (node: TreeNode) =
     seq {
         yield $"{m}.{prefix}"
         yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> getIds m $"{prefix}.{i + 1}" child)
     }
 
-let getValidIdsForMarkerSeq (tree: Hywe.Node.SubModel) (marker: string) =
+let getValidIdsForMarkerSeq (tree: SubModel) (marker: string) =
     match marker.StartsWith("N") with
     | true ->
         let nestId = match System.Int32.TryParse(marker.Substring(1)) with true, v -> v | _ -> 1
@@ -40,16 +40,16 @@ let getValidIdsForMarkerSeq (tree: Hywe.Node.SubModel) (marker: string) =
         | Some levelNode -> getIds marker "1" levelNode
         | None -> Seq.empty
 
-let getValidIdsForMarker (tree: Hywe.Node.SubModel) (marker: string) =
+let getValidIdsForMarker (tree: SubModel) (marker: string) =
     getValidIdsForMarkerSeq tree marker |> Set.ofSeq
 
-let getValidIds (tree: Hywe.Node.SubModel) =
+let getValidIds (tree: SubModel) =
     match tree.ActiveNest with
     | Some nestId -> getValidIdsForMarker tree $"N{nestId}"
     | None -> getValidIdsForMarker tree (match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}")
 
-let getIdToNodeMap (tree: Hywe.Node.SubModel) =
-    let rec traverse (m: string) (prefix: string) (node: Hywe.Node.TreeNode) =
+let getIdToNodeMap (tree: SubModel) =
+    let rec traverse (m: string) (prefix: string) (node: TreeNode) =
         seq {
             yield $"{m}.{prefix}", node
             yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
@@ -61,7 +61,7 @@ let getIdToNodeMap (tree: Hywe.Node.SubModel) =
             yield! traverse $"N{kvp.Key}" "1" kvp.Value
     } |> Map.ofSeq
 
-let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubModel) (marker: string) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
+let filterBatchConfigForMarker (computeExpensive: bool) (tree: SubModel) (marker: string) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
     let validIdsSeq = getValidIdsForMarkerSeq tree marker |> Seq.toArray
     let validIds = validIdsSeq |> Set.ofArray
     match validIds.IsEmpty with
@@ -181,5 +181,5 @@ let filterBatchConfigForMarker (computeExpensive: bool) (tree: Hywe.Node.SubMode
             cxB36 = b36s
             cxSol1 = config.cxSol1 |}
 
-let filterBatchConfig (computeExpensive: bool) (tree: Hywe.Node.SubModel) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
+let filterBatchConfig (computeExpensive: bool) (tree: SubModel) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
     filterBatchConfigForMarker computeExpensive tree (match tree.ActiveNest with | Some nestId -> $"N{nestId}" | None -> match tree.ActiveLevel with | 0 -> "L0" | lvl -> $"L{lvl}") config

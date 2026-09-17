@@ -4,7 +4,7 @@ open System
 open Microsoft.JSInterop
 open Elmish
 open PageElements
-open Hywe.Node
+open TreeTypes
 open Types
 open State
 open ModelTypes

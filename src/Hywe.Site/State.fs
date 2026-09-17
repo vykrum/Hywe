@@ -1,3 +1,7 @@
+/// <summary>
+/// State management, command updates, coordinate transformations, and serialization
+/// for the polygon boundary editor.
+/// </summary>
 module State
 
 open System
@@ -24,6 +28,7 @@ let initIslands = Array.empty<Point[]>
 
 // ---------- Import helpers ----------
 
+/// <summary> Parses a comma-separated coordinate string into a Point. </summary>
 let parsePoint (multiplier: float) (s: string) : Result<Point, string> =
     match s.Split(',', StringSplitOptions.RemoveEmptyEntries) with
     | [| x; y |] ->
@@ -43,12 +48,16 @@ let sequenceResults (arr: Result<'a,'e> array) : Result<'a array,'e> =
             | Error e -> Error e
     loop 0 []
 
+/// <summary> Parses a comma-delimited coordinate string into an array of Points. </summary>
 let parsePoly (multiplier: float) (s: string) : Result<Point[], string> =
     s.Split(',', StringSplitOptions.RemoveEmptyEntries)
     |> Array.chunkBySize 2
     |> Array.map (fun a -> parsePoint multiplier (String.concat "," a))
     |> sequenceResults
 
+/// <summary>
+/// Parses hyphen-delimited island coordinate strings into an array of Point arrays.
+/// </summary>
 let parseIslands (multiplier: float) (s: string) : Result<Point[][], string> =
     match String.IsNullOrWhiteSpace s with
     | true -> Ok [||]
@@ -62,15 +71,21 @@ let parseIslands (multiplier: float) (s: string) : Result<Point[][], string> =
         |> sequenceResults
 
 // ---------- Utility functions ----------
+
+/// <summary> Clamps a point to lie within the logical bounds of the editor canvas. </summary>
 let clampPt (model: PolygonEditorModel) (pt: Point) =
     {
         X = max 0.0 (min model.LogicalWidth pt.X)
         Y = max 0.0 (min model.LogicalHeight pt.Y)
     }
 
+/// <summary>
+/// Creates a clean snapshot of the model by resetting transient drag and ghost states.
+/// </summary>
 let snapshot (model: PolygonEditorModel) : PolygonEditorModel =
     { model with Dragging = None; DraggingIsland = None; DragOffset = None; GhostVertex = None }
 
+/// <summary> Formats an array of points into an SVG polygon points string. </summary>
 let polyToSvgPoints (poly: Point[]) =
     poly |> Array.map (fun p -> sprintf "%.1f,%.1f" p.X p.Y) |> String.concat " "
 
@@ -78,6 +93,9 @@ let polyToSvgPoints (poly: Point[]) =
 let formatBoundaryValue (w: float) (value: float) (isMapBase: bool) =
     value / 10.0
 
+/// <summary>
+/// Computes display-scaled dimensions and points from logical coordinates.
+/// </summary>
 let updateDisplayFields (model: PolygonEditorModel) =
     let scale v = formatBoundaryValue model.LogicalWidth v model.UseMapBase
     { model with
@@ -87,19 +105,23 @@ let updateDisplayFields (model: PolygonEditorModel) =
         DisplayIslands = model.Islands |> Array.map (Array.map (fun pt -> { X = scale pt.X; Y = scale (model.LogicalHeight - pt.Y) }))
     }
 
-/// Refreshes cached strings and UI fields to avoid expensive re-formatting during every frame
+/// <summary>
+/// Refreshes cached SVG strings and UI fields to avoid expensive reformatting during render.
+/// </summary>
 let refreshCachedStrings (model: PolygonEditorModel) =
     let displayUpdated = updateDisplayFields model
     { displayUpdated with
         OuterPointsStr = polyToSvgPoints displayUpdated.Outer
         IslandPointsStrs = displayUpdated.Islands |> Array.map polyToSvgPoints }
 
-/// Standard padding around polygon boundary in logical units
+/// <summary> Standard padding around polygon boundary in logical units. </summary>
 let standardPad (w: float) (h: float) =
     let maxDim = max w h
     max 60.0 (maxDim * 0.16)
 
-/// Conversion scale factor from SVG viewBox units to physical screen pixels
+/// <summary>
+/// Calculates conversion scale factor from SVG viewBox units to physical screen pixels.
+/// </summary>
 let getSvgScale (model: PolygonEditorModel) (info: SvgInfo option) =
     let w = model.LogicalWidth
     let h = model.LogicalHeight
@@ -112,6 +134,10 @@ let getSvgScale (model: PolygonEditorModel) (info: SvgInfo option) =
     safeW / max 200.0 clientW
 
 // ---------- JS interop helpers ----------
+
+/// <summary>
+/// Queries the SVG element client rect and viewBox metrics from the DOM via JavaScript.
+/// </summary>
 let getSvgInfo (js: IJSRuntime) =
     async {
         let! el = js.InvokeAsync<JsonElement>("getSvgInfo", [| box "polygon-editor-svg" |]).AsTask() |> Async.AwaitTask
@@ -126,12 +152,15 @@ let getSvgInfo (js: IJSRuntime) =
         return { ViewBoxX = vbx; ViewBoxY = vby; ViewBoxW = vbw; ViewBoxH = vbh; ClientLeft = left; ClientTop = top; ClientW = width; ClientH = height }
     }
 
+/// <summary>
+/// Transforms client screen coordinates into SVG coordinate space using cached SvgInfo.
+/// </summary>
 let toSvgCoordsFromInfo (info: SvgInfo) (clientX: float) (clientY: float) =
     let x = info.ViewBoxX + (clientX - info.ClientLeft) * info.ViewBoxW / info.ClientW
     let y = info.ViewBoxY + (clientY - info.ClientTop) * info.ViewBoxH / info.ClientH
     { X = x; Y = y }
 
-// Occasional precise mapping using getSvgCoords (for double click & contextmenu)
+/// <summary> Maps pointer event coordinates to SVG coordinate space via JS interop. </summary>
 let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
     async {
         let! result =
@@ -140,6 +169,9 @@ let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
         return { X = result.GetProperty("x").GetDouble(); Y = result.GetProperty("y").GetDouble() }
     }
 
+/// <summary>
+/// Validates and adjusts the site entry point so it remains valid within the boundary.
+/// </summary>
 let ensureEntryWithin
     (outer: Point[])
     (islands: Point[][])
@@ -149,7 +181,10 @@ let ensureEntryWithin
     | true -> entry
     | false -> Geometry.closestValidEntryPoint outer islands
 
-/// Return (outer, islands, absolute, entry, width, height, elevation, baseStr)
+/// <summary>
+/// Exports model geometry as serialized boundary strings:
+/// (outer, islands, absolute, entry, width, height, elevation, baseStr).
+/// </summary>
 let exportPolygonStrings (model: PolygonEditorModel) : string * string * string * string * int * int * int * string =
     let divisor = 10.0
     let fmtPoint (p: Point) = sprintf "%d,%d" (int (System.Math.Floor((p.X + 0.001) / divisor))) (int (System.Math.Floor((p.Y + 0.001) / divisor)))
@@ -175,6 +210,10 @@ let exportPolygonStrings (model: PolygonEditorModel) : string * string * string 
     outer, islands, absolute, entry, w, h, model.Elevation, model.BaseStr
 
 // ---------- Import function ----------
+
+/// <summary>
+/// Deserializes boundary syntax strings and returns an updated PolygonEditorModel.
+/// </summary>
 let importPolygonStrings
     (outerStr: string)
     (islandsStr: string)
@@ -223,6 +262,7 @@ let importPolygonStrings
 
 // ---------- Initial Model ----------
 
+/// <summary> Default initial state for the polygon editor model. </summary>
 let initModel =
     {
         UseBoundary = false
@@ -259,9 +299,13 @@ let initModel =
     }
     |> refreshCachedStrings
 
+/// <summary> Finalizes active dragging operations and clears transient drag states. </summary>
 let handlePointerUp (model: PolygonEditorModel) : PolygonEditorModel =
     { model with Dragging = None; DraggingEntry = false; DraggingIsland = None; DragOffset = None; LastMoveMs = None }
 
+/// <summary>
+/// Inserts a candidate ghost vertex into the target edge of the outer boundary or island.
+/// </summary>
 let commitGhost (ghost: GhostCandidate) (model: PolygonEditorModel) : PolygonEditorModel option =
     match ghost.PolyIndex = 0 with
     | true ->
@@ -300,6 +344,9 @@ let commitGhost (ghost: GhostCandidate) (model: PolygonEditorModel) : PolygonEdi
             Some (updated |> refreshCachedStrings)
         | false -> None
 
+/// <summary>
+/// Deletes a vertex from the outer boundary or an island, enforcing minimum vertex counts.
+/// </summary>
 let deleteVertexAt (polyIndex: int) (vertexIndex: int) (model: PolygonEditorModel) : PolygonEditorModel option =
     match polyIndex = 0 with
     | true ->
@@ -347,6 +394,9 @@ let deleteVertexAt (polyIndex: int) (vertexIndex: int) (model: PolygonEditorMode
                     Some (updated |> refreshCachedStrings)
                 | false -> None
 
+/// <summary>
+/// Processes pointer move events to drag vertices, islands, entry point, or detect ghost edges.
+/// </summary>
 let handlePointerMove (ev: MouseEventArgs) (model: PolygonEditorModel) : PolygonEditorModel =
     match model.PolygonEnabled with
     | false -> model
@@ -445,6 +495,9 @@ let handlePointerMove (ev: MouseEventArgs) (model: PolygonEditorModel) : Polygon
 
             | _ -> model
 
+/// <summary>
+/// Synchronously handles editor messages that do not require asynchronous JS interop.
+/// </summary>
 let updateSync (msg: PolygonEditorMessage) (model: PolygonEditorModel) : PolygonEditorModel option =
     match msg with
     | ToggleLock -> Some { model with IsLocked = not model.IsLocked; SelectedVertex = None; GhostVertex = None }
@@ -480,6 +533,10 @@ let updateSync (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Polygon
     | _ -> None
 
 // ---------- Update ----------
+
+/// <summary>
+/// Elmish update function handling all PolygonEditorMessage cases, executing async JS interop when needed.
+/// </summary>
 let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
     match msg with
     | ToggleBoundary isChecked ->

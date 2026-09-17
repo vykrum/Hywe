@@ -1,6 +1,6 @@
 module ModelTypes
 
-open Hywe.Node
+open TreeTypes
 open Types
 open Hywe.Core.Coxel
 open System
@@ -140,7 +140,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-16T19:23:50Z"
+let MODIFIED_DATE = "2026-09-17T17:27:59Z"
 let GALLERY_PAGE_SIZE = 12
 
 

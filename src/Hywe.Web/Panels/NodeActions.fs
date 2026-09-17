@@ -4,7 +4,7 @@ open System
 open Elmish
 open Bolero
 open Bolero.Html
-open Hywe.Node
+open TreeTypes
 
 // --------------------
 // UI Action Registry

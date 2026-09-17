@@ -6,7 +6,7 @@ open System
 open System.Text
 open Hywe.Core
 open Hywe.Core.Coxel
-open Hywe.Node
+open TreeTypes
 open Graphics
 
 // --- DATA TYPES ---
