@@ -65,8 +65,7 @@ let colorModel (model: SubModel) : SubModel =
 
     let applyColor (lvl: int) (n: TreeNode) =
         let isElevatedAnchor = model.LevelAnchors |> Map.exists (fun targetLvl aId -> targetLvl > lvl && aId = n.Id)
-        let isAnchorForThisLevel = lvl > 0 && (model.LevelAnchors |> Map.tryFind lvl = Some n.Id)
-        let isElevated = n.Level > lvl || isElevatedAnchor || isAnchorForThisLevel
+        let isElevated = n.Level > lvl || isElevatedAnchor
         let isNested = nestAnchorIds.Contains n.Id
 
         let color = 

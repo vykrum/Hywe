@@ -71,7 +71,7 @@ let rec syncHierarchy (levels: Map<int, TreeNode>) (anchors: Map<int, Guid>) (lv
         | Some anchorNode ->
             match levels |> Map.tryFind (lvl + 1) with
             | Some childTree ->
-                let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight; Color = anchorNode.Color }
+                let updatedChildTree = { childTree with Name = anchorNode.Name; Weight = anchorNode.Weight }
                 let nextLevels = levels |> Map.add (lvl + 1) updatedChildTree
                 syncHierarchy nextLevels anchors (lvl + 1)
             | None -> levels

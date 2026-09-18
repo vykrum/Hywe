@@ -187,7 +187,7 @@ let renderNode (node: TreeNode) (prefix: string) (model: SubModel) (isAffected: 
         (model.LevelAnchors |> Map.tryFind model.ActiveLevel = Some node.Id)
     let isElevatedAnchor = 
         model.LevelAnchors |> Map.exists (fun lvl anchorId -> lvl > model.ActiveLevel && anchorId = node.Id)
-    let isElevated = (node.Level > model.ActiveLevel) || isElevatedAnchor || isAnchorForThisView || (node.Color = Some "#3498db")
+    let isElevated = (node.Level > model.ActiveLevel) || isElevatedAnchor || (node.Color = Some "#3498db")
     
     let nestIdOpt = model.NestAnchors |> Map.tryPick (fun k v -> match v = node.Id with true -> Some k | false -> None)
     let isNestAnchor = nestIdOpt.IsSome || (node.Color = Some "#2ecc71")
