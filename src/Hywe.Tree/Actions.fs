@@ -147,9 +147,9 @@ let elevateActionLogic = {
         let freshRoot = 
             match model.Levels |> Map.tryFind nextLvlForNode with
             | Some existingRoot ->
-                fst (TreeOps.layoutTree { existingRoot with Id = node.Id; Name = node.Name; Weight = node.Weight; Color = node.Color } 0 50.0)
+                fst (TreeOps.layoutTree { existingRoot with Id = node.Id; Name = node.Name; Weight = node.Weight; Color = None } 0 50.0)
             | None ->
-                { node with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0; Color = node.Color }
+                { node with Level = nextLvlForNode; Children = []; X = 50.0; Y = 50.0; Extrusion = 3.0; Color = None }
         
         let treeWithResets = TreeOps.resetElevatedNodes model.ActiveLevel currentTree
         let updatedCurrentTree = TreeOps.updateNodeById node.Id (fun n -> { n with Level = nextLvlForNode }) treeWithResets
