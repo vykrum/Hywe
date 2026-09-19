@@ -14,12 +14,10 @@ let getHierarchicalIdMap (tree: SubModel) =
             yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
         }
     
-    seq {
-        for kvp in tree.Levels do
-            yield! traverse $"L{kvp.Key}" "1" kvp.Value
-        for kvp in tree.Nests do
-            yield! traverse $"N{kvp.Key}" "1" kvp.Value
-    } |> Map.ofSeq
+    let levels = tree.Levels |> Map.toSeq |> Seq.collect (fun (k, v) -> traverse $"L{k}" "1" v)
+    let nests  = tree.Nests  |> Map.toSeq |> Seq.collect (fun (k, v) -> traverse $"N{k}" "1" v)
+
+    Seq.append levels nests |> Map.ofSeq
 
 let rec getIds (m: string) (prefix: string) (node: TreeNode) =
     seq {
@@ -54,12 +52,10 @@ let getIdToNodeMap (tree: SubModel) =
             yield $"{m}.{prefix}", node
             yield! node.Children |> List.indexed |> Seq.collect (fun (i, child) -> traverse m $"{prefix}.{i + 1}" child)
         }
-    seq {
-        for kvp in tree.Levels do
-            yield! traverse $"L{kvp.Key}" "1" kvp.Value
-        for kvp in tree.Nests do
-            yield! traverse $"N{kvp.Key}" "1" kvp.Value
-    } |> Map.ofSeq
+    let levels = tree.Levels |> Map.toSeq |> Seq.collect (fun (k, v) -> traverse $"L{k}" "1" v)
+    let nests  = tree.Nests  |> Map.toSeq |> Seq.collect (fun (k, v) -> traverse $"N{k}" "1" v)
+
+    Seq.append levels nests |> Map.ofSeq
 
 let filterBatchConfigForMarker (computeExpensive: bool) (tree: SubModel) (marker: string) (config: ModelTypes.BatchConfgrtns) : ModelTypes.BatchConfgrtns =
     let validIdsSeq = getValidIdsForMarkerSeq tree marker |> Seq.toArray
