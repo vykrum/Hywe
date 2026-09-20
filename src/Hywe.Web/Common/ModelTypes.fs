@@ -40,10 +40,10 @@ type DerivedData = {
 
 let labelPhrase = "alternATE◦CONFIGURATions"
 
-let indexToLabel (i: int) =
-    if i < 0 then "a"
-    elif i < 24 then string labelPhrase.[i]
-    else
+let indexToLabel = function
+    | i when i < 0 -> "a"
+    | i when i < 24 -> string labelPhrase.[i]
+    | i ->
         let first = labelPhrase.[(i / 24) - 1]
         let second = labelPhrase.[i % 24]
         $"{first}{second}"
@@ -57,10 +57,14 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
     let activeSqn = 
         cxCxl1 
         |> Array.tryFind (fun c -> let (_, _, z) = Hywe.Core.Hexel.hxlCrd c.Base in z = elv)
+        |> Option.orElse (Array.tryHead cxCxl1)
         |> Option.map (fun c -> c.Seqn)
-        |> Option.defaultValue (if Array.isEmpty cxCxl1 then fallbackSqn else (Array.head cxCxl1).Seqn)
+        |> Option.defaultValue fallbackSqn
     
-    let cxlAvl = if Array.isEmpty cxCxl1 then [||] else Hywe.Core.Coxel.cxlExp cxCxl1 activeSqn elv
+    let cxlAvl = 
+        match cxCxl1 with
+        | [||] -> [||]
+        | _ -> Hywe.Core.Coxel.cxlExp cxCxl1 activeSqn elv
     
     // Deterministic coloring based on architectural ID (Rfid) to ensure consistency across levels
     let uniqueRfids = cxCxl1 |> Array.map (fun c -> Hywe.Core.Coxel.prpVlu c.Rfid) |> Array.distinct
@@ -74,49 +78,56 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
     let cxB36 = cxCxl1 |> Array.map Hywe.Core.Coxel.getCxlCoordsString
 
     let cxSol1 = 
-        match latitude with
-        | None -> None
-        | Some lat ->
+        latitude
+        |> Option.map (fun lat ->
             let allHxls = cxCxl1 |> Array.collect (fun c -> c.Hxls)
             let occSet = Hywe.Core.Hexel.hxlSet allHxls
 
             let degreesToRadians deg = deg * System.Math.PI / 180.0
             let approxDailyInsolation azDeg =
-                let equatorFacing = if lat >= 0.0 then 180.0 else 0.0
+                let equatorFacing = 
+                    match lat with
+                    | l when l >= 0.0 -> 180.0
+                    | _ -> 0.0
                 let azDiff = abs(azDeg - equatorFacing)
-                let azDiffMod = if azDiff > 180.0 then 360.0 - azDiff else azDiff
+                let azDiffMod = 
+                    match azDiff with
+                    | d when d > 180.0 -> 360.0 - d
+                    | d -> d
                 let facingFactor = System.Math.Cos(degreesToRadians azDiffMod)
                 200.0 + (100.0 * facingFactor)
 
-            Some (cxCxl1 |> Array.map (fun cxl ->
+            cxCxl1 |> Array.map (fun cxl ->
                 let openEdges = 
                     cxl.Hxls 
                     |> Array.collect (fun h -> 
                         let hx, hy, _ = Hywe.Core.Hexel.hxlCrd h
                         Hywe.Core.Hexel.adjacent cxl.Seqn h
-                        |> Array.choose (fun a -> 
-                            if occSet.Contains(a) then None
-                            else
-                                let ax, ay, _ = Hywe.Core.Hexel.hxlCrd a
-                                let dx = float (ax - hx)
-                                let dy = float (ay - hy)
-                                
-                                let rad = System.Math.Atan2(dy, dx)
-                                let mutAz = 90.0 + (rad * 180.0 / System.Math.PI)
-                                let azimuth = 
-                                    if mutAz < 0.0 then mutAz + 360.0 
-                                    elif mutAz >= 360.0 then mutAz - 360.0 
-                                    else mutAz
-                                
-                                Some (approxDailyInsolation azimuth)
+                        |> Array.filter (occSet.Contains >> not)
+                        |> Array.map (fun a -> 
+                            let ax, ay, _ = Hywe.Core.Hexel.hxlCrd a
+                            let dx = float (ax - hx)
+                            let dy = float (ay - hy)
+                            
+                            let rad = System.Math.Atan2(dy, dx)
+                            let mutAz = 90.0 + (rad * 180.0 / System.Math.PI)
+                            let azimuth = 
+                                match mutAz with
+                                | a when a < 0.0 -> a + 360.0
+                                | a when a >= 360.0 -> a - 360.0
+                                | a -> a
+                            
+                            approxDailyInsolation azimuth
                         )
                     )
 
-                if openEdges.Length = 0 then 0.0
-                else 
-                    try Array.average openEdges
+                match openEdges with
+                | [||] -> 0.0
+                | edges ->
+                    try Array.average edges
                     with _ -> 0.0
-            ))
+            )
+        )
 
     {
         cxCxl1 = cxCxl1
@@ -403,15 +414,15 @@ let syncPolygonState (p: PolygonEditorModel) =
         | true  -> w, h, entry, outer, islands
         
     let lat = 
-        match p.TopographyData with
-        | Some topoData ->
+        p.TopographyData
+        |> Option.map (fun topoData ->
             try
                 let node = System.Text.Json.Nodes.JsonNode.Parse(topoData)
                 let extents = node.["extents"]
                 let n = extents.["north"].GetValue<float>()
                 let s = extents.["south"].GetValue<float>()
-                Some ((n + s) / 2.0)
-            with _ -> Some 0.0
-        | None -> None
+                (n + s) / 2.0
+            with _ -> 0.0
+        )
 
     { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h'; Latitude = lat; MapScale = p.MapScale }
