@@ -8,12 +8,13 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Xyxel
 
-let calculateSD (values: seq<float>) =
-    let count = values |> Seq.length |> float
-    if count <= 1.0 then 0.0 else
-    let avg = values |> Seq.average
-    let sumOfSquares = values |> Seq.sumBy (fun v -> (v - avg) ** 2.0)
-    sqrt (sumOfSquares / count)
+let calculateSD (values: float[]) =
+    match float values.Length with
+    | n when n <= 1.0 -> 0.0
+    | n ->
+        let avg = Array.average values
+        let sumOfSquares = values |> Array.sumBy (fun v -> (v - avg) ** 2.0)
+        sqrt (sumOfSquares / n)
 
 let operators = [|
     "VRCWEE"; "VRCCEE"; "VRCWSE"; "VRCCSE"; "VRCWSW"; "VRCCSW"; "VRCWWW"; "VRCCWW"; "VRCWNW"; "VRCCNW"; "VRCWNE"; "VRCCNE";
@@ -72,253 +73,301 @@ let runCompilation (tree: LayoutTree) (sqn: Sqn) =
     }
     
     let ctx = prepareLayoutContext Map.empty tree opts
-    let baseOpt = generateBaseCxl ctx
-    match baseOpt with
+    match generateBaseCxl ctx with
     | Some (baseCxl, nextOcc) -> 
         let layout, _, _ = generateCxlLayout ctx baseCxl nextOcc
         layout
     | None -> failwithf "Failed to generate base hexel for %s" (sqnToString sqn)
 
-let appendMarkdownHeader (sb: System.Text.StringBuilder) (title: string) (description: string) (clientInfo: string) =
-    sb.AppendLine(sprintf "### %s" title) |> ignore
-    sb.AppendLine(description) |> ignore
-    sb.AppendLine("") |> ignore
-    sb.AppendLine("#### Benchmark Protocol & Execution Environment") |> ignore
-    sb.AppendLine("- **Runtime**: WebAssembly (Mono / " + RuntimeInformation.FrameworkDescription + ")") |> ignore
-    sb.AppendLine("- **Architecture**: " + RuntimeInformation.ProcessArchitecture.ToString()) |> ignore
-    sb.AppendLine("- **Build Configuration**: Release") |> ignore
-    if not (String.IsNullOrWhiteSpace(clientInfo)) then
-        sb.AppendLine("- **Client / Browser Engine**: " + clientInfo) |> ignore
-    sb.AppendLine("- **Timing Scope**: Core layout engine compilation (`runCompilation`), excluding DOM manipulation, SVG formatting, and WebGPU rendering.") |> ignore
-    sb.AppendLine("- **Warm-up Policy**: 2 warm-up cycles executed prior to steady-state measurement (reducing the influence of JIT/WASM compilation and static dispatch latency).") |> ignore
-    sb.AppendLine("- **Memory Isolation**: Forced generation garbage collection (`GC.Collect()`) executed between operator batches.") |> ignore
-    sb.AppendLine("") |> ignore
+let measureLatencyMs (action: unit -> unit) : float =
+    let sw = Stopwatch.StartNew()
+    action ()
+    sw.Stop()
+    sw.Elapsed.TotalMilliseconds
+
+let formatMarkdownHeader (title: string) (description: string) (clientInfo: string) =
+    [
+        sprintf "### %s" title
+        description
+        ""
+        "#### Benchmark Protocol & Execution Environment"
+        sprintf "- **Runtime**: WebAssembly (Mono / %s)" RuntimeInformation.FrameworkDescription
+        sprintf "- **Architecture**: %s" (RuntimeInformation.ProcessArchitecture.ToString())
+        "- **Build Configuration**: Release"
+        if not (String.IsNullOrWhiteSpace clientInfo) then
+            sprintf "- **Client / Browser Engine**: %s" clientInfo
+        "- **Timing Scope**: Core layout engine compilation (`runCompilation`), excluding DOM manipulation, SVG formatting, and WebGPU rendering."
+        "- **Warm-up Policy**: 2 warm-up cycles executed prior to steady-state measurement (reducing the influence of JIT/WASM compilation and static dispatch latency)."
+        "- **Memory Isolation**: Forced generation garbage collection (`GC.Collect()`) executed between operator batches."
+        ""
+    ]
+
+let renderTable (headerLines: string list) (tableColumns: string list) (dataRows: string list) (footerMessage: string) =
+    [
+        yield! headerLines
+        yield! tableColumns
+        yield! dataRows
+        yield ""
+        yield footerMessage
+    ]
+    |> String.concat Environment.NewLine
 
 type BenchmarkRunner() =
     [<JSInvokable("RunPerformanceBenchmark")>]
     static member RunPerformanceBenchmark ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
-        let sb = System.Text.StringBuilder()
-        appendMarkdownHeader sb "Performance Benchmark — Production / WebAssembly" "Latency and standard deviation metrics for generating canonical topological presets." clientInfo
-        sb.AppendLine("| Layout | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) | Total Warm (ms) |") |> ignore
-        sb.AppendLine("|--------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|-----------------|") |> ignore
+        let header = 
+            formatMarkdownHeader 
+                "Performance Benchmark — Production / WebAssembly" 
+                "Latency and standard deviation metrics for generating canonical topological presets." 
+                clientInfo
+
+        let columns = [
+            "| Layout | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) | Total Warm (ms) |"
+            "|--------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|-----------------|"
+        ]
 
         printfn "Starting Performance Benchmark (Takes ~3-4 minutes)..."
         
         let warmUpRuns = 2
         let iterations = 10
-        for layoutName, tree in presets do
-            printfn "-> Processing Layout: %s..." layoutName
-            for opName, sqn in parsedOperators do
-                GC.Collect()
 
-                // Cold run measurement
-                let swCold = Stopwatch.StartNew()
-                runCompilation tree sqn |> ignore
-                swCold.Stop()
-                let coldTime = swCold.Elapsed.TotalMilliseconds
+        let rows =
+            presets
+            |> Array.collect (fun (layoutName, tree) ->
+                printfn "-> Processing Layout: %s..." layoutName
+                parsedOperators
+                |> Array.map (fun (opName, sqn) ->
+                    GC.Collect()
 
-                // Warm-up run to ensure JIT/WASM compilation has stabilized
-                for _ in 1 .. (warmUpRuns - 1) do
-                    runCompilation tree sqn |> ignore
+                    let coldTime = measureLatencyMs (fun () -> runCompilation tree sqn |> ignore)
 
-                // Steady-state measurement
-                let times = ResizeArray<float>()
-                let sw = Stopwatch()
+                    // Warm-up to stabilize execution
+                    List.init (warmUpRuns - 1) (fun _ -> runCompilation tree sqn |> ignore) |> ignore
 
-                for _ in 1 .. iterations do
-                    sw.Restart()
-                    runCompilation tree sqn |> ignore
-                    sw.Stop()
-                    times.Add(sw.Elapsed.TotalMilliseconds)
+                    // Steady-state measurement
+                    let times = Array.init iterations (fun _ -> measureLatencyMs (fun () -> runCompilation tree sqn |> ignore))
 
-                let minT = times |> Seq.min
-                let maxT = times |> Seq.max
-                let avgT = times |> Seq.average
-                let sdT = calculateSD times
-                let sumT = times |> Seq.sum
+                    let minT = Array.min times
+                    let maxT = Array.max times
+                    let avgT = Array.average times
+                    let sdT = calculateSD times
+                    let sumT = Array.sum times
 
-                sb.AppendLine(sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f | %.2f |" layoutName opName iterations coldTime minT maxT avgT sdT sumT) |> ignore
-        
-        sb.AppendLine("\n[Benchmark Complete. Copy the table above into your documentation/wiki!]") |> ignore
-        sb.ToString()
+                    sprintf "| %s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f | %.2f |" 
+                        layoutName opName iterations coldTime minT maxT avgT sdT sumT))
+            |> Array.toList
+
+        renderTable header columns rows "[Benchmark Complete. Copy the table above into your documentation/wiki!]"
         
     [<JSInvokable("RunConformanceTests")>]
     static member RunConformanceTests ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
-        let sb = System.Text.StringBuilder()
-        appendMarkdownHeader sb "Repeatability & Conformance Benchmark" "Empirical verification of topology signature consistency for canonical inputs across repeated executions under the same engine build." clientInfo
-        sb.AppendLine("| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |") |> ignore
-        sb.AppendLine("|--------|----------|------------|------------------|--------------|-------------------------|") |> ignore
-        
+        let header = 
+            formatMarkdownHeader 
+                "Repeatability & Conformance Benchmark" 
+                "Empirical verification of topology signature consistency for canonical inputs across repeated executions under the same engine build." 
+                clientInfo
+
+        let columns = [
+            "| Layout | Operator | Iterations | Signatures Match | Valid States | Topology Signature Hash |"
+            "|--------|----------|------------|------------------|--------------|-------------------------|"
+        ]
+
         printfn "Starting Conformance (Repeatability) Benchmark..."
         let iterations = 10
-        
-        for presetName, tree in presets do
-            printfn "-> Checking Conformance on Layout: %s..." presetName
-            for opName, sqn in parsedOperators do
-                let mutable validCount = 0
-                let signatures = ResizeArray<string>()
-                
-                for _ in 1 .. iterations do
-                    try
-                        let layout = runCompilation tree sqn
-                        let sigStr = layout |> Array.map getCxlCoordsString |> String.concat "|"
-                        signatures.Add(sigStr)
-                        validCount <- validCount + 1
-                    with _ -> ()
-                    
-                let validStatesStr = sprintf "%d%%" (validCount * 100 / iterations)
-                
-                if validCount > 0 then
-                    let firstSig = signatures.[0]
-                    let sigsMatch = (signatures |> Seq.forall (fun s -> s = firstSig)).ToString().ToLower()
-                    let hashStr = sprintf "%X" (abs (hash firstSig))
-                    sb.AppendLine(sprintf "| %s | %s | %d | %s | %s | `%s` |" presetName opName iterations sigsMatch validStatesStr hashStr) |> ignore
-                else
-                    sb.AppendLine(sprintf "| %s | %s | %d | false | %s | `N/A` |" presetName opName iterations validStatesStr) |> ignore
-                
-                GC.Collect()
-                
-        sb.AppendLine("\n[Conformance Benchmark Complete]") |> ignore
-        sb.ToString()
+
+        let executeAttempt tree sqn =
+            try
+                let layout = runCompilation tree sqn
+                Some (layout |> Array.map getCxlCoordsString |> String.concat "|")
+            with _ -> None
+
+        let rows =
+            presets
+            |> Array.collect (fun (presetName, tree) ->
+                printfn "-> Checking Conformance on Layout: %s..." presetName
+                parsedOperators
+                |> Array.map (fun (opName, sqn) ->
+                    let signatures = 
+                        List.init iterations (fun _ -> executeAttempt tree sqn)
+                        |> List.choose id
+
+                    let validCount = signatures.Length
+                    let validStatesStr = sprintf "%d%%" (validCount * 100 / iterations)
+
+                    let row =
+                        match signatures with
+                        | firstSig :: rest ->
+                            let sigsMatch = (rest |> List.forall ((=) firstSig)).ToString().ToLower()
+                            let hashStr = sprintf "%X" (abs (hash firstSig))
+                            sprintf "| %s | %s | %d | %s | %s | `%s` |" presetName opName iterations sigsMatch validStatesStr hashStr
+                        | [] ->
+                            sprintf "| %s | %s | %d | false | %s | `N/A` |" presetName opName iterations validStatesStr
+                            
+                    GC.Collect()
+                    row))
+            |> Array.toList
+
+        renderTable header columns rows "[Conformance Benchmark Complete]"
 
     [<JSInvokable("RunQualityBenchmarks")>]
     static member RunQualityBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
-        let sb = System.Text.StringBuilder()
-        appendMarkdownHeader sb "Quality Benchmark — Quantitative Topological Descriptors" "Empirical evaluation of six quantitative spatial descriptors across canonical architectural archetypes." clientInfo
-        sb.AppendLine("| Layout | Operator | Depth (D) | Compactness (CI) | Branching (B) | Perimeter (P) | Adjacency Delta (ΔJ) | Area Dev (σ_A) |") |> ignore
-        sb.AppendLine("|--------|----------|:---------:|:----------------:|:-------------:|:-------------:|:--------------------:|:--------------:|") |> ignore
-        
-        for presetName, tree in presets do
-            printfn "-> Checking Quality on Layout: %s..." presetName
-            let nodes = tree.Raw |> Array.concat
-            let depths = nodes |> Array.map (fun (id, _, _) -> id.Split('.').Length - 1)
-            let depthD = if depths.Length = 0 then 0 else Array.max depths
-            
-            let parentIds = 
-                nodes 
-                |> Array.choose (fun (id, _, _) ->
-                    let parts = id.Split('.')
-                    if parts.Length > 1 then Some (parts.[0 .. parts.Length - 2] |> String.concat ".")
-                    else None)
-                |> Array.distinct
+        let header = 
+            formatMarkdownHeader 
+                "Quality Benchmark — Quantitative Topological Descriptors" 
+                "Empirical evaluation of six quantitative spatial descriptors across canonical architectural archetypes." 
+                clientInfo
 
-            let branchCounts = 
-                parentIds 
-                |> Array.map (fun pid -> 
-                    nodes |> Array.filter (fun (id, _, _) -> 
-                        let parts = id.Split('.')
-                        parts.Length > 1 && (parts.[0 .. parts.Length - 2] |> String.concat ".") = pid)
-                    |> Array.length |> float)
-            let branchingB = if branchCounts.Length = 0 then 0.0 else branchCounts |> Array.average
+        let columns = [
+            "| Layout | Operator | Depth (D) | Compactness (CI) | Branching (B) | Perimeter (P) | Adjacency Delta (ΔJ) | Area Dev (σ_A) |"
+            "|--------|----------|:---------:|:----------------:|:-------------:|:-------------:|:--------------------:|:--------------:|"
+        ]
 
-            let targetEdges = 
-                nodes 
-                |> Array.choose (fun (id, _, _) ->
-                    let parts = id.Split('.')
-                    if parts.Length > 1 then 
-                        let pid = parts.[0 .. parts.Length - 2] |> String.concat "."
-                        let a, b = min id pid, max id pid
-                        Some (a, b)
-                    else None)
-                |> Set.ofArray
-            
-            for opName, sqn in parsedOperators do
-                let layout = runCompilation tree sqn
-                let allHexels = layout |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls)
-                let totalArea = float allHexels.Length * 4.0
+        let getParentId (id: string) =
+            match id.Split('.') with
+            | parts when parts.Length > 1 -> Some (String.concat "." parts.[0 .. parts.Length - 2])
+            | _ -> None
+
+        let rows =
+            presets
+            |> Array.collect (fun (presetName, tree) ->
+                printfn "-> Checking Quality on Layout: %s..." presetName
+                let nodes = tree.Raw |> Array.concat
                 
-                let occupiedSet = 
-                    allHexels 
-                    |> Array.map (fun h -> let (x, y, z) = hxlCrd h in AV(x, y, z))
+                let depthD = 
+                    match nodes with
+                    | [||] -> 0
+                    | _ -> nodes |> Array.map (fun (id, _, _) -> id.Split('.').Length - 1) |> Array.max
+
+                let parentIds = 
+                    nodes 
+                    |> Array.choose (fun (id, _, _) -> getParentId id)
+                    |> Array.distinct
+
+                let branchingB = 
+                    match parentIds with
+                    | [||] -> 0.0
+                    | pids ->
+                        pids
+                        |> Array.map (fun pid -> 
+                            nodes 
+                            |> Array.filter (fun (id, _, _) -> getParentId id = Some pid) 
+                            |> Array.length 
+                            |> float)
+                        |> Array.average
+
+                let targetEdges = 
+                    nodes 
+                    |> Array.choose (fun (id, _, _) ->
+                        getParentId id
+                        |> Option.map (fun pid -> min id pid, max id pid))
                     |> Set.ofArray
+
+                parsedOperators
+                |> Array.map (fun (opName, sqn) ->
+                    let layout = runCompilation tree sqn
+                    let allHexels = layout |> Array.collect (fun c -> Array.append [| c.Base |] c.Hxls)
+                    let totalArea = float allHexels.Length * 4.0
+
+                    let occupiedSet = 
+                        allHexels 
+                        |> Array.map (fun h -> let (x, y, z) = hxlCrd h in AV(x, y, z))
+                        |> Set.ofArray
+
+                    let perimeter = 
+                        allHexels 
+                        |> Array.sumBy (fun h -> 
+                            adjacent sqn h 
+                            |> Array.filter (fun n -> not (occupiedSet.Contains n)) 
+                            |> Array.length)
+
+                    let compactnessCI = 
+                        match perimeter with
+                        | 0 -> 0.0
+                        | p -> (4.0 * Math.PI * totalArea) / float (p * p)
+
+                    let _, matrix = cxlAdj layout
+                    let compiledEdges = 
+                        seq {
+                            for i in 0 .. layout.Length - 1 do
+                                for j in i + 1 .. layout.Length - 1 do
+                                    if matrix.[i].[j] then
+                                        let id1 = prpVlu layout.[i].Rfid
+                                        let id2 = prpVlu layout.[j].Rfid
+                                        yield min id1 id2, max id1 id2
+                        }
+                        |> Set.ofSeq
+
+                    let interCount = Set.intersect targetEdges compiledEdges |> Set.count |> float
+                    let unionCount = Set.union targetEdges compiledEdges |> Set.count |> float
                     
-                let perimeter = 
-                    allHexels 
-                    |> Array.sumBy (fun h -> 
-                        adjacent sqn h 
-                        |> Array.filter (fun n -> not (occupiedSet.Contains(n))) 
-                        |> Array.length)
-                        
-                let compactnessCI = 
-                    if perimeter = 0 then 0.0 
-                    else (4.0 * Math.PI * totalArea) / float (perimeter * perimeter)
-                
-                let _, matrix = cxlAdj layout
-                let compiledEdges = 
-                    [| for i in 0 .. layout.Length - 1 do
-                        for j in i + 1 .. layout.Length - 1 do
-                            if matrix.[i].[j] then
-                                let id1 = prpVlu layout.[i].Rfid
-                                let id2 = prpVlu layout.[j].Rfid
-                                yield (min id1 id2, max id1 id2) |]
-                    |> Set.ofArray
-                    
-                let interCount = Set.intersect targetEdges compiledEdges |> Set.count |> float
-                let unionCount = Set.union targetEdges compiledEdges |> Set.count |> float
-                let deltaJ = if unionCount = 0.0 then 0.0 else 1.0 - (interCount / unionCount)
-                
-                sb.AppendLine(sprintf "| %s | %s | %d | %.3f | %.2f | %d | %.3f | 0.0%% |" presetName opName depthD compactnessCI branchingB perimeter deltaJ) |> ignore
-                GC.Collect()
-            
-        sb.AppendLine("\n[Quality Benchmark Complete]") |> ignore
-        sb.ToString()
+                    let deltaJ = 
+                        match unionCount with
+                        | 0.0 -> 0.0
+                        | u -> 1.0 - (interCount / u)
+
+                    GC.Collect()
+                    sprintf "| %s | %s | %d | %.3f | %.2f | %d | %.3f | 0.0%% |" 
+                        presetName opName depthD compactnessCI branchingB perimeter deltaJ))
+            |> Array.toList
+
+        renderTable header columns rows "[Quality Benchmark Complete]"
 
     [<JSInvokable("RunScalingBenchmarks")>]
     static member RunScalingBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
-        let sb = System.Text.StringBuilder()
-        appendMarkdownHeader sb "Scaling Benchmark" "Algorithmic scaling latency metrics from 10 to 1,000 architectural nodes under branching tree topologies." clientInfo
-        sb.AppendLine("| Scale (Nodes) | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) |") |> ignore
-        sb.AppendLine("|---------------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|") |> ignore
+        let header = 
+            formatMarkdownHeader 
+                "Scaling Benchmark" 
+                "Algorithmic scaling latency metrics from 10 to 1,000 architectural nodes under branching tree topologies." 
+                clientInfo
+
+        let columns = [
+            "| Scale (Nodes) | Operator | Warm Runs | Cold Latency (ms) | Warm Min (ms) | Warm Max (ms) | Warm Avg (ms) | Warm SD (ms) |"
+            "|---------------|----------|-----------|-------------------|---------------|---------------|---------------|--------------|"
+        ]
+
         printfn "Starting Scaling Benchmark..."
-        
+
         let warmUpRuns = 2
         let iterations = 10
         let nodeCounts = [| 10; 50; 100; 250; 500; 750; 1000 |]
-        
-        for count in nodeCounts do
-            printfn "-> Processing scale: %d nodes..." count
-            
-            // Generate a realistic tree structure (branching factor 3) instead of a flat star topology
-            let ids = Array.create count ""
-            ids.[0] <- "1"
-            let childCounts = Array.create count 0
-            for i in 1 .. count - 1 do
-                let p = (i - 1) / 3
-                childCounts.[p] <- childCounts.[p] + 1
-                ids.[i] <- sprintf "%s.%d" ids.[p] childCounts.[p]
-                
-            let genNodes = ids |> Array.map (fun id -> id, 50, "Node")
-            let tree = LayoutTree.Create [| genNodes |]
-            
-            for opName, sqn in parsedOperators do
-                GC.Collect()
 
-                // Cold run measurement
-                let swCold = Stopwatch.StartNew()
-                runCompilation tree sqn |> ignore
-                swCold.Stop()
-                let coldTime = swCold.Elapsed.TotalMilliseconds
+        let rec nodeId index =
+            match index with
+            | 0 -> "1"
+            | n ->
+                let parentIndex = (n - 1) / 3
+                let childNumber = ((n - 1) % 3) + 1
+                sprintf "%s.%d" (nodeId parentIndex) childNumber
 
-                // Additional warm-up
-                for _ in 1 .. (warmUpRuns - 1) do
-                    runCompilation tree sqn |> ignore
+        let generateTree count =
+            Array.init count (fun i -> nodeId i, 50, "Node")
+            |> fun nodes -> LayoutTree.Create [| nodes |]
 
-                // Steady-state measurement
-                let times = ResizeArray<float>()
-                let sw = Stopwatch()
-                
-                for _ in 1 .. iterations do
-                    sw.Restart()
-                    runCompilation tree sqn |> ignore
-                    sw.Stop()
-                    times.Add(sw.Elapsed.TotalMilliseconds)
-                    
-                let minT = times |> Seq.min
-                let maxT = times |> Seq.max
-                let avgT = times |> Seq.average
-                let sdT = calculateSD times
-                
-                sb.AppendLine(sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" count opName iterations coldTime minT maxT avgT sdT) |> ignore
-            
-        sb.AppendLine("\n[Scaling Benchmark Complete]") |> ignore
-        sb.ToString()
+        let rows =
+            nodeCounts
+            |> Array.collect (fun count ->
+                printfn "-> Processing scale: %d nodes..." count
+                let tree = generateTree count
+
+                parsedOperators
+                |> Array.map (fun (opName, sqn) ->
+                    GC.Collect()
+
+                    let coldTime = measureLatencyMs (fun () -> runCompilation tree sqn |> ignore)
+
+                    // Additional warm-up
+                    List.init (warmUpRuns - 1) (fun _ -> runCompilation tree sqn |> ignore) |> ignore
+
+                    // Steady-state measurement
+                    let times = Array.init iterations (fun _ -> measureLatencyMs (fun () -> runCompilation tree sqn |> ignore))
+
+                    let minT = Array.min times
+                    let maxT = Array.max times
+                    let avgT = Array.average times
+                    let sdT = calculateSD times
+
+                    sprintf "| %d | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f |" 
+                        count opName iterations coldTime minT maxT avgT sdT))
+            |> Array.toList
+
+        renderTable header columns rows "[Scaling Benchmark Complete]"
