@@ -131,7 +131,9 @@ let svgCoxels
             cxl 
             |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
             |> Option.map (fun c -> c.Seqn)
-            |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
+            |> Option.orElse (cxl |> Array.tryHead |> Option.map (fun c -> c.Seqn))
+            |> Option.orElse (wtmkCxls |> Array.tryHead |> Option.map (fun c -> c.Seqn))
+            |> Option.defaultValue fallbackSqn
 
         // Calculate scaled boundary points to include in bounds
         let bdrPoints = 
