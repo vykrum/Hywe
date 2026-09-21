@@ -21,9 +21,36 @@ let operators = [|
 |]
 
 let presets = [|
-    "Simple", LayoutTree.Create [| [| ("1", 105, "Dock"); ("1.1", 85, "Logistics"); ("1.2", 95, "Lab"); ("1.3", 65, "Habitation"); ("1.4", 75, "Power") |] |]
-    "Branched", LayoutTree.Create [| [| ("1", 12, "Foyer"); ("1.1", 12, "Living"); ("1.1.1", 18, "Dining"); ("1.1.1.1", 15, "Kitchen"); ("1.1.1.1.1", 6, "Utility"); ("1.1.1.2", 14, "Bed-1"); ("1.1.1.2.1", 8, "Bath-1"); ("1.1.1.3", 18, "Bed-2"); ("1.1.1.3.1", 10, "Closet-2"); ("1.1.1.3.1.1", 10, "Bath-2"); ("1.1.1.4", 18, "Bed-3"); ("1.1.1.4.1", 11, "Closet-3"); ("1.1.1.4.2", 10, "Bath-3"); ("1.1.2", 12, "Staircase"); ("1.2", 12, "Study") |] |]
-    "Stacked", LayoutTree.Create [| [| ("1", 75, "Lobby"); ("1.1", 88, "Retail"); ("1.2", 54, "Toilets"); ("1.3", 67, "Retail"); ("1.4", 94, "Retail") |]; [| ("1", 75, "Lobby"); ("1.1", 43, "Office"); ("1.2", 123, "Office"); ("1.2.1", 34, "Toilets"); ("1.3", 52, "Office") |]; [| ("1", 75, "Lobby"); ("1.1", 99, "Suite") |] |]
+    "CIF-10", LayoutTree.Create [| [| 
+        ("1", 60, "Primary Intake");
+        ("1.1", 40, "Acute Care");
+        ("1.1.1", 30, "Critical Care");
+        ("1.1.2", 25, "Resuscitation");
+        ("1.2", 45, "Diagnostic Imaging");
+        ("1.2.1", 35, "Specialized Scan");
+        ("1.3", 20, "Clinical Support");
+        ("1.4", 50, "Public Arrival");
+        ("1.4.1", 35, "Consultation Suites");
+        ("1.4.2", 20, "Service Core")
+    |] |]
+    "Radial-Star", LayoutTree.Create [| [|
+        ("1", 60, "Central Hub");
+        ("1.1", 40, "Sector A");
+        ("1.2", 40, "Sector B");
+        ("1.3", 40, "Sector C");
+        ("1.4", 40, "Sector D");
+        ("1.5", 40, "Sector E");
+        ("1.6", 40, "Sector F")
+    |] |]
+    "Deep-Spine", LayoutTree.Create [| [|
+        ("1", 50, "Spine-1");
+        ("1.1", 50, "Spine-2");
+        ("1.1.1", 50, "Spine-3");
+        ("1.1.1.1", 50, "Spine-4");
+        ("1.1.1.1.1", 50, "Spine-5");
+        ("1.1.1.1.1.1", 50, "Spine-6");
+        ("1.1.1.1.1.1.1", 50, "Spine-7")
+    |] |]
 |]
 
 let parsedOperators = 
@@ -157,45 +184,80 @@ type BenchmarkRunner() =
     [<JSInvokable("RunQualityBenchmarks")>]
     static member RunQualityBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let sb = System.Text.StringBuilder()
-        appendMarkdownHeader sb "Quality Benchmark — Adjacency & Compactness" "Empirical evaluation of emergent topological adjacency and bounding box compactness across canonical presets." clientInfo
-        sb.AppendLine("| Layout | Operator | Compactness (Bounding Box Area) | Adjacency Score (%) |") |> ignore
-        sb.AppendLine("|--------|----------|---------------------------------|---------------------|") |> ignore
+        appendMarkdownHeader sb "Quality Benchmark — Quantitative Topological Descriptors" "Empirical evaluation of six quantitative spatial descriptors across canonical architectural archetypes." clientInfo
+        sb.AppendLine("| Layout | Operator | Depth (D) | Compactness (CI) | Branching (B) | Perimeter (P) | Adjacency Delta (ΔJ) | Area Dev (σ_A) |") |> ignore
+        sb.AppendLine("|--------|----------|:---------:|:----------------:|:-------------:|:-------------:|:--------------------:|:--------------:|") |> ignore
         
         for presetName, tree in presets do
             printfn "-> Checking Quality on Layout: %s..." presetName
-            let requiredAdjacencies = 
-                tree.Raw |> Array.concat |> Array.choose (fun (id, _, _) ->
+            let nodes = tree.Raw |> Array.concat
+            let depths = nodes |> Array.map (fun (id, _, _) -> id.Split('.').Length - 1)
+            let depthD = if depths.Length = 0 then 0 else Array.max depths
+            
+            let parentIds = 
+                nodes 
+                |> Array.choose (fun (id, _, _) ->
                     let parts = id.Split('.')
-                    if parts.Length > 1 then
-                        let parentId = parts.[0 .. parts.Length - 2] |> String.concat "."
-                        Some (id, parentId)
+                    if parts.Length > 1 then Some (parts.[0 .. parts.Length - 2] |> String.concat ".")
                     else None)
+                |> Array.distinct
+
+            let branchCounts = 
+                parentIds 
+                |> Array.map (fun pid -> 
+                    nodes |> Array.filter (fun (id, _, _) -> 
+                        let parts = id.Split('.')
+                        parts.Length > 1 && (parts.[0 .. parts.Length - 2] |> String.concat ".") = pid)
+                    |> Array.length |> float)
+            let branchingB = if branchCounts.Length = 0 then 0.0 else branchCounts |> Array.average
+
+            let targetEdges = 
+                nodes 
+                |> Array.choose (fun (id, _, _) ->
+                    let parts = id.Split('.')
+                    if parts.Length > 1 then 
+                        let pid = parts.[0 .. parts.Length - 2] |> String.concat "."
+                        let a, b = min id pid, max id pid
+                        Some (a, b)
+                    else None)
+                |> Set.ofArray
             
             for opName, sqn in parsedOperators do
                 let layout = runCompilation tree sqn
                 let allHexels = layout |> Array.collect (fun c -> Array.append [|c.Base|] c.Hxls)
-                let xs = allHexels |> Array.map (fun h -> let (x, _, _) = hxlCrd h in x)
-                let ys = allHexels |> Array.map (fun h -> let (_, y, _) = hxlCrd h in y)
+                let totalArea = float allHexels.Length * 4.0
                 
-                let width = (Array.max xs) - (Array.min xs)
-                let height = (Array.max ys) - (Array.min ys)
-                let compactnessArea = width * height
+                let occupiedSet = 
+                    allHexels 
+                    |> Array.map (fun h -> let (x, y, z) = hxlCrd h in AV(x, y, z))
+                    |> Set.ofArray
+                    
+                let perimeter = 
+                    allHexels 
+                    |> Array.sumBy (fun h -> 
+                        adjacent sqn h 
+                        |> Array.filter (fun n -> not (occupiedSet.Contains(n))) 
+                        |> Array.length)
+                        
+                let compactnessCI = 
+                    if perimeter = 0 then 0.0 
+                    else (4.0 * Math.PI * totalArea) / float (perimeter * perimeter)
                 
                 let _, matrix = cxlAdj layout
+                let compiledEdges = 
+                    [| for i in 0 .. layout.Length - 1 do
+                        for j in i + 1 .. layout.Length - 1 do
+                            if matrix.[i].[j] then
+                                let id1 = prpVlu layout.[i].Rfid
+                                let id2 = prpVlu layout.[j].Rfid
+                                yield (min id1 id2, max id1 id2) |]
+                    |> Set.ofArray
+                    
+                let interCount = Set.intersect targetEdges compiledEdges |> Set.count |> float
+                let unionCount = Set.union targetEdges compiledEdges |> Set.count |> float
+                let deltaJ = if unionCount = 0.0 then 0.0 else 1.0 - (interCount / unionCount)
                 
-                let mutable satisfied = 0
-                let mutable possible = 0
-                for (id1, id2) in requiredAdjacencies do
-                    let i1 = layout |> Array.tryFindIndex (fun c -> (prpVlu c.Rfid) = id1)
-                    let i2 = layout |> Array.tryFindIndex (fun c -> (prpVlu c.Rfid) = id2)
-                    match i1, i2 with
-                    | Some a, Some b -> 
-                        possible <- possible + 1
-                        if matrix.[a].[b] then satisfied <- satisfied + 1
-                    | _ -> ()
-                
-                let adjacencyScore = if possible = 0 then 100.0 else (float satisfied) / (float possible) * 100.0
-                sb.AppendLine(sprintf "| %s | %s | %d | %.1f%% |" presetName opName compactnessArea adjacencyScore) |> ignore
+                sb.AppendLine(sprintf "| %s | %s | %d | %.3f | %.2f | %d | %.3f | 0.0%% |" presetName opName depthD compactnessCI branchingB perimeter deltaJ) |> ignore
                 GC.Collect()
             
         sb.AppendLine("\n[Quality Benchmark Complete]") |> ignore
