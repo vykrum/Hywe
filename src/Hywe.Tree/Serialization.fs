@@ -199,8 +199,8 @@ let getOutput (model: SubModel) (qMap: Map<int, string>) w h x b o i =
             let (parentLvl, bVal) = match anchorInfo with Some (l, id) -> (l, id) | None -> (0, "0")
             
             let currentL = match parentLvl < elevations.Length with | true -> elevations.[parentLvl] | false -> 0.0
-            
-            let attrs = $"Q=VRCCNE/L={parentLvl}/W={w}/H={h}/X={x}/E=0/B={bVal}/O={o}/I={i}"
+            let parentSqn = qMap |> Map.tryFind parentLvl |> Option.defaultValue "VRCCNE"
+            let attrs = $"Q={parentSqn}/L={parentLvl}/W={w}/H={h}/X={x}/E=0/B={bVal}/O={o}/I={i}"
             
             let body = 
                 nodes 

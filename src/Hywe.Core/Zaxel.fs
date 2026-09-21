@@ -123,7 +123,20 @@ module Zaxel =
                                 | Level l, _, _, _, _, _, lIdx when lIdx = lvlIdx -> Some l.Attributes.Thickness
                                 | _ -> None)
                             |> Option.defaultValue 3.0
-                        match Nexel.generateNestLayout n_block hostCxl hostThickness state.Cxls None with
+                        let nestSeqOverride =
+                            match seqOverride with
+                            | Some (_, s) -> Some (Hexel.sqnToString s)
+                            | None ->
+                                match hostCxl.Seqn with
+                                | Hexel.Horizontal ->
+                                    match tryParseUnion<Sqn> n_block.Attributes.Sequence with
+                                    | Some Hexel.Vertical -> Some (Hexel.sqnToString hostCxl.Seqn)
+                                    | _ -> None
+                                | Hexel.Vertical ->
+                                    match tryParseUnion<Sqn> n_block.Attributes.Sequence with
+                                    | Some Hexel.Horizontal -> Some (Hexel.sqnToString hostCxl.Seqn)
+                                    | _ -> None
+                        match Nexel.generateNestLayout n_block hostCxl hostThickness state.Cxls nestSeqOverride with
                         | Some (cxls, bounds, _) ->
                             { state with Cxls = Array.append state.Cxls cxls; Bounds = Array.append state.Bounds [| bounds |] }
                         | None -> state

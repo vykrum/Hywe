@@ -328,7 +328,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 | _, isVR when isVR <> targetIsVR -> newSqn
                 | _ -> sqn)
 
-        let updatedSrc = 
+        let baseSrc = 
             match model.EditorMode with
             | Interactive -> serializeModelTree model.Tree newSqns model.PolygonExport
             | Syntax -> 
@@ -338,19 +338,22 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     | Some oldSqn when oldSqn = sqn -> s
                     | _ -> Lexel.injectSqn s lvl sqn)
 
+        let updatedSrc = ensureCategory baseSrc i
+        let finalSqns = Lexel.extractSequences updatedSrc
+
         Protocol.sync js updatedSrc model.ActivePanel
 
         match Cache.get (toMarker currentLevel) i model.LayoutCache with
         | Some config ->
             { model with 
-                Sequences = newSqns
+                Sequences = finalSqns
                 SrcOfTrth = updatedSrc
                 Derived = Cache.toDerived config
                 SelectedPreviewIndex = None 
             }, Cmd.none
         | None ->
             { model with 
-                Sequences = newSqns
+                Sequences = finalSqns
                 SrcOfTrth = updatedSrc
                 IsHyweaving = true 
                 SelectedPreviewIndex = None 
