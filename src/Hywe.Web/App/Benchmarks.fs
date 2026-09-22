@@ -371,3 +371,168 @@ type BenchmarkRunner() =
             |> Array.toList
 
         renderTable header columns rows "[Scaling Benchmark Complete]"
+
+    [<JSInvokable("RunEndToEndLatencyProfile")>]
+    static member RunEndToEndLatencyProfile ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
+        let header = 
+            formatMarkdownHeader 
+                "End-to-End Latency Profiling" 
+                "Measuring wall-clock time from user node edit through topology generation and base34 payload serialization." 
+                clientInfo
+
+        let columns = [
+            "| Layout | Operator | Iterations | T_compilation (ms) | T_serialization (ms) | Total T (ms) |"
+            "|--------|----------|------------|--------------------|----------------------|--------------|"
+        ]
+
+        printfn "Starting End-to-End Latency Benchmark..."
+        let iterations = 10
+        let rows =
+            presets
+            |> Array.collect (fun (layoutName, tree) ->
+                parsedOperators
+                |> Array.map (fun (opName, sqn) ->
+                    GC.Collect()
+                    
+                    let compTimes = Array.init iterations (fun _ -> 
+                        let sw = Stopwatch.StartNew()
+                        let layout = runCompilation tree sqn
+                        sw.Stop()
+                        layout, sw.Elapsed.TotalMilliseconds)
+                    
+                    let layoutToSerialize = fst compTimes.[0]
+
+                    let serTimes = Array.init iterations (fun _ ->
+                        let sw = Stopwatch.StartNew()
+                        let _str = layoutToSerialize |> Array.map getCxlCoordsString |> String.concat "|"
+                        sw.Stop()
+                        sw.Elapsed.TotalMilliseconds)
+
+                    let avgComp = (compTimes |> Array.map snd |> Array.average)
+                    let avgSer = (serTimes |> Array.average)
+                    sprintf "| %s | %s | %d | %.2f | %.2f | %.2f |" 
+                        layoutName opName iterations avgComp avgSer (avgComp + avgSer)))
+            |> Array.toList
+
+        renderTable header columns rows "[End-to-End Latency Benchmark Complete]"
+
+    [<JSInvokable("RunMultiContainerScaling")>]
+    static member RunMultiContainerScaling ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
+        let header = 
+            formatMarkdownHeader 
+                "Combinatorial Multi-Container Growth" 
+                "Benchmarking simultaneous multi-container permutations (N_containers x 24 operators)." 
+                clientInfo
+
+        let columns = [
+            "| Containers | Total Nodes | Warm Runs | Avg Latency (ms) | Max Latency (ms) | SD (ms) |"
+            "|------------|-------------|-----------|------------------|------------------|---------|"
+        ]
+
+        printfn "Starting Multi-Container Scaling Benchmark..."
+        let iterations = 10
+        let containerCounts = [| 1; 2; 5; 10; 20 |]
+        let nodesPerContainer = 20
+
+        let rec buildNodeId index =
+            match index with
+            | 0 -> "1"
+            | n ->
+                let parentIndex = (n - 1) / 3
+                let childNumber = ((n - 1) % 3) + 1
+                sprintf "%s.%d" (buildNodeId parentIndex) childNumber
+
+        let rows =
+            containerCounts
+            |> Array.map (fun cCount ->
+                let nodes = 
+                    Array.init cCount (fun c ->
+                        Array.init nodesPerContainer (fun n -> buildNodeId n, 50, "Node")
+                    )
+                let multiTree = LayoutTree.Create nodes
+                
+                let op = snd parsedOperators.[0] // VRCWEE
+                
+                GC.Collect()
+                
+                let warmUpRuns = 2
+                List.init (warmUpRuns - 1) (fun _ -> runCompilation multiTree op |> ignore) |> ignore
+                
+                let times = Array.init iterations (fun _ -> measureLatencyMs (fun () -> runCompilation multiTree op |> ignore))
+                
+                let minT = Array.min times
+                let maxT = Array.max times
+                let avgT = Array.average times
+                let sdT = calculateSD times
+
+                sprintf "| %d | %d | %d | %.2f | %.2f | %.2f |" 
+                    cCount (cCount * nodesPerContainer) iterations avgT maxT sdT)
+            |> Array.toList
+
+        renderTable header columns rows "[Multi-Container Benchmark Complete]"
+
+    [<JSInvokable("RunPerturbationSensitivity")>]
+    static member RunPerturbationSensitivity ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
+        let header = 
+            formatMarkdownHeader 
+                "Syntactic Perturbation Sensitivity (D(C_0, C_1))" 
+                "Quantifying structural sensitivity under minimal AST token changes (+1 Area weight)." 
+                clientInfo
+
+        let columns = [
+            "| Layout | Operator | Node Mutated | Adjacency Delta (Edges) | Symmetric Diff (Hexels) |"
+            "|--------|----------|--------------|-------------------------|-------------------------|"
+        ]
+
+        printfn "Starting Perturbation Sensitivity Benchmark..."
+
+        let mutateTree (tree: LayoutTree) =
+            let raw = tree.Raw
+            if raw.Length > 0 && raw.[0].Length > 1 then
+                let newRaw = 
+                    raw |> Array.mapi (fun i arr ->
+                        if i = 0 then
+                            arr |> Array.mapi (fun j (id, w, n) ->
+                                if j = 1 then (id, w + 1, n) else (id, w, n))
+                        else arr)
+                let (mutId, _, _) = raw.[0].[1]
+                Some (mutId, LayoutTree.Create newRaw)
+            else None
+
+        let rows =
+            presets
+            |> Array.choose (fun (presetName, tree) ->
+                match mutateTree tree with
+                | Some (mutId, mutatedTree) ->
+                    let subRows = 
+                        parsedOperators |> Array.take 5 |> Array.map (fun (opName, sqn) ->
+                            let layout0 = runCompilation tree sqn
+                            let layout1 = runCompilation mutatedTree sqn
+                            
+                            let adj0 = cxlAdj layout0 |> snd
+                            let adj1 = cxlAdj layout1 |> snd
+                            
+                            let mutable deltaAdj = 0
+                            for i in 0 .. adj0.Length - 1 do
+                                for j in i + 1 .. adj0.Length - 1 do
+                                    if i < adj1.Length && j < adj1.Length then
+                                        if adj0.[i].[j] <> adj1.[i].[j] then deltaAdj <- deltaAdj + 1
+                                    else deltaAdj <- deltaAdj + 1
+                                    
+                            let getHexels (l: Cxl[]) = 
+                                l |> Array.collect (fun c -> Array.append [| c.Base |] c.Hxls)
+                                |> Array.map (fun h -> hxlCrd h) |> Set.ofArray
+                                
+                            let hex0 = getHexels layout0
+                            let hex1 = getHexels layout1
+                            let symDiff = (Set.difference hex0 hex1 |> Set.count) + (Set.difference hex1 hex0 |> Set.count)
+                            
+                            sprintf "| %s | %s | %s (+1 Area) | %d | %d |" presetName opName mutId deltaAdj symDiff
+                        )
+                    Some subRows
+                | None -> None)
+            |> Array.concat
+            |> Array.toList
+
+        renderTable header columns rows "[Perturbation Sensitivity Benchmark Complete]"
+
