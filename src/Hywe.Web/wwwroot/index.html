@@ -43,7 +43,7 @@
     <meta name="keywords"
         content="computational spatial design, relational space planning, topology-driven architecture, deterministic layout generation, WebAssembly spatial engine, WebGPU 3D massing, procedural space planning, architectural topology, architectural AI dataset" />
     <meta property="article:published_time" content="2022-08-15T00:00:00Z" />
-    <meta property="article:modified_time" content="2026-09-21T18:00:26Z" />
+    <meta property="article:modified_time" content="2026-09-22T17:34:48Z" />
 
     <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
@@ -101,7 +101,7 @@
       "operatingSystem": "All",
       "codeRepository": "https://repo.hywe.in",
       "datePublished": "2022-08-15T00:00:00Z",
-      "dateModified": "2026-09-21T18:00:26Z"
+      "dateModified": "2026-09-22T17:34:48Z"
     }
     </script>
 
@@ -720,19 +720,28 @@
         window.runConformanceTest = () => window.runAndDownloadBenchmark('RunConformanceTests', 'ConformanceTests.md');
         window.runQualityTest = () => window.runAndDownloadBenchmark('RunQualityBenchmarks', 'QualityBenchmarks.md');
         window.runScalingTest = () => window.runAndDownloadBenchmark('RunScalingBenchmarks', 'ScalingBenchmarks.md');
+        window.runEndToEndTest = () => window.runAndDownloadBenchmark('RunEndToEndLatencyProfile', 'EndToEndLatency.md');
+        window.runMultiContainerTest = () => window.runAndDownloadBenchmark('RunMultiContainerScaling', 'MultiContainerScaling.md');
+        window.runSensitivityTest = () => window.runAndDownloadBenchmark('RunPerturbationSensitivity', 'PerturbationSensitivity.md');
 
         window.runAllTests = async function () {
             console.log("%c[TEST RUNNER] Initiating Full Benchmark Suite...", "color: #3498db; font-weight: bold;");
-            console.log("%c-> [1/4] Running Quality Benchmarks...", "color: #f39c12;");
+            console.log("%c-> [1/7] Running Quality Benchmarks...", "color: #f39c12;");
             const q = await window.runQualityTest();
-            console.log("%c-> [2/4] Running Conformance & Repeatability Tests...", "color: #f39c12;");
+            console.log("%c-> [2/7] Running Conformance & Repeatability Tests...", "color: #f39c12;");
             const c = await window.runConformanceTest();
-            console.log("%c-> [3/4] Running Performance Benchmark...", "color: #f39c12;");
+            console.log("%c-> [3/7] Running Performance Benchmark...", "color: #f39c12;");
             const p = await window.runPerformanceTest();
-            console.log("%c-> [4/4] Running Scaling Benchmark (10 to 1,000 nodes)...", "color: #f39c12;");
+            console.log("%c-> [4/7] Running Scaling Benchmark (10 to 1,000 nodes)...", "color: #f39c12;");
             const s = await window.runScalingTest();
+            console.log("%c-> [5/7] Running End-to-End Latency Benchmark...", "color: #f39c12;");
+            const e2e = await window.runEndToEndTest();
+            console.log("%c-> [6/7] Running Multi-Container Scaling Benchmark...", "color: #f39c12;");
+            const mc = await window.runMultiContainerTest();
+            console.log("%c-> [7/7] Running Perturbation Sensitivity Benchmark...", "color: #f39c12;");
+            const sens = await window.runSensitivityTest();
             console.log("%c[TEST RUNNER] All benchmark suites completed successfully! Check your downloads folder.", "color: #2ecc71; font-size: 14px; font-weight: bold;");
-            return { quality: q, conformance: c, performance: p, scaling: s };
+            return { quality: q, conformance: c, performance: p, scaling: s, endToEnd: e2e, multiContainer: mc, sensitivity: sens };
         };
 
         console.log(
