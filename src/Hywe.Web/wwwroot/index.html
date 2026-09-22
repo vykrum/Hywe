@@ -754,9 +754,15 @@
             "%c2. runConformanceTest()      %c— Determinism & signature hash repeatability across 10 iterations (~2 min)\n" +
             "%c3. runPerformanceTest()      %c— Cold vs. warm latency & standard deviation across 24 operators (~3-4 min)\n" +
             "%c4. runScalingTest()          %c— Algorithmic scaling latency from 10 to 1,000 nodes (~3-5 min)\n" +
-            "%c5. runAllTests()              %c— Execute all suites sequentially with automated downloads\n\n" +
+            "%c5. runEndToEndTest()         %c— End-to-End latency profiling (AST → SVG → DOM → WebGPU) (~1-2 min)\n" +
+            "%c6. runMultiContainerTest()   %c— Combinatorial multi-container scaling across floorplates (~2-3 min)\n" +
+            "%c7. runSensitivityTest()      %c— Syntactic perturbation sensitivity (D(C_0, C_1)) (~1 min)\n" +
+            "%c8. runAllTests()             %c— Execute all 7 suites sequentially with automated downloads\n\n" +
             "%cAdvanced: %crunAndDownloadBenchmark('RunQualityBenchmarks', 'CustomQualityReport.md')",
             "color: #a6adc8; font-size: 12px;",
+            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
+            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
+            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
             "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
             "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
             "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
