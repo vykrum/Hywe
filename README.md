@@ -2,7 +2,7 @@
 ### **Hy**grid **W**oven **E**nsemble
 *A deterministic computational spatial reasoning system for early-stage architecture.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Featured in: F# Weekly](https://img.shields.io/badge/Featured%20in-F%23%20Weekly-30B0C7.svg)](https://sergeytihon.com/?s=hywe) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
 
 **[Launch HYWE (hywe.in)](https://hywe.in)** · **[Wiki & Research Reference](https://wiki.hywe.in)** · **[Spatial Dataset](https://data.hywe.in)**
 
@@ -131,13 +131,16 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ---
 
-## Technical Stack & Recognition
+## Technical Stack
 
 * **Language**: [F#](https://fsharp.org/) (functional-first, dependency-free core engine)
 * **Frontend**: [Bolero](https://fsbolero.io/) (Blazor WebAssembly with Elmish architecture)
 * **3D Graphics**: [WebGPU](https://gpuweb.github.io/gpuweb/) (zero-dependency native shader pipeline)
 * **Persistence & Moderation**: Serverless Node.js edge functions ([Hynteract](https://github.com/vykrum/Hynteract))
-* **Community Recognition**: Highlighted in **[F# Weekly](https://sergeytihon.com/?s=hywe)** ([#18](https://sergeytihon.com/2026/05/03/f-weekly-18-2026/) & [#35](https://sergeytihon.com/2026/08/30/f-weekly-35-2026/)) as an active open-source project combining functional domain modeling with WebAssembly and WebGPU.
+
+### Featured in the F# Community
+
+HYWE has been featured as a highlighted project in [F# Weekly #18 (2026)](https://sergeytihon.com/2026/05/03/f-weekly-18-2026-game-boy-emulator-in-f/) and [F# Weekly #35 (2026)](https://sergeytihon.com/2026/08/30/f-weekly-35-2026-fabulous-10-net-conf-2026-announced-and-c-15-preview/), covering its use of F#, WebAssembly, WebGPU, and computational spatial design.
 
 ---
 
