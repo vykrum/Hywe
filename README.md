@@ -140,7 +140,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ### Ecosystem & Community
 
-* **AEC Open Source**: Listed in the **[AEC Open Source Directory](https://github.com/opensource-construction/osc-directory)**, a curated directory of open-source projects for the Architecture, Engineering, and Construction (AEC) industry.
+* **AEC Open Source**: Listed in the **[AEC Open Source Directory](https://directory.opensource.construction/)**, a curated directory of open-source projects for the Architecture, Engineering, and Construction (AEC) industry.
 * **F# Community**: Featured as a highlighted project in [F# Weekly #18 (2026)](https://sergeytihon.com/2026/05/03/f-weekly-18-2026-game-boy-emulator-in-f/) and [F# Weekly #35 (2026)](https://sergeytihon.com/2026/08/30/f-weekly-35-2026-fabulous-10-net-conf-2026-announced-and-c-15-preview/), covering its use of F#, WebAssembly, WebGPU, and computational spatial design.
 
 ---
