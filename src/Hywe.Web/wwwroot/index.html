@@ -6,9 +6,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Title and SEO -->
-    <title>HYWE – Computational Spatial Design & Deterministic Layout Engine</title>
+    <title>HYWE – Computational Spatial Design & Spatial Layout Generation</title>
     <meta name="description"
-        content="A computational spatial design environment for generating and exploring architectural spatial configurations from relational graphs, rules and constraints." />
+        content="HYWE is a computational spatial design environment for early-stage architecture, generating and exploring spatial configurations from relational graphs, rules and constraints." />
     <link rel="canonical" href="https://hywe.in/" />
     <meta name="author" content="Vikram Subbaiah" />
 
@@ -23,74 +23,81 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HYWE" />
     <meta property="og:title" content="HYWE – Computational Spatial Design Environment" />
     <meta property="og:description"
-        content="A computational design system for generating and exploring architectural spatial configurations from relationships, rules, and constraints." />
-    <meta property="og:type" content="website" />
+        content="Explore architectural spatial configurations generated from relational graphs, hierarchy, sequence and constraints." />
     <meta property="og:url" content="https://hywe.in/" />
-    <meta property="og:image" content="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" />
+    <meta property="og:image" content="https://hywe.in/images/hyweLogoBanner.png" />
     <meta property="og:image:width" content="1600" />
     <meta property="og:image:height" content="400" />
+    <meta property="og:locale" content="en_IN" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="HYWE – Computational Spatial Design Environment" />
     <meta name="twitter:description"
-        content="A computational design system for generating and exploring architectural spatial configurations from relationships, rules, and constraints." />
-    <meta name="twitter:image" content="https://vykrum.github.io/Hywe/images/hyweLogoBanner.png" />
+        content="Explore architectural spatial configurations generated from relational graphs, hierarchy, sequence and constraints." />
+    <meta name="twitter:image" content="https://hywe.in/images/hyweLogoBanner.png" />
     <meta name="twitter:site" content="@_hywe_" />
 
     <meta name="keywords"
-        content="computational spatial design, relational space planning, topology-driven architecture, deterministic layout generation, WebAssembly spatial engine, WebGPU 3D massing, procedural space planning, architectural topology, architectural AI dataset" />
-    <meta property="article:published_time" content="2022-08-15T00:00:00Z" />
-    <meta property="article:modified_time" content="2026-09-22T18:36:38Z" />
+        content="computational spatial design, architectural spatial configuration, spatial layout generation, computational architecture, procedural space planning, relational space planning, architectural topology, deterministic spatial generation, early-stage architectural design" />
 
     <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
     {
       "@context": "https://schema.org",
-      "@type": ["WebApplication", "CreativeWork", "SoftwareApplication"],
+      "@type": ["WebApplication", "SoftwareApplication"],
       "applicationCategory": "DesignApplication",
+      "applicationSubCategory": "Computational Architecture",
       "name": "HYWE – Computational Spatial Design Environment",
       "alternateName": ["HYWE", "Hygrid Woven Ensemble", "HYWE Engine"],
       "url": "https://hywe.in",
       "logo": "https://hywe.in/images/web-app-manifest-192x192.png",
-      "author": {
+      "creator": {
         "@type": "Person",
         "name": "Vikram Subbaiah",
         "url": "https://github.com/vykrum"
       },
-      "description": "HYWE is a computational spatial design environment and research apparatus for generating and exploring architectural spatial configurations from relational graphs, rules and circulation flow.",
+      "description": "HYWE is a computational spatial design environment for generating and exploring architectural spatial configurations from relational graphs, rules, hierarchy, sequence and constraints.",
       "inLanguage": "en",
       "about": [
         "Computational Spatial Design",
-        "Relational Space Planning",
-        "Deterministic Topological Synthesis",
+        "Deterministic Spatial Synthesis",
         "Architectural Programming",
-        "Flow-Based Layout Generation",
-        "Discrete Integer Lattice"
+        "Relational Space Planning",
+        "Procedural Space Planning",
+        "Spatial Hierarchy and Circulation Sequence",
+        "Topology-Driven Architectural Grammar",
+        "Discrete Integer Lattice Packing",
+        "In-Browser WebGPU Volumetric Massing"
       ],
       "keywords": [ 
-        "computational spatial design", "computational design", "spatial design", "architectural generative design",
-        "computational architecture", "procedural space planning", "topology-driven architectural design",
-        "deterministic spatial synthesis", "Relational Space Planning", "Vertical Spatial Hierarchy",
-        "flow-based floor layout", "rule-based spatial design", "wasm architectural tool", "deterministic layout generation",
-        "architecture", "topology", "deterministic-geometry", "spatial-computation", "architectural-ai", "procedural-generation", "graph-topology"
+        "computational spatial design", "computational architecture", "spatial design",
+        "architectural programming", "procedural space planning", "relational space planning",
+        "deterministic spatial synthesis", "spatial topology engine", "space syntax",
+        "spatial hierarchy", "vertical spatial hierarchy", "spatial configuration",
+        "spatial layout generation", "discrete integer lattice", "integer lattice packing",
+        "spatial graph grammar", "volumetric massing", "3D spatial stacking",
+        "wasm architectural tool", "WebAssembly spatial engine", "WebGPU massing",
+        "rule-based spatial design", "early-stage architectural design"
       ],
       "featureList": [
-        "Deterministic integer-lattice spatial packing (Hygrid)",
-        "Automated architectural programming from relational tree graphs",
-        "Real-time 2D planar floor layout generation and SVG export",
-        "In-browser WebGPU 3D vertical massing and stacking",
-        "Community layout gallery for spatial configurations",
-        "Full URL hash state persistence and stateless design sharing",
-        "Zero-install client-side WebAssembly execution (kernel-free)",
-        "Curated JSONL dataset generation for layout-aware models"
+        "Relational architectural programming",
+        "Deterministic spatial configuration generation",
+        "Integer-lattice spatial representation (Hygrid)",
+        "2D spatial layout generation",
+        "SVG export",
+        "WebGPU 3D spatial massing and stacking",
+        "Shareable URL-based design states",
+        "Client-side WebAssembly execution",
+        "Spatial configuration dataset generation"
       ],
+      "codeRepository": "https://repo.hywe.in",
+      "documentation": "https://wiki.hywe.in",
       "sameAs": [
-        "https://wiki.hywe.in",
-        "https://repo.hywe.in",
-        "https://data.hywe.in",
         "https://linkedin.hywe.in",
         "https://x.com/_hywe_"
       ],
@@ -98,10 +105,7 @@
       "creativeWorkStatus": "InDevelopment",
       "isAccessibleForFree": true,
       "browserRequirements": "Requires a modern browser with WebAssembly and WebGPU support.",
-      "operatingSystem": "All",
-      "codeRepository": "https://repo.hywe.in",
-      "datePublished": "2022-08-15T00:00:00Z",
-      "dateModified": "2026-09-22T18:36:38Z"
+      "operatingSystem": "All"
     }
     </script>
 
@@ -109,6 +113,8 @@
 
     <base href="/">
     <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/loading.css" />
+    <link rel="stylesheet" href="css/about.css" />
 
     <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
@@ -116,352 +122,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Hywe" />
     <link rel="manifest" href="site.webmanifest" />
-    <script>
-        // @ts-nocheck
-        // Global stash for the install prompt to catch it as early as possible
-        window.hyweDeferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            window.hyweDeferredPrompt = e;
-            console.log("Hywe: Install prompt captured (head).");
-            // If the PWA bridge is already registered, notify it immediately
-            if (window.hywePwaDotNetRef) {
-                window.hywePwaDotNetRef.invokeMethodAsync('SetInstallPromptAvailable', true);
-            }
-        });
-    </script>
-    <style>
-        /* Minimal critical CSS for the initial loading state */
-        body {
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            font-weight: 300;
-            margin: 0;
-            padding: 0;
-            background-color: white;
-        }
-
-        #loading-frame {
-            position: fixed;
-            top: 37px;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 900;
-            background: white;
-        }
-
-        .fullscreen-bg {
-            position: fixed;
-            width: 100%;
-            height: 100vh;
-            object-fit: cover;
-            z-index: 100;
-            background-color: white;
-        }
-
-        .fullscreen-bg.fade-out {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .intro-section {
-            position: absolute;
-            z-index: 250;
-            background: #d3d3d1;
-            color: #363636;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            font-size: 16px;
-            font-weight: 300;
-            line-height: 1.5;
-            padding: 20px 30px;
-            border-radius: 6px;
-            text-align: center;
-            top: 100px;
-            left: 130px;
-            width: 100%;
-            max-width: 220px;
-            box-sizing: border-box;
-        }
-
-        .loadingText {
-            font-size: 12px;
-            text-align: center;
-            margin-top: 6px;
-            color: #363636;
-        }
-
-        .site-header {
-            display: flex;
-            flex-direction: row;
-            align-items: flex-start;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            position: relative;
-            z-index: 1000;
-            width: 100%;
-            height: 37px;
-            background: #363636;
-            padding: 5px 0 0 5px;
-            gap: 10px;
-            box-sizing: border-box;
-        }
-
-        .site-header .title {
-            color: white;
-            font-size: 20px;
-            font-weight: normal;
-            padding: 0 10px 7px 10px;
-            white-space: nowrap;
-        }
-
-        .site-header .logo-acronym {
-            opacity: 1;
-        }
-
-        @media (max-width: 220px) {
-            .intro-section {
-                left: 0;
-                right: 0;
-                margin: 0 auto;
-                max-width: calc(100% - 50px);
-            }
-        }
-
-        /* Mirrored right-edge Drawer Handle Button (matching Waggle Exchange) */
-        .specs-drawer-handle {
-            position: absolute;
-            top: 65px;
-            right: 0;
-            z-index: 1802;
-            width: 16px;
-            height: 184px;
-            background: #ffffff;
-            border: 1px solid #eeeeee;
-            border-right: none;
-            border-radius: 4px 0 0 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
-            transition: background 0.2s ease;
-            user-select: none;
-            outline: none;
-            box-sizing: border-box;
-        }
-
-        .specs-drawer-handle:hover {
-            background: #fafafa;
-        }
-
-        .specs-drawer-handle span {
-            writing-mode: vertical-rl;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            font-size: 8px;
-            font-weight: 600;
-            color: #666666;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            white-space: pre;
-            transform: rotate(180deg);
-        }
-
-        .hywe-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            z-index: 20000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            box-sizing: border-box;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease;
-        }
-
-        .hywe-modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .hywe-modal-content {
-            background: #ffffff;
-            color: #333333;
-            width: 100%;
-            max-width: 820px;
-            max-height: 85vh;
-            border-radius: 12px;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-            position: relative;
-            overflow-y: auto;
-            padding: 32px 36px;
-            box-sizing: border-box;
-            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            font-size: 14px;
-            font-weight: 300;
-            transform: scale(0.95);
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .hywe-modal-overlay.active .hywe-modal-content {
-            transform: scale(1);
-        }
-
-        .hywe-modal-close {
-            position: sticky;
-            top: 0;
-            float: right;
-            background: #f0f0f0;
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 16px;
-            color: #555;
-            transition: background 0.2s, color 0.2s;
-            margin-top: -10px;
-            margin-right: -10px;
-            z-index: 10;
-        }
-
-        .hywe-modal-close:hover {
-            background: #333;
-            color: #fff;
-        }
-
-        .hywe-modal-content h1 {
-            margin-top: 0;
-            font-size: 22px;
-            font-weight: 600;
-            color: #222;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 8px;
-        }
-
-        .hywe-modal-content h2 {
-            font-size: 18px;
-            font-weight: 500;
-            margin-top: 20px;
-            color: #333;
-        }
-
-        .hywe-modal-content h3 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-top: 18px;
-            color: #444;
-        }
-
-        .hywe-modal-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-            font-size: 13px;
-        }
-
-        .hywe-modal-content th,
-        .hywe-modal-content td {
-            border: 1px solid #e0e0e0;
-            padding: 8px 12px;
-            text-align: left;
-        }
-
-        .hywe-modal-content th {
-            background-color: #f7f7f7;
-            font-weight: 600;
-        }
-
-        .about-feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 12px;
-            margin: 16px 0;
-        }
-
-        .about-feature-card {
-            background: #fafafa;
-            border: 1px solid #e8e8e8;
-            border-left: 3px solid #363636;
-            border-radius: 4px;
-            padding: 12px 14px;
-            box-sizing: border-box;
-        }
-
-        .about-feature-card strong {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #222;
-            margin-bottom: 4px;
-            letter-spacing: 0.2px;
-        }
-
-        .about-feature-card p {
-            margin: 0;
-            font-size: 12px;
-            color: #666;
-            line-height: 1.45;
-        }
-
-        .about-links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 10px;
-            margin: 16px 0 8px 0;
-        }
-
-        .about-link-chip {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background: #f8f8f8;
-            padding: 10px 14px;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
-            text-decoration: none !important;
-            transition: all 0.15s ease;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .about-link-chip-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 13px;
-            font-weight: 600;
-            color: #222222;
-            margin-bottom: 2px;
-        }
-
-        .about-link-chip-url {
-            font-size: 11.5px;
-            font-family: 'Outfit', system-ui, sans-serif;
-            color: #777777;
-            letter-spacing: 0.2px;
-        }
-
-        .about-link-chip:hover {
-            background: #363636;
-            border-color: #363636;
-        }
-
-        .about-link-chip:hover .about-link-chip-header,
-        .about-link-chip:hover .about-link-chip-url {
-            color: #ffffff !important;
-        }
-    </style>
+    <script src="scripts/install.js"></script>
 </head>
 
 <body>
@@ -473,7 +134,7 @@
             </div>
             <div class="title">H Y W E</div>
             <div class="logo-acronym">
-                <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45"
+                <img src="images/hyweLogoAcronym.png" width="200" height="45"
                     alt="HYWE acronym">
             </div>
         </header>
@@ -486,295 +147,38 @@
             <section class="intro-section">
                 Weave spatial configurations with<br><br>
                 <strong> H Y W E </strong><br><br>
-                A relational, flow-based spatial design environment for early-stage architecture.<br><br>
+                A relational spatial design environment for early-stage architecture.<br><br>
                 Outline the intended hierarchy to generate spatial configurations defined by sequence and connections.
                 <div class="loadingText">Loading<span>...</span></div>
             </section>
         </div>
-    </div>
-    <!-- Mirrored right-side handle button to access About HYWE -->
-    <div id="specs-drawer-btn" class="specs-drawer-handle" onclick="openAboutModal()"
-        onkeydown="if(event.key==='Enter'||event.key===' '){openAboutModal();event.preventDefault();}" role="button"
-        tabindex="0" aria-label="Open About HYWE dialog" title="About HYWE">
-        <span>About Hywe</span>
-    </div>
 
-    <!-- Accessible About HYWE Modal Overlay -->
-    <div id="about-hywe-modal" class="hywe-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true"
-        onclick="if(event.target===this)closeAboutModal()">
-        <section id="about-hywe" class="hywe-modal-content">
-            <button class="hywe-modal-close" onclick="closeAboutModal()" aria-label="Close dialog">✕</button>
-            <h1>HYWE <span style="font-size: 15px; font-weight: 400; color: #666; margin-left: 8px;">Hygrid Woven
-                    Ensemble</span></h1>
-
-            <p style="font-size: 15px; line-height: 1.6; color: #1a1a1a; margin: 16px 0 12px 0;">
-                HYWE is a computational spatial design environment for exploring architecture from <strong>relationships
-                    rather than geometry</strong>.
+        <!-- Semantic Static Content for Crawlers and Initial Indexing -->
+        <section class="seo-intro">
+            <h1>HYWE — Computational Spatial Design Environment</h1>
+            <p>
+                HYWE is a computational spatial design environment for exploring architectural spatial configurations during early-stage design. It translates relational descriptions of spaces into deterministic spatial configurations that can be generated, compared and explored before detailed geometric modelling.
             </p>
-            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 12px;">
-                Instead of beginning by drawing rooms and then deciding how they connect, HYWE begins with spatial
-                intent: hierarchy, sequence, adjacency, containment, boundaries, and flow.
+            <h2>Relational spatial design</h2>
+            <p>
+                HYWE represents architectural programs through spaces, relationships, hierarchy, sequence and constraints. The system generates spatial configurations from these discrete relationships rather than beginning with detailed geometric modelling.
             </p>
-            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 22px;">
-                These relationships are compiled into spatial configurations through a deterministic computational
-                process. The result is not a single prescribed solution, but a spatial system that can be generated,
-                inspected, modified, compared, and explored.
+            <h2>Computational architectural layout generation</h2>
+            <p>
+                HYWE provides a browser-based environment for procedural space planning, topology-driven layout generation and computational exploration of architectural configurations.
             </p>
-
-            <h2>Define &rarr; Generate &rarr; Explore</h2>
-            <div class="about-feature-grid">
-                <div class="about-feature-card">
-                    <strong>Define</strong>
-                    <p>Express architectural intent through hierarchical structure, spatial relationships, sequence,
-                        boundaries, and constraints.</p>
-                    <p style="margin-top: 8px; color: #777; font-size: 12px;">Intent can be constructed visually or
-                        represented through HYWE's compact spatial syntax.</p>
-                </div>
-                <div class="about-feature-card">
-                    <strong>Generate</strong>
-                    <p>HYWE translates this relational structure into spatial configurations using its discrete Hygrid
-                        model.</p>
-                    <p style="margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #555;">The
-                        same underlying relationships can resolve into:</p>
-                    <ul style="margin: 0 0 8px 16px; padding: 0; font-size: 12px; color: #666; line-height: 1.5;">
-                        <li>planar spatial layouts</li>
-                        <li>site-bounded configurations</li>
-                        <li>hierarchical spatial arrangements</li>
-                        <li>volumetric massing</li>
-                    </ul>
-                    <p style="margin: 0; color: #777; font-size: 12px;">Because the process is deterministic, the same
-                        encoded intent produces the same configuration.</p>
-                </div>
-                <div class="about-feature-card">
-                    <strong>Explore</strong>
-                    <p>The generated configurations become a space for investigation.</p>
-                    <p style="margin-top: 8px; color: #666; font-size: 12px;">Inspect relationships, modify constraints,
-                        compare alternatives, analyse spatial properties, and explore permutations of the same
-                        underlying intent.</p>
-                    <p style="margin-top: 8px; color: #777; font-size: 12px;">HYWE therefore treats early-stage design
-                        not simply as drawing, but as exploring a structured space of possibilities.</p>
-                </div>
-            </div>
-
-            <h2>Why HYWE?</h2>
-            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 10px;">
-                Most architectural computational tools begin with geometry: points, curves, surfaces, solids, or
-                predefined components.
+            <h2>Documentation &amp; Ecosystem</h2>
+            <p>
+                Explore the <a href="https://wiki.hywe.in">HYWE Documentation &amp; Wiki</a> for formal specifications, benchmarks, and architectural design principles, or review the source code on <a href="https://repo.hywe.in">GitHub</a> and spatial datasets on <a href="https://data.hywe.in">Hugging Face</a>.
             </p>
-            <p
-                style="font-size: 14.5px; line-height: 1.6; color: #1a1a1a; margin-bottom: 10px; background: #fafafa; border-left: 3px solid #111; padding: 10px 14px; border-radius: 0 4px 4px 0;">
-                <strong>HYWE asks a different question:</strong><br>
-                <em>Can architectural intent be represented as relationships first, and can those relationships be
-                    computationally resolved into geometry?</em>
-            </p>
-            <p style="font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 14px;">
-                This shifts the emphasis from drawing a solution toward defining a system from which solutions can
-                emerge.
-            </p>
-            <p style="font-size: 13.5px; line-height: 1.5; color: #333; margin-bottom: 6px; font-weight: 500;">
-                HYWE is an experimental investigation into:
-            </p>
-            <ul style="margin: 0 0 22px 20px; padding: 0; font-size: 13.5px; color: #555; line-height: 1.65;">
-                <li>relational and flow-based spatial design</li>
-                <li>deterministic generative systems</li>
-                <li>computational architectural programming</li>
-                <li>discrete spatial topology</li>
-                <li>hierarchical space formation</li>
-                <li>systematic exploration of spatial permutations</li>
-            </ul>
-
-            <h2>An Evolving Research Environment</h2>
-            <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 10px;">
-                HYWE is not intended to replace comprehensive architectural modelling, structural coordination, or
-                construction documentation.
-            </p>
-            <p style="font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 12px;">
-                It focuses deliberately on the early and exploratory stages of architectural design &mdash; where
-                relationships are established, alternatives are generated, and the boundaries of a design problem are
-                still being discovered.
-            </p>
-            <p style="font-size: 13.5px; line-height: 1.6; color: #555; margin-bottom: 18px;">
-                The application, computational engine, documentation, and growing dataset form parts of the same ongoing
-                research.
-            </p>
-
-            <div class="about-links-grid">
-                <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header">
-                        <span>HYWE Wiki</span>
-                        <span>&rarr;</span>
-                    </div>
-                    <div class="about-link-chip-url">wiki.hywe.in</div>
-                </a>
-                <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header">
-                        <span>HYWE Engine</span>
-                        <span>&rarr;</span>
-                    </div>
-                    <div class="about-link-chip-url">repo.hywe.in</div>
-                </a>
-                <a href="https://data.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header">
-                        <span>HYWE Data</span>
-                        <span>&rarr;</span>
-                    </div>
-                    <div class="about-link-chip-url">data.hywe.in</div>
-                </a>
-                <a href="https://linkedin.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header">
-                        <span>LinkedIn</span>
-                        <span>&rarr;</span>
-                    </div>
-                    <div class="about-link-chip-url">linkedin.hywe.in</div>
-                </a>
-                <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header">
-                        <span>X (Twitter)</span>
-                        <span>&rarr;</span>
-                    </div>
-                    <div class="about-link-chip-url">x.com/_hywe_</div>
-                </a>
-            </div>
         </section>
     </div>
 
-    <!-- Modal helper scripts and height sync -->
-    <script>
-        function openAboutModal() {
-            var modal = document.getElementById('about-hywe-modal');
-            if (modal) {
-                modal.classList.add('active');
-                modal.setAttribute('aria-hidden', 'false');
-            }
-        }
-        function closeAboutModal() {
-            var modal = document.getElementById('about-hywe-modal');
-            if (modal) {
-                modal.classList.remove('active');
-                modal.setAttribute('aria-hidden', 'true');
-            }
-        }
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeAboutModal();
-        });
 
-        // Pixel-perfect height sync with Waggle Exchange drawer
-        function syncDrawerHeight() {
-            var preset = document.querySelector('.preset-drawer');
-            var specs = document.getElementById('specs-drawer-btn');
-            if (preset && specs) {
-                var h = preset.offsetHeight;
-                if (h > 40) {
-                    specs.style.height = h + 'px';
-                }
-            }
-        }
-        window.addEventListener('resize', syncDrawerHeight);
-        var syncInterval = setInterval(function () {
-            var preset = document.querySelector('.preset-drawer');
-            if (preset) {
-                syncDrawerHeight();
-                if (window.ResizeObserver) {
-                    new ResizeObserver(syncDrawerHeight).observe(preset);
-                }
-                clearInterval(syncInterval);
-            }
-        }, 150);
-    </script>
-
-    <!--Scripts-->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js');
-        }
-
-        window.runAndDownloadBenchmark = async function (methodName, filename) {
-            console.log("%c[TEST RUNNER] Starting " + methodName + "... (The browser UI will yield while computing)", "color: #f39c12; font-weight: bold;");
-            try {
-                let clientDetails = navigator.userAgent || "Unknown Browser";
-                if (navigator.hardwareConcurrency) {
-                    clientDetails += " (" + navigator.hardwareConcurrency + " logical threads";
-                    if (navigator.deviceMemory) clientDetails += ", ~" + navigator.deviceMemory + " GB RAM";
-                    clientDetails += ")";
-                }
-                const result = await DotNet.invokeMethodAsync('Hywe.Web', methodName, clientDetails);
-                const blob = new Blob([result], { type: 'text/markdown' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                console.log("%c[TEST RUNNER] Successfully completed and downloaded " + filename + "!", "color: #2ecc71; font-weight: bold;");
-                return result;
-            } catch (err) {
-                console.error("[TEST RUNNER] Benchmark failed:", err);
-                throw err;
-            }
-        };
-
-        window.runPerformanceTest = () => window.runAndDownloadBenchmark('RunPerformanceBenchmark', 'PerformanceBenchmark.md');
-        window.runConformanceTest = () => window.runAndDownloadBenchmark('RunConformanceTests', 'ConformanceTests.md');
-        window.runQualityTest = () => window.runAndDownloadBenchmark('RunQualityBenchmarks', 'QualityBenchmarks.md');
-        window.runScalingTest = () => window.runAndDownloadBenchmark('RunScalingBenchmarks', 'ScalingBenchmarks.md');
-        window.runEndToEndTest = () => window.runAndDownloadBenchmark('RunEndToEndLatencyProfile', 'EndToEndLatency.md');
-        window.runMultiContainerTest = () => window.runAndDownloadBenchmark('RunMultiContainerScaling', 'MultiContainerScaling.md');
-        window.runSensitivityTest = () => window.runAndDownloadBenchmark('RunPerturbationSensitivity', 'PerturbationSensitivity.md');
-
-        window.runAllTests = async function () {
-            console.log("%c[TEST RUNNER] Initiating Full Benchmark Suite...", "color: #3498db; font-weight: bold;");
-            console.log("%c-> [1/7] Running Quality Benchmarks...", "color: #f39c12;");
-            const q = await window.runQualityTest();
-            console.log("%c-> [2/7] Running Conformance & Repeatability Tests...", "color: #f39c12;");
-            const c = await window.runConformanceTest();
-            console.log("%c-> [3/7] Running Performance Benchmark...", "color: #f39c12;");
-            const p = await window.runPerformanceTest();
-            console.log("%c-> [4/7] Running Scaling Benchmark (10 to 1,000 nodes)...", "color: #f39c12;");
-            const s = await window.runScalingTest();
-            console.log("%c-> [5/7] Running End-to-End Latency Benchmark...", "color: #f39c12;");
-            const e2e = await window.runEndToEndTest();
-            console.log("%c-> [6/7] Running Multi-Container Scaling Benchmark...", "color: #f39c12;");
-            const mc = await window.runMultiContainerTest();
-            console.log("%c-> [7/7] Running Perturbation Sensitivity Benchmark...", "color: #f39c12;");
-            const sens = await window.runSensitivityTest();
-            console.log("%c[TEST RUNNER] All benchmark suites completed successfully! Check your downloads folder.", "color: #2ecc71; font-size: 14px; font-weight: bold;");
-            return { quality: q, conformance: c, performance: p, scaling: s, endToEnd: e2e, multiContainer: mc, sensitivity: sens };
-        };
-
-        console.log(
-            "%c🧪 HYWE WebAssembly Benchmark & Conformance Test Suite",
-            "background: #1e1e2e; color: #89b4fa; font-size: 14px; font-weight: bold; padding: 6px 12px; border-radius: 4px; border-left: 4px solid #89b4fa; margin-top: 8px;"
-        );
-        console.log(
-            "%cRun empirical WebAssembly tests directly from DevTools and auto-download Markdown reports:\n\n" +
-            "%c1. runQualityTest()          %c— 6 Quantitative Topological Descriptors (D, CI, B, P, ΔJ, σ_A) (~1-2 min)\n" +
-            "%c2. runConformanceTest()      %c— Determinism & signature hash repeatability across 10 iterations (~2 min)\n" +
-            "%c3. runPerformanceTest()      %c— Cold vs. warm latency & standard deviation across 24 operators (~3-4 min)\n" +
-            "%c4. runScalingTest()          %c— Algorithmic scaling latency from 10 to 1,000 nodes (~3-5 min)\n" +
-            "%c5. runEndToEndTest()         %c— End-to-End latency profiling (AST → SVG → DOM → WebGPU) (~1-2 min)\n" +
-            "%c6. runMultiContainerTest()   %c— Combinatorial multi-container scaling across floorplates (~2-3 min)\n" +
-            "%c7. runSensitivityTest()      %c— Syntactic perturbation sensitivity (D(C_0, C_1)) (~1 min)\n" +
-            "%c8. runAllTests()             %c— Execute all 7 suites sequentially with automated downloads\n\n" +
-            "%cAdvanced: %crunAndDownloadBenchmark('RunQualityBenchmarks', 'CustomQualityReport.md')",
-            "color: #a6adc8; font-size: 12px;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #a6e3a1; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #f9e2af; font-weight: bold; font-family: monospace;", "color: #cdd6f4;",
-            "color: #fab387; font-weight: bold;", "color: #89dceb; font-family: monospace;"
-        );
-    </script>
+    <!-- Benchmarks & DevTools Test Suite -->
+    <script src="scripts/benchmarks.js" defer></script>
     <script src="_framework/blazor.webassembly.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
-    <script src="scripts/index.js" defer></script>
     <script src="scripts/shell.js" defer></script>
     <script src="scripts/webgpu.js" defer></script>
 

@@ -1,3 +1,8 @@
+/// <summary>
+/// Benchmark suite and performance profiling harnesses for the Hywe spatial compiler.
+/// Exposes WebAssembly-executable benchmarks for evaluating execution latency, determinism,
+/// spatial quality descriptors, scaling limits, and AST perturbation sensitivity.
+/// </summary>
 module Benchmarks
 
 open System
@@ -8,6 +13,11 @@ open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Xyxel
 
+/// <summary>
+/// Calculates the population standard deviation of an array of floating-point values.
+/// </summary>
+/// <param name="values">Array of floating-point sample values.</param>
+/// <returns>The calculated standard deviation, or <c>0.0</c> if fewer than two samples exist.</returns>
 let calculateSD (values: float[]) =
     match float values.Length with
     | n when n <= 1.0 -> 0.0
@@ -16,11 +26,24 @@ let calculateSD (values: float[]) =
         let sumOfSquares = values |> Array.sumBy (fun v -> (v - avg) ** 2.0)
         sqrt (sumOfSquares / n)
 
+/// <summary>
+/// Canonical 24 discrete hexagonal sequence operator tokens representing all permutations
+/// of grid orientation (Vertical/Horizontal), winding order (Clockwise/Counter-Clockwise),
+/// and starting compass directional offsets.
+/// </summary>
 let operators = [|
     "VRCWEE"; "VRCCEE"; "VRCWSE"; "VRCCSE"; "VRCWSW"; "VRCCSW"; "VRCWWW"; "VRCCWW"; "VRCWNW"; "VRCCNW"; "VRCWNE"; "VRCCNE";
     "HRCWNN"; "HRCCNN"; "HRCWNE"; "HRCCNE"; "HRCWSE"; "HRCCSE"; "HRCWSS"; "HRCCSS"; "HRCWSW"; "HRCCSW"; "HRCWNW"; "HRCCNW"
 |]
 
+/// <summary>
+/// Predefined canonical architectural archetypes used across empirical benchmark runs:
+/// <list type="bullet">
+/// <item><description><c>CIF-10</c>: Complex Institutional Floorplate (10 nodes, multi-tier healthcare suite).</description></item>
+/// <item><description><c>Radial-Star</c>: Concentric hub-and-spoke archetype (7 nodes radiating from a central core).</description></item>
+/// <item><description><c>Deep-Spine</c>: Linear progressive spine archetype (7-node linear descent chain).</description></item>
+/// </list>
+/// </summary>
 let presets = [|
     "CIF-10", LayoutTree.Create [| [| 
         ("1", 60, "Primary Intake");
@@ -54,10 +77,22 @@ let presets = [|
     |] |]
 |]
 
+/// <summary>
+/// Sequence operator names pre-parsed into their strongly-typed <see cref="Sqn"/> discriminated union representations.
+/// </summary>
 let parsedOperators = 
     operators 
     |> Array.map (fun opName -> opName, tryParseUnion<Sqn> opName |> Option.get)
 
+/// <summary>
+/// Compiles a <see cref="LayoutTree"/> against a target sequence operator (<see cref="Sqn"/>),
+/// generating the resolved array of compiled <see cref="Cxl"/> units.
+/// Isolates core AST resolution and spatial packing from DOM, SVG, and WebGPU passes.
+/// </summary>
+/// <param name="tree">The hierarchical layout tree representing architectural programmatic intent.</param>
+/// <param name="sqn">The hexagonal sequence operator governing growth direction, winding, and alignment.</param>
+/// <returns>An array of compiled <see cref="Cxl"/> structures containing geometric and relational allocations.</returns>
+/// <exception cref="System.Exception">Thrown when base hexel generation fails for the specified sequence operator.</exception>
 let runCompilation (tree: LayoutTree) (sqn: Sqn) =
     let opts = {
         EntryFallback = "0,0"
@@ -79,12 +114,25 @@ let runCompilation (tree: LayoutTree) (sqn: Sqn) =
         layout
     | None -> failwithf "Failed to generate base hexel for %s" (sqnToString sqn)
 
+/// <summary>
+/// Measures the wall-clock execution time of an action in milliseconds using high-resolution <see cref="Stopwatch"/>.
+/// </summary>
+/// <param name="action">The function delegate to benchmark.</param>
+/// <returns>Elapsed time in milliseconds.</returns>
 let measureLatencyMs (action: unit -> unit) : float =
     let sw = Stopwatch.StartNew()
     action ()
     sw.Stop()
     sw.Elapsed.TotalMilliseconds
 
+/// <summary>
+/// Generates a standardized Markdown report header containing execution environment metadata,
+/// including runtime platform, architecture, client browser engine, and isolation parameters.
+/// </summary>
+/// <param name="title">Title heading for the benchmark report.</param>
+/// <param name="description">Brief description of the test suite and its objectives.</param>
+/// <param name="clientInfo">Optional client browser engine or user agent string provided via JS interop.</param>
+/// <returns>A list of formatted markdown lines.</returns>
 let formatMarkdownHeader (title: string) (description: string) (clientInfo: string) =
     [
         sprintf "### %s" title
@@ -102,6 +150,14 @@ let formatMarkdownHeader (title: string) (description: string) (clientInfo: stri
         ""
     ]
 
+/// <summary>
+/// Concatenates header metadata, markdown table column headers, data rows, and a concluding status message.
+/// </summary>
+/// <param name="headerLines">List of report header lines.</param>
+/// <param name="tableColumns">List of markdown table header and delimiter lines.</param>
+/// <param name="dataRows">List of formatted markdown table rows.</param>
+/// <param name="footerMessage">Concluding footer text or instructions.</param>
+/// <returns>A complete markdown-formatted report string.</returns>
 let renderTable (headerLines: string list) (tableColumns: string list) (dataRows: string list) (footerMessage: string) =
     [
         yield! headerLines
@@ -112,7 +168,19 @@ let renderTable (headerLines: string list) (tableColumns: string list) (dataRows
     ]
     |> String.concat Environment.NewLine
 
+/// <summary>
+/// Provides JavaScript-invokable benchmark test entry points for WebAssembly browser execution.
+/// Covers performance profiling, determinism verification, spatial quality scoring, scaling limits,
+/// end-to-end latency analysis, multi-container synthesis, and AST perturbation sensitivity.
+/// </summary>
 type BenchmarkRunner() =
+    /// <summary>
+    /// Measures cold and warm steady-state compilation latency across all canonical archetypes
+    /// and 24 spatial sequence operators. Outputs metrics including minimum, maximum, average,
+    /// and standard deviation.
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table containing benchmark results.</returns>
     [<JSInvokable("RunPerformanceBenchmark")>]
     static member RunPerformanceBenchmark ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -159,6 +227,12 @@ type BenchmarkRunner() =
 
         renderTable header columns rows "[Benchmark Complete. Copy the table above into your documentation/wiki!]"
         
+    /// <summary>
+    /// Empirically evaluates compilation determinism and repeatability across repeated runs.
+    /// Computes spatial signature hashes to guarantee zero-divergence behavior under identical inputs.
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table verifying signature consistency, valid states, and hash stability.</returns>
     [<JSInvokable("RunConformanceTests")>]
     static member RunConformanceTests ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -209,6 +283,13 @@ type BenchmarkRunner() =
 
         renderTable header columns rows "[Conformance Benchmark Complete]"
 
+    /// <summary>
+    /// Evaluates six quantitative spatial descriptors across canonical architectural archetypes:
+    /// graph depth (<c>D</c>), compactness index (<c>CI</c>), branching factor (<c>B</c>),
+    /// outer perimeter (<c>P</c>), adjacency divergence (<c>ΔJ</c>), and programmatic area deviation (<c>σ_A</c>).
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table containing structural and geometric quality descriptors.</returns>
     [<JSInvokable("RunQualityBenchmarks")>]
     static member RunQualityBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -312,6 +393,12 @@ type BenchmarkRunner() =
 
         renderTable header columns rows "[Quality Benchmark Complete]"
 
+    /// <summary>
+    /// Profiles compilation latency scalability across synthetic ternary branching tree hierarchies
+    /// from 10 to 1,000 nodes, recording cold latency, warm min/max/average, and standard deviation.
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table containing scaling latency metrics across node tiers.</returns>
     [<JSInvokable("RunScalingBenchmarks")>]
     static member RunScalingBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -372,6 +459,12 @@ type BenchmarkRunner() =
 
         renderTable header columns rows "[Scaling Benchmark Complete]"
 
+    /// <summary>
+    /// Profiles end-to-end wall-clock latency by isolating abstract syntax tree compilation time
+    /// (<c>T_compilation</c>) from base34 string payload serialization time (<c>T_serialization</c>).
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table comparing compilation versus serialization timing.</returns>
     [<JSInvokable("RunEndToEndLatencyProfile")>]
     static member RunEndToEndLatencyProfile ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -416,6 +509,12 @@ type BenchmarkRunner() =
 
         renderTable header columns rows "[End-to-End Latency Benchmark Complete]"
 
+    /// <summary>
+    /// Measures compilation scaling under simultaneous multi-container growth configurations
+    /// (<c>N_containers × 20 nodes</c>), evaluating performance under multi-cluster spatial constraints.
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table containing latency metrics across container scaling factors.</returns>
     [<JSInvokable("RunMultiContainerScaling")>]
     static member RunMultiContainerScaling ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -471,6 +570,13 @@ type BenchmarkRunner() =
 
         renderTable header columns rows "[Multi-Container Benchmark Complete]"
 
+    /// <summary>
+    /// Quantifies structural sensitivity and topological perturbation (<c>D(C_0, C_1)</c>)
+    /// by introducing a minimal AST token edit (+1 Area weight to a child node) and evaluating
+    /// adjacency matrix edge divergence and hexel set symmetric differences.
+    /// </summary>
+    /// <param name="clientInfo">Optional client browser environment information string.</param>
+    /// <returns>A formatted Markdown table containing mutated node IDs, edge adjacency deltas, and hexel symmetric difference counts.</returns>
     [<JSInvokable("RunPerturbationSensitivity")>]
     static member RunPerturbationSensitivity ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
@@ -535,4 +641,3 @@ type BenchmarkRunner() =
             |> Array.toList
 
         renderTable header columns rows "[Perturbation Sensitivity Benchmark Complete]"
-

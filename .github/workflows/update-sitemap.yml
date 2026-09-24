@@ -23,7 +23,6 @@ jobs:
           echo '  <url>' >> src/Hywe.Web/wwwroot/sitemap.xml
           echo '    <loc>https://hywe.in/</loc>' >> src/Hywe.Web/wwwroot/sitemap.xml
           echo "    <lastmod>${{ steps.date.outputs.date }}</lastmod>" >> src/Hywe.Web/wwwroot/sitemap.xml
-          echo '    <priority>1.0</priority>' >> src/Hywe.Web/wwwroot/sitemap.xml
           echo '  </url>' >> src/Hywe.Web/wwwroot/sitemap.xml
           echo '</urlset>' >> src/Hywe.Web/wwwroot/sitemap.xml
 

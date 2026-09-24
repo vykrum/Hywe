@@ -151,7 +151,7 @@ type ConfirmAction =
 
 
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
-let MODIFIED_DATE = "2026-09-22T18:36:38Z"
+let MODIFIED_DATE = "2026-09-24T12:03:38Z"
 let GALLERY_PAGE_SIZE = 12
 
 
@@ -303,6 +303,7 @@ type Model =
         IsCoordsVisible: bool
         ShowLinkCopied: bool
         ShowGallery: bool
+        ShowAboutModal: bool
         IsLoadingGallery: bool
         GalleryEntries: GalleryEntry list option
         GalleryOffset: int
@@ -389,6 +390,8 @@ type Message =
     | SetIsStandalone of bool
     | ToggleCoords
     | ToggleGallery
+    | ToggleAboutModal
+    | SetShowAboutModal of bool
     | LoadGalleryEntries
     | NextGalleryPage
     | PrevGalleryPage
