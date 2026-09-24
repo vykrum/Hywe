@@ -121,3 +121,10 @@ body {
     margin-bottom: 12px;
 }
 
+.seo-intro a {
+    color: #1e2327;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+
