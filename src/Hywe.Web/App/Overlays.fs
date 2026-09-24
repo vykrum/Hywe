@@ -389,3 +389,184 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                 }
             }
         }
+
+/// <summary> Right-edge drawer handle button to open the About HYWE dialog. </summary>
+let viewAboutDrawerHandle (dispatch: Message -> unit) =
+    div {
+        attr.id "specs-drawer-btn"
+        attr.``class`` "specs-drawer-handle"
+        "role" => "button"
+        attr.tabindex 0
+        attr.title "About HYWE"
+        "aria-label" => "Open About HYWE dialog"
+        on.click (fun _ -> dispatch ToggleAboutModal)
+        on.keydown (fun (e: Microsoft.AspNetCore.Components.Web.KeyboardEventArgs) ->
+            if e.Key = "Enter" || e.Key = " " then
+                dispatch ToggleAboutModal
+        )
+        span { text "About Hywe" }
+    }
+
+/// <summary> Declarative About HYWE modal dialog. </summary>
+let viewAboutModal (model: Model) (dispatch: Message -> unit) =
+    match model.ShowAboutModal with
+    | false -> empty()
+    | true ->
+        div {
+            attr.id "about-hywe-modal"
+            attr.``class`` "hywe-modal-overlay active"
+            "role" => "dialog"
+            "aria-modal" => "true"
+            on.click (fun _ -> dispatch (SetShowAboutModal false))
+            
+            section {
+                attr.id "about-hywe"
+                attr.``class`` "hywe-modal-content"
+                "onclick:stopPropagation" => true
+                
+                button {
+                    attr.``class`` "hywe-modal-close"
+                    "aria-label" => "Close dialog"
+                    on.click (fun _ -> dispatch (SetShowAboutModal false))
+                    text "✕"
+                }
+
+                h1 {
+                    text "HYWE "
+                    span {
+                        attr.style "font-size: 15px; font-weight: 400; color: #666; margin-left: 8px;"
+                        text "Hygrid Woven Ensemble"
+                    }
+                }
+
+                p {
+                    attr.style "font-size: 15px; line-height: 1.6; color: #1a1a1a; margin: 16px 0 12px 0;"
+                    text "HYWE is a computational spatial design environment for exploring architecture from "
+                    strong { text "relationships rather than geometry" }
+                    text "."
+                }
+                p {
+                    attr.style "font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 12px;"
+                    text "Instead of beginning by drawing rooms and then deciding how they connect, HYWE begins with spatial intent: hierarchy, sequence, adjacency, containment, boundaries, and flow."
+                }
+                p {
+                    attr.style "font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 22px;"
+                    text "These relationships are compiled into spatial configurations through a deterministic computational process. The result is not a single prescribed solution, but a spatial system that can be generated, inspected, modified, compared, and explored."
+                }
+
+                h2 { text "Define → Generate → Explore" }
+                div {
+                    attr.``class`` "about-feature-grid"
+                    div {
+                        attr.``class`` "about-feature-card"
+                        strong { text "Define" }
+                        p { text "Express architectural intent through hierarchical structure, spatial relationships, sequence, boundaries, and constraints." }
+                        p {
+                            attr.style "margin-top: 8px; color: #777; font-size: 12px;"
+                            text "Intent can be constructed visually or represented through HYWE's compact spatial syntax."
+                        }
+                    }
+                    div {
+                        attr.``class`` "about-feature-card"
+                        strong { text "Generate" }
+                        p { text "HYWE translates this relational structure into spatial configurations using its discrete Hygrid model." }
+                        p {
+                            attr.style "margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #555;"
+                            text "The same underlying relationships can resolve into:"
+                        }
+                        ul {
+                            attr.style "margin: 0 0 8px 16px; padding: 0; font-size: 12px; color: #666; line-height: 1.5;"
+                            li { text "planar spatial layouts" }
+                            li { text "site-bounded configurations" }
+                            li { text "hierarchical spatial arrangements" }
+                            li { text "volumetric massing" }
+                        }
+                        p {
+                            attr.style "margin: 0; color: #777; font-size: 12px;"
+                            text "Because the process is deterministic, the same encoded intent produces the same configuration."
+                        }
+                    }
+                    div {
+                        attr.``class`` "about-feature-card"
+                        strong { text "Explore" }
+                        p { text "The generated configurations become a space for investigation." }
+                        p {
+                            attr.style "margin-top: 8px; color: #666; font-size: 12px;"
+                            text "Inspect relationships, modify constraints, compare alternatives, analyse spatial properties, and explore permutations of the same underlying intent."
+                        }
+                        p {
+                            attr.style "margin-top: 8px; color: #777; font-size: 12px;"
+                            text "HYWE therefore treats early-stage design not simply as drawing, but as exploring a structured space of possibilities."
+                        }
+                    }
+                }
+
+                h2 { text "Why HYWE?" }
+                p {
+                    attr.style "font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 10px;"
+                    text "Most architectural computational tools begin with geometry: points, curves, surfaces, solids, or predefined components."
+                }
+                p {
+                    attr.style "font-size: 14.5px; line-height: 1.6; color: #1a1a1a; margin-bottom: 10px; background: #fafafa; border-left: 3px solid #111; padding: 10px 14px; border-radius: 0 4px 4px 0;"
+                    strong { text "HYWE asks a different question:" }
+                    br {}
+                    em { text "Can architectural intent be represented as relationships first, and can those relationships be computationally resolved into geometry?" }
+                }
+                p {
+                    attr.style "font-size: 14px; line-height: 1.6; color: #444; margin-bottom: 14px;"
+                    text "This shifts the emphasis from drawing a solution toward defining a system from which solutions can emerge."
+                }
+                p {
+                    attr.style "font-size: 13.5px; line-height: 1.5; color: #333; margin-bottom: 6px; font-weight: 500;"
+                    text "HYWE is an experimental investigation into:"
+                }
+                ul {
+                    attr.style "margin: 0 0 22px 20px; padding: 0; font-size: 13.5px; color: #555; line-height: 1.65;"
+                    li { text "relational and flow-based spatial design" }
+                    li { text "deterministic generative systems" }
+                    li { text "computational architectural programming" }
+                    li { text "discrete spatial topology" }
+                    li { text "hierarchical space formation" }
+                    li { text "systematic exploration of spatial permutations" }
+                }
+
+                h2 { text "An Evolving Research Environment" }
+                p {
+                    attr.style "font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 10px;"
+                    text "HYWE is not intended to replace comprehensive architectural modelling, structural coordination, or construction documentation."
+                }
+                p {
+                    attr.style "font-size: 13.5px; line-height: 1.6; color: #444; margin-bottom: 12px;"
+                    text "It focuses deliberately on the early and exploratory stages of architectural design — where relationships are established, alternatives are generated, and the boundaries of a design problem are still being discovered."
+                }
+                p {
+                    attr.style "font-size: 13.5px; line-height: 1.6; color: #555; margin-bottom: 18px;"
+                    text "The application, computational engine, documentation, and growing dataset form parts of the same ongoing research."
+                }
+
+                div {
+                    attr.``class`` "about-links-grid"
+                    let chip (title: string) (url: string) (displayUrl: string) =
+                        a {
+                            attr.href url
+                            attr.target "_blank"
+                            attr.rel "noopener noreferrer"
+                            attr.``class`` "about-link-chip"
+                            div {
+                                attr.``class`` "about-link-chip-header"
+                                span { text title }
+                                span { text "→" }
+                            }
+                            div {
+                                attr.``class`` "about-link-chip-url"
+                                text displayUrl
+                            }
+                        }
+                    chip "HYWE Wiki" "https://wiki.hywe.in" "wiki.hywe.in"
+                    chip "HYWE Engine" "https://repo.hywe.in" "repo.hywe.in"
+                    chip "HYWE Data" "https://data.hywe.in" "data.hywe.in"
+                    chip "LinkedIn" "https://linkedin.hywe.in" "linkedin.hywe.in"
+                    chip "X (Twitter)" "https://x.com/_hywe_" "x.com/_hywe_"
+                }
+            }
+        }

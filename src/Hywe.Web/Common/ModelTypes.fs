@@ -303,6 +303,7 @@ type Model =
         IsCoordsVisible: bool
         ShowLinkCopied: bool
         ShowGallery: bool
+        ShowAboutModal: bool
         IsLoadingGallery: bool
         GalleryEntries: GalleryEntry list option
         GalleryOffset: int
@@ -389,6 +390,8 @@ type Message =
     | SetIsStandalone of bool
     | ToggleCoords
     | ToggleGallery
+    | ToggleAboutModal
+    | SetShowAboutModal of bool
     | LoadGalleryEntries
     | NextGalleryPage
     | PrevGalleryPage

@@ -1,3 +1,8 @@
+/// <summary>
+/// Root application state management and Elmish MVU (Model-View-Update) orchestrator.
+/// Coordinates bidirectional synchronization between the source-of-truth AST string,
+/// hierarchical tree structure, polygon boundary editor, and cached spatial derivations.
+/// </summary>
 module AppState
 
 open System
@@ -12,28 +17,60 @@ open Hywe.Core
 open FileManager
 
 // Active Patterns & Pure Helpers
+
+/// <summary>
+/// Active pattern distinguishing null, empty, or whitespace strings from valid, non-blank strings.
+/// </summary>
 let (|BlankString|ValidString|) (s: string) =
     match s with
     | null -> BlankString
     | s when String.IsNullOrWhiteSpace s -> BlankString
     | s -> ValidString (s.Trim())
 
+/// <summary>
+/// Partial active pattern returning trimmed text for non-empty, non-whitespace strings.
+/// </summary>
 let (|NonEmptyString|_|) (s: string) =
     match s with
     | BlankString -> None
     | ValidString trimmed -> Some trimmed
 
+/// <summary>
+/// Formats an architectural level integer index into a standardized marker string (e.g. <c>0 -> "L0"</c>, <c>1 -> "L1"</c>).
+/// </summary>
+/// <param name="lvl">Zero-based level index.</param>
+/// <returns>Level marker string.</returns>
 let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
 
+/// <summary>
+/// Extracts the underlying <see cref="PolygonEditorModel"/> from a <see cref="PolygonEditorState"/> wrapper.
+/// </summary>
+/// <param name="state">The polygon editor state union (<c>Stable</c> or <c>FreshlyImported</c>).</param>
+/// <returns>The unwrapped inner <see cref="PolygonEditorModel"/>.</returns>
 let getInnerPolygonEditor = function
     | Stable m | FreshlyImported m -> m
 
+/// <summary>
+/// Resolves the sequence operator index in <see cref="Hexel.sqnArray"/> for a given level,
+/// defaulting to index 11 (<c>VRCCNE</c>) if unassigned.
+/// </summary>
+/// <param name="level">Target architectural level index.</param>
+/// <param name="sequences">Map of level indices to sequence operator strings.</param>
+/// <returns>The zero-based index of the sequence operator.</returns>
 let getSequenceIndex level sequences =
     sequences
     |> Map.tryFind level
     |> Option.bind (fun s -> Hexel.sqnArray |> Array.tryFindIndex (fun x -> Hexel.sqnToString x = s))
     |> Option.defaultValue 11
 
+/// <summary>
+/// Serializes the hierarchical tree, level sequence operators, and polygon boundary definition
+/// into a canonical Hywe domain-specific language (DSL) string.
+/// </summary>
+/// <param name="tree">The hierarchical node tree model.</param>
+/// <param name="sequences">Map of level sequence operators.</param>
+/// <param name="export">Synchronized polygon boundary export data.</param>
+/// <returns>The serialized Hywe AST representation.</returns>
 let serializeModelTree (tree: SubModel) sequences (export: PolygonExportData) =
     Serialization.getOutput
         tree
@@ -45,6 +82,13 @@ let serializeModelTree (tree: SubModel) sequences (export: PolygonExportData) =
         export.OuterStr
         export.IslandsStr
 
+/// <summary>
+/// Determines whether any geometric attributes (boundaries, islands, entry point, dimensions, or coordinates)
+/// have changed between two <see cref="PolygonExportData"/> snapshots.
+/// </summary>
+/// <param name="a">First export data snapshot.</param>
+/// <param name="b">Second export data snapshot.</param>
+/// <returns><c>true</c> if any geometric attribute differs; otherwise <c>false</c>.</returns>
 let hasGeometryChanged (a: PolygonExportData) (b: PolygonExportData) =
     a.OuterStr <> b.OuterStr || 
     a.IslandsStr <> b.IslandsStr ||
@@ -54,17 +98,44 @@ let hasGeometryChanged (a: PolygonExportData) (b: PolygonExportData) =
     a.BaseStr <> b.BaseStr ||
     a.AbsStr <> b.AbsStr
 
+/// <summary>
+/// Determines whether boundary topology (outer boundary, island holes, or entry point)
+/// has changed between two <see cref="PolygonExportData"/> snapshots, ignoring dimension scaling.
+/// </summary>
+/// <param name="a">First export data snapshot.</param>
+/// <param name="b">Second export data snapshot.</param>
+/// <returns><c>true</c> if outer boundary, islands, or entry string differ; otherwise <c>false</c>.</returns>
 let hasBoundaryChanged (a: PolygonExportData) (b: PolygonExportData) =
     a.OuterStr <> b.OuterStr || 
     a.IslandsStr <> b.IslandsStr ||
     a.EntryStr <> b.EntryStr
 
 // Defaults / init 
+
+/// <summary>
+/// Initial hierarchical node tree parsed from default canonical syntax (<c>beeyond</c>).
+/// </summary>
 let initialTree = Serialization.initModel beeyond
+
+/// <summary>
+/// Default sequence operator token assigned to base level 0 (<c>VRCCNE</c>).
+/// </summary>
 let initialSequence = allSqns.[11]
+
+/// <summary>
+/// Initial polygon export data synchronized from default boundary state.
+/// </summary>
 let initialPolygonExport = syncPolygonState State.initModel
+
+/// <summary>
+/// Initial serialized domain-specific language output string.
+/// </summary>
 let initialOutput = serializeModelTree initialTree (Map.ofList [0, initialSequence]) initialPolygonExport
 
+/// <summary>
+/// Default root application state model initialized with default canonical presets,
+/// empty layout caches, and initial navigation states.
+/// </summary>
 let initModel =
     {
         Sequences = Map.ofList [0, initialSequence]
@@ -138,6 +209,7 @@ let initModel =
         IsCoordsVisible = false
         ShowLinkCopied = false
         ShowGallery = false
+        ShowAboutModal = false
         IsLoadingGallery = false
         GalleryEntries = None
         GalleryOffset = 0
@@ -147,6 +219,11 @@ let initModel =
         HasAppendedModSuffix = false
     }
 
+/// <summary>
+/// Updates HTML article metadata (<c>article:published_time</c> and <c>article:modified_time</c>)
+/// in the document head via JavaScript interop.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
 let updateMetadata (js: IJSRuntime) =
     async {
         do! js.InvokeVoidAsync("document.querySelector('meta[property=\"article:published_time\"]').setAttribute", "content", PUBLISHED_DATE).AsTask() |> Async.AwaitTask
@@ -155,9 +232,17 @@ let updateMetadata (js: IJSRuntime) =
     } |> Async.StartImmediate
  
 
+/// <summary>
+/// Maximum number of undo and redo snapshots preserved in history.
+/// </summary>
 let maxUndoDepth = 50
 
-/// Captures the current undoable state and prepends it to the undo stack.
+/// <summary>
+/// Captures the current undoable state (AST source of truth, node tree, polygon editor, and sequence map)
+/// and prepends it to the undo stack, discarding the redo stack unless the current state is identical to the top snapshot.
+/// </summary>
+/// <param name="model">Current application model.</param>
+/// <returns>Updated model with new undo snapshot prepended.</returns>
 let pushUndo (model: Model) : Model =
     let cleanPolyInner = 
         model.PolygonEditor
@@ -179,6 +264,13 @@ let pushUndo (model: Model) : Model =
         let newStack = snap :: model.UndoStack |> List.truncate maxUndoDepth
         { model with UndoStack = newStack; RedoStack = [] }
 
+/// <summary>
+/// Appends a date-based modification suffix to the exploration title when a user alters a design,
+/// clearing community authorship attributes to reflect local user derivative ownership.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="model">Current application model.</param>
+/// <returns>Updated model with modified title and cleared community authorship.</returns>
 let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
     let userAuthor = 
         match model.CachedAuthor with
@@ -220,6 +312,15 @@ let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
                 ReportOptions = { m.ReportOptions with ProjectTitle = suffixedTitle }
             }
 
+/// <summary>
+/// Restores an application state from an <see cref="UndoSnapshot"/>, updating undo/redo stacks,
+/// synchronizing polygon geometry, recalculating or reusing derived layouts, and notifying the JS protocol bridge.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="model">Current application model.</param>
+/// <param name="snap">Target snapshot to restore.</param>
+/// <param name="updateStacks">Function to update undo and redo history stacks.</param>
+/// <returns>Tuple of updated model and asynchronous command to synchronize protocol state.</returns>
 let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (updateStacks: UndoSnapshot -> Model -> Model) : Model * Cmd<Message> =
     let currentPolyInner = getInnerPolygonEditor model.PolygonEditor
     let reverseSnap = { 
@@ -260,6 +361,13 @@ let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (update
 
     restored, syncCmd
 
+/// <summary>
+/// Executes an undo operation by popping the latest snapshot from <c>UndoStack</c>,
+/// restoring previous state, and pushing the inverted snapshot onto <c>RedoStack</c>.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="model">Current application model.</param>
+/// <returns>Updated model and synchronization command.</returns>
 let performUndo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.UndoStack with
     | [] -> model, Cmd.none
@@ -267,6 +375,13 @@ let performUndo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
         restoreSnapshot js model snap (fun revSnap m ->
             { m with UndoStack = rest; RedoStack = revSnap :: m.RedoStack })
 
+/// <summary>
+/// Executes a redo operation by popping the latest snapshot from <c>RedoStack</c>,
+/// restoring state, and pushing the inverted snapshot onto <c>UndoStack</c>.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="model">Current application model.</param>
+/// <returns>Updated model and synchronization command.</returns>
 let performRedo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.RedoStack with
     | [] -> model, Cmd.none
@@ -274,6 +389,13 @@ let performRedo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
         restoreSnapshot js model snap (fun revSnap m ->
             { m with RedoStack = rest; UndoStack = revSnap :: m.UndoStack })
 
+/// <summary>
+/// Automatically concludes and dismisses onboarding tutorials if a user performs an intentional editing
+/// or interaction action outside of guided step progression.
+/// </summary>
+/// <param name="message">Incoming application message.</param>
+/// <param name="model">Current application model.</param>
+/// <returns>Model with onboarding deactivated if message indicates active user interaction.</returns>
 let dismissOnboardingIfInteracting (message: Message) (model: Model) : Model =
     match model, message with
     | { Onboarding = { IsActive = false } }, _ -> model
@@ -281,6 +403,7 @@ let dismissOnboardingIfInteracting (message: Message) (model: Model) : Model =
         | TransitionToIntro | TransitionToMain 
         | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
         | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
+        | ToggleAboutModal | SetShowAboutModal _
         | UpdateMetadata _ | Undo | Redo | SetAuthor _ | SetExplorationTitle _ | AuthorCachedLoaded _
         | TitleCachedLoaded _ | CommunityAuthorCachedLoaded _
         | SetIsStandalone _ | SetPrivacyAlert _ | SetInstallPromptAvailable _
@@ -294,6 +417,14 @@ let dismissOnboardingIfInteracting (message: Message) (model: Model) : Model =
             IsPresetsCollapsed = true
             IsWorkspaceCollapsed = true }
 
+/// <summary>
+/// Handles UI helper commands and page actions (panel switching, file imports, preset selection,
+/// report generation, and data exports), recording undo checkpoints when destructive changes occur.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="msg">Incoming application message.</param>
+/// <param name="model">Current application model.</param>
+/// <returns>Tuple of updated model and resulting Elmish command.</returns>
 let handlePageHelperUpdate (js: IJSRuntime) (msg: Message) (model: Model) : Model * Cmd<Message> =
     let modelToUpdate =
         match msg with
@@ -306,7 +437,15 @@ let handlePageHelperUpdate (js: IJSRuntime) (msg: Message) (model: Model) : Mode
         newModel, cmd
     | None -> model, Cmd.none
 
-/// Update
+/// <summary>
+/// Main Elmish update loop processing all application-level messages.
+/// Coordinates bidirectional synchronization across AST text syntax, hierarchical node trees,
+/// polygon boundary editing, layout caching, multi-container batch synthesis, and undo/redo stacks.
+/// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="message">Incoming application message.</param>
+/// <param name="model">Current application state model.</param>
+/// <returns>Tuple of updated model and Elmish command.</returns>
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
     let model = dismissOnboardingIfInteracting message model
 
@@ -1012,6 +1151,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             { model with ShowGallery = true; GalleryOffset = 0 }, Cmd.ofMsg LoadGalleryEntries
         | { ShowGallery = true } ->
             { model with ShowGallery = false; GalleryOffset = 0 }, Cmd.none
+
+    | ToggleAboutModal ->
+        { model with ShowAboutModal = not model.ShowAboutModal }, Cmd.none
+
+    | SetShowAboutModal show ->
+        { model with ShowAboutModal = show }, Cmd.none
 
     | LoadGalleryEntries ->
         let fetchGallery () = async {
