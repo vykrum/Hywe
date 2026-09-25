@@ -5,11 +5,15 @@ authors:
   - family-names: "Subbaiah"
     given-names: "Vikram"
 abstract: "A computational spatial design environment powered by deterministic design computation, integer-lattice spatial topology, and edge-native WebAssembly. HYWE formalizes and explores early-stage architectural spatial configurations from relational graphs, circulation sequences, and programmatic constraints."
-version: "1.0.0"
-date-released: "2026-06-01"
+version: "2026.09.26"
+date-released: "2026-09-26"
+doi: "10.5281/zenodo.22967097"
 url: "https://hywe.in"
 repository-code: "https://github.com/vykrum/Hywe"
 identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22967097"
+    description: "Permanent Zenodo Software Archive and DOI"
   - type: url
     value: "https://huggingface.co/datasets/vykrum/hywe-training-data"
     description: "HYWE Benchmark Corpus of Computational Spatial Configurations"
@@ -34,5 +38,6 @@ preferred-citation:
       given-names: "Vikram"
   title: "HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent"
   year: 2026
-  url: "https://github.com/vykrum/Hywe"
+  doi: "10.5281/zenodo.22967097"
+  url: "https://doi.org/10.5281/zenodo.22967097"
   notes: "Includes the HYWE Spatial Configuration Dataset published on Hugging Face (https://huggingface.co/datasets/vykrum/hywe-training-data)"
