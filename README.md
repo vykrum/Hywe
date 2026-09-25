@@ -147,6 +147,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ## Documentation & Research Reference
 
+* **[Hugging Face Dataset (vykrum/hywe-training-data)](https://huggingface.co/datasets/vykrum/hywe-training-data)**: Open benchmark corpus of machine-readable architectural spatial configurations.
 * **[HYWE Wiki (wiki.hywe.in)](https://wiki.hywe.in)**:
   * **01 — Understand**: [[Philosophy]](https://wiki.hywe.in/Computational-Spatial-Design) · [[Ontology]](https://wiki.hywe.in/Platform-Ontology) · [[Guarantees]](https://wiki.hywe.in/Guarantees-and-Non-Guarantees)
   * **02 — Use**: [[Getting Started]](https://wiki.hywe.in/Getting-Started) · [[Interface Guide]](https://wiki.hywe.in/Input) · [[Boundary Editor]](https://wiki.hywe.in/Boundary)
@@ -163,12 +164,13 @@ Contributions to the HYWE engine and spatial research tools are welcome. Please 
 If you utilize HYWE or the HYWE Spatial Configuration Dataset in academic or computational design research, please cite:
 
 ```bibtex
-@software{subbaiah_hywe_2026,
+@misc{subbaiah_hywe_2026,
   author = {Subbaiah, Vikram},
-  title = {HYWE: Computational Spatial Design Environment},
+  title = {HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent},
   year = {2026},
-  publisher = {GitHub},
-  url = {https://github.com/vykrum/Hywe}
+  publisher = {GitHub and Hugging Face},
+  url = {https://github.com/vykrum/Hywe},
+  note = {Dataset available at https://huggingface.co/datasets/vykrum/hywe-training-data}
 }
 ```
 
