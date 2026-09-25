@@ -126,7 +126,7 @@ HYWE provides an automated pipeline contributing to the open **[HYWE Spatial Con
 
 $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{24 Sequence Sweeps} \longrightarrow \text{Hynteract Ingestion} \longrightarrow \text{JSONL Spatial Corpus}$$
 
-* **Bit-Exact Base34 Coordinate Compression**: Integer coordinates are compressed into Base34 strings using a canonical 34-symbol alphabet (`0-9`, `A-H`, `J-N`, `P-Z`), omitting `I` and `O` to prevent visual and OCR ambiguity.
+* **Dataset & URL Base34 Serialization**: Base34 is used strictly as an external transport and persistence layer (for compact Hugging Face `.jsonl` dataset records and stateless URL hash sharing). Discrete integer coordinates are serialized using a canonical 34-symbol alphabet (`0-9`, `A-H`, `J-N`, `P-Z`), omitting `I` and `O` to prevent visual and OCR ambiguity. Internal engine computation operates entirely on discrete integer lattices, algebraic data structures, and relational graphs.
 * **Hynteract Provenance Gate**: Submissions pass through the [Hynteract](https://github.com/vykrum/Hynteract) ingestion service for grammar validation, profanity/link scanning, duplicate detection, and pre-flight cache readiness checks.
 
 ---
