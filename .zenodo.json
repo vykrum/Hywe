@@ -1,0 +1,47 @@
+{
+  "title": "HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent",
+  "description": "A computational spatial design environment powered by deterministic design computation, integer-lattice spatial topology, and edge-native WebAssembly. HYWE formalizes and explores early-stage architectural spatial configurations from relational graphs, circulation sequences, and programmatic constraints.",
+  "creators": [
+    {
+      "name": "Subbaiah, Vikram",
+      "affiliation": "HYWE Research"
+    }
+  ],
+  "access_right": "open",
+  "license": "MIT",
+  "upload_type": "software",
+  "keywords": [
+    "computational-spatial-design",
+    "design-computation",
+    "spatial-programming",
+    "computational-architecture",
+    "spatial-topology",
+    "spatial-layout",
+    "procedural-generation",
+    "deterministic-synthesis",
+    "discrete-lattice",
+    "architectural-dataset",
+    "fsharp",
+    "webassembly"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://huggingface.co/datasets/vykrum/hywe-training-data",
+      "relation": "hasPart",
+      "resource_type": "dataset",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://hywe.in",
+      "relation": "isDocumentedBy",
+      "resource_type": "other",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://wiki.hywe.in",
+      "relation": "isDocumentedBy",
+      "resource_type": "other",
+      "scheme": "url"
+    }
+  ]
+}

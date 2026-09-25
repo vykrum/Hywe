@@ -5,8 +5,8 @@ authors:
   - family-names: "Subbaiah"
     given-names: "Vikram"
 abstract: "A computational spatial design environment powered by deterministic design computation, integer-lattice spatial topology, and edge-native WebAssembly. HYWE formalizes and explores early-stage architectural spatial configurations from relational graphs, circulation sequences, and programmatic constraints."
-version: 1.0.0
-date-released: 2026-06-01
+version: "1.0.0"
+date-released: "2026-06-01"
 url: "https://hywe.in"
 repository-code: "https://github.com/vykrum/Hywe"
 identifiers:
