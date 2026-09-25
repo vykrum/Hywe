@@ -28,7 +28,7 @@ type MyApp() =
 
     [<JSInvokable>]
     member this.HandleHashChange(rawHash: string) =
-        let (content, panel, isFromUrl) = Protocol.resolveHashChange rawHash
+        let (content, panel, isFromUrl) = FileManager.resolveHashChange rawHash
         this.Dispatch (LoadState (content, panel, isFromUrl))
 
     [<JSInvokable>]
@@ -62,7 +62,7 @@ type MyApp() =
     override this.Program =
         Program.mkProgram
             (fun _ -> initModel, Cmd.batch [
-                Cmd.OfAsync.perform (fun () -> Protocol.resolveStartupState this.JSRuntime) () (fun (res, panel, isFromUrl) -> 
+                Cmd.OfAsync.perform (fun () -> FileManager.resolveStartupState this.JSRuntime) () (fun (res, panel, isFromUrl) -> 
                         LoadState (res, panel, isFromUrl))
                 Cmd.OfAsync.perform (fun () -> async {
                     try

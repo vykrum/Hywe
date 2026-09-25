@@ -19,65 +19,84 @@ let saveFile (js: IJSRuntime) (content: string) =
     let fileName = sprintf "%s.hyw" timestamp
     js.InvokeVoidAsync("downloadFile", fileName, content, "application/octet-stream") |> ignore
 
-/// Safely parse JSON into a JsonDocument using F#'s functional Async.Catch to avoid try...with.
+/// Safely parse JSON into a JsonDocument.
 let private tryParseJson (json: string) =
-    match Async.RunSynchronously(Async.Catch(async { return JsonDocument.Parse(json) })) with
-    | Choice1Of2 doc -> Some doc
-    | Choice2Of2 _ -> None
+    try
+        Some (JsonDocument.Parse(json))
+    with _ ->
+        None
 
 /// Exports Map Extents or Terrain Grid from Topography JSON
 let exportMapData (js: IJSRuntime) (topoJson: string) (exportType: string) =
-    match tryParseJson topoJson with
-    | Some doc ->
-        use doc = doc
-        let root = doc.RootElement
-        
-        match exportType, root.TryGetProperty("extents") |> fst, root.TryGetProperty("elevations") |> fst with
-        | "extents", true, _ ->
-            let content = root.GetProperty("extents").GetRawText()
-            js.InvokeVoidAsync("downloadFile", "hywe-map-extents.json", content, "application/json") |> ignore
+    try
+        match tryParseJson topoJson with
+        | Some doc ->
+            use doc = doc
+            let root = doc.RootElement
             
-        | "terrain", _, true ->
-            let elevationsProp = root.GetProperty("elevations")
-            let elevationsArr = elevationsProp.EnumerateArray() |> Seq.toArray
-            
-            match elevationsArr.Length with
-            | len when len > 0 ->
-                let extents = root.GetProperty("extents")
-                let north = extents.GetProperty("north").GetDouble()
-                let south = extents.GetProperty("south").GetDouble()
-                let east = extents.GetProperty("east").GetDouble()
-                let west = extents.GetProperty("west").GetDouble()
+            match exportType with
+            | "extents" ->
+                match root.TryGetProperty("extents") with
+                | true, extentsProp ->
+                    let content = extentsProp.GetRawText()
+                    js.InvokeVoidAsync("downloadFile", "hywe-map-extents.json", content, "application/json") |> ignore
+                | false, _ ->
+                    js.InvokeVoidAsync("downloadFile", "hywe-map-extents.json", topoJson, "application/json") |> ignore
+
+            | "terrain" ->
+                let hasExtents, extents = root.TryGetProperty("extents")
+                let hasElevations, elevationsProp = root.TryGetProperty("elevations")
                 
-                let gridSize = int (Math.Sqrt(float len))
-                
-                let lat0 = south // Bottom-left reference
-                let lon0 = west
-                
-                let csvContent =
-                    let header = "X,Y,Z\n"
-                    let body =
-                        Array.init len (fun idx ->
-                            let i = idx / gridSize
-                            let j = idx % gridSize
-                            let lat = north - (north - south) * (float i / float (gridSize - 1))
-                            let lon = west + (east - west) * (float j / float (gridSize - 1))
-                            let ele = elevationsArr.[idx].GetDouble()
-                            
-                            let x = (lon - lon0) * 111320.0 * Math.Cos(lat0 * Math.PI / 180.0)
-                            let y = (lat - lat0) * 111320.0
-                            sprintf "%.2f,%.2f,%.2f" x y ele
-                        )
-                        |> String.concat "\n"
-                    header + body + "\n"
-                
-                js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.csv", csvContent, "text/csv") |> ignore
-            | _ -> ()
-            
-        | _ ->
-            let fileName = match exportType with | "extents" -> "hywe-map-extents.json" | _ -> "hywe-terrain-grid.json"
-            js.InvokeVoidAsync("downloadFile", fileName, topoJson, "application/json") |> ignore
-    | None -> ()
+                if hasExtents && hasElevations then
+                    let elevationsArr = elevationsProp.EnumerateArray() |> Seq.toArray
+                    let len = elevationsArr.Length
+                    if len > 0 then
+                        let north = extents.GetProperty("north").GetDouble()
+                        let south = extents.GetProperty("south").GetDouble()
+                        let east = extents.GetProperty("east").GetDouble()
+                        let west = extents.GetProperty("west").GetDouble()
+                        
+                        let gridSize = int (Math.Sqrt(float len))
+                        let gridSizeDiv = float (max 1 (gridSize - 1))
+                        
+                        let lat0 = south // Bottom-left reference
+                        let lon0 = west
+                        
+                        let header = "X,Y,Z\n"
+                        let body =
+                            Array.init len (fun idx ->
+                                let i = idx / gridSize
+                                let j = idx % gridSize
+                                let lat = north - (north - south) * (float i / gridSizeDiv)
+                                let lon = west + (east - west) * (float j / gridSizeDiv)
+                                let ele = elevationsArr.[idx].GetDouble()
+                                
+                                let x = (lon - lon0) * 111320.0 * Math.Cos(lat0 * Math.PI / 180.0)
+                                let y = (lat - lat0) * 111320.0
+                                sprintf "%.2f,%.2f,%.2f" x y ele
+                            )
+                            |> String.concat "\n"
+                        let csvContent = header + body + "\n"
+                        js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.csv", csvContent, "text/csv") |> ignore
+                    else
+                        js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.json", topoJson, "application/json") |> ignore
+                else
+                    match root.TryGetProperty("points") with
+                    | true, pointsProp ->
+                        let content = pointsProp.GetRawText()
+                        js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.json", content, "application/json") |> ignore
+                    | false, _ ->
+                        js.InvokeVoidAsync("downloadFile", "hywe-terrain-grid.json", topoJson, "application/json") |> ignore
+
+            | _ ->
+                let fileName = match exportType with | "extents" -> "hywe-map-extents.json" | _ -> "hywe-terrain-grid.json"
+                js.InvokeVoidAsync("downloadFile", fileName, topoJson, "application/json") |> ignore
+
+        | None ->
+            if not (String.IsNullOrWhiteSpace topoJson) then
+                let fileName = match exportType with | "extents" -> "hywe-map-extents.json" | _ -> "hywe-terrain-grid.json"
+                js.InvokeVoidAsync("downloadFile", fileName, topoJson, "application/json") |> ignore
+    with _ -> ()
 
 /// Exports the current map view as a PNG image using Leaflet.
 let exportMapImage (js: IJSRuntime) =
@@ -286,62 +305,87 @@ let generateHynteractPayloadFromCxls (cxls: Cxl[]) =
 
 // --- PROTOCOL (State Transfer & Persistence) ---
 
-module Protocol =
-    
-    /// Low-level JS interop for URL and LocalStorage
-    let private setUrlHash (js: IJSRuntime) (content: string) =
-        js.InvokeVoidAsync("setUrlHash", content) |> ignore
+/// Low-level JS interop for URL and LocalStorage
+let private setUrlHash (js: IJSRuntime) (content: string) =
+    js.InvokeVoidAsync("setUrlHash", content) |> ignore
 
-    let private getUrlHash (js: IJSRuntime) =
-        js.InvokeAsync<string>("getUrlHash")
+let private getUrlHash (js: IJSRuntime) =
+    js.InvokeAsync<string>("getUrlHash")
 
-    let private setBackup (js: IJSRuntime) (content: string) =
-        js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
+let private setBackup (js: IJSRuntime) (content: string) =
+    js.InvokeVoidAsync("localStorage.setItem", "hywe_backup", content) |> ignore
 
-    let private getBackup (js: IJSRuntime) =
-        js.InvokeAsync<string>("localStorage.getItem", "hywe_backup")
+let private getBackup (js: IJSRuntime) =
+    js.InvokeAsync<string>("localStorage.getItem", "hywe_backup")
 
-    let private clearBackup (js: IJSRuntime) =
-        js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
+let private clearBackup (js: IJSRuntime) =
+    js.InvokeVoidAsync("localStorage.removeItem", "hywe_backup") |> ignore
 
-    let panelToString = function
-        | BoundaryPanel -> "boundary"
-        | LayoutPanel -> "layout"
-        | AnalyzePanel -> "analyze"
-        | ViewPanel -> "3d"
-        | BatchPanel -> "batch"
-        | TeachPanel -> "teach"
-        | ReportPanel -> "report"
+let panelToString = function
+    | BoundaryPanel -> "boundary"
+    | LayoutPanel -> "layout"
+    | AnalyzePanel -> "analyze"
+    | ViewPanel -> "3d"
+    | BatchPanel -> "batch"
+    | TeachPanel -> "teach"
+    | ReportPanel -> "report"
 
-    let stringToPanel (s: string) = 
-        match s.Trim().ToLower() with
-        | "boundary" -> Some BoundaryPanel
-        | "layout" -> Some LayoutPanel
-        | "analyze" -> Some AnalyzePanel
-        | "view" | "3d" -> Some ViewPanel
-        | "teach" -> Some TeachPanel
-        | "report" -> Some ReportPanel
-        | "batch" -> Some BatchPanel
-        | _ -> None
+let stringToPanel (s: string) = 
+    match s.Trim().ToLower() with
+    | "boundary" -> Some BoundaryPanel
+    | "layout" -> Some LayoutPanel
+    | "analyze" -> Some AnalyzePanel
+    | "view" | "3d" -> Some ViewPanel
+    | "teach" -> Some TeachPanel
+    | "report" -> Some ReportPanel
+    | "batch" -> Some BatchPanel
+    | _ -> None
 
-    /// Synchronizes the current design state to both LocalStorage and the URL Hash.
-    let sync (js: IJSRuntime) (content: string) (panel: ActivePanel) =
-        match String.IsNullOrWhiteSpace content with
-        | false ->
-            setBackup js content
-            let p = panelToString panel
-            let hash = sprintf "%s|P=%s" content p
-            setUrlHash js hash
-        | true ->
-            setUrlHash js ""
+/// Synchronizes the current design state to both LocalStorage and the URL Hash.
+let sync (js: IJSRuntime) (content: string) (panel: ActivePanel) =
+    match String.IsNullOrWhiteSpace content with
+    | false ->
+        setBackup js content
+        let p = panelToString panel
+        let hash = sprintf "%s|P=%s" content p
+        setUrlHash js hash
+    | true ->
+        setUrlHash js ""
 
-    /// Parses a raw hash string (already decoded) into (content, panel option, isFromUrl).
-    /// Used synchronously by HandleHashChange when the URL changes in an already-running app.
-    let resolveHashChange (rawHash: string) : string * ActivePanel option * bool =
-        match String.IsNullOrWhiteSpace rawHash with
-        | true -> "", None, false
-        | false ->
-            let upperHash = rawHash.ToUpperInvariant()
+/// Parses a raw hash string (already decoded) into (content, panel option, isFromUrl).
+/// Used synchronously by HandleHashChange when the URL changes in an already-running app.
+let resolveHashChange (rawHash: string) : string * ActivePanel option * bool =
+    match String.IsNullOrWhiteSpace rawHash with
+    | true -> "", None, false
+    | false ->
+        let upperHash = rawHash.ToUpperInvariant()
+        let pIdx = 
+            match upperHash.LastIndexOf("|P=") with
+            | -1 -> 
+                match upperHash.LastIndexOf("%7CP=") with
+                | -1 -> -1
+                | i2 -> i2
+            | i1 -> i1
+        match pIdx with
+        | -1 -> rawHash, None, true
+        | _ ->
+            let isStandardDelim = upperHash.Substring(pIdx).StartsWith("|P=")
+            let delimLength = match isStandardDelim with | true -> 3 | false -> 5
+            
+            match pIdx >= 0 && pIdx + delimLength <= rawHash.Length with
+            | true ->
+                let c = rawHash.Substring(0, pIdx)
+                let pName = rawHash.Substring(pIdx + delimLength)
+                c, stringToPanel pName, true
+            | false -> rawHash, None, true
+
+/// Orchestrates the startup state resolution.
+let resolveStartupState (js: IJSRuntime) =
+    async {
+        let! hashAttempt = Async.Catch ((getUrlHash js).AsTask() |> Async.AwaitTask)
+        match hashAttempt with
+        | Choice1Of2 urlHash when not (String.IsNullOrWhiteSpace urlHash) ->
+            let upperHash = urlHash.ToUpperInvariant()
             let pIdx = 
                 match upperHash.LastIndexOf("|P=") with
                 | -1 -> 
@@ -349,54 +393,27 @@ module Protocol =
                     | -1 -> -1
                     | i2 -> i2
                 | i1 -> i1
+            
             match pIdx with
-            | -1 -> rawHash, None, true
+            | -1 -> return urlHash, None, true // Source: URL
             | _ ->
                 let isStandardDelim = upperHash.Substring(pIdx).StartsWith("|P=")
                 let delimLength = match isStandardDelim with | true -> 3 | false -> 5
                 
-                match pIdx >= 0 && pIdx + delimLength <= rawHash.Length with
+                match pIdx >= 0 && pIdx + delimLength <= urlHash.Length with
                 | true ->
-                    let c = rawHash.Substring(0, pIdx)
-                    let pName = rawHash.Substring(pIdx + delimLength)
-                    c, stringToPanel pName, true
-                | false -> rawHash, None, true
+                    let c = urlHash.Substring(0, pIdx)
+                    let pName = urlHash.Substring(pIdx + delimLength)
+                    return c, stringToPanel pName, true
+                | false -> return urlHash, None, true
+        | _ ->
+            let! backupAttempt = Async.Catch ((getBackup js).AsTask() |> Async.AwaitTask)
+            match backupAttempt with
+            | Choice1Of2 backup when not (isNull backup) && not (String.IsNullOrWhiteSpace backup) ->
+                return backup, None, false // Source: Local
+            | _ -> return "", None, false
+    }
 
-    /// Orchestrates the startup state resolution.
-    let resolveStartupState (js: IJSRuntime) =
-        async {
-            let! hashAttempt = Async.Catch ((getUrlHash js).AsTask() |> Async.AwaitTask)
-            match hashAttempt with
-            | Choice1Of2 urlHash when not (String.IsNullOrWhiteSpace urlHash) ->
-                let upperHash = urlHash.ToUpperInvariant()
-                let pIdx = 
-                    match upperHash.LastIndexOf("|P=") with
-                    | -1 -> 
-                        match upperHash.LastIndexOf("%7CP=") with
-                        | -1 -> -1
-                        | i2 -> i2
-                    | i1 -> i1
-                
-                match pIdx with
-                | -1 -> return urlHash, None, true // Source: URL
-                | _ ->
-                    let isStandardDelim = upperHash.Substring(pIdx).StartsWith("|P=")
-                    let delimLength = match isStandardDelim with | true -> 3 | false -> 5
-                    
-                    match pIdx >= 0 && pIdx + delimLength <= urlHash.Length with
-                    | true ->
-                        let c = urlHash.Substring(0, pIdx)
-                        let pName = urlHash.Substring(pIdx + delimLength)
-                        return c, stringToPanel pName, true
-                    | false -> return urlHash, None, true
-            | _ ->
-                let! backupAttempt = Async.Catch ((getBackup js).AsTask() |> Async.AwaitTask)
-                match backupAttempt with
-                | Choice1Of2 backup when not (isNull backup) && not (String.IsNullOrWhiteSpace backup) ->
-                    return backup, None, false // Source: Local
-                | _ -> return "", None, false
-        }
-
-    /// Clears the local backup safely.
-    let purgeLocalBackup (js: IJSRuntime) =
-        clearBackup js
+/// Clears the local backup safely.
+let purgeLocalBackup (js: IJSRuntime) =
+    clearBackup js
