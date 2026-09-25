@@ -357,7 +357,7 @@ let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (update
         |> updateStacks reverseSnap
 
     let syncCmd = 
-        Cmd.OfAsync.perform (fun () -> async { Protocol.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
+        Cmd.OfAsync.perform (fun () -> async { FileManager.sync js snap.SrcOfTrth model.ActivePanel }) () (fun _ -> NoOp)
 
     restored, syncCmd
 
@@ -433,7 +433,7 @@ let handlePageHelperUpdate (js: IJSRuntime) (msg: Message) (model: Model) : Mode
 
     match PageHelpers.update js msg modelToUpdate with
     | Some (newModel, cmd) -> 
-        Protocol.sync js newModel.SrcOfTrth newModel.ActivePanel
+        FileManager.sync js newModel.SrcOfTrth newModel.ActivePanel
         newModel, cmd
     | None -> model, Cmd.none
 
@@ -480,7 +480,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let updatedSrc = ensureCategory baseSrc i
         let finalSqns = Lexel.extractSequences updatedSrc
 
-        Protocol.sync js updatedSrc model.ActivePanel
+        FileManager.sync js updatedSrc model.ActivePanel
 
         match Cache.get (toMarker currentLevel) i model.LayoutCache with
         | Some config ->
@@ -522,7 +522,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
             IsWorkspaceCollapsed = nextWorkspaceCollapse
-        }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js value m.ActivePanel }) () (fun _ -> NoOp)
+        }, Cmd.OfAsync.perform (fun () -> async { FileManager.sync js value m.ActivePanel }) () (fun _ -> NoOp)
 
     | StartHyweave ->
         let modelWithSyntax =
@@ -551,7 +551,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | Interactive ->
                 model, serializeModelTree model.Tree model.Sequences model.PolygonExport
 
-        Protocol.sync js updatedSrcOfTrth modelWithSyntax.ActivePanel
+        FileManager.sync js updatedSrcOfTrth modelWithSyntax.ActivePanel
 
         let currentExport = modelWithSyntax.PolygonExport
         let currentLevel = max 0 modelWithSyntax.Tree.ActiveLevel
@@ -589,7 +589,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Derived = Cache.toDerived activeConfig
             IsHyweaving = false
             NeedsHyweave = false
-        }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
+        }, Cmd.OfAsync.perform (fun () -> async { FileManager.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
 
     | CacheResult (marker, lvl, idx, data) ->
         let newCache = Cache.update marker idx data model.LayoutCache
@@ -604,7 +604,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 Derived = Cache.toDerived data
                 SrcOfTrth = finalSrc
                 IsHyweaving = false 
-            }, Cmd.OfAsync.perform (fun () -> async { Protocol.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
+            }, Cmd.OfAsync.perform (fun () -> async { FileManager.sync js finalSrc model.ActivePanel }) () (fun _ -> NoOp)
         | _ -> newModel, Cmd.none
 
     | FinishHyweave ->
@@ -663,7 +663,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | SubMsg.ExecuteAction _ | SubMsg.AddChild _ | SubMsg.UpdateName _ 
         | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _
         | SubMsg.PointerUp ->
-            Protocol.sync js newOutput modelToUse.ActivePanel
+            FileManager.sync js newOutput modelToUse.ActivePanel
         | _ -> ()
 
         match subMsg with
@@ -707,7 +707,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match State.updateSync subMsg currentInnerModel with
             | Some updatedInner ->
                 // Fast path: synchronous move update during dragging.
-                // Do NOT push undo, do NOT run heavy Protocol.sync/LZString, do NOT re-serialize.
+                // Do NOT push undo, do NOT run heavy FileManager.sync/LZString, do NOT re-serialize.
                 let newExport = syncPolygonState updatedInner
                 let modelSnap =
                     match model.PreDragSnapshot with
@@ -745,7 +745,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         | _ -> applyAlterationSuffix js model
                     let newUndoStack = preSnap :: m.UndoStack |> List.truncate maxUndoDepth
                     let newOutput = serializeModelTree m.Tree m.Sequences newExport
-                    let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput m.ActivePanel }) () (fun _ -> NoOp)
+                    let syncCmd = Cmd.OfAsync.perform (fun () -> async { FileManager.sync js newOutput m.ActivePanel }) () (fun _ -> NoOp)
 
                     { m with 
                         PolygonEditor   = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
@@ -771,7 +771,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 let newExport = syncPolygonState updatedInner
                 let model = applyAlterationSuffix js model
                 let newOutput = serializeModelTree model.Tree model.Sequences newExport
-                let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
+                let syncCmd = Cmd.OfAsync.perform (fun () -> async { FileManager.sync js newOutput model.ActivePanel }) () (fun _ -> NoOp)
                 { model with
                     PolygonEditor   = Stable (updatedInner |> State.snapshot |> State.refreshCachedStrings)
                     PolygonExport   = newExport
@@ -819,7 +819,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | true, true, edits when edits > 0 ->
             let m = pushUndo model |> applyAlterationSuffix js
             let newOutput = serializeModelTree m.Tree m.Sequences newExport
-            let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput m.ActivePanel }) () (fun _ -> NoOp)
+            let syncCmd = Cmd.OfAsync.perform (fun () -> async { FileManager.sync js newOutput m.ActivePanel }) () (fun _ -> NoOp)
 
             { m with 
                 PolygonEditor   = Stable (newModel |> State.snapshot |> State.refreshCachedStrings)
@@ -831,7 +831,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | true, _, _ ->
             let m = pushUndo model
             let newOutput = serializeModelTree m.Tree m.Sequences newExport
-            let syncCmd = Cmd.OfAsync.perform (fun () -> async { Protocol.sync js newOutput m.ActivePanel }) () (fun _ -> NoOp)
+            let syncCmd = Cmd.OfAsync.perform (fun () -> async { FileManager.sync js newOutput m.ActivePanel }) () (fun _ -> NoOp)
 
             { m with 
                 PolygonEditor   = Stable (newModel |> State.snapshot |> State.refreshCachedStrings)
@@ -915,7 +915,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SaveRequested ->
         FileManager.saveFile js model.SrcOfTrth |> ignore
-        Protocol.sync js model.SrcOfTrth model.ActivePanel
+        FileManager.sync js model.SrcOfTrth model.ActivePanel
         model, Cmd.none
 
     | ImportRequested ->
@@ -1002,8 +1002,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 modelWithPanel, Cmd.none
 
     | HardReset ->
-        Protocol.purgeLocalBackup js
-        Protocol.sync js "" model.ActivePanel
+        FileManager.purgeLocalBackup js
+        FileManager.sync js "" model.ActivePanel
         js.InvokeVoidAsync("localStorage.removeItem", "hywe_title") |> ignore
         js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
         let model = pushUndo model
