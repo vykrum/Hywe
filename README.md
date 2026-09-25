@@ -2,7 +2,7 @@
 ### **Hy**grid **W**oven **E**nsemble
 *A deterministic computational spatial reasoning system for early-stage architecture.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22967097.svg)](https://doi.org/10.5281/zenodo.22967097) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
 
 **[Launch HYWE (hywe.in)](https://hywe.in)** · **[Wiki & Research Reference](https://wiki.hywe.in)** · **[Spatial Dataset](https://data.hywe.in)**
 
@@ -168,9 +168,10 @@ If you utilize HYWE or the HYWE Spatial Configuration Dataset in academic or com
   author = {Subbaiah, Vikram},
   title = {HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent},
   year = {2026},
-  publisher = {GitHub and Hugging Face},
-  url = {https://github.com/vykrum/Hywe},
-  note = {Dataset available at https://huggingface.co/datasets/vykrum/hywe-training-data}
+  publisher = {Zenodo and Hugging Face},
+  doi = {10.5281/zenodo.22967097},
+  url = {https://doi.org/10.5281/zenodo.22967097},
+  note = {Software archive via Zenodo (DOI: 10.5281/zenodo.22967097); Spatial Dataset via Hugging Face (https://huggingface.co/datasets/vykrum/hywe-training-data)}
 }
 ```
 
