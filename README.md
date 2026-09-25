@@ -147,7 +147,6 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ## Documentation & Research Reference
 
-* **[HYWE Conceptual Ontology & Taxonomy (ONTOLOGY.md)](ONTOLOGY.md)**: Authoritative specification of the 6 facets of HYWE and integer-lattice spatial primitives.
 * **[Hugging Face Dataset (vykrum/hywe-training-data)](https://huggingface.co/datasets/vykrum/hywe-training-data)**: Open benchmark corpus of machine-readable architectural spatial configurations.
 * **[HYWE Wiki (wiki.hywe.in)](https://wiki.hywe.in)**:
   * **01 — Understand**: [[Philosophy]](https://wiki.hywe.in/Computational-Spatial-Design) · [[Ontology]](https://wiki.hywe.in/Platform-Ontology) · [[Guarantees]](https://wiki.hywe.in/Guarantees-and-Non-Guarantees)
