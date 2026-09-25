@@ -1,25 +1,38 @@
 cff-version: 1.2.0
-message: "If you use HYWE in your design research or projects, please cite it as follows."
+message: "If you use HYWE or the HYWE Spatial Configuration Dataset in your research or computational design projects, please cite it as follows."
+title: "HYWE: Computational Spatial Design Environment & Benchmark Dataset"
 authors:
-- family-names: "Subbaiah"
-  given-names: "Vikram"
-title: "HYWE: Computational Spatial Design Environment"
-abstract: "A computational spatial design environment powered by deterministic design computation and edge-native WebAssembly. HYWE generates and explores architectural spatial configurations from relational graphs, rules, and constraints."
-url: "https://github.com/vykrum/Hywe"
+  - family-names: "Subbaiah"
+    given-names: "Vikram"
+abstract: "A computational spatial design environment powered by deterministic design computation, integer-lattice spatial topology, and edge-native WebAssembly. HYWE formalizes and explores early-stage architectural spatial configurations from relational graphs, circulation sequences, and programmatic constraints."
+version: 1.0.0
+date-released: 2026-06-01
+url: "https://hywe.in"
+repository-code: "https://github.com/vykrum/Hywe"
+identifiers:
+  - type: url
+    value: "https://huggingface.co/datasets/vykrum/hywe-training-data"
+    description: "HYWE Benchmark Corpus of Computational Spatial Configurations"
 keywords:
-  - "Computational Spatial Design"
-  - "Design Computation"
-  - "Computational Architecture"
-  - "Spatial Layout"
-  - "Procedural Space Planning"
-  - "AEC Interoperability"
-  - "F#"
-  - "WebAssembly"
-  - "architecture"
-  - "topology"
-  - "computational-design"
-  - "deterministic-geometry"
-  - "spatial-computation"
-  - "architectural-ai"
+  - "computational-spatial-design"
+  - "design-computation"
+  - "spatial-programming"
+  - "computational-architecture"
+  - "spatial-topology"
+  - "spatial-layout"
   - "procedural-generation"
-  - "graph-topology"
+  - "deterministic-synthesis"
+  - "discrete-lattice"
+  - "architectural-dataset"
+  - "fsharp"
+  - "webassembly"
+license: "MIT"
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Subbaiah"
+      given-names: "Vikram"
+  title: "HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent"
+  year: 2026
+  url: "https://github.com/vykrum/Hywe"
+  notes: "Includes the HYWE Spatial Configuration Dataset published on Hugging Face (https://huggingface.co/datasets/vykrum/hywe-training-data)"

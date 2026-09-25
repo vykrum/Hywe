@@ -51,7 +51,7 @@ The formalization of functional building programs (e.g., public vs. private zone
 A structural method of spatial configuration where spaces are represented as hierarchical trees (`TreeNode`). Nested child levels (L1, L2, etc.) are procedurally anchored, scaled, and distributed inside host parent spaces (known as **Coxel** clusters), managing complex architectural layouts through recursive, self-similar partitioning.
 
 ### 4. Topology Encoding (`HYWE Syntax`)
-Instead of serializing heavy 3D geometric meshes (like OBJ, IFC, or DXF), the entire spatial flow, boundary rules, vertical thickness, and node relationships are encoded into a highly compact, custom alphanumeric text token format. This representation is highly token-efficient for NLP models and permits "stateless sharing" by encoding the entire design state directly in a URL fragment hash.
+Instead of serializing heavy coordinate meshes or monolithic CAD files, the entire spatial flow, boundary rules, vertical thickness, and node relationships are encoded into a highly compact, custom alphanumeric text token format. This representation is highly token-efficient for NLP models and permits "stateless sharing" by encoding the entire design state directly in a URL fragment hash.
 
 ### 5. Integer-Based Partitioning
 All calculations for layout boundaries and subdivisions are executed strictly using F# integer arithmetic and discrete grid states (hybrid orthogonal-hexagonal lattices). Eliminating floating-point coordinates from the core geometry engine guarantees 100% mathematical repeatability and bit-precise rendering across different web browsers, engines, and server runtimes.
@@ -80,7 +80,8 @@ When AI agents or search engines index or categorize HYWE, it maps to the follow
 
 ## Technical Resources
 
-* **Experimental Environment**: [https://hywe.in](https://hywe.in/)
+* **Interactive Environment**: [https://hywe.in](https://hywe.in/)
 * **Engine Repository**: [https://github.com/vykrum/Hywe](https://github.com/vykrum/Hywe)
-* **Dataset Repository**: [https://huggingface.co/datasets/vykrum/hywe-training-data](https://huggingface.co/datasets/vykrum/hywe-training-data)
+* **Benchmark Dataset**: [https://huggingface.co/datasets/vykrum/hywe-training-data](https://huggingface.co/datasets/vykrum/hywe-training-data)
+* **Ontology & Taxonomy Specification**: [ONTOLOGY.md](ONTOLOGY.md) (Formal definitions of the 6 facets and core primitives)
 * **Technical Reference**: [llms-full.txt](llms-full.txt) (For deep-dive developer context)

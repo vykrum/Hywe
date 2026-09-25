@@ -43,67 +43,110 @@
     <meta name="twitter:site" content="@_hywe_" />
 
     <!-- JSON-LD Structured Data Schema for HYWE -->
+    <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "applicationCategory": "DesignApplication",
-      "applicationSubCategory": "Computational Design",
-      "name": "HYWE – Computational Spatial Design Environment",
-      "alternateName": ["HYWE", "Hygrid Woven Ensemble"],
-      "url": "https://hywe.in",
-      "logo": "https://hywe.in/images/web-app-manifest-192x192.png",
-      "creator": {
-        "@type": "Person",
-        "name": "Vikram Subbaiah",
-        "url": "https://github.com/vykrum"
-      },
-      "description": "HYWE is a computational spatial design environment for generating and exploring architectural layouts from spatial relationships, hierarchy, sequence and constraints.",
-      "inLanguage": "en",
-      "about": [
-        "Computational Spatial Design",
-        "Deterministic Spatial Synthesis",
-        "Architectural Programming",
-        "Relational Space Planning",
-        "Procedural Space Planning",
-        "Spatial Hierarchy and Circulation Sequence",
-        "Topology-Driven Architectural Grammar",
-        "Discrete Integer Lattice Packing"
-      ],
-      "keywords": [ 
-        "computational spatial design", "computational architecture", "spatial layout generation",
-        "architectural programming", "procedural space planning", "relational space planning",
-        "deterministic spatial synthesis", "spatial hierarchy", "vertical spatial hierarchy",
-        "spatial configuration", "discrete integer lattice", "integer lattice packing",
-        "rule-based spatial design", "early-stage architectural design"
-      ],
-      "featureList": [
-        "Relational architectural programming",
-        "Deterministic spatial configuration generation",
-        "Integer-lattice spatial representation (Hygrid)",
-        "2D spatial layout generation",
-        "SVG export",
-        "WebGPU 3D spatial massing and stacking",
-        "Shareable URL-based design states",
-        "Client-side WebAssembly execution",
-        "Spatial configuration dataset generation"
-      ],
-      "offers": {
-        "@type": "Offer",
-        "price": 0,
-        "priceCurrency": "USD"
-      },
-      "codeRepository": "https://repo.hywe.in",
-      "documentation": "https://wiki.hywe.in",
-      "sameAs": [
-        "https://linkedin.hywe.in",
-        "https://x.com/_hywe_"
-      ],
-      "license": "https://github.com/vykrum/Hywe/blob/main/LICENSE",
-      "creativeWorkStatus": "InDevelopment",
-      "isAccessibleForFree": true,
-      "browserRequirements": "Requires a modern browser with WebAssembly and WebGPU support.",
-      "operatingSystem": "All"
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://hywe.in/#software",
+          "applicationCategory": "DesignApplication",
+          "applicationSubCategory": "Computational Spatial Design",
+          "name": "HYWE – Computational Spatial Design Environment",
+          "alternateName": ["HYWE", "Hygrid Woven Ensemble"],
+          "url": "https://hywe.in",
+          "logo": "https://hywe.in/images/web-app-manifest-192x192.png",
+          "creator": {
+            "@type": "Person",
+            "@id": "https://github.com/vykrum#person",
+            "name": "Vikram Subbaiah",
+            "url": "https://github.com/vykrum",
+            "sameAs": [
+              "https://linkedin.hywe.in"
+            ]
+          },
+          "description": "HYWE is a computational spatial design environment for early-stage architecture, generating and exploring spatial layouts deterministically from spatial relationships, hierarchy, sequence and constraints.",
+          "inLanguage": "en",
+          "about": [
+            "Computational Spatial Design",
+            "Deterministic Spatial Synthesis",
+            "Architectural Programming",
+            "Relational Space Planning",
+            "Procedural Space Planning",
+            "Spatial Hierarchy and Circulation Sequence",
+            "Topology-Driven Architectural Grammar",
+            "Discrete Integer Lattice Packing"
+          ],
+          "keywords": [ 
+            "computational spatial design", "computational architecture", "spatial layout generation",
+            "architectural programming", "procedural space planning", "relational space planning",
+            "deterministic spatial synthesis", "spatial hierarchy", "vertical spatial hierarchy",
+            "spatial configuration", "discrete integer lattice", "integer lattice packing",
+            "rule-based spatial design", "early-stage architectural design"
+          ],
+          "featureList": [
+            "Relational architectural programming",
+            "Deterministic spatial configuration generation",
+            "Integer-lattice spatial representation (Hygrid)",
+            "2D spatial layout generation",
+            "SVG export",
+            "WebGPU 3D spatial massing and stacking",
+            "Shareable URL-based design states",
+            "Client-side WebAssembly execution",
+            "Spatial configuration dataset generation"
+          ],
+          "offers": {
+            "@type": "Offer",
+            "price": 0,
+            "priceCurrency": "USD"
+          },
+          "codeRepository": "https://repo.hywe.in",
+          "documentation": "https://wiki.hywe.in",
+          "sameAs": [
+            "https://github.com/vykrum/Hywe",
+            "https://linkedin.hywe.in",
+            "https://x.com/_hywe_",
+            "https://huggingface.co/datasets/vykrum/hywe-training-data"
+          ],
+          "license": "https://github.com/vykrum/Hywe/blob/main/LICENSE",
+          "creativeWorkStatus": "InDevelopment",
+          "isAccessibleForFree": true,
+          "browserRequirements": "Requires a modern browser with WebAssembly and WebGPU support.",
+          "operatingSystem": "All"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://huggingface.co/datasets/vykrum/hywe-training-data#dataset",
+          "name": "HYWE Spatial Configuration Dataset",
+          "alternateName": "HYWE Computational Spatial Design Benchmark Corpus",
+          "description": "An open benchmark corpus of machine-readable architectural spatial configurations, topologies, and relational graph flows generated through the HYWE deterministic design engine.",
+          "url": "https://huggingface.co/datasets/vykrum/hywe-training-data",
+          "isAccessibleForFree": true,
+          "license": "https://creativecommons.org/licenses/by/4.0/",
+          "creator": {
+            "@type": "Person",
+            "@id": "https://github.com/vykrum#person",
+            "name": "Vikram Subbaiah",
+            "url": "https://github.com/vykrum"
+          },
+          "keywords": [
+            "computational-design",
+            "spatial-programming",
+            "topology",
+            "layout-generation",
+            "spatial-reasoning",
+            "architectural-data"
+          ],
+          "distribution": [
+            {
+              "@type": "DataDownload",
+              "encodingFormat": "application/jsonlines",
+              "contentUrl": "https://huggingface.co/datasets/vykrum/hywe-training-data"
+            }
+          ]
+        }
+      ]
     }
     </script>
 
