@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use HYWE or the HYWE Spatial Configuration Dataset in your research or computational design projects, please cite it as follows."
+message: "If you use HYWE or the HYWE Spatial Dataset in your research or computational design projects, please cite it as follows."
 title: "HYWE: Computational Spatial Design Environment & Benchmark Dataset"
 authors:
   - family-names: "Subbaiah"
@@ -15,7 +15,7 @@ identifiers:
     value: "10.5281/zenodo.22967097"
     description: "Permanent Zenodo Software Archive and DOI"
   - type: url
-    value: "https://huggingface.co/datasets/vykrum/hywe-training-data"
+    value: "https://huggingface.co/datasets/vykrum/hywe-spatial-dataset"
     description: "HYWE Benchmark Corpus of Computational Spatial Configurations"
 keywords:
   - "computational-spatial-design"
@@ -40,4 +40,4 @@ preferred-citation:
   year: 2026
   doi: "10.5281/zenodo.22967097"
   url: "https://doi.org/10.5281/zenodo.22967097"
-  notes: "Includes the HYWE Spatial Configuration Dataset published on Hugging Face (https://huggingface.co/datasets/vykrum/hywe-training-data)"
+  notes: "Includes the HYWE Spatial Dataset published on Hugging Face (https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)"

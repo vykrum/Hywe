@@ -2,7 +2,7 @@
 ### **Hy**grid **W**oven **E**nsemble
 *A deterministic computational spatial reasoning system for early-stage architecture.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22967097.svg)](https://doi.org/10.5281/zenodo.22967097) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-training-data)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22967097.svg)](https://doi.org/10.5281/zenodo.22967097) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
 
 **[Launch HYWE (hywe.in)](https://hywe.in)** · **[Wiki & Research Reference](https://wiki.hywe.in)** · **[Spatial Dataset](https://data.hywe.in)**
 
@@ -120,9 +120,9 @@ HYWE's formal guarantees are codified in the [Canonical Conformance Specificatio
 
 ---
 
-## Downstream Application: HYWE Spatial Configuration Dataset
+## Downstream Application: HYWE Spatial Dataset
 
-HYWE provides an automated pipeline contributing to the open **[HYWE Spatial Configuration Dataset](https://huggingface.co/datasets/vykrum/hywe-training-data)** on Hugging Face:
+HYWE provides an automated pipeline contributing to the open **[HYWE Spatial Dataset](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)** on Hugging Face:
 
 $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{24 Sequence Sweeps} \longrightarrow \text{Hynteract Ingestion} \longrightarrow \text{JSONL Spatial Corpus}$$
 
@@ -147,7 +147,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ## Documentation & Research Reference
 
-* **[Hugging Face Dataset (vykrum/hywe-training-data)](https://huggingface.co/datasets/vykrum/hywe-training-data)**: Open benchmark corpus of machine-readable architectural spatial configurations.
+* **[Hugging Face Dataset (vykrum/hywe-spatial-dataset)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)**: Open benchmark corpus of machine-readable architectural spatial configurations.
 * **[HYWE Wiki (wiki.hywe.in)](https://wiki.hywe.in)**:
   * **01 — Understand**: [[Philosophy]](https://wiki.hywe.in/Computational-Spatial-Design) · [[Ontology]](https://wiki.hywe.in/Platform-Ontology) · [[Guarantees]](https://wiki.hywe.in/Guarantees-and-Non-Guarantees)
   * **02 — Use**: [[Getting Started]](https://wiki.hywe.in/Getting-Started) · [[Interface Guide]](https://wiki.hywe.in/Input) · [[Boundary Editor]](https://wiki.hywe.in/Boundary)
@@ -161,7 +161,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 Contributions to the HYWE engine and spatial research tools are welcome. Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for local setup instructions.
 
-If you utilize HYWE or the HYWE Spatial Configuration Dataset in academic or computational design research, please cite:
+If you utilize HYWE or the HYWE Spatial Dataset in academic or computational design research, please cite:
 
 ```bibtex
 @misc{subbaiah_hywe_2026,
@@ -171,7 +171,7 @@ If you utilize HYWE or the HYWE Spatial Configuration Dataset in academic or com
   publisher = {Zenodo and Hugging Face},
   doi = {10.5281/zenodo.22967097},
   url = {https://doi.org/10.5281/zenodo.22967097},
-  note = {Software archive via Zenodo (DOI: 10.5281/zenodo.22967097); Spatial Dataset via Hugging Face (https://huggingface.co/datasets/vykrum/hywe-training-data)}
+  note = {Software archive via Zenodo (DOI: 10.5281/zenodo.22967097); Spatial Dataset via Hugging Face (https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)}
 }
 ```
 
