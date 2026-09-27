@@ -392,7 +392,7 @@ window.fetchHFGallery = async () => {
 
 window.fetchGalleryDefinition = async (rowIdx) => {
     try {
-        const url = `https://datasets-server.huggingface.co/rows?dataset=vykrum%2Fhywe-training-data&config=default&split=train&offset=${rowIdx}&length=1`;
+        const url = `https://datasets-server.huggingface.co/rows?dataset=vykrum%2Fhywe-spatial-dataset&config=default&split=train&offset=${rowIdx}&length=1`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch specific definition");
         const data = await res.json();
