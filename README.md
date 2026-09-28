@@ -74,7 +74,7 @@ graph TD
 
     subgraph "Computational Engine Layer (Implementation-Facing)"
         Lexel[Lexel: AST Grammar & Tokenizer]
-        Hexel[Hexel: Hygrid Coordinate Primitive]
+        Hexel[Hexel: Atomic Substrate Unit]
         Coxel[Coxel: Synchronously Growing Clusters]
         Goxel[Goxel: Boundary & Island Clipping]
         Xyxel[Xyxel: Planar Spatial Placement]
@@ -95,10 +95,13 @@ graph TD
     SpatialEnsemble --> AnalysisOut
 ```
 
+> [!NOTE]
+> **Hygrid as Spatial Substrate**: Hygrid is not an original coordinate system, but a discrete spatial computational substrate. It organizes underlying integer lattice primitives, anisotropic parity constraints, and 24 deterministic sequence operators into a unified environment for compiling architectural programmes into pre-geometric configurations.
+
 | Architectural Concept | Engine Component | Mathematical Transformation | Output |
 | :--- | :--- | :--- | :--- |
 | **Program Intent** | `Lexel` | AST tokenization and parent-child hierarchy validation | Abstract Program Tree |
-| **Spatial Discretization** | `Hexel` | Coordinate quantization onto the integer Hygrid lattice | Integer Coordinate Triples $(x,y,z)$ |
+| **Spatial Discretization** | `Hexel` | Coordinate allocation & occupancy tagging on the Hygrid substrate | Tagged Integer Triples `(AV\|RV\|EX)` |
 | **Spatial Clustering** | `Coxel` | Synchronous cluster growth and collision avoidance | Clustered Tile Envelopes |
 | **Site Confinement** | `Goxel` | Polygon clipping, site boundaries, and keep-out islands | Verified Boundary Contours |
 | **Planar Configuration** | `Xyxel` | Sequence-driven 2D placement and rotation sweeps | Planar Layout & Vector SVG |

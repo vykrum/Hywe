@@ -6,34 +6,34 @@ This document provides a highly technical, deep-dive architectural manual of the
 
 ## Workspace Structure
 
-The core spatial engine is dependency-free, while the browser application uses Bolero/Blazor and Elmish for its interface layer. The codebase is structured into three F# projects under the [src](file:///c:/Users/vykru/source/repos/Hywe/src) directory:
+The core spatial engine is dependency-free, while the browser application uses Bolero/Blazor and Elmish for its interface layer. The codebase is structured into three F# projects under the [src](src) directory:
 
-### 1. [Hywe.Tree](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree)
+### 1. [Hywe.Tree](src/Hywe.Tree)
 A pure functional library governing the abstract hierarchical data structures.
-*   [Types.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Types.fs): Defines tree node models, core record structures, and Elmish action primitives.
-*   [Operations.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Operations.fs): Contains recursive operations for tree node manipulation (insertion, deletion, reordering).
-*   [Serialization.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Serialization.fs): Handles JSON and custom text-based serializations of abstract hierarchical states.
-*   [Visualization.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Visualization.fs): Converts standard tree node structures into visual-oriented tree nodes.
+*   [Types.fs](src/Hywe.Tree/Types.fs): Defines tree node models, core record structures, and Elmish action primitives.
+*   [Operations.fs](src/Hywe.Tree/Operations.fs): Contains recursive operations for tree node manipulation (insertion, deletion, reordering).
+*   [Serialization.fs](src/Hywe.Tree/Serialization.fs): Handles JSON and custom text-based serializations of abstract hierarchical states.
+*   [Visualization.fs](src/Hywe.Tree/Visualization.fs): Converts standard tree node structures into visual-oriented tree nodes.
 
-### 2. [Hywe.Core](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core)
+### 2. [Hywe.Core](src/Hywe.Core)
 The geometric and topological computation engine.
-*   [Nexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Nexel.fs): Core nodes, attributes, and basic topological configurations.
-*   [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs): Parsing system translating `HYWE Syntax` strings into `TreeNode` models.
-*   [Hexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Hexel.fs): Defines the **Hexel** (hybrid-grid grid coordinate unit) and basic grid operations.
-*   [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs): Grid configuration, graph relationships, and spatial coordinate grids.
-*   [Coxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Coxel.fs): Manages simultaneously evolving Hexel clusters forming macro spatial structures.
-*   [Xyxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Xyxel.fs): Resolves 2D spatial layouts, boundary conformance, and planimetric layouts.
-*   [Zaxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Zaxel.fs): Computes 3D vertical stacking, programmatic layers, and volumetric massing vectors.
+*   [Nexel.fs](src/Hywe.Core/Nexel.fs): Core nodes, attributes, and basic topological configurations.
+*   [Lexel.fs](src/Hywe.Core/Lexel.fs): Parsing system translating `HYWE Syntax` strings into `TreeNode` models.
+*   [Hexel.fs](src/Hywe.Core/Hexel.fs): Defines the **Hexel** (atomic discrete spatial unit on the Hygrid substrate) and basic lattice operations.
+*   [Goxel.fs](src/Hywe.Core/Goxel.fs): Grid configuration, graph relationships, and spatial coordinate grids.
+*   [Coxel.fs](src/Hywe.Core/Coxel.fs): Manages simultaneously evolving Hexel clusters forming macro spatial structures.
+*   [Xyxel.fs](src/Hywe.Core/Xyxel.fs): Resolves 2D spatial layouts, boundary conformance, and planimetric layouts.
+*   [Zaxel.fs](src/Hywe.Core/Zaxel.fs): Computes 3D vertical stacking, programmatic layers, and volumetric massing vectors.
 
-### 3. [Hywe.Web](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web)
+### 3. [Hywe.Web](src/Hywe.Web)
 The client-side UI, rendering pipelines, and Bolero/Elmish runtime environment.
-*   [Main.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/App/Main.fs): The primary application controller holding the Elmish Model-View-Update (MVU) loops.
-*   [NodeTree.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/NodeTree.fs): Interactive tree editor sidebar.
-*   [Boundary.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Boundary.fs): Drawing canvas for complex, custom 2D site boundary polygons.
-*   [Layout.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Layout.fs): Combines modular panels and manages core viewport logic.
-*   [Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Graphics.fs): Renders procedural 2D plans in the browser using SVG vector graphics.
-*   [ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/ThreeD.fs) & [Shaders.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Shaders.fs): Interactive 3D rendering pipeline leveraging raw WebGPU buffers and vertex shaders.
-*   [Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Teach.fs): The core interactive interface for automated design variation processing and dataset curation.
+*   [Main.fs](src/Hywe.Web/App/Main.fs): The primary application controller holding the Elmish Model-View-Update (MVU) loops.
+*   [NodeTree.fs](src/Hywe.Web/Panels/NodeTree.fs): Interactive tree editor sidebar.
+*   [Boundary.fs](src/Hywe.Web/Panels/Boundary.fs): Drawing canvas for complex, custom 2D site boundary polygons.
+*   [Layout.fs](src/Hywe.Web/Panels/Layout.fs): Combines modular panels and manages core viewport logic.
+*   [Graphics.fs](src/Hywe.Web/Rendering/Graphics.fs): Renders procedural 2D plans in the browser using SVG vector graphics.
+*   [ThreeD.fs](src/Hywe.Web/Rendering/ThreeD.fs) & [Shaders.fs](src/Hywe.Web/Rendering/Shaders.fs): Interactive 3D rendering pipeline leveraging raw WebGPU buffers and vertex shaders.
+*   [Teach.fs](src/Hywe.Web/Panels/Teach.fs): The core interactive interface for automated design variation processing and dataset curation.
 
 ---
 
@@ -43,22 +43,22 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 
 ### 1. Deterministic Topology
 *   **Concepts**: Layout configurations must emerge strictly as a mathematical consequence of declared topological adjacency, without random stochastic placement or manual freeform dragging.
-*   **Code Location**: [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs) and [Coxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Coxel.fs) resolve proximity and spatial containment. The coordinates are calculated iteratively by adding discrete vectors on a hexagonal grid, ensuring that adjacent nodes in the tree remain adjacent in the physical layout.
+*   **Code Location**: [Goxel.fs](src/Hywe.Core/Goxel.fs) and [Coxel.fs](src/Hywe.Core/Coxel.fs) resolve proximity and spatial containment. The coordinates are calculated iteratively by adding discrete vectors on the Hygrid substrate, ensuring that adjacent nodes in the tree remain adjacent in the physical layout.
 *   **Rules**: Never introduce random generators (`System.Random`) inside core geometric solvers. Every spatial layout output must be 100% reproducible given the same syntax input.
 
 ### 2. Architectural Programming
 *   **Concepts**: Converting architectural layout rules (circulation, floor areas, program designations) into functional boundaries.
-*   **Code Location**: [NodeTree.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/NodeTree.fs) registers user inputs, which are parsed and recursively handled via F# Pattern Matching in [Operations.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Tree/Operations.fs).
+*   **Code Location**: [NodeTree.fs](src/Hywe.Web/Panels/NodeTree.fs) registers user inputs, which are parsed and recursively handled via F# Pattern Matching in [Operations.fs](src/Hywe.Tree/Operations.fs).
 *   **Rules**: Maintain standard F# immutable programming. When executing modifications to trees, return a new structural state instead of mutating existing records.
 
 ### 3. Spatial Hierarchy
 *   **Concepts**: Complex structural containment where spatial components are resolved as hierarchical layers (e.g., L0 = Site, L1 = Massing, L2 = Program blocks).
-*   **Code Location**: [Xyxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Xyxel.fs) recursively splits structural zones. It uses the weight ratios (`R` attribute) of nested sibling tree nodes to compute proportional boundary subdivisions.
+*   **Code Location**: [Xyxel.fs](src/Hywe.Core/Xyxel.fs) recursively splits structural zones. It uses the weight ratios (`R` attribute) of nested sibling tree nodes to compute proportional boundary subdivisions.
 *   **Rules**: Child layout subdivisions must strictly respect the parent boundaries computed in the previous recursion pass.
 
 ### 4. Topology Encoding
 *   **Concepts**: Storing hierarchical structures, constraints, and attributes in highly compressed, URL-safe alphanumeric strings.
-*   **Code Location**: [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs). The parsing module translates compact notation:
+*   **Code Location**: [Lexel.fs](src/Hywe.Core/Lexel.fs). The parsing module translates compact notation:
     *   `R`: Target spatial weight ratio.
     *   `B`: Outer structural boundaries.
     *   `I`: Islands / Void regions.
@@ -67,15 +67,18 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 
 ### 5. Integer-Based Partitioning
 *   **Concepts**: All grid definitions, coordinates, and intersection calculations must be executed strictly with integer coordinates to prevent browser-specific rounding discrepancies.
-*   **Code Location**: [Hexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Hexel.fs). This file defines spatial positions using discrete lattice coordinates:
+*   **Code Location**: [Hexel.fs](src/Hywe.Core/Hexel.fs). This file defines spatial positions using discrete lattice coordinates and occupancy tags:
     ```fsharp
-    type HexelCoord = { Q: int; R: int }
+    type Hxl = 
+        | AV of x: int * y: int * z: int  // Available
+        | RV of x: int * y: int * z: int  // Reserved
+        | EX of x: int * y: int * z: int  // Excluded
     ```
-*   **Rules**: Do not use standard F# `float` or `double` math inside [Hexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Hexel.fs) or [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs). Use strict integer multiplication and division. Floating-point numbers are only permitted at the final rendering stage in [ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/ThreeD.fs) and [Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Graphics.fs).
+*   **Rules**: Do not use standard F# `float` or `double` math inside [Hexel.fs](src/Hywe.Core/Hexel.fs) or [Goxel.fs](src/Hywe.Core/Goxel.fs). Use strict integer multiplication and division. Floating-point numbers are only permitted at the final rendering stage in [ThreeD.fs](src/Hywe.Web/Rendering/ThreeD.fs) and [Graphics.fs](src/Hywe.Web/Rendering/Graphics.fs).
 
 ### 6. Semantic Architectural Intent
 *   **Concepts**: Structuring generative dataset records by mapping architectural programming constraints and prompts with completed, functional layouts.
-*   **Code Location**: [Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Teach.fs) captures layout runs. When users commit designs, it calls `Teach.fs` to post JSON payloads containing `definition`, `description`, and `configuration` (as a 24-element string array of sweep layouts) to the private Hynteract serverless endpoint, which compiles them into `.jsonl` datasets for Hugging Face.
+*   **Code Location**: [Teach.fs](src/Hywe.Web/Panels/Teach.fs) captures layout runs. When users commit designs, it calls `Teach.fs` to post JSON payloads containing `definition`, `description`, and `configuration` (as a 24-element string array of sweep layouts) to the private Hynteract serverless endpoint, which compiles them into `.jsonl` datasets for Hugging Face.
 
 ---
 
@@ -83,12 +86,12 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
 
 The client-side F# engine executes a sequence-driven pipeline on every design change:
 
-1.  **State Management**: Bolero/Elmish registers user actions in [Main.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/App/Main.fs).
-2.  **String Parsing**: If loading from a URL hash or import, [Lexel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Lexel.fs) parses the Base34 string into a `TreeNode` state.
-3.  **Adjacency Graphing**: [Goxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Goxel.fs) builds spatial cell configurations based on the `TreeNode` structure.
-4.  **2D Layout (Xyxel)**: [Xyxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Xyxel.fs) executes integer-based boundary partitioning and produces 2D layout vectors.
-5.  **3D Extrusion (Zaxel)**: [Zaxel.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Core/Zaxel.fs) reads thickness rules (`T` attribute) and layers these 2D layouts into stacked 3D coordinates.
+1.  **State Management**: Bolero/Elmish registers user actions in [Main.fs](src/Hywe.Web/App/Main.fs).
+2.  **String Parsing**: If loading from a URL hash or import, [Lexel.fs](src/Hywe.Core/Lexel.fs) parses the Base34 string into a `TreeNode` state.
+3.  **Adjacency Graphing**: [Goxel.fs](src/Hywe.Core/Goxel.fs) builds spatial cell configurations based on the `TreeNode` structure.
+4.  **2D Layout (Xyxel)**: [Xyxel.fs](src/Hywe.Core/Xyxel.fs) executes integer-based boundary partitioning and produces 2D layout vectors.
+5.  **3D Extrusion (Zaxel)**: [Zaxel.fs](src/Hywe.Core/Zaxel.fs) reads thickness rules (`T` attribute) and layers these 2D layouts into stacked 3D coordinates.
 6.  **Graphics Dispatch**:
-    *   *SVG Viewport*: Renders vector plans via [Graphics.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/Graphics.fs).
-    *   *WebGPU Viewport*: [ThreeD.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Rendering/ThreeD.fs) maps the 3D meshes to GPU vertex buffers, rendering volumetric models.
-7.  **Data Export**: [Teach.fs](file:///c:/Users/vykru/source/repos/Hywe/src/Hywe.Web/Panels/Teach.fs) serializes layout tokens, coordinates, and descriptions, and sends them to the serverless `Hynteract` endpoint.
+    *   *SVG Viewport*: Renders vector plans via [Graphics.fs](src/Hywe.Web/Rendering/Graphics.fs).
+    *   *WebGPU Viewport*: [ThreeD.fs](src/Hywe.Web/Rendering/ThreeD.fs) maps the 3D meshes to GPU vertex buffers, rendering volumetric models.
+7.  **Data Export**: [Teach.fs](src/Hywe.Web/Panels/Teach.fs) serializes layout tokens, coordinates, and descriptions, and sends them to the serverless `Hynteract` endpoint.
