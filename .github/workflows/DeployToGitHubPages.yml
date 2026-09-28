@@ -8,6 +8,7 @@ env:
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -42,6 +43,23 @@ jobs:
 
       - name: Ensure publish dir
         run: mkdir -p ${{ env.PUBLISH_DIR }}/wwwroot
+
+      - name: Generate sitemap and update modified timestamps
+        run: |
+          CURRENT_DATE=$(date -u +'%Y-%m-%d')
+          CURRENT_DATETIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > src/Hywe.Web/wwwroot/sitemap.xml
+          echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '  <url>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '    <loc>https://hywe.in/</loc>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo "    <lastmod>${CURRENT_DATE}</lastmod>" >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '  </url>' >> src/Hywe.Web/wwwroot/sitemap.xml
+          echo '</urlset>' >> src/Hywe.Web/wwwroot/sitemap.xml
+
+          sed -i -E "s/let MODIFIED_DATE = \".*\"/let MODIFIED_DATE = \"$CURRENT_DATETIME\"/g" src/Hywe.Web/Common/ModelTypes.fs
+          sed -i -E "s/<meta property=\"article:modified_time\" content=\".*\" \/>/<meta property=\"article:modified_time\" content=\"$CURRENT_DATETIME\" \/>/g" src/Hywe.Web/wwwroot/index.html
+          sed -i -E "s/\"dateModified\": \".*\"/\"dateModified\": \"$CURRENT_DATETIME\"/g" src/Hywe.Web/wwwroot/index.html
 
       - name: Publish Bolero app (Release + Trimming + AOT for GH Pages)
         run: |
