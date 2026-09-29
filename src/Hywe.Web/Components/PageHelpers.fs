@@ -230,15 +230,12 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | Download3DPng ->
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
         let fileName = "Hywe3D_" + datePart + ".png"
+        let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+        let meta = ExportHelpers.createExportMetadata model lvlStr
         let downloadCmd = 
             Cmd.OfAsync.perform (fun () -> 
-                async {
-                    let! pngDataUrl = js.InvokeAsync<string>("captureCanvasWebGPU", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask
-                    if not (System.String.IsNullOrEmpty(pngDataUrl)) then
-                        // The string returned is already a Data URL (base64) so we just trigger a download directly
-                        let jsCode = sprintf "var a = document.createElement('a'); a.href = '%s'; a.download = '%s'; document.body.appendChild(a); a.click(); document.body.removeChild(a);" pngDataUrl fileName
-                        do! js.InvokeVoidAsync("eval", jsCode).AsTask() |> Async.AwaitTask
-                }) () (fun _ -> NoOp)
+                js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "png", meta).AsTask() |> Async.AwaitTask
+            ) () (fun _ -> NoOp)
         Some (model, downloadCmd)
     
     | DownloadCoordCsv ->
@@ -337,25 +334,27 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | Download3DSvg ->
         let datePart = System.DateTime.Now.ToString("yyMMddmm")
         let fileName = "Hywe3D_" + datePart + ".svg"
+        let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+        let meta = ExportHelpers.createExportMetadata model lvlStr
         let downloadCmd = 
             Cmd.OfAsync.perform (fun () -> 
-                async {
-                    let! pngDataUrl = js.InvokeAsync<string>("captureCanvasWebGPU", "hywe-extruded-polygon").AsTask() |> Async.AwaitTask
-                    if not (System.String.IsNullOrEmpty(pngDataUrl)) then
-                        let svgString = sprintf """<svg xmlns="http://www.w3.org/2000/svg" width="100%%" height="100%%"><image href="%s" width="100%%" height="100%%" /></svg>""" pngDataUrl
-                        do! js.InvokeVoidAsync("downloadFile", fileName, svgString, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
-                }) () (fun _ -> NoOp)
+                js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "svg", meta).AsTask() |> Async.AwaitTask
+            ) () (fun _ -> NoOp)
         Some (model, downloadCmd)
     
     | DownloadBatchSvg ->
         let datePart = DateTime.Now.ToString("yyMMddHHmm")
         let fileName = "HywVariations_" + datePart + ".svg"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+        let meta = ExportHelpers.createExportMetadata model lvlStr
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     
     | DownloadBatchPng ->
         let datePart = DateTime.Now.ToString("yyMMddHHmm")
         let fileName = "HywVariations_" + datePart + ".png"
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+        let meta = ExportHelpers.createExportMetadata model lvlStr
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
 
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
