@@ -313,6 +313,28 @@ type Model =
         HasAppendedModSuffix: bool
     }
 
+type ExportMetadata = {
+    ProjectTitle: string
+    Author: string
+    Date: string
+    Level: string
+}
+
+module ExportHelpers =
+    let createExportMetadata (model: Model) (levelStr: string) : ExportMetadata =
+        let pTitle = 
+            if System.String.IsNullOrWhiteSpace model.ReportOptions.ProjectTitle then "Hywe Exploration" 
+            else model.ReportOptions.ProjectTitle
+        let pAuthor = 
+            if System.String.IsNullOrWhiteSpace model.ReportOptions.Author then "Hywe Design Team" 
+            else model.ReportOptions.Author
+        {
+            ProjectTitle = pTitle
+            Author = pAuthor
+            Date = System.DateTime.Now.ToString("yyyy-MM-dd")
+            Level = levelStr
+        }
+
 /// <summary> Messages representing all possible state changes in the main module. </summary>
 type Message =
     | SetSqnIndex of int

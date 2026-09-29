@@ -519,13 +519,15 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                 let elv = model.Tree.ActiveLevel
                                 let currentSqnIdx = sqnToIndex currentSqn
                                 let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
-                                match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
+                                let marker = toMarker elv
+                                let meta = ExportHelpers.createExportMetadata model marker
+                                match Cache.get marker currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
                                     let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
-                                    do! js.InvokeVoidAsync("downloadFile", fileName, svgString, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
+                                    do! js.InvokeVoidAsync("downloadSvgWithTitleblock", fileName, svgString, meta).AsTask() |> Async.AwaitTask
                                 | None ->
                                     // Fallback to DOM scraper if cache is missing
-                                    do! downloadSvg js "layout-svg-output" fileName
+                                    do! js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
                             } |> Async.StartImmediate
                         )
                         text "SVG"
@@ -539,13 +541,15 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                 let elv = model.Tree.ActiveLevel
                                 let currentSqnIdx = sqnToIndex currentSqn
                                 let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
-                                match Cache.get (toMarker elv) currentSqnIdx model.LayoutCache with
+                                let marker = toMarker elv
+                                let meta = ExportHelpers.createExportMetadata model marker
+                                match Cache.get marker currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
                                     let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
-                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, svgString).AsTask() |> Async.AwaitTask
+                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, svgString, meta).AsTask() |> Async.AwaitTask
                                 | None ->
                                     // If cache missing, fall back to SVG scraper and pass to PNG converter
-                                    do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName).AsTask() |> Async.AwaitTask 
+                                    do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName, meta).AsTask() |> Async.AwaitTask 
                             } |> Async.StartImmediate
                         )
                         text "PNG"

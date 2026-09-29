@@ -552,6 +552,7 @@ window.captureCanvasWebGPU = async (canvasId) => {
     tempCanvas.width = w; tempCanvas.height = h;
     const ctx = tempCanvas.getContext('2d'), imageData = ctx.createImageData(w, h);
     
+    let minX = w, minY = h, maxX = -1, maxY = -1;
     const isBGRA = state.presentationFormat === 'bgra8unorm';
     for (let y = 0; y < h; y++) {
         const srcOffset = y * bytesPerRow;
@@ -559,22 +560,59 @@ window.captureCanvasWebGPU = async (canvasId) => {
         for (let x = 0; x < w; x++) {
             const srcIdx = srcOffset + x * 4;
             const dstIdx = dstOffset + x * 4;
+            let r, g, b, a;
             if (isBGRA) {
-                imageData.data[dstIdx] = data[srcIdx + 2];     // R
-                imageData.data[dstIdx + 1] = data[srcIdx + 1]; // G
-                imageData.data[dstIdx + 2] = data[srcIdx];     // B
-                imageData.data[dstIdx + 3] = data[srcIdx + 3]; // A
+                r = data[srcIdx + 2];     // R
+                g = data[srcIdx + 1];     // G
+                b = data[srcIdx];         // B
+                a = data[srcIdx + 3];     // A
             } else {
-                imageData.data[dstIdx] = data[srcIdx];
-                imageData.data[dstIdx + 1] = data[srcIdx + 1];
-                imageData.data[dstIdx + 2] = data[srcIdx + 2];
-                imageData.data[dstIdx + 3] = data[srcIdx + 3];
+                r = data[srcIdx];
+                g = data[srcIdx + 1];
+                b = data[srcIdx + 2];
+                a = data[srcIdx + 3];
+            }
+            imageData.data[dstIdx] = r;
+            imageData.data[dstIdx + 1] = g;
+            imageData.data[dstIdx + 2] = b;
+            imageData.data[dstIdx + 3] = a;
+
+            // Detect non-white content pixels
+            if ((r < 250 || g < 250 || b < 250) && a > 10) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
             }
         }
     }
     
     ctx.putImageData(imageData, 0, 0);
-    const dataUrl = tempCanvas.toDataURL('image/png');
+
+    let dataUrl;
+    if (maxX >= minX && maxY >= minY) {
+        const modelW = maxX - minX + 1;
+        const modelH = maxY - minY + 1;
+        const pad = Math.round(Math.max(28, Math.min(modelW, modelH) * 0.05));
+        const cropX = Math.max(0, minX - pad);
+        const cropY = Math.max(0, minY - pad);
+        const cropMaxX = Math.min(w - 1, maxX + pad);
+        const cropMaxY = Math.min(h - 1, maxY + pad);
+        const cropW = cropMaxX - cropX + 1;
+        const cropH = cropMaxY - cropY + 1;
+
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = cropW;
+        croppedCanvas.height = cropH;
+        const cropCtx = croppedCanvas.getContext('2d');
+        cropCtx.fillStyle = '#ffffff';
+        cropCtx.fillRect(0, 0, cropW, cropH);
+        cropCtx.drawImage(tempCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        dataUrl = croppedCanvas.toDataURL('image/png');
+    } else {
+        dataUrl = tempCanvas.toDataURL('image/png');
+    }
+
     readBuffer.unmap(); readBuffer.destroy();
     return dataUrl;
 };
