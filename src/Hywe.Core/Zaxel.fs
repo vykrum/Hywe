@@ -120,7 +120,7 @@ module Zaxel =
                         let hostThickness = 
                             resolvedLevels 
                             |> List.tryPick (function 
-                                | Level l, _, _, _, _, _, lIdx when lIdx = lvlIdx -> Some l.Attributes.Thickness
+                                | Level l, _, _, _, _, _, lIdx when lIdx = targetLvl -> Some l.Attributes.Thickness
                                 | _ -> None)
                             |> Option.defaultValue 3.0
                         let nestSeqOverride =
@@ -144,10 +144,13 @@ module Zaxel =
             )
 
         let finalElvs = 
-            match List.tryLast parsedLevels with
-            | Some lastSegment -> 
-                let t = match lastSegment with Level l -> l.Attributes.Thickness | Nest n -> n.Attributes.Thickness
-                Array.append finalState.Elvs [| Array.last finalState.Elvs + t |]
-            | None -> finalState.Elvs
+            let topThickness = 
+                parsedLevels 
+                |> List.choose (function | Level l -> Some l.Attributes.Thickness | _ -> None)
+                |> List.tryLast
+                |> Option.defaultValue 3.0
+            match finalState.Elvs with
+            | [||] -> [||]
+            | elvs -> Array.append elvs [| Array.last elvs + topThickness |]
 
         finalState.Cxls, finalState.Bounds, finalElvs, Array.replicate parsedLevels.Length (finalState.Ratio |> Option.defaultValue 0.0)
