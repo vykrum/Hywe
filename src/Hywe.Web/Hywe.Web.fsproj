@@ -2,7 +2,15 @@
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
 		<ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>full</TrimMode>
 	</PropertyGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+	</ItemGroup>
 	
 	<ItemGroup>
 		<ProjectReference Include="..\Hywe.Core\Hywe.Core.fsproj" />

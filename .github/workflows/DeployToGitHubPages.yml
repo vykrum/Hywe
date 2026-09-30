@@ -81,10 +81,13 @@ jobs:
       - name: Create CNAME file
         run: echo 'hywe.in' > ${{ env.PUBLISH_DIR }}/wwwroot/CNAME
 
+      - name: Ensure .nojekyll exists
+        run: touch ${{ env.PUBLISH_DIR }}/wwwroot/.nojekyll
+
       - name: Compress WASM and DLL files
         run: |
-          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 {} \;
-          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 {} \;
+          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 -k {} \;
+          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 -k {} \;
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
