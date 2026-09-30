@@ -1,10 +1,54 @@
 // window.Hymap namespace to expose functions to F# Bolero
 window.Hymap = {
     map: null,
+    _loadingDeps: null,
+
+    ensureDependencies: function() {
+        if (window.L && window.L.Control && window.L.Control.Geocoder) {
+            return Promise.resolve();
+        }
+        if (this._loadingDeps) {
+            return this._loadingDeps;
+        }
+        this._loadingDeps = new Promise((resolve, reject) => {
+            if (!document.getElementById('leaflet-css')) {
+                const link = document.createElement('link');
+                link.id = 'leaflet-css';
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(link);
+            }
+            if (!document.getElementById('leaflet-geocoder-css')) {
+                const link = document.createElement('link');
+                link.id = 'leaflet-geocoder-css';
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css';
+                document.head.appendChild(link);
+            }
+
+            const loadScript = (src) => new Promise((res, rej) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = res;
+                s.onerror = rej;
+                document.body.appendChild(s);
+            });
+
+            const loadL = window.L ? Promise.resolve() : loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+            loadL.then(() => {
+                if (window.L && (!window.L.Control || !window.L.Control.Geocoder)) {
+                    return loadScript('https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js');
+                }
+            }).then(resolve).catch(reject);
+        });
+        return this._loadingDeps;
+    },
     
-    init: function() {
+    init: async function() {
         const container = document.getElementById('hymap-container');
         if (!container) return;
+
+        await this.ensureDependencies();
 
         // If the map exists but the container element was destroyed and recreated by Bolero,
         // we must destroy the old map instance so Leaflet can attach to the new container.
