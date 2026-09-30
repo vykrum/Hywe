@@ -4,6 +4,7 @@ title: "HYWE: Computational Spatial Design Environment & Benchmark Dataset"
 authors:
   - family-names: "Subbaiah"
     given-names: "Vikram"
+    orcid: "https://orcid.org/0009-0000-2438-7308"
 abstract: "A computational spatial design environment powered by deterministic design computation, integer-lattice spatial topology, and edge-native WebAssembly. HYWE formalizes and explores early-stage architectural spatial configurations from relational graphs, circulation sequences, and programmatic constraints."
 version: "2026.09.26"
 date-released: "2026-09-26"
@@ -36,6 +37,7 @@ preferred-citation:
   authors:
     - family-names: "Subbaiah"
       given-names: "Vikram"
+      orcid: "https://orcid.org/0009-0000-2438-7308"
   title: "HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent"
   year: 2026
   doi: "10.5281/zenodo.22967097"
