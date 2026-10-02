@@ -13,27 +13,7 @@ open Hywe.Core
 
 open Overlays
 
-let downloadFile (js: IJSRuntime) (filename: string) (content: string) (contentType: string) =
-    async {
-        do! js.InvokeVoidAsync("eval", sprintf """
-            (function() {
-                const blob = new Blob([`%s`], { type: '%s' });
-                const url = URL.createObjectURL(blob);
-                const anchor = document.createElement('a');
-                anchor.href = url;
-                anchor.download = '%s';
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-                URL.revokeObjectURL(url);
-            })()
-        """ content contentType filename).AsTask() |> Async.AwaitTask
-    }
 
-let downloadSvg (js: IJSRuntime) (svgId: string) (filename: string) =
-    async {
-        do! js.InvokeVoidAsync("downloadSvgFile", svgId, filename).AsTask() |> Async.AwaitTask
-    }
 
 // View helpers
 let private iconSwitchNode model = drawMenuIcon (match model.EditorMode with Syntax -> pathSwitchNode | Interactive -> pathSwitchCode)
@@ -523,8 +503,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                 let meta = ExportHelpers.createExportMetadata model marker
                                 match Cache.get marker currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
-                                    let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
-                                    do! js.InvokeVoidAsync("downloadSvgWithTitleblock", fileName, svgString, meta).AsTask() |> Async.AwaitTask
+                                    let rawSvg = Layout.generateSvgFromBatchConfig cfg 20.0
+                                    let finalSvg = Titleblock.apply rawSvg meta
+                                    let xmlHeader = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n"
+                                    do! js.InvokeVoidAsync("downloadFile", fileName, xmlHeader + finalSvg, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
                                 | None ->
                                     // Fallback to DOM scraper if cache is missing
                                     do! js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
@@ -545,8 +527,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                 let meta = ExportHelpers.createExportMetadata model marker
                                 match Cache.get marker currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
-                                    let svgString = Layout.generateSvgFromBatchConfig cfg 20.0
-                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, svgString, meta).AsTask() |> Async.AwaitTask
+                                    let rawSvg = Layout.generateSvgFromBatchConfig cfg 20.0
+                                    let finalSvg = Titleblock.apply rawSvg meta
+                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, finalSvg, meta).AsTask() |> Async.AwaitTask
                                 | None ->
                                     // If cache missing, fall back to SVG scraper and pass to PNG converter
                                     do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName, meta).AsTask() |> Async.AwaitTask 
