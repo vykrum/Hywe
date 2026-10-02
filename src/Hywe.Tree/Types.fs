@@ -48,7 +48,13 @@ module ActionIds =
 /// <summary>
 /// Abstract pointer event data to decouple the tree model from AspNetCore.Components.Web.
 /// </summary>
-type PointerEventData = { ClientX: float; ClientY: float }
+type PointerEventData = { ClientX: float; ClientY: float; Buttons: int }
+
+/// <summary> Target drop mode for moving or reparenting a node. </summary>
+type DropMode =
+    | DropAsChild
+    | DropBefore
+    | DropAfter
 
 /// <summary>
 /// State model for the node hierarchy tree, tracking levels, nests, dragging, and menus.
@@ -63,9 +69,12 @@ type SubModel =
       ConfirmingId: Guid option
       ActiveActionId: ActionId
       ActiveMenuId: Guid option
+      SelectedNodeId: Guid option
       DraggingId: Guid option
       PendingDragId: Guid option
       DropTargetId: Guid option
+      DropTargetMode: DropMode option
+      DragPos: SvgPoint option
       SvgInfo: SvgInfo option
       PointerDownPos: SvgPoint option
       LastMoveMs: float option
@@ -75,6 +84,7 @@ type SubModel =
 type SubMsg =
     | OpenMenu of Guid
     | CloseMenu
+    | SelectNode of Guid option
     | SetLevel of int
     | SetNest of int
     | SetTopExtrusion of string
@@ -90,6 +100,7 @@ type SubMsg =
     | PointerMove of PointerEventData
     | PointerUp
     | DragStartInternal of Guid * SvgInfo * SvgPoint
+    | NodePointerDown of Guid * PointerEventData
     | PointerUpInternal
 
 /// <summary>
