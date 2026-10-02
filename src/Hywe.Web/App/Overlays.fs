@@ -518,7 +518,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                 }
                 p {
                     attr.style "font-size: 13.5px; line-height: 1.5; color: #333; margin-bottom: 6px; font-weight: 500;"
-                    text "HYWE is an experimental investigation into:"
+                    text "HYWE is a computational investigation into:"
                 }
                 ul {
                     attr.style "margin: 0 0 22px 20px; padding: 0; font-size: 13.5px; color: #555; line-height: 1.65;"
