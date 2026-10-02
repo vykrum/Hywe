@@ -168,23 +168,6 @@ type PolygonExportData = {
     MapScale: float
 }
 
-type OnboardingStep =
-    | Welcome
-    | BoundaryGuide
-    | NodeGuide
-    | NodeMenuGuide
-    | ElevateGuide
-    | MoveNodeGuide
-    | LayoutGuide
-    | Finish
-
-type OnboardingState = {
-    IsActive: bool
-    IsAutoSimulating: bool
-    CurrentStep: OnboardingStep
-    SeenSteps: Set<OnboardingStep>
-}
-
 /// <summary> Minimal snapshot of undoable editor state. </summary>
 type UndoSnapshot = {
     SrcOfTrth: string
@@ -280,7 +263,6 @@ type Model =
         TeachErrorMessage : string option
         IsRecording : bool
         PolygonExport: PolygonExportData
-        Onboarding: OnboardingState
         /// <summary> Number of variations successfully generated in the current batch. </summary>
         BatchProgress: int
         CurrentScreen: AppScreen
@@ -292,7 +274,6 @@ type Model =
         EditsCount: int
         IsPresetsCollapsed: bool
         IsWorkspaceCollapsed: bool
-        IsHelpCollapsed: bool
         PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
         RedoStack: UndoSnapshot list
@@ -381,15 +362,8 @@ type Message =
     | RecordResult of success: bool * errorMsg: string option * cache: LayoutCache
     | StartVoiceCapture
     | OnVoiceResult
-    | NextOnboardingStep
-    | PreviousOnboardingStep
-    | SkipOnboarding
-    | RestartOnboarding
     | TogglePresetsCollapse
     | ToggleWorkspaceCollapse
-    | ToggleHelpCollapse
-    | StartAutoSimulation
-    | StopAutoSimulation
     | TransitionToIntro
     | TransitionToMain
     | ToggleViewLock
