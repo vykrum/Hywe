@@ -65,11 +65,10 @@ let colorModel (model: SubModel) : SubModel =
 
     let applyColor (lvl: int) (n: TreeNode) =
         let isElevatedAnchor = model.LevelAnchors |> Map.exists (fun targetLvl aId -> targetLvl > lvl && aId = n.Id)
-        let isElevated = n.Level > lvl || isElevatedAnchor
         let isNested = nestAnchorIds.Contains n.Id
 
         let color = 
-            if isElevated then Some "#3498db"
+            if isElevatedAnchor then Some "#3498db"
             elif isNested then Some "#2ecc71"
             else None
 
@@ -79,7 +78,21 @@ let colorModel (model: SubModel) : SubModel =
         let updated = applyColor lvl node
         { updated with Children = updated.Children |> List.map (updateTree lvl) }
 
+    let rec containsNode id (node: TreeNode) =
+        node.Id = id || node.Children |> List.exists (containsNode id)
+
     let coloredLevels = model.Levels |> Map.map (fun lvl tree -> updateTree lvl tree)
-    let coloredNests = model.Nests |> Map.map (fun _ tree -> updateTree 0 tree)
+    let coloredNests = 
+        model.Nests 
+        |> Map.map (fun nId tree -> 
+            let hostLvl = 
+                match model.NestAnchors |> Map.tryFind nId with
+                | Some aId ->
+                    model.Levels 
+                    |> Map.tryPick (fun lvl root -> 
+                        if containsNode aId root then Some lvl else None)
+                    |> Option.defaultValue 0
+                | None -> 0
+            updateTree hostLvl tree)
 
     { model with Levels = coloredLevels; Nests = coloredNests }

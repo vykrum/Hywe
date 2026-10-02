@@ -249,9 +249,21 @@ let pushUndo (model: Model) : Model =
         |> getInnerPolygonEditor
         |> State.snapshot
         |> State.refreshCachedStrings
+    let cleanTree =
+        { model.Tree with
+            DraggingId = None
+            PendingDragId = None
+            DropTargetId = None
+            DropTargetMode = None
+            DragPos = None
+            SvgInfo = None
+            PointerDownPos = None
+            ConfirmingId = None
+            ActiveActionId = ActionIds.NoAction
+            ActiveMenuId = None }
     let snap = {
         SrcOfTrth     = model.SrcOfTrth
-        Tree          = model.Tree
+        Tree          = cleanTree
         PolygonEditor = Stable cleanPolyInner
         Sequences     = model.Sequences
     }
@@ -323,9 +335,21 @@ let applyAlterationSuffix (js: IJSRuntime) (model: Model) : Model =
 /// <returns>Tuple of updated model and asynchronous command to synchronize protocol state.</returns>
 let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (updateStacks: UndoSnapshot -> Model -> Model) : Model * Cmd<Message> =
     let currentPolyInner = getInnerPolygonEditor model.PolygonEditor
+    let cleanCurrentTree =
+        { model.Tree with
+            DraggingId = None
+            PendingDragId = None
+            DropTargetId = None
+            DropTargetMode = None
+            DragPos = None
+            SvgInfo = None
+            PointerDownPos = None
+            ConfirmingId = None
+            ActiveActionId = ActionIds.NoAction
+            ActiveMenuId = None }
     let reverseSnap = { 
         SrcOfTrth     = model.SrcOfTrth
-        Tree          = model.Tree
+        Tree          = cleanCurrentTree
         PolygonEditor = Stable (currentPolyInner |> State.snapshot |> State.refreshCachedStrings)
         Sequences     = model.Sequences 
     }
@@ -343,10 +367,13 @@ let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (update
         | _ when snap.SrcOfTrth = model.SrcOfTrth -> model.Derived
         | _ -> Cache.deriveFromSource snap.SrcOfTrth snap.Sequences newExport snap.Tree.ActiveLevel
 
+    let restoredTree = Coloring.colorModel snap.Tree
+
     let restored = 
         { model with
             SrcOfTrth       = snap.SrcOfTrth
-            Tree            = snap.Tree
+            Tree            = restoredTree
+            LastValidTree   = restoredTree
             PolygonEditor   = Stable restoredPolyInner
             PolygonExport   = newExport
             Sequences       = snap.Sequences
@@ -616,8 +643,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | TreeMsg subMsg ->
         let modelToUse, nextCount =
             match subMsg with
-            | SubMsg.ExecuteAction _ | SubMsg.AddChild _ | SubMsg.UpdateName _ 
-            | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _
+            | SubMsg.ExecuteAction _ 
+            | SubMsg.AddChild _ 
+            | SubMsg.UpdateName _ 
+            | SubMsg.UpdateWeight _ 
+            | SubMsg.UpdateExtrusion _ 
+            | SubMsg.SetTopExtrusion _ ->
+                let m = pushUndo model |> applyAlterationSuffix js
+                m, m.EditsCount + 1
             | SubMsg.PointerUp when model.Tree.DraggingId.IsSome ->
                 let m = pushUndo model |> applyAlterationSuffix js
                 m, m.EditsCount + 1

@@ -22,14 +22,16 @@ let deleteAction = {
             button {
                 attr.``class`` "nodeweight"
                 attr.style "color: #e67e22; border: none !important; width: 54px; margin: auto; cursor: pointer; padding: 0; background: none;"
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
                 on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, ActionIds.Delete)))
                 text "DELETE"
             }
             button {
                 attr.``class`` "nodebutton2"
                 attr.style "color: #999; font-size: 10px;"
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
                 on.pointerdown (fun _ -> dispatch CancelAction)
                 text "↺"
             }
@@ -46,19 +48,22 @@ let elevateAction = {
                 attr.style "border: none !important; width: 54px; position: absolute; top: 8px; left: 3px; background: transparent;"
                 attr.value (string node.Extrusion)
                 on.input (fun ev -> dispatch (ActionInput (node.Id, ActionIds.Elevate, string ev.Value)))
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
             }
             button {
                 attr.``class`` "nodename"
                 attr.style "color: #3498db; font-weight: bold; cursor: pointer; border: none !important; width: 54px; padding: 0; margin: auto; transform: translateY(5px); background: none;"
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
                 on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, ActionIds.Elevate)))
                 text "ELEVATE"
             }
             button {
                 attr.``class`` "nodebutton2"
                 attr.style "color: #999; font-size: 10px;"
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
                 on.pointerdown (fun _ -> dispatch CancelAction)
                 text "↺"
             }
@@ -78,14 +83,16 @@ let nestAction = {
             button {
                 attr.``class`` "nodename"
                 attr.style "color: #2ecc71; font-weight: normal; font-size: 10px; cursor: pointer; border: none !important; width: 54px; padding: 0; margin: auto; transform: translateY(5px); background: none;"
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
                 on.pointerdown (fun _ -> dispatch (ExecuteAction (node.Id, ActionIds.Nest)))
                 text "NEST"
             }
             button {
                 attr.``class`` "nodebutton2"
                 attr.style "color: #999; font-size: 10px;"
-                "onpointerdown:stopPropagation" => true
+                on.stopPropagation "pointerdown" true
+                on.stopPropagation "click" true
                 on.pointerdown (fun _ -> dispatch CancelAction)
                 text "↺"
             }

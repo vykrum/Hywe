@@ -26,39 +26,37 @@ let rec isDescendant (targetId: Guid) (potentialParent: TreeNode) : bool =
 
 /// <summary> Recursively searches for a tree node by its unique identifier. </summary>
 let rec findNodeById (id: Guid) (node: TreeNode) : TreeNode option =
-    match node.Id = id with
-    | true -> Some node
-    | false -> node.Children |> List.tryPick (findNodeById id)
+    if node.Id = id then Some node
+    else node.Children |> List.tryPick (findNodeById id)
 
 /// <summary>
 /// Appends a new child node with random name and default attributes to the target parent.
 /// </summary>
-let rec addChildToNodeById (node: TreeNode) parentId =
-    match node.Id = parentId with
-    | true ->
-        let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = node.Level; Extrusion = 3.0; Base = None; Color = None }
+let rec addChildToNodeById (node: TreeNode) (parentId: Guid) : TreeNode =
+    if node.Id = parentId then
+        let childLevel = match node.Children with c :: _ -> c.Level | [] -> node.Level
+        let newChild = { Id = Guid.NewGuid(); Name = getRandomName(); Weight = "96"; X = 0.0; Y = 0.0; Children = []; Level = childLevel; Extrusion = 3.0; Base = None; Color = None }
         { node with Children = node.Children @ [newChild] }
-    | false -> { node with Children = node.Children |> List.map (fun c -> addChildToNodeById c parentId) }
+    else
+        { node with Children = node.Children |> List.map (fun c -> addChildToNodeById c parentId) }
 
 /// <summary> Recursively removes the node matching the given identifier from the tree. </summary>
-let rec removeNodeById id (node: TreeNode) : TreeNode option =
-    match node.Id = id with
-    | true -> None
-    | false ->
+let rec removeNodeById (id: Guid) (node: TreeNode) : TreeNode option =
+    if node.Id = id then None
+    else
         let newChildren = node.Children |> List.choose (removeNodeById id)
         Some { node with Children = newChildren }
 
 /// <summary> Applies a transformation function to the node matching the given identifier. </summary>
-let rec updateNodeById id updateFn node =
-    match node.Id = id with
-    | true -> updateFn node
-    | false -> { node with Children = node.Children |> List.map (updateNodeById id updateFn) }
+let rec updateNodeById (id: Guid) (updateFn: TreeNode -> TreeNode) (node: TreeNode) : TreeNode =
+    if node.Id = id then updateFn node
+    else { node with Children = node.Children |> List.map (updateNodeById id updateFn) }
 
 /// <summary>
 /// Resets node levels that exceed a target level down to that target level.
 /// </summary>
-let rec resetElevatedNodes targetLvl (node: TreeNode) =
-    let newNode = match node.Level > targetLvl with true -> { node with Level = targetLvl } | false -> node
+let rec resetElevatedNodes (targetLvl: int) (node: TreeNode) : TreeNode =
+    let newNode = if node.Level > targetLvl then { node with Level = targetLvl } else node
     { newNode with Children = newNode.Children |> List.map (resetElevatedNodes targetLvl) }
 
 /// <summary>
@@ -82,17 +80,17 @@ let rec syncHierarchy (levels: Map<int, TreeNode>) (anchors: Map<int, Guid>) (lv
 /// Detaches and returns a node by ID from a tree along with the remaining tree structure.
 /// </summary>
 let rec extractNode (id: Guid) (node: TreeNode) : TreeNode option * TreeNode option =
-    match node.Id = id with
-    | true -> (None, Some node)
-    | false ->
-        let newChildren, extracted = 
-            node.Children |> List.fold (fun (acc, found) c ->
+    if node.Id = id then (None, Some node)
+    else
+        let newChildrenRev, extracted = 
+            (([], None), node.Children)
+            ||> List.fold (fun (acc, found) c ->
                 let (newNode, maybeFound) = extractNode id c
-                let nextAcc = match newNode with Some n -> acc @ [n] | None -> acc
-                let nextFound = match maybeFound with Some _ -> maybeFound | None -> found
+                let nextAcc = match newNode with Some n -> n :: acc | None -> acc
+                let nextFound = Option.orElse maybeFound found
                 nextAcc, nextFound
-            ) ([], None)
-        (Some { node with Children = newChildren }, extracted)
+            )
+        (Some { node with Children = List.rev newChildrenRev }, extracted)
 
 /// <summary>
 /// Inserts a node before a specified sibling node within the tree hierarchy.
@@ -101,30 +99,51 @@ let rec insertBefore (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) 
     let rec insertInList list =
         match list with
         | [] -> []
-        | h :: t ->
-            match h.Id = targetId with
-            | true -> nodeToInsert :: h :: t
-            | false -> h :: insertInList t
+        | h :: t when h.Id = targetId -> nodeToInsert :: h :: t
+        | h :: t -> h :: insertInList t
     
-    match node.Children |> List.exists (fun c -> c.Id = targetId) with
-    | true -> { node with Children = insertInList node.Children }
-    | false -> { node with Children = node.Children |> List.map (insertBefore targetId nodeToInsert) }
+    if node.Children |> List.exists (fun c -> c.Id = targetId) then
+        { node with Children = insertInList node.Children }
+    else
+        { node with Children = node.Children |> List.map (insertBefore targetId nodeToInsert) }
+
+/// <summary>
+/// Inserts a node after a specified sibling node within the tree hierarchy.
+/// </summary>
+let rec insertAfter (targetId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
+    let rec insertInList list =
+        match list with
+        | [] -> []
+        | h :: t when h.Id = targetId -> h :: nodeToInsert :: t
+        | h :: t -> h :: insertInList t
+    
+    if node.Children |> List.exists (fun c -> c.Id = targetId) then
+        { node with Children = insertInList node.Children }
+    else
+        { node with Children = node.Children |> List.map (insertAfter targetId nodeToInsert) }
+
+/// <summary>
+/// Appends a node as a child of a specified parent node within the tree hierarchy.
+/// </summary>
+let rec attachChild (parentId: Guid) (nodeToInsert: TreeNode) (node: TreeNode) : TreeNode =
+    if node.Id = parentId then
+        { node with Children = node.Children @ [nodeToInsert] }
+    else
+        { node with Children = node.Children |> List.map (attachChild parentId nodeToInsert) }
 
 /// <summary>
 /// Computes 2D Cartesian coordinates (X, Y) for tree nodes based on depth and subtree widths.
 /// </summary>
 let rec layoutTree (node: TreeNode) (depth: int) (xStart: float) : TreeNode * float =
     let y = float depth * 65.0 + 30.0
-    match node.Children.IsEmpty with
-    | true ->
+    if node.Children.IsEmpty then
         let x = xStart
-        { node with X = x; Y = y }, x + 60.0
-    | false ->
+        { node with X = x; Y = y }, x + 76.0
+    else
         let laidOutChildren, finalX = 
-            node.Children |> List.fold (fun (acc, currentX) child ->
-                let newNode, nextX = layoutTree child (depth + 1) currentX
-                acc @ [newNode], nextX
-            ) ([], xStart)
+            (xStart, node.Children)
+            ||> List.mapFold (fun currentX child ->
+                layoutTree child (depth + 1) currentX)
         let firstX = laidOutChildren.Head.X
         let lastX = (List.last laidOutChildren).X
         let x = (firstX + lastX) / 2.0

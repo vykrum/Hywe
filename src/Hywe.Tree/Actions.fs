@@ -141,7 +141,11 @@ let elevateActionLogic = {
         node.Level >= model.ActiveLevel && not isNestAnchor
     IsDisabled = fun _ _ -> false
     Execute = fun model node ->
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+        let currentTree = 
+            match model.ActiveNest with
+            | Some nId -> model.Nests |> Map.tryFind nId |> Option.defaultValue (model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0])
+            | None -> model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+
         let nextLvlForNode = model.ActiveLevel + 1
         let newAnchors = model.LevelAnchors |> Map.add nextLvlForNode node.Id
         let freshRoot = 
@@ -153,21 +157,43 @@ let elevateActionLogic = {
         
         let treeWithResets = TreeOps.resetElevatedNodes model.ActiveLevel currentTree
         let updatedCurrentTree = TreeOps.updateNodeById node.Id (fun n -> { n with Level = nextLvlForNode }) treeWithResets
-        let finalLevels = 
-            model.Levels 
-            |> Map.add nextLvlForNode freshRoot
-            |> Map.add model.ActiveLevel updatedCurrentTree
         
-        let newModel = 
-            { model with Levels = finalLevels; LevelAnchors = newAnchors; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
-            |> Coloring.colorModel
-        newModel, Cmd.none
+        match model.ActiveNest with
+        | Some nId ->
+            let newNests = model.Nests |> Map.add nId updatedCurrentTree
+            let finalLevels = model.Levels |> Map.add nextLvlForNode freshRoot
+            let newModel = 
+                { model with 
+                    Levels = finalLevels
+                    Nests = newNests
+                    LevelAnchors = newAnchors
+                    ConfirmingId = None
+                    ActiveActionId = ActionIds.NoAction
+                    ActiveMenuId = None }
+                |> Coloring.colorModel
+            newModel, Cmd.none
+        | None ->
+            let finalLevels = 
+                model.Levels 
+                |> Map.add nextLvlForNode freshRoot
+                |> Map.add model.ActiveLevel updatedCurrentTree
+            let newModel = 
+                { model with Levels = finalLevels; LevelAnchors = newAnchors; ConfirmingId = None; ActiveActionId = ActionIds.NoAction; ActiveMenuId = None }
+                |> Coloring.colorModel
+            newModel, Cmd.none
     HandleInput = Some (fun model node newVal ->
         let extrusion = match Double.TryParse newVal with true, v -> max 0.1 v | _ -> node.Extrusion
-        let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
-        let updatedRoot = TreeOps.updateNodeById node.Id (fun n -> { n with Extrusion = extrusion }) currentTree
-        let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel updatedRoot) model.LevelAnchors 0
-        { model with Levels = finalLevels }, Cmd.none
+        match model.ActiveNest with
+        | Some nId ->
+            let currentTree = model.Nests |> Map.tryFind nId |> Option.defaultValue (model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0])
+            let updatedRoot = TreeOps.updateNodeById node.Id (fun n -> { n with Extrusion = extrusion }) currentTree
+            let newNests = model.Nests |> Map.add nId updatedRoot
+            { model with Nests = newNests }, Cmd.none
+        | None ->
+            let currentTree = model.Levels |> Map.tryFind model.ActiveLevel |> Option.defaultValue model.Levels.[0]
+            let updatedRoot = TreeOps.updateNodeById node.Id (fun n -> { n with Extrusion = extrusion }) currentTree
+            let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel updatedRoot) model.LevelAnchors 0
+            { model with Levels = finalLevels }, Cmd.none
     )
 }
 
@@ -179,11 +205,11 @@ let nestActionLogic = {
     LogicLabel = "Nest"
     IsApplicable = fun model node -> 
         let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = node.Id)
-        node.Children.IsEmpty && not isNestAnchor
+        model.ActiveNest.IsNone && node.Children.IsEmpty && not isNestAnchor
     IsDisabled = fun model node -> node.Level > model.ActiveLevel
     Execute = fun model node ->
         let newNestId = match model.Nests.IsEmpty with true -> 1 | false -> (model.Nests.Keys |> Seq.max) + 1
-        let newNestRoot = { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None; Color = node.Color }
+        let newNestRoot = { Id = Guid.NewGuid(); Name = "<nest>"; Weight = "100"; X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None; Color = None }
         let laidOut = fst (TreeOps.layoutTree newNestRoot 0 50.0)
         let newNests = model.Nests |> Map.add newNestId laidOut
         let newNestAnchors = model.NestAnchors |> Map.add newNestId node.Id
@@ -192,6 +218,7 @@ let nestActionLogic = {
                 Nests = newNests
                 NestAnchors = newNestAnchors
                 ActiveNest = Some newNestId
+                SelectedNodeId = Some newNestRoot.Id
                 ConfirmingId = None
                 ActiveActionId = ActionIds.NoAction
                 ActiveMenuId = None }

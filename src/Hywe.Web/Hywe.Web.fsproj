@@ -26,6 +26,7 @@
 
 		<!-- Core Panel Components -->
 		<Compile Include="Panels/NodeActions.fs" />
+		<Compile Include="Components/NodeElement.fs" />
 		<Compile Include="Panels/NodeTree.fs" />
 
 		<!-- State & Model Types -->
