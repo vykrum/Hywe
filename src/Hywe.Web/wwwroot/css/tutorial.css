@@ -1,0 +1,370 @@
+/* ==========================================================================
+   HYWE Tutorial System Styles
+   ========================================================================== */
+
+/* Tutorial Banner (Minimalist Light Theme) */
+.tutorial-banner {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px 10px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    animation: tutorialSlideIn 0.3s ease;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes tutorialSlideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Top row: dots + step counter */
+.tutorial-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tutorial-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tutorial-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    transition: background 0.25s, transform 0.25s;
+    flex-shrink: 0;
+}
+
+.tutorial-dot.active {
+    background: var(--color-primary, #363636);
+    transform: scale(1.3);
+}
+
+.tutorial-step-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutorial-step-label {
+    font-size: 9px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--color-text-light, #94a3b8);
+    font-weight: 600;
+}
+
+/* Content */
+.tutorial-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tutorial-title {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-text-main, #1e293b);
+    line-height: 1.3;
+}
+
+.tutorial-body {
+    margin: 0;
+    font-size: 11px;
+    color: var(--color-text-muted, #64748b);
+    line-height: 1.5;
+}
+
+/* Annotation chip */
+.tutorial-annotation {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+}
+
+.tutorial-badge-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid;
+    flex-shrink: 0;
+}
+
+.tutorial-annotation-text {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #334155;
+    letter-spacing: 0.1px;
+}
+
+/* Auto-play progress bar */
+.tutorial-progress-bar {
+    height: 2px;
+    width: 100%;
+    background: #f1f5f9;
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 1px;
+}
+
+.tutorial-progress-fill {
+    height: 100%;
+    background: #6366f1;
+    width: 0%;
+    animation: tutorialAutoProgress 3.5s linear forwards;
+}
+
+@keyframes tutorialAutoProgress {
+    from { width: 0%; }
+    to   { width: 100%; }
+}
+
+/* Navigation row */
+.tutorial-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.tutorial-left-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.tutorial-nav-arrows {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tutorial-skip,
+.tutorial-autoplay {
+    font-size: 10px !important;
+    color: #64748b !important;
+    padding: 2px 6px !important;
+    height: 22px;
+}
+
+.tutorial-autoplay.active {
+    color: #6366f1 !important;
+    font-weight: 600;
+}
+
+.tutorial-skip:hover,
+.tutorial-autoplay:hover {
+    color: #1e293b !important;
+}
+
+.tutorial-back,
+.tutorial-next {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px !important;
+    padding: 3px 9px !important;
+    height: 24px;
+}
+
+.tutorial-back:disabled {
+    opacity: 0.25;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Tree wrapper — scopes all badge highlights */
+.tutorial-tree-wrapper {
+    width: 100%;
+    flex: 1;
+    overflow: hidden;
+    border-radius: 8px;
+    position: relative;
+    transition: border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 6px;
+}
+
+/* Per-badge highlight keyframe animations */
+@keyframes thlPulseIndigo {
+    0%   { box-shadow: 0 0 0 0   rgba(99,102,241,0.9), 0 0 8px 2px rgba(99,102,241,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0),   0 0 8px 2px rgba(99,102,241,0); }
+    100% { box-shadow: 0 0 0 0   rgba(99,102,241,0),   0 0 0   0   rgba(99,102,241,0); }
+}
+@keyframes thlPulseRed {
+    0%   { box-shadow: 0 0 0 0   rgba(248,113,113,0.9), 0 0 8px 2px rgba(248,113,113,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(248,113,113,0),   0 0 8px 2px rgba(248,113,113,0); }
+    100% { box-shadow: 0 0 0 0   rgba(248,113,113,0),   0 0 0   0   rgba(248,113,113,0); }
+}
+@keyframes thlPulseBlue {
+    0%   { box-shadow: 0 0 0 0   rgba(96,165,250,0.9), 0 0 8px 2px rgba(96,165,250,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(96,165,250,0),   0 0 8px 2px rgba(96,165,250,0); }
+    100% { box-shadow: 0 0 0 0   rgba(96,165,250,0),   0 0 0   0   rgba(96,165,250,0); }
+}
+@keyframes thlPulseGreen {
+    0%   { box-shadow: 0 0 0 0   rgba(52,211,153,0.9), 0 0 8px 2px rgba(52,211,153,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(52,211,153,0),   0 0 8px 2px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0   rgba(52,211,153,0),   0 0 0   0   rgba(52,211,153,0); }
+}
+@keyframes thlPulseViolet {
+    0%   { box-shadow: 0 0 0 0   rgba(167,139,250,0.9), 0 0 8px 2px rgba(167,139,250,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(167,139,250,0),   0 0 8px 2px rgba(167,139,250,0); }
+    100% { box-shadow: 0 0 0 0   rgba(167,139,250,0),   0 0 0   0   rgba(167,139,250,0); }
+}
+@keyframes thlPulseAmber {
+    0%   { box-shadow: 0 0 0 0   rgba(251,191,36,0.9), 0 0 8px 2px rgba(251,191,36,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(251,191,36,0),   0 0 8px 2px rgba(251,191,36,0); }
+    100% { box-shadow: 0 0 0 0   rgba(251,191,36,0),   0 0 0   0   rgba(251,191,36,0); }
+}
+@keyframes thlPulseUnderline {
+    0%   { border-bottom-color: rgba(6, 182, 212, 1); box-shadow: 0 2px 6px 0 rgba(6, 182, 212, 0.4); }
+    50%  { border-bottom-color: rgba(6, 182, 212, 0.3); box-shadow: 0 1px 2px 0 rgba(6, 182, 212, 0.1); }
+    100% { border-bottom-color: rgba(6, 182, 212, 1); box-shadow: 0 2px 6px 0 rgba(6, 182, 212, 0.4); }
+}
+
+/* Smoothly animate node movements and tree SVG line transitions during tutorial */
+.tutorial-tree-wrapper div[style*="position:absolute"] {
+    transition: left 0.75s cubic-bezier(0.34, 1.25, 0.64, 1), top 0.75s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.tutorial-tree-wrapper svg line {
+    transition: x1 0.75s cubic-bezier(0.34, 1.25, 0.64, 1), y1 0.75s cubic-bezier(0.34, 1.25, 0.64, 1),
+                x2 0.75s cubic-bezier(0.34, 1.25, 0.64, 1), y2 0.75s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+/* move badge */
+.tutorial-hl-badge-move .badge-move {
+    animation: thlPulseAmber 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(230,126,34,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+
+/* + badge */
+.tutorial-hl-badge-add .badge-add {
+    animation: thlPulseIndigo 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(99,102,241,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+
+/* delete badge */
+.tutorial-hl-badge-delete .badge-delete {
+    animation: thlPulseRed 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(248,113,113,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+.tutorial-hl-badge-delete .prop-btn-delete {
+    animation: thlPulseRed 1.6s ease-out infinite;
+    border-radius: 6px;
+    outline: 2px solid rgba(248,113,113,0.6);
+    outline-offset: 2px;
+}
+
+/* elevate badge */
+.tutorial-hl-badge-elevate .badge-elevate {
+    animation: thlPulseBlue 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(96,165,250,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+.tutorial-hl-badge-elevate .prop-btn-elevate {
+    animation: thlPulseBlue 1.6s ease-out infinite;
+    border-radius: 6px;
+    outline: 2px solid rgba(96,165,250,0.6);
+    outline-offset: 2px;
+}
+
+/* nest badge */
+.tutorial-hl-badge-nest .badge-nest {
+    animation: thlPulseGreen 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(52,211,153,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+.tutorial-hl-badge-nest .prop-btn-nest {
+    animation: thlPulseGreen 1.6s ease-out infinite;
+    border-radius: 6px;
+    outline: 2px solid rgba(52,211,153,0.6);
+    outline-offset: 2px;
+}
+
+/* level-nav (highlight the level tabs strip & breadcrumbs) */
+.tutorial-hl-level-nav .level-controls-container {
+    animation: thlPulseViolet 1.6s ease-out infinite;
+    border-radius: 20px;
+    outline: 2.5px solid rgba(167, 139, 250, 0.9);
+    outline-offset: 2px;
+}
+.tutorial-hl-level-nav .level-tab.active {
+    animation: thlPulseViolet 1.6s ease-out infinite;
+    border-radius: 4px;
+    background: rgba(167, 139, 250, 0.25) !important;
+    color: #8b5cf6 !important;
+}
+
+/* props bar */
+.tutorial-hl-props-bar .node-properties-bar {
+    animation: thlPulseAmber 1.6s ease-out infinite;
+    border-radius: 8px;
+    outline: 2px solid rgba(251,191,36,0.6);
+    outline-offset: 2px;
+}
+.tutorial-hl-props-bar .prop-input {
+    animation: thlPulseAmber 1.6s ease-out infinite;
+    border-radius: 4px;
+    background: rgba(251, 191, 36, 0.2) !important;
+    outline: 2px solid rgba(251, 191, 36, 0.9);
+    outline-offset: 1px;
+}
+
+/* edit-name (sleek underline highlight for inline label input) */
+.tutorial-hl-edit-name .node-outer.is-selected .nodename {
+    border: none !important;
+    border-bottom: 2.5px solid #06b6d4 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #0891b2 !important;
+    font-weight: 700 !important;
+    outline: none !important;
+    animation: thlPulseUnderline 1.6s ease-in-out infinite;
+}
+
+/* edit-weight (sleek underline highlight for inline weight input) */
+.tutorial-hl-edit-weight .node-outer.is-selected .nodeweight {
+    border: none !important;
+    border-bottom: 2.5px solid #06b6d4 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #0891b2 !important;
+    font-weight: 700 !important;
+    outline: none !important;
+    animation: thlPulseUnderline 1.6s ease-in-out infinite;
+}
