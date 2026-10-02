@@ -32,6 +32,9 @@
 		<!-- State & Model Types -->
 		<Compile Include="Common/ModelTypes.fs" />
 
+		<!-- Tutorial onboarding -->
+		<Compile Include="Panels/Tutorial.fs" />
+
 		<!-- Reusable UI Components -->
 		<Compile Include="Components/PageElements.fs" />
 

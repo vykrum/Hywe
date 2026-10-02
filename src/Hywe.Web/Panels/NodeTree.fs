@@ -342,7 +342,7 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
         // Level Nav
         div {
             attr.``class`` "level-controls-container"
-            attr.style "width: fit-content; margin-bottom: 5px; z-index: 1000;"
+            attr.style "width: fit-content; margin: 4px auto 8px auto; z-index: 1000;"
             span { attr.``class`` "level-label"; text "LEVELS:" }
             forEach (List.init (maxLevel + 1) id) (fun i ->
                 let elv = if i < elevations.Length then elevations.[i] else 0.0
