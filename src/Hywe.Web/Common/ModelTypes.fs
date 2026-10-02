@@ -292,6 +292,10 @@ type Model =
         LoadedCommunityAuthor: string option
         CachedAuthor: string option
         HasAppendedModSuffix: bool
+        /// <summary> Current tutorial step index. None means tutorial is not active. </summary>
+        TutorialStep: int option
+        /// <summary> Whether auto step advance is active in the tutorial. </summary>
+        TutorialAutoPlay: bool
     }
 
 type ExportMetadata = {
@@ -401,6 +405,11 @@ type Message =
     | AuthorCachedLoaded of string
     | TitleCachedLoaded of string
     | CommunityAuthorCachedLoaded of string
+    | TutorialNext
+    | TutorialBack
+    | DismissTutorial
+    | ToggleTutorialAutoPlay
+    | TutorialAutoAdvance of step: int
     | NoOp
 
 /// <summary> Synchronizes the PolygonEditor state to pure data cache. </summary>

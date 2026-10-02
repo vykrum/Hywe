@@ -294,7 +294,16 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
             div {
                 attr.id "hywe-input-interactive"
                 attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
-                NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
+                match model.TutorialStep with
+                | Some step ->
+                    Tutorial.viewTutorialBanner step model.TutorialAutoPlay dispatch
+                    let highlightClass = Tutorial.badgeCssClass Tutorial.stepDefs.[min step (Tutorial.totalSteps - 1)].Badge
+                    div {
+                        attr.``class`` (if highlightClass <> "" then $"tutorial-tree-wrapper {highlightClass}" else "tutorial-tree-wrapper")
+                        NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
+                    }
+                | None ->
+                    NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
             }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
