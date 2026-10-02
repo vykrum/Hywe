@@ -168,7 +168,6 @@ let instructionsModal model dispatch (js: IJSRuntime) =
     | true ->
         let closeGuide () =
             dispatch ToggleInstructions
-            js.InvokeVoidAsync("eval", "var b = document.getElementById('hywe-boundary-guide-btn'); if(b){b.focus({preventScroll:true});}else if(document.activeElement){document.activeElement.blur();}") |> ignore
 
         let renderGuideSection title items =
             div {
@@ -486,7 +485,7 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo =
         // Hidden fields for JS interop callback
         let handleMapJsonTrigger elementId onParsed =
             async {
-                let! dataStr = js.InvokeAsync<string>("eval", [| box $"document.getElementById('{elementId}').value" |]).AsTask() |> Async.AwaitTask
+                let! dataStr = js.InvokeAsync<string>("getElementValue", [| box elementId |]).AsTask() |> Async.AwaitTask
                 match System.String.IsNullOrWhiteSpace dataStr with
                 | true -> ()
                 | false ->

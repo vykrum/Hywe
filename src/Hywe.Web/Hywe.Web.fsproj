@@ -36,6 +36,7 @@
 		<Compile Include="Components/PageElements.fs" />
 
 		<!-- Shared Domain & Infrastructure -->
+		<Compile Include="Common/Titleblock.fs" />
 		<Compile Include="Common/TreeFilter.fs" />
 		<Compile Include="Common/FileManager.fs" />
 

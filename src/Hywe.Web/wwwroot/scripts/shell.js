@@ -80,6 +80,11 @@ window.clickElement = (id) => {
     if (el) el.click();
 };
 
+window.getElementValue = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value : "";
+};
+
 window.copyToClipboard = function (text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
         return navigator.clipboard.writeText(text).then(() => true).catch(() => false);

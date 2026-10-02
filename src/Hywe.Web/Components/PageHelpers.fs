@@ -387,14 +387,14 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                           match markers with
                           | [] -> return cache, batches
                           | marker :: rest ->
-                              do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Processing %s" marker).AsTask() |> Async.AwaitTask
+                              printfn "Hywe: Processing %s" marker
                               let section = 
                                   match Map.tryFind marker model.ReportOptions.LevelSections with
                                   | Some s -> s
                                   | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
                               
                               if section.BatchOverview || section.Variations || section.FlowChart then
-                                  do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Generating layout data for %s..." marker).AsTask() |> Async.AwaitTask
+                                  printfn "Hywe: Generating layout data for %s..." marker
                                   let range = if section.BatchOverview || section.Variations then [0..23] else [11] // Use index 11 as default for coloring
                                   
                                   let baseLevel = 
@@ -442,10 +442,10 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                       
                   let! currentCache, allBatches = processMarkers allMarkers model.LayoutCache Map.empty
                       
-                  do! js.InvokeVoidAsync("console.log", "Hywe: Compiling final HTML report...").AsTask() |> Async.AwaitTask
+                  printfn "Hywe: Compiling final HTML report..."
                   let opts = { model.ReportOptions with Captured3DImage = model.Captured3DImage }
                   let html = Report.generateReportHtml opts model.Tree allBatches
-                  do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Report compiled. HTML size: %d bytes" html.Length).AsTask() |> Async.AwaitTask
+                  printfn "Hywe: Report compiled. HTML size: %d bytes" html.Length
                   return html, currentCache
               }) () (fun (html, cache) -> ReportGenerated (html, cache)))
     
