@@ -34,7 +34,6 @@
 
 		<!-- Reusable UI Components -->
 		<Compile Include="Components/PageElements.fs" />
-		<Compile Include="Components/PageHelp.fs" />
 
 		<!-- Shared Domain & Infrastructure -->
 		<Compile Include="Common/TreeFilter.fs" />

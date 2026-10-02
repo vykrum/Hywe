@@ -186,19 +186,12 @@ let initModel =
         TeachErrorMessage = None
         IsRecording = false
         PolygonExport = initialPolygonExport
-        Onboarding = {
-            IsActive = true
-            IsAutoSimulating = false
-            CurrentStep = Welcome
-            SeenSteps = Set.empty
-        }
         BatchProgress = 0
         CurrentScreen = LoadingScreen
         ViewLocked = false
         EditsCount = 0
         IsPresetsCollapsed = true
         IsWorkspaceCollapsed = true
-        IsHelpCollapsed = false
         PendingConfirm = None
         UndoStack = []
         RedoStack = []
@@ -417,34 +410,6 @@ let performRedo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
             { m with RedoStack = rest; UndoStack = revSnap :: m.UndoStack })
 
 /// <summary>
-/// Automatically concludes and dismisses onboarding tutorials if a user performs an intentional editing
-/// or interaction action outside of guided step progression.
-/// </summary>
-/// <param name="message">Incoming application message.</param>
-/// <param name="model">Current application model.</param>
-/// <returns>Model with onboarding deactivated if message indicates active user interaction.</returns>
-let dismissOnboardingIfInteracting (message: Message) (model: Model) : Model =
-    match model, message with
-    | { Onboarding = { IsActive = false } }, _ -> model
-    | _, (NextOnboardingStep | PreviousOnboardingStep | SkipOnboarding | RestartOnboarding | NoOp | ToggleCoords
-        | TransitionToIntro | TransitionToMain 
-        | LoadState _ | StartHyweave | RunHyweave | FinishHyweave | SetSqnIndex _
-        | SelectPreset _ | TogglePresetsCollapse | ToggleHelpCollapse | ToggleConfirm _
-        | ToggleAboutModal | SetShowAboutModal _
-        | UpdateMetadata _ | Undo | Redo | SetAuthor _ | SetExplorationTitle _ | AuthorCachedLoaded _
-        | TitleCachedLoaded _ | CommunityAuthorCachedLoaded _
-        | SetIsStandalone _ | SetPrivacyAlert _ | SetInstallPromptAvailable _
-        | CacheResult _ | HyweaveResult _ | RecordResult _ | ReportGenerated _
-        | HideLinkCopied
-        | TreeMsg (SubMsg.PointerMove _)
-        | PolygonEditorMsg (PointerMove _)) -> model
-    | _ ->
-        { model with 
-            Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }
-            IsPresetsCollapsed = true
-            IsWorkspaceCollapsed = true }
-
-/// <summary>
 /// Handles UI helper commands and page actions (panel switching, file imports, preset selection,
 /// report generation, and data exports), recording undo checkpoints when destructive changes occur.
 /// </summary>
@@ -474,7 +439,6 @@ let handlePageHelperUpdate (js: IJSRuntime) (msg: Message) (model: Model) : Mode
 /// <param name="model">Current application state model.</param>
 /// <returns>Tuple of updated model and Elmish command.</returns>
 let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
-    let model = dismissOnboardingIfInteracting message model
 
     match message with
     | NoOp -> model, Cmd.none
@@ -992,9 +956,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match isFromUrl with
             | true ->
                 async { do! js.InvokeVoidAsync("console.log", sprintf "Hywe: Restoration successful. Panel: %A" panel).AsTask() |> Async.AwaitTask } |> Async.StartImmediate
-                { model with 
-                    ActivePanel = resolvedPanel
-                    Onboarding = { model.Onboarding with IsActive = false } }
+                { model with ActivePanel = resolvedPanel }
             | false ->
                 { model with ActivePanel = resolvedPanel }
 
@@ -1071,81 +1033,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | Redo ->
         performRedo js model
 
-    | NextOnboardingStep ->
-        match model.Onboarding with
-        | { IsActive = false } -> model, Cmd.none
-        | { CurrentStep = Finish } ->
-            { model with 
-                Onboarding = { model.Onboarding with 
-                                IsActive = false
-                                SeenSteps = model.Onboarding.SeenSteps.Add Finish }
-                IsPresetsCollapsed = true
-                IsWorkspaceCollapsed = true
-            }, Cmd.none
-        | { CurrentStep = currentStep } ->
-            let nextStep = 
-                match currentStep with
-                | Welcome -> NodeGuide
-                | NodeGuide -> NodeMenuGuide
-                | NodeMenuGuide -> ElevateGuide
-                | ElevateGuide -> MoveNodeGuide
-                | MoveNodeGuide -> BoundaryGuide
-                | BoundaryGuide -> LayoutGuide
-                | LayoutGuide | Finish -> Finish
-
-            let newActivePanel = 
-                match nextStep with
-                | BoundaryGuide -> BoundaryPanel
-                | NodeGuide | NodeMenuGuide | ElevateGuide | MoveNodeGuide | LayoutGuide -> LayoutPanel
-                | _ -> model.ActivePanel
-
-            { model with 
-                Onboarding = { model.Onboarding with 
-                                CurrentStep = nextStep
-                                SeenSteps = model.Onboarding.SeenSteps.Add currentStep }
-                ActivePanel = newActivePanel
-            }, Cmd.none
-
-    | PreviousOnboardingStep ->
-        match model.Onboarding with
-        | { IsActive = false } -> model, Cmd.none
-        | { CurrentStep = currentStep } ->
-            let prevStep = 
-                match currentStep with
-                | Welcome | NodeGuide -> Welcome
-                | NodeMenuGuide -> NodeGuide
-                | ElevateGuide -> NodeMenuGuide
-                | MoveNodeGuide -> ElevateGuide
-                | BoundaryGuide -> MoveNodeGuide
-                | LayoutGuide -> BoundaryGuide
-                | Finish -> LayoutGuide
-
-            let newActivePanel = 
-                match prevStep with
-                | BoundaryGuide -> BoundaryPanel
-                | _ -> LayoutPanel
-
-            { model with 
-                Onboarding = { model.Onboarding with CurrentStep = prevStep }
-                ActivePanel = newActivePanel
-            }, Cmd.none
-
-    | SkipOnboarding ->
-        { model with Onboarding = { model.Onboarding with IsActive = false; IsAutoSimulating = false }; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, 
-        Cmd.map TreeMsg (Cmd.ofMsg CancelAction)
-
-    | RestartOnboarding ->
-        { model with 
-            Onboarding = { IsActive = true; IsAutoSimulating = false; CurrentStep = Welcome; SeenSteps = Set.empty } 
-            ActivePanel = LayoutPanel
-        }, Cmd.none
-
-    | StartAutoSimulation ->
-        model, Cmd.none
-
-    | StopAutoSimulation ->
-        { model with Onboarding = { model.Onboarding with IsAutoSimulating = false } }, Cmd.none
-
     | SetInstallPromptAvailable available ->
         { model with InstallPromptAvailable = available }, Cmd.none
 
@@ -1164,7 +1051,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | TransitionToMain ->
         { model with 
             CurrentScreen = MainScreen
-            Onboarding = { model.Onboarding with IsActive = model.Onboarding.IsActive }
             IsPresetsCollapsed = true 
             IsWorkspaceCollapsed = true
         }, Cmd.none
@@ -1174,9 +1060,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleWorkspaceCollapse ->
         { model with IsWorkspaceCollapsed = not model.IsWorkspaceCollapsed }, Cmd.none
-
-    | ToggleHelpCollapse ->
-        { model with IsHelpCollapsed = not model.IsHelpCollapsed }, Cmd.none
 
     | ToggleGallery ->
         match model with

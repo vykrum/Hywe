@@ -89,10 +89,6 @@ type MyApp() =
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 
                 concat {
-                    match model.Onboarding.IsActive && model.CurrentScreen = MainScreen with
-                    | true -> PageHelp.viewHelp model.Onboarding dispatch
-                    | false -> empty()
-
                     Shell.siteHeader
                     div {
                         attr.id "page-content"
