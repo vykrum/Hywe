@@ -560,7 +560,7 @@ let view model dispatch =
         div {
             attr.``class`` "teach-intro-section"
             h2 { attr.``class`` "teach-intro-title"; text "Teach HYWE" }
-            p { attr.``class`` "teach-intro-text"; text "Contribute an architectural exploration to the dataset by describing your design intent. The fields below capture spatial characteristics and rationale from your active workspace, helping HYWE learn complex hierarchical arrangements." }
+            p { attr.``class`` "teach-intro-text"; text "Contribute an architectural exploration to the HYWE Spatial Dataset. Each contribution records design intent alongside its structured relational representation and deterministic spatial configurations." }
             div {
                 attr.style "display: flex; gap: 8px; justify-content: center; margin-top: 8px;"
                 span {
