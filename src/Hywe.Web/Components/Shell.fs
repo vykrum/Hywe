@@ -147,7 +147,6 @@ let siteFooter (current: AppScreen) =
             a {
                 attr.href "https://linkedin.hywe.in"
                 attr.target "_blank"
-                attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/linkedin.svg"; attr.alt "LinkedIn"; attr.style "display: block;" }
             }
             a {
@@ -159,13 +158,11 @@ let siteFooter (current: AppScreen) =
             a {
                 attr.href "https://repo.hywe.in"
                 attr.target "_blank"
-                attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/github.svg"; attr.alt "GitHub"; attr.style "display: block;" }
             }
             a {
                 attr.href "https://data.hywe.in"
                 attr.target "_blank"
-                attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/hugging-face.svg"; attr.alt "HuggingFace"; attr.style "display: block;" }
             }
         }
