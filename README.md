@@ -1,6 +1,6 @@
 # H Y W E
 ### **Hy**grid **W**oven **E**nsemble
-*A deterministic computational spatial reasoning system for early-stage architecture.*
+*A computational spatial design environment for early-stage architecture.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22967097.svg)](https://doi.org/10.5281/zenodo.22967097) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
 
@@ -31,7 +31,7 @@ $$\text{Programmatic Intent} \longrightarrow \text{Relational Topology} \longrig
 3. **Deterministic Spatial Synthesis**: No random seeds, no hallucinated geometry. For a fixed engine version, identical canonical inputs always resolve into the exact same spatial configuration.
 
 > [!IMPORTANT]
-> **Operational Scope**: HYWE is strictly an exploratory layout engine and spatial reasoning apparatus, not a detailed building modeling platform or construction lifecycle suite. It operates exclusively at early-stage architectural programming, zoning, and volumetric massing.
+> **Operational Scope**: HYWE is strictly an exploratory computational spatial design environment, not a detailed building modeling platform or construction lifecycle suite. It operates exclusively at early-stage architectural programming, zoning, and volumetric massing.
 
 ---
 
@@ -169,7 +169,7 @@ If you utilize HYWE or the HYWE Spatial Dataset in academic or computational des
 ```bibtex
 @misc{subbaiah_hywe_2026,
   author = {Subbaiah, Vikram},
-  title = {HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent},
+  title = {HYWE: A Computational Spatial Design Environment for Deterministic Relational Spatial Configuration},
   year = {2026},
   publisher = {Zenodo and Hugging Face},
   doi = {10.5281/zenodo.22967097},

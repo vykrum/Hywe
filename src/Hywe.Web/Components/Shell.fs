@@ -58,10 +58,10 @@ let loadingScreen (current: AppScreen) =
             strong { text " H Y W E " }
             br {}
             br {}
-            text "A relational, flow-based spatial design environment for early-stage architecture."
+            text "A relational computational spatial design environment for early-stage architecture."
             br {}
             br {}
-            text "Outline the intended hierarchy to generate spatial configurations defined by sequence and connections."
+            text "Define spaces and their relationships. HYWE generates discrete spatial configurations from that programme."
             div {
                 attr.``class`` "loadingText"
                 text "Loading"
@@ -107,10 +107,10 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
             strong { text " H Y W E " }
             br {}
             br {}
-            text "A relational, flow-based spatial design environment for early-stage architecture."
+            text "A relational computational spatial design environment for early-stage architecture."
             br {}
             br {}
-            text "Outline the intended hierarchy to generate spatial configurations defined by sequence and connections."
+            text "Define spaces and their relationships. HYWE generates discrete spatial configurations from that programme."
             
             div {
                 let tapCls = match current with IntroScreen -> "tapText visible" | _ -> "tapText"
@@ -137,7 +137,7 @@ let siteFooter (current: AppScreen) =
             attr.style "display: none; opacity: 0;"
         
         div {
-            attr.style "display: flex; gap: 25px; padding: 20px;"
+            attr.style "display: flex; gap: 25px; padding: 20px; align-items: center;"
             a {
                 attr.href "https://forms.gle/TnH8ghGYz3ugEfWg9"
                 attr.target "_blank"
@@ -163,10 +163,28 @@ let siteFooter (current: AppScreen) =
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/github.svg"; attr.alt "GitHub"; attr.style "display: block;" }
             }
             a {
+                attr.href "https://wiki.hywe.in"
+                attr.target "_blank"
+                attr.rel "noopener noreferrer"
+                attr.title "HYWE Research Wiki"
+                attr.style "font-size: 0.8rem; font-weight: 600; color: #4b5563; text-decoration: none;"
+                text "Wiki"
+            }
+            a {
                 attr.href "https://data.hywe.in"
                 attr.target "_blank"
                 attr.rel "noopener noreferrer"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/hugging-face.svg"; attr.alt "HuggingFace"; attr.style "display: block;" }
+            }
+        }
+        div {
+            attr.style "display: flex; gap: 16px; margin-bottom: 8px; font-size: 0.78rem;"
+            a {
+                attr.href "https://wiki.hywe.in/Guarantees-and-Non-Guarantees"
+                attr.target "_blank"
+                attr.rel "noopener noreferrer"
+                attr.style "color: #64748b; text-decoration: underline;"
+                text "Guarantees & Non-Guarantees"
             }
         }
         div {
