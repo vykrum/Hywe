@@ -139,7 +139,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 * **Language**: [F#](https://fsharp.org/) (functional-first, dependency-free core engine)
 * **Frontend**: [Bolero](https://fsbolero.io/) (Blazor WebAssembly with Elmish architecture)
 * **3D Graphics**: [WebGPU](https://gpuweb.github.io/gpuweb/) (zero-dependency native shader pipeline)
-* **Persistence & Moderation**: Serverless Node.js edge functions ([Hynteract](https://github.com/vykrum/Hynteract))
+* **Data Pipeline**: Serverless Node.js edge functions ([Hynteract](https://github.com/vykrum/Hynteract))
 
 ### Ecosystem & Community
 
