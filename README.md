@@ -166,6 +166,8 @@ Contributions to the HYWE engine and spatial research tools are welcome. Please 
 
 If you utilize HYWE or the HYWE Spatial Dataset in academic or computational design research, please cite:
 
+**Author:** Vikram Subbaiah ([ORCID: 0009-0000-2438-7308](https://orcid.org/0009-0000-2438-7308))
+
 ```bibtex
 @misc{subbaiah_hywe_2026,
   author = {Subbaiah, Vikram},
@@ -174,6 +176,7 @@ If you utilize HYWE or the HYWE Spatial Dataset in academic or computational des
   publisher = {Zenodo and Hugging Face},
   doi = {10.5281/zenodo.22967097},
   url = {https://doi.org/10.5281/zenodo.22967097},
+  orcid = {0009-0000-2438-7308},
   note = {Software archive via Zenodo (DOI: 10.5281/zenodo.22967097); Spatial Dataset via Hugging Face (https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)}
 }
 ```

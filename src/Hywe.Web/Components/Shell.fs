@@ -168,7 +168,14 @@ let siteFooter (current: AppScreen) =
         }
         div {
             attr.``class`` "license-footer"
-            text "© 2022–2026 Vikram Subbaiah · Released under the "
+            text "© 2022–2026 "
+            a {
+                attr.href "https://orcid.org/0009-0000-2438-7308"
+                attr.target "_blank"
+                attr.rel "noopener noreferrer"
+                text "Vikram Subbaiah"
+            }
+            text " · Released under the "
             a {
                 attr.href "https://github.com/vykrum/Hywe/blob/394fddf8edb5c43f594d008c0c876e092f4d38cf/LICENSE#L11"
                 attr.target "_blank"
