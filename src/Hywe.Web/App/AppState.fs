@@ -210,6 +210,7 @@ let initModel =
         LoadedCommunityAuthor = None
         CachedAuthor = None
         HasAppendedModSuffix = false
+        TutorialLevel = Basic
         TutorialStep = None
         TutorialAutoPlay = true
     }
@@ -438,6 +439,31 @@ let scheduleAutoAdvance (step: int) =
         return step
     }) () TutorialAutoAdvance
 
+/// Synchronizes a tutorial step snapshot into full AST text, sequence operators, and derived layout geometries.
+let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model =
+    let stepDef = Tutorial.getStepDef level step
+    let snapshot = Tutorial.getSnapshot level step
+
+    let srcText = serializeModelTree snapshot model.Sequences model.PolygonExport
+    let newSqns = Lexel.extractSequences srcText
+    let derived = Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
+
+    let m = {
+        model with
+            TutorialLevel = level
+            TutorialStep = Some step
+            Tree = snapshot
+            LastValidTree = snapshot
+            SrcOfTrth = srcText
+            Sequences = newSqns
+            Derived = derived
+            NeedsHyweave = false
+    }
+
+    match stepDef.TargetPanel with
+    | Some p -> { m with ActivePanel = p }
+    | None   -> m
+
 /// Main Elmish update loop processing all application-level messages.
 /// Coordinates bidirectional synchronization across AST text syntax, hierarchical node trees,
 /// polygon boundary editing, layout caching, multi-container batch synthesis, and undo/redo stacks.
@@ -451,15 +477,22 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     match message with
     | NoOp -> model, Cmd.none
 
+    | SetTutorialLevel lvl ->
+        let nextStep = 0
+        let m = updateTutorialStep model lvl nextStep
+        let cmd = if m.TutorialAutoPlay then scheduleAutoAdvance nextStep else Cmd.none
+        m, cmd
+
     | TutorialNext ->
         match model.TutorialStep with
         | None -> model, Cmd.none
         | Some step ->
+            let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
-            if nextStep >= Tutorial.totalSteps then
-                { model with TutorialStep = None; Tree = Tutorial.snapshots.[0] }, Cmd.none
+            if nextStep >= total then
+                { model with TutorialStep = None }, Cmd.none
             else
-                let m = { model with TutorialStep = Some nextStep; Tree = Tutorial.snapshots.[nextStep] }
+                let m = updateTutorialStep model model.TutorialLevel nextStep
                 let cmd = if model.TutorialAutoPlay then scheduleAutoAdvance nextStep else Cmd.none
                 m, cmd
 
@@ -468,12 +501,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | None | Some 0 -> model, Cmd.none
         | Some step ->
             let prevStep = step - 1
-            let m = { model with TutorialStep = Some prevStep; Tree = Tutorial.snapshots.[prevStep] }
+            let m = updateTutorialStep model model.TutorialLevel prevStep
             let cmd = if model.TutorialAutoPlay then scheduleAutoAdvance prevStep else Cmd.none
             m, cmd
 
     | DismissTutorial ->
-        { model with TutorialStep = None; Tree = Tutorial.snapshots.[0] }, Cmd.none
+        { model with TutorialStep = None }, Cmd.none
 
     | ToggleTutorialAutoPlay ->
         let newAutoPlay = not model.TutorialAutoPlay
@@ -485,11 +518,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | TutorialAutoAdvance expectedStep ->
         match model.TutorialAutoPlay, model.TutorialStep with
         | true, Some step when step = expectedStep ->
+            let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
-            if nextStep >= Tutorial.totalSteps then
-                { model with TutorialStep = None; Tree = Tutorial.snapshots.[0] }, Cmd.none
+            if nextStep >= total then
+                { model with TutorialStep = None }, Cmd.none
             else
-                let m = { model with TutorialStep = Some nextStep; Tree = Tutorial.snapshots.[nextStep] }
+                let m = updateTutorialStep model model.TutorialLevel nextStep
                 m, scheduleAutoAdvance nextStep
         | _ -> model, Cmd.none
 
@@ -1014,7 +1048,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | BlankString ->
             // Fresh launch (no URL, no local backup): activate tutorial
             match isFromUrl with
-            | false -> { modelWithPanel with TutorialStep = Some 0; TutorialAutoPlay = true; Tree = Tutorial.snapshots.[0] }, scheduleAutoAdvance 0
+            | false ->
+                let m = updateTutorialStep modelWithPanel Basic 0
+                { m with TutorialAutoPlay = true }, scheduleAutoAdvance 0
             | true  -> modelWithPanel, Cmd.none
         | ValidString cleanContent ->
             try
@@ -1057,7 +1093,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         js.InvokeVoidAsync("localStorage.removeItem", "hywe_community_author") |> ignore
         let model = pushUndo model
         let resetSyntax = start
-        let resetTree = Tutorial.snapshots.[0]
+        let resetTree = Serialization.initModel resetSyntax
         let resetPoly = State.initModel
         let resetExport = syncPolygonState resetPoly
         
@@ -1065,8 +1101,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             SrcOfTrth = resetSyntax
             Tree = resetTree
             LastValidTree = resetTree
-            TutorialStep = Some 0
-            TutorialAutoPlay = true
+            TutorialStep = None
+            TutorialAutoPlay = false
             PolygonEditor = Stable resetPoly
             PolygonExport = resetExport
             Sequences = Map.ofList [0, allSqns.[11]]
@@ -1081,7 +1117,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             TeachMetadata = { model.TeachMetadata with ExplorationDescription = "" }
             ReportOptions = { model.ReportOptions with ProjectTitle = "" }
             UserDescription = ""
-        }, scheduleAutoAdvance 0
+        }, Cmd.none
 
     | Undo ->
         performUndo js model
