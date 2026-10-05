@@ -17,8 +17,9 @@ type ActivePanel =
 
 type TutorialLevel =
     | Basic
-    | Operations
+    | Hierarchy
     | Levels
+    | Nests
 
 /// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =

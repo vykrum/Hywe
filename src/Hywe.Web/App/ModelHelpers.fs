@@ -108,7 +108,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 toolbarBtn
                     "Tutorial Help"
                     (Some (SetTutorialLevel Basic))
-                    (rawHtml """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>""")
+                    (span { attr.style "font-size: 11px; font-weight: 700; font-family: system-ui, sans-serif; line-height: 1; padding: 0 1px;"; text "?" })
                     dispatch
                     (if tutActive then "active" else "")
                     ""

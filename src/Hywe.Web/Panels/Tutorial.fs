@@ -16,21 +16,24 @@ open Hywe.Core
 
 module TutorialLevel =
     let name = function
-        | Basic      -> "Basic Quickstart"
-        | Operations -> "Node Operations & Drag/Drop"
-        | Levels     -> "Levels & Program Nesting"
+        | Basic     -> "Basic Quickstart"
+        | Hierarchy -> "Hierarchy & Flow"
+        | Levels    -> "Multi-Storey Levels"
+        | Nests     -> "Program Nesting"
 
     let shortName = function
-        | Basic      -> "Basic"
-        | Operations -> "Operations"
-        | Levels     -> "Levels"
+        | Basic     -> "Basic"
+        | Hierarchy -> "Hierarchy"
+        | Levels    -> "Levels"
+        | Nests     -> "Nests"
 
     let nextLevel = function
-        | Basic      -> Some Operations
-        | Operations -> Some Levels
-        | Levels     -> None
+        | Basic     -> Some Hierarchy
+        | Hierarchy -> Some Levels
+        | Levels    -> Some Nests
+        | Nests     -> None
 
-    let allLevels = [ Basic; Operations; Levels ]
+    let allLevels = [ Basic; Hierarchy; Levels; Nests ]
 
 // ─────────────────────────────────────────────
 // Step definitions
@@ -62,122 +65,82 @@ type TutorialStepDef = {
 
 let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge = badge; TargetPanel = panel }
 
-// ─── Level 1: Basic Quickstart ───
+// ─── Level 1: Basic Quickstart (4 Steps) ───
 let basicStepDefs = [|
     def "Relational Spatial Intent"
-        "Design begins with spatial relationships rather than static boundaries."
+        "Design begins with spatial relationships rather than static boundaries. Define your overall program root on the relational graph canvas."
         "" NoBadge None
 
-    def "Establish Spatial Flow"
-        "Introduce connected space to define movement across the layout."
-        "Add connected spaces" BadgeAdd None
-
-    def "Assign Program & Proportions"
-        "Label spaces and adjust area weights."
-        "Define space names & weights" EditName None
+    def "Establish Spatial Flow & Program"
+        "Introduce connected spaces to define circulation, functional zoning, and area proportions."
+        "Add connected spaces & weights" BadgeAdd None
 
     def "Synthesize Spatial Layout (HYWEAVE)"
-        "Execute HYWEAVE to visualize abstract spatial flows."
-        "Click HYWEAVE generate spatial configuration" HyweaveBtn None
+        "Click HYWEAVE to run the spatial synthesis solver. Watch abstract graph relationships translate into an optimized 2D floor plan layout."
+        "Click HYWEAVE to generate spatial configuration" HyweaveBtn (Some LayoutPanel)
 
-    def "Evaluate Floor Plan Adjacencies"
-        "Observe spatial adjacencies naturally emerge from your relational graph."
-        "View 2D Spatial Layout Panel" TabLayoutPanel (Some LayoutPanel)
-
-    def "Experience Volumetric 3D Form"
-        "Switch to the 3D View Panel to experience the volumetric enclosure."
+    def "Explore 2D & 3D Architectural Form"
+        "Inspect generated 2D plan adjacencies or switch to 3D to experience the volumetric enclosure, spatial heights, and building model."
         "View 3D View Panel" TabViewPanel (Some ViewPanel)
 |]
 
-// ─── Level 2: Node Operations ───
-let operationsStepDefs = [|
-    def "Focus Label Input on Space"
-        "Select a space node to highlight its inline label input field for editing."
-        "Focus label input" EditName None
-
-    def "Select Move Badge"
-        "Select a space node and tap the Move badge to initiate spatial re-ordering or re-parenting."
+// ─── Level 2: Hierarchy & Flow (4 Steps) ───
+let hierarchyStepDefs = [|
+    def "Initiate Node Relocation"
+        "Select a space node and tap the Move badge to initiate spatial re-ordering or structural reparenting within the graph."
         "Tap Move badge on space" BadgeMove None
 
-    def "Drag Space to Re-order Siblings"
-        "Dragging a space to the edge of a sibling node shows the DropBefore indicator line to reorder sibling sequence."
-        "Dragging to left of sibling" BadgeMove None
+    def "Re-order Sibling Circulation"
+        "Drag a space to the boundary edge of a sibling node to adjust the spatial sequence and adjacency flow."
+        "Drag to re-order siblings" BadgeMove None
 
-    def "Space Re-ordered"
-        "The space drops into its new position, re-arranging the sibling hierarchy."
-        "Space reordered" NoBadge None
+    def "Re-parent Child Spaces"
+        "Drag a space directly onto another space node to re-parent it as a child within a nested functional zone."
+        "Drag onto node to nest as child" BadgeMove None
 
-    def "Drag Space to Re-parent Under Node"
-        "Dragging a space onto another space displays the drag ghost and drop indicator to nest it as a child space."
-        "Dragging over parent space" BadgeMove None
-
-    def "Space Re-parented"
-        "The space is now nested beneath its new parent space in the spatial hierarchy."
-        "Space moved under parent" NoBadge None
-
-    def "Focus Area Weight Input"
-        "Select a space node to highlight its inline area weight input field."
-        "Focus weight input on node" EditWeight None
-
-    def "Alter Area Weight Inline"
-        "Edit the area weight input inline to change its target floor area allocation."
-        "Alter area weight" EditWeight None
-
-    def "Focus Properties Bar"
-        "The Properties Bar opens at the bottom of the view when a node is selected."
-        "Focus Properties Bar" PropsBar None
-
-    def "Select Delete Badge"
-        "Select a space node and tap the red Delete badge at bottom-left."
-        "Tap Delete badge on space" BadgeDelete None
-
-    def "Confirm Delete Action"
-        "Tap DELETE inside the node overlay to confirm its removal from the tree structure."
-        "Confirm DELETE action" NoBadge None
+    def "Balance Target Area Allocations"
+        "Adjust inline weight inputs on nodes to calibrate relative floor area allocations across spatial zones."
+        "Alter area weight inline" EditWeight None
 |]
 
-// ─── Level 3: Levels & Nesting ───
+// ─── Level 3: Multi-Storey Levels (4 Steps) ───
 let levelsStepDefs = [|
-    def "Select Elevate Badge"
-        "Select a space node and tap the Elevate badge to promote it to a new floor level."
+    def "Initiate Vertical Elevation"
+        "Select a space node and tap the Elevate badge to promote it to a new elevated floor level."
         "Tap Elevate badge" BadgeElevate None
 
-    def "Elevate Confirmation UI"
-        "The ELEVATE confirmation panel opens inside the node, allowing extrusion height configuration."
-        "ELEVATE confirmation panel" NoBadge None
+    def "Confirm Level 1 Creation"
+        "Set extrusion parameters and confirm ELEVATE to instantiate Level 1 (L1) in the spatial model."
+        "Confirm ELEVATE action" NoBadge None
 
-    def "Confirm Elevate Action"
-        "Set extrusion height and confirm ELEVATE to create Level 1 (L1)."
-        "Confirm ELEVATE" NoBadge None
-
-    def "Focus Level Navigator"
-        "Notice Level 1 (L1) is created and active in the top Level Navigator."
+    def "Inspect Level Navigator"
+        "Focus the Level Navigator at top to view active storeys, elevated space distribution, and storey hierarchy."
         "Focus Level Navigator" LevelNav None
 
-    def "Return to Level 0"
-        "Tap the L0 tab in the Level Navigator to return to the Level 0 main view."
-        "Select L0 tab" LevelNav None
+    def "Navigate Storey Views"
+        "Switch between Level 0 and Level 1 tabs in the Level Navigator to inspect plan adjacencies across storeys."
+        "Select L0 / L1 tabs" LevelNav None
+|]
 
-    def "Select Nest Badge"
-        "Select node and tap the Nest badge to create an internal sub-tree program."
-        "Tap Nest badge on node" BadgeNest None
+// ─── Level 4: Program Nesting (4 Steps) ───
+let nestsStepDefs = [|
+    def "Initiate Nested Sub-Program"
+        "Select a node with no children and tap the Nest badge to embed a secondary spatial sub-tree program."
+        "Tap Nest badge on leaf node" BadgeNest None
 
-    def "Nest Confirmation UI"
-        "The NEST confirmation panel opens inside node, specifying sub-tree program N#."
-        "NEST confirmation panel" NoBadge None
+    def "Confirm Sub-Program Nesting"
+        "Confirm NEST inside the node overlay to generate a nested program zone within the spatial structure."
+        "Confirm NEST action" NoBadge None
 
-    def "Confirm Nest Action"
-        "Tap NEST inside the node to generate nested sub-tree N# inside node."
-        "Confirm NEST" NoBadge None
-
-    def "Focus Nests Breadcrumb"
-        "Notice nested program N# appears alongside corresponding Level in the breadcrumbs bar."
+    def "Navigate Breadcrumb Program Trees"
+        "Use the program breadcrumbs bar to navigate seamlessly between main level views and nested sub-programs."
         "Focus Nests Breadcrumb" LevelNav None
 
-    def "Return to Level View"
-        "Tap in the breadcrumbs bar to return to desired level view."
-        "Navigate using Levels Navigator" LevelNav None
+    def "Prune Obsolete Spaces"
+        "Select any redundant space node and tap the Delete badge to clean up and refine the relational graph structure."
+        "Tap & confirm Delete action" BadgeDelete None
 |]
+
 
 /// CSS class applied to the tree wrapper to highlight a specific badge or target.
 let badgeCssClass = function
@@ -317,14 +280,14 @@ let private buildBaseSnapshots () : SubModel[] =
         | None   -> s5bbase
 
     let s8a = sel s7 None
-    let s8b = { s7 with ActiveLevel = 0; ActiveNest = None; SelectedNodeId = Some sp1Id } |> Coloring.colorModel
+    let s8b = { s7 with ActiveLevel = 0; ActiveNest = None; SelectedNodeId = Some sp3Id } |> Coloring.colorModel
 
-    let s9a = sel s8b (Some sp1Id)
-    let s9b = { s9a with ConfirmingId = Some sp1Id; ActiveActionId = ActionIds.Nest; SelectedNodeId = Some sp1Id }
+    let s9a = sel s8b (Some sp3Id)
+    let s9b = { s9a with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Nest; SelectedNodeId = Some sp3Id }
 
-    let child1NodeS8 = TreeOps.findNodeById sp1Id (rootOf s8b)
+    let child3NodeS8 = TreeOps.findNodeById sp3Id (rootOf s8b)
     let s10 =
-        match child1NodeS8 with
+        match child3NodeS8 with
         | Some n -> fst (Actions.nestActionLogic.Execute s8b n)
         | None   -> s8b
 
@@ -367,15 +330,13 @@ let private baseSnapshots : SubModel[] = buildBaseSnapshots ()
 let basicSnapshots : SubModel[] =
     let cleanBasic = sel baseSnapshots.[11] None
     [|
-        baseSnapshots.[0]   // Step 0: Welcome
-        baseSnapshots.[4]   // Step 1: Add Child Spaces
-        baseSnapshots.[11]  // Step 2: Name Your Spaces
-        cleanBasic          // Step 3: Click HYWEAVE
-        cleanBasic          // Step 4: Explore 2D Layout Panel
-        cleanBasic          // Step 5: Explore 3D Building View Panel
+        baseSnapshots.[0]   // Step 0: Relational Spatial Intent (Single Root)
+        baseSnapshots.[11]  // Step 1: Establish Spatial Flow & Program (Nodes & Weights)
+        cleanBasic          // Step 2: Synthesize Spatial Layout (HYWEAVE -> 2D Layout Panel)
+        cleanBasic          // Step 3: Explore 2D & 3D Architectural Form (3D View Panel)
     |]
 
-let operationsSnapshots : SubModel[] =
+let hierarchySnapshots : SubModel[] =
     let cleanS2f2 = baseSnapshots.[11]
     let rootNode = rootOf cleanS2f2
     let sp3Node = rootNode.Children |> List.find (fun n -> n.Name.Contains("Child 3"))
@@ -386,42 +347,43 @@ let operationsSnapshots : SubModel[] =
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { cleanS2f2 with Levels = cleanS2f2.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
 
-    let sDelSel = sel cleanS2f2 (Some sp3Id)
-    let sDelConfirm = { sDelSel with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Delete }
-
     [|
-        baseSnapshots.[1]   // Step 0: Focus Label Input
-        baseSnapshots.[12]  // Step 1: Select Move Badge
-        baseSnapshots.[13]  // Step 2: Drag Space to Re-order
-        baseSnapshots.[14]  // Step 3: Space Re-ordered
-        baseSnapshots.[15]  // Step 4: Drag Space to Re-parent
-        baseSnapshots.[16]  // Step 5: Space Re-parented
-        sel cleanS2f2 (Some sp3Id)   // Step 6: Focus Area Weight Input
-        sel sWeightEdit (Some sp3Id) // Step 7: Alter Area Weight Inline
-        sel cleanS2f2 (Some sp3Id)   // Step 8: Focus Properties Bar
-        sDelSel                      // Step 9: Select Delete Badge
-        sDelConfirm                  // Step 10: Confirm Delete Action
+        baseSnapshots.[12]           // Step 0: Initiate Node Relocation (Select Move Badge)
+        baseSnapshots.[13]           // Step 1: Re-order Sibling Circulation (Drag to re-order)
+        baseSnapshots.[15]           // Step 2: Re-parent Child Spaces (Drag to re-parent)
+        sel sWeightEdit (Some sp3Id) // Step 3: Balance Target Area Allocations (Alter Weight)
     |]
 
 let levelsSnapshots : SubModel[] =
     [|
-        baseSnapshots.[17]  // Step 0: Select Elevate Badge
-        baseSnapshots.[18]  // Step 1: Elevate Confirmation UI
-        baseSnapshots.[19]  // Step 2: Confirm Elevate Action
-        baseSnapshots.[20]  // Step 3: Focus Level Navigator
-        baseSnapshots.[21]  // Step 4: Return to Level 0
-        baseSnapshots.[22]  // Step 5: Select Nest Badge
-        baseSnapshots.[23]  // Step 6: Nest Confirmation UI
-        baseSnapshots.[24]  // Step 7: Confirm Nest Action
-        baseSnapshots.[25]  // Step 8: Focus Nests Breadcrumb
-        baseSnapshots.[26]  // Step 9: Return to Level View
+        baseSnapshots.[17]  // Step 0: Initiate Vertical Elevation (Select Elevate Badge)
+        baseSnapshots.[18]  // Step 1: Confirm Level 1 Creation (Elevate Confirmation UI)
+        baseSnapshots.[20]  // Step 2: Inspect Level Navigator (Focus Level Navigator)
+        baseSnapshots.[21]  // Step 3: Navigate Storey Views (Select L0 / L1 tabs)
+    |]
+
+let nestsSnapshots : SubModel[] =
+    let cleanS2f2 = baseSnapshots.[11]
+    let rootNode = rootOf cleanS2f2
+    let sp3Node = rootNode.Children |> List.find (fun n -> n.Name.Contains("Child 3"))
+    let sp3Id = sp3Node.Id
+    let sDelSel = sel cleanS2f2 (Some sp3Id)
+    let sDelConfirm = { sDelSel with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Delete }
+
+    [|
+        baseSnapshots.[22]  // Step 0: Initiate Nested Sub-Program (Select Nest Badge)
+        baseSnapshots.[23]  // Step 1: Confirm Sub-Program Nesting (Nest Confirmation UI)
+        baseSnapshots.[26]  // Step 2: Navigate Breadcrumb Program Trees (Focus Nests Breadcrumb)
+        sDelConfirm         // Step 3: Prune Obsolete Spaces (Confirm Delete Action)
     |]
 
 let getDefsAndSnapshots (level: TutorialLevel) : TutorialStepDef[] * SubModel[] =
     match level with
-    | Basic      -> basicStepDefs, basicSnapshots
-    | Operations -> operationsStepDefs, operationsSnapshots
-    | Levels     -> levelsStepDefs, levelsSnapshots
+    | Basic     -> basicStepDefs, basicSnapshots
+    | Hierarchy -> hierarchyStepDefs, hierarchySnapshots
+    | Levels    -> levelsStepDefs, levelsSnapshots
+    | Nests     -> nestsStepDefs, nestsSnapshots
+
 
 let getStepDef (level: TutorialLevel) (step: int) : TutorialStepDef =
     let defs, _ = getDefsAndSnapshots level
