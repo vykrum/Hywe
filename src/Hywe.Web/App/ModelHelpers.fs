@@ -103,6 +103,15 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                     iconRedo 
                     dispatch 
                     "" (sprintf "opacity: %s;" (match canRedo with true -> "1" | false -> "0.3"))
+
+                let tutActive = model.TutorialStep.IsSome
+                toolbarBtn
+                    "Tutorial Help"
+                    (Some (SetTutorialLevel Basic))
+                    (rawHtml """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>""")
+                    dispatch
+                    (if tutActive then "active" else "")
+                    ""
             }
 
             match model.InstallPromptAvailable with
@@ -296,8 +305,9 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
                 attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
                 match model.TutorialStep with
                 | Some step ->
-                    Tutorial.viewTutorialBanner step model.TutorialAutoPlay dispatch
-                    let highlightClass = Tutorial.badgeCssClass Tutorial.stepDefs.[min step (Tutorial.totalSteps - 1)].Badge
+                    Tutorial.viewTutorialBanner model.TutorialLevel step model.TutorialAutoPlay dispatch
+                    let stepDef = Tutorial.getStepDef model.TutorialLevel step
+                    let highlightClass = Tutorial.badgeCssClass stepDef.Badge
                     div {
                         attr.``class`` (if highlightClass <> "" then $"tutorial-tree-wrapper {highlightClass}" else "tutorial-tree-wrapper")
                         NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)

@@ -15,6 +15,11 @@ type ActivePanel =
     | TeachPanel
     | ReportPanel
 
+type TutorialLevel =
+    | Basic
+    | Operations
+    | Levels
+
 /// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =
     | Interactive
@@ -292,6 +297,8 @@ type Model =
         LoadedCommunityAuthor: string option
         CachedAuthor: string option
         HasAppendedModSuffix: bool
+        /// <summary> Active tutorial level module. </summary>
+        TutorialLevel: TutorialLevel
         /// <summary> Current tutorial step index. None means tutorial is not active. </summary>
         TutorialStep: int option
         /// <summary> Whether auto step advance is active in the tutorial. </summary>
@@ -405,6 +412,7 @@ type Message =
     | AuthorCachedLoaded of string
     | TitleCachedLoaded of string
     | CommunityAuthorCachedLoaded of string
+    | SetTutorialLevel of TutorialLevel
     | TutorialNext
     | TutorialBack
     | DismissTutorial
