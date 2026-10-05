@@ -19,7 +19,7 @@ type TutorialLevel =
     | Basic
     | Hierarchy
     | Levels
-    | Programs
+    | Nests
 
 /// <summary> Specifies the input methodology - flowchart or text </summary>
 type EditorMode =

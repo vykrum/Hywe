@@ -19,21 +19,21 @@ module TutorialLevel =
         | Basic     -> "Basic Quickstart"
         | Hierarchy -> "Hierarchy & Flow"
         | Levels    -> "Multi-Storey Levels"
-        | Programs  -> "Program Nesting"
+        | Nests     -> "Program Nesting"
 
     let shortName = function
         | Basic     -> "Basic"
         | Hierarchy -> "Hierarchy"
         | Levels    -> "Levels"
-        | Programs  -> "Programs"
+        | Nests     -> "Nests"
 
     let nextLevel = function
         | Basic     -> Some Hierarchy
         | Hierarchy -> Some Levels
-        | Levels    -> Some Programs
-        | Programs  -> None
+        | Levels    -> Some Nests
+        | Nests     -> None
 
-    let allLevels = [ Basic; Hierarchy; Levels; Programs ]
+    let allLevels = [ Basic; Hierarchy; Levels; Nests ]
 
 // ─────────────────────────────────────────────
 // Step definitions
@@ -123,7 +123,7 @@ let levelsStepDefs = [|
 |]
 
 // ─── Level 4: Program Nesting (4 Steps) ───
-let programsStepDefs = [|
+let nestsStepDefs = [|
     def "Initiate Nested Sub-Program"
         "Select a space node and tap the Nest badge to embed a secondary spatial sub-tree program."
         "Tap Nest badge on node" BadgeNest None
@@ -362,7 +362,7 @@ let levelsSnapshots : SubModel[] =
         baseSnapshots.[21]  // Step 3: Navigate Storey Views (Select L0 / L1 tabs)
     |]
 
-let programsSnapshots : SubModel[] =
+let nestsSnapshots : SubModel[] =
     let cleanS2f2 = baseSnapshots.[11]
     let rootNode = rootOf cleanS2f2
     let sp3Node = rootNode.Children |> List.find (fun n -> n.Name.Contains("Child 3"))
@@ -382,7 +382,7 @@ let getDefsAndSnapshots (level: TutorialLevel) : TutorialStepDef[] * SubModel[] 
     | Basic     -> basicStepDefs, basicSnapshots
     | Hierarchy -> hierarchyStepDefs, hierarchySnapshots
     | Levels    -> levelsStepDefs, levelsSnapshots
-    | Programs  -> programsStepDefs, programsSnapshots
+    | Nests     -> nestsStepDefs, nestsSnapshots
 
 
 let getStepDef (level: TutorialLevel) (step: int) : TutorialStepDef =
