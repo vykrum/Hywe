@@ -12,7 +12,7 @@ let parseSqn (name: string) =
 // SVG Icons
 
 // Panel Icons (Original Silhouette Style)
-let pathBoundary = "M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v10H7V7z"
+let pathBoundary = "M2 2h5v2H4v3H2V2zm15 0h5v5h-2V4h-3V2zM2 17h2v3h3v2H2v-5zm18 3h-3v2h5v-5h-2v3z M12 4l6.5 3.8-2.8 10.2-7.4 1.9-3.8-8.3L12 4zm-.9 2.1l-5.2 5.2 2.6 5.8 5.2-1.3 1.9-7.1-4.5-2.6z"
 let pathLayout   = "M12 2l3.5 2v4l-3.5 2-3.5-2V4l3.5-2z M7 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z M17 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z"
 let pathAnalyze  = "M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"
 let path3D       = "M21 16.5c0 .38-.21.71-.53.88l-7.97 4.65c-.31.18-.69.18-1 0l-7.97-4.65c-.32-.17-.53-.5-.53-.88V7.5c0-.38.21-.71.53-.88l7.97-4.65c.31-.18.69-.18 1 0l7.97 4.65c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.5v-6.71L5 9.21v6.7zm14 0v-6.7l-6 3.49v6.71l6-3.5z"
