@@ -125,11 +125,11 @@ let levelsStepDefs = [|
 // ─── Level 4: Program Nesting (4 Steps) ───
 let nestsStepDefs = [|
     def "Initiate Nested Sub-Program"
-        "Select a leaf space node (with no children) and tap the Nest badge to embed a secondary spatial sub-tree program."
+        "Select a node with no children and tap the Nest badge to embed a secondary spatial sub-tree program."
         "Tap Nest badge on leaf node" BadgeNest None
 
     def "Confirm Sub-Program Nesting"
-        "Confirm NEST inside the node overlay to generate a nested program zone (N1) within the spatial structure."
+        "Confirm NEST inside the node overlay to generate a nested program zone within the spatial structure."
         "Confirm NEST action" NoBadge None
 
     def "Navigate Breadcrumb Program Trees"
