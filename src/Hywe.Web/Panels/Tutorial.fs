@@ -62,30 +62,22 @@ type TutorialStepDef = {
 
 let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge = badge; TargetPanel = panel }
 
-// ─── Level 1: Basic Quickstart ───
+// ─── Level 1: Basic Quickstart (4 Steps) ───
 let basicStepDefs = [|
     def "Relational Spatial Intent"
-        "Design begins with spatial relationships rather than static boundaries."
+        "Design begins with spatial relationships rather than static boundaries. Define your overall program root on the relational graph canvas."
         "" NoBadge None
 
-    def "Establish Spatial Flow"
-        "Introduce connected space to define movement across the layout."
-        "Add connected spaces" BadgeAdd None
-
-    def "Assign Program & Proportions"
-        "Label spaces and adjust area weights."
-        "Define space names & weights" EditName None
+    def "Establish Spatial Flow & Program"
+        "Introduce connected spaces (<Living Lounge>, <Garden Courtyard>, <Kitchen Atelier>) to define circulation, functional zoning, and area proportions."
+        "Add connected spaces & weights" BadgeAdd None
 
     def "Synthesize Spatial Layout (HYWEAVE)"
-        "Execute HYWEAVE to visualize abstract spatial flows."
-        "Click HYWEAVE generate spatial configuration" HyweaveBtn None
+        "Click HYWEAVE to run the spatial synthesis solver. Watch abstract graph relationships translate into an optimized 2D floor plan layout."
+        "Click HYWEAVE to generate spatial configuration" HyweaveBtn (Some LayoutPanel)
 
-    def "Evaluate Floor Plan Adjacencies"
-        "Observe spatial adjacencies naturally emerge from your relational graph."
-        "View 2D Spatial Layout Panel" TabLayoutPanel (Some LayoutPanel)
-
-    def "Experience Volumetric 3D Form"
-        "Switch to the 3D View Panel to experience the volumetric enclosure."
+    def "Explore 2D & 3D Architectural Form"
+        "Inspect generated 2D plan adjacencies or switch to 3D to experience the volumetric enclosure, spatial heights, and building model."
         "View 3D View Panel" TabViewPanel (Some ViewPanel)
 |]
 
@@ -367,12 +359,10 @@ let private baseSnapshots : SubModel[] = buildBaseSnapshots ()
 let basicSnapshots : SubModel[] =
     let cleanBasic = sel baseSnapshots.[11] None
     [|
-        baseSnapshots.[0]   // Step 0: Welcome
-        baseSnapshots.[4]   // Step 1: Add Child Spaces
-        baseSnapshots.[11]  // Step 2: Name Your Spaces
-        cleanBasic          // Step 3: Click HYWEAVE
-        cleanBasic          // Step 4: Explore 2D Layout Panel
-        cleanBasic          // Step 5: Explore 3D Building View Panel
+        baseSnapshots.[0]   // Step 0: Relational Spatial Intent (Single Root)
+        baseSnapshots.[11]  // Step 1: Establish Spatial Flow & Program (Nodes & Weights)
+        cleanBasic          // Step 2: Synthesize Spatial Layout (HYWEAVE -> 2D Layout Panel)
+        cleanBasic          // Step 3: Explore 2D & 3D Architectural Form (3D View Panel)
     |]
 
 let operationsSnapshots : SubModel[] =
