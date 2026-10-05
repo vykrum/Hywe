@@ -5,6 +5,8 @@ open Microsoft.Extensions.DependencyInjection
 open System
 open System.Net.Http
 
+open System.Threading.Tasks
+
 [<EntryPoint>]
 let Main args =
     let builder = WebAssemblyHostBuilder.CreateDefault(args)
@@ -13,3 +15,6 @@ let Main args =
         new HttpClient(BaseAddress = Uri builder.HostEnvironment.BaseAddress)) |> ignore
     builder.Build().RunAsync() |> ignore
     0
+
+
+
