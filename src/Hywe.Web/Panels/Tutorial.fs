@@ -125,8 +125,8 @@ let levelsStepDefs = [|
 // ─── Level 4: Program Nesting (4 Steps) ───
 let nestsStepDefs = [|
     def "Initiate Nested Sub-Program"
-        "Select a space node and tap the Nest badge to embed a secondary spatial sub-tree program."
-        "Tap Nest badge on node" BadgeNest None
+        "Select a leaf space node (with no children) and tap the Nest badge to embed a secondary spatial sub-tree program."
+        "Tap Nest badge on leaf node" BadgeNest None
 
     def "Confirm Sub-Program Nesting"
         "Confirm NEST inside the node overlay to generate a nested program zone (N1) within the spatial structure."
@@ -280,14 +280,14 @@ let private buildBaseSnapshots () : SubModel[] =
         | None   -> s5bbase
 
     let s8a = sel s7 None
-    let s8b = { s7 with ActiveLevel = 0; ActiveNest = None; SelectedNodeId = Some sp1Id } |> Coloring.colorModel
+    let s8b = { s7 with ActiveLevel = 0; ActiveNest = None; SelectedNodeId = Some sp3Id } |> Coloring.colorModel
 
-    let s9a = sel s8b (Some sp1Id)
-    let s9b = { s9a with ConfirmingId = Some sp1Id; ActiveActionId = ActionIds.Nest; SelectedNodeId = Some sp1Id }
+    let s9a = sel s8b (Some sp3Id)
+    let s9b = { s9a with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Nest; SelectedNodeId = Some sp3Id }
 
-    let child1NodeS8 = TreeOps.findNodeById sp1Id (rootOf s8b)
+    let child3NodeS8 = TreeOps.findNodeById sp3Id (rootOf s8b)
     let s10 =
-        match child1NodeS8 with
+        match child3NodeS8 with
         | Some n -> fst (Actions.nestActionLogic.Execute s8b n)
         | None   -> s8b
 
