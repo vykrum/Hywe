@@ -701,7 +701,7 @@ let alternateConfigurations
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
                 let isSelected = selectedIndex = Some i
 
-                let staggerDelay = sprintf "%dms" (i * 25)
+                let staggerDelay = sprintf "%dms" (i * 45)
 
                 elt "g" {
                     attr.``class`` (if isTutorial then "batch-card-cascade" else "")
