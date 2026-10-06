@@ -70,11 +70,11 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
     def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static walls. Inspect the pre-configured program."
-        "Inspect pre-configured program" NoBadge None
+        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter the pre-configured values inline."
+        "Alter pre-configured program" NoBadge None
 
     def "Shift a spatial demand"
-        "Expand or adjust a room's target area. Every constraint reshapes how the compiler packs the whole system."
+        "Expand or adjust a doace's target area. Every constraint reshapes how the compiler packs the whole system."
         "Adjust target area of space" EditWeight None
 
     def "Compile the lattice"
