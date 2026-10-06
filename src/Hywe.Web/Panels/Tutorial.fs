@@ -69,8 +69,8 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
-    def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Extend your spatial hierarchy by adding child nodes"
+    def "Welcome to HYWE"
+        "Begin by charting spatial intent. Extend your relational hierarchy by adding child space nodes."
         "Add Child node" BadgeAdd None
 
     def "Tweak labels and area weights"
