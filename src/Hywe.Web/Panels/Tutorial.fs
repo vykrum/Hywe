@@ -86,8 +86,8 @@ let basicStepDefs = [|
         "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
     def "Code meets space"
-        "Every layout maps to a portable, algebraic spatial syntax. Edit the tree, tweak the text, or continue into Hierarchy for reparenting and zoning."
-        "Click Start Designing to begin" TabLayoutPanel (Some LayoutPanel)
+        "Every layout maps to a portable, algebraic spatial syntax. Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
+        "Click Start Designing to begin" TabBatchPanel (Some BatchPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───
@@ -353,11 +353,11 @@ let basicSnapshots : SubModel[] =
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { bathUnderBedModel with Levels = bathUnderBedModel.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
 
-    let step0 = sel bathUnderBedModel (Some bedId) // 1st Step: Add child node (Bath under Bedroom, Bedroom selected & BadgeAdd highlighted)
-    let step1 = sel studio36Model (Some studioId)   // 2nd Step: Alter values (Studio weight 36, Studio selected & EditWeight highlighted)
-    let step2 = sel studio36Model None              // 3rd Step: Generate (Compile the lattice on LayoutPanel)
-    let step3 = sel studio36Model None              // 4th Step: Slider (Explore valid alternatives on LayoutPanel)
-    let step4 = sel studio36Model None              // 5th Step: Batch Panel (Code meets space on BatchPanel)
+    let step0 = sel entryStudioBed None             // Step 0: Define intent (Entry 25, Studio 24, Bedroom 16)
+    let step1 = sel bathUnderBedModel (Some bedId)  // Step 1: Expand program (Bath added under Bedroom, Bedroom selected & BadgeAdd highlighted)
+    let step2 = sel bathUnderBedModel None          // Step 2: Compile the lattice (LayoutPanel)
+    let step3 = sel bathUnderBedModel None          // Step 3: Explore valid alternatives (LayoutPanel)
+    let step4 = sel bathUnderBedModel None          // Step 4: Code meets space (BatchPanel)
 
     [| step0; step1; step2; step3; step4 |]
 
