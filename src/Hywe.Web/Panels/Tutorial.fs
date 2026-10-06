@@ -69,25 +69,25 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
-    def "Expand the spatial program"
-        "Extend your spatial hierarchy by adding child nodes — Bath is added as a child space under Bedroom."
-        "Add Bath node under Bedroom" BadgeAdd None
-
     def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter node label or area weight inline to sculpt spatial intent — Studio's weight is set to 36."
-        "Alter area weight inline" EditWeight None
+        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Extend your spatial hierarchy by adding child nodes"
+        "Add Child node" BadgeAdd None
+
+    def "Tweak labels and area weights"
+        "Alter node label or area weight inline to sculpt spatial intent."
+        "Alter labels and area weight inline" EditWeight None
 
     def "Compile the lattice"
-        "Run the engine. HYWE synthesizes these relational demands into discrete spatial configurations."
+        "Run the engine to synthesize these relational demands into discrete spatial configurations."
         "Click hyWEAVE to compile lattice" HyweaveBtn (Some LayoutPanel)
 
-    def "Explore valid alternatives"
-        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
-        "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
+    def "Explore alternate configurations"
+        "This isn't random diffusion but mathematically deterministic configurations. Cycle through the variants."
+        "Scrub slider to explore alternate configurations" BadgeSlider (Some LayoutPanel)
 
-    def "Inspect configuration space"
-        "Every encoded intent generates a full spectrum of valid spatial configurations. Inspect all 24 resolved deterministic arrangements at a glance in the Batch view."
-        "Click Start Designing to begin" TabBatchPanel (Some BatchPanel)
+    def "Inspect all configurations"
+        "Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
+        "Inspect all configurations" TabBatchPanel (Some BatchPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───
@@ -342,22 +342,15 @@ let basicSnapshots : SubModel[] =
     let bedId = bedNode.Id
 
     let bathUnderBedModel = addNamedChild bedId "Bath" "8" entryStudioBed
-
     let rootNodeBath = rootOf bathUnderBedModel
-    let studioNode = rootNodeBath.Children |> List.find (fun n -> n.Name.Contains("Studio"))
-    let studioId = studioNode.Id
+    let bathNodeOpt = rootNodeBath.Children |> List.tryPick (fun n -> n.Children |> List.tryFind (fun c -> c.Name.Contains("Bath")))
+    let bathId = match bathNodeOpt with Some b -> b.Id | None -> bedId
 
-    let studio36Model =
-        let r = rootOf bathUnderBedModel
-        let newRoot = TreeOps.updateNodeById studioId (fun n -> { n with Weight = "36" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { bathUnderBedModel with Levels = bathUnderBedModel.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-
-    let step0 = sel bathUnderBedModel (Some bedId)  // Step 1: Expand program (Bath added under Bedroom, Bedroom selected & BadgeAdd highlighted)
-    let step1 = sel studio36Model (Some studioId)   // Step 2: Define intent (Studio area weight set to 36, Studio selected & EditWeight highlighted)
-    let step2 = sel studio36Model None              // Step 3: Compile the lattice (LayoutPanel)
-    let step3 = sel studio36Model None              // Step 4: Explore valid alternatives (LayoutPanel)
-    let step4 = sel studio36Model None              // Step 5: Inspect configuration space (BatchPanel)
+    let step0 = sel entryStudioBed (Some bedId)       // Step 1: Entry 25, Studio 24, Bedroom 16 (Bedroom selected, + badge highlighted, Bath NOT present initially)
+    let step1 = sel bathUnderBedModel (Some bathId)   // Step 2: Bath 8 added under Bedroom 16 (Bath selected, EditWeight highlighted)
+    let step2 = sel bathUnderBedModel None            // Step 3: Compile lattice on LayoutPanel
+    let step3 = sel bathUnderBedModel None            // Step 4: Explore alternate configurations on LayoutPanel
+    let step4 = sel bathUnderBedModel None            // Step 5: Inspect all configurations on BatchPanel
 
     [| step0; step1; step2; step3; step4 |]
 
