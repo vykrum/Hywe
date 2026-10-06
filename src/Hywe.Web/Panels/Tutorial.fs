@@ -70,24 +70,24 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
     def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static walls. Inspect the pre-configured program."
+        "HYWE compiles spatial layouts directly from relational hierarchy rather than static walls. Inspect the Residence program (Studio, Bedroom, Bath)."
         "Inspect pre-configured program" NoBadge None
 
     def "Shift a spatial demand"
-        "Expand or adjust a room's target area. Every constraint reshapes how the compiler packs the whole system."
-        "Adjust target area of space" EditWeight None
+        "Every space carries target weight. Studio's area weight is increased to 36 — notice how it reshapes relative spatial priority before compilation."
+        "Studio area weight set to 36" EditWeight None
 
     def "Compile the lattice"
-        "Run the engine. HYWE synthesizes these relational demands into discrete, topologically valid floor plans."
+        "Run the engine. HYWE synthesizes these relational demands into discrete, topologically valid floor plans. 24 valid arrangements — none are random."
         "Click hyWEAVE to compile lattice" HyweaveBtn (Some BatchPanel)
 
     def "Explore valid alternatives"
-        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
+        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Scrub the variant slider to compare structural archetypes."
         "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
     def "Code meets space"
-        "Every layout you see maps to a portable, algebraic spatial syntax. Edit the tree, tweak the text, or dive into Operations for nesting and zoning."
-        "Click Finish Tour" TabLayoutPanel (Some LayoutPanel)
+        "Every layout maps to a portable, algebraic spatial syntax. Edit the tree, tweak the text, or continue into Hierarchy for reparenting and zoning."
+        "Click Start Designing to begin" TabLayoutPanel (Some LayoutPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───

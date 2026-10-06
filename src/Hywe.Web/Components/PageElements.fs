@@ -84,9 +84,30 @@ let labelPhrase = "alternATE◦CONFIGURATions"
 // Sequence Slider Component
 let sequenceSlider (selected: string) (minIdx: int) (maxIdx: int) (dispatch: int -> unit) =
     let currentIndex = sqnToIndex selected
+    let archetypeLabel =
+        match currentIndex with
+        | i when i >= 0 && i <= 5   -> "Compact Centralized Topology"
+        | i when i >= 6 && i <= 11  -> "Linear Perimeter Sequence"
+        | i when i >= 12 && i <= 17 -> "Dual Wing Adjacency"
+        | _                         -> "Interlocking Spatial Matrix"
     
     div {
         attr.``class`` "slider-wrapper"
+
+        // Archetype & Variant Counter Header
+        div {
+            attr.``class`` "variant-archetype-tag"
+            attr.style "display: flex; align-items: center; justify-content: space-between; font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #8b5cf6; margin-bottom: 6px; padding: 0 4px;"
+            span {
+                attr.style "display: inline-flex; align-items: center; gap: 5px;"
+                span { attr.style "width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; display: inline-block;" }
+                text $"Variant {currentIndex + 1} of 24"
+            }
+            span {
+                attr.style "color: #475569; font-weight: 700; background: rgba(139, 92, 246, 0.08); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(139, 92, 246, 0.2);"
+                text archetypeLabel
+            }
+        }
 
         // Labels
         div {
