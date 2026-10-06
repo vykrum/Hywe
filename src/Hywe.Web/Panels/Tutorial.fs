@@ -197,24 +197,24 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s1base =
         let r = rootOf s0
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "<Residence>" }) r
+        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Entry"; Weight = "25" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s0 with Levels = s0.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s1b = sel s1base (Some rootId)
 
-    let s2a_base = addNamedChild rootId "<Studio>" "24" s1base
+    let s2a_base = addNamedChild rootId "Studio" "24" s1base
     let rootNode2a = rootOf s2a_base
     let sp1Node = rootNode2a.Children |> List.find (fun n -> n.Name.Contains("Studio"))
     let sp1Id = sp1Node.Id
     let s2a = sel s2a_base (Some rootId)
 
-    let s2b_base = addNamedChild rootId "<Bedroom>" "16" s2a_base
+    let s2b_base = addNamedChild rootId "Bedroom" "16" s2a_base
     let rootNode2b = rootOf s2b_base
     let sp2Node = rootNode2b.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
     let sp2Id = sp2Node.Id
     let s2b = sel s2b_base (Some rootId)
 
-    let s2c_base = addNamedChild rootId "<Bath>" "8" s2b_base
+    let s2c_base = addNamedChild rootId "Bath" "8" s2b_base
     let rootNode2c = rootOf s2c_base
     let sp3Node = rootNode2c.Children |> List.find (fun n -> n.Name.Contains("Bath"))
     let sp3Id = sp3Node.Id
@@ -233,7 +233,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2e2_base =
         let r = rootOf s2d2_base
-        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "<Bedroom>" }) r
+        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "Bedroom" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2d2_base with Levels = s2d2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2e2 = sel s2e2_base (Some sp2Id)
@@ -242,7 +242,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2f2_base =
         let r = rootOf s2e2_base
-        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "<Bath>" }) r
+        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "Bath" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2e2_base with Levels = s2e2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2f2 = sel s2f2_base (Some sp3Id)
@@ -325,7 +325,7 @@ let private buildBaseSnapshots () : SubModel[] =
     let s15a = sel s14bbase (Some rootId)
     let s15bbase =
         let r = rootOf s14bbase
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "<Main Hub>"; Weight = "200" }) r
+        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Main Hub"; Weight = "200" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s14bbase with Levels = s14bbase.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s15b = sel s15bbase (Some rootId)
