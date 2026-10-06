@@ -523,10 +523,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             if nextStep >= total then
                 match model.UndoStack with
                 | snap :: rest ->
-                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
                     m, cmd
                 | [] ->
-                    { model with TutorialStep = None }, Cmd.none
+                    { model with TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel nextStep else Cmd.none
@@ -544,10 +544,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | DismissTutorial ->
         match model.UndoStack with
         | snap :: rest ->
-            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
             m, cmd
         | [] ->
-            { model with TutorialStep = None }, Cmd.none
+            { model with TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
 
     | ToggleTutorialAutoPlay ->
         let newAutoPlay = not model.TutorialAutoPlay
@@ -564,10 +564,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             if nextStep >= total then
                 match model.UndoStack with
                 | snap :: rest ->
-                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
                     m, cmd
                 | [] ->
-                    { model with TutorialStep = None }, Cmd.none
+                    { model with TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 m, scheduleAutoAdvanceForStep model.TutorialLevel nextStep
