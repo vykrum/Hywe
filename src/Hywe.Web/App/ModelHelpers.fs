@@ -506,27 +506,44 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 }
                 
                 let filteredCxls, filteredClrs, _, bgCxl, wtmkCxls = getFilteredGeometries ()
-                
-                let bdrToPass = 
-                    match bgCxl with
-                    | Some bg -> 
-                        let (_, _, z) = Hywe.Core.Hexel.hxlCrd bg.Base
-                        [| Hywe.Core.Coxel.cxlPrm bg z |> Hywe.Core.Goxel.cleanPolygon bg.Seqn |]
-                    | None -> model.Derived.cxOuIl
-                
-                div {
-                    attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
-                    svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output") (Some js)
-                }
 
-                let legendItems =
-                    if Array.length filteredCxls = Array.length filteredClrs then
-                        Array.zip filteredCxls filteredClrs
-                        |> Array.map (fun (c, clr) -> Hywe.Core.Coxel.prpVlu c.Name, clr)
-                    else
-                        [||]
+                if model.NeedsHyweave || Array.isEmpty filteredCxls then
+                    div {
+                        attr.style "display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; width: 100%; color: #94a3b8; text-align: center; gap: 12px; font-family: 'Outfit', system-ui, sans-serif;"
+                        div {
+                            attr.style "width: 52px; height: 52px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; margin-top: 30px;"
+                            rawHtml """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>"""
+                        }
+                        div {
+                            attr.style "font-size: 14px; font-weight: 600; color: #475569;"
+                            text "No Layout Compiled"
+                        }
+                        div {
+                            attr.style "font-size: 11.5px; color: #94a3b8; max-width: 290px; line-height: 1.45;"
+                            text "Click hyWEAVE to compile relational intent into deterministic spatial configurations."
+                        }
+                    }
+                else
+                    let bdrToPass = 
+                        match bgCxl with
+                        | Some bg -> 
+                            let (_, _, z) = Hywe.Core.Hexel.hxlCrd bg.Base
+                            [| Hywe.Core.Coxel.cxlPrm bg z |> Hywe.Core.Goxel.cleanPolygon bg.Seqn |]
+                        | None -> model.Derived.cxOuIl
+                    
+                    div {
+                        attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
+                        svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output") (Some js)
+                    }
 
-                Graphics.viewLegend legendItems
+                    let legendItems =
+                        if Array.length filteredCxls = Array.length filteredClrs then
+                            Array.zip filteredCxls filteredClrs
+                            |> Array.map (fun (c, clr) -> Hywe.Core.Coxel.prpVlu c.Name, clr)
+                        else
+                            [||]
+
+                    Graphics.viewLegend legendItems
 
                 div {
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"

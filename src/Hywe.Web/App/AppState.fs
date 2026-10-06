@@ -449,7 +449,14 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
 
     let srcText = serializeModelTree snapshot model.Sequences model.PolygonExport
     let newSqns = Lexel.extractSequences srcText
-    let derived = Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
+
+    let isUncompiledStep = level = Basic && step < 2
+
+    let derived =
+        if isUncompiledStep then
+            emptyDerivedData
+        else
+            Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
 
     let m = {
         model with
@@ -460,7 +467,9 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
             SrcOfTrth = srcText
             Sequences = newSqns
             Derived = derived
-            NeedsHyweave = false
+            NeedsHyweave = isUncompiledStep
+            LayoutCache = if isUncompiledStep then Map.empty else model.LayoutCache
+            BatchProgress = if isUncompiledStep then 0 else model.BatchProgress
     }
 
     match stepDef.TargetPanel with
@@ -468,7 +477,8 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
         let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
         let markers = snapshot.Levels.Keys |> Seq.map toMarker |> Seq.toList
         let cache = Cache.init markers
-        { m with ActivePanel = BatchPanel; LayoutCache = cache; BatchProgress = 24 }
+        let compiledDerived = Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
+        { m with ActivePanel = BatchPanel; LayoutCache = cache; BatchProgress = 24; NeedsHyweave = false; Derived = compiledDerived }
     | Some p -> { m with ActivePanel = p }
     | None   -> m
 
