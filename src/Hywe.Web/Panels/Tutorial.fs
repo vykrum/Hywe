@@ -74,12 +74,12 @@ let basicStepDefs = [|
         "Alter node label or area inline" NoBadge None
 
     def "Expand the spatial program"
-        "Extend your spatial hierarchy by adding child nodes. Here, Bath is added as a child space under Bedroom."
-        "Add Bath node under Bedroom" BadgeAdd None
+        "Extend your spatial hierarchy by adding child nodes."
+        "Add child node" BadgeAdd None
 
     def "Compile the lattice"
-        "Run the engine. HYWE synthesizes these relational demands into discrete, topologically valid floor plans. 24 valid arrangements — none are random."
-        "Click hyWEAVE to compile lattice" HyweaveBtn (Some BatchPanel)
+        "Run the engine. HYWE synthesizes these relational demands into discrete spatial configurations."
+        "Click hyWEAVE to compile lattice" HyweaveBtn (Some LayoutPanel)
 
     def "Explore valid alternatives"
         "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
@@ -342,16 +342,24 @@ let basicSnapshots : SubModel[] =
     let bedId = bedNode.Id
 
     let bathUnderBedModel = addNamedChild bedId "Bath" "8" entryStudioBed
-    let step0 = sel entryStudioBed None
-    let step1 = sel bathUnderBedModel (Some bedId)
-    let step2 = sel bathUnderBedModel None
-    [|
-        step0   // Step 0: Define intent (Entry: 25, Studio: 24, Bedroom: 16)
-        step1   // Step 1: Expand spatial program (Add Bath as child under Bedroom, Bedroom selected & BadgeAdd highlighted)
-        step2   // Step 2: Compile the lattice (hyWEAVE button glowing)
-        step2   // Step 3: Explore valid alternatives (Batch Panel 24 configs)
-        step2   // Step 4: Code meets space (Layout Panel dual representation)
-    |]
+
+    let rootNodeBath = rootOf bathUnderBedModel
+    let studioNode = rootNodeBath.Children |> List.find (fun n -> n.Name.Contains("Studio"))
+    let studioId = studioNode.Id
+
+    let studio36Model =
+        let r = rootOf bathUnderBedModel
+        let newRoot = TreeOps.updateNodeById studioId (fun n -> { n with Weight = "36" }) r
+        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
+        { bathUnderBedModel with Levels = bathUnderBedModel.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
+
+    let step0 = sel bathUnderBedModel (Some bedId) // 1st Step: Add child node (Bath under Bedroom, Bedroom selected & BadgeAdd highlighted)
+    let step1 = sel studio36Model (Some studioId)   // 2nd Step: Alter values (Studio weight 36, Studio selected & EditWeight highlighted)
+    let step2 = sel studio36Model None              // 3rd Step: Generate (Compile the lattice on LayoutPanel)
+    let step3 = sel studio36Model None              // 4th Step: Slider (Explore valid alternatives on LayoutPanel)
+    let step4 = sel studio36Model None              // 5th Step: Batch Panel (Code meets space on BatchPanel)
+
+    [| step0; step1; step2; step3; step4 |]
 
 let hierarchySnapshots : SubModel[] =
     let cleanS2f2 = baseSnapshots.[11]

@@ -458,6 +458,10 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
         else
             Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
 
+    let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
+    let markers = snapshot.Levels.Keys |> Seq.map toMarker |> Seq.toList
+    let cache = if isUncompiledStep then Map.empty else Cache.init markers
+
     let m = {
         model with
             TutorialLevel = level
@@ -468,17 +472,13 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
             Sequences = newSqns
             Derived = derived
             NeedsHyweave = isUncompiledStep
-            LayoutCache = if isUncompiledStep then Map.empty else model.LayoutCache
-            BatchProgress = if isUncompiledStep then 0 else model.BatchProgress
+            LayoutCache = cache
+            BatchProgress = if isUncompiledStep then 0 else 24
     }
 
     match stepDef.TargetPanel with
     | Some BatchPanel ->
-        let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
-        let markers = snapshot.Levels.Keys |> Seq.map toMarker |> Seq.toList
-        let cache = Cache.init markers
-        let compiledDerived = Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
-        { m with ActivePanel = BatchPanel; LayoutCache = cache; BatchProgress = 24; NeedsHyweave = false; Derived = compiledDerived }
+        { m with ActivePanel = BatchPanel; LayoutCache = cache; BatchProgress = 24; NeedsHyweave = false }
     | Some p -> { m with ActivePanel = p }
     | None   -> m
 
