@@ -771,16 +771,25 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let nextCollapse = isSecondEdit || modelToUse.IsPresetsCollapsed
         let nextWorkspaceCollapse = isSecondEdit || modelToUse.IsWorkspaceCollapsed
         
-        let needsHyweave =
-            match subMsg with
-            | SubMsg.PointerMove _ -> modelToUse.NeedsHyweave
-            | _ -> true
+        let isTutorialUncompiled =
+            match modelToUse.TutorialStep with
+            | Some s when modelToUse.TutorialLevel = Basic && s < 2 -> true
+            | _ -> false
+
+        let needsHyweave = isTutorialUncompiled
+
+        let derivedData =
+            if isTutorialUncompiled then
+                emptyDerivedData
+            else
+                Cache.deriveFromSource newOutput newSqns modelToUse.PolygonExport updatedTree.ActiveLevel
 
         let modelWithTree = 
             { modelToUse with 
                 Tree = updatedTree 
                 Sequences = newSqns
                 SrcOfTrth = newOutput 
+                Derived = derivedData
                 NeedsHyweave = needsHyweave
                 EditsCount = nextCount
                 IsPresetsCollapsed = nextCollapse
@@ -795,15 +804,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         match subMsg with
         | SubMsg.SetLevel _ | SubMsg.SetNest _ | SubMsg.ExecuteAction _ ->
-            let m = { modelWithTree with Derived = Cache.deriveFromSource newOutput modelWithTree.Sequences modelWithTree.PolygonExport updatedTree.ActiveLevel }
             match modelWithTree.ActivePanel with
             | BatchPanel ->
-                { m with 
+                { modelWithTree with 
                     IsHyweaving = true
                     BatchProgress = 0
                 }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
             | _ ->
-                m, Cmd.map TreeMsg treeCmd
+                modelWithTree, Cmd.map TreeMsg treeCmd
         | _ ->
             modelWithTree, Cmd.map TreeMsg treeCmd
 
