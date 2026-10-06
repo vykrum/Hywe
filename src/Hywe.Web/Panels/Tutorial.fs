@@ -70,7 +70,7 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
     def "Welcome to HYWE"
-        "Start with relationships, not walls. Add a child space to begin."
+        "Begin pre-geometry exploration by charting spatial intent. Extend your relational hierarchy by adding child space nodes."
         "Add Child node" BadgeAdd None
 
     def "Tweak labels and area weights"
@@ -85,9 +85,9 @@ let basicStepDefs = [|
         "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
         "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
-    def "24 valid solutions. Zero randomness."
-        "Every one of these floor plans satisfies the exact hierarchy and area weights you defined. Scrub or click to compare."
-        "Explore the set" TabBatchPanel (Some BatchPanel)
+    def "Inspect all configurations"
+        "Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
+        "Inspect all configurations" TabBatchPanel (Some BatchPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───
