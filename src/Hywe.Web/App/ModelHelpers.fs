@@ -713,6 +713,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 | true ->
                     let results = rawResults |> Array.map (TreeFilter.filterBatchConfig false model.Tree)
                     alternateConfigurations 
+                        model.TutorialStep.IsSome
                         results 
                         model.SelectedPreviewIndex 
                         TapBatchPreview                   

@@ -78,12 +78,12 @@ let basicStepDefs = [|
         "Alter labels and area weight inline" EditWeight None
 
     def "Compile the lattice"
-        "Run the engine to synthesize these relational demands into discrete spatial configurations."
-        "Click hyWEAVE to compile lattice" HyweaveBtn (Some LayoutPanel)
+        "Watch the hierarchy become space. HYWE will resolve your exact relationships into multiple valid floor plans — none of them random."
+        "Click hyWEAVE" HyweaveBtn (Some LayoutPanel)
 
     def "Explore alternate configurations"
-        "This isn't random diffusion but mathematically deterministic configurations. Cycle through the variants."
-        "Scrub slider to explore alternate configurations" BadgeSlider (Some LayoutPanel)
+        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
+        "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
     def "Inspect all configurations"
         "Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
@@ -571,7 +571,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     match TutorialLevel.nextLevel level with
                     | Some nxt ->
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark tutorial-next-module"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost tutorial-next-module"
                             attr.title $"Proceed to {TutorialLevel.name nxt}"
                             on.click (fun _ -> dispatch (SetTutorialLevel nxt))
                             text $"Next: {TutorialLevel.shortName nxt} "

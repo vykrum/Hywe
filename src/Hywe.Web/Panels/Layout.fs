@@ -579,6 +579,7 @@ let getDatasetWithLabels (configs: BatchConfgrtns[]) : (string * float[])[][] =
     )
 
 let alternateConfigurations 
+    (isTutorial: bool)
     (configs: BatchConfgrtns[]) 
     (selectedIndex: int option) 
     (onTap: int -> Message)
@@ -700,7 +701,12 @@ let alternateConfigurations
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
                 let isSelected = selectedIndex = Some i
 
+                let staggerDelay = sprintf "%dms" (i * 45)
+
                 elt "g" {
+                    attr.``class`` (if isTutorial then "batch-card-cascade" else "")
+                    attr.style (if isTutorial then $"animation-delay: {staggerDelay}; transform-box: fill-box; transform-origin: center;" else "")
+
                     // 1. BOUNDARY
                     for poly in cfg.cxOuIl do
                         let xy = poly 
