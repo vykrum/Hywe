@@ -508,8 +508,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | NoOp -> model, Cmd.none
 
     | SetTutorialLevel lvl ->
+        let modelWithUndo = pushUndo model
         let nextStep = 0
-        let m = updateTutorialStep model lvl nextStep
+        let m = updateTutorialStep modelWithUndo lvl nextStep
         let cmd = if m.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
         m, cmd
 
