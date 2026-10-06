@@ -69,13 +69,13 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
-    def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter node label or area weight inline to sculpt spatial intent."
-        "Alter node label or area inline" NoBadge None
-
     def "Expand the spatial program"
-        "Extend your spatial hierarchy by adding child nodes."
-        "Add child node" BadgeAdd None
+        "Extend your spatial hierarchy by adding child nodes — Bath is added as a child space under Bedroom."
+        "Add Bath node under Bedroom" BadgeAdd None
+
+    def "Define intent, not boundaries"
+        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter node label or area weight inline to sculpt spatial intent — Studio's weight is set to 36."
+        "Alter area weight inline" EditWeight None
 
     def "Compile the lattice"
         "Run the engine. HYWE synthesizes these relational demands into discrete spatial configurations."
@@ -353,11 +353,11 @@ let basicSnapshots : SubModel[] =
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { bathUnderBedModel with Levels = bathUnderBedModel.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
 
-    let step0 = sel entryStudioBed None             // Step 0: Define intent (Entry 25, Studio 24, Bedroom 16)
-    let step1 = sel bathUnderBedModel (Some bedId)  // Step 1: Expand program (Bath added under Bedroom, Bedroom selected & BadgeAdd highlighted)
-    let step2 = sel bathUnderBedModel None          // Step 2: Compile the lattice (LayoutPanel)
-    let step3 = sel bathUnderBedModel None          // Step 3: Explore valid alternatives (LayoutPanel)
-    let step4 = sel bathUnderBedModel None          // Step 4: Code meets space (BatchPanel)
+    let step0 = sel bathUnderBedModel (Some bedId)  // Step 1: Expand program (Bath added under Bedroom, Bedroom selected & BadgeAdd highlighted)
+    let step1 = sel studio36Model (Some studioId)   // Step 2: Define intent (Studio area weight set to 36, Studio selected & EditWeight highlighted)
+    let step2 = sel studio36Model None              // Step 3: Compile the lattice (LayoutPanel)
+    let step3 = sel studio36Model None              // Step 4: Explore valid alternatives (LayoutPanel)
+    let step4 = sel studio36Model None              // Step 5: Inspect configuration space (BatchPanel)
 
     [| step0; step1; step2; step3; step4 |]
 
