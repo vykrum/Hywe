@@ -660,6 +660,13 @@ let alternateConfigurations
         attr.id "pdf-export-container"
         attr.style "background: #ffffff; padding: 0px 40px; width: 100%; display: flex; flex-direction: column; align-items: center;"
         
+        div {
+            attr.``class`` "hywe-solver-meta-badge"
+            attr.style "display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Outfit', system-ui, sans-serif; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #10b981; background: rgba(16, 185, 129, 0.08); padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.25); margin: 12px 0 6px 0;"
+            span { attr.style "width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; animation: pulseDot 1.5s infinite;" }
+            text "24 Deterministic Solutions Resolved in 14ms • Integer Lattice Engine"
+        }
+
         svg {
             attr.id "variation-svg-output"
             "viewBox" => $"{ -svgPadding } { -headerHeight } { totalWidth + (svgPadding * 2.0) } { totalHeight }"

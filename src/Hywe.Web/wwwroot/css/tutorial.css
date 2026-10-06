@@ -421,25 +421,83 @@
 }
 
 /* Target Highlights for Buttons & View Tabs */
-.tutorial-hl-hyweave #hywe-hyweave {
-    outline: 3px solid #6366f1 !important;
-    outline-offset: 3px !important;
-    box-shadow: 0 0 14px rgba(99, 102, 241, 0.6) !important;
-    animation: tutorialBtnPulse 1.4s infinite ease-in-out !important;
+.tutorial-hl-hyweave #hywe-hyweave,
+#hywe-hyweave.tutorial-hl-hyweave-btn,
+.hyweave-container.tutorial-hl-hyweave #hywe-hyweave {
+    outline: 2px solid #6366f1 !important;
+    outline-offset: 0px !important;
+    box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.7), 0 0 12px rgba(99, 102, 241, 0.6) !important;
+    animation: hyweaveBtnPulse 1.2s infinite ease-in-out !important;
+    position: relative;
+    z-index: 10;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-.tutorial-hl-tab-layout button[title="Layout"],
-.tutorial-hl-tab-view button[title="3D"] {
+@keyframes hyweaveBtnPulse {
+    0% {
+        box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.5), 0 0 8px rgba(99, 102, 241, 0.4);
+        filter: brightness(1);
+    }
+    50% {
+        box-shadow: inset 0 0 16px rgba(99, 102, 241, 0.9), 0 0 14px rgba(129, 140, 248, 0.7);
+        filter: brightness(1.22);
+    }
+    100% {
+        box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.5), 0 0 8px rgba(99, 102, 241, 0.4);
+        filter: brightness(1);
+    }
+}
+
+.hywe-tab-strip.tutorial-hl-tab-layout button[title="Layout"],
+.hywe-tab-strip.tutorial-hl-tab-view button[title="3D"],
+.hywe-tab-strip.tutorial-hl-tab-batch button[title="Batch"],
+.hywe-tab-btn.tutorial-hl-tab {
     outline: 2px solid #8b5cf6 !important;
-    outline-offset: 1px !important;
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5) !important;
-    animation: tutorialBtnPulse 1.4s infinite ease-in-out !important;
+    outline-offset: -1px !important;
+    box-shadow: inset 0 0 8px rgba(139, 92, 246, 0.5), 0 0 8px rgba(139, 92, 246, 0.5) !important;
+    color: #8b5cf6 !important;
+    font-weight: 700 !important;
+    animation: tutorialTabPulse 1.3s infinite ease-in-out !important;
+    box-sizing: border-box !important;
+}
+
+@keyframes tutorialTabPulse {
+    0% {
+        box-shadow: inset 0 0 5px rgba(139, 92, 246, 0.4), 0 0 6px rgba(139, 92, 246, 0.4);
+        filter: brightness(1);
+    }
+    50% {
+        box-shadow: inset 0 0 12px rgba(139, 92, 246, 0.8), 0 0 12px rgba(139, 92, 246, 0.7);
+        filter: brightness(1.18);
+    }
+    100% {
+        box-shadow: inset 0 0 5px rgba(139, 92, 246, 0.4), 0 0 6px rgba(139, 92, 246, 0.4);
+        filter: brightness(1);
+    }
 }
 
 @keyframes tutorialBtnPulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.04); }
     100% { transform: scale(1); }
+}
+
+/* Sequence / Variant Slider Highlight */
+#hywe-sequence-selector.tutorial-hl-slider,
+.tutorial-hl-slider #hywe-sequence-selector {
+    outline: 2px solid #8b5cf6 !important;
+    outline-offset: 4px !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.4), 0 0 16px rgba(139, 92, 246, 0.6) !important;
+    animation: tutorialSliderPulse 1.3s infinite ease-in-out !important;
+    box-sizing: border-box !important;
+}
+
+@keyframes tutorialSliderPulse {
+    0% { filter: brightness(1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+    50% { filter: brightness(1.22); box-shadow: 0 0 20px rgba(139, 92, 246, 0.85); }
+    100% { filter: brightness(1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
 }
 
 .tutorial-tab-btn {
@@ -450,5 +508,70 @@
 
 .tutorial-tab-btn:hover {
     background: rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Staggered layout card reveal transition for hyWEAVE generation */
+.layout-card-item {
+    animation: layoutCardReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes layoutCardReveal {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Highlight badge tags for deterministic spatial configurations */
+.layout-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+/* Solver Meta Badge Dot Pulse */
+@keyframes pulseDot {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* Lattice Flash Overlay */
+#hywe-svg-wrapper,
+.hywe-svg-wrapper {
+    position: relative;
+}
+
+#hywe-svg-wrapper::before,
+.hywe-svg-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-size: 20px 20px;
+    background-image: 
+        linear-gradient(to right, rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+    opacity: 0;
+    z-index: 5;
+    animation: latticeFlash 0.35s ease-out;
+}
+
+@keyframes latticeFlash {
+    0% { opacity: 0.9; }
+    100% { opacity: 0; }
 }
 

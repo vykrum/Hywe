@@ -54,6 +54,8 @@ type BadgeTarget =
     | HyweaveBtn
     | TabLayoutPanel
     | TabViewPanel
+    | TabBatchPanel
+    | BadgeSlider
 
 type TutorialStepDef = {
     Title       : string
@@ -65,23 +67,27 @@ type TutorialStepDef = {
 
 let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge = badge; TargetPanel = panel }
 
-// ─── Level 1: Basic Quickstart (4 Steps) ───
+// ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
-    def "Relational Spatial Intent"
-        "Design begins with spatial relationships rather than static boundaries. Define your overall program root on the relational graph canvas."
-        "" NoBadge None
+    def "Define intent, not boundaries"
+        "HYWE compiles spatial layouts directly from relational hierarchy rather than static walls. Inspect the pre-configured program."
+        "Inspect pre-configured program" NoBadge None
 
-    def "Establish Spatial Flow & Program"
-        "Introduce connected spaces to define circulation, functional zoning, and area proportions."
-        "Add connected spaces & weights" BadgeAdd None
+    def "Shift a spatial demand"
+        "Expand or adjust a room's target area. Every constraint reshapes how the compiler packs the whole system."
+        "Adjust target area of space" EditWeight None
 
-    def "Synthesize Spatial Layout (HYWEAVE)"
-        "Click HYWEAVE to run the spatial synthesis solver. Watch abstract graph relationships translate into an optimized 2D floor plan layout."
-        "Click HYWEAVE to generate spatial configuration" HyweaveBtn (Some LayoutPanel)
+    def "Compile the lattice"
+        "Run the engine. HYWE synthesizes these relational demands into discrete, topologically valid floor plans."
+        "Click hyWEAVE to compile lattice" HyweaveBtn (Some BatchPanel)
 
-    def "Explore 2D & 3D Architectural Form"
-        "Inspect generated 2D plan adjacencies or switch to 3D to experience the volumetric enclosure, spatial heights, and building model."
-        "View 3D View Panel" TabViewPanel (Some ViewPanel)
+    def "Explore valid alternatives"
+        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
+        "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
+
+    def "Code meets space"
+        "Every layout you see maps to a portable, algebraic spatial syntax. Edit the tree, tweak the text, or dive into Operations for nesting and zoning."
+        "Click Finish Tour" TabLayoutPanel (Some LayoutPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───
@@ -157,6 +163,8 @@ let badgeCssClass = function
     | HyweaveBtn    -> "tutorial-hl-hyweave"
     | TabLayoutPanel-> "tutorial-hl-tab-layout"
     | TabViewPanel  -> "tutorial-hl-tab-view"
+    | TabBatchPanel -> "tutorial-hl-tab-batch"
+    | BadgeSlider   -> "tutorial-hl-slider"
 
 // ─────────────────────────────────────────────
 // Snapshot builder — real SubModel per step
@@ -189,26 +197,26 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s1base =
         let r = rootOf s0
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "<Root>" }) r
+        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "<Residence>" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s0 with Levels = s0.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s1b = sel s1base (Some rootId)
 
-    let s2a_base = addNamedChild rootId "<Space 1>" "30" s1base
+    let s2a_base = addNamedChild rootId "<Studio>" "24" s1base
     let rootNode2a = rootOf s2a_base
-    let sp1Node = rootNode2a.Children |> List.find (fun n -> n.Name.Contains("Space 1"))
+    let sp1Node = rootNode2a.Children |> List.find (fun n -> n.Name.Contains("Studio"))
     let sp1Id = sp1Node.Id
     let s2a = sel s2a_base (Some rootId)
 
-    let s2b_base = addNamedChild rootId "<Space 2>" "30" s2a_base
+    let s2b_base = addNamedChild rootId "<Bedroom>" "16" s2a_base
     let rootNode2b = rootOf s2b_base
-    let sp2Node = rootNode2b.Children |> List.find (fun n -> n.Name.Contains("Space 2"))
+    let sp2Node = rootNode2b.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
     let sp2Id = sp2Node.Id
     let s2b = sel s2b_base (Some rootId)
 
-    let s2c_base = addNamedChild rootId "<Space 3>" "30" s2b_base
+    let s2c_base = addNamedChild rootId "<Bath>" "8" s2b_base
     let rootNode2c = rootOf s2c_base
-    let sp3Node = rootNode2c.Children |> List.find (fun n -> n.Name.Contains("Space 3"))
+    let sp3Node = rootNode2c.Children |> List.find (fun n -> n.Name.Contains("Bath"))
     let sp3Id = sp3Node.Id
     let s2c = sel s2c_base (Some sp3Id)
 
@@ -216,7 +224,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2d2_base =
         let r = rootOf s2c_base
-        let newRoot = TreeOps.updateNodeById sp1Id (fun n -> { n with Name = "<Child 1>" }) r
+        let newRoot = TreeOps.updateNodeById sp1Id (fun n -> { n with Weight = "36" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2c_base with Levels = s2c_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2d2 = sel s2d2_base (Some sp1Id)
@@ -225,7 +233,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2e2_base =
         let r = rootOf s2d2_base
-        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "<Child 2>" }) r
+        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "<Bedroom>" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2d2_base with Levels = s2d2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2e2 = sel s2e2_base (Some sp2Id)
@@ -234,7 +242,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2f2_base =
         let r = rootOf s2e2_base
-        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "<Child 3>" }) r
+        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "<Bath>" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2e2_base with Levels = s2e2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2f2 = sel s2f2_base (Some sp3Id)
@@ -328,18 +336,26 @@ let private buildBaseSnapshots () : SubModel[] =
 let private baseSnapshots : SubModel[] = buildBaseSnapshots ()
 
 let basicSnapshots : SubModel[] =
-    let cleanBasic = sel baseSnapshots.[11] None
+    let cleanS2c = sel baseSnapshots.[5] None
+    let studioModel = baseSnapshots.[7]
+    let studioNodeOpt = (rootOf studioModel).Children |> List.tryFind (fun n -> n.Name.Contains("Studio"))
+    let studio36Selected =
+        match studioNodeOpt with
+        | Some sn -> sel studioModel (Some sn.Id)
+        | None    -> studioModel
+    let cleanS2d2 = sel studioModel None
     [|
-        baseSnapshots.[0]   // Step 0: Relational Spatial Intent (Single Root)
-        baseSnapshots.[11]  // Step 1: Establish Spatial Flow & Program (Nodes & Weights)
-        cleanBasic          // Step 2: Synthesize Spatial Layout (HYWEAVE -> 2D Layout Panel)
-        cleanBasic          // Step 3: Explore 2D & 3D Architectural Form (3D View Panel)
+        cleanS2c            // Step 0: Define intent, not boundaries (Studio: 24, Bedroom: 16, Bath: 8, unselected)
+        studio36Selected    // Step 1: Shift a spatial demand (Studio: 36, Studio node selected & highlighted!)
+        cleanS2d2           // Step 2: Compile the lattice (hyWEAVE button glowing)
+        cleanS2d2           // Step 3: Explore valid alternatives (Batch Panel 24 configs)
+        cleanS2d2           // Step 4: Code meets space (Layout Panel dual representation)
     |]
 
 let hierarchySnapshots : SubModel[] =
     let cleanS2f2 = baseSnapshots.[11]
     let rootNode = rootOf cleanS2f2
-    let sp3Node = rootNode.Children |> List.find (fun n -> n.Name.Contains("Child 3"))
+    let sp3Node = rootNode.Children |> List.tryFind (fun n -> n.Name.Contains("Service") || n.Name.Contains("Child 3") || n.Name.Contains("Space 3")) |> Option.defaultValue (List.last rootNode.Children)
     let sp3Id = sp3Node.Id
 
     let sWeightEdit =
@@ -365,7 +381,7 @@ let levelsSnapshots : SubModel[] =
 let nestsSnapshots : SubModel[] =
     let cleanS2f2 = baseSnapshots.[11]
     let rootNode = rootOf cleanS2f2
-    let sp3Node = rootNode.Children |> List.find (fun n -> n.Name.Contains("Child 3"))
+    let sp3Node = rootNode.Children |> List.tryFind (fun n -> n.Name.Contains("Service") || n.Name.Contains("Child 3") || n.Name.Contains("Space 3")) |> Option.defaultValue (List.last rootNode.Children)
     let sp3Id = sp3Node.Id
     let sDelSel = sel cleanS2f2 (Some sp3Id)
     let sDelConfirm = { sDelSel with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Delete }
@@ -421,6 +437,8 @@ let private badgeIcon = function
     | HyweaveBtn    -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>"""
     | TabLayoutPanel-> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>"""
     | TabViewPanel  -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>"""
+    | TabBatchPanel -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>"""
+    | BadgeSlider   -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>"""
     | NoBadge       -> ""
 
 let private badgeColor = function
@@ -436,6 +454,8 @@ let private badgeColor = function
     | HyweaveBtn    -> "#6366f1"
     | TabLayoutPanel-> "#8b5cf6"
     | TabViewPanel  -> "#ec4899"
+    | TabBatchPanel -> "#8b5cf6"
+    | BadgeSlider   -> "#8b5cf6"
     | NoBadge       -> "transparent"
 
 // ─────────────────────────────────────────────
@@ -504,9 +524,16 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
 
         // Auto-play progress bar
         if autoPlay then
+            let durationSec =
+                match def.Badge, def.TargetPanel with
+                | HyweaveBtn, _ | _, Some BatchPanel -> 8.0
+                | _ -> 4.5
             div {
                 attr.``class`` "tutorial-progress-bar"
-                div { attr.``class`` "tutorial-progress-fill" }
+                div {
+                    attr.``class`` "tutorial-progress-fill"
+                    attr.style $"animation-duration: {durationSec}s;"
+                }
             }
 
         // Navigation
