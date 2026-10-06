@@ -73,9 +73,9 @@ let basicStepDefs = [|
         "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter node label or area weight inline to sculpt spatial intent."
         "Alter node label or area inline" NoBadge None
 
-    def "Shift a spatial demand"
-        "Every space carries target weight. Studio's area weight is increased to 36 — notice how it reshapes relative spatial priority before compilation."
-        "Studio area weight set to 36" EditWeight None
+    def "Expand the spatial program"
+        "Extend your spatial hierarchy by adding child nodes. Here, Bath is added as a child space under Bedroom."
+        "Add Bath node under Bedroom" BadgeAdd None
 
     def "Compile the lattice"
         "Run the engine. HYWE synthesizes these relational demands into discrete, topologically valid floor plans. 24 valid arrangements — none are random."
@@ -336,20 +336,21 @@ let private buildBaseSnapshots () : SubModel[] =
 let private baseSnapshots : SubModel[] = buildBaseSnapshots ()
 
 let basicSnapshots : SubModel[] =
-    let cleanS2c = sel baseSnapshots.[5] None
-    let studioModel = baseSnapshots.[7]
-    let studioNodeOpt = (rootOf studioModel).Children |> List.tryFind (fun n -> n.Name.Contains("Studio"))
-    let studio36Selected =
-        match studioNodeOpt with
-        | Some sn -> sel studioModel (Some sn.Id)
-        | None    -> studioModel
-    let cleanS2d2 = sel studioModel None
+    let entryStudioBed = baseSnapshots.[4] // s2b_base (Entry 25, Studio 24, Bedroom 16)
+    let rootNode = rootOf entryStudioBed
+    let bedNode = rootNode.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
+    let bedId = bedNode.Id
+
+    let bathUnderBedModel = addNamedChild bedId "Bath" "8" entryStudioBed
+    let step0 = sel entryStudioBed None
+    let step1 = sel bathUnderBedModel (Some bedId)
+    let step2 = sel bathUnderBedModel None
     [|
-        cleanS2c            // Step 0: Define intent, not boundaries (Studio: 24, Bedroom: 16, Bath: 8, unselected)
-        studio36Selected    // Step 1: Shift a spatial demand (Studio: 36, Studio node selected & highlighted!)
-        cleanS2d2           // Step 2: Compile the lattice (hyWEAVE button glowing)
-        cleanS2d2           // Step 3: Explore valid alternatives (Batch Panel 24 configs)
-        cleanS2d2           // Step 4: Code meets space (Layout Panel dual representation)
+        step0   // Step 0: Define intent (Entry: 25, Studio: 24, Bedroom: 16)
+        step1   // Step 1: Expand spatial program (Add Bath as child under Bedroom, Bedroom selected & BadgeAdd highlighted)
+        step2   // Step 2: Compile the lattice (hyWEAVE button glowing)
+        step2   // Step 3: Explore valid alternatives (Batch Panel 24 configs)
+        step2   // Step 4: Code meets space (Layout Panel dual representation)
     |]
 
 let hierarchySnapshots : SubModel[] =
