@@ -82,7 +82,7 @@ let basicStepDefs = [|
         "Click hyWEAVE to compile lattice" HyweaveBtn (Some BatchPanel)
 
     def "Explore valid alternatives"
-        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Scrub the variant slider to compare structural archetypes."
+        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
         "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
     def "Code meets space"
