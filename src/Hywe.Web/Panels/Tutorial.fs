@@ -70,8 +70,8 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
     def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Inspect the Residence program (Studio, Bedroom, Bath)."
-        "Inspect pre-configured program" NoBadge None
+        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter node label or area weight inline to sculpt spatial intent."
+        "Alter node label or area inline" NoBadge None
 
     def "Shift a spatial demand"
         "Every space carries target weight. Studio's area weight is increased to 36 — notice how it reshapes relative spatial priority before compilation."
