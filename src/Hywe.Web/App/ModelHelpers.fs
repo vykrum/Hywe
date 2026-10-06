@@ -10,7 +10,7 @@ open Types
 open ModelTypes
 open Bolero.Html
 open Hywe.Core
-
+open Tutorial
 open Overlays
 
 
@@ -318,18 +318,18 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
+    let isHyweaveTutorialHl =
+        match model.TutorialStep with
+        | Some step -> (Tutorial.getStepDef model.TutorialLevel step).Badge = HyweaveBtn
+        | None -> false
     
     let buttonClass = 
         let baseClass = "hywe-btn hywe-btn-lg hywe-btn-dark hyWeaveButton"
-        match model.IsHyweaving with
-        | true -> baseClass + " stop-state" 
-        | false -> 
-            match syntaxAltered with
-            | true -> baseClass + " needs-update"
-            | false -> baseClass
+        let cls1 = match model.IsHyweaving with true -> baseClass + " stop-state" | false -> match syntaxAltered with true -> baseClass + " needs-update" | false -> baseClass
+        match isHyweaveTutorialHl with true -> cls1 + " tutorial-hl-hyweave-btn" | false -> cls1
 
     div {
-        attr.``class`` "hyweave-container"
+        attr.``class`` (match isHyweaveTutorialHl with true -> "hyweave-container tutorial-hl-hyweave" | false -> "hyweave-container")
         button {
             attr.id "hywe-hyweave"
             attr.``class`` buttonClass
@@ -366,31 +366,45 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     }
 
 let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
+    let tutBadge =
+        match model.TutorialStep with
+        | Some step -> (Tutorial.getStepDef model.TutorialLevel step).Badge
+        | None -> NoBadge
+
+    let tabStripClass =
+        match tutBadge with
+        | TabLayoutPanel -> "hywe-tab-strip tutorial-hl-tab-layout"
+        | TabViewPanel   -> "hywe-tab-strip tutorial-hl-tab-view"
+        | TabBatchPanel  -> "hywe-tab-strip tutorial-hl-tab-batch"
+        | _              -> "hywe-tab-strip"
+
     div {
-        attr.``class`` "hywe-tab-strip"
+        attr.``class`` tabStripClass
         
-        let tab title path panel =
+        let tab title path panel targetBadge =
             let isActive = model.ActivePanel = panel
+            let isHighlighted = tutBadge <> NoBadge && tutBadge = targetBadge
             let activeClass = match isActive with true -> " active" | false -> ""
+            let hlClass = match isHighlighted with true -> " tutorial-hl-tab" | false -> ""
 
             button {
                 attr.title title 
-                attr.``class`` ("hywe-tab-btn" + activeClass)
+                attr.``class`` ("hywe-tab-btn" + activeClass + hlClass)
                 on.click (fun _ -> dispatch (SetActivePanel panel))
                 
-                // Show text if active, icon if inactive
-                match isActive with
+                // Show text if active or highlighted, icon if inactive
+                match isActive || isHighlighted with
                 | true -> text title
                 | false -> drawIcon path
             }
 
-        tab "Boundary" pathBoundary BoundaryPanel
-        tab "Layout"   pathLayout   LayoutPanel
-        tab "Analyze"  pathAnalyze  AnalyzePanel
-        tab "3D"       path3D       ViewPanel
-        tab "Batch"    pathBatch    BatchPanel
-        tab "Teach"    pathTeach    TeachPanel
-        tab "Report"   pathReport   ReportPanel
+        tab "Boundary" pathBoundary BoundaryPanel NoBadge
+        tab "Layout"   pathLayout   LayoutPanel   TabLayoutPanel
+        tab "Analyze"  pathAnalyze  AnalyzePanel  NoBadge
+        tab "3D"       path3D       ViewPanel     TabViewPanel
+        tab "Batch"    pathBatch    BatchPanel    TabBatchPanel
+        tab "Teach"    pathTeach    TeachPanel    NoBadge
+        tab "Report"   pathReport   ReportPanel   NoBadge
     }
 
 
@@ -461,6 +475,11 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 
         cxls, clrs, avls, bgCxl, wtmkCxls
 
+    let isSliderTutorialHl =
+        match model.TutorialStep with
+        | Some step -> (Tutorial.getStepDef model.TutorialLevel step).Badge = BadgeSlider
+        | None -> false
+
     div {
         attr.style "padding: 10px; min-height: 400px;"
         
@@ -480,7 +499,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             div {
                 attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
                 div {
-                    attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
+                    attr.id "hywe-sequence-selector"
+                    attr.``class`` (if isSliderTutorialHl then "tutorial-hl-slider" else "")
+                    attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
                 

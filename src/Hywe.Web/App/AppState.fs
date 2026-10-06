@@ -433,9 +433,12 @@ let handlePageHelperUpdate (js: IJSRuntime) (msg: Message) (model: Model) : Mode
     | None -> model, Cmd.none
 
 /// <summary>
-let scheduleAutoAdvance (step: int) =
+let scheduleAutoAdvanceForStep (level: TutorialLevel) (step: int) =
+    let stepDef = Tutorial.getStepDef level step
+    let isGenStep = stepDef.Badge = Tutorial.HyweaveBtn || stepDef.TargetPanel = Some BatchPanel
+    let durationMs = if isGenStep then 8000 else 4500
     Cmd.OfAsync.perform (fun () -> async {
-        do! Async.Sleep 3500
+        do! Async.Sleep durationMs
         return step
     }) () TutorialAutoAdvance
 
@@ -461,6 +464,11 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
     }
 
     match stepDef.TargetPanel with
+    | Some BatchPanel ->
+        let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
+        let markers = snapshot.Levels.Keys |> Seq.map toMarker |> Seq.toList
+        let cache = Cache.init markers
+        { m with ActivePanel = BatchPanel; LayoutCache = cache; BatchProgress = 24 }
     | Some p -> { m with ActivePanel = p }
     | None   -> m
 
@@ -480,7 +488,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | SetTutorialLevel lvl ->
         let nextStep = 0
         let m = updateTutorialStep model lvl nextStep
-        let cmd = if m.TutorialAutoPlay then scheduleAutoAdvance nextStep else Cmd.none
+        let cmd = if m.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
         m, cmd
 
     | TutorialNext ->
@@ -493,7 +501,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 { model with TutorialStep = None }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
-                let cmd = if model.TutorialAutoPlay then scheduleAutoAdvance nextStep else Cmd.none
+                let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel nextStep else Cmd.none
                 m, cmd
 
     | TutorialBack ->
@@ -502,7 +510,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | Some step ->
             let prevStep = step - 1
             let m = updateTutorialStep model model.TutorialLevel prevStep
-            let cmd = if model.TutorialAutoPlay then scheduleAutoAdvance prevStep else Cmd.none
+            let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel prevStep else Cmd.none
             m, cmd
 
     | DismissTutorial ->
@@ -512,7 +520,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newAutoPlay = not model.TutorialAutoPlay
         let m = { model with TutorialAutoPlay = newAutoPlay }
         match newAutoPlay, model.TutorialStep with
-        | true, Some step -> m, scheduleAutoAdvance step
+        | true, Some step -> m, scheduleAutoAdvanceForStep model.TutorialLevel step
         | _ -> m, Cmd.none
 
     | TutorialAutoAdvance expectedStep ->
@@ -524,7 +532,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 { model with TutorialStep = None }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
-                m, scheduleAutoAdvance nextStep
+                m, scheduleAutoAdvanceForStep model.TutorialLevel nextStep
         | _ -> model, Cmd.none
 
     | SetSqnIndex i ->
@@ -1050,7 +1058,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match isFromUrl with
             | false ->
                 let m = updateTutorialStep modelWithPanel Basic 0
-                { m with TutorialAutoPlay = true }, scheduleAutoAdvance 0
+                { m with TutorialAutoPlay = true }, scheduleAutoAdvanceForStep Basic 0
             | true  -> modelWithPanel, Cmd.none
         | ValidString cleanContent ->
             try
