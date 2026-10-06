@@ -698,9 +698,13 @@ let alternateConfigurations
                 let col, row = i % cols, i / cols
                 let ox = (float col * cellW) + (cellW / 2.0) - (maxW * scale / 2.0)
                 let oy = (float row * cellH) + (cellH / 2.0) - (maxH * scale / 2.0)
+                let staggerDelay = sprintf "%dms" (i * 25)
                 let isSelected = selectedIndex = Some i
 
                 elt "g" {
+                    attr.``class`` "batch-card-cascade"
+                    attr.style $"animation-delay: {staggerDelay}; transform-box: fill-box; transform-origin: center;"
+
                     // 1. BOUNDARY
                     for poly in cfg.cxOuIl do
                         let xy = poly 

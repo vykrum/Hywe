@@ -361,6 +361,22 @@
 }
 
 /* Tutorial Module Level Selector Strip */
+/* Batch Reveal Cascading Animation (staggered 30ms apart) */
+.batch-card-cascade {
+    animation: batchCascadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes batchCascadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .tutorial-level-strip {
     display: flex;
     align-items: center;
