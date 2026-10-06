@@ -345,19 +345,10 @@
     outline-offset: 1px;
 }
 
-/* edit-name (sleek underline highlight for inline label input) */
-.tutorial-hl-edit-name .node-outer.is-selected .nodename {
-    border: none !important;
-    border-bottom: 2.5px solid #06b6d4 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: #0891b2 !important;
-    font-weight: 700 !important;
-    outline: none !important;
-    animation: thlPulseUnderline 1.6s ease-in-out infinite;
-}
-
-/* edit-weight (sleek underline highlight for inline weight input) */
+/* edit-name & edit-weight (sleek underline highlight for both inline label and weight inputs) */
+.tutorial-hl-edit-name .node-outer.is-selected .nodename,
+.tutorial-hl-edit-name .node-outer.is-selected .nodeweight,
+.tutorial-hl-edit-weight .node-outer.is-selected .nodename,
 .tutorial-hl-edit-weight .node-outer.is-selected .nodeweight {
     border: none !important;
     border-bottom: 2.5px solid #06b6d4 !important;
