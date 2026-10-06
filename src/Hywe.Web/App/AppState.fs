@@ -508,8 +508,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | NoOp -> model, Cmd.none
 
     | SetTutorialLevel lvl ->
+        let modelWithUndo = pushUndo model
         let nextStep = 0
-        let m = updateTutorialStep model lvl nextStep
+        let m = updateTutorialStep modelWithUndo lvl nextStep
         let cmd = if m.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
         m, cmd
 
@@ -520,7 +521,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                { model with TutorialStep = None }, Cmd.none
+                match model.UndoStack with
+                | snap :: rest ->
+                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+                    m, cmd
+                | [] ->
+                    { model with TutorialStep = None }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel nextStep else Cmd.none
@@ -536,7 +542,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             m, cmd
 
     | DismissTutorial ->
-        { model with TutorialStep = None }, Cmd.none
+        match model.UndoStack with
+        | snap :: rest ->
+            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+            m, cmd
+        | [] ->
+            { model with TutorialStep = None }, Cmd.none
 
     | ToggleTutorialAutoPlay ->
         let newAutoPlay = not model.TutorialAutoPlay
@@ -551,7 +562,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                { model with TutorialStep = None }, Cmd.none
+                match model.UndoStack with
+                | snap :: rest ->
+                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+                    m, cmd
+                | [] ->
+                    { model with TutorialStep = None }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 m, scheduleAutoAdvanceForStep model.TutorialLevel nextStep
@@ -755,16 +771,25 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let nextCollapse = isSecondEdit || modelToUse.IsPresetsCollapsed
         let nextWorkspaceCollapse = isSecondEdit || modelToUse.IsWorkspaceCollapsed
         
-        let needsHyweave =
-            match subMsg with
-            | SubMsg.PointerMove _ -> modelToUse.NeedsHyweave
-            | _ -> true
+        let isTutorialUncompiled =
+            match modelToUse.TutorialStep with
+            | Some s when modelToUse.TutorialLevel = Basic && s < 2 -> true
+            | _ -> false
+
+        let needsHyweave = isTutorialUncompiled
+
+        let derivedData =
+            if isTutorialUncompiled then
+                emptyDerivedData
+            else
+                Cache.deriveFromSource newOutput newSqns modelToUse.PolygonExport updatedTree.ActiveLevel
 
         let modelWithTree = 
             { modelToUse with 
                 Tree = updatedTree 
                 Sequences = newSqns
                 SrcOfTrth = newOutput 
+                Derived = derivedData
                 NeedsHyweave = needsHyweave
                 EditsCount = nextCount
                 IsPresetsCollapsed = nextCollapse
@@ -779,15 +804,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         match subMsg with
         | SubMsg.SetLevel _ | SubMsg.SetNest _ | SubMsg.ExecuteAction _ ->
-            let m = { modelWithTree with Derived = Cache.deriveFromSource newOutput modelWithTree.Sequences modelWithTree.PolygonExport updatedTree.ActiveLevel }
             match modelWithTree.ActivePanel with
             | BatchPanel ->
-                { m with 
+                { modelWithTree with 
                     IsHyweaving = true
                     BatchProgress = 0
                 }, Cmd.batch [ Cmd.map TreeMsg treeCmd; Cmd.ofMsg (GenerateNextBatchItem 0) ]
             | _ ->
-                m, Cmd.map TreeMsg treeCmd
+                modelWithTree, Cmd.map TreeMsg treeCmd
         | _ ->
             modelWithTree, Cmd.map TreeMsg treeCmd
 
