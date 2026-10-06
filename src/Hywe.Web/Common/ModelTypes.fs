@@ -147,6 +147,18 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
         cxSol1 = cxSol1
     }
 
+let emptyDerivedData : DerivedData = {
+    cxCxl1 = [||]
+    cxlAvl = [||]
+    cxClr1 = [||]
+    cxOuIl = [||]
+    cxElv1 = [||]
+    cxRto1 = [||]
+    cxAdj1 = ([||], [||])
+    cxB36 = [||]
+    cxSol1 = None
+}
+
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string

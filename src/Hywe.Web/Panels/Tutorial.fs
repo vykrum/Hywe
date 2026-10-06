@@ -69,25 +69,25 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
-    def "Define intent, not boundaries"
-        "HYWE compiles spatial layouts directly from relational hierarchy rather than static boundaries. Alter the pre-configured values inline."
-        "Alter pre-configured program" NoBadge None
+    def "Welcome to HYWE"
+        "Begin pre-geometry exploration by charting spatial intent. Extend your relational hierarchy by adding child space nodes."
+        "Add Child node" BadgeAdd None
 
-    def "Shift a spatial demand"
-        "Expand or adjust a doace's target area. Every constraint reshapes how the compiler packs the whole system."
-        "Adjust target area of space" EditWeight None
+    def "Tweak labels and area weights"
+        "Alter node label or area weight inline to sculpt spatial intent."
+        "Alter labels and area weight inline" EditWeight None
 
     def "Compile the lattice"
-        "Run the engine. HYWE synthesizes these relational demands into discrete, topologically valid floor plans."
-        "Click hyWEAVE to compile lattice" HyweaveBtn (Some BatchPanel)
+        "Run the engine to synthesize these relational demands into discrete spatial configurations."
+        "Click hyWEAVE to compile lattice" HyweaveBtn (Some LayoutPanel)
 
-    def "Explore valid alternatives"
-        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
-        "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
+    def "Explore alternate configurations"
+        "This isn't random diffusion but mathematically deterministic configurations. Cycle through the variants."
+        "Scrub slider to explore alternate configurations" BadgeSlider (Some LayoutPanel)
 
-    def "Code meets space"
-        "Every layout you see maps to a portable, algebraic spatial syntax. Edit the tree, tweak the text, or dive into Operations for nesting and zoning."
-        "Click Finish Tour" TabLayoutPanel (Some LayoutPanel)
+    def "Inspect all configurations"
+        "Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
+        "Inspect all configurations" TabBatchPanel (Some BatchPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───
@@ -197,24 +197,24 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s1base =
         let r = rootOf s0
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "<Residence>" }) r
+        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Entry"; Weight = "25" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s0 with Levels = s0.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s1b = sel s1base (Some rootId)
 
-    let s2a_base = addNamedChild rootId "<Studio>" "24" s1base
+    let s2a_base = addNamedChild rootId "Studio" "24" s1base
     let rootNode2a = rootOf s2a_base
     let sp1Node = rootNode2a.Children |> List.find (fun n -> n.Name.Contains("Studio"))
     let sp1Id = sp1Node.Id
     let s2a = sel s2a_base (Some rootId)
 
-    let s2b_base = addNamedChild rootId "<Bedroom>" "16" s2a_base
+    let s2b_base = addNamedChild rootId "Bedroom" "16" s2a_base
     let rootNode2b = rootOf s2b_base
     let sp2Node = rootNode2b.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
     let sp2Id = sp2Node.Id
     let s2b = sel s2b_base (Some rootId)
 
-    let s2c_base = addNamedChild rootId "<Bath>" "8" s2b_base
+    let s2c_base = addNamedChild rootId "Bath" "8" s2b_base
     let rootNode2c = rootOf s2c_base
     let sp3Node = rootNode2c.Children |> List.find (fun n -> n.Name.Contains("Bath"))
     let sp3Id = sp3Node.Id
@@ -233,7 +233,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2e2_base =
         let r = rootOf s2d2_base
-        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "<Bedroom>" }) r
+        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "Bedroom" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2d2_base with Levels = s2d2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2e2 = sel s2e2_base (Some sp2Id)
@@ -242,7 +242,7 @@ let private buildBaseSnapshots () : SubModel[] =
 
     let s2f2_base =
         let r = rootOf s2e2_base
-        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "<Bath>" }) r
+        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "Bath" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2e2_base with Levels = s2e2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s2f2 = sel s2f2_base (Some sp3Id)
@@ -325,7 +325,7 @@ let private buildBaseSnapshots () : SubModel[] =
     let s15a = sel s14bbase (Some rootId)
     let s15bbase =
         let r = rootOf s14bbase
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "<Main Hub>"; Weight = "200" }) r
+        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Main Hub"; Weight = "200" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s14bbase with Levels = s14bbase.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
     let s15b = sel s15bbase (Some rootId)
@@ -336,21 +336,23 @@ let private buildBaseSnapshots () : SubModel[] =
 let private baseSnapshots : SubModel[] = buildBaseSnapshots ()
 
 let basicSnapshots : SubModel[] =
-    let cleanS2c = sel baseSnapshots.[5] None
-    let studioModel = baseSnapshots.[7]
-    let studioNodeOpt = (rootOf studioModel).Children |> List.tryFind (fun n -> n.Name.Contains("Studio"))
-    let studio36Selected =
-        match studioNodeOpt with
-        | Some sn -> sel studioModel (Some sn.Id)
-        | None    -> studioModel
-    let cleanS2d2 = sel studioModel None
-    [|
-        cleanS2c            // Step 0: Define intent, not boundaries (Studio: 24, Bedroom: 16, Bath: 8, unselected)
-        studio36Selected    // Step 1: Shift a spatial demand (Studio: 36, Studio node selected & highlighted!)
-        cleanS2d2           // Step 2: Compile the lattice (hyWEAVE button glowing)
-        cleanS2d2           // Step 3: Explore valid alternatives (Batch Panel 24 configs)
-        cleanS2d2           // Step 4: Code meets space (Layout Panel dual representation)
-    |]
+    let entryStudioBed = baseSnapshots.[4] // s2b_base (Entry 25, Studio 24, Bedroom 16)
+    let rootNode = rootOf entryStudioBed
+    let bedNode = rootNode.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
+    let bedId = bedNode.Id
+
+    let bathUnderBedModel = addNamedChild bedId "Bath" "8" entryStudioBed
+    let rootNodeBath = rootOf bathUnderBedModel
+    let bathNodeOpt = rootNodeBath.Children |> List.tryPick (fun n -> n.Children |> List.tryFind (fun c -> c.Name.Contains("Bath")))
+    let bathId = match bathNodeOpt with Some b -> b.Id | None -> bedId
+
+    let step0 = sel entryStudioBed (Some bedId)       // Step 1: Entry 25, Studio 24, Bedroom 16 (Bedroom selected, + badge highlighted, Bath NOT present initially)
+    let step1 = sel bathUnderBedModel (Some bathId)   // Step 2: Bath 8 added under Bedroom 16 (Bath selected, EditWeight highlighted)
+    let step2 = sel bathUnderBedModel None            // Step 3: Compile lattice on LayoutPanel
+    let step3 = sel bathUnderBedModel None            // Step 4: Explore alternate configurations on LayoutPanel
+    let step4 = sel bathUnderBedModel None            // Step 5: Inspect all configurations on BatchPanel
+
+    [| step0; step1; step2; step3; step4 |]
 
 let hierarchySnapshots : SubModel[] =
     let cleanS2f2 = baseSnapshots.[11]
