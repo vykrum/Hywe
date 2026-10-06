@@ -85,8 +85,8 @@ let basicStepDefs = [|
         "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
         "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
-    def "Code meets space"
-        "Every layout maps to a portable, algebraic spatial syntax. Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
+    def "Inspect configuration space"
+        "Every encoded intent generates a full spectrum of valid spatial configurations. Inspect all 24 resolved deterministic arrangements at a glance in the Batch view."
         "Click Start Designing to begin" TabBatchPanel (Some BatchPanel)
 |]
 
