@@ -70,7 +70,7 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 // ─── Level 1: Basic Quickstart (5 Steps) ───
 let basicStepDefs = [|
     def "Welcome to HYWE"
-        "Begin pre-geometry exploration by charting spatial intent. Extend your relational hierarchy by adding child space nodes."
+        "Start with relationships, not walls. Add a child space to begin."
         "Add Child node" BadgeAdd None
 
     def "Tweak labels and area weights"
@@ -78,16 +78,16 @@ let basicStepDefs = [|
         "Alter labels and area weight inline" EditWeight None
 
     def "Compile the lattice"
-        "Run the engine to synthesize these relational demands into discrete spatial configurations."
-        "Click hyWEAVE to compile lattice" HyweaveBtn (Some LayoutPanel)
+        "Watch the hierarchy become space. HYWE will resolve your exact relationships into multiple valid floor plans — none of them random."
+        "Click hyWEAVE" HyweaveBtn (Some LayoutPanel)
 
     def "Explore alternate configurations"
-        "This isn't random diffusion but mathematically deterministic configurations. Cycle through the variants."
-        "Scrub slider to explore alternate configurations" BadgeSlider (Some LayoutPanel)
+        "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
+        "Scrub variant slider to explore options" BadgeSlider (Some LayoutPanel)
 
-    def "Inspect all configurations"
-        "Inspect all 24 resolved deterministic configurations at a glance in the Batch view."
-        "Inspect all configurations" TabBatchPanel (Some BatchPanel)
+    def "24 valid solutions. Zero randomness."
+        "Every one of these floor plans satisfies the exact hierarchy and area weights you defined. Scrub or click to compare."
+        "Explore the set" TabBatchPanel (Some BatchPanel)
 |]
 
 // ─── Level 2: Hierarchy & Flow (4 Steps) ───
@@ -571,7 +571,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     match TutorialLevel.nextLevel level with
                     | Some nxt ->
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark tutorial-next-module"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost tutorial-next-module"
                             attr.title $"Proceed to {TutorialLevel.name nxt}"
                             on.click (fun _ -> dispatch (SetTutorialLevel nxt))
                             text $"Next: {TutorialLevel.shortName nxt} "

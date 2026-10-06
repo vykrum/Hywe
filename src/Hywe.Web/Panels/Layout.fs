@@ -691,6 +691,13 @@ let alternateConfigurations
                     text (labelPhrase.[i].ToString())
                 }
 
+            elt "text" {
+                "x" => (totalWidth / 2.0)
+                "y" => (-headerHeight / 1.5 + 28.0)
+                attr.style "font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 600; fill: #06b6d4; text-anchor: middle; letter-spacing: 2px;"
+                text "ALL DETERMINISTIC • ALL VALID"
+            }
+
             // --- THE GRID ---
             for i in 0 .. (configs.Length - 1) do
                 let cfg = configs.[i]
