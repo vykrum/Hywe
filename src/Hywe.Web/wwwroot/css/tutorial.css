@@ -330,6 +330,28 @@
     color: #8b5cf6 !important;
 }
 
+/* hyWEAVE button highlight (Generation Moment cue) */
+.tutorial-hl-hyweave-btn {
+    animation: thlHyweavePulse 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite !important;
+    outline: 2.5px solid rgba(139, 92, 246, 0.9) !important;
+    outline-offset: 3px !important;
+}
+
+@keyframes thlHyweavePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.8), 0 0 16px 4px rgba(139, 92, 246, 0.4);
+    }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 0 10px rgba(139, 92, 246, 0), 0 0 22px 6px rgba(139, 92, 246, 0.25);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0), 0 0 0 0 rgba(139, 92, 246, 0);
+    }
+}
+
 /* props bar */
 .tutorial-hl-props-bar .node-properties-bar {
     animation: thlPulseAmber 1.6s ease-out infinite;
