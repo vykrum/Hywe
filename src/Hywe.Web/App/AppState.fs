@@ -521,7 +521,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                { model with TutorialStep = None }, Cmd.none
+                match model.UndoStack with
+                | snap :: rest ->
+                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+                    m, cmd
+                | [] ->
+                    { model with TutorialStep = None }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel nextStep else Cmd.none
@@ -537,7 +542,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             m, cmd
 
     | DismissTutorial ->
-        { model with TutorialStep = None }, Cmd.none
+        match model.UndoStack with
+        | snap :: rest ->
+            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+            m, cmd
+        | [] ->
+            { model with TutorialStep = None }, Cmd.none
 
     | ToggleTutorialAutoPlay ->
         let newAutoPlay = not model.TutorialAutoPlay
@@ -552,7 +562,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                { model with TutorialStep = None }, Cmd.none
+                match model.UndoStack with
+                | snap :: rest ->
+                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None })
+                    m, cmd
+                | [] ->
+                    { model with TutorialStep = None }, Cmd.none
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 m, scheduleAutoAdvanceForStep model.TutorialLevel nextStep
