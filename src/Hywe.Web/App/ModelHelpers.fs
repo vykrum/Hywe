@@ -695,21 +695,12 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 match rawResults.Length > 0 && model.BatchProgress = 24 with
                 | true ->
                     let results = rawResults |> Array.map (TreeFilter.filterBatchConfig false model.Tree)
-                    div {
-                        attr.style "width: 100%; display: flex; flex-direction: column; align-items: center;"
-                        div {
-                            attr.``class`` "hywe-solver-climax-badge"
-                            attr.style "display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Outfit', system-ui, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #6366f1; background: rgba(99, 102, 241, 0.08); padding: 7px 18px; border-radius: 20px; border: 1px solid rgba(99, 102, 241, 0.25); margin: 14px 0 6px 0; animation: climaxPulse 2s infinite;"
-                            span { attr.style "width: 7px; height: 7px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 10px #6366f1; animation: pulseDot 1.5s infinite;" }
-                            text "24 Deterministic Configurations Compiled • These are all valid. None are random."
-                        }
-                        alternateConfigurations 
-                            results 
-                            model.SelectedPreviewIndex 
-                            TapBatchPreview                   
-                            dispatch                   
-                            (fun () -> dispatch (SetActivePanel LayoutPanel)) js
-                    }
+                    alternateConfigurations 
+                        results 
+                        model.SelectedPreviewIndex 
+                        TapBatchPreview                   
+                        dispatch                   
+                        (fun () -> dispatch (SetActivePanel LayoutPanel)) js
                 | false ->
                     div { 
                         attr.style "text-align:center; padding: 40px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"

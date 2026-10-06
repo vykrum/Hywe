@@ -549,21 +549,6 @@
     100% { transform: scale(1); opacity: 0.8; }
 }
 
-@keyframes climaxPulse {
-    0% { box-shadow: 0 0 0px rgba(99, 102, 241, 0); transform: scale(1); }
-    50% { box-shadow: 0 0 16px rgba(99, 102, 241, 0.35); transform: scale(1.01); }
-    100% { box-shadow: 0 0 0px rgba(99, 102, 241, 0); transform: scale(1); }
-}
-
-.hywe-solver-climax-badge {
-    transition: all 0.3s ease;
-}
-
-.hywe-solver-climax-badge:hover {
-    background: rgba(99, 102, 241, 0.15) !important;
-    border-color: rgba(99, 102, 241, 0.4) !important;
-}
-
 /* Lattice Flash Overlay */
 #hywe-svg-wrapper,
 .hywe-svg-wrapper {
