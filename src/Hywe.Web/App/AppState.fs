@@ -511,8 +511,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let modelWithUndo = pushUndo model
         let nextStep = 0
         let m = updateTutorialStep modelWithUndo lvl nextStep
-        let cmd = if m.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
-        m, cmd
+        let mWithPanel = { m with ActivePanel = LayoutPanel }
+        let cmd = if mWithPanel.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
+        mWithPanel, cmd
 
     | TutorialNext ->
         match model.TutorialStep with
@@ -1104,7 +1105,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match isFromUrl with
             | false ->
                 let m = updateTutorialStep modelWithPanel Basic 0
-                { m with TutorialAutoPlay = true }, scheduleAutoAdvanceForStep Basic 0
+                { m with TutorialAutoPlay = true; ActivePanel = LayoutPanel }, scheduleAutoAdvanceForStep Basic 0
             | true  -> modelWithPanel, Cmd.none
         | ValidString cleanContent ->
             try
