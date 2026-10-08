@@ -507,7 +507,12 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 
                 let filteredCxls, filteredClrs, _, bgCxl, wtmkCxls = getFilteredGeometries ()
 
-                if model.NeedsHyweave || Array.isEmpty filteredCxls then
+                let isTutorialUncompiled =
+                    match model.TutorialStep with
+                    | Some s when model.TutorialLevel = Basic && s < 2 -> true
+                    | _ -> false
+
+                if (model.NeedsHyweave && isTutorialUncompiled) || Array.isEmpty filteredCxls then
                     div {
                         attr.style "display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 380px; width: 100%; pointer-events: none; user-select: none;"
                         rawHtml """<svg width="200" height="200" viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg" style="margin-top: 10px;"><path fill="#64748b" opacity="0.15" d="M 167 836 Q 167 850 179 857 L 279 915 Q 317 937 317 893 L 317 600 Q 317 575 342 575 L 500 575 Q 525 575 525 600 L 525 738 Q 525 788 575 788 L 748 788 Q 841 788 760 834 L 488 992 Q 450 1013 488 1035 L 588 1093 Q 600 1100 613 1093 L 1021 857 Q 1033 850 1033 364 Q 1033 350 1021 343 L 921 285 Q 883 263 883 307 L 883 613 Q 883 638 858 638 L 700 638 Q 675 638 675 613 L 675 450 Q 675 425 650 425 L 430 425 Q 337 425 418 378 L 713 208 Q 750 187 713 165 L 613 104 Q 600 100 588 104 L 179 343 Q 167 350 167 364 L 167 836 Z"><animate attributeName="opacity" values="0.08;0.22;0.08" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"/></path></svg>"""
