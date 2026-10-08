@@ -316,6 +316,8 @@ type Model =
         TutorialStep: int option
         /// <summary> Whether auto step advance is active in the tutorial. </summary>
         TutorialAutoPlay: bool
+        /// <summary> Preserved snapshot of user's pre-tutorial project state to restore on exit. </summary>
+        PreTutorialSnapshot: UndoSnapshot option
     }
 
 type ExportMetadata = {

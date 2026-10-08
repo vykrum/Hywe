@@ -213,6 +213,7 @@ let initModel =
         TutorialLevel = Basic
         TutorialStep = None
         TutorialAutoPlay = true
+        PreTutorialSnapshot = None
     }
 
 /// Check if current tutorial state is uncompiled (Basic Quickstart steps 0 & 1)
@@ -240,12 +241,11 @@ let updateMetadata (js: IJSRuntime) =
 let maxUndoDepth = 50
 
 /// <summary>
-/// Captures the current undoable state (AST source of truth, node tree, polygon editor, and sequence map)
-/// and prepends it to the undo stack, discarding the redo stack unless the current state is identical to the top snapshot.
+/// Captures the current undoable state as an <see cref="UndoSnapshot"/>.
 /// </summary>
 /// <param name="model">Current application model.</param>
-/// <returns>Updated model with new undo snapshot prepended.</returns>
-let pushUndo (model: Model) : Model =
+/// <returns>UndoSnapshot instance representing current project state.</returns>
+let createSnapshot (model: Model) : UndoSnapshot =
     let cleanPolyInner = 
         model.PolygonEditor
         |> getInnerPolygonEditor
@@ -263,12 +263,22 @@ let pushUndo (model: Model) : Model =
             ConfirmingId = None
             ActiveActionId = ActionIds.NoAction
             ActiveMenuId = None }
-    let snap = {
+    {
         SrcOfTrth     = model.SrcOfTrth
         Tree          = cleanTree
         PolygonEditor = Stable cleanPolyInner
         Sequences     = model.Sequences
     }
+
+/// <summary>
+/// Captures the current undoable state (AST source of truth, node tree, polygon editor, and sequence map)
+/// and prepends it to the undo stack, discarding the redo stack unless the current state is identical to the top snapshot.
+/// </summary>
+/// <param name="model">Current application model.</param>
+/// <returns>Updated model with new undo snapshot prepended.</returns>
+let pushUndo (model: Model) : Model =
+    let snap = createSnapshot model
+    let cleanPolyInner = getInnerPolygonEditor snap.PolygonEditor
     match model.UndoStack with
     // Only skip if both source of truth and boundary geometry are identical
     | top :: _ when top.SrcOfTrth = snap.SrcOfTrth && 
@@ -500,6 +510,23 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
     | Some p -> { m with ActivePanel = p }
     | None   -> m
 
+/// <summary>
+/// Restores the pre-tutorial project state when exiting or dismissing the onboarding tutorial.
+/// </summary>
+let exitTutorial (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
+    match model.PreTutorialSnapshot with
+    | Some snap ->
+        let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with PreTutorialSnapshot = None; TutorialStep = None; ActivePanel = LayoutPanel })
+        m, cmd
+    | None ->
+        match model.UndoStack with
+        | snap :: rest ->
+            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
+            m, cmd
+        | [] ->
+            { model with PreTutorialSnapshot = None; TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
+
+/// <summary>
 /// Main Elmish update loop processing all application-level messages.
 /// Coordinates bidirectional synchronization across AST text syntax, hierarchical node trees,
 /// polygon boundary editing, layout caching, multi-container batch synthesis, and undo/redo stacks.
@@ -514,10 +541,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | NoOp -> model, Cmd.none
 
     | SetTutorialLevel lvl ->
-        let modelWithUndo = pushUndo model
+        let preSnap =
+            match model.PreTutorialSnapshot with
+            | Some snap -> Some snap
+            | None -> Some (createSnapshot model)
         let nextStep = 0
-        let m = updateTutorialStep modelWithUndo lvl nextStep
-        let mWithPanel = { m with ActivePanel = LayoutPanel }
+        let m = updateTutorialStep model lvl nextStep
+        let mWithPanel = { m with PreTutorialSnapshot = preSnap; ActivePanel = LayoutPanel }
         let cmd = if mWithPanel.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
         mWithPanel, cmd
 
@@ -528,12 +558,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                match model.UndoStack with
-                | snap :: rest ->
-                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
-                    m, cmd
-                | [] ->
-                    { model with TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
+                exitTutorial js model
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel nextStep else Cmd.none
@@ -549,12 +574,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             m, cmd
 
     | DismissTutorial ->
-        match model.UndoStack with
-        | snap :: rest ->
-            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
-            m, cmd
-        | [] ->
-            { model with TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
+        exitTutorial js model
 
     | ToggleTutorialAutoPlay ->
         let newAutoPlay = not model.TutorialAutoPlay
@@ -569,12 +589,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                match model.UndoStack with
-                | snap :: rest ->
-                    let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
-                    m, cmd
-                | [] ->
-                    { model with TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
+                exitTutorial js model
             else
                 let m = updateTutorialStep model model.TutorialLevel nextStep
                 m, scheduleAutoAdvanceForStep model.TutorialLevel nextStep
