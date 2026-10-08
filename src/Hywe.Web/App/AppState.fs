@@ -215,6 +215,12 @@ let initModel =
         TutorialAutoPlay = true
     }
 
+/// Check if current tutorial state is uncompiled (Basic Quickstart steps 0 & 1)
+let isTutorialUncompiled (model: Model) =
+    match model.TutorialStep with
+    | Some s when model.TutorialLevel = Basic && s < 2 -> true
+    | _ -> false
+
 /// <summary>
 /// Updates HTML article metadata (<c>article:published_time</c> and <c>article:modified_time</c>)
 /// in the document head via JavaScript interop.
@@ -376,7 +382,7 @@ let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (update
             Derived         = newDerived
             LayoutCache     = Map.empty
             PreDragSnapshot = None
-            NeedsHyweave    = true }
+            NeedsHyweave    = isTutorialUncompiled model }
         |> updateStacks reverseSnap
 
     let syncCmd = 
@@ -640,7 +646,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             SrcOfTrth = value
             Derived = newDerived
             LayoutCache = Map.empty
-            NeedsHyweave = true
+            NeedsHyweave = isTutorialUncompiled synced
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
             IsWorkspaceCollapsed = nextWorkspaceCollapse
@@ -890,7 +896,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         UndoStack       = newUndoStack
                         RedoStack       = []
                         PreDragSnapshot = None
-                        NeedsHyweave    = true }, syncCmd
+                        NeedsHyweave    = isTutorialUncompiled m }, syncCmd
                 | _ ->
                     let newOutput = serializeModelTree model.Tree model.Sequences newExport
                     { model with 
@@ -913,7 +919,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     PolygonExport   = newExport
                     SrcOfTrth       = newOutput
                     PreDragSnapshot = None
-                    NeedsHyweave    = true }, syncCmd
+                    NeedsHyweave    = isTutorialUncompiled model }, syncCmd
             | None -> model, Cmd.none
 
         | SelectVertex sel ->
@@ -962,7 +968,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 PolygonExport   = newExport
                 SrcOfTrth       = newOutput
                 PreDragSnapshot = None
-                NeedsHyweave    = true },
+                NeedsHyweave    = isTutorialUncompiled m },
                 syncCmd
         | true, _, _ ->
             let m = pushUndo model
@@ -974,7 +980,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 PolygonExport   = newExport
                 SrcOfTrth       = newOutput
                 PreDragSnapshot = None
-                NeedsHyweave    = true },
+                NeedsHyweave    = isTutorialUncompiled m },
                 syncCmd
 
     | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ 
@@ -1126,7 +1132,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Sequences = newSqns
                         Derived = Cache.deriveFromSource cleanContent newSqns newExport newTree.ActiveLevel
                         LayoutCache = Map.empty
-                        NeedsHyweave = true
+                        NeedsHyweave = isTutorialUncompiled modelWithPanel
                         IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
                         EditsCount = 0
@@ -1163,7 +1169,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             Sequences = Map.ofList [0, allSqns.[11]]
             Derived = Cache.deriveFromSource resetSyntax (Map.ofList [0, allSqns.[11]]) resetExport 0
             LayoutCache = Map.empty
-            NeedsHyweave = true
+            NeedsHyweave = false
             EditsCount = 0
             SelectedPreset = None
             PendingConfirm = None

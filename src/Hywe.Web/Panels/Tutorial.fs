@@ -14,32 +14,49 @@ open Hywe.Core
 // Level definitions
 // ─────────────────────────────────────────────
 
+/// <summary>
+/// Domain helpers for working with onboarding tutorial level modules.
+/// </summary>
 module TutorialLevel =
+    /// <summary>
+    /// Returns the human-readable display title for a tutorial level.
+    /// </summary>
     let name = function
         | Basic     -> "Basic Quickstart"
         | Hierarchy -> "Hierarchy & Flow"
         | Levels    -> "Multi-Storey Levels"
         | Nests     -> "Program Nesting"
 
+    /// <summary>
+    /// Returns the short tab label for a tutorial level.
+    /// </summary>
     let shortName = function
         | Basic     -> "Basic"
         | Hierarchy -> "Hierarchy"
         | Levels    -> "Levels"
         | Nests     -> "Nests"
 
+    /// <summary>
+    /// Returns the next sequential tutorial level, or None if at the final level.
+    /// </summary>
     let nextLevel = function
         | Basic     -> Some Hierarchy
         | Hierarchy -> Some Levels
         | Levels    -> Some Nests
         | Nests     -> None
 
+    /// <summary>
+    /// Ordered list of all available tutorial levels.
+    /// </summary>
     let allLevels = [ Basic; Hierarchy; Levels; Nests ]
 
 // ─────────────────────────────────────────────
 // Step definitions
 // ─────────────────────────────────────────────
 
-/// Which badge/zone to ring-highlight on this step (drives CSS class on wrapper).
+/// <summary>
+/// Defines which UI element or badge target should be highlighted for a tutorial step.
+/// </summary>
 type BadgeTarget =
     | NoBadge
     | BadgeMove
@@ -57,17 +74,27 @@ type BadgeTarget =
     | TabBatchPanel
     | BadgeSlider
 
+/// <summary>
+/// Record defining metadata, instructions, and highlight targets for a tutorial step.
+/// </summary>
 type TutorialStepDef = {
+    /// <summary>Step title displayed in the banner.</summary>
     Title       : string
+    /// <summary>Detailed step explanation and instructions.</summary>
     Body        : string
-    Annotation  : string      // Short action cue shown as a chip; empty = no chip
+    /// <summary>Short action cue text shown inside chip annotation; empty string for no chip.</summary>
+    Annotation  : string
+    /// <summary>Target UI element or badge to highlight.</summary>
     Badge       : BadgeTarget
+    /// <summary>Target application panel to activate automatically on this step.</summary>
     TargetPanel : ActivePanel option
 }
 
 let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge = badge; TargetPanel = panel }
 
-// ─── Level 1: Basic Quickstart (5 Steps) ───
+/// <summary>
+/// Step definitions for Level 1: Basic Quickstart onboarding.
+/// </summary>
 let basicStepDefs = [|
     def "Welcome to HYWE"
         "Begin pre-geometry exploration by charting spatial intent. Extend your relational hierarchy by adding child space nodes."
@@ -90,7 +117,9 @@ let basicStepDefs = [|
         "Inspect all configurations" TabBatchPanel (Some BatchPanel)
 |]
 
-// ─── Level 2: Hierarchy & Flow (4 Steps) ───
+/// <summary>
+/// Step definitions for Level 2: Hierarchy & Flow operations.
+/// </summary>
 let hierarchyStepDefs = [|
     def "Initiate Node Relocation"
         "Select a space node and tap the Move badge to initiate spatial re-ordering or structural reparenting within the graph."
@@ -109,7 +138,9 @@ let hierarchyStepDefs = [|
         "Alter area weight inline" EditWeight None
 |]
 
-// ─── Level 3: Multi-Storey Levels (4 Steps) ───
+/// <summary>
+/// Step definitions for Level 3: Multi-Storey Level management.
+/// </summary>
 let levelsStepDefs = [|
     def "Initiate Vertical Elevation"
         "Select a space node and tap the Elevate badge to promote it to a new elevated floor level."
@@ -128,7 +159,9 @@ let levelsStepDefs = [|
         "Select L0 / L1 tabs" LevelNav None
 |]
 
-// ─── Level 4: Program Nesting (4 Steps) ───
+/// <summary>
+/// Step definitions for Level 4: Program Nesting sub-trees.
+/// </summary>
 let nestsStepDefs = [|
     def "Initiate Nested Sub-Program"
         "Select a node with no children and tap the Nest badge to embed a secondary spatial sub-tree program."
@@ -188,66 +221,51 @@ let private addNamedChild (parentId: Guid) (name: string) (weight: string) (sm: 
     let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
     { sm with Levels = sm.Levels |> Map.add sm.ActiveLevel laidOut } |> Coloring.colorModel
 
-let private buildBaseSnapshots () : SubModel[] =
+let private buildBaseSnapshots () =
     let s0 = makeSingleNodeModel ()
     let rootNode0 = rootOf s0
     let rootId = rootNode0.Id
-
-    let s1a = sel s0 (Some rootId)
 
     let s1base =
         let r = rootOf s0
         let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Entry"; Weight = "25" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s0 with Levels = s0.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-    let s1b = sel s1base (Some rootId)
 
     let s2a_base = addNamedChild rootId "Studio" "24" s1base
     let rootNode2a = rootOf s2a_base
     let sp1Node = rootNode2a.Children |> List.find (fun n -> n.Name.Contains("Studio"))
     let sp1Id = sp1Node.Id
-    let s2a = sel s2a_base (Some rootId)
 
     let s2b_base = addNamedChild rootId "Bedroom" "16" s2a_base
     let rootNode2b = rootOf s2b_base
     let sp2Node = rootNode2b.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
     let sp2Id = sp2Node.Id
-    let s2b = sel s2b_base (Some rootId)
 
     let s2c_base = addNamedChild rootId "Bath" "8" s2b_base
     let rootNode2c = rootOf s2c_base
     let sp3Node = rootNode2c.Children |> List.find (fun n -> n.Name.Contains("Bath"))
     let sp3Id = sp3Node.Id
-    let s2c = sel s2c_base (Some sp3Id)
-
-    let s2d1 = sel s2c_base (Some sp1Id)
 
     let s2d2_base =
         let r = rootOf s2c_base
         let newRoot = TreeOps.updateNodeById sp1Id (fun n -> { n with Weight = "36" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2c_base with Levels = s2c_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-    let s2d2 = sel s2d2_base (Some sp1Id)
-
-    let s2e1 = sel s2d2_base (Some sp2Id)
 
     let s2e2_base =
         let r = rootOf s2d2_base
         let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "Bedroom" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2d2_base with Levels = s2d2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-    let s2e2 = sel s2e2_base (Some sp2Id)
-
-    let s2f1 = sel s2e2_base (Some sp3Id)
 
     let s2f2_base =
         let r = rootOf s2e2_base
         let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "Bath" }) r
         let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
         { s2e2_base with Levels = s2e2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-    let s2f2 = sel s2f2_base (Some sp3Id)
 
-    let s3 = s2f2
+    let s3 = sel s2f2_base (Some sp3Id)
 
     let child2Node = TreeOps.findNodeById sp2Id (rootOf s2f2_base) |> Option.get
     let dragPtLeft = { SvgX = child2Node.X - 35.0; SvgY = child2Node.Y }
@@ -261,12 +279,11 @@ let private buildBaseSnapshots () : SubModel[] =
             let laidOut = fst (TreeOps.layoutTree reordered 0 50.0)
             { s2f2_base with Levels = s2f2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
         | _ -> s2f2_base
-    let s4b = sel s4bbase (Some sp3Id)
 
     let rootNodeS4b = rootOf s4bbase
     let child1NodeS4b = TreeOps.findNodeById sp1Id rootNodeS4b |> Option.get
     let dragPtChild = { SvgX = child1NodeS4b.X; SvgY = child1NodeS4b.Y + 45.0 }
-    let s5a = { s4b with DraggingId = Some sp3Id; DragPos = Some dragPtChild; DropTargetId = Some sp1Id; DropTargetMode = Some DropAsChild }
+    let s5a = { sel s4bbase (Some sp3Id) with DraggingId = Some sp3Id; DragPos = Some dragPtChild; DropTargetId = Some sp1Id; DropTargetMode = Some DropAsChild }
 
     let s5bbase =
         let (rootWithoutSource, extracted) = TreeOps.extractNode sp3Id (rootOf s4bbase)
@@ -276,7 +293,6 @@ let private buildBaseSnapshots () : SubModel[] =
             let laidOut = fst (TreeOps.layoutTree reordered 0 50.0)
             { s4bbase with Levels = s4bbase.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
         | _ -> s4bbase
-    let s5b = sel s5bbase (Some sp3Id)
 
     let s6a = sel s5bbase (Some sp2Id)
     let s6b = { s6a with ConfirmingId = Some sp2Id; ActiveActionId = ActionIds.Elevate; SelectedNodeId = Some sp2Id }
@@ -287,7 +303,6 @@ let private buildBaseSnapshots () : SubModel[] =
         | Some n -> fst (Actions.elevateActionLogic.Execute s5bbase n)
         | None   -> s5bbase
 
-    let s8a = sel s7 None
     let s8b = { s7 with ActiveLevel = 0; ActiveNest = None; SelectedNodeId = Some sp3Id } |> Coloring.colorModel
 
     let s9a = sel s8b (Some sp3Id)
@@ -299,44 +314,28 @@ let private buildBaseSnapshots () : SubModel[] =
         | Some n -> fst (Actions.nestActionLogic.Execute s8b n)
         | None   -> s8b
 
-    let s11a = sel s10 None
     let s11b = { s10 with ActiveLevel = 0; ActiveNest = None; SelectedNodeId = Some sp3Id } |> Coloring.colorModel
 
-    let s12a = sel s11b (Some sp3Id)
-    let s12b = { s12a with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Delete; SelectedNodeId = Some sp3Id }
+    {|
+        EntryStudioBed = s2b_base
+        CleanS2f2 = s2f2_base
+        S3 = s3
+        S4a = s4a
+        S5a = s5a
+        S6b = s6b
+        S7 = s7
+        S8b = s8b
+        S9a = s9a
+        S9b = s9b
+        S10 = s10
+        S11b = s11b
+        Sp3Id = sp3Id
+    |}
 
-    let s13base =
-        match TreeOps.removeNodeById sp3Id (rootOf s11b) with
-        | Some newRoot ->
-            let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-            { s11b with Levels = s11b.Levels |> Map.add 0 laidOut; ConfirmingId = None; ActiveActionId = ActionIds.NoAction }
-            |> Coloring.colorModel
-        | None -> s11b
-    let s13 = sel s13base (Some rootId)
-
-    let s14a = sel s13base (Some rootId)
-    let s14bbase =
-        let r = rootOf s13base
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Weight = "150" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { s13base with Levels = s13base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-    let s14b = sel s14bbase (Some rootId)
-
-    let s15a = sel s14bbase (Some rootId)
-    let s15bbase =
-        let r = rootOf s14bbase
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Main Hub"; Weight = "200" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { s14bbase with Levels = s14bbase.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-    let s15b = sel s15bbase (Some rootId)
-    let s16 = sel s15bbase None
-
-    [| s0; s1a; s1b; s2a; s2b; s2c; s2d1; s2d2; s2e1; s2e2; s2f1; s2f2; s3; s4a; s4b; s5a; s5b; s6a; s6b; s7; s8a; s8b; s9a; s9b; s10; s11a; s11b; s12a; s12b; s13; s14a; s14b; s15a; s15b; s16; s16; s16 |]
-
-let private baseSnapshots : SubModel[] = buildBaseSnapshots ()
+let private baseSnaps = buildBaseSnapshots ()
 
 let basicSnapshots : SubModel[] =
-    let entryStudioBed = baseSnapshots.[4] // s2b_base (Entry 25, Studio 24, Bedroom 16)
+    let entryStudioBed = baseSnaps.EntryStudioBed
     let rootNode = rootOf entryStudioBed
     let bedNode = rootNode.Children |> List.find (fun n -> n.Name.Contains("Bedroom"))
     let bedId = bedNode.Id
@@ -346,8 +345,8 @@ let basicSnapshots : SubModel[] =
     let bathNodeOpt = rootNodeBath.Children |> List.tryPick (fun n -> n.Children |> List.tryFind (fun c -> c.Name.Contains("Bath")))
     let bathId = match bathNodeOpt with Some b -> b.Id | None -> bedId
 
-    let step0 = sel entryStudioBed (Some bedId)       // Step 1: Entry 25, Studio 24, Bedroom 16 (Bedroom selected, + badge highlighted, Bath NOT present initially)
-    let step1 = sel bathUnderBedModel (Some bathId)   // Step 2: Bath 8 added under Bedroom 16 (Bath selected, EditWeight highlighted)
+    let step0 = sel entryStudioBed (Some bedId)       // Step 1: Entry 25, Studio 24, Bedroom 16
+    let step1 = sel bathUnderBedModel (Some bathId)   // Step 2: Bath 8 added under Bedroom 16
     let step2 = sel bathUnderBedModel None            // Step 3: Compile lattice on LayoutPanel
     let step3 = sel bathUnderBedModel None            // Step 4: Explore alternate configurations on LayoutPanel
     let step4 = sel bathUnderBedModel None            // Step 5: Inspect all configurations on BatchPanel
@@ -355,10 +354,9 @@ let basicSnapshots : SubModel[] =
     [| step0; step1; step2; step3; step4 |]
 
 let hierarchySnapshots : SubModel[] =
-    let cleanS2f2 = baseSnapshots.[11]
+    let cleanS2f2 = baseSnaps.CleanS2f2
+    let sp3Id = baseSnaps.Sp3Id
     let rootNode = rootOf cleanS2f2
-    let sp3Node = rootNode.Children |> List.tryFind (fun n -> n.Name.Contains("Service") || n.Name.Contains("Child 3") || n.Name.Contains("Space 3")) |> Option.defaultValue (List.last rootNode.Children)
-    let sp3Id = sp3Node.Id
 
     let sWeightEdit =
         let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Weight = "150" }) rootNode
@@ -366,35 +364,36 @@ let hierarchySnapshots : SubModel[] =
         { cleanS2f2 with Levels = cleanS2f2.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
 
     [|
-        baseSnapshots.[12]           // Step 0: Initiate Node Relocation (Select Move Badge)
-        baseSnapshots.[13]           // Step 1: Re-order Sibling Circulation (Drag to re-order)
-        baseSnapshots.[15]           // Step 2: Re-parent Child Spaces (Drag to re-parent)
-        sel sWeightEdit (Some sp3Id) // Step 3: Balance Target Area Allocations (Alter Weight)
+        baseSnaps.S3           // Step 0: Initiate Node Relocation
+        baseSnaps.S4a          // Step 1: Re-order Sibling Circulation
+        baseSnaps.S5a          // Step 2: Re-parent Child Spaces
+        sel sWeightEdit (Some sp3Id) // Step 3: Balance Target Area Allocations
     |]
 
 let levelsSnapshots : SubModel[] =
     [|
-        baseSnapshots.[17]  // Step 0: Initiate Vertical Elevation (Select Elevate Badge)
-        baseSnapshots.[18]  // Step 1: Confirm Level 1 Creation (Elevate Confirmation UI)
-        baseSnapshots.[20]  // Step 2: Inspect Level Navigator (Focus Level Navigator)
-        baseSnapshots.[21]  // Step 3: Navigate Storey Views (Select L0 / L1 tabs)
+        baseSnaps.S6b  // Step 0: Initiate Vertical Elevation
+        baseSnaps.S7   // Step 1: Confirm Level 1 Creation
+        baseSnaps.S8b  // Step 2: Inspect Level Navigator
+        baseSnaps.S9a  // Step 3: Navigate Storey Views
     |]
 
 let nestsSnapshots : SubModel[] =
-    let cleanS2f2 = baseSnapshots.[11]
-    let rootNode = rootOf cleanS2f2
-    let sp3Node = rootNode.Children |> List.tryFind (fun n -> n.Name.Contains("Service") || n.Name.Contains("Child 3") || n.Name.Contains("Space 3")) |> Option.defaultValue (List.last rootNode.Children)
-    let sp3Id = sp3Node.Id
+    let cleanS2f2 = baseSnaps.CleanS2f2
+    let sp3Id = baseSnaps.Sp3Id
     let sDelSel = sel cleanS2f2 (Some sp3Id)
     let sDelConfirm = { sDelSel with ConfirmingId = Some sp3Id; ActiveActionId = ActionIds.Delete }
 
     [|
-        baseSnapshots.[22]  // Step 0: Initiate Nested Sub-Program (Select Nest Badge)
-        baseSnapshots.[23]  // Step 1: Confirm Sub-Program Nesting (Nest Confirmation UI)
-        baseSnapshots.[26]  // Step 2: Navigate Breadcrumb Program Trees (Focus Nests Breadcrumb)
-        sDelConfirm         // Step 3: Prune Obsolete Spaces (Confirm Delete Action)
+        baseSnaps.S9b  // Step 0: Initiate Nested Sub-Program
+        baseSnaps.S10  // Step 1: Confirm Sub-Program Nesting
+        baseSnaps.S11b // Step 2: Navigate Breadcrumb Program Trees
+        sDelConfirm    // Step 3: Prune Obsolete Spaces
     |]
 
+/// <summary>
+/// Returns the tuple of step definitions and snapshot models for a given tutorial level.
+/// </summary>
 let getDefsAndSnapshots (level: TutorialLevel) : TutorialStepDef[] * SubModel[] =
     match level with
     | Basic     -> basicStepDefs, basicSnapshots
@@ -402,25 +401,28 @@ let getDefsAndSnapshots (level: TutorialLevel) : TutorialStepDef[] * SubModel[] 
     | Levels    -> levelsStepDefs, levelsSnapshots
     | Nests     -> nestsStepDefs, nestsSnapshots
 
-
+/// <summary>
+/// Retrieves the step definition for a specific level and 0-indexed step number.
+/// </summary>
 let getStepDef (level: TutorialLevel) (step: int) : TutorialStepDef =
     let defs, _ = getDefsAndSnapshots level
     let idx = Math.Clamp(step, 0, defs.Length - 1)
     defs.[idx]
 
+/// <summary>
+/// Retrieves the submodel tree snapshot for a specific level and 0-indexed step number.
+/// </summary>
 let getSnapshot (level: TutorialLevel) (step: int) : SubModel =
     let _, snaps = getDefsAndSnapshots level
     let idx = Math.Clamp(step, 0, snaps.Length - 1)
     snaps.[idx]
 
+/// <summary>
+/// Returns the total number of steps configured for a tutorial level.
+/// </summary>
 let getTotalSteps (level: TutorialLevel) : int =
     let defs, snaps = getDefsAndSnapshots level
     min defs.Length snaps.Length
-
-// Legacy helpers for back-compat
-let stepDefs = basicStepDefs
-let snapshots = basicSnapshots
-let totalSteps = basicStepDefs.Length
 
 // ─────────────────────────────────────────────
 // Badge visual helpers
@@ -464,6 +466,13 @@ let private badgeColor = function
 // View
 // ─────────────────────────────────────────────
 
+/// <summary>
+/// Renders the interactive onboarding tutorial banner component for the active step.
+/// </summary>
+/// <param name="level">Active tutorial level.</param>
+/// <param name="tutorialStep">Active 0-indexed step index.</param>
+/// <param name="autoPlay">Whether auto-advancing steps is enabled.</param>
+/// <param name="dispatch">Elmish dispatch delegate.</param>
 let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: bool) (dispatch: Message -> unit) : Node =
     let totalSteps = getTotalSteps level
     let step       = Math.Clamp(tutorialStep, 0, totalSteps - 1)
