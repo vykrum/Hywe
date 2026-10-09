@@ -216,7 +216,11 @@ let initModel =
         PreTutorialSnapshot = None
     }
 
-/// Check if current tutorial state is uncompiled (Basic Quickstart steps 0 & 1)
+/// <summary>
+/// Determines whether the current tutorial state is in uncompiled mode (Basic Quickstart steps 0 and 1).
+/// </summary>
+/// <param name="model">Current application model.</param>
+/// <returns><c>true</c> if the tutorial is currently at step 0 or 1 of the Basic level; otherwise <c>false</c>.</returns>
 let isTutorialUncompiled (model: Model) =
     match model.TutorialStep with
     | Some s when model.TutorialLevel = Basic && s < 2 -> true
@@ -449,6 +453,11 @@ let handlePageHelperUpdate (js: IJSRuntime) (msg: Message) (model: Model) : Mode
     | None -> model, Cmd.none
 
 /// <summary>
+/// Schedules an asynchronous timer command to automatically advance to the next tutorial step after a duration.
+/// </summary>
+/// <param name="level">Target tutorial difficulty level.</param>
+/// <param name="step">Current step index within the tutorial level.</param>
+/// <returns>Elmish command triggering <see cref="TutorialAutoAdvance"/> upon timer completion.</returns>
 let scheduleAutoAdvanceForStep (level: TutorialLevel) (step: int) =
     let stepDef = Tutorial.getStepDef level step
     let isGenStep = stepDef.Badge = Tutorial.HyweaveBtn || stepDef.TargetPanel = Some BatchPanel
@@ -458,7 +467,13 @@ let scheduleAutoAdvanceForStep (level: TutorialLevel) (step: int) =
         return step
     }) () TutorialAutoAdvance
 
-/// Synchronizes a tutorial step snapshot into full AST text, sequence operators, and derived layout geometries.
+/// <summary>
+/// Synchronizes a tutorial step snapshot into full AST text, level sequence operators, and derived layout geometries.
+/// </summary>
+/// <param name="model">Current application model.</param>
+/// <param name="level">Target tutorial level.</param>
+/// <param name="step">Target step index within the tutorial level.</param>
+/// <returns>Updated application model configured for the specified tutorial step.</returns>
 let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model =
     let stepDef = Tutorial.getStepDef level step
     let snapshot = Tutorial.getSnapshot level step
@@ -513,6 +528,9 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
 /// <summary>
 /// Restores the pre-tutorial project state when exiting or dismissing the onboarding tutorial.
 /// </summary>
+/// <param name="js">JavaScript runtime interop instance.</param>
+/// <param name="model">Current application model.</param>
+/// <returns>Tuple of restored model and resulting Elmish command.</returns>
 let exitTutorial (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.PreTutorialSnapshot with
     | Some snap ->
