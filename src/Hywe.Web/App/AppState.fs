@@ -936,7 +936,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         UndoStack       = newUndoStack
                         RedoStack       = []
                         PreDragSnapshot = None
-                        NeedsHyweave    = isTutorialUncompiled m }, syncCmd
+                        NeedsHyweave    = true }, syncCmd
                 | _ ->
                     let newOutput = serializeModelTree model.Tree model.Sequences newExport
                     { model with 
@@ -960,7 +960,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                     PolygonExport   = newExport
                     SrcOfTrth       = newOutput
                     PreDragSnapshot = None
-                    NeedsHyweave    = isTutorialUncompiled model }, syncCmd
+                    NeedsHyweave    = true }, syncCmd
             | None -> model, Cmd.none
 
         | SelectVertex sel ->
@@ -1037,7 +1037,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 PolygonExport   = newExport
                 SrcOfTrth       = newOutput
                 PreDragSnapshot = None
-                NeedsHyweave    = isTutorialUncompiled m },
+                NeedsHyweave    = true },
                 syncCmd
         | true, _, _ ->
             let m = pushUndo model
@@ -1049,7 +1049,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 PolygonExport   = newExport
                 SrcOfTrth       = newOutput
                 PreDragSnapshot = None
-                NeedsHyweave    = isTutorialUncompiled m },
+                NeedsHyweave    = true },
                 syncCmd
 
     | SetActivePanel _ | FileImported _ | SelectPreset _ | ReportGenerated _ | UpdateReportOptions _ 

@@ -357,7 +357,7 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
             | false -> 
                 match syntaxAltered with
                 | true ->
-                    span { attr.``class`` "hyweave-prompt"; text "syntax altered" }
+                    span { attr.``class`` "hyweave-prompt"; text "input altered" }
                     span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
                     span { attr.``class`` "hyweave-prompt"; text "to regenerate" }
                 | false -> 
@@ -378,6 +378,12 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
         | TabBatchPanel  -> "hywe-tab-strip tutorial-hl-tab-batch"
         | _              -> "hywe-tab-strip"
 
+    let isBoundaryActive =
+        let poly =
+            match model.PolygonEditor with
+            | Stable p | FreshlyImported p -> p
+        poly.UseBoundary
+
     div {
         attr.``class`` tabStripClass
         
@@ -387,24 +393,39 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
             let activeClass = match isActive with true -> " active" | false -> ""
             let hlClass = match isHighlighted with true -> " tutorial-hl-tab" | false -> ""
 
+            let isBoundaryTab = panel = BoundaryPanel
+            let statusClass =
+                if isBoundaryTab then
+                    if isBoundaryActive then " boundary-bound" else " boundary-unbound"
+                else ""
+
+            let dynamicTitle =
+                if isBoundaryTab then
+                    if isBoundaryActive then "Boundary (Bound)" else "Boundary (Unbound)"
+                else title
+
             button {
-                attr.title title 
-                attr.``class`` ("hywe-tab-btn" + activeClass + hlClass)
+                attr.title dynamicTitle 
+                attr.``class`` ("hywe-tab-btn" + activeClass + hlClass + statusClass)
                 on.click (fun _ -> dispatch (SetActivePanel panel))
                 
                 // Show text if active or highlighted, icon if inactive
                 match isActive || isHighlighted with
                 | true -> text title
-                | false -> drawIcon path
+                | false ->
+                    if isBoundaryTab then
+                        drawBoundaryIcon isBoundaryActive
+                    else
+                        drawIcon path
             }
 
         tab "Boundary" pathBoundary BoundaryPanel NoBadge
-        tab "Layout"   pathLayout   LayoutPanel   TabLayoutPanel
-        tab "Analyze"  pathAnalyze  AnalyzePanel  NoBadge
-        tab "3D"       path3D       ViewPanel     TabViewPanel
-        tab "Batch"    pathBatch    BatchPanel    TabBatchPanel
-        tab "Teach"    pathTeach    TeachPanel    NoBadge
-        tab "Report"   pathReport   ReportPanel   NoBadge
+        tab "Layout"   pathLayout        LayoutPanel   TabLayoutPanel
+        tab "Analyze"  pathAnalyze       AnalyzePanel  NoBadge
+        tab "3D"       path3D            ViewPanel     TabViewPanel
+        tab "Batch"    pathBatch         BatchPanel    TabBatchPanel
+        tab "Teach"    pathTeach         TeachPanel    NoBadge
+        tab "Report"   pathReport        ReportPanel   NoBadge
     }
 
 
