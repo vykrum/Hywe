@@ -4204,7 +4204,7 @@ video.fullscreen-bg {
     100% { transform: scale(1); opacity: 0.8; }
 }
 
-/* Lattice Flash Overlay */
+/* Lattice Flash Overlay - Hexagonal Grid */
 #hywe-svg-wrapper,
 .hywe-svg-wrapper {
     position: relative;
@@ -4216,17 +4216,15 @@ video.fullscreen-bg {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background-size: 20px 20px;
-    background-image: 
-        linear-gradient(to right, rgba(99, 102, 241, 0.08) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+    background-size: 28px 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='48' viewBox='0 0 28 48'%3E%3Cpath d='M0 8l14-8 14 8M0 8v16l14 8 14-8V8M14 32v16' fill='none' stroke='%236366f1' stroke-width='1' stroke-opacity='0.28'/%3E%3C/svg%3E");
     opacity: 0;
     z-index: 5;
-    animation: latticeFlash 0.35s ease-out;
+    animation: latticeFlash 0.45s ease-out;
 }
 
 @keyframes latticeFlash {
-    0% { opacity: 0.9; }
+    0% { opacity: 0.95; }
     100% { opacity: 0; }
 }
 

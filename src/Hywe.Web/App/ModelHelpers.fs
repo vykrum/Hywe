@@ -553,7 +553,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                         | None -> model.Derived.cxOuIl
                     
                     div {
-                        attr.id "hywe-svg-wrapper"; attr.style "width: 100%;"
+                        attr.id "hywe-svg-wrapper"
+                        attr.key (model.SrcOfTrth.GetHashCode().ToString() + "_" + currentSqn.ToString())
+                        attr.style "width: 100%;"
                         svgCoxels filteredCxls bdrToPass wtmkCxls model.Tree.ActiveLevel filteredClrs 20 (Some "layout-svg-output") (Some js)
                     }
 
