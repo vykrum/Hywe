@@ -1908,6 +1908,23 @@ video.fullscreen-bg {
     min-width: 32px;
 }
 
+/* Boundary Tab Bound & Unbound Status Styling */
+.hywe-tab-btn.boundary-bound.active {
+    color: #10b981 !important;
+}
+
+.hywe-tab-btn.boundary-unbound.active {
+    color: #ef4444 !important;
+}
+
+.hywe-tab-btn.boundary-bound:hover {
+    color: #059669;
+}
+
+.hywe-tab-btn.boundary-unbound:hover {
+    color: #dc2626;
+}
+
 
 /* =====================
    TEACH PANEL

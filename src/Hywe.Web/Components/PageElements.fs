@@ -12,7 +12,9 @@ let parseSqn (name: string) =
 // SVG Icons
 
 // Panel Icons (Original Silhouette Style)
-let pathBoundary = "M4 7l14-3 2 14-14 1L4 7zm1.6 1.7l1.2 8.1 10.6-.8-1.5-10.7-10.3 3.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
+let pathBoundaryBound   = "M4 7l14-3 2 14-14 1L4 7zm1.6 1.7l1.2 8.1 10.6-.8-1.5-10.7-10.3 3.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
+let pathBoundaryUnbound = "M4 12.5l1.6-.1-.2-4.7 4.8-1-.3-1.6L4 6.3z M13.8 5.1l.3 1.6 4.6-1-.5 4.8 1.6-.1.6-6.4z M19.7 12.5l-1.6.1.5 4.7-4.8.3.1 1.6 6.3-.4z M10.2 18.8l-.1-1.6-4.6.3.5-4.8-1.6.1-.6 6.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
+let pathBoundary        = pathBoundaryBound
 let pathLayout   = "M12 2l3.5 2v4l-3.5 2-3.5-2V4l3.5-2z M7 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z M17 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z"
 let pathAnalyze  = "M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"
 let path3D       = "M21 16.5c0 .38-.21.71-.53.88l-7.97 4.65c-.31.18-.69.18-1 0l-7.97-4.65c-.32-.17-.53-.5-.53-.88V7.5c0-.38.21-.71.53-.88l7.97-4.65c.31-.18.69-.18 1 0l7.97 4.65c.32.17.53.5.53.88v9zM12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15zM5 15.91l6 3.5v-6.71L5 9.21v6.7zm14 0v-6.7l-6 3.49v6.71l6-3.5z"
@@ -38,6 +40,39 @@ let drawIcon path =
         "viewBox" => "0 0 24 24"
         attr.style "width: 1.3rem; height: 1.3rem; fill: currentColor;"
         elt "path" { "d" => path }
+    }
+
+/// <summary>
+/// Renders the boundary icon reflecting active bound state (subtle green)
+/// or inactive unbound state (muted polygon with subtle red diagonal slash).
+/// </summary>
+let drawBoundaryIcon (isBound: bool) =
+    svg {
+        "viewBox" => "0 0 24 24"
+        attr.style "width: 1.3rem; height: 1.3rem;"
+        match isBound with
+        | true ->
+            elt "path" {
+                "d" => pathBoundary
+                "fill" => "#10b981"
+            }
+        | false ->
+            concat {
+                elt "path" {
+                    "d" => pathBoundary
+                    "fill" => "#94a3b8"
+                    "opacity" => "0.55"
+                }
+                elt "line" {
+                    "x1" => "2.5"
+                    "y1" => "3.5"
+                    "x2" => "21.5"
+                    "y2" => "20.5"
+                    "stroke" => "#ef4444"
+                    "stroke-width" => "1.8"
+                    "stroke-linecap" => "round"
+                }
+            }
     }
 
 let drawMenuIcon path =
