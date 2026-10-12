@@ -136,7 +136,7 @@ a {
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     border: 1px solid transparent;
     outline: none;
     white-space: nowrap;
@@ -296,7 +296,7 @@ a {
     border-radius: 8px;
     padding: 20px;
     box-sizing: border-box;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .hywe-input {
@@ -311,7 +311,7 @@ a {
     color: var(--color-text-main);
     outline: none;
     box-sizing: border-box;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .hywe-input:focus {
@@ -640,7 +640,7 @@ input[type=number] {
     letter-spacing: 0.6px;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .drawer-gallery-link:hover {
@@ -710,7 +710,7 @@ input[type=number] {
 /* =====================
    SPINNER & VIDEO
    ===================== */
-/* Animated loading indicator â€” used in hyWeave button and other loading states */
+/* Animated loading indicator Ã¢â‚¬â€ used in hyWeave button and other loading states */
 .spinner {
     display: inline-block;
     flex-shrink: 0;
@@ -1885,7 +1885,7 @@ video.fullscreen-bg {
     justify-content: center;
     border-radius: 4px;
     color: #999;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     /* Typography for active text */
     font-family: 'Optima', sans-serif;
     font-size: 9px;
@@ -2516,7 +2516,7 @@ video.fullscreen-bg {
     text-decoration: none;
     text-align: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
     white-space: nowrap;
     line-height: 1.4;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -2574,7 +2574,7 @@ video.fullscreen-bg {
     text-decoration: none;
     text-align: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
     white-space: nowrap;
     line-height: 1.4;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -2927,7 +2927,7 @@ video.fullscreen-bg {
     text-align: center;
     font-size: 11px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     user-select: none;
 }
 
@@ -3084,7 +3084,7 @@ video.fullscreen-bg {
     color: #24292f;
     padding: 2px 6px;
     outline: none;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3131,7 +3131,7 @@ video.fullscreen-bg {
     color: #57606a;
     padding: 2px 5px;
     outline: none;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .workspace-meta-author:hover {
@@ -3183,7 +3183,7 @@ video.fullscreen-bg {
     max-width: 100%;
     box-sizing: border-box;
     cursor: default;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .layout-legend-item:hover {
@@ -3308,3 +3308,923 @@ video.fullscreen-bg {
     border-radius: 2px !important;
     margin: 0 0 4px 6px !important;
 }
+
+/* ==========================================================================
+   SEO INTRO & PRE-LOAD SHELL
+   ========================================================================== */
+.seo-intro {
+    max-width: 800px;
+    margin: 60px auto 40px auto;
+    padding: 24px;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    color: #363636;
+    line-height: 1.6;
+}
+
+.seo-intro h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.seo-intro h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+.seo-intro p {
+    font-size: 15px;
+    font-weight: 300;
+    margin-bottom: 12px;
+}
+
+.seo-intro a {
+    color: #1e2327;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.seo-intro a:hover {
+    color: #000;
+}
+
+.seo-intro ul {
+    margin: 8px 0 16px 20px;
+    padding: 0;
+}
+
+.seo-intro li {
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   ABOUT MODAL & SPECS DRAWER
+   ========================================================================== */
+/* Mirrored right-edge Drawer Handle Button (matching Waggle Exchange) */
+.specs-drawer-handle {
+    position: absolute;
+    top: 65px;
+    right: 0;
+    z-index: 1802;
+    width: 16px;
+    height: 184px;
+    background: #ffffff;
+    border: 1px solid #eeeeee;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
+    transition: background 0.2s ease;
+    user-select: none;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.specs-drawer-handle:hover {
+    background: #fafafa;
+}
+
+.specs-drawer-handle span {
+    writing-mode: vertical-rl;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    color: #666666;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    white-space: pre;
+    transform: rotate(180deg);
+}
+
+.hywe-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.hywe-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hywe-modal-content {
+    background: #ffffff;
+    color: #333333;
+    width: 100%;
+    max-width: 820px;
+    max-height: 85vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    position: relative;
+    overflow-y: auto;
+    padding: 32px 36px;
+    box-sizing: border-box;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    font-size: 14px;
+    font-weight: 300;
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hywe-modal-overlay.active .hywe-modal-content {
+    transform: scale(1);
+}
+
+.hywe-modal-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: #555;
+    transition: background 0.2s, color 0.2s;
+    margin-top: -10px;
+    margin-right: -10px;
+    z-index: 10;
+}
+
+.hywe-modal-close:hover {
+    background: #333;
+    color: #fff;
+}
+
+.hywe-modal-content h1 {
+    margin-top: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #222;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+}
+
+.hywe-modal-content h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 20px;
+    color: #333;
+}
+
+.hywe-modal-content h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 18px;
+    color: #444;
+}
+
+.hywe-modal-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 13px;
+}
+
+.hywe-modal-content th,
+.hywe-modal-content td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.hywe-modal-content th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+}
+
+.about-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.about-feature-card {
+    background: #fafafa;
+    border: 1px solid #e8e8e8;
+    border-left: 3px solid #363636;
+    border-radius: 4px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+}
+
+.about-feature-card strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+}
+
+.about-feature-card p {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.45;
+}
+
+.about-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin: 16px 0 8px 0;
+}
+
+.about-link-chip {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #f8f8f8;
+    padding: 10px 14px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.about-link-chip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: #222222;
+    margin-bottom: 2px;
+}
+
+.about-link-chip-url {
+    font-size: 11.5px;
+    font-family: 'Outfit', system-ui, sans-serif;
+    color: #777777;
+    letter-spacing: 0.2px;
+}
+
+.about-link-chip:hover {
+    background: #363636;
+    border-color: #363636;
+}
+
+.about-link-chip:hover .about-link-chip-header,
+.about-link-chip:hover .about-link-chip-url {
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   HYWE ONBOARDING TUTORIAL SYSTEM
+   ========================================================================== */
+/* ==========================================================================
+   HYWE Tutorial System Styles
+   ========================================================================== */
+
+/* Tutorial Banner (Minimalist Light Theme) */
+.tutorial-banner {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px 10px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    animation: tutorialSlideIn 0.3s ease;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes tutorialSlideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Top row: dots + step counter */
+.tutorial-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tutorial-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tutorial-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    background: #e2e8f0;
+    transition: background 0.25s, transform 0.25s;
+    flex-shrink: 0;
+    touch-action: manipulation;
+}
+
+.tutorial-dot:hover {
+    transform: scale(1.3);
+    background: #cbd5e1;
+}
+
+.tutorial-dot.active {
+    background: var(--color-primary, #363636);
+    transform: scale(1.35);
+}
+
+.tutorial-step-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutorial-step-label {
+    font-size: 9px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--color-text-light, #94a3b8);
+    font-weight: 600;
+}
+
+/* Content */
+.tutorial-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tutorial-title {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--color-text-main, #1e293b);
+    line-height: 1.3;
+}
+
+.tutorial-body {
+    margin: 0;
+    font-size: 11px;
+    color: var(--color-text-muted, #64748b);
+    line-height: 1.5;
+}
+
+/* Annotation chip */
+.tutorial-annotation {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+}
+
+.tutorial-badge-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid;
+    flex-shrink: 0;
+}
+
+.tutorial-annotation-text {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #334155;
+    letter-spacing: 0.1px;
+}
+
+/* Auto-play progress bar */
+.tutorial-progress-bar {
+    height: 2px;
+    width: 100%;
+    background: #f1f5f9;
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 1px;
+}
+
+.tutorial-progress-fill {
+    height: 100%;
+    background: #6366f1;
+    width: 0%;
+    animation: tutorialAutoProgress 3.5s linear forwards;
+}
+
+@keyframes tutorialAutoProgress {
+    from { width: 0%; }
+    to   { width: 100%; }
+}
+
+/* Navigation row */
+.tutorial-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.tutorial-left-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.tutorial-nav-arrows {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tutorial-skip,
+.tutorial-autoplay {
+    font-size: 10px !important;
+    color: #64748b !important;
+    padding: 2px 6px !important;
+    height: 22px;
+}
+
+.tutorial-autoplay.active {
+    color: #6366f1 !important;
+    font-weight: 600;
+}
+
+.tutorial-skip:hover,
+.tutorial-autoplay:hover {
+    color: #1e293b !important;
+}
+
+.tutorial-back,
+.tutorial-next,
+.tutorial-next-module {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px !important;
+    padding: 3px 9px !important;
+    height: 24px;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+.tutorial-back svg,
+.tutorial-next svg,
+.tutorial-next-module svg,
+.tutorial-skip svg,
+.tutorial-autoplay svg {
+    pointer-events: none;
+}
+
+.tutorial-back:disabled {
+    opacity: 0.25;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Tree wrapper â€” scopes all badge highlights */
+.tutorial-tree-wrapper {
+    width: 100%;
+    flex: 1;
+    overflow: hidden;
+    border-radius: 8px;
+    position: relative;
+    transition: border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 6px;
+}
+
+/* Per-badge highlight keyframe animations */
+@keyframes thlPulseIndigo {
+    0%   { box-shadow: 0 0 0 0   rgba(99,102,241,0.9), 0 0 8px 2px rgba(99,102,241,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0),   0 0 8px 2px rgba(99,102,241,0); }
+    100% { box-shadow: 0 0 0 0   rgba(99,102,241,0),   0 0 0   0   rgba(99,102,241,0); }
+}
+@keyframes thlPulseRed {
+    0%   { box-shadow: 0 0 0 0   rgba(248,113,113,0.9), 0 0 8px 2px rgba(248,113,113,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(248,113,113,0),   0 0 8px 2px rgba(248,113,113,0); }
+    100% { box-shadow: 0 0 0 0   rgba(248,113,113,0),   0 0 0   0   rgba(248,113,113,0); }
+}
+@keyframes thlPulseBlue {
+    0%   { box-shadow: 0 0 0 0   rgba(96,165,250,0.9), 0 0 8px 2px rgba(96,165,250,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(96,165,250,0),   0 0 8px 2px rgba(96,165,250,0); }
+    100% { box-shadow: 0 0 0 0   rgba(96,165,250,0),   0 0 0   0   rgba(96,165,250,0); }
+}
+@keyframes thlPulseGreen {
+    0%   { box-shadow: 0 0 0 0   rgba(52,211,153,0.9), 0 0 8px 2px rgba(52,211,153,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(52,211,153,0),   0 0 8px 2px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0   rgba(52,211,153,0),   0 0 0   0   rgba(52,211,153,0); }
+}
+@keyframes thlPulseViolet {
+    0%   { box-shadow: 0 0 0 0   rgba(167,139,250,0.9), 0 0 8px 2px rgba(167,139,250,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(167,139,250,0),   0 0 8px 2px rgba(167,139,250,0); }
+    100% { box-shadow: 0 0 0 0   rgba(167,139,250,0),   0 0 0   0   rgba(167,139,250,0); }
+}
+@keyframes thlPulseAmber {
+    0%   { box-shadow: 0 0 0 0   rgba(251,191,36,0.9), 0 0 8px 2px rgba(251,191,36,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(251,191,36,0),   0 0 8px 2px rgba(251,191,36,0); }
+    100% { box-shadow: 0 0 0 0   rgba(251,191,36,0),   0 0 0   0   rgba(251,191,36,0); }
+}
+@keyframes thlPulseUnderline {
+    0%   { border-bottom-color: rgba(6, 182, 212, 1); box-shadow: 0 2px 6px 0 rgba(6, 182, 212, 0.4); }
+    50%  { border-bottom-color: rgba(6, 182, 212, 0.3); box-shadow: 0 1px 2px 0 rgba(6, 182, 212, 0.1); }
+    100% { border-bottom-color: rgba(6, 182, 212, 1); box-shadow: 0 2px 6px 0 rgba(6, 182, 212, 0.4); }
+}
+
+/* Smoothly animate node movements and tree SVG line transitions during tutorial */
+.tutorial-tree-wrapper div[style*="position:absolute"] {
+    transition: left 0.75s cubic-bezier(0.34, 1.25, 0.64, 1), top 0.75s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.tutorial-tree-wrapper svg line {
+    transition: x1 0.75s cubic-bezier(0.34, 1.25, 0.64, 1), y1 0.75s cubic-bezier(0.34, 1.25, 0.64, 1),
+                x2 0.75s cubic-bezier(0.34, 1.25, 0.64, 1), y2 0.75s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+/* move badge */
+.tutorial-hl-badge-move .badge-move {
+    animation: thlPulseAmber 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(230,126,34,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+
+/* + badge */
+.tutorial-hl-badge-add .badge-add {
+    animation: thlPulseIndigo 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(99,102,241,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+
+/* delete badge */
+.tutorial-hl-badge-delete .badge-delete {
+    animation: thlPulseRed 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(248,113,113,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+.tutorial-hl-badge-delete .prop-btn-delete {
+    animation: thlPulseRed 1.6s ease-out infinite;
+    border-radius: 6px;
+    outline: 2px solid rgba(248,113,113,0.6);
+    outline-offset: 2px;
+}
+
+/* elevate badge */
+.tutorial-hl-badge-elevate .badge-elevate {
+    animation: thlPulseBlue 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(96,165,250,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+.tutorial-hl-badge-elevate .prop-btn-elevate {
+    animation: thlPulseBlue 1.6s ease-out infinite;
+    border-radius: 6px;
+    outline: 2px solid rgba(96,165,250,0.6);
+    outline-offset: 2px;
+}
+
+/* nest badge */
+.tutorial-hl-badge-nest .badge-nest {
+    animation: thlPulseGreen 1.6s ease-out infinite;
+    border-radius: 50%;
+    outline: 2px solid rgba(52,211,153,0.6);
+    outline-offset: 2px;
+    z-index: 10;
+}
+.tutorial-hl-badge-nest .prop-btn-nest {
+    animation: thlPulseGreen 1.6s ease-out infinite;
+    border-radius: 6px;
+    outline: 2px solid rgba(52,211,153,0.6);
+    outline-offset: 2px;
+}
+
+/* level-nav (highlight the level tabs strip & breadcrumbs) */
+.tutorial-hl-level-nav .level-controls-container {
+    animation: thlPulseViolet 1.6s ease-out infinite;
+    border-radius: 20px;
+    outline: 2.5px solid rgba(167, 139, 250, 0.9);
+    outline-offset: 2px;
+}
+.tutorial-hl-level-nav .level-tab.active {
+    animation: thlPulseViolet 1.6s ease-out infinite;
+    border-radius: 4px;
+    background: rgba(167, 139, 250, 0.25) !important;
+    color: #8b5cf6 !important;
+}
+
+/* hyWEAVE button highlight (Generation Moment cue) */
+.tutorial-hl-hyweave-btn {
+    animation: thlHyweavePulse 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite !important;
+    outline: 2.5px solid rgba(139, 92, 246, 0.9) !important;
+    outline-offset: 3px !important;
+}
+
+@keyframes thlHyweavePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.8), 0 0 16px 4px rgba(139, 92, 246, 0.4);
+    }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 0 10px rgba(139, 92, 246, 0), 0 0 22px 6px rgba(139, 92, 246, 0.25);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0), 0 0 0 0 rgba(139, 92, 246, 0);
+    }
+}
+
+/* props bar */
+.tutorial-hl-props-bar .node-properties-bar {
+    animation: thlPulseAmber 1.6s ease-out infinite;
+    border-radius: 8px;
+    outline: 2px solid rgba(251,191,36,0.6);
+    outline-offset: 2px;
+}
+.tutorial-hl-props-bar .prop-input {
+    animation: thlPulseAmber 1.6s ease-out infinite;
+    border-radius: 4px;
+    background: rgba(251, 191, 36, 0.2) !important;
+    outline: 2px solid rgba(251, 191, 36, 0.9);
+    outline-offset: 1px;
+}
+
+/* edit-name & edit-weight (sleek underline highlight for both inline label and weight inputs) */
+.tutorial-hl-edit-name .node-outer.is-selected .nodename,
+.tutorial-hl-edit-name .node-outer.is-selected .nodeweight,
+.tutorial-hl-edit-weight .node-outer.is-selected .nodename,
+.tutorial-hl-edit-weight .node-outer.is-selected .nodeweight {
+    border: none !important;
+    border-bottom: 2.5px solid #06b6d4 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #0891b2 !important;
+    font-weight: 700 !important;
+    outline: none !important;
+    animation: thlPulseUnderline 1.6s ease-in-out infinite;
+}
+
+/* Tutorial Module Level Selector Strip */
+/* Batch Reveal Cascading Animation (staggered 45ms apart) */
+.batch-card-cascade {
+    animation: batchCascadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes batchCascadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tutorial-level-strip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f8fafc;
+    padding: 3px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2px;
+    overflow-x: auto;
+}
+
+.tutorial-level-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.tutorial-level-btn:hover {
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.tutorial-level-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #cbd5e1;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.tutorial-level-icon {
+    font-size: 11px;
+}
+
+.tutorial-level-name {
+    letter-spacing: 0.2px;
+}
+
+/* Target Highlights for Buttons & View Tabs */
+.tutorial-hl-hyweave #hywe-hyweave,
+#hywe-hyweave.tutorial-hl-hyweave-btn,
+.hyweave-container.tutorial-hl-hyweave #hywe-hyweave {
+    outline: 2px solid #6366f1 !important;
+    outline-offset: 0px !important;
+    box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.7), 0 0 12px rgba(99, 102, 241, 0.6) !important;
+    animation: hyweaveBtnPulse 1.2s infinite ease-in-out !important;
+    position: relative;
+    z-index: 10;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+@keyframes hyweaveBtnPulse {
+    0% {
+        box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.5), 0 0 8px rgba(99, 102, 241, 0.4);
+        filter: brightness(1);
+    }
+    50% {
+        box-shadow: inset 0 0 16px rgba(99, 102, 241, 0.9), 0 0 14px rgba(129, 140, 248, 0.7);
+        filter: brightness(1.22);
+    }
+    100% {
+        box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.5), 0 0 8px rgba(99, 102, 241, 0.4);
+        filter: brightness(1);
+    }
+}
+
+.hywe-tab-strip.tutorial-hl-tab-layout button[title="Layout"],
+.hywe-tab-strip.tutorial-hl-tab-view button[title="3D"],
+.hywe-tab-strip.tutorial-hl-tab-batch button[title="Batch"],
+.hywe-tab-btn.tutorial-hl-tab {
+    outline: 2px solid #8b5cf6 !important;
+    outline-offset: -1px !important;
+    box-shadow: inset 0 0 8px rgba(139, 92, 246, 0.5), 0 0 8px rgba(139, 92, 246, 0.5) !important;
+    color: #8b5cf6 !important;
+    font-weight: 700 !important;
+    animation: tutorialTabPulse 1.3s infinite ease-in-out !important;
+    box-sizing: border-box !important;
+}
+
+@keyframes tutorialTabPulse {
+    0% {
+        box-shadow: inset 0 0 5px rgba(139, 92, 246, 0.4), 0 0 6px rgba(139, 92, 246, 0.4);
+        filter: brightness(1);
+    }
+    50% {
+        box-shadow: inset 0 0 12px rgba(139, 92, 246, 0.8), 0 0 12px rgba(139, 92, 246, 0.7);
+        filter: brightness(1.18);
+    }
+    100% {
+        box-shadow: inset 0 0 5px rgba(139, 92, 246, 0.4), 0 0 6px rgba(139, 92, 246, 0.4);
+        filter: brightness(1);
+    }
+}
+
+@keyframes tutorialBtnPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+}
+
+/* Sequence / Variant Slider Highlight */
+#hywe-sequence-selector.tutorial-hl-slider,
+.tutorial-hl-slider #hywe-sequence-selector {
+    outline: 2px solid #8b5cf6 !important;
+    outline-offset: 4px !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.4), 0 0 16px rgba(139, 92, 246, 0.6) !important;
+    animation: tutorialSliderPulse 1.3s infinite ease-in-out !important;
+    box-sizing: border-box !important;
+}
+
+@keyframes tutorialSliderPulse {
+    0% { filter: brightness(1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+    50% { filter: brightness(1.22); box-shadow: 0 0 20px rgba(139, 92, 246, 0.85); }
+    100% { filter: brightness(1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+}
+
+.tutorial-tab-btn {
+    margin-left: 6px;
+    color: #6366f1 !important;
+    border: 1px dashed rgba(99, 102, 241, 0.4) !important;
+}
+
+.tutorial-tab-btn:hover {
+    background: rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Staggered layout card reveal transition for hyWEAVE generation */
+.layout-card-item {
+    animation: layoutCardReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes layoutCardReveal {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Highlight badge tags for deterministic spatial configurations */
+.layout-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+/* Solver Meta Badge Dot Pulse */
+@keyframes pulseDot {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* Lattice Flash Overlay - Hexagonal Grid */
+#hywe-svg-wrapper,
+.hywe-svg-wrapper {
+    position: relative;
+}
+
+#hywe-svg-wrapper::before,
+.hywe-svg-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-size: 28px 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='48' viewBox='0 0 28 48'%3E%3Cpath d='M0 8l14-8 14 8M0 8v16l14 8 14-8V8M14 32v16' fill='none' stroke='%236366f1' stroke-width='1' stroke-opacity='0.28'/%3E%3C/svg%3E");
+    opacity: 0;
+    z-index: 5;
+    animation: latticeFlash 0.45s ease-out;
+}
+
+@keyframes latticeFlash {
+    0% { opacity: 0.95; }
+    100% { opacity: 0; }
+}
+

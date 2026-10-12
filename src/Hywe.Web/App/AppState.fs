@@ -490,24 +490,30 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
         if isUncompiledStep then
             emptyDerivedData
         else
-            Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
+            try
+                Cache.deriveFromSource srcText newSqns model.PolygonExport snapshot.ActiveLevel
+            with _ ->
+                emptyDerivedData
 
     let cache =
         if isUncompiledStep then
             Map.empty
         else
-            let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
-            let markers = snapshot.Levels.Keys |> Seq.map toMarker |> Seq.toList
-            let baseCache = Cache.init markers
-            snapshot.Levels.Keys
-            |> Seq.fold (fun c lvl ->
-                let marker = toMarker lvl
-                [0 .. 23]
-                |> List.fold (fun cAcc sqnIdx ->
-                    let cfg = Cache.generateSingleConfig srcText Hexel.sqnArray.[sqnIdx] model.PolygonExport lvl
-                    Cache.update marker sqnIdx cfg cAcc
-                ) c
-            ) baseCache
+            try
+                let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
+                let markers = snapshot.Levels.Keys |> Seq.map toMarker |> Seq.toList
+                let baseCache = Cache.init markers
+                snapshot.Levels.Keys
+                |> Seq.fold (fun c lvl ->
+                    let marker = toMarker lvl
+                    [0 .. 23]
+                    |> List.fold (fun cAcc sqnIdx ->
+                        let cfg = Cache.generateSingleConfig srcText Hexel.sqnArray.[sqnIdx] model.PolygonExport lvl
+                        Cache.update marker sqnIdx cfg cAcc
+                    ) c
+                ) baseCache
+            with _ ->
+                Map.empty
 
     let m = {
         model with
@@ -568,9 +574,14 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | None -> Some (createSnapshot model)
         let nextStep = 0
         let m = updateTutorialStep model lvl nextStep
-        let mWithPanel = { m with PreTutorialSnapshot = preSnap; ActivePanel = LayoutPanel }
-        let cmd = if mWithPanel.TutorialAutoPlay then scheduleAutoAdvanceForStep lvl nextStep else Cmd.none
-        mWithPanel, cmd
+        let mWithPanel = { m with PreTutorialSnapshot = preSnap; ActivePanel = LayoutPanel; TutorialAutoPlay = false }
+        mWithPanel, Cmd.none
+
+    | SetTutorialStep stepIdx ->
+        let total = Tutorial.getTotalSteps model.TutorialLevel
+        let validStep = Math.Clamp(stepIdx, 0, total - 1)
+        let m = { updateTutorialStep model model.TutorialLevel validStep with TutorialAutoPlay = false }
+        m, Cmd.none
 
     | TutorialNext ->
         match model.TutorialStep with
@@ -579,20 +590,23 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             let total = Tutorial.getTotalSteps model.TutorialLevel
             let nextStep = step + 1
             if nextStep >= total then
-                exitTutorial js model
+                match Tutorial.TutorialLevel.nextLevel model.TutorialLevel with
+                | Some nxt ->
+                    let m = { updateTutorialStep model nxt 0 with TutorialAutoPlay = false }
+                    m, Cmd.none
+                | None ->
+                    exitTutorial js model
             else
-                let m = updateTutorialStep model model.TutorialLevel nextStep
-                let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel nextStep else Cmd.none
-                m, cmd
+                let m = { updateTutorialStep model model.TutorialLevel nextStep with TutorialAutoPlay = false }
+                m, Cmd.none
 
     | TutorialBack ->
         match model.TutorialStep with
         | None | Some 0 -> model, Cmd.none
         | Some step ->
             let prevStep = step - 1
-            let m = updateTutorialStep model model.TutorialLevel prevStep
-            let cmd = if model.TutorialAutoPlay then scheduleAutoAdvanceForStep model.TutorialLevel prevStep else Cmd.none
-            m, cmd
+            let m = { updateTutorialStep model model.TutorialLevel prevStep with TutorialAutoPlay = false }
+            m, Cmd.none
 
     | DismissTutorial ->
         exitTutorial js model
@@ -697,6 +711,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let markers = modelWithSyntax.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
         let newCache = Cache.init markers
         let model2 = { modelWithSyntax with 
+                        ActivePanel = LayoutPanel
                         IsHyweaving = true
                         NeedsHyweave = false
                         LayoutCache = newCache }
