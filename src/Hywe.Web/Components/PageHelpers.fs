@@ -18,41 +18,50 @@ open TreeTypes
 let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
 
 let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
-    match panel with
-    | BatchPanel ->
-        let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
-        match isStale with
-        | true -> 
-            let cts = new System.Threading.CancellationTokenSource()
-            let markers = model.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
-            let model' = 
-                { model with 
-                    ActivePanel = panel
-                    IsHyweaving = true
-                    IsCancelling = false 
-                    CancelToken = Some cts
-                    BatchProgress = 0
-                    LayoutCache = Cache.init markers
-                    IsPresetsCollapsed = true
-                    IsWorkspaceCollapsed = true
-                }
-            model', Cmd.ofMsg (GenerateNextBatchItem 0)
-        | false -> 
+    let isLeavingBoundaryWithChanges = model.ActivePanel = BoundaryPanel && panel <> BoundaryPanel && model.NeedsHyweave
+    let baseModel, baseCmd =
+        match panel with
+        | TreePanel ->
+            { model with ActivePanel = TreePanel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
+        | BatchPanel ->
+            let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
+            match isStale with
+            | true -> 
+                let cts = new System.Threading.CancellationTokenSource()
+                let markers = model.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
+                let model' = 
+                    { model with 
+                        ActivePanel = panel
+                        IsHyweaving = true
+                        IsCancelling = false 
+                        CancelToken = Some cts
+                        BatchProgress = 0
+                        LayoutCache = Cache.init markers
+                        IsPresetsCollapsed = true
+                        IsWorkspaceCollapsed = true
+                    }
+                model', Cmd.ofMsg (GenerateNextBatchItem 0)
+            | false -> 
+                { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
+        | BoundaryPanel ->
+            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            let newState = FileManager.importFromHyw model.SrcOfTrth inner
+            let finalPoly = match newState with Stable m | FreshlyImported m -> m
+            let newExport = syncPolygonState finalPoly
+            { model with 
+                ActivePanel = BoundaryPanel
+                PolygonEditor = newState
+                PolygonExport = newExport
+                IsPresetsCollapsed = true
+                IsWorkspaceCollapsed = true 
+            }, Cmd.none
+        | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
             { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
-    | BoundaryPanel ->
-        let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-        let newState = FileManager.importFromHyw model.SrcOfTrth inner
-        let finalPoly = match newState with Stable m | FreshlyImported m -> m
-        let newExport = syncPolygonState finalPoly
-        { model with 
-            ActivePanel = BoundaryPanel
-            PolygonEditor = newState
-            PolygonExport = newExport
-            IsPresetsCollapsed = true
-            IsWorkspaceCollapsed = true 
-        }, Cmd.none
-    | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
-        { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
+
+    if isLeavingBoundaryWithChanges then
+        baseModel, Cmd.batch [ baseCmd; Cmd.ofMsg StartHyweave ]
+    else
+        baseModel, baseCmd
 
 let syncSyntaxToModel (code: string) (model: Model) : Model =
     let maybeSubModel =

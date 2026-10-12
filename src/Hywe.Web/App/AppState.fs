@@ -153,7 +153,7 @@ let initModel =
         IsCancelling = false
         CancelToken = None
         PolygonEditor = Stable State.initModel
-        ActivePanel = LayoutPanel 
+        ActivePanel = TreePanel 
         EditorMode = Interactive
         LastBatchSrc = None
         SelectedPreviewIndex = None
@@ -193,6 +193,7 @@ let initModel =
         EditsCount = 0
         IsPresetsCollapsed = true
         IsWorkspaceCollapsed = true
+        IsTreeCollapsed = false
         PendingConfirm = None
         UndoStack = []
         RedoStack = []
@@ -485,9 +486,10 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
     let newSqns = Lexel.extractSequences srcText
 
     let isUncompiledStep = level = Basic && step < 2
+    let needsBatchCache = stepDef.Badge = Tutorial.BadgeSlider || stepDef.TargetPanel = Some BatchPanel
 
     let derived =
-        if isUncompiledStep then
+        if isUncompiledStep || stepDef.TargetPanel = Some TreePanel then
             emptyDerivedData
         else
             try
@@ -496,7 +498,7 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
                 emptyDerivedData
 
     let cache =
-        if isUncompiledStep then
+        if not needsBatchCache then
             Map.empty
         else
             try
@@ -526,8 +528,8 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
             Derived = derived
             NeedsHyweave = isUncompiledStep
             LayoutCache = cache
-            BatchProgress = if isUncompiledStep then 0 else 24
-            LastBatchSrc = if isUncompiledStep then None else Some srcText
+            BatchProgress = if needsBatchCache then 24 else 0
+            LastBatchSrc = if needsBatchCache then Some srcText else None
     }
 
     match stepDef.TargetPanel with
@@ -574,7 +576,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | None -> Some (createSnapshot model)
         let nextStep = 0
         let m = updateTutorialStep model lvl nextStep
-        let mWithPanel = { m with PreTutorialSnapshot = preSnap; ActivePanel = LayoutPanel; TutorialAutoPlay = false }
+        let mWithPanel = { m with PreTutorialSnapshot = preSnap; TutorialAutoPlay = false }
         mWithPanel, Cmd.none
 
     | SetTutorialStep stepIdx ->
@@ -714,7 +716,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         ActivePanel = LayoutPanel
                         IsHyweaving = true
                         NeedsHyweave = false
-                        LayoutCache = newCache }
+                        LayoutCache = newCache
+                        IsTreeCollapsed = (if model.TutorialStep.IsSome then model.IsTreeCollapsed else true) }
         model2,
         Cmd.batch [
             Cmd.map TreeMsg (Cmd.ofMsg CancelAction)
@@ -1163,15 +1166,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         |> Option.defaultValue (model, Cmd.none)
 
     | ShareLink ->
-        let panelParam = 
-            match model.ActivePanel with
-            | BoundaryPanel -> "boundary"
-            | LayoutPanel -> "layout"
-            | AnalyzePanel -> "analyze"
-            | ViewPanel -> "3d"
-            | TeachPanel -> "teach"
-            | ReportPanel -> "report"
-            | BatchPanel -> "batch"
+        let panelParam = FileManager.panelToString model.ActivePanel
         let hash = sprintf "%s|P=%s" model.SrcOfTrth panelParam
         let compressed = FileManager.compress hash
         { model with ShowLinkCopied = true }, 
@@ -1223,6 +1218,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         NeedsHyweave = isTutorialUncompiled modelWithPanel
                         IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
+                        IsTreeCollapsed = false
                         EditsCount = 0
                         HasAppendedModSuffix = false
                     }
@@ -1301,6 +1297,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleWorkspaceCollapse ->
         { model with IsWorkspaceCollapsed = not model.IsWorkspaceCollapsed }, Cmd.none
+
+    | ToggleTreeCollapse ->
+        { model with IsTreeCollapsed = not model.IsTreeCollapsed }, Cmd.none
+
+    | SetTreeCollapse collapsed ->
+        { model with IsTreeCollapsed = collapsed }, Cmd.none
 
     | ToggleGallery ->
         match model with

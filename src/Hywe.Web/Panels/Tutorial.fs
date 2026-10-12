@@ -69,6 +69,7 @@ type BadgeTarget =
     | EditName
     | EditWeight
     | HyweaveBtn
+    | TabTreePanel
     | TabLayoutPanel
     | TabViewPanel
     | TabBatchPanel
@@ -98,15 +99,15 @@ let private def t b a badge panel = { Title = t; Body = b; Annotation = a; Badge
 let basicStepDefs = [|
     def "Welcome to HYWE"
         "Begin pre-geometry exploration by charting spatial intent. Extend your relational hierarchy by adding child space nodes."
-        "Add Child node" BadgeAdd None
+        "Add Child node" BadgeAdd (Some TreePanel)
 
     def "Tweak labels and area weights"
         "Alter node label or area weight inline to sculpt spatial intent."
-        "Alter labels and area weight inline" EditWeight None
+        "Alter labels and area weight inline" EditWeight (Some TreePanel)
 
     def "Compile the lattice"
         "Watch the hierarchy become space. HYWE will resolve your exact relationships into multiple valid floor plans — none of them random."
-        "Click hyWEAVE" HyweaveBtn (Some LayoutPanel)
+        "Click hyWEAVE" HyweaveBtn (Some TreePanel)
 
     def "Explore alternate configurations"
         "This isn't random diffusion. These are mathematically deterministic arrangements matching your exact hierarchy. Cycle through the variants."
@@ -123,19 +124,19 @@ let basicStepDefs = [|
 let hierarchyStepDefs = [|
     def "Initiate Node Relocation"
         "Select a space node and tap the Move badge to initiate spatial re-ordering or structural reparenting within the graph."
-        "Tap Move badge on space" BadgeMove None
+        "Tap Move badge on space" BadgeMove (Some TreePanel)
 
     def "Re-order Sibling Circulation"
         "Drag a space to the boundary edge of a sibling node to adjust the spatial sequence and adjacency flow."
-        "Drag to re-order siblings" BadgeMove None
+        "Drag to re-order siblings" BadgeMove (Some TreePanel)
 
     def "Re-parent Child Spaces"
         "Drag a space directly onto another space node to re-parent it as a child within a nested functional zone."
-        "Drag onto node to nest as child" BadgeMove None
+        "Drag onto node to nest as child" BadgeMove (Some TreePanel)
 
     def "Balance Target Area Allocations"
         "Adjust inline weight inputs on nodes to calibrate relative floor area allocations across spatial zones."
-        "Alter area weight inline" EditWeight None
+        "Alter area weight inline" EditWeight (Some TreePanel)
 |]
 
 /// <summary>
@@ -144,19 +145,19 @@ let hierarchyStepDefs = [|
 let levelsStepDefs = [|
     def "Initiate Vertical Elevation"
         "Select a space node and tap the Elevate badge to promote it to a new elevated floor level."
-        "Tap Elevate badge" BadgeElevate None
+        "Tap Elevate badge" BadgeElevate (Some TreePanel)
 
     def "Confirm Level 1 Creation"
         "Set extrusion parameters and confirm ELEVATE to instantiate Level 1 (L1) in the spatial model."
-        "Confirm ELEVATE action" NoBadge None
+        "Confirm ELEVATE action" NoBadge (Some TreePanel)
 
     def "Inspect Level Navigator"
         "Focus the Level Navigator at top to view active storeys, elevated space distribution, and storey hierarchy."
-        "Focus Level Navigator" LevelNav None
+        "Focus Level Navigator" LevelNav (Some TreePanel)
 
     def "Navigate Storey Views"
         "Switch between Level 0 and Level 1 tabs in the Level Navigator to inspect plan adjacencies across storeys."
-        "Select L0 / L1 tabs" LevelNav None
+        "Select L0 / L1 tabs" LevelNav (Some TreePanel)
 |]
 
 /// <summary>
@@ -165,19 +166,19 @@ let levelsStepDefs = [|
 let nestsStepDefs = [|
     def "Initiate Nested Sub-Program"
         "Select a node with no children and tap the Nest badge to embed a secondary spatial sub-tree program."
-        "Tap Nest badge on leaf node" BadgeNest None
+        "Tap Nest badge on leaf node" BadgeNest (Some TreePanel)
 
     def "Confirm Sub-Program Nesting"
         "Confirm NEST inside the node overlay to generate a nested program zone within the spatial structure."
-        "Confirm NEST action" NoBadge None
+        "Confirm NEST action" NoBadge (Some TreePanel)
 
     def "Navigate Breadcrumb Program Trees"
         "Use the program breadcrumbs bar to navigate seamlessly between main level views and nested sub-programs."
-        "Focus Nests Breadcrumb" LevelNav None
+        "Focus Nests Breadcrumb" LevelNav (Some TreePanel)
 
     def "Prune Obsolete Spaces"
         "Select any redundant space node and tap the Delete badge to clean up and refine the relational graph structure."
-        "Tap & confirm Delete action" BadgeDelete None
+        "Tap & confirm Delete action" BadgeDelete (Some TreePanel)
 |]
 
 
@@ -194,6 +195,7 @@ let badgeCssClass = function
     | EditName      -> "tutorial-hl-edit-name"
     | EditWeight    -> "tutorial-hl-edit-weight"
     | HyweaveBtn    -> "tutorial-hl-hyweave"
+    | TabTreePanel  -> "tutorial-hl-tab-tree"
     | TabLayoutPanel-> "tutorial-hl-tab-layout"
     | TabViewPanel  -> "tutorial-hl-tab-view"
     | TabBatchPanel -> "tutorial-hl-tab-batch"
@@ -432,13 +434,15 @@ let private badgeIcon = function
     | BadgeMove     -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>"""
     | BadgeAdd      -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>"""
     | BadgeDelete   -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>"""
-    | BadgeElevate  -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>"""
+    | BadgeElevate  -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="curre
+    ntColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>"""
     | BadgeNest     -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>"""
     | LevelNav      -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="4" rx="1"/><rect x="2" y="13" width="20" height="4" rx="1"/></svg>"""
     | PropsBar      -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>"""
     | EditName      -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>"""
     | EditWeight    -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>"""
     | HyweaveBtn    -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>"""
+    | TabTreePanel  -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="4" rx="1"/><rect x="3" y="17" width="6" height="4" rx="1"/><rect x="15" y="17" width="6" height="4" rx="1"/><path d="M12 7v5m-6 5v-2a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v2"/></svg>"""
     | TabLayoutPanel-> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>"""
     | TabViewPanel  -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>"""
     | TabBatchPanel -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>"""
@@ -456,6 +460,7 @@ let private badgeColor = function
     | EditName      -> "#06b6d4"
     | EditWeight    -> "#06b6d4"
     | HyweaveBtn    -> "#6366f1"
+    | TabTreePanel  -> "#10b981"
     | TabLayoutPanel-> "#8b5cf6"
     | TabViewPanel  -> "#ec4899"
     | TabBatchPanel -> "#8b5cf6"
