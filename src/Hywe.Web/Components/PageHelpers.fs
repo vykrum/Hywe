@@ -3,6 +3,7 @@ module PageHelpers
 open System
 open Elmish
 open Microsoft.JSInterop
+open Hywe.Web
 open ModelTypes
 open Hywe.Core
 open Hywe.Core.Coxel
@@ -171,13 +172,19 @@ let handleFileImported (model: Model) (content: string) (js: IJSRuntime) : Model
 
 let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message>) option =
     match msg with
-    | SetActivePanel panel -> Some (handleSetActivePanel model panel)
+    | SetActivePanel panel ->
+        if model.ActivePanel <> panel then
+            Haptics.trigger js HapticPattern.Tick
+        Some (handleSetActivePanel model panel)
     
-    | ToggleEditorMode -> Some (handleToggleEditorMode model)
+    | ToggleEditorMode ->
+        Haptics.trigger js HapticPattern.Tick
+        Some (handleToggleEditorMode model)
     
     | SetSrcOfTrth src -> Some ({ model with SrcOfTrth = src; SelectedPreset = None }, Cmd.none)
     
     | SelectPreset name ->
+        Haptics.trigger js HapticPattern.Select
         let content = 
             match name with 
             | "Simple" -> beeyond 

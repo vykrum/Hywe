@@ -15,6 +15,7 @@ open State
 open ModelTypes
 open Hywe.Core
 open FileManager
+open Hywe.Web
 
 // Active Patterns & Pure Helpers
 
@@ -415,6 +416,7 @@ let performUndo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.UndoStack with
     | [] -> model, Cmd.none
     | snap :: rest ->
+        Haptics.trigger js HapticPattern.Tick
         restoreSnapshot js model snap (fun revSnap m ->
             { m with UndoStack = rest; RedoStack = revSnap :: m.RedoStack })
 
@@ -429,6 +431,7 @@ let performRedo (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.RedoStack with
     | [] -> model, Cmd.none
     | snap :: rest ->
+        Haptics.trigger js HapticPattern.Tick
         restoreSnapshot js model snap (fun revSnap m ->
             { m with RedoStack = rest; UndoStack = revSnap :: m.UndoStack })
 
@@ -821,6 +824,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let derivedData =
             if isTutorialUncompiled then
                 emptyDerivedData
+            elif newOutput = modelToUse.SrcOfTrth && updatedTree.ActiveLevel = modelToUse.Tree.ActiveLevel then
+                modelToUse.Derived
             else
                 Cache.deriveFromSource newOutput newSqns modelToUse.PolygonExport updatedTree.ActiveLevel
 
@@ -837,8 +842,9 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
         match subMsg with
         | SubMsg.ExecuteAction _ | SubMsg.AddChild _ | SubMsg.UpdateName _ 
-        | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _
-        | SubMsg.PointerUp ->
+        | SubMsg.UpdateWeight _ | SubMsg.UpdateExtrusion _ | SubMsg.SetTopExtrusion _ ->
+            FileManager.sync js newOutput modelToUse.ActivePanel
+        | SubMsg.PointerUp when model.Tree.DraggingId.IsSome ->
             FileManager.sync js newOutput modelToUse.ActivePanel
         | _ -> ()
 
@@ -914,6 +920,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
                 match model.PreDragSnapshot with
                 | Some preSnap when isDraggingAny && hasChanged preSnap ->
+                    Haptics.trigger js HapticPattern.Drop
                     let m =
                         match model.EditsCount with
                         | 0 -> model
@@ -942,6 +949,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         | CommitGhostVertex ->
             match State.updateSync subMsg currentInnerModel with
             | Some updatedInner ->
+                Haptics.trigger js HapticPattern.Success
                 let model = pushUndo model
                 let newExport = syncPolygonState updatedInner
                 let model = applyAlterationSuffix js model
@@ -956,16 +964,44 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | None -> model, Cmd.none
 
         | SelectVertex sel ->
+            if sel.IsSome && currentInnerModel.SelectedVertex <> sel then
+                Haptics.trigger js HapticPattern.Select
             { model with PolygonEditor = Stable { currentInnerModel with SelectedVertex = sel } }, Cmd.none
 
         | ToggleInstructions ->
             { model with PolygonEditor = Stable { currentInnerModel with ShowInstructions = not currentInnerModel.ShowInstructions } }, Cmd.none
 
         | ToggleLock ->
+            Haptics.trigger js HapticPattern.Tick
             { model with PolygonEditor = Stable { currentInnerModel with IsLocked = not currentInnerModel.IsLocked; SelectedVertex = None; GhostVertex = None } }, Cmd.none
 
         | RequestResetBoundary ->
+            Haptics.trigger js HapticPattern.Warning
             { model with PendingConfirm = Some ConfirmAction.ResetBoundaryAction }, Cmd.none
+
+        | DeleteSelectedVertex ->
+            Haptics.trigger js HapticPattern.Delete
+            model,
+            Cmd.OfAsync.perform
+                (State.update js subMsg)
+                currentInnerModel
+                PolygonEditorUpdated
+
+        | RemoveVertex _ ->
+            Haptics.trigger js HapticPattern.Delete
+            model,
+            Cmd.OfAsync.perform
+                (State.update js subMsg)
+                currentInnerModel
+                PolygonEditorUpdated
+
+        | ResetBoundary ->
+            Haptics.trigger js HapticPattern.Warning
+            model,
+            Cmd.OfAsync.perform
+                (State.update js subMsg)
+                currentInnerModel
+                PolygonEditorUpdated
 
         | UndoBoundary ->
             performUndo js model
@@ -1024,6 +1060,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         handlePageHelperUpdate js msg model
 
     | SetBatchFinished ->
+        Haptics.trigger js HapticPattern.Success
         { model with 
             LastBatchSrc = Some model.SrcOfTrth 
             IsHyweaving = false 
@@ -1072,6 +1109,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with BatchProgress = nextI; LayoutCache = updatedCache }, Cmd.ofMsg (GenerateNextBatchItem nextI)
 
     | TapBatchPreview i ->
+        Haptics.trigger js HapticPattern.Select
         let nextSelection = 
             match model.SelectedPreviewIndex with
             | Some current when current = i -> None
@@ -1082,6 +1120,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         { model with ActivePanel = LayoutPanel; SelectedPreviewIndex = None }, Cmd.none
 
     | CancelBatch ->
+        Haptics.trigger js HapticPattern.Warning
         model.CancelToken |> Option.iter (fun cts -> cts.Cancel())
         { model with IsCancelling = true }, Cmd.none
 
@@ -1119,9 +1158,10 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             | ReportPanel -> "report"
             | BatchPanel -> "batch"
         let hash = sprintf "%s|P=%s" model.SrcOfTrth panelParam
+        let compressed = FileManager.compress hash
         { model with ShowLinkCopied = true }, 
         Cmd.batch [
-            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("shareCompressedHash", "Hywe Design", "", hash).AsTask()) () (fun _ -> NoOp)
+            Cmd.OfTask.perform (fun () -> js.InvokeAsync<bool>("shareCompressedHash", "Hywe Design", "", compressed).AsTask()) () (fun _ -> NoOp)
             Cmd.OfAsync.perform (fun () -> async { do! Async.Sleep 2000 }) () (fun _ -> HideLinkCopied)
         ]
 

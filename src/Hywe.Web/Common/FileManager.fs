@@ -5,6 +5,9 @@
 module FileManager
 
 open System
+open System.IO
+open System.IO.Compression
+open System.Text
 open System.Text.Json
 open Microsoft.JSInterop
 open Hywe.Core
@@ -441,6 +444,124 @@ let stringToPanel (s: string) =
     | _ -> None
 
 /// <summary>
+/// Minifies a Hywe DSL state string before compression:
+/// Strips all newlines, carriage returns, tabs, indentation, and structural whitespace around tokens and delimiters,
+/// while strictly leaving node labels intact with their intra-word spaces (e.g., "Master Bedroom").
+/// </summary>
+let cleanWhitespace (text: string) : string =
+    if String.IsNullOrWhiteSpace text then ""
+    else
+        // Separate DSL content from |P= panel parameter if present
+        let dsl, panelPart =
+            let pIdx = text.LastIndexOf("|P=")
+            if pIdx >= 0 then
+                text.Substring(0, pIdx), text.Substring(pIdx)
+            else
+                text, ""
+
+        // Process parenthesized blocks: (attributes) and (nodes)
+        // Outside parentheses: strip all whitespace
+        // Inside parentheses: for node blocks (id/area/label...), preserve label spacing but trim elements
+        let sb = System.Text.StringBuilder()
+        let mutable i = 0
+        let len = dsl.Length
+        while i < len do
+            if dsl.[i] = '(' then
+                let closeIdx = dsl.IndexOf(')', i)
+                if closeIdx > i then
+                    let inner = dsl.Substring(i + 1, closeIdx - i - 1)
+                    let bits = inner.Split('/')
+                    sb.Append('(') |> ignore
+                    if bits.Length >= 3 && (match Int32.TryParse (bits.[1].Trim()) with true, _ -> true | _ -> false) then
+                        // Node block: id / area / label [/ extrusion] [/ base]
+                        let path = Text.RegularExpressions.Regex.Replace(bits.[0].Trim(), @"\s+", "")
+                        let area = Text.RegularExpressions.Regex.Replace(bits.[1].Trim(), @"\s+", "")
+                        let label = bits.[2].Trim() // Strictly preserves internal spaces like "Master Bedroom"
+                        let rest = bits |> Array.skip 3 |> Array.map (fun s -> Text.RegularExpressions.Regex.Replace(s.Trim(), @"\s+", ""))
+                        let cleanedBits = Array.concat [ [| path; area; label |]; rest ]
+                        sb.Append(String.Join("/", cleanedBits)) |> ignore
+                    else
+                        // Attribute or other metadata block: strip all internal whitespace
+                        let cleanedAttrs = Text.RegularExpressions.Regex.Replace(inner, @"\s+", "")
+                        sb.Append(cleanedAttrs) |> ignore
+                    sb.Append(')') |> ignore
+                    i <- closeIdx + 1
+                else
+                    // Unclosed parenthesis: append and advance
+                    sb.Append(dsl.[i]) |> ignore
+                    i <- i + 1
+            else
+                // Outside parentheses: strip any whitespace character
+                if not (Char.IsWhiteSpace dsl.[i]) then
+                    sb.Append(dsl.[i]) |> ignore
+                i <- i + 1
+
+        let cleanedDsl = sb.ToString()
+        let cleanedPanel =
+            if String.IsNullOrEmpty panelPart then ""
+            else Text.RegularExpressions.Regex.Replace(panelPart, @"\s+", "")
+
+        cleanedDsl + cleanedPanel
+
+/// <summary>
+/// Compresses a string into a URL-safe Base64 representation using native .NET Deflate compression.
+/// Strips all structural whitespace, newlines, and tabs while preserving internal spaces in node labels.
+/// </summary>
+let compress (text: string) : string =
+    if String.IsNullOrWhiteSpace text then ""
+    else
+        let cleaned = cleanWhitespace text
+        if String.IsNullOrEmpty cleaned then ""
+        else
+            try
+                let bytes = Encoding.UTF8.GetBytes cleaned
+                use output = new MemoryStream()
+                (
+                    use deflate = new DeflateStream(output, CompressionLevel.Optimal, leaveOpen = true)
+                    deflate.Write(bytes, 0, bytes.Length)
+                )
+                let compressedBytes = output.ToArray()
+                Convert.ToBase64String(compressedBytes)
+                    .Replace('+', '-')
+                    .Replace('/', '_')
+                    .TrimEnd('=')
+            with _ ->
+                try
+                    let bytes = Encoding.UTF8.GetBytes cleaned
+                    Convert.ToBase64String(bytes)
+                        .Replace('+', '-')
+                        .Replace('/', '_')
+                        .TrimEnd('=')
+                with _ ->
+                    ""
+
+/// <summary>
+/// Decompresses a URL-safe Base64 string back into plain text using native .NET Deflate decompression.
+/// Restores the exact canonical minified state, preserving intact node labels.
+/// </summary>
+let decompress (encoded: string) : string =
+    if String.IsNullOrWhiteSpace encoded then ""
+    else
+        try
+            let clean = Text.RegularExpressions.Regex.Replace(encoded.Trim(), @"\s+", "")
+            let unescaped = clean.Replace('-', '+').Replace('_', '/')
+            let base64 =
+                match unescaped.Length % 4 with
+                | 2 -> unescaped + "=="
+                | 3 -> unescaped + "="
+                | _ -> unescaped
+            let bytes = Convert.FromBase64String base64
+            try
+                use input = new MemoryStream(bytes)
+                use deflate = new DeflateStream(input, CompressionMode.Decompress)
+                use reader = new StreamReader(deflate, Encoding.UTF8)
+                reader.ReadToEnd()
+            with _ ->
+                Encoding.UTF8.GetString bytes
+        with _ ->
+            ""
+
+/// <summary>
 /// Synchronizes the current design state to both LocalStorage backup and the browser URL hash.
 /// </summary>
 /// <param name="js">The JS interop runtime instance.</param>
@@ -452,19 +573,17 @@ let sync (js: IJSRuntime) (content: string) (panel: ActivePanel) =
     else
         setBackup js content
         let p = panelToString panel
-        let hash = sprintf "%s|P=%s" content p
-        setUrlHash js hash
+        let rawState = sprintf "%s|P=%s" content p
+        let compressed = compress rawState
+        setUrlHash js compressed
 
 /// <summary>
 /// Purely finds the delimiter index and length for panel state parsing within a URL hash fragment.
 /// </summary>
 let private findPanelDelimiterIndex (upperHash: string) =
-    let idx1 = upperHash.LastIndexOf("|P=")
-    if idx1 >= 0 then Some (idx1, 3)
-    else
-        let idx2 = upperHash.LastIndexOf("%7CP=")
-        if idx2 >= 0 then Some (idx2, 5)
-        else None
+    let idx = upperHash.LastIndexOf("|P=")
+    if idx >= 0 then Some (idx, 3)
+    else None
 
 /// <summary>
 /// Parses a raw, decoded URL hash fragment into its constituent state content, optional active panel, and URL origin flag.
@@ -474,14 +593,17 @@ let private findPanelDelimiterIndex (upperHash: string) =
 let resolveHashChange (rawHash: string) : string * ActivePanel option * bool =
     if String.IsNullOrWhiteSpace rawHash then "", None, false
     else
-        let upperHash = rawHash.ToUpperInvariant()
-        match findPanelDelimiterIndex upperHash with
-        | Some (pIdx, delimLength) when pIdx + delimLength <= rawHash.Length ->
-            let content = rawHash.Substring(0, pIdx)
-            let panelName = rawHash.Substring(pIdx + delimLength)
-            content, stringToPanel panelName, true
-        | _ ->
-            rawHash, None, true
+        let decoded = decompress rawHash
+        if String.IsNullOrWhiteSpace decoded then "", None, true
+        else
+            let upperHash = decoded.ToUpperInvariant()
+            match findPanelDelimiterIndex upperHash with
+            | Some (pIdx, delimLength) when pIdx + delimLength <= decoded.Length ->
+                let content = decoded.Substring(0, pIdx)
+                let panelName = decoded.Substring(pIdx + delimLength)
+                content, stringToPanel panelName, true
+            | _ ->
+                decoded, None, true
 
 /// <summary>
 /// Asynchronously resolves initial startup state by checking the browser URL hash first, falling back to LocalStorage backup.

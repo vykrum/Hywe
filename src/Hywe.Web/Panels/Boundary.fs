@@ -4,6 +4,7 @@ open Bolero
 open Bolero.Html
 open Microsoft.AspNetCore.Components.Web
 open Microsoft.JSInterop
+open Hywe.Web
 open State
 open Types
 
@@ -73,16 +74,17 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
             attr.``class`` "toggle-column"
 
             let siteOptions = [
-                "None", not model.UseBoundary, (fun () -> dispatch (ToggleBoundary false))
-                "Boundary", model.UseBoundary, (fun () -> dispatch (ToggleBoundary true))
+                "None", not model.UseBoundary, (fun () -> Haptics.trigger js HapticPattern.Tick; dispatch (ToggleBoundary false))
+                "Boundary", model.UseBoundary, (fun () -> Haptics.trigger js HapticPattern.Tick; dispatch (ToggleBoundary true))
             ]
             let countOptions = [
-                "Relative", not model.UseAbsolute, (fun () -> dispatch (ToggleAbsolute false))
-                "Absolute", model.UseAbsolute, (fun () -> dispatch (ToggleAbsolute true))
+                "Relative", not model.UseAbsolute, (fun () -> Haptics.trigger js HapticPattern.Tick; dispatch (ToggleAbsolute false))
+                "Absolute", model.UseAbsolute, (fun () -> Haptics.trigger js HapticPattern.Tick; dispatch (ToggleAbsolute true))
             ]
             let baseOptions = [
-                "None", not model.UseMapBase, (fun () -> dispatch (ToggleMapBase false))
+                "None", not model.UseMapBase, (fun () -> Haptics.trigger js HapticPattern.Select; dispatch (ToggleMapBase false))
                 "Map", model.UseMapBase, (fun () ->
+                    Haptics.trigger js HapticPattern.Select
                     dispatch (ToggleMapBase true)
                     js.InvokeVoidAsync("Hymap.init").AsTask() |> ignore
                 )
@@ -588,6 +590,7 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo =
                     attr.title lockTitle
                     on.click (fun _ ->
                         let newState = not model.IsMapLocked
+                        Haptics.trigger js HapticPattern.Select
                         dispatch (ToggleMapLock newState)
                         let jsAction = match newState with true -> "Hymap.lockMap" | false -> "Hymap.unlockMap"
                         js.InvokeVoidAsync(jsAction).AsTask() |> ignore
