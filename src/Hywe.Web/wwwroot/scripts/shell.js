@@ -14,7 +14,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// --- URL Hash & LZ-String State Management ---
+// --- URL Hash State Management ---
 window.getUrlHash = function () {
     let hash = "";
     if (window.location.hash && window.location.hash.length > 1) {
@@ -24,18 +24,13 @@ window.getUrlHash = function () {
         const idx = url.indexOf('#');
         if (idx !== -1) hash = url.substring(idx + 1);
     }
-    if (hash) {
-        try {
-            return window.LZString ? LZString.decompressFromEncodedURIComponent(hash) : hash;
-        } catch (e) { return hash; }
-    }
-    return "";
+    return hash ? decodeURIComponent(hash).replace(/\s+/g, '') : "";
 };
 
 window.setUrlHash = function (hash) {
     if (hash) {
-        let encoded = window.LZString ? LZString.compressToEncodedURIComponent(hash) : encodeURIComponent(hash);
-        window.history.replaceState(null, null, "#" + encoded);
+        const clean = hash.replace(/\s+/g, '');
+        window.history.replaceState(null, null, "#" + clean);
     } else {
         window.history.replaceState(null, null, window.location.pathname);
     }
@@ -55,8 +50,8 @@ window.shareUrl = async (title, text, url) => {
 };
 
 window.shareCompressedHash = async (title, text, hash) => {
-    let encoded = window.LZString ? LZString.compressToEncodedURIComponent(hash) : encodeURIComponent(hash);
-    const fullUrl = window.location.origin + window.location.pathname + "#" + encoded;
+    const clean = hash ? hash.replace(/\s+/g, '') : "";
+    const fullUrl = window.location.origin + window.location.pathname + (clean ? "#" + clean : "");
     return window.shareUrl(title, text, fullUrl);
 };
 
@@ -85,23 +80,16 @@ window.getElementValue = (id) => {
     return el ? el.value : "";
 };
 
-window.copyToClipboard = function (text) {
+window.copyToClipboard = async function (text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
-    } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
         try {
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            return Promise.resolve(successful);
-        } catch (err) {
-            document.body.removeChild(textArea);
-            return Promise.resolve(false);
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (_) {
+            return false;
         }
     }
+    return false;
 };
 
 // --- SVG Layout & Coordinates Utilities ---
@@ -703,6 +691,27 @@ window.triggerPwaInstall = async function () {
     window.hyweDeferredPrompt = null;
     return outcome === 'accepted';
 };
+
+// --- Touch Device Haptics ---
+window.vibrateHaptic = function (pattern) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+            if (typeof pattern === 'string') {
+                switch (pattern) {
+                    case 'tick': case 'snap': navigator.vibrate(8); break;
+                    case 'dragStart': navigator.vibrate(12); break;
+                    case 'select': navigator.vibrate(15); break;
+                    case 'drop': case 'success': navigator.vibrate([15, 35, 20]); break;
+                    case 'delete': case 'warning': navigator.vibrate([25, 40, 25]); break;
+                    default: navigator.vibrate(10); break;
+                }
+            } else {
+                navigator.vibrate(pattern);
+            }
+        } catch (_) { }
+    }
+};
+window.triggerHaptic = window.vibrateHaptic;
 
 // --- Global Keyboard Shortcuts ---
 document.addEventListener('keydown', function (e) {

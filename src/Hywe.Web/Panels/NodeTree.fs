@@ -5,6 +5,7 @@ open Elmish
 open Bolero
 open Bolero.Html
 open Microsoft.JSInterop
+open Hywe.Web
 open TreeTypes
 open NodeActions
 open NodeElement
@@ -46,12 +47,15 @@ let updateCurrentTree model newTree =
         let finalLevels = TreeOps.syncHierarchy (model.Levels |> Map.add model.ActiveLevel newTree) model.LevelAnchors 0
         { model with Levels = finalLevels }
 
-let handleExecuteAction id actionId model =
+let handleExecuteAction id actionId (js: IJSRuntime) model =
     match NodeActions.findAction actionId with
     | Some action ->
         let currentTree = getCurrentTree model
         match TreeOps.findNodeById id currentTree with
-        | Some node when action.Logic.IsApplicable model node -> action.Logic.Execute model node
+        | Some node when action.Logic.IsApplicable model node ->
+            let haptic = if actionId = ActionIds.Delete then HapticPattern.Delete else HapticPattern.Success
+            Haptics.trigger js haptic
+            action.Logic.Execute model node
         | _ -> model, Cmd.none
     | None -> model, Cmd.none
 
@@ -82,13 +86,14 @@ let handleNodeUpdate msg model =
         | None -> model, Cmd.none
     | _ -> model, Cmd.none
 
-let handlePointerEvent msg js model =
+let handlePointerEvent msg (js: IJSRuntime) model =
     match msg with
     | NodePointerDown (nodeId, data) ->
         let currentTree = getCurrentTree model
         if nodeId = currentTree.Id then 
             { model with SelectedNodeId = Some nodeId; ActiveMenuId = None }, Cmd.none
         else
+            Haptics.trigger js HapticPattern.Tick
             { model with 
                 SelectedNodeId = Some nodeId
                 ActiveMenuId = None
@@ -160,6 +165,10 @@ let handlePointerEvent msg js model =
                             else node.Children |> List.tryPick findTarget
                     
                     let targetOpt = findTarget currentTree
+                    let targetIdOpt = targetOpt |> Option.map (fun t -> t.Id)
+                    if targetIdOpt <> model.DropTargetId && targetIdOpt.IsSome then
+                        Haptics.trigger js HapticPattern.Snap
+
                     let dropModeOpt = 
                         targetOpt |> Option.map (fun target ->
                             let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = target.Id)
@@ -170,7 +179,7 @@ let handlePointerEvent msg js model =
                         )
                     
                     { model with 
-                        DropTargetId = targetOpt |> Option.map (fun t -> t.Id)
+                        DropTargetId = targetIdOpt
                         DropTargetMode = dropModeOpt
                         DragPos = Some pt
                         LastMoveMs = Some nowMs }, Cmd.none
@@ -181,6 +190,7 @@ let handlePointerEvent msg js model =
                         let pt = toSvgCoords info (float data.ClientX) (float data.ClientY)
                         let dist = sqrt ((pt.SvgX - startPt.SvgX)**2.0 + (pt.SvgY - startPt.SvgY)**2.0)
                         if dist > 16.0 then 
+                            Haptics.trigger js HapticPattern.DragStart
                             { model with 
                                 DraggingId = Some pendingId
                                 PendingDragId = None
@@ -201,6 +211,7 @@ let handlePointerEvent msg js model =
                 let (rootWithoutSource, extracted) = TreeOps.extractNode sourceId currentTree
                 match rootWithoutSource, extracted with
                 | Some rs, Some ex ->
+                    Haptics.trigger js HapticPattern.Drop
                     let isTargetNestAnchor = m.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = targetId)
                     let reorderedTree = 
                         match mode with
@@ -227,6 +238,10 @@ let handlePointerEvent msg js model =
 let updateSub (js: IJSRuntime) msg model =
     match msg with
     | SelectNode idOpt -> 
+        match idOpt with
+        | Some id when model.SelectedNodeId <> Some id ->
+            Haptics.trigger js HapticPattern.Select
+        | _ -> ()
         { model with 
             SelectedNodeId = idOpt
             ActiveMenuId = None
@@ -240,8 +255,12 @@ let updateSub (js: IJSRuntime) msg model =
             DragPos = None }, Cmd.none
     | OpenMenu id -> { model with ActiveMenuId = Some id; SelectedNodeId = Some id; ConfirmingId = None }, Cmd.none
     | CloseMenu -> { model with ActiveMenuId = None }, Cmd.none
-    | SetLevel lvl -> { model with ActiveLevel = lvl; ActiveNest = None; ActiveMenuId = None; SelectedNodeId = None } |> Coloring.colorModel, Cmd.none
+    | SetLevel lvl -> 
+        if lvl <> model.ActiveLevel then
+            Haptics.trigger js HapticPattern.Tick
+        { model with ActiveLevel = lvl; ActiveNest = None; ActiveMenuId = None; SelectedNodeId = None } |> Coloring.colorModel, Cmd.none
     | SetNest nId -> 
+        Haptics.trigger js HapticPattern.Select
         let nestRootOpt = model.Nests |> Map.tryFind nId
         let parentLvl = 
             match model.NestAnchors |> Map.tryFind nId with
@@ -265,16 +284,21 @@ let updateSub (js: IJSRuntime) msg model =
             let currentTree = getCurrentTree model
             match TreeOps.findNodeById id currentTree with
             | Some node when action.Logic.IsApplicable model node ->
+                let haptic = if actionId = ActionIds.Delete then HapticPattern.Warning else HapticPattern.Select
+                Haptics.trigger js haptic
                 { model with ConfirmingId = Some id; ActiveActionId = actionId; ActiveMenuId = None; SelectedNodeId = Some id }, Cmd.none
             | _ -> model, Cmd.none
         | None -> model, Cmd.none
-    | CancelAction -> { model with ConfirmingId = None; ActiveActionId = ActionIds.NoAction }, Cmd.none
-    | ExecuteAction (id, actionId) -> handleExecuteAction id actionId model
+    | CancelAction -> 
+        Haptics.trigger js HapticPattern.Tick
+        { model with ConfirmingId = None; ActiveActionId = ActionIds.NoAction }, Cmd.none
+    | ExecuteAction (id, actionId) -> handleExecuteAction id actionId js model
     | AddChild parentId ->
         let isNestAnchor = model.NestAnchors |> Map.exists (fun _ anchorId -> anchorId = parentId)
         if isNestAnchor then
             model, Cmd.none
         else
+            Haptics.trigger js HapticPattern.Select
             let currentTree = getCurrentTree model
             let newChild = { Id = Guid.NewGuid(); Name = TreeOps.getRandomName(); Weight = TreeOps.getRandomWeight(); X = 0.0; Y = 0.0; Children = []; Level = model.ActiveLevel; Extrusion = 3.0; Base = None; Color = None }
             let newRoot = TreeOps.updateNodeById parentId (fun n -> { n with Children = n.Children @ [newChild] }) currentTree

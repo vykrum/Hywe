@@ -229,9 +229,30 @@
 
 
     <!-- Scripts -->
+    <script>
+        // Touch Haptics fallback bridge (ensures immediate availability before WASM initializes)
+        window.vibrateHaptic = function (pattern) {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try {
+                    if (typeof pattern === 'string') {
+                        switch (pattern) {
+                            case 'tick': case 'snap': navigator.vibrate(8); break;
+                            case 'dragStart': navigator.vibrate(12); break;
+                            case 'select': navigator.vibrate(15); break;
+                            case 'drop': case 'success': navigator.vibrate([15, 35, 20]); break;
+                            case 'delete': case 'warning': navigator.vibrate([25, 40, 25]); break;
+                            default: navigator.vibrate(10); break;
+                        }
+                    } else {
+                        navigator.vibrate(pattern);
+                    }
+                } catch (_) { }
+            }
+        };
+        window.triggerHaptic = window.vibrateHaptic;
+    </script>
     <script src="scripts/benchmarks.js" defer></script>
     <script src="_framework/blazor.webassembly.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js" defer></script>
     <script src="scripts/shell.js" defer></script>
     <script src="scripts/webgpu.js" defer></script>
     <script src="scripts/hymap.js" defer></script>

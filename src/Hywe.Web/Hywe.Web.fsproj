@@ -19,6 +19,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Common Infrastructure -->
+		<Compile Include="Common/Haptics.fs" />
+
 		<!-- Rendering Layer -->
 		<Compile Include="Rendering/Graphics.fs" />
 		<Compile Include="Rendering/Shaders.fs" />

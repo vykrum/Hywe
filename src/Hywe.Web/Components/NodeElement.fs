@@ -223,6 +223,10 @@ let private renderInlineControls
                 if not state.IsSelected then
                     dispatch (SelectNode (Some node.Id))
             )
+            on.click (fun _ -> 
+                if not state.IsSelected then
+                    dispatch (SelectNode (Some node.Id))
+            )
             on.input (fun e -> dispatch (UpdateName (node.Id, string e.Value)))
         }
 
@@ -234,6 +238,10 @@ let private renderInlineControls
             on.stopPropagation "pointerdown" true
             on.stopPropagation "click" true
             on.pointerdown (fun _ -> 
+                if not state.IsSelected then
+                    dispatch (SelectNode (Some node.Id))
+            )
+            on.click (fun _ -> 
                 if not state.IsSelected then
                     dispatch (SelectNode (Some node.Id))
             )
@@ -320,7 +328,12 @@ let renderNode
             on.stopPropagation "pointerdown" true
             on.stopPropagation "click" true
             on.pointerdown (fun _ -> 
-                dispatch (SelectNode (Some node.Id))
+                if model.SelectedNodeId <> Some node.Id then
+                    dispatch (SelectNode (Some node.Id))
+            )
+            on.click (fun _ -> 
+                if model.SelectedNodeId <> Some node.Id then
+                    dispatch (SelectNode (Some node.Id))
             )
             
             div {
