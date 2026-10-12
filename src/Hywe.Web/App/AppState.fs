@@ -711,6 +711,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let markers = modelWithSyntax.Tree.Levels.Keys |> Seq.map toMarker |> Seq.toList
         let newCache = Cache.init markers
         let model2 = { modelWithSyntax with 
+                        ActivePanel = LayoutPanel
                         IsHyweaving = true
                         NeedsHyweave = false
                         LayoutCache = newCache }
