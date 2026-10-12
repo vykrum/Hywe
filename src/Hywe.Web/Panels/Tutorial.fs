@@ -502,7 +502,11 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             div {
                 attr.``class`` "tutorial-dots"
                 for i in 0 .. totalSteps - 1 do
-                    span { attr.``class`` (if i = step then "tutorial-dot active" else "tutorial-dot") }
+                    button {
+                        attr.``class`` (if i = step then "tutorial-dot active" else "tutorial-dot")
+                        attr.title $"Jump to Step {i + 1}"
+                        on.click (fun _ -> dispatch (SetTutorialStep i))
+                    }
             }
             div {
                 attr.``class`` "tutorial-step-info"
@@ -562,9 +566,9 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     attr.title (if autoPlay then "Pause auto advance" else "Auto advance steps")
                     on.click (fun _ -> dispatch ToggleTutorialAutoPlay)
                     if autoPlay then
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg><span> Pause</span>"""
+                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="pointer-events:none;"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg><span style="pointer-events:none;"> Pause</span>"""
                     else
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span> Auto</span>"""
+                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="pointer-events:none;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span style="pointer-events:none;"> Auto</span>"""
                 }
             }
             div {
@@ -573,7 +577,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark tutorial-back"
                     attr.disabled isFirst
                     on.click (fun _ -> dispatch TutorialBack)
-                    rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
+                    rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
                     text " Back"
                 }
                 if isLast then
@@ -584,7 +588,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                             attr.title $"Proceed to {TutorialLevel.name nxt}"
                             on.click (fun _ -> dispatch (SetTutorialLevel nxt))
                             text $"Next: {TutorialLevel.shortName nxt} "
-                            rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
+                            rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
                         }
                     | None -> ()
 
@@ -592,14 +596,14 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-primary tutorial-next"
                         on.click (fun _ -> dispatch DismissTutorial)
                         text "Start designing "
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
+                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
                     }
                 else
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark tutorial-next"
                         on.click (fun _ -> dispatch TutorialNext)
                         text "Next "
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
+                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
                     }
             }
         }

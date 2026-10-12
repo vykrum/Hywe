@@ -721,6 +721,8 @@ type Message =
     | CommunityAuthorCachedLoaded of string
     /// <summary> Sets active tutorial difficulty level module. </summary>
     | SetTutorialLevel of TutorialLevel
+    /// <summary> Sets active step index within current tutorial level. </summary>
+    | SetTutorialStep of int
     /// <summary> Advances to next step in active tutorial. </summary>
     | TutorialNext
     /// <summary> Returns to previous step in active tutorial. </summary>
