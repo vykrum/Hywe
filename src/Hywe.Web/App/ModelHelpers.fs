@@ -23,6 +23,10 @@ let private iconShare model      = drawMenuIcon pathShare
 let private iconReset            = drawMenuIcon pathReset
 let private iconUndo             = drawMenuIcon pathUndo
 let private iconRedo             = drawMenuIcon pathRedo
+let private iconChevronUp        = drawMenuIcon pathChevronUp
+let private iconChevronDown      = drawMenuIcon pathChevronDown
+let private iconToggleTree isCollapsed = drawMenuIcon (if isCollapsed then pathChevronDown else pathChevronUp)
+let private iconProgram = drawIcon pathTree
 
 let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node) (dispatch: Message -> unit) (cls: string) (style: string) =
     match msg with
@@ -74,17 +78,11 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     concat {
         div {
-            attr.style "display:flex; width: 100%; gap:0px; padding: 0 4px; justify-content: flex-start; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
+            attr.style "display:flex; width: 100%; box-sizing: border-box; gap:0px; padding: 0 20px; justify-content: flex-start; align-items: center; position: relative; z-index: 3000; pointer-events: none;"
             
-            // 1. Editor Toggle & Undo/Redo (on the top left edge)
+            // 1. Undo/Redo & Tutorial (on the top left edge)
             div {
-                attr.style "margin-left: 4px; margin-top: 2px; pointer-events: auto; display: flex; align-items: center; gap: 4px;"
-                
-                toolbarBtn 
-                    (match model.EditorMode with Syntax -> "Switch to Node Editor" | Interactive -> "Switch to Code Editor")
-                    (Some ToggleEditorMode)
-                    (iconSwitchNode model)
-                    dispatch "" ""
+                attr.style "margin-top: 2px; pointer-events: auto; display: flex; align-items: center; gap: 4px;"
 
                 // Undo/Redo
                 let canUndo = model.UndoStack <> []
@@ -118,7 +116,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             | false -> empty()
             | true ->
                 div {
-                    attr.style "margin-left: auto; margin-right: 10px; margin-top: 6px; pointer-events: auto; display: flex; align-items: center;"
+                    attr.style "margin-left: auto; margin-top: 6px; pointer-events: auto; display: flex; align-items: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
                         attr.title "Install as an App"
@@ -287,34 +285,33 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
 
 let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
     match model.EditorMode with
-        | Syntax ->
-            div {
-                attr.id "hywe-input-syntax"
-                attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 5px 10px 5px 30px;"
-                textarea {
-                    attr.``class`` "hyweSyntax"
-                    attr.style "min-height: 185px;"
-                    attr.key (model.SrcOfTrth.GetHashCode().ToString())
-                    attr.value model.SrcOfTrth
-                    on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
-                }
+    | Syntax ->
+        div {
+            attr.id "hywe-input-syntax"
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 28px 10px 5px 30px;"
+            textarea {
+                attr.``class`` "hyweSyntax"
+                attr.style "min-height: 250px; width: 100%;"
+                attr.key (model.SrcOfTrth.GetHashCode().ToString())
+                attr.value model.SrcOfTrth
+                on.change (fun e -> dispatch (SetSrcOfTrth (unbox<string> e.Value)))
             }
-        | Interactive ->
-            div {
-                attr.id "hywe-input-interactive"
-                attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
-                match model.TutorialStep with
-                | Some step ->
-                    Tutorial.viewTutorialBanner model.TutorialLevel step model.TutorialAutoPlay dispatch
-                    let stepDef = Tutorial.getStepDef model.TutorialLevel step
-                    let highlightClass = Tutorial.badgeCssClass stepDef.Badge
-                    div {
-                        attr.``class`` (if highlightClass <> "" then $"tutorial-tree-wrapper {highlightClass}" else "tutorial-tree-wrapper")
-                        NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
-                    }
-                | None ->
+        }
+    | Interactive ->
+        div {
+            attr.id "hywe-input-interactive"
+            attr.style "width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 0 10px; gap: 5px; flex: 1; overflow: hidden;"
+            match model.TutorialStep with
+            | Some step ->
+                let stepDef = Tutorial.getStepDef model.TutorialLevel step
+                let highlightClass = Tutorial.badgeCssClass stepDef.Badge
+                div {
+                    attr.``class`` (if highlightClass <> "" then $"tutorial-tree-wrapper {highlightClass}" else "tutorial-tree-wrapper")
                     NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
-            }
+                }
+            | None ->
+                NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
+        }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
     let syntaxAltered = model.NeedsHyweave && not model.IsHyweaving
@@ -365,6 +362,51 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
         }
     }
 
+let private viewBoundaryWeaveButton (model: Model) (dispatch: Message -> unit) =
+    let isChanged = model.NeedsHyweave && not model.IsHyweaving
+    let buttonClass = 
+        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-dark hyWeaveButton"
+        match model.IsHyweaving with 
+        | true -> baseClass + " stop-state" 
+        | false -> match isChanged with true -> baseClass + " needs-update" | false -> baseClass
+
+    div {
+        attr.``class`` "hyweave-container"
+        button {
+            attr.id "hywe-boundary-hyweave"
+            attr.``class`` buttonClass
+            attr.disabled model.IsCancelling 
+
+            on.click (fun _ -> 
+                match model.IsHyweaving with
+                | true -> dispatch CancelBatch
+                | false -> dispatch StartHyweave)
+            
+            match model.IsHyweaving with
+            | true ->
+                span { attr.key "hy-spinner"; attr.``class`` "spinner" }
+                span { 
+                    attr.key "hy-labels"
+                    attr.``class`` "label-stack"
+                    span { attr.key "weaving-lbl"; attr.``class`` "weaving-label"; text " h y W E A V E i n g . . ." }
+                    span { 
+                        attr.key "stop-lbl"
+                        attr.``class`` "stop-label"
+                        span { attr.style "color: #E67E22; font-weight: bold;white-space: pre"; text " S T O P " } 
+                        text "h y W E A V E i n g" 
+                    }
+                }
+            | false -> 
+                match isChanged with
+                | true ->
+                    span { attr.``class`` "hyweave-prompt"; text "boundary altered" }
+                    span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
+                    span { attr.``class`` "hyweave-prompt"; text "to apply changes" }
+                | false -> 
+                    text "h y W E A V E"
+        }
+    }
+
 let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
     let tutBadge =
         match model.TutorialStep with
@@ -373,6 +415,7 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
 
     let tabStripClass =
         match tutBadge with
+        | TabTreePanel   -> "hywe-tab-strip tutorial-hl-tab-tree"
         | TabLayoutPanel -> "hywe-tab-strip tutorial-hl-tab-layout"
         | TabViewPanel   -> "hywe-tab-strip tutorial-hl-tab-view"
         | TabBatchPanel  -> "hywe-tab-strip tutorial-hl-tab-batch"
@@ -419,11 +462,26 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
                         drawIcon path
             }
 
-        tab "Boundary" pathBoundary BoundaryPanel NoBadge
+        let divider () =
+            div {
+                attr.``class`` "hywe-tab-divider"
+            }
+
+        // Inputs
+        tab "Program"  pathTree          TreePanel     TabTreePanel
+        tab "Boundary" pathBoundary      BoundaryPanel NoBadge
+
+        divider ()
+
+        // Analysis / Visualizations
         tab "Layout"   pathLayout        LayoutPanel   TabLayoutPanel
         tab "Analyze"  pathAnalyze       AnalyzePanel  NoBadge
         tab "3D"       path3D            ViewPanel     TabViewPanel
         tab "Batch"    pathBatch         BatchPanel    TabBatchPanel
+
+        divider ()
+
+        // Outputs
         tab "Teach"    pathTeach         TeachPanel    NoBadge
         tab "Report"   pathReport        ReportPanel   NoBadge
     }
@@ -514,16 +572,47 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         }
 
         match model.ActivePanel with
-        | BoundaryPanel -> empty()
+        | TreePanel ->
+            div {
+                attr.id "hywe-tree-panel"
+                attr.style "display: flex; flex-direction: column; align-items: center; width: 100%; gap: 10px; position: relative;"
+                
+                button {
+                    attr.id "tree-floating-mode-btn"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat tree-floating-toggle-btn"
+                    attr.title (match model.EditorMode with Syntax -> "Switch to Interactive Node Graph" | Interactive -> "Switch to DSL Code Editor")
+                    on.click (fun _ -> dispatch ToggleEditorMode)
+                    iconSwitchNode model
+                }
+
+                viewEditorPanel model dispatch
+                viewHyweButton model dispatch
+            }
+
+        | BoundaryPanel ->
+            div {
+                attr.style "display: flex; flex-direction: column; align-items: center; width: 100%; gap: 10px; margin-top: 15px;"
+                viewBoundaryWeaveButton model dispatch
+            }
 
         | LayoutPanel ->
             div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
+                attr.id "hywe-layout-panel"
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; position: relative; width: 100%;"
+
                 div {
                     attr.id "hywe-sequence-selector"
                     attr.``class`` (if isSliderTutorialHl then "tutorial-hl-slider" else "")
                     attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
+                }
+
+                button {
+                    attr.id "layout-floating-tree-btn"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat layout-floating-tree-btn"
+                    attr.title "Switch to Program Panel"
+                    on.click (fun _ -> dispatch (SetActivePanel TreePanel))
+                    iconProgram
                 }
                 
                 let filteredCxls, filteredClrs, _, bgCxl, wtmkCxls = getFilteredGeometries ()
@@ -637,10 +726,19 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     fCxls, fClrs, fAvls, Coxel.cxlAdj fCxls, model.Derived.cxSol1
 
             div {
-                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px;"
+                attr.id "hywe-analyze-panel"
+                attr.style "display: flex; flex-direction: column; align-items: center; gap: 15px; position: relative; width: 100%;"
                 div {
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
+                }
+
+                button {
+                    attr.id "analyze-floating-tree-btn"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat layout-floating-tree-btn"
+                    attr.title "Switch to Program Panel"
+                    on.click (fun _ -> dispatch (SetActivePanel TreePanel))
+                    iconProgram
                 }
                 
                 let editor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
@@ -685,11 +783,20 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; max-height: 70vh; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
                     
-                    // Floating Lock button
+                    // Floating Program Switch button
+                    button {
+                        attr.id "view-floating-tree-btn"
+                        attr.``class`` "hywe-btn hywe-btn-circle hywe-btn-flat view-floating-tree-btn"
+                        attr.title "Switch to Program Panel"
+                        on.click (fun _ -> dispatch (SetActivePanel TreePanel))
+                        iconProgram
+                    }
+
+                    // Floating Lock button (shifted to the left of Program button)
                     button {
                         attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-flat layout-download-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
                         attr.title (match model.ViewLocked with true -> "View Locked: Captured for cover" | false -> "Lock 3D view for report cover")
-                        attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
+                        attr.style "position: absolute; top: 10px; right: 50px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
                         on.pointerdown (fun _ -> dispatch ToggleViewLock)
                         match model.ViewLocked with
                         | true -> drawMenuIcon pathLock
@@ -779,9 +886,10 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
 let view model dispatch (js: IJSRuntime) =
     concat {
         viewNodeCodeButtons model dispatch js
-        viewEditorPanel model dispatch
-        viewHyweButton model dispatch
         viewSessionMetadataBar model dispatch
+        match model.TutorialStep with
+        | Some step -> Tutorial.viewTutorialBanner model.TutorialLevel step model.TutorialAutoPlay dispatch
+        | None -> empty()
         viewHyweTabs model dispatch 
         viewHywePanels model dispatch js
         Overlays.viewConfirmOverlay model dispatch

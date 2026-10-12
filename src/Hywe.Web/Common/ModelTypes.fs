@@ -12,6 +12,8 @@ open System
 /// Specifies the currently active main UI panel in the application shell.
 /// </summary>
 type ActivePanel =
+    /// <summary> Interactive node tree and space program editor panel. </summary>
+    | TreePanel
     /// <summary> Boundary &amp; site contour editor panel. </summary>
     | BoundaryPanel
     /// <summary> Interactive node tree and layout solver panel. </summary>
@@ -477,6 +479,8 @@ type Model =
         IsPresetsCollapsed: bool
         /// <summary> Whether workspace panel drawer is collapsed. </summary>
         IsWorkspaceCollapsed: bool
+        /// <summary> Whether the interactive tree or syntax editor is collapsed into a compact ribbon. </summary>
+        IsTreeCollapsed: bool
         /// <summary> Pending action confirmation modal state. </summary>
         PendingConfirm: ConfirmAction option
         /// <summary> History stack of undoable snapshots. </summary>
@@ -645,6 +649,10 @@ type Message =
     | TogglePresetsCollapse
     /// <summary> Toggles collapsed state of workspace panel drawer. </summary>
     | ToggleWorkspaceCollapse
+    /// <summary> Toggles collapsed state of the tree / syntax editor. </summary>
+    | ToggleTreeCollapse
+    /// <summary> Explicitly sets collapsed state of the tree / syntax editor. </summary>
+    | SetTreeCollapse of bool
     /// <summary> Navigates to onboarding intro screen. </summary>
     | TransitionToIntro
     /// <summary> Navigates to main workspace screen. </summary>

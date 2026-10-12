@@ -14,6 +14,7 @@ let parseSqn (name: string) =
 // Panel Icons (Original Silhouette Style)
 let pathBoundaryBound   = "M4 7l14-3 2 14-14 1L4 7zm1.6 1.7l1.2 8.1 10.6-.8-1.5-10.7-10.3 3.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
 let pathBoundaryUnbound = "M4 12.5l1.6-.1-.2-4.7 4.8-1-.3-1.6L4 6.3z M13.8 5.1l.3 1.6 4.6-1-.5 4.8 1.6-.1.6-6.4z M19.7 12.5l-1.6.1.5 4.7-4.8.3.1 1.6 6.3-.4z M10.2 18.8l-.1-1.6-4.6.3.5-4.8-1.6.1-.6 6.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
+let pathTree            = "M10 2h4v4h-4z M4 16h4v4H4z M16 16h4v4h-4z M11.2 6v4H6v6h1.6v-4.4h8.8V16H18v-6h-5.2V6z"
 let pathBoundary        = pathBoundaryBound
 let pathLayout   = "M12 2l3.5 2v4l-3.5 2-3.5-2V4l3.5-2z M7 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z M17 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z"
 let pathAnalyze  = "M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"
@@ -33,6 +34,8 @@ let pathUndo       = "M10 15l-5-5 5-5 M5 10h12a5 5 0 015 5v2"
 let pathRedo       = "M14 15l5-5-5-5 M19 10H7a5 5 0 00-5 5v2"
 let pathLock       = "M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z M7 11V7a5 5 0 0110 0v4"
 let pathUnlock     = "M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z M7 11V7a5 5 0 019.9-1"
+let pathChevronUp   = "M18 15l-6-6-6 6"
+let pathChevronDown = "M6 9l6 6 6-6"
 
 
 let drawIcon path =

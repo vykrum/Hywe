@@ -419,6 +419,7 @@ let private clearBackup (js: IJSRuntime) =
 /// <param name="panel">The active panel value.</param>
 /// <returns>String representation of the panel key (e.g. "boundary", "layout", "analyze", "3d", "batch", "teach", "report").</returns>
 let panelToString = function
+    | TreePanel -> "tree"
     | BoundaryPanel -> "boundary"
     | LayoutPanel -> "layout"
     | AnalyzePanel -> "analyze"
@@ -434,6 +435,7 @@ let panelToString = function
 /// <returns><c>Some ActivePanel</c> if matched; otherwise <c>None</c>.</returns>
 let stringToPanel (s: string) = 
     match s.Trim().ToLower() with
+    | "tree" -> Some TreePanel
     | "boundary" -> Some BoundaryPanel
     | "layout" -> Some LayoutPanel
     | "analyze" -> Some AnalyzePanel
