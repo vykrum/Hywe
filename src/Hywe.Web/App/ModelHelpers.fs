@@ -26,7 +26,6 @@ let private iconRedo             = drawMenuIcon pathRedo
 let private iconChevronUp        = drawMenuIcon pathChevronUp
 let private iconChevronDown      = drawMenuIcon pathChevronDown
 let private iconToggleTree isCollapsed = drawMenuIcon (if isCollapsed then pathChevronDown else pathChevronUp)
-let private iconProgram = drawIcon pathTree
 
 let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node) (dispatch: Message -> unit) (cls: string) (style: string) =
     match msg with
@@ -139,7 +138,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
             div {
                 attr.``class`` (match isWorkspaceCollapsed with true -> "preset-drawer collapsed" | false -> "preset-drawer")
-                attr.style "top: 65px;"
+                attr.style "top: 132px;"
                 
                 div {
                     attr.``class`` "preset-drawer-content"
@@ -437,9 +436,11 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
             let hlClass = match isHighlighted with true -> " tutorial-hl-tab" | false -> ""
 
             let isBoundaryTab = panel = BoundaryPanel
+            let isProgramTab = panel = TreePanel
             let statusClass =
                 if isBoundaryTab then
                     if isBoundaryActive then " boundary-bound" else " boundary-unbound"
+                elif isProgramTab then " tab-program"
                 else ""
 
             let dynamicTitle =
@@ -452,14 +453,17 @@ let private viewHyweTabs (model: Model) (dispatch: Message -> unit) =
                 attr.``class`` ("hywe-tab-btn" + activeClass + hlClass + statusClass)
                 on.click (fun _ -> dispatch (SetActivePanel panel))
                 
-                // Show text if active or highlighted, icon if inactive
-                match isActive || isHighlighted with
-                | true -> text title
-                | false ->
-                    if isBoundaryTab then
-                        drawBoundaryIcon isBoundaryActive
-                    else
-                        drawIcon path
+                if isProgramTab then
+                    drawTreeIcon ()
+                else
+                    // Show text if active or highlighted, icon if inactive
+                    match isActive || isHighlighted with
+                    | true -> text title
+                    | false ->
+                        if isBoundaryTab then
+                            drawBoundaryIcon isBoundaryActive
+                        else
+                            drawIcon path
             }
 
         let divider () =
@@ -606,14 +610,6 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
-
-                button {
-                    attr.id "layout-floating-tree-btn"
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat layout-floating-tree-btn"
-                    attr.title "Switch to Program Panel"
-                    on.click (fun _ -> dispatch (SetActivePanel TreePanel))
-                    iconProgram
-                }
                 
                 let filteredCxls, filteredClrs, _, bgCxl, wtmkCxls = getFilteredGeometries ()
 
@@ -732,14 +728,6 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.id "hywe-sequence-selector"; attr.style "width: 100%;"
                     sequenceSlider currentSqn minIdx maxIdx (fun i -> SetSqnIndex i |> dispatch)
                 }
-
-                button {
-                    attr.id "analyze-floating-tree-btn"
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat layout-floating-tree-btn"
-                    attr.title "Switch to Program Panel"
-                    on.click (fun _ -> dispatch (SetActivePanel TreePanel))
-                    iconProgram
-                }
                 
                 let editor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
                 
@@ -783,20 +771,11 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 div {
                     attr.style "width: 95%; max-width: 100%; aspect-ratio: 3/2; max-height: 70vh; position: relative; overflow: hidden; background: #f9f9f9; border-radius: 8px;"
                     
-                    // Floating Program Switch button
-                    button {
-                        attr.id "view-floating-tree-btn"
-                        attr.``class`` "hywe-btn hywe-btn-circle hywe-btn-flat view-floating-tree-btn"
-                        attr.title "Switch to Program Panel"
-                        on.click (fun _ -> dispatch (SetActivePanel TreePanel))
-                        iconProgram
-                    }
-
-                    // Floating Lock button (shifted to the left of Program button)
+                    // Floating Lock button
                     button {
                         attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-flat layout-download-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
                         attr.title (match model.ViewLocked with true -> "View Locked: Captured for cover" | false -> "Lock 3D view for report cover")
-                        attr.style "position: absolute; top: 10px; right: 50px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
+                        attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
                         on.pointerdown (fun _ -> dispatch ToggleViewLock)
                         match model.ViewLocked with
                         | true -> drawMenuIcon pathLock

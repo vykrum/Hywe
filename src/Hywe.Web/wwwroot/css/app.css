@@ -597,7 +597,7 @@ input[type=number] {
 
 .preset-drawer {
     position: absolute;
-    top: 65px;
+    top: 132px;
     left: 0;
     z-index: 1802;
     display: flex;
@@ -702,67 +702,6 @@ input[type=number] {
     color: #000;
 }
 
-/* Floating Program/Tree Button (below slider, top right of Layout area) */
-.layout-floating-tree-btn {
-    position: absolute;
-    top: 48px;
-    right: 18px;
-    z-index: 25;
-    padding: 4px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    box-shadow: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.layout-floating-tree-btn svg {
-    width: 1.3rem;
-    height: 1.3rem;
-    fill: currentColor;
-}
-
-.layout-floating-tree-btn:hover {
-    color: #000;
-    background: rgba(0, 0, 0, 0.04);
-}
-
-/* Floating Program/Tree Button (top right of 3D Viewport) */
-.view-floating-tree-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border-radius: 50%;
-    z-index: 10;
-    border: none;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(4px);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #555;
-    cursor: pointer;
-    transition: color 0.15s ease, background 0.15s ease;
-}
-
-.view-floating-tree-btn svg {
-    width: 1.15rem;
-    height: 1.15rem;
-    fill: currentColor;
-}
-
-.view-floating-tree-btn:hover {
-    color: #000;
-    background: rgba(255, 255, 255, 0.9);
-}
 
 .sliver-handle span {
     color: #555;
@@ -2115,8 +2054,8 @@ video.fullscreen-bg {
     width: 100%;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    padding: 4px 0;
+    gap: 6px;
+    padding: 3px 0;
     /* Slightly more padding to breathe with borders */
     border-top: 1px solid rgba(0, 0, 0, 0.08);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -2125,7 +2064,7 @@ video.fullscreen-bg {
 
 .hywe-tab-divider {
     width: 1px;
-    height: 14px;
+    height: 12px;
     background: rgba(0, 0, 0, 0.14);
     border-radius: 1px;
     flex-shrink: 0;
@@ -2136,7 +2075,7 @@ video.fullscreen-bg {
     border: 1px solid transparent;
     /* Keeps layout stable */
     outline: none;
-    padding: 4px 8px;
+    padding: 3px 5px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -2146,15 +2085,15 @@ video.fullscreen-bg {
     transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     /* Typography for active text */
     font-family: 'Optima', sans-serif;
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .hywe-tab-btn svg {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 1.15rem;
+    height: 1.15rem;
     fill: currentColor;
 }
 
@@ -2162,25 +2101,66 @@ video.fullscreen-bg {
 .hywe-tab-btn.active {
     background: rgba(0, 0, 0, 0.03);
     color: #000 !important;
-    padding: 0 8px;
-    min-width: 32px;
+    padding: 0 6px;
+    min-width: 28px;
 }
 
-/* Boundary Tab Bound & Unbound Status Styling */
-.hywe-tab-btn.boundary-bound.active {
-    color: #10b981 !important;
+/* Prominent Program Tab (Honeycomb Canopy Tree - Bee Themed) */
+.hywe-tab-btn.tab-program {
+    color: #1e293b;
+    font-weight: 800;
 }
 
-.hywe-tab-btn.boundary-unbound.active {
-    color: #ef4444 !important;
+.hywe-tab-btn.tab-program svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.14));
 }
 
-.hywe-tab-btn.boundary-bound:hover {
-    color: #059669;
+.hywe-tab-btn.tab-program .tree-icon-canopy {
+    fill: #f59e0b;
+    transition: fill 0.2s ease;
 }
 
-.hywe-tab-btn.boundary-unbound:hover {
-    color: #dc2626;
+.hywe-tab-btn.tab-program .tree-icon-trunk {
+    fill: #18181b;
+    transition: fill 0.2s ease;
+}
+
+.hywe-tab-btn.tab-program:hover .tree-icon-canopy {
+    fill: #d97706;
+}
+
+.hywe-tab-btn.tab-program:hover .tree-icon-trunk {
+    fill: #000000;
+}
+
+.hywe-tab-btn.tab-program:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.hywe-tab-btn.tab-program.active {
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.hywe-tab-btn.tab-program.active .tree-icon-trunk {
+    fill: #000000;
+}
+
+@media (max-width: 440px) {
+    .hywe-tab-strip {
+        gap: 4px;
+        padding: 3px 6px;
+    }
+    .hywe-tab-btn {
+        padding: 2px 4px;
+        font-size: 8px;
+    }
+    .hywe-tab-btn svg {
+        width: 1.05rem;
+        height: 1.05rem;
+    }
 }
 
 
@@ -3625,7 +3605,7 @@ video.fullscreen-bg {
 /* Mirrored right-edge Drawer Handle Button (matching Waggle Exchange) */
 .specs-drawer-handle {
     position: absolute;
-    top: 65px;
+    top: 132px;
     right: 0;
     z-index: 1802;
     width: 16px;

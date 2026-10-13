@@ -14,7 +14,9 @@ let parseSqn (name: string) =
 // Panel Icons (Original Silhouette Style)
 let pathBoundaryBound   = "M4 7l14-3 2 14-14 1L4 7zm1.6 1.7l1.2 8.1 10.6-.8-1.5-10.7-10.3 3.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
 let pathBoundaryUnbound = "M4 12.5l1.6-.1-.2-4.7 4.8-1-.3-1.6L4 6.3z M13.8 5.1l.3 1.6 4.6-1-.5 4.8 1.6-.1.6-6.4z M19.7 12.5l-1.6.1.5 4.7-4.8.3.1 1.6 6.3-.4z M10.2 18.8l-.1-1.6-4.6.3.5-4.8-1.6.1-.6 6.4z M4 4.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M18 1.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M20 15.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z M6 16.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"
-let pathTree            = "M10 2h4v4h-4z M4 16h4v4H4z M16 16h4v4h-4z M11.2 6v4H6v6h1.6v-4.4h8.8V16H18v-6h-5.2V6z"
+let pathTreeCanopy      = "M12 1.5l3.8 2.2v4.4L12 10.3 8.2 8.1V3.7z M5.8 7.5l3.3 1.9v3.8L5.8 15.1 2.5 13.2V9.4z M18.2 7.5l3.3 1.9v3.8L18.2 15.1 14.9 13.2V9.4z"
+let pathTreeTrunk       = "M11 11.2h2v3.6l4.5 2.6-1 1.7-3.5-2V20l3 2.5H8L11 20v-2.9l-3.5 2-1-1.7 4.5-2.6z"
+let pathTree            = pathTreeCanopy + " " + pathTreeTrunk
 let pathBoundary        = pathBoundaryBound
 let pathLayout   = "M12 2l3.5 2v4l-3.5 2-3.5-2V4l3.5-2z M7 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z M17 11.5l3.5 2v4l-3.5 2-3.5-2v-4l3.5-2z"
 let pathAnalyze  = "M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"
@@ -45,34 +47,48 @@ let drawIcon path =
         elt "path" { "d" => path }
     }
 
+let drawTreeIcon () =
+    svg {
+        "viewBox" => "0 0 24 24"
+        attr.style "width: 1.3rem; height: 1.3rem;"
+        elt "path" {
+            "d" => pathTreeCanopy
+            "class" => "tree-icon-canopy"
+            "fill" => "#f59e0b"
+        }
+        elt "path" {
+            "d" => pathTreeTrunk
+            "class" => "tree-icon-trunk"
+            "fill" => "#18181b"
+        }
+    }
+
 /// <summary>
-/// Renders the boundary icon reflecting active bound state (subtle green)
-/// or inactive unbound state (muted polygon with subtle red diagonal slash).
+/// Renders the boundary icon with no color fill (inherits standard icon color)
+/// and a very subtle diagonal slash when unbound.
 /// </summary>
 let drawBoundaryIcon (isBound: bool) =
     svg {
         "viewBox" => "0 0 24 24"
-        attr.style "width: 1.3rem; height: 1.3rem;"
+        attr.style "width: 1.3rem; height: 1.3rem; fill: currentColor;"
         match isBound with
         | true ->
             elt "path" {
                 "d" => pathBoundary
-                "fill" => "#10b981"
             }
         | false ->
             concat {
                 elt "path" {
                     "d" => pathBoundary
-                    "fill" => "#94a3b8"
-                    "opacity" => "0.55"
+                    "opacity" => "0.5"
                 }
                 elt "line" {
                     "x1" => "2.5"
                     "y1" => "3.5"
                     "x2" => "21.5"
                     "y2" => "20.5"
-                    "stroke" => "#ef4444"
-                    "stroke-width" => "1.8"
+                    "stroke" => "rgba(220, 38, 38, 0.45)"
+                    "stroke-width" => "1.2"
                     "stroke-linecap" => "round"
                 }
             }
