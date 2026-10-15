@@ -18,6 +18,7 @@ wwwroot/css/*.map
 .idea/
 *.swp
 *.swo
+*.code-workspace
 
 # ---- Node / JS Tooling ---
 node_modules/
