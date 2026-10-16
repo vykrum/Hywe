@@ -63,7 +63,7 @@ AI agents modifying or reviewing this codebase must maintain the integrity of th
     *   `B`: Outer structural boundaries.
     *   `I`: Islands / Void regions.
     *   `T`: Thickness / Layer heights.
-*   **Rules**: Base34 decoding uses custom mapping arrays in `Lexel.fs`. Ensure all new attributes introduced to the parser have valid character bindings that do not conflict with the existing character alphabet `0-9` and `A-W` (excluding ambiguous characters like `I` and `O`).
+*   **Rules**: Base34 decoding uses custom mapping arrays in `Lexel.fs`. Ensure all new attributes introduced to the parser have valid character bindings that do not conflict with the existing character alphabet `0-9` and `A-Z` (excluding ambiguous characters like `I` and `O`).
 
 ### 5. Integer-Based Partitioning
 *   **Concepts**: All grid definitions, coordinates, and intersection calculations must be executed strictly with integer coordinates to prevent browser-specific rounding discrepancies.

@@ -13,3 +13,14 @@
 # Blazor / WebAssembly (Bolero) binary safety
 *.wasm binary
 *.dll binary
+*.png binary
+
+# GitHub Linguist Language Configuration
+# Ensures GitHub identifies Hywe as a 100% F# project
+*.fs text diff=fsharp linguist-language=F# linguist-detectable=true
+*.fsproj text linguist-detectable=true
+
+*.js linguist-detectable=false
+*.css linguist-detectable=false
+*.html linguist-detectable=false
+src/Hywe.Web/wwwroot/** linguist-detectable=false
