@@ -27,7 +27,7 @@ The HYWE ecosystem consists of three distinct, non-overlapping components that f
 * **Definition**: Hynteract is the serverless architectural data ingestion and structuring layer of the HYWE ecosystem.
 * **Role**: Probabilistic and linguistic mapping. Serves as the pipeline integration layer that translates natural language prompts into structural spatial tokens.
 * **Stack**: Serverless JavaScript / Node.js API handlers deployed via Vercel.
-* **Privacy Status**: Private repository (`github.com/vykrum/Hynteract`). Accessible only to authorized system instances via secure API keys (`X-Hywe-Key`).
+* **Access & Security**: Open-source repository (`github.com/vykrum/Hynteract`); ingestion endpoint protected via secure API key (`X-Hywe-Key`).
 * **Operational Flow**: Receives `HYWE Syntax` from client sessions, pairs it with validated linguistic descriptions and session metadata, and commits structured JSON Lines (`.jsonl`) to Hugging Face.
 
 ### 3. [HYWE Spatial Dataset](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset) (Spatial Dataset)
