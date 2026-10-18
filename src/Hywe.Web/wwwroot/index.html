@@ -6,11 +6,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Title and SEO -->
-    <title>HYWE – Computational Spatial Design & Spatial Layout Generation</title>
+    <title>HYWE — Official Site | Computational Spatial Design</title>
     <meta name="description"
-        content="HYWE is a computational spatial design environment for early-stage architecture, generating and exploring spatial layouts from spatial relationships, hierarchy, sequence and constraints." />
+        content="HYWE (Hygrid Woven Ensemble) is an open computational spatial design environment for early-stage architecture. Generate and explore spatial configurations from relational graphs, sequence, and constraints." />
     <link rel="canonical" href="https://hywe.in/" />
     <meta name="author" content="Vikram Subbaiah" />
+    <meta property="article:modified_time" content="2026-10-18T00:00:00Z" />
+
+    <!-- Identity Verification & Canonical Profiles -->
+    <link rel="me" href="https://www.linkedin.com/company/hywein" />
+    <link rel="me" href="https://github.com/vykrum/Hywe" />
+    <link rel="me" href="https://x.com/_hywe_" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,9 +27,9 @@
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="HYWE" />
-    <meta property="og:title" content="HYWE – Computational Spatial Design Environment" />
+    <meta property="og:title" content="HYWE — Official Site | Computational Spatial Design" />
     <meta property="og:description"
-        content="Explore architectural spatial configurations generated from relational graphs, hierarchy, sequence and constraints." />
+        content="HYWE is an open computational spatial design environment for early-stage architecture. Generate and explore architectural spatial configurations from relational graphs, hierarchy, sequence, and constraints." />
     <meta property="og:url" content="https://hywe.in/" />
     <meta property="og:image" content="https://hywe.in/images/hyweLogoBanner.png" />
     <meta property="og:image:width" content="1600" />
@@ -32,39 +38,89 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="HYWE – Computational Spatial Design Environment" />
+    <meta name="twitter:title" content="HYWE — Official Site | Computational Spatial Design" />
     <meta name="twitter:description"
-        content="Explore architectural spatial configurations generated from relational graphs, hierarchy, sequence and constraints." />
+        content="HYWE is an open computational spatial design environment for early-stage architecture. Generate and explore architectural spatial configurations from relational graphs, hierarchy, sequence, and constraints." />
     <meta name="twitter:image" content="https://hywe.in/images/hyweLogoBanner.png" />
     <meta name="twitter:site" content="@_hywe_" />
 
-    <!-- JSON-LD Structured Data Schema for HYWE -->
     <!-- JSON-LD Structured Data Schema for HYWE -->
     <script type="application/ld+json" id="hywe-schema">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "WebSite",
+          "@id": "https://hywe.in/#website",
+          "url": "https://hywe.in/",
+          "name": "HYWE",
+          "alternateName": [
+            "H Y W E",
+            "Hygrid Woven Ensemble",
+            "HYWE Spatial Design"
+          ],
+          "description": "HYWE is an open computational spatial design environment for early-stage architecture, generating spatial layouts deterministically from topological relationships, hierarchy, sequence, and constraints.",
+          "publisher": {
+            "@id": "https://hywe.in/#organization"
+          },
+          "inLanguage": "en-IN",
+          "dateModified": "2026-10-18T00:00:00Z"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://hywe.in/#organization",
+          "name": "HYWE",
+          "alternateName": [
+            "H Y W E",
+            "Hygrid Woven Ensemble"
+          ],
+          "url": "https://hywe.in/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://hywe.in/images/web-app-manifest-512x512.png",
+            "width": 512,
+            "height": 512
+          },
+          "sameAs": [
+            "https://www.linkedin.com/company/hywein",
+            "https://github.com/vykrum/Hywe",
+            "https://x.com/_hywe_",
+            "https://huggingface.co/datasets/vykrum/hywe-spatial-dataset"
+          ],
+          "founder": {
+            "@type": "Person",
+            "@id": "https://github.com/vykrum#person",
+            "name": "Vikram Subbaiah",
+            "url": "https://github.com/vykrum",
+            "sameAs": [
+              "https://orcid.org/0009-0000-2438-7308"
+            ]
+          }
+        },
+        {
           "@type": "WebApplication",
           "@id": "https://hywe.in/#software",
           "applicationCategory": "DesignApplication",
           "applicationSubCategory": "Computational Spatial Design",
           "name": "HYWE – Computational Spatial Design Environment",
-          "alternateName": ["HYWE", "Hygrid Woven Ensemble"],
-          "url": "https://hywe.in",
+          "alternateName": ["HYWE", "H Y W E", "Hygrid Woven Ensemble"],
+          "url": "https://hywe.in/",
           "logo": "https://hywe.in/images/web-app-manifest-192x192.png",
+          "provider": {
+            "@id": "https://hywe.in/#organization"
+          },
           "creator": {
             "@type": "Person",
             "@id": "https://github.com/vykrum#person",
             "name": "Vikram Subbaiah",
             "url": "https://github.com/vykrum",
             "sameAs": [
-              "https://orcid.org/0009-0000-2438-7308",
-              "https://linkedin.hywe.in"
+              "https://orcid.org/0009-0000-2438-7308"
             ]
           },
           "description": "HYWE is a computational spatial design environment for early-stage architecture, generating and exploring spatial layouts deterministically from spatial relationships, hierarchy, sequence and constraints.",
           "inLanguage": "en",
+          "dateModified": "2026-10-18T00:00:00Z",
           "about": [
             "Computational Spatial Design",
             "Deterministic Spatial Synthesis",
@@ -76,7 +132,7 @@
             "Discrete Integer Lattice Packing"
           ],
           "keywords": [ 
-            "computational spatial design", "computational architecture", "spatial layout generation",
+            "HYWE", "H Y W E", "computational spatial design", "computational architecture", "spatial layout generation",
             "architectural programming", "procedural space planning", "relational space planning",
             "deterministic spatial synthesis", "spatial hierarchy", "vertical spatial hierarchy",
             "spatial configuration", "discrete integer lattice", "integer lattice packing",
@@ -102,7 +158,7 @@
           "documentation": "https://wiki.hywe.in",
           "sameAs": [
             "https://github.com/vykrum/Hywe",
-            "https://linkedin.hywe.in",
+            "https://www.linkedin.com/company/hywein",
             "https://x.com/_hywe_",
             "https://huggingface.co/datasets/vykrum/hywe-spatial-dataset"
           ],
@@ -219,6 +275,8 @@
                     <li><a href="https://wiki.hywe.in/Benchmarks">HYWE Benchmarks</a></li>
                     <li><a href="https://repo.hywe.in">HYWE Source Code</a></li>
                     <li><a href="https://data.hywe.in">HYWE Spatial Datasets</a></li>
+                    <li><a href="https://www.linkedin.com/company/hywein" rel="me">HYWE on LinkedIn</a></li>
+                    <li><a href="https://github.com/vykrum/Hywe" rel="me">HYWE on GitHub</a></li>
                 </ul>
             </nav>
         </section>
