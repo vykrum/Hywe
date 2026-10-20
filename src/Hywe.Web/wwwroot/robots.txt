@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Machine-readable context for AI and LLM agents
+# https://hywe.in/llms.txt
+# https://hywe.in/llms-full.txt
+
 Sitemap: https://hywe.in/sitemap.xml
+

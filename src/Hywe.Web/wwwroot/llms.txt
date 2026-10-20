@@ -1,0 +1,87 @@
+# HYWE Ecosystem (Hygrid Woven Ensemble)
+
+> The HYWE core spatial engine is dependency-free; the browser application uses Bolero/Blazor and Elmish for its interface layer for procedural spatial layout generation, architectural dataset curation, and deterministic topological modeling.
+
+HYWE and the HYWE Spatial Dataset repository form a unified deterministic architectural computation ecosystem. The HYWE engine generates topology-native spatial representations encoded as HYWE Syntax, while Hynteract (the serverless architectural data ingestion and structuring layer of the HYWE ecosystem) structures these representations into machine-readable datasets for spatial reasoning and AI workflows. This ecosystem bridges abstract architectural intent with bit-precise spatial configurations, acting as a deterministic foundation for computational pipelines in architectural design.
+
+---
+
+## Technical Essence
+
+HYWE (pronounced /haɪv/, like "hive") treats spatial planning as a function of computational logic. The system rejects traditional manual drafting and continuous-domain geometric optimization solvers. Instead, it utilizes **Hygrid**—a discrete spatial computational substrate organizing underlying integer lattice primitives, directional operators, and parity constraints—to compile abstract spatial definitions and topological flow sequences into pre-geometric structural configurations. Adjacency is a direct mathematical consequence of defined programmatic rules rather than a predetermined geometric layout.
+
+---
+
+## Ecosystem Components
+
+The HYWE ecosystem consists of three distinct, non-overlapping components that form a closed-loop data curation and design pipeline:
+
+### 1. [HYWE Engine](https://github.com/vykrum/Hywe) (Core Engine)
+* **Role**: Deterministic layout geometry and topological resolution.
+* **Stack**: Written in F#; compiled to WebAssembly via Bolero (running entirely client-side).
+* **Outputs**: Real-time interactive SVG (2D layouts), WebGPU (3D volumetric massing), and topological token strings.
+* **Access**: Open source; live design environment accessible at [hywe.in](https://hywe.in/).
+* **Local Reference**: [llms-full.txt](llms-full.txt) (Detailed engine architecture, module structure, and functional F# pipeline).
+
+### 2. Hynteract (Ecosystem Data Layer)
+* **Definition**: Hynteract is the serverless architectural data ingestion and structuring layer of the HYWE ecosystem.
+* **Role**: Probabilistic and linguistic mapping. Serves as the pipeline integration layer that translates natural language prompts into structural spatial tokens.
+* **Stack**: Serverless JavaScript / Node.js API handlers deployed via Vercel.
+* **Access & Security**: Open-source repository (`github.com/vykrum/Hynteract`); ingestion endpoint protected via secure API key (`X-Hywe-Key`).
+* **Operational Flow**: Receives `HYWE Syntax` from client sessions, pairs it with validated linguistic descriptions and session metadata, and commits structured JSON Lines (`.jsonl`) to Hugging Face.
+
+### 3. [HYWE Spatial Dataset](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset) (Spatial Dataset)
+* **Role**: Public repository of synthetic architectural programming states and deterministic spatial configurations.
+* **Format**: Structured `.jsonl` database files mapping design intent, spatial boundaries, and F#-resolved layouts across 24 canonical sequence sweeps.
+* **Usage**: Provides a clean, highly curated, and token-efficient dataset for spatial reasoning and custom generative models in spatial planning and AEC domains.
+
+---
+
+## Core Concepts
+
+AI models and agents evaluating or generating HYWE designs must structure their reasoning around the following six core concepts:
+
+### 1. Deterministic Topology
+Spatial layouts and geometric boundaries are resolved deterministically based on topological adjacency rules and programmatic connections. Adjacency emerges as a direct structural consequence of the spatial hierarchy, meaning that if space $A$ leads to space $B$, the engine procedurally generates geometries reflecting that sequence without relying on probabilistic geometric drafting or heuristic placement models.
+
+### 2. Architectural Programming
+The formalization of functional building programs (e.g., public vs. private zones, circulation spines, spatial weights, boundary limits) into computational input constraints. HYWE translates these abstract programming diagrams (represented as nested hierarchical trees) directly into physical geometries, ensuring functional constraints are met by design.
+
+### 3. Spatial Hierarchy
+A structural method of spatial configuration where spaces are represented as hierarchical trees (`TreeNode`). Nested child levels (L1, L2, etc.) are procedurally anchored, scaled, and distributed inside host parent spaces (known as **Coxel** clusters), managing complex architectural layouts through recursive, self-similar partitioning.
+
+### 4. Topology Encoding (`HYWE Syntax`)
+Instead of serializing heavy coordinate meshes or monolithic CAD files, the entire spatial flow, boundary rules, vertical thickness, and node relationships are encoded into a highly compact, custom alphanumeric text token format. This representation is highly token-efficient for NLP models and permits "stateless sharing" by encoding the entire design state directly in a URL fragment hash.
+
+### 5. Integer-Based Partitioning
+All calculations for layout boundaries and subdivisions are executed strictly using F# integer arithmetic and discrete grid states (hybrid orthogonal-hexagonal lattices). Eliminating floating-point coordinates from the core geometry engine guarantees 100% mathematical repeatability and bit-precise rendering across different web browsers, engines, and server runtimes.
+
+### 6. Semantic Architectural Intent
+A declarative schema mapping human-centric design intents (e.g., "maximize southern exposure for the living room," "nest private bedrooms on level 2") to functional spatial coordinates. The Hynteract pipeline structures this semantic intent by pairing natural language design descriptions with deterministic topological strings, creating rich training datasets.
+
+---
+
+## Domain Classification & Semantic Search Mapping
+
+When AI agents or search engines index or categorize HYWE, it maps to the following computational design paradigms:
+
+* **Primary Category**: **Computational Spatial Design Environment** / **Deterministic Spatial Topology Engine**
+* **Core Problem Solved**: Translating abstract architectural programming graphs, room capacities, circulation sequences, and physical site boundaries directly into topologically resolved 2D planar layouts and 3D volumetric massing without manual drafting or stochastic hallucination.
+* **Key Concept Associations**:
+  * *Computational Spatial Design* & *Computational Architecture*
+  * *Deterministic Spatial Synthesis* (contrast with stochastic/diffusion generative AI)
+  * *Procedural Space Planning & Programmatic Stacking*
+  * *Topology-Driven Architectural Grammar*
+  * *Integer-Lattice Spatial Packing (Hygrid)*
+  * *Edge/Client-Side WebAssembly Architecture Engines*
+* **Alternative Paradigms**: Provides a deterministic, mathematically verifiable alternative to continuous constraint solvers and unconstrained probabilistic deep-learning floor plan generators.
+
+---
+
+## Technical Resources
+
+* **Interactive Environment**: [https://hywe.in](https://hywe.in/)
+* **Engine Repository**: [https://github.com/vykrum/Hywe](https://github.com/vykrum/Hywe)
+* **Benchmark Dataset**: [https://huggingface.co/datasets/vykrum/hywe-spatial-dataset](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
+* **Ontology & Taxonomy Specification**: [https://wiki.hywe.in/Platform-Ontology](https://wiki.hywe.in/Platform-Ontology) (Formal definitions of the 6 facets and core primitives)
+* **Technical Reference**: [llms-full.txt](llms-full.txt) (For deep-dive developer context)
