@@ -2,6 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://hywe.in/</loc>
-    <lastmod>2026-09-28</lastmod>
+    <lastmod>2026-10-20</lastmod>
+  </url>
+  <url>
+    <loc>https://hywe.in/llms.txt</loc>
+    <lastmod>2026-10-20</lastmod>
+  </url>
+  <url>
+    <loc>https://hywe.in/llms-full.txt</loc>
+    <lastmod>2026-10-20</lastmod>
   </url>
 </urlset>
+
