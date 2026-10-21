@@ -218,15 +218,7 @@ let initModel =
         PreTutorialSnapshot = None
     }
 
-/// <summary>
-/// Determines whether the current tutorial state is in uncompiled mode (Basic Quickstart steps 0 and 1).
-/// </summary>
-/// <param name="model">Current application model.</param>
-/// <returns><c>true</c> if the tutorial is currently at step 0 or 1 of the Basic level; otherwise <c>false</c>.</returns>
-let isTutorialUncompiled (model: Model) =
-    match model.TutorialStep with
-    | Some s when model.TutorialLevel = Basic && s < 2 -> true
-    | _ -> false
+
 
 /// <summary>
 /// Updates HTML article metadata (<c>article:published_time</c> and <c>article:modified_time</c>)
@@ -398,7 +390,7 @@ let restoreSnapshot (js: IJSRuntime) (model: Model) (snap: UndoSnapshot) (update
             Derived         = newDerived
             LayoutCache     = Map.empty
             PreDragSnapshot = None
-            NeedsHyweave    = isTutorialUncompiled model }
+            NeedsHyweave    = false }
         |> updateStacks reverseSnap
 
     let syncCmd = 
@@ -485,11 +477,10 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
     let srcText = serializeModelTree snapshot model.Sequences model.PolygonExport
     let newSqns = Lexel.extractSequences srcText
 
-    let isUncompiledStep = level = Basic && step < 2
     let needsBatchCache = stepDef.Badge = Tutorial.BadgeSlider || stepDef.TargetPanel = Some BatchPanel
 
     let derived =
-        if isUncompiledStep || stepDef.TargetPanel = Some TreePanel then
+        if stepDef.TargetPanel = Some TreePanel then
             emptyDerivedData
         else
             try
@@ -526,7 +517,7 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
             SrcOfTrth = srcText
             Sequences = newSqns
             Derived = derived
-            NeedsHyweave = isUncompiledStep
+            NeedsHyweave = false
             LayoutCache = cache
             BatchProgress = if needsBatchCache then 24 else 0
             LastBatchSrc = if needsBatchCache then Some srcText else None
@@ -545,15 +536,15 @@ let updateTutorialStep (model: Model) (level: TutorialLevel) (step: int) : Model
 let exitTutorial (js: IJSRuntime) (model: Model) : Model * Cmd<Message> =
     match model.PreTutorialSnapshot with
     | Some snap ->
-        let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with PreTutorialSnapshot = None; TutorialStep = None; ActivePanel = LayoutPanel })
+        let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with PreTutorialSnapshot = None; TutorialStep = None; ActivePanel = TreePanel })
         m, cmd
     | None ->
         match model.UndoStack with
         | snap :: rest ->
-            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = LayoutPanel })
+            let m, cmd = restoreSnapshot js model snap (fun _ m -> { m with UndoStack = rest; TutorialStep = None; ActivePanel = TreePanel })
             m, cmd
         | [] ->
-            { model with PreTutorialSnapshot = None; TutorialStep = None; ActivePanel = LayoutPanel }, Cmd.none
+            { model with PreTutorialSnapshot = None; TutorialStep = None; ActivePanel = TreePanel }, Cmd.none
 
 /// <summary>
 /// Main Elmish update loop processing all application-level messages.
@@ -615,7 +606,13 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleTutorialAutoPlay ->
         let newAutoPlay = not model.TutorialAutoPlay
-        let m = { model with TutorialAutoPlay = newAutoPlay }
+        let m =
+            if not newAutoPlay then
+                { model with TutorialAutoPlay = false; ActivePanel = TreePanel }
+            else
+                let stepDefOpt = model.TutorialStep |> Option.map (Tutorial.getStepDef model.TutorialLevel)
+                let panel = stepDefOpt |> Option.bind (fun d -> d.TargetPanel) |> Option.defaultValue model.ActivePanel
+                { model with TutorialAutoPlay = true; ActivePanel = panel }
         match newAutoPlay, model.TutorialStep with
         | true, Some step -> m, scheduleAutoAdvanceForStep model.TutorialLevel step
         | _ -> m, Cmd.none
@@ -698,7 +695,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             SrcOfTrth = value
             Derived = newDerived
             LayoutCache = Map.empty
-            NeedsHyweave = isTutorialUncompiled synced
+            NeedsHyweave = true
             EditsCount = nextCount 
             IsPresetsCollapsed = nextCollapse 
             IsWorkspaceCollapsed = nextWorkspaceCollapse
@@ -832,17 +829,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let nextCollapse = isSecondEdit || modelToUse.IsPresetsCollapsed
         let nextWorkspaceCollapse = isSecondEdit || modelToUse.IsWorkspaceCollapsed
         
-        let isTutorialUncompiled =
-            match modelToUse.TutorialStep with
-            | Some s when modelToUse.TutorialLevel = Basic && s < 2 -> true
-            | _ -> false
-
-        let needsHyweave = isTutorialUncompiled
-
         let derivedData =
-            if isTutorialUncompiled then
-                emptyDerivedData
-            elif newOutput = modelToUse.SrcOfTrth && updatedTree.ActiveLevel = modelToUse.Tree.ActiveLevel then
+            if newOutput = modelToUse.SrcOfTrth && updatedTree.ActiveLevel = modelToUse.Tree.ActiveLevel then
                 modelToUse.Derived
             else
                 Cache.deriveFromSource newOutput newSqns modelToUse.PolygonExport updatedTree.ActiveLevel
@@ -853,7 +841,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 Sequences = newSqns
                 SrcOfTrth = newOutput 
                 Derived = derivedData
-                NeedsHyweave = needsHyweave
+                NeedsHyweave = false
                 EditsCount = nextCount
                 IsPresetsCollapsed = nextCollapse
                 IsWorkspaceCollapsed = nextWorkspaceCollapse }
@@ -1194,7 +1182,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             match isFromUrl with
             | false ->
                 let m = updateTutorialStep modelWithPanel Basic 0
-                { m with TutorialAutoPlay = true; ActivePanel = LayoutPanel }, scheduleAutoAdvanceForStep Basic 0
+                { m with TutorialAutoPlay = true }, scheduleAutoAdvanceForStep Basic 0
             | true  -> modelWithPanel, Cmd.none
         | ValidString cleanContent ->
             try
@@ -1215,7 +1203,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Sequences = newSqns
                         Derived = Cache.deriveFromSource cleanContent newSqns newExport newTree.ActiveLevel
                         LayoutCache = Map.empty
-                        NeedsHyweave = isTutorialUncompiled modelWithPanel
+                        NeedsHyweave = false
                         IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
                         IsTreeCollapsed = false
