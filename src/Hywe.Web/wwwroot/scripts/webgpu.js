@@ -536,9 +536,13 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
 };
 
 window.captureCanvasWebGPU = async (canvasId) => {
+    console.log("[Hywe Debug] captureCanvasWebGPU called for canvasId:", canvasId);
     const canvas = document.getElementById(canvasId);
     const state = canvas?._wgpuState;
-    if (!state) return null;
+    if (!state) {
+        console.warn("[Hywe Debug] captureCanvasWebGPU: canvas or _wgpuState is missing!", { canvas, state });
+        return null;
+    }
     const { device, resolvedColorTexture } = state;
     const w = canvas.width, h = canvas.height;
     const bytesPerRow = Math.ceil((w * 4) / 256) * 256;
@@ -617,4 +621,20 @@ window.captureCanvasWebGPU = async (canvasId) => {
     return dataUrl;
 };
 window.captureCanvasSVG = window.captureCanvasWebGPU;
-window.export3DToSVG = (canvasId, filename) => { window.captureCanvasWebGPU(canvasId).then(d => { if (d) { const a = document.createElement("a"); a.href = d; a.download = filename.replace(".svg", ".png"); a.click(); } }); };
+window.export3DToSVG = (canvasId, filename) => {
+    window.captureCanvasWebGPU(canvasId).then(d => {
+        if (d) {
+            const pngName = filename.replace(/\.svg$/i, ".png");
+            if (window.triggerDirectDownload) {
+                window.triggerDirectDownload(d, pngName);
+            } else {
+                const a = document.createElement("a");
+                a.href = d;
+                a.download = pngName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => a.remove(), 1000);
+            }
+        }
+    });
+};

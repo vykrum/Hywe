@@ -640,7 +640,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center;"
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                        on.pointerdown (fun _ ->
+                        on.click (fun _ ->
                             let datePart = System.DateTime.Now.ToString("yyMMddmm")
                             let fileName = "HyweLayout_" + datePart + ".svg"
                             async {
@@ -664,7 +664,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     }
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                        on.pointerdown (fun _ ->
+                        on.click (fun _ ->
                             let datePart = System.DateTime.Now.ToString("yyMMddmm")
                             let fileName = "HyweLayout_" + datePart + ".png"
                             async {
@@ -777,14 +777,14 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         attr.title "Download Layout as SVG"
-                        on.pointerdown (fun _ -> dispatch Download3DSvg)
+                        on.click (fun _ -> dispatch Download3DSvg)
                         text "SVG"
                     }
 
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         attr.title "Download View as PNG"
-                        on.pointerdown (fun _ -> dispatch Download3DPng)
+                        on.click (fun _ -> dispatch Download3DPng)
                         text "PNG"
                     }
                 }
