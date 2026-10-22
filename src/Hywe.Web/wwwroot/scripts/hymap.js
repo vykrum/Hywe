@@ -409,12 +409,25 @@ window.Hymap = {
             finalCtx.fillStyle = "#333";
             finalCtx.fillText(text, cropW - textWidth - 5, cropH - 6);
             
-            const dataUrl = finalCanvas.toDataURL("image/png");
-            
-            const a = document.createElement('a');
-            a.href = dataUrl;
-            a.download = "hywe-map-extents.png";
-            a.click();
+            if (finalCanvas.toBlob && window.downloadFile) {
+                finalCanvas.toBlob(blob => {
+                    if (blob) {
+                        window.downloadFile("hywe-map-extents.png", blob, "image/png");
+                    }
+                }, "image/png");
+            } else {
+                const dataUrl = finalCanvas.toDataURL("image/png");
+                if (window.triggerDirectDownload) {
+                    window.triggerDirectDownload(dataUrl, "hywe-map-extents.png");
+                } else {
+                    const a = document.createElement('a');
+                    a.href = dataUrl;
+                    a.download = "hywe-map-extents.png";
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => a.remove(), 1000);
+                }
+            }
             
         } catch (err) {
             console.error("Map Image Extraction Error:", err);

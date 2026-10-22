@@ -174,15 +174,40 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
 };
 
 // --- File Downloads & Serialization ---
-window.downloadFile = async function (fileName, content, contentType) {
-    const blob = new Blob([content], { type: contentType });
+window.triggerDirectDownload = function (blobOrUrl, fileName) {
+    let url = blobOrUrl;
+    let needsRevoke = false;
+    if (blobOrUrl instanceof Blob) {
+        url = URL.createObjectURL(blobOrUrl);
+        needsRevoke = true;
+    }
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        if (a.parentNode) {
+            document.body.removeChild(a);
+        }
+        if (needsRevoke) {
+            URL.revokeObjectURL(url);
+        }
+    }, 60000);
+};
 
-    // On mobile, the Web Share API provides a superior experience
+window.downloadFile = async function (fileName, content, contentType) {
+    const blob = (content instanceof Blob)
+        ? content
+        : new Blob([content], { type: contentType || "application/octet-stream" });
+
+    // On mobile, the Web Share API provides a superior native sharing experience
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
+    if (isMobile && navigator.canShare) {
         try {
-            const file = new File([blob], fileName, { type: contentType });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            const file = new File([blob], fileName, { type: contentType || blob.type });
+            if (navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
                     title: fileName,
@@ -191,23 +216,12 @@ window.downloadFile = async function (fileName, content, contentType) {
                 return;
             }
         } catch (e) {
-            console.warn("Web Share API not supported or user cancelled, falling back to download", e);
+            console.warn("Web Share API cancelled or not supported, falling back to direct download", e);
         }
     }
 
-    // Fallback: Use FileReader to convert Blob to Base64 Data URL
-    const reader = new FileReader();
-    reader.onload = function () {
-        const a = document.createElement("a");
-        a.href = reader.result;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-        }, 500);
-    };
-    reader.readAsDataURL(blob);
+    // Direct, synchronous Blob download via Object URL
+    window.triggerDirectDownload(blob, fileName);
 };
 
 // --- Minimalist Architectural Titleblock & Template Engine for Exports ---
@@ -402,14 +416,19 @@ window.applyArchitecturalTitleblock = function (svgString, meta) {
 };
 
 window.downloadSvgWithTitleblock = function (filename, svgString, metadata) {
+    console.log("[Hywe Debug] downloadSvgWithTitleblock called:", { filename, metadata });
     const withTitleblock = window.applyArchitecturalTitleblock(svgString, metadata);
     const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
     window.downloadFile(filename, xmlHeader + withTitleblock, "image/svg+xml;charset=utf-8");
 };
 
 window.downloadSvgFile = function (svgId, filename, metadata) {
+    console.log("[Hywe Debug] downloadSvgFile called:", { svgId, filename, metadata });
     const svg = document.getElementById(svgId);
-    if (!svg) return;
+    if (!svg) {
+        console.warn("[Hywe Debug] downloadSvgFile: element not found:", svgId);
+        return;
+    }
 
     const serializer = new XMLSerializer();
     let source = serializer.serializeToString(svg);
@@ -439,6 +458,7 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
     const blob = new Blob([withTitleblock], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = function () {
         let nativeWidth = img.width || 800;
         let nativeHeight = img.height || 600;
@@ -468,30 +488,39 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
 
         canvas.toBlob(function (pngBlob) {
             if (pngBlob !== null) {
-                const objUrl = URL.createObjectURL(pngBlob);
-                const a = document.createElement("a");
-                a.href = objUrl;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(objUrl);
-                }, 500);
+                window.downloadFile(fileName, pngBlob, "image/png");
             } else {
-                console.error("Hywe: Canvas toBlob failed.");
+                console.warn("Hywe: Canvas toBlob failed, falling back to toDataURL blob.");
+                try {
+                    const dataUrl = canvas.toDataURL("image/png");
+                    const byteString = atob(dataUrl.split(',')[1]);
+                    const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    const fallbackBlob = new Blob([ab], { type: mimeString });
+                    window.downloadFile(fileName, fallbackBlob, "image/png");
+                } catch (err) {
+                    console.error("Hywe: Failed to export canvas image:", err);
+                }
             }
         }, "image/png");
     };
     img.onerror = function (e) {
         console.error("Hywe: Failed to render SVG into Image for PNG conversion. Invalid SVG format.", e);
+        URL.revokeObjectURL(url);
     };
     img.src = url;
 };
 
 window.downloadSvgElementAsPng = function (svgId, filename, metadata) {
     const svg = document.getElementById(svgId);
-    if (!svg) return;
+    if (!svg) {
+        console.warn("[Hywe] downloadSvgElementAsPng: element not found:", svgId);
+        return;
+    }
 
     const serializer = new XMLSerializer();
     let source = serializer.serializeToString(svg);
@@ -527,8 +556,8 @@ window.download3DView = async function (canvasId, filename, format, metadata) {
     });
     const w = img.width || 800;
     const h = img.height || 600;
-    const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
-        <image href="${pngDataUrl}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet" />
+    const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+        <image href="${pngDataUrl}" xlink:href="${pngDataUrl}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet" />
     </svg>`;
     const withTitleblock = window.applyArchitecturalTitleblock(rawSvg, metadata || {});
     if (format === 'svg') {

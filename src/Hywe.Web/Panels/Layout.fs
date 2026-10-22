@@ -788,12 +788,12 @@ let alternateConfigurations
             attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.pointerdown (fun _ -> dispatch DownloadBatchSvg)
+                on.click (fun _ -> dispatch DownloadBatchSvg)
                 text "SVG"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.pointerdown (fun _ -> dispatch DownloadBatchPng)
+                on.click (fun _ -> dispatch DownloadBatchPng)
                 text "PNG"
             }
 
@@ -802,21 +802,21 @@ let alternateConfigurations
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
                 attr.title "Coordinates"
-                on.pointerdown (fun _ -> dispatch DownloadBatchCoordCsv)
+                on.click (fun _ -> dispatch DownloadBatchCoordCsv)
                 text "Crd"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
                 attr.title "Area Metrics"
-                on.pointerdown (fun _ -> dispatch DownloadBatchMetricsCsv)
+                on.click (fun _ -> dispatch DownloadBatchMetricsCsv)
                 text "ARE"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
                 attr.title "Adjacency Matrix"
-                on.pointerdown (fun _ -> dispatch DownloadBatchAdjCsv)
+                on.click (fun _ -> dispatch DownloadBatchAdjCsv)
                 text "Adj"
             }
         }
