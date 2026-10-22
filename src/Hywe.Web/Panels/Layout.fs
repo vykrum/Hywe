@@ -589,7 +589,8 @@ let alternateConfigurations
     (onTap: int -> Message)
     (dispatch: Message -> unit)
     (onClose: unit -> unit)
-    (js: IJSRuntime): Node =
+    (js: IJSRuntime)
+    (meta: ExportMetadata): Node =
     
     // 1. GRID CONSTANTS
     let totalItems = configs.Length
@@ -788,12 +789,24 @@ let alternateConfigurations
             attr.style "display: flex; gap: 10px; margin-top: 10px; justify-content: center; align-items: center;"
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.click (fun _ -> dispatch DownloadBatchSvg)
+                on.click (fun _ ->
+                    let datePart = DateTime.Now.ToString("yyMMddHHmm")
+                    let fileName = "HywVariations_" + datePart + ".svg"
+                    async {
+                        do! js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
+                    } |> Async.StartImmediate
+                )
                 text "SVG"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
-                on.click (fun _ -> dispatch DownloadBatchPng)
+                on.click (fun _ ->
+                    let datePart = DateTime.Now.ToString("yyMMddHHmm")
+                    let fileName = "HywVariations_" + datePart + ".png"
+                    async {
+                        do! js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
+                    } |> Async.StartImmediate
+                )
                 text "PNG"
             }
 
@@ -802,21 +815,58 @@ let alternateConfigurations
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
                 attr.title "Coordinates"
-                on.click (fun _ -> dispatch DownloadBatchCoordCsv)
+                on.click (fun _ ->
+                    let datePart = DateTime.Now.ToString("yyMMddHHmm")
+                    let fileName = "Hywe_Batch_Coords_" + datePart + ".csv"
+                    let batchData = configs |> Array.collect (fun r -> 
+                        r.cxCxl1 
+                        |> Array.indexed
+                        |> Array.groupBy (fun (_, (c: Cxl)) -> let (_, _, z) = Hexel.hxlCrd c.Base in z) 
+                        |> Array.map (fun (z, indexedCxls) -> 
+                            let cxls = indexedCxls |> Array.map snd
+                            (r.sqnName, z, cxls))
+                    )
+                    let csv = FileManager.generateCoordinatesCsv batchData
+                    async {
+                        do! js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask
+                    } |> Async.StartImmediate
+                )
                 text "Crd"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
                 attr.title "Area Metrics"
-                on.click (fun _ -> dispatch DownloadBatchMetricsCsv)
+                on.click (fun _ ->
+                    let datePart = DateTime.Now.ToString("yyMMddHHmm")
+                    let fileName = "Hywe_Batch_Metrics_" + datePart + ".csv"
+                    let batchData = configs |> Array.collect (fun r -> 
+                        r.cxCxl1 
+                        |> Array.groupBy (fun (c: Cxl) -> let (_, _, z) = Hexel.hxlCrd c.Base in z) 
+                        |> Array.map (fun (z, cxls) -> (r.sqnName, z, cxls))
+                    )
+                    let csv = FileManager.generateAreaMetricsCsv batchData
+                    async {
+                        do! js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask
+                    } |> Async.StartImmediate
+                )
                 text "ARE"
             }
             button {
                 attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
                 attr.``style`` "font-size: 10px;"
                 attr.title "Adjacency Matrix"
-                on.click (fun _ -> dispatch DownloadBatchAdjCsv)
+                on.click (fun _ ->
+                    let datePart = DateTime.Now.ToString("yyMMddHHmm")
+                    let fileName = "Hywe_Batch_Adjacency_" + datePart + ".csv"
+                    let batchData = configs |> Array.map (fun r -> 
+                        (r.sqnName, 0, r.cxAdj1)
+                    )
+                    let csv = FileManager.generateAdjacencyCsv batchData
+                    async {
+                        do! js.InvokeVoidAsync("downloadFile", fileName, csv, "text/csv").AsTask() |> Async.AwaitTask
+                    } |> Async.StartImmediate
+                )
                 text "Adj"
             }
         }

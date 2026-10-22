@@ -175,6 +175,7 @@ window.getSvgCoords = function (svgId, clientX, clientY) {
 
 // --- File Downloads & Serialization ---
 window.triggerDirectDownload = function (blobOrUrl, fileName) {
+    console.log("[Hywe Debug] triggerDirectDownload: initiating download for " + fileName);
     let url = blobOrUrl;
     let needsRevoke = false;
     if (blobOrUrl instanceof Blob) {
@@ -358,7 +359,7 @@ window.applyArchitecturalTitleblock = function (svgString, meta) {
     const borderWidth = Math.max(0.8, 1.2 * s).toFixed(1);
     const divWidth = Math.max(0.6, 1.0 * s).toFixed(1);
 
-    const wrappedSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${sheetW} ${sheetH}" width="${sheetW}" height="${sheetH}">
+    const wrappedSvg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${sheetW} ${sheetH}" width="${sheetW}" height="${sheetH}">
     <defs>
         <style>
             .tb-font { font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -438,14 +439,22 @@ window.downloadSvgFile = function (svgId, filename, metadata) {
     if (!source.includes('xmlns="http://www.w3.org/2000/svg"')) {
         source = source.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
     }
+    if (!source.includes('xmlns:xlink=')) {
+        source = source.replace('<svg ', '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ');
+    }
 
     source = source.replace(/<textpath/g, "<textPath")
                    .replace(/<\/textpath>/g, "</textPath>")
                    .replace(/viewbox=/g, "viewBox=")
                    .replace(/startoffset=/g, "startOffset=")
                    .replace(/textlength=/g, "textLength=")
-                   .replace(/lengthadjust=/g, "lengthAdjust=")
-                   .replace(/\s*onclick:stoppropagation(?:=["'][^"']*["'])?/gi, "");
+                   .replace(/lengthadjust=/g, "lengthAdjust=");
+
+    // Strip colon-prefixed attributes not declared in XML namespaces (e.g. Blazor event stops)
+    source = source.replace(/\s+([a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+)(?:=["'][^"']*["'])?/gi, function(match, p1) {
+        const lower = p1.toLowerCase();
+        return (lower.startsWith("xmlns:") || lower.startsWith("xlink:") || lower.startsWith("xml:")) ? match : "";
+    });
 
     const withTitleblock = window.applyArchitecturalTitleblock(source, metadata);
     const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
@@ -511,6 +520,23 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
     img.onerror = function (e) {
         console.error("Hywe: Failed to render SVG into Image for PNG conversion. Invalid SVG format.", e);
         URL.revokeObjectURL(url);
+        // Fallback: If SVG contains embedded image data URL, download it directly
+        const dataUrlMatch = svgString.match(/<image[^>]+(?:href|xlink:href)=["'](data:image\/png;base64,[^"']+)["']/i);
+        if (dataUrlMatch && dataUrlMatch[1]) {
+            console.warn("Hywe: Falling back to direct embedded PNG download.");
+            try {
+                const byteString = atob(dataUrlMatch[1].split(',')[1]);
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                const fallbackBlob = new Blob([ab], { type: "image/png" });
+                window.downloadFile(fileName, fallbackBlob, "image/png");
+            } catch (err) {
+                console.error("Hywe: Direct fallback failed:", err);
+            }
+        }
     };
     img.src = url;
 };
@@ -530,19 +556,28 @@ window.downloadSvgElementAsPng = function (svgId, filename, metadata) {
     if (!source.includes('xmlns="http://www.w3.org/2000/svg"')) {
         source = source.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
     }
+    if (!source.includes('xmlns:xlink=')) {
+        source = source.replace('<svg ', '<svg xmlns:xlink="http://www.w3.org/1999/xlink" ');
+    }
 
     source = source.replace(/<textpath/g, "<textPath")
                    .replace(/<\/textpath>/g, "</textPath>")
                    .replace(/viewbox=/g, "viewBox=")
                    .replace(/startoffset=/g, "startOffset=")
                    .replace(/textlength=/g, "textLength=")
-                   .replace(/lengthadjust=/g, "lengthAdjust=")
-                   .replace(/\s*onclick:stoppropagation(?:=["'][^"']*["'])?/gi, "");
+                   .replace(/lengthadjust=/g, "lengthAdjust=");
+
+    // Strip colon-prefixed attributes not declared in XML namespaces
+    source = source.replace(/\s+([a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+)(?:=["'][^"']*["'])?/gi, function(match, p1) {
+        const lower = p1.toLowerCase();
+        return (lower.startsWith("xmlns:") || lower.startsWith("xlink:") || lower.startsWith("xml:")) ? match : "";
+    });
 
     window.downloadSvgAsPng(filename, source, metadata);
 };
 
 window.download3DView = async function (canvasId, filename, format, metadata) {
+    console.log("[Hywe Debug] download3DView called:", { canvasId, filename, format, metadata });
     const pngDataUrl = await window.captureCanvasWebGPU(canvasId);
     if (!pngDataUrl) {
         console.error("Hywe: captureCanvasWebGPU returned empty data URL.");
@@ -564,7 +599,7 @@ window.download3DView = async function (canvasId, filename, format, metadata) {
         const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
         window.downloadFile(filename, xmlHeader + withTitleblock, "image/svg+xml;charset=utf-8");
     } else {
-        window.downloadSvgAsPng(filename, withTitleblock, metadata);
+        window.downloadSvgAsPng(filename, rawSvg, metadata);
     }
 };
 

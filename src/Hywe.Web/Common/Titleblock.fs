@@ -258,7 +258,7 @@ let apply (svgString: string) (meta: ExportMetadata) : string =
         let bW = layout.SheetWidth - layout.BorderMargin * 2.0
         let bH = layout.SheetHeight - layout.BorderMargin * 2.0
 
-        String.Format(inv, """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {0:0} {1:0}" width="{0:0}" height="{1:0}">
+        String.Format(inv, """<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {0:0} {1:0}" width="{0:0}" height="{1:0}">
     <defs>
         <style>
             .tb-font {{ font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}

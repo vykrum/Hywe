@@ -777,14 +777,30 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         attr.title "Download Layout as SVG"
-                        on.click (fun _ -> dispatch Download3DSvg)
+                        on.click (fun _ ->
+                            let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                            let fileName = "Hywe3D_" + datePart + ".svg"
+                            let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+                            let meta = ExportHelpers.createExportMetadata model lvlStr
+                            async {
+                                do! js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "svg", meta).AsTask() |> Async.AwaitTask
+                            } |> Async.StartImmediate
+                        )
                         text "SVG"
                     }
 
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost layout-download-btn"
                         attr.title "Download View as PNG"
-                        on.click (fun _ -> dispatch Download3DPng)
+                        on.click (fun _ ->
+                            let datePart = System.DateTime.Now.ToString("yyMMddmm")
+                            let fileName = "Hywe3D_" + datePart + ".png"
+                            let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+                            let meta = ExportHelpers.createExportMetadata model lvlStr
+                            async {
+                                do! js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "png", meta).AsTask() |> Async.AwaitTask
+                            } |> Async.StartImmediate
+                        )
                         text "PNG"
                     }
                 }
@@ -804,13 +820,17 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 match rawResults.Length > 0 && model.BatchProgress = 24 with
                 | true ->
                     let results = rawResults |> Array.map (TreeFilter.filterBatchConfig false model.Tree)
+                    let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
+                    let meta = ExportHelpers.createExportMetadata model lvlStr
                     alternateConfigurations 
                         model.TutorialStep.IsSome
                         results 
                         model.SelectedPreviewIndex 
                         TapBatchPreview                   
                         dispatch                   
-                        (fun () -> dispatch (SetActivePanel LayoutPanel)) js
+                        (fun () -> dispatch (SetActivePanel LayoutPanel))
+                        js
+                        meta
                 | false ->
                     div { 
                         attr.style "text-align:center; padding: 40px 20px; color: #888; width: 100%; display: flex; flex-direction: column; align-items: center;"
