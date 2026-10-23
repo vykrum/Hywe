@@ -528,6 +528,7 @@ type Model =
     }
 
 /// <summary> Metadata header used when generating downloadable CSV and SVG exports. </summary>
+[<CLIMutable>]
 type ExportMetadata = {
     /// <summary> Project title. </summary>
     ProjectTitle: string
@@ -558,6 +559,17 @@ module ExportHelpers =
             Date = System.DateTime.Now.ToString("yyyy-MM-dd")
             Level = levelStr
         }
+
+    /// <summary> Serializes ExportMetadata to a clean JSON string to prevent JSInterop constructor reflection errors. </summary>
+    let toJson (meta: ExportMetadata) : string =
+        let esc (s: string) = 
+            if isNull s then "\"\""
+            else System.Text.Json.JsonSerializer.Serialize(s)
+        sprintf "{\"projectTitle\":%s,\"author\":%s,\"date\":%s,\"level\":%s}"
+            (esc meta.ProjectTitle)
+            (esc meta.Author)
+            (esc meta.Date)
+            (esc meta.Level)
 
 /// <summary> Messages representing all possible state changes in the main module. </summary>
 type Message =

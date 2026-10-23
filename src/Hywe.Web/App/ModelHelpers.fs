@@ -649,6 +649,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                 let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
                                 let marker = toMarker elv
                                 let meta = ExportHelpers.createExportMetadata model marker
+                                let metaJson = ExportHelpers.toJson meta
                                 match Cache.get marker currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
                                     let rawSvg = Layout.generateSvgFromBatchConfig cfg 20.0
@@ -657,7 +658,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                     do! js.InvokeVoidAsync("downloadFile", fileName, xmlHeader + finalSvg, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
                                 | None ->
                                     // Fallback to DOM scraper if cache is missing
-                                    do! js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
+                                    do! js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask
                             } |> Async.StartImmediate
                         )
                         text "SVG"
@@ -673,14 +674,15 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                                 let toMarker lvl = match lvl with 0 -> "L0" | _ -> sprintf "L%d" lvl
                                 let marker = toMarker elv
                                 let meta = ExportHelpers.createExportMetadata model marker
+                                let metaJson = ExportHelpers.toJson meta
                                 match Cache.get marker currentSqnIdx model.LayoutCache with
                                 | Some cfg ->
                                     let rawSvg = Layout.generateSvgFromBatchConfig cfg 20.0
                                     let finalSvg = Titleblock.apply rawSvg meta
-                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, finalSvg, meta).AsTask() |> Async.AwaitTask
+                                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, finalSvg, metaJson).AsTask() |> Async.AwaitTask
                                 | None ->
                                     // If cache missing, fall back to SVG scraper and pass to PNG converter
-                                    do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName, meta).AsTask() |> Async.AwaitTask 
+                                    do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask 
                             } |> Async.StartImmediate
                         )
                         text "PNG"
@@ -782,8 +784,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             let fileName = "Hywe3D_" + datePart + ".svg"
                             let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
                             let meta = ExportHelpers.createExportMetadata model lvlStr
+                            let metaJson = ExportHelpers.toJson meta
                             async {
-                                do! js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "svg", meta).AsTask() |> Async.AwaitTask
+                                do! js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "svg", metaJson).AsTask() |> Async.AwaitTask
                             } |> Async.StartImmediate
                         )
                         text "SVG"
@@ -797,8 +800,9 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                             let fileName = "Hywe3D_" + datePart + ".png"
                             let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
                             let meta = ExportHelpers.createExportMetadata model lvlStr
+                            let metaJson = ExportHelpers.toJson meta
                             async {
-                                do! js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "png", meta).AsTask() |> Async.AwaitTask
+                                do! js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "png", metaJson).AsTask() |> Async.AwaitTask
                             } |> Async.StartImmediate
                         )
                         text "PNG"
