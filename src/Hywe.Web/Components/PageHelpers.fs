@@ -248,9 +248,10 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe3D_" + datePart + ".png"
         let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
         let meta = ExportHelpers.createExportMetadata model lvlStr
+        let metaJson = ExportHelpers.toJson meta
         let downloadCmd = 
             Cmd.OfAsync.perform (fun () -> 
-                js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "png", meta).AsTask() |> Async.AwaitTask
+                js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "png", metaJson).AsTask() |> Async.AwaitTask
             ) () (fun _ -> NoOp)
         Some (model, downloadCmd)
     
@@ -352,9 +353,10 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "Hywe3D_" + datePart + ".svg"
         let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
         let meta = ExportHelpers.createExportMetadata model lvlStr
+        let metaJson = ExportHelpers.toJson meta
         let downloadCmd = 
             Cmd.OfAsync.perform (fun () -> 
-                js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "svg", meta).AsTask() |> Async.AwaitTask
+                js.InvokeVoidAsync("download3DView", "hywe-extruded-polygon", fileName, "svg", metaJson).AsTask() |> Async.AwaitTask
             ) () (fun _ -> NoOp)
         Some (model, downloadCmd)
     
@@ -363,14 +365,16 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let fileName = "HywVariations_" + datePart + ".svg"
         let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
         let meta = ExportHelpers.createExportMetadata model lvlStr
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let metaJson = ExportHelpers.toJson meta
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
     
     | DownloadBatchPng ->
         let datePart = DateTime.Now.ToString("yyMMddHHmm")
         let fileName = "HywVariations_" + datePart + ".png"
         let lvlStr = match model.Tree.ActiveLevel with 0 -> "L0" | lvl -> sprintf "L%d" lvl
         let meta = ExportHelpers.createExportMetadata model lvlStr
-        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
+        let metaJson = ExportHelpers.toJson meta
+        Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
 
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)

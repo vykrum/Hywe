@@ -792,8 +792,9 @@ let alternateConfigurations
                 on.click (fun _ ->
                     let datePart = DateTime.Now.ToString("yyMMddHHmm")
                     let fileName = "HywVariations_" + datePart + ".svg"
+                    let metaJson = ExportHelpers.toJson meta
                     async {
-                        do! js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
+                        do! js.InvokeVoidAsync("downloadSvgFile", "variation-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask
                     } |> Async.StartImmediate
                 )
                 text "SVG"
@@ -803,8 +804,9 @@ let alternateConfigurations
                 on.click (fun _ ->
                     let datePart = DateTime.Now.ToString("yyMMddHHmm")
                     let fileName = "HywVariations_" + datePart + ".png"
+                    let metaJson = ExportHelpers.toJson meta
                     async {
-                        do! js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, meta).AsTask() |> Async.AwaitTask
+                        do! js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask
                     } |> Async.StartImmediate
                 )
                 text "PNG"

@@ -253,6 +253,9 @@ window.applyArchitecturalTitleblock = function (svgString, meta) {
         return svgString;
     }
 
+    if (typeof meta === "string") {
+        try { meta = JSON.parse(meta); } catch (e) { meta = {}; }
+    }
     meta = meta || {};
     const projectTitle = meta.projectTitle || meta.ProjectTitle || "Hywe Exploration";
     const author = meta.author || meta.Author || "Hywe Design Team";
@@ -417,6 +420,9 @@ window.applyArchitecturalTitleblock = function (svgString, meta) {
 };
 
 window.downloadSvgWithTitleblock = function (filename, svgString, metadata) {
+    if (typeof metadata === "string") {
+        try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
+    }
     console.log("[Hywe Debug] downloadSvgWithTitleblock called:", { filename, metadata });
     const withTitleblock = window.applyArchitecturalTitleblock(svgString, metadata);
     const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
@@ -424,6 +430,9 @@ window.downloadSvgWithTitleblock = function (filename, svgString, metadata) {
 };
 
 window.downloadSvgFile = function (svgId, filename, metadata) {
+    if (typeof metadata === "string") {
+        try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
+    }
     console.log("[Hywe Debug] downloadSvgFile called:", { svgId, filename, metadata });
     const svg = document.getElementById(svgId);
     if (!svg) {
@@ -463,9 +472,11 @@ window.downloadSvgFile = function (svgId, filename, metadata) {
 };
 
 window.downloadSvgAsPng = function (fileName, svgString, metadata) {
+    if (typeof metadata === "string") {
+        try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
+    }
     const withTitleblock = window.applyArchitecturalTitleblock(svgString, metadata);
-    const blob = new Blob([withTitleblock], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+    const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(withTitleblock);
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = function () {
@@ -493,7 +504,6 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
 
         canvas.toBlob(function (pngBlob) {
             if (pngBlob !== null) {
@@ -518,30 +528,18 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
         }, "image/png");
     };
     img.onerror = function (e) {
-        console.error("Hywe: Failed to render SVG into Image for PNG conversion. Invalid SVG format.", e);
-        URL.revokeObjectURL(url);
-        // Fallback: If SVG contains embedded image data URL, download it directly
-        const dataUrlMatch = svgString.match(/<image[^>]+(?:href|xlink:href)=["'](data:image\/png;base64,[^"']+)["']/i);
-        if (dataUrlMatch && dataUrlMatch[1]) {
-            console.warn("Hywe: Falling back to direct embedded PNG download.");
-            try {
-                const byteString = atob(dataUrlMatch[1].split(',')[1]);
-                const ab = new ArrayBuffer(byteString.length);
-                const ia = new Uint8Array(ab);
-                for (let i = 0; i < byteString.length; i++) {
-                    ia[i] = byteString.charCodeAt(i);
-                }
-                const fallbackBlob = new Blob([ab], { type: "image/png" });
-                window.downloadFile(fileName, fallbackBlob, "image/png");
-            } catch (err) {
-                console.error("Hywe: Direct fallback failed:", err);
-            }
-        }
+        console.error("Hywe: Failed to render SVG into Image for PNG conversion. Falling back to SVG download.", e);
+        const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
+        const fallbackSvgName = fileName.replace(/\.png$/i, ".svg");
+        window.downloadFile(fallbackSvgName, xmlHeader + withTitleblock, "image/svg+xml;charset=utf-8");
     };
     img.src = url;
 };
 
 window.downloadSvgElementAsPng = function (svgId, filename, metadata) {
+    if (typeof metadata === "string") {
+        try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
+    }
     const svg = document.getElementById(svgId);
     if (!svg) {
         console.warn("[Hywe] downloadSvgElementAsPng: element not found:", svgId);
@@ -576,8 +574,162 @@ window.downloadSvgElementAsPng = function (svgId, filename, metadata) {
     window.downloadSvgAsPng(filename, source, metadata);
 };
 
+window.render3DTitleblockToCanvasAndDownload = function (filename, img3D, meta) {
+    if (typeof meta === "string") {
+        try { meta = JSON.parse(meta); } catch (e) { meta = {}; }
+    }
+    meta = meta || {};
+    const projectTitle = meta.projectTitle || meta.ProjectTitle || "Hywe Exploration";
+    const author = meta.author || meta.Author || "Hywe Design Team";
+    const date = meta.date || meta.Date || new Date().toISOString().slice(0, 10);
+    const level = meta.level || meta.Level || "L0";
+
+    const origW = img3D.width || 800;
+    const origH = img3D.height || 600;
+    const sheetH = Math.round(origH * 1.2);
+    const barH = Math.max(16, Math.round(sheetH * 0.056));
+    const s = barH / 42;
+    const bMargin = Math.max(4, Math.round(sheetH * 0.016));
+    const padX = Math.round(sheetH * 0.04);
+    let sheetW = Math.round(origW + padX * 2);
+
+    const logoW = Math.round(44 * s);
+    const wordmarkW = Math.round(100 * s);
+    const dateW = Math.round(105 * s);
+    const levelW = Math.round(85 * s);
+    const minTextW = Math.round(200 * s);
+    const minBarW = logoW + wordmarkW + dateW + levelW + minTextW;
+    const minSheetW = minBarW + bMargin * 2;
+    if (sheetW < minSheetW) {
+        sheetW = minSheetW;
+    }
+
+    const bW = sheetW - bMargin * 2;
+    const bH = sheetH - bMargin * 2;
+    const drawingAreaH = bH - barH;
+    const shiftX = Math.round((sheetW - origW) / 2);
+    const shiftY = bMargin + Math.round((drawingAreaH - origH) / 2);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = sheetW;
+    canvas.height = sheetH;
+    const ctx = canvas.getContext("2d");
+
+    // 1. White Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, sheetW, sheetH);
+
+    // 2. 3D Render
+    ctx.drawImage(img3D, shiftX, shiftY, origW, origH);
+
+    // 3. Sheet Border
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = Math.max(1, 1.2 * s);
+    ctx.strokeRect(bMargin, bMargin, bW, bH);
+
+    // 4. Single-Row Bottom Titlebar
+    const barX = bMargin;
+    const barY = bMargin + bH - barH;
+    const barW = bW;
+
+    ctx.beginPath();
+    ctx.moveTo(barX, barY);
+    ctx.lineTo(barX + barW, barY);
+    ctx.stroke();
+
+    const logoSize = Math.round(22 * s);
+    const logoX = barX + Math.round((logoW - logoSize) / 2);
+    const logoY = barY + Math.round((barH - logoSize) / 2);
+
+    // Draw Hywe Logo Path
+    if (window.Path2D) {
+        ctx.save();
+        ctx.translate(logoX, logoY);
+        const logoScale = logoSize / 1200;
+        ctx.scale(logoScale, logoScale);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill(new Path2D(HYWE_LOGO_PATH));
+        ctx.restore();
+    }
+
+    // Dividers
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = Math.max(1, 1.0 * s);
+
+    const wordmarkX = barX + logoW;
+    ctx.beginPath(); ctx.moveTo(wordmarkX, barY); ctx.lineTo(wordmarkX, barY + barH); ctx.stroke();
+
+    const projX = wordmarkX + wordmarkW;
+    ctx.beginPath(); ctx.moveTo(projX, barY); ctx.lineTo(projX, barY + barH); ctx.stroke();
+
+    const dateX = barX + barW - dateW;
+    const levelX = dateX - levelW;
+    const authorX = projX + Math.round(Math.max(minTextW, levelX - projX) * 0.58);
+
+    ctx.beginPath(); ctx.moveTo(authorX, barY); ctx.lineTo(authorX, barY + barH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(levelX, barY); ctx.lineTo(levelX, barY + barH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(dateX, barY); ctx.lineTo(dateX, barY + barH); ctx.stroke();
+
+    // Typography
+    const textPadX = Math.max(3, Math.round(12 * s));
+    const fontFam = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+    // Wordmark
+    ctx.fillStyle = "#0f172a";
+    ctx.font = `bold ${Math.round(11.5 * s)}px ${fontFam}`;
+    ctx.fillText("H Y W E", wordmarkX + textPadX, barY + Math.round(barH * 0.45));
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = `500 ${Math.round(7.5 * s)}px ${fontFam}`;
+    ctx.fillText("www.hywe.in", wordmarkX + textPadX, barY + Math.round(barH * 0.74));
+
+    // Project
+    ctx.fillStyle = "#64748b";
+    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.fillText("PROJECT", projX + textPadX, barY + Math.round(barH * 0.36));
+    ctx.fillStyle = "#0f172a";
+    ctx.font = `600 ${Math.round(11 * s)}px ${fontFam}`;
+    ctx.fillText(projectTitle, projX + textPadX, barY + Math.round(barH * 0.72));
+
+    // Author
+    ctx.fillStyle = "#64748b";
+    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.fillText("AUTHOR", authorX + textPadX, barY + Math.round(barH * 0.36));
+    ctx.fillStyle = "#0f172a";
+    ctx.font = `500 ${Math.round(11 * s)}px ${fontFam}`;
+    ctx.fillText(author, authorX + textPadX, barY + Math.round(barH * 0.72));
+
+    // Level
+    ctx.fillStyle = "#64748b";
+    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.fillText("LEVEL", levelX + textPadX, barY + Math.round(barH * 0.36));
+    ctx.fillStyle = "#0f172a";
+    ctx.font = `600 ${Math.round(11 * s)}px ${fontFam}`;
+    ctx.fillText(level, levelX + textPadX, barY + Math.round(barH * 0.72));
+
+    // Date
+    ctx.fillStyle = "#64748b";
+    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.fillText("DATE", dateX + textPadX, barY + Math.round(barH * 0.36));
+    ctx.fillStyle = "#0f172a";
+    ctx.font = `500 ${Math.round(10.5 * s)}px ${fontFam}`;
+    ctx.fillText(date, dateX + textPadX, barY + Math.round(barH * 0.72));
+
+    // Export to PNG blob
+    canvas.toBlob((blob) => {
+        if (blob) {
+            window.downloadFile(filename, blob, "image/png");
+        } else {
+            window.downloadFile(filename, img3D.src, "image/png");
+        }
+    }, "image/png");
+};
+
 window.download3DView = async function (canvasId, filename, format, metadata) {
     console.log("[Hywe Debug] download3DView called:", { canvasId, filename, format, metadata });
+    if (typeof metadata === "string") {
+        try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
+    }
     const pngDataUrl = await window.captureCanvasWebGPU(canvasId);
     if (!pngDataUrl) {
         console.error("Hywe: captureCanvasWebGPU returned empty data URL.");
@@ -599,7 +751,7 @@ window.download3DView = async function (canvasId, filename, format, metadata) {
         const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
         window.downloadFile(filename, xmlHeader + withTitleblock, "image/svg+xml;charset=utf-8");
     } else {
-        window.downloadSvgAsPng(filename, rawSvg, metadata);
+        window.render3DTitleblockToCanvasAndDownload(filename, img, metadata);
     }
 };
 
