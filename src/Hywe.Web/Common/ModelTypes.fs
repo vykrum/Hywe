@@ -673,6 +673,10 @@ type Message =
     | ToggleViewLock
     /// <summary> Triggers download of 3D rendering canvas as PNG. </summary>
     | Download3DPng
+    /// <summary> Triggers download of interactive tree as SVG vector file. </summary>
+    | DownloadTreeSvg
+    /// <summary> Triggers download of interactive tree as PNG image file. </summary>
+    | DownloadTreePng
     /// <summary> Updates report generation options using a transformer function. </summary>
     | UpdateReportOptions of (ReportOptions -> ReportOptions)
     /// <summary> Triggers report document generation. </summary>

@@ -376,6 +376,61 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
         let metaJson = ExportHelpers.toJson meta
         Some (model, Cmd.OfAsync.perform (fun () -> js.InvokeVoidAsync("downloadSvgElementAsPng", "variation-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask) () (fun _ -> NoOp))
 
+    | DownloadTreeSvg ->
+        let currentTree = NodeTree.getCurrentTree model.Tree
+        let marker = 
+            match model.Tree.ActiveNest with
+            | Some nId -> sprintf "N%d" nId
+            | None -> toMarker model.Tree.ActiveLevel
+        let meta = ExportHelpers.createExportMetadata model marker
+        let metaJson = ExportHelpers.toJson meta
+        let colorMap =
+            if Array.length model.Derived.cxCxl1 = Array.length model.Derived.cxClr1 then
+                Array.zip model.Derived.cxCxl1 model.Derived.cxClr1
+                |> Array.collect (fun (c, clr) ->
+                    [| Hywe.Core.Coxel.prpVlu c.Name, clr
+                       Hywe.Core.Coxel.prpVlu c.Rfid, clr |])
+                |> Map.ofArray
+            else
+                Map.empty
+        let rawSvg = Visualization.renderSvgToString currentTree colorMap None None
+        let finalSvg = Titleblock.apply rawSvg meta
+        let datePart = DateTime.Now.ToString("yyMMddmm")
+        let fileName = "HyweTree_" + datePart + ".svg"
+        let xmlHeader = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n"
+        let downloadCmd = 
+            Cmd.OfAsync.perform (fun () -> 
+                js.InvokeVoidAsync("downloadFile", fileName, xmlHeader + finalSvg, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
+            ) () (fun _ -> NoOp)
+        Some (model, downloadCmd)
+
+    | DownloadTreePng ->
+        let currentTree = NodeTree.getCurrentTree model.Tree
+        let marker = 
+            match model.Tree.ActiveNest with
+            | Some nId -> sprintf "N%d" nId
+            | None -> toMarker model.Tree.ActiveLevel
+        let meta = ExportHelpers.createExportMetadata model marker
+        let metaJson = ExportHelpers.toJson meta
+        let colorMap =
+            if Array.length model.Derived.cxCxl1 = Array.length model.Derived.cxClr1 then
+                Array.zip model.Derived.cxCxl1 model.Derived.cxClr1
+                |> Array.collect (fun (c, clr) ->
+                    [| Hywe.Core.Coxel.prpVlu c.Name, clr
+                       Hywe.Core.Coxel.prpVlu c.Rfid, clr |])
+                |> Map.ofArray
+            else
+                Map.empty
+        let rawSvg = Visualization.renderSvgToString currentTree colorMap None None
+        let finalSvg = Titleblock.apply rawSvg meta
+        let datePart = DateTime.Now.ToString("yyMMddmm")
+        let fileName = "HyweTree_" + datePart + ".png"
+        let downloadCmd = 
+            Cmd.OfAsync.perform (fun () -> 
+                js.InvokeVoidAsync("downloadSvgAsPng", fileName, finalSvg, metaJson).AsTask() |> Async.AwaitTask
+            ) () (fun _ -> NoOp)
+        Some (model, downloadCmd)
+
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
     

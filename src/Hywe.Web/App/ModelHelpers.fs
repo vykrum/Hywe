@@ -310,6 +310,24 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
                 }
             | None ->
                 NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
+
+            div {
+                attr.style "display: flex; gap: 10px; margin-top: 6px; justify-content: center;"
+                button {
+                    attr.id "tree-download-svg"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
+                    attr.title "Download Tree as SVG"
+                    on.click (fun _ -> dispatch DownloadTreeSvg)
+                    text "SVG"
+                }
+                button {
+                    attr.id "tree-download-png"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light layout-download-btn"
+                    attr.title "Download Tree as PNG"
+                    on.click (fun _ -> dispatch DownloadTreePng)
+                    text "PNG"
+                }
+            }
         }
 
 let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
