@@ -1062,7 +1062,7 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv 
     | DownloadBatchMetricsCsv | DownloadBatchAdjCsv | ToggleCoords
     | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DPng 
-    | Download3DSvg | DownloadBatchSvg | DownloadBatchPng | GenerateReport as msg ->
+    | Download3DSvg | DownloadBatchSvg | DownloadBatchPng | DownloadTreeSvg | DownloadTreePng | GenerateReport as msg ->
         handlePageHelperUpdate js msg model
 
     | SetBatchFinished ->

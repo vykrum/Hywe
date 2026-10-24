@@ -113,8 +113,8 @@ let generateVisualElements (root: TreeNode) (colorMap: Map<string, string>) (for
                 let stroke = 
                     if isElevated then "#4a90e2"
                     elif isNested then "#2ecc71"
-                    else "none"
-                let strokeWidth = if stroke <> "none" then "2" else "0"
+                    else "#d3d3d1"
+                let strokeWidth = if isElevated || isNested then "2" else "1"
                 
                 let w, h = 50.0, 40.0
                 let cx, cy = node.X, node.Y
@@ -167,7 +167,8 @@ let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) (forcedW:
             | VPolygon(pts, fill, stroke, sw) -> 
                 sprintf """<polygon points="%s" fill="%s" stroke="%s" stroke-width="%s" />""" pts fill stroke sw
             | VText(x, y, sz, ta, fl, nm) ->
-                sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz ta fl nm
+                let fw = if sz >= 10 then "600" else "400"
+                sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" font-weight="%s" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz fw ta fl nm
         )
         
     elStrings |> List.iter (fun s -> sb.AppendLine(s) |> ignore)
