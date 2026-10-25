@@ -4,7 +4,7 @@ open Bolero.Html
 open ModelTypes
 
 /// The top navigation header with branding
-let siteHeader =
+let siteHeader (dispatch: Message -> unit) =
     header {
         attr.``class`` "site-header"
         div {
@@ -23,6 +23,15 @@ let siteHeader =
                 attr.width "200"
                 attr.height "45"
                 attr.alt "HYWE acronym"
+            }
+        }
+        div {
+            attr.style "margin-left: auto; margin-right: 15px; display: flex; align-items: center;"
+            button {
+                attr.``type`` "button"
+                attr.``class`` "pre-about-btn"
+                on.click (fun _ -> dispatch ToggleAboutModal)
+                text "About"
             }
         }
     }
@@ -123,7 +132,7 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
     }
 
 /// The site footer with social links and license
-let siteFooter (current: AppScreen) =
+let siteFooter (current: AppScreen) (dispatch: Message -> unit) =
     footer {
         attr.id "footer"
         match current with
@@ -180,6 +189,12 @@ let siteFooter (current: AppScreen) =
                 attr.href "https://github.com/vykrum/Hywe/blob/394fddf8edb5c43f594d008c0c876e092f4d38cf/LICENSE#L11"
                 attr.target "_blank"
                 text "MIT License"
+            }
+            text " · "
+            a {
+                attr.style "cursor: pointer; text-decoration: underline;"
+                on.click (fun _ -> dispatch ToggleAboutModal)
+                text "About HYWE"
             }
         }
     }

@@ -206,6 +206,7 @@ let initModel =
         ShowLinkCopied = false
         ShowGallery = false
         ShowAboutModal = false
+        ShowHarvestModal = false
         IsLoadingGallery = false
         GalleryEntries = None
         GalleryOffset = 0
@@ -1312,6 +1313,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | SetShowAboutModal show ->
         { model with ShowAboutModal = show }, Cmd.none
+
+    | ToggleHarvestModal ->
+        { model with ShowHarvestModal = not model.ShowHarvestModal }, Cmd.none
+
+    | SetShowHarvestModal show ->
+        { model with ShowHarvestModal = show }, Cmd.none
 
     | LoadGalleryEntries ->
         let fetchGallery () = async {
