@@ -597,7 +597,7 @@ input[type=number] {
 }
 
 .preset-drawer {
-    position: absolute;
+    position: fixed;
     top: 132px;
     left: 0;
     z-index: 1802;
@@ -612,15 +612,20 @@ input[type=number] {
 }
 
 .preset-drawer-content {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 8px 10px;
     border: 1px solid #eee;
     border-left: none;
+    border-radius: 0 6px 6px 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
 }
 
 .drawer-gallery-link {
@@ -1965,10 +1970,12 @@ video.fullscreen-bg {
 /* Layout Container remains full width and centered */
 .hyweave-container {
     width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
     display: flex;
     justify-content: center;
     box-sizing: border-box;
-    padding: 8px 10px;
+    padding: 8px 24px;
 }
 
 .hyWeaveButton {
@@ -4598,99 +4605,8 @@ video.fullscreen-bg {
 }
 
 /* ==========================================================================
-   HARVEST (EXPORTS) DRAWER - Right Edge Overlay
+   HARVEST (EXPORTS) - Contextual inside Waggle Exchange
    ========================================================================== */
-.harvest-drawer {
-    position: fixed !important;
-    right: 0 !important;
-    bottom: 80px !important;
-    z-index: 1850 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: stretch !important;
-    transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
-    will-change: transform !important;
-    pointer-events: auto !important;
-    max-height: 80vh;
-}
-
-.harvest-drawer.collapsed {
-    transform: translateX(calc(100% - 16px)) !important;
-}
-
-.harvest-drawer.collapsed .harvest-drawer-content {
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: opacity 0.2s ease, visibility 0.2s ease !important;
-}
-
-.harvest-drawer:not(.collapsed) .harvest-drawer-content {
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transition: opacity 0.25s ease 0.05s !important;
-}
-
-/* The 16px vertical handle on the screen edge */
-.harvest-drawer-handle {
-    width: 16px !important;
-    min-width: 16px !important;
-    min-height: 100px !important;
-    background: #ffffff !important;
-    border: 1px solid #eeeeee !important;
-    border-right: none !important;
-    border-radius: 4px 0 0 4px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.04) !important;
-    transition: background 0.2s ease, border-color 0.2s ease !important;
-    user-select: none !important;
-    outline: none !important;
-    box-sizing: border-box !important;
-    padding: 10px 0 !important;
-    align-self: stretch !important;
-}
-
-.harvest-drawer-handle:hover {
-    background: #f8f8f8 !important;
-    border-color: #d8d8d8 !important;
-}
-
-.harvest-drawer-handle span {
-    writing-mode: vertical-rl !important;
-    transform: rotate(180deg) !important;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif !important;
-    font-size: 8px !important;
-    font-weight: 600 !important;
-    color: #666666 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1.2px !important;
-    white-space: pre !important;
-}
-
-/* Drawer Content Panel */
-.harvest-drawer-content {
-    width: 190px !important;
-    min-width: 190px !important;
-    max-width: 190px !important;
-    background: rgba(255, 255, 255, 0.96) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    padding: 10px 12px !important;
-    border: 1px solid #eeeeee !important;
-    border-right: none !important;
-    border-radius: 6px 0 0 6px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08) !important;
-    box-sizing: border-box !important;
-    overflow-y: auto !important;
-    max-height: 80vh !important;
-}
 
 .harvest-drawer-header {
     display: flex !important;

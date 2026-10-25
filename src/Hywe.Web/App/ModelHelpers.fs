@@ -73,6 +73,248 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
             content
         }
 
+let private iconDownloadSvg =
+    rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
+
+let private viewContextualHarvest (model: Model) (dispatch: Message -> unit) =
+    match model.ActivePanel with
+    | TeachPanel | ReportPanel -> empty()
+    | _ ->
+        let panelBadge =
+            match model.ActivePanel with
+            | TreePanel -> "Tree"
+            | BoundaryPanel -> "Boundary"
+            | LayoutPanel -> "Layout"
+            | AnalyzePanel -> "Analysis"
+            | ViewPanel -> "3D View"
+            | BatchPanel -> "Variations"
+            | _ -> ""
+
+        div {
+            attr.style "margin-top: 6px; padding-top: 6px; border-top: 1px solid #edf0f2; width: 100%; display: flex; flex-direction: column; gap: 4px;"
+
+            div {
+                attr.``class`` "harvest-drawer-header"
+                span { attr.``class`` "harvest-drawer-title"; text "Harvest" }
+                if panelBadge <> "" then
+                    span { attr.``class`` "harvest-drawer-badge"; text panelBadge }
+            }
+
+            match model.ActivePanel with
+            | TreePanel ->
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "Vector & Image"
+                }
+                div {
+                    attr.``class`` "harvest-action-grid"
+                    button {
+                        attr.id "harvest-tree-svg"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download Tree as vector SVG"
+                        on.click (fun _ -> dispatch DownloadTreeSvg)
+                        iconDownloadSvg
+                        text "SVG"
+                    }
+                    button {
+                        attr.id "harvest-tree-png"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download Tree as PNG image"
+                        on.click (fun _ -> dispatch DownloadTreePng)
+                        iconDownloadSvg
+                        text "PNG"
+                    }
+                }
+
+            | LayoutPanel ->
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "Plan Drawings"
+                }
+                div {
+                    attr.``class`` "harvest-action-grid"
+                    button {
+                        attr.id "harvest-layout-svg"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download Layout Plan as vector SVG with titleblock"
+                        on.click (fun _ -> dispatch DownloadLayoutSvg)
+                        iconDownloadSvg
+                        text "SVG"
+                    }
+                    button {
+                        attr.id "harvest-layout-png"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download Layout Plan as high-res PNG with titleblock"
+                        on.click (fun _ -> dispatch DownloadLayoutPng)
+                        iconDownloadSvg
+                        text "PNG"
+                    }
+                }
+
+            | ViewPanel ->
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "3D Perspectives"
+                }
+                div {
+                    attr.``class`` "harvest-action-grid"
+                    button {
+                        attr.id "harvest-3d-svg"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download 3D View as vector SVG"
+                        on.click (fun _ -> dispatch Download3DSvg)
+                        iconDownloadSvg
+                        text "SVG"
+                    }
+                    button {
+                        attr.id "harvest-3d-png"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download 3D View as PNG image"
+                        on.click (fun _ -> dispatch Download3DPng)
+                        iconDownloadSvg
+                        text "PNG"
+                    }
+                }
+
+            | BatchPanel ->
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "Variation Sheets"
+                }
+                div {
+                    attr.``class`` "harvest-action-grid"
+                    button {
+                        attr.id "harvest-batch-svg"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download all 24 variations sheet as SVG"
+                        on.click (fun _ -> dispatch DownloadBatchSvg)
+                        iconDownloadSvg
+                        text "SVG"
+                    }
+                    button {
+                        attr.id "harvest-batch-png"
+                        attr.``class`` "harvest-action-btn"
+                        attr.title "Download all 24 variations sheet as PNG"
+                        on.click (fun _ -> dispatch DownloadBatchPng)
+                        iconDownloadSvg
+                        text "PNG"
+                    }
+                }
+
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "Batch Datasets (CSV)"
+                }
+                div {
+                    attr.style "display: flex; flex-direction: column; gap: 4px;"
+                    button {
+                        attr.id "harvest-batch-crd"
+                        attr.``class`` "harvest-action-btn-row"
+                        attr.title "Download Batch Hexel Coordinates CSV"
+                        on.click (fun _ -> dispatch DownloadBatchCoordCsv)
+                        span { text "Coordinates" }
+                        span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                    }
+                    button {
+                        attr.id "harvest-batch-metrics"
+                        attr.``class`` "harvest-action-btn-row"
+                        attr.title "Download Batch Area Metrics CSV"
+                        on.click (fun _ -> dispatch DownloadBatchMetricsCsv)
+                        span { text "Area Metrics" }
+                        span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                    }
+                    button {
+                        attr.id "harvest-batch-adj"
+                        attr.``class`` "harvest-action-btn-row"
+                        attr.title "Download Batch Adjacency Matrix CSV"
+                        on.click (fun _ -> dispatch DownloadBatchAdjCsv)
+                        span { text "Adjacency Matrix" }
+                        span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                    }
+                }
+
+            | AnalyzePanel ->
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "Spatial Data (CSV)"
+                }
+                div {
+                    attr.style "display: flex; flex-direction: column; gap: 4px;"
+                    button {
+                        attr.id "harvest-ana-crd"
+                        attr.``class`` "harvest-action-btn-row"
+                        attr.title "Download Hexel Coordinates as CSV"
+                        on.click (fun _ -> dispatch DownloadCoordCsv)
+                        span { text "Hexel Coordinates" }
+                        span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                    }
+                    button {
+                        attr.id "harvest-ana-metrics"
+                        attr.``class`` "harvest-action-btn-row"
+                        attr.title "Download Area Metrics as CSV"
+                        on.click (fun _ -> dispatch DownloadMetricsCsv)
+                        span { text "Area Metrics" }
+                        span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                    }
+                    button {
+                        attr.id "harvest-ana-adj"
+                        attr.``class`` "harvest-action-btn-row"
+                        attr.title "Download Adjacency Matrix as CSV"
+                        on.click (fun _ -> dispatch DownloadAdjCsv)
+                        span { text "Adjacency Matrix" }
+                        span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                    }
+                }
+
+                div {
+                    attr.``class`` "harvest-section-label"
+                    text "Inspectors"
+                }
+                button {
+                    attr.id "harvest-toggle-coords"
+                    attr.``class`` (if model.IsCoordsVisible then "harvest-action-btn-row active" else "harvest-action-btn-row")
+                    attr.title "Toggle Coordinates Inspector Window"
+                    on.click (fun _ -> dispatch ToggleCoords)
+                    span { text "Coordinates Inspector" }
+                    span { attr.style "font-size: 8px; font-weight: 700;"; text (if model.IsCoordsVisible then "ACTIVE" else "VIEW") }
+                }
+
+            | BoundaryPanel ->
+                let poly = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+                match poly.UseMapBase, poly.IsMapLocked, poly.TopographyData with
+                | true, true, Some _ ->
+                    div {
+                        attr.``class`` "harvest-section-label"
+                        text "Site & Topography"
+                    }
+                    div {
+                        attr.style "display: flex; flex-direction: column; gap: 4px;"
+                        button {
+                            attr.id "harvest-map-img"
+                            attr.``class`` "harvest-action-btn-row"
+                            attr.title "Download Satellite / Map View Image"
+                            on.click (fun _ -> dispatch DownloadMapImage)
+                            span { text "Map Extents" }
+                            span { attr.style "opacity: 0.5; font-size: 9px;"; text ".PNG" }
+                        }
+                        button {
+                            attr.id "harvest-terrain-grid"
+                            attr.``class`` "harvest-action-btn-row"
+                            attr.title "Download Terrain Grid Elevation Data"
+                            on.click (fun _ -> dispatch DownloadTerrainGrid)
+                            span { text "Terrain Grid" }
+                            span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
+                        }
+                    }
+                | _ ->
+                    div {
+                        attr.style "font-size: 10px; color: #888; padding: 10px 0; text-align: center; font-style: italic;"
+                        text "Lock map or generate layout to harvest."
+                    }
+
+            | _ -> empty()
+        }
+
 // View helpers
 let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
     concat {
@@ -142,7 +384,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 
                 div {
                     attr.``class`` "preset-drawer-content"
-                    attr.style "min-width: 100px;"
+                    attr.style "width: 200px; min-width: 200px; max-width: 200px; box-sizing: border-box; max-height: calc(100vh - 160px); overflow-y: auto;"
                     
                     div {
                         attr.style "display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;"
@@ -172,8 +414,11 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                             ""
                     }
 
+                    // Contextual Harvest (Exports)
+                    viewContextualHarvest model dispatch
+
                     div {
-                        attr.style "margin-top: 4px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;"
+                        attr.style "margin-top: 6px; padding-top: 6px; border-top: 1px solid #edf0f2; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; width: 100%; box-sizing: border-box;"
                         
                         // Header row with Presets
                         div {
@@ -203,14 +448,30 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                             presetLink "Nest" "Nest" false
                         }
                         
-                        a {
-                            attr.``class`` "drawer-gallery-link"
-                            "onclick:stopPropagation" => true
-                            on.click (fun _ -> 
-                                dispatch ToggleGallery
-                                dispatch ToggleWorkspaceCollapse
-                            )
-                            text "Gallery"
+                        div {
+                            attr.style "display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; margin-top: 6px; padding-top: 6px; border-top: 1px solid #edf0f2; box-sizing: border-box;"
+
+                            a {
+                                attr.``class`` "drawer-gallery-link"
+                                attr.style "margin-top: 0;"
+                                "onclick:stopPropagation" => true
+                                on.click (fun _ -> 
+                                    dispatch ToggleGallery
+                                    dispatch ToggleWorkspaceCollapse
+                                )
+                                text "Gallery"
+                            }
+
+                            a {
+                                attr.``class`` "drawer-gallery-link"
+                                attr.style "margin-top: 0;"
+                                "onclick:stopPropagation" => true
+                                on.click (fun _ -> 
+                                    dispatch ToggleAboutModal
+                                    dispatch ToggleWorkspaceCollapse
+                                )
+                                text "About"
+                            }
                         }
                     }
 
@@ -778,283 +1039,6 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
             Report.viewReport model dispatch
     }
 
-let private iconDownloadSvg =
-    rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
-
-let private viewHarvestDrawer (model: Model) (dispatch: Message -> unit) (js: IJSRuntime) =
-    // The drawer does not appear for Teach and Report
-    match model.ActivePanel with
-    | TeachPanel | ReportPanel -> empty()
-    | _ ->
-        let isCollapsed = model.IsHarvestCollapsed
-        let panelBadge =
-            match model.ActivePanel with
-            | TreePanel -> "Tree"
-            | BoundaryPanel -> "Boundary"
-            | LayoutPanel -> "Layout"
-            | AnalyzePanel -> "Analysis"
-            | ViewPanel -> "3D View"
-            | BatchPanel -> "Variations"
-            | _ -> ""
-
-        concat {
-            // Backdrop to close on outside click when open
-            if not isCollapsed then
-                div {
-                    attr.style "position: fixed; inset: 0; z-index: 1800; background: transparent; pointer-events: auto;"
-                    on.click (fun _ -> dispatch (SetHarvestCollapse true))
-                }
-
-            div {
-                attr.id "hywe-harvest-drawer"
-                attr.``class`` (if isCollapsed then "harvest-drawer collapsed" else "harvest-drawer")
-                attr.style (
-                    "position: fixed !important; right: 0 !important; bottom: 80px !important; z-index: 1850 !important; " +
-                    "display: flex !important; flex-direction: row !important; align-items: stretch !important; " +
-                    "pointer-events: auto !important; max-height: 80vh !important; box-sizing: border-box !important;"
-                )
-
-                // Vertical handle on the left of drawer body (facing left, sticking out from right edge)
-                div {
-                    attr.id "harvest-drawer-btn"
-                    attr.``class`` "harvest-drawer-handle"
-                    attr.style "width: 16px !important; min-width: 16px !important; box-sizing: border-box !important;"
-                    attr.title (if isCollapsed then "Open Harvest (Exports)" else "Close Harvest")
-                    on.click (fun _ -> dispatch ToggleHarvestCollapse)
-                    span { 
-                        attr.style "white-space: pre;"
-                        text "Harvest" 
-                    }
-                }
-
-                // Drawer Content
-                div {
-                    attr.``class`` "harvest-drawer-content"
-                    attr.style "width: 190px !important; min-width: 190px !important; max-width: 190px !important; box-sizing: border-box !important;"
-
-                    div {
-                        attr.``class`` "harvest-drawer-header"
-                        span { attr.``class`` "harvest-drawer-title"; text "Harvest" }
-                        if panelBadge <> "" then
-                            span { attr.``class`` "harvest-drawer-badge"; text panelBadge }
-                    }
-
-                    match model.ActivePanel with
-                    | TreePanel ->
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "Vector & Image"
-                        }
-                        div {
-                            attr.``class`` "harvest-action-grid"
-                            button {
-                                attr.id "harvest-tree-svg"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download Tree as vector SVG"
-                                on.click (fun _ -> dispatch DownloadTreeSvg)
-                                iconDownloadSvg
-                                text "SVG"
-                            }
-                            button {
-                                attr.id "harvest-tree-png"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download Tree as PNG image"
-                                on.click (fun _ -> dispatch DownloadTreePng)
-                                iconDownloadSvg
-                                text "PNG"
-                            }
-                        }
-
-                    | LayoutPanel ->
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "Plan Drawings"
-                        }
-                        div {
-                            attr.``class`` "harvest-action-grid"
-                            button {
-                                attr.id "harvest-layout-svg"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download Layout Plan as vector SVG with titleblock"
-                                on.click (fun _ -> dispatch DownloadLayoutSvg)
-                                iconDownloadSvg
-                                text "SVG"
-                            }
-                            button {
-                                attr.id "harvest-layout-png"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download Layout Plan as high-res PNG with titleblock"
-                                on.click (fun _ -> dispatch DownloadLayoutPng)
-                                iconDownloadSvg
-                                text "PNG"
-                            }
-                        }
-
-                    | ViewPanel ->
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "3D Perspectives"
-                        }
-                        div {
-                            attr.``class`` "harvest-action-grid"
-                            button {
-                                attr.id "harvest-3d-svg"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download 3D View as vector SVG"
-                                on.click (fun _ -> dispatch Download3DSvg)
-                                iconDownloadSvg
-                                text "SVG"
-                            }
-                            button {
-                                attr.id "harvest-3d-png"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download 3D View as PNG image"
-                                on.click (fun _ -> dispatch Download3DPng)
-                                iconDownloadSvg
-                                text "PNG"
-                            }
-                        }
-
-                    | BatchPanel ->
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "Variation Sheets"
-                        }
-                        div {
-                            attr.``class`` "harvest-action-grid"
-                            button {
-                                attr.id "harvest-batch-svg"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download all 24 variations sheet as SVG"
-                                on.click (fun _ -> dispatch DownloadBatchSvg)
-                                iconDownloadSvg
-                                text "SVG"
-                            }
-                            button {
-                                attr.id "harvest-batch-png"
-                                attr.``class`` "harvest-action-btn"
-                                attr.title "Download all 24 variations sheet as PNG"
-                                on.click (fun _ -> dispatch DownloadBatchPng)
-                                iconDownloadSvg
-                                text "PNG"
-                            }
-                        }
-
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "Batch Datasets (CSV)"
-                        }
-                        div {
-                            attr.style "display: flex; flex-direction: column; gap: 4px;"
-                            button {
-                                attr.id "harvest-batch-crd"
-                                attr.``class`` "harvest-action-btn-row"
-                                attr.title "Download Batch Hexel Coordinates CSV"
-                                on.click (fun _ -> dispatch DownloadBatchCoordCsv)
-                                span { text "Coordinates" }
-                                span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                            }
-                            button {
-                                attr.id "harvest-batch-metrics"
-                                attr.``class`` "harvest-action-btn-row"
-                                attr.title "Download Batch Area Metrics CSV"
-                                on.click (fun _ -> dispatch DownloadBatchMetricsCsv)
-                                span { text "Area Metrics" }
-                                span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                            }
-                            button {
-                                attr.id "harvest-batch-adj"
-                                attr.``class`` "harvest-action-btn-row"
-                                attr.title "Download Batch Adjacency Matrix CSV"
-                                on.click (fun _ -> dispatch DownloadBatchAdjCsv)
-                                span { text "Adjacency Matrix" }
-                                span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                            }
-                        }
-
-                    | AnalyzePanel ->
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "Spatial Data (CSV)"
-                        }
-                        div {
-                            attr.style "display: flex; flex-direction: column; gap: 4px;"
-                            button {
-                                attr.id "harvest-ana-crd"
-                                attr.``class`` "harvest-action-btn-row"
-                                attr.title "Download Hexel Coordinates as CSV"
-                                on.click (fun _ -> dispatch DownloadCoordCsv)
-                                span { text "Hexel Coordinates" }
-                                span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                            }
-                            button {
-                                attr.id "harvest-ana-metrics"
-                                attr.``class`` "harvest-action-btn-row"
-                                attr.title "Download Area Metrics as CSV"
-                                on.click (fun _ -> dispatch DownloadMetricsCsv)
-                                span { text "Area Metrics" }
-                                span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                            }
-                            button {
-                                attr.id "harvest-ana-adj"
-                                attr.``class`` "harvest-action-btn-row"
-                                attr.title "Download Adjacency Matrix as CSV"
-                                on.click (fun _ -> dispatch DownloadAdjCsv)
-                                span { text "Adjacency Matrix" }
-                                span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                            }
-                        }
-
-                        div {
-                            attr.``class`` "harvest-section-label"
-                            text "Inspectors"
-                        }
-                        button {
-                            attr.id "harvest-toggle-coords"
-                            attr.``class`` (if model.IsCoordsVisible then "harvest-action-btn-row active" else "harvest-action-btn-row")
-                            attr.title "Toggle Coordinates Inspector Window"
-                            on.click (fun _ -> dispatch ToggleCoords)
-                            span { text "Coordinates Inspector" }
-                            span { attr.style "font-size: 8px; font-weight: 700;"; text (if model.IsCoordsVisible then "ACTIVE" else "VIEW") }
-                        }
-
-                    | BoundaryPanel ->
-                        let poly = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-                        match poly.UseMapBase, poly.IsMapLocked, poly.TopographyData with
-                        | true, true, Some _ ->
-                            div {
-                                attr.``class`` "harvest-section-label"
-                                text "Site & Topography"
-                            }
-                            div {
-                                attr.style "display: flex; flex-direction: column; gap: 4px;"
-                                button {
-                                    attr.id "harvest-map-img"
-                                    attr.``class`` "harvest-action-btn-row"
-                                    attr.title "Download Satellite / Map View Image"
-                                    on.click (fun _ -> dispatch DownloadMapImage)
-                                    span { text "Map Extents" }
-                                    span { attr.style "opacity: 0.5; font-size: 9px;"; text ".PNG" }
-                                }
-                                button {
-                                    attr.id "harvest-terrain-grid"
-                                    attr.``class`` "harvest-action-btn-row"
-                                    attr.title "Download Terrain Grid Elevation Data"
-                                    on.click (fun _ -> dispatch DownloadTerrainGrid)
-                                    span { text "Terrain Grid" }
-                                    span { attr.style "opacity: 0.5; font-size: 9px;"; text ".CSV" }
-                                }
-                            }
-                        | _ ->
-                            div {
-                                attr.style "font-size: 10px; color: #888; padding: 10px 0; text-align: center; font-style: italic;"
-                                text "Lock map or generate layout to harvest."
-                            }
-
-                    | _ -> empty()
-                }
-            }
-        }
 
 let view model dispatch (js: IJSRuntime) =
     concat {
@@ -1065,6 +1049,5 @@ let view model dispatch (js: IJSRuntime) =
         | None -> empty()
         viewHyweTabs model dispatch 
         viewHywePanels model dispatch js
-        viewHarvestDrawer model dispatch js
         Overlays.viewConfirmOverlay model dispatch
     }

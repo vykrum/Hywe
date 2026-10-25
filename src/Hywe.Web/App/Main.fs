@@ -109,7 +109,6 @@ type MyApp() =
 
                             view model dispatch this.JSRuntime
                             viewGalleryModal model dispatch
-                            viewAboutDrawerHandle dispatch
                             viewAboutModal model dispatch
                         }
 

@@ -390,22 +390,8 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
             }
         }
 
-/// <summary> Right-edge drawer handle button to open the About HYWE dialog. </summary>
-let viewAboutDrawerHandle (dispatch: Message -> unit) =
-    div {
-        attr.id "specs-drawer-btn"
-        attr.``class`` "specs-drawer-handle"
-        "role" => "button"
-        attr.tabindex 0
-        attr.title "About HYWE"
-        "aria-label" => "Open About HYWE dialog"
-        on.click (fun _ -> dispatch ToggleAboutModal)
-        on.keydown (fun (e: Microsoft.AspNetCore.Components.Web.KeyboardEventArgs) ->
-            if e.Key = "Enter" || e.Key = " " then
-                dispatch ToggleAboutModal
-        )
-        span { text "About Hywe" }
-    }
+/// <summary> Right-edge drawer handle button to open the About HYWE dialog (now integrated into Waggle Exchange). </summary>
+let viewAboutDrawerHandle (_: Message -> unit) = empty()
 
 /// <summary> Declarative About HYWE modal dialog. </summary>
 let viewAboutModal (model: Model) (dispatch: Message -> unit) =
