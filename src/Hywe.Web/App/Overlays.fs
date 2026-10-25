@@ -556,3 +556,183 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                 }
             }
         }
+
+/// <summary> Declarative Contextual Harvest modal window. </summary>
+let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
+    match model.ShowHarvestModal with
+    | false -> empty()
+    | true ->
+        let panelBadge, panelDesc =
+            match model.ActivePanel with
+            | TreePanel -> "Tree", "Download relational program tree diagrams and vector graphs."
+            | LayoutPanel -> "Layout", "Export architectural layout plans with titleblocks and documentation."
+            | ViewPanel -> "3D View", "Export 3D perspectives, isometric representations, and massing."
+            | BatchPanel -> "Variations", "Download 24-variation comparative sheets and aggregate batch CSV datasets."
+            | AnalyzePanel -> "Analysis", "Download quantitative spatial data, room coordinates, and adjacency matrices."
+            | BoundaryPanel -> "Boundary", "Export site imagery and terrain elevation grid data."
+            | _ -> "Workspace", "Export design and spatial assets."
+
+        div {
+            attr.id "harvest-modal-overlay"
+            attr.``class`` "hywe-modal-overlay active"
+            "role" => "dialog"
+            "aria-modal" => "true"
+            on.click (fun _ -> dispatch (SetShowHarvestModal false))
+
+            div {
+                attr.``class`` "hywe-modal-content harvest-modal-window"
+                "onclick:stopPropagation" => true
+
+                button {
+                    attr.``class`` "hywe-modal-close"
+                    "aria-label" => "Close harvest window"
+                    on.click (fun _ -> dispatch (SetShowHarvestModal false))
+                    text "✕"
+                }
+
+                div {
+                    attr.style "display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #edf0f2; padding-bottom: 12px; margin-bottom: 16px;"
+                    div {
+                        h1 {
+                            attr.style "margin: 0; font-size: 1.35rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;"
+                            rawHtml """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
+                            text "Harvest"
+                        }
+                        p {
+                            attr.style "margin: 4px 0 0 0; font-size: 12px; color: #64748b;"
+                            text panelDesc
+                        }
+                    }
+                    span {
+                        attr.``class`` "harvest-drawer-badge"
+                        attr.style "font-size: 10px; padding: 3px 8px; background: #e0f2fe; color: #0369a1; border-radius: 12px; font-weight: 600; text-transform: uppercase;"
+                        text panelBadge
+                    }
+                }
+
+                let harvestCard id title desc badge msg =
+                    button {
+                        attr.id id
+                        attr.``class`` "harvest-modal-card"
+                        on.click (fun _ -> dispatch msg)
+                        div {
+                            attr.``class`` "harvest-modal-card-header"
+                            span {
+                                attr.``class`` "harvest-modal-card-title"
+                                rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
+                                text title
+                            }
+                            span {
+                                attr.``class`` "harvest-modal-card-badge"
+                                text badge
+                            }
+                        }
+                        p {
+                            attr.``class`` "harvest-modal-card-desc"
+                            text desc
+                        }
+                    }
+
+                let harvestSectionTitle title =
+                    div {
+                        attr.style "font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px 0;"
+                        text title
+                    }
+
+                match model.ActivePanel with
+                | TreePanel ->
+                    harvestSectionTitle "Vector & Bitmap Drawings"
+                    div {
+                        attr.``class`` "harvest-modal-grid"
+                        harvestCard "harvest-tree-svg" "Tree Hierarchy" "Scalable vector representation of spatial tree" "SVG" DownloadTreeSvg
+                        harvestCard "harvest-tree-png" "Tree Hierarchy" "High-resolution raster graphic of current tree" "PNG" DownloadTreePng
+                    }
+
+                | LayoutPanel ->
+                    harvestSectionTitle "Architectural Plan Documentation"
+                    div {
+                        attr.``class`` "harvest-modal-grid"
+                        harvestCard "harvest-layout-svg" "Layout Plan" "Clean vector architectural plan with titleblock" "SVG" DownloadLayoutSvg
+                        harvestCard "harvest-layout-png" "Layout Plan" "High-resolution raster plan presentation" "PNG" DownloadLayoutPng
+                    }
+
+                | ViewPanel ->
+                    harvestSectionTitle "3D Perspectives & Massing"
+                    div {
+                        attr.``class`` "harvest-modal-grid"
+                        harvestCard "harvest-3d-svg" "3D Perspective" "Vector line drawing of 3D arrangement" "SVG" Download3DSvg
+                        harvestCard "harvest-3d-png" "3D Perspective" "Pixel-rendered view of 3D volumes" "PNG" Download3DPng
+                    }
+
+                | BatchPanel ->
+                    harvestSectionTitle "Variation Sheets"
+                    div {
+                        attr.``class`` "harvest-modal-grid"
+                        harvestCard "harvest-batch-svg" "24 Variations Grid" "Vector sheet of all 24 spatial configurations" "SVG" DownloadBatchSvg
+                        harvestCard "harvest-batch-png" "24 Variations Grid" "High-resolution raster sheet of variations" "PNG" DownloadBatchPng
+                    }
+
+                    harvestSectionTitle "Batch Numerical Datasets"
+                    div {
+                        attr.``class`` "harvest-modal-grid"
+                        harvestCard "harvest-batch-crd" "Hexel Coordinates" "Grid coordinates across all 24 permutations" "CSV" DownloadBatchCoordCsv
+                        harvestCard "harvest-batch-metrics" "Area Metrics" "Square footage & dimensions for all variants" "CSV" DownloadBatchMetricsCsv
+                        harvestCard "harvest-batch-adj" "Adjacency Matrix" "Spatial adjacency relations across permutations" "CSV" DownloadBatchAdjCsv
+                    }
+
+                | AnalyzePanel ->
+                    harvestSectionTitle "Spatial Analytics & Graph Topologies"
+                    div {
+                        attr.``class`` "harvest-modal-grid"
+                        harvestCard "harvest-ana-crd" "Room Hexel Coordinates" "Spatial discrete coordinates for layout hexels" "CSV" DownloadCoordCsv
+                        harvestCard "harvest-ana-metrics" "Area Allocation Metrics" "Detailed room areas, boundaries, and ratios" "CSV" DownloadMetricsCsv
+                        harvestCard "harvest-ana-adj" "Adjacency Matrix" "Room-to-room connectivity and adjacency data" "CSV" DownloadAdjCsv
+                    }
+
+                    harvestSectionTitle "Interactive Inspectors"
+                    button {
+                        attr.id "harvest-toggle-coords"
+                        attr.``class`` "harvest-modal-card"
+                        attr.style "width: 100%; box-sizing: border-box;"
+                        on.click (fun _ -> dispatch ToggleCoords)
+                        div {
+                            attr.``class`` "harvest-modal-card-header"
+                            span {
+                                attr.``class`` "harvest-modal-card-title"
+                                text "Coordinates Inspector Window"
+                            }
+                            span {
+                                attr.``class`` "harvest-modal-card-badge"
+                                attr.style (if model.IsCoordsVisible then "background: #22c55e; color: #fff;" else "")
+                                text (if model.IsCoordsVisible then "ACTIVE" else "TOGGLE")
+                            }
+                        }
+                        p {
+                            attr.``class`` "harvest-modal-card-desc"
+                            text "Open or close the on-screen live coordinate inspector."
+                        }
+                    }
+
+                | BoundaryPanel ->
+                    let poly = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+                    match poly.UseMapBase, poly.IsMapLocked, poly.TopographyData with
+                    | true, true, Some _ ->
+                        harvestSectionTitle "Site Context & Elevation"
+                        div {
+                            attr.``class`` "harvest-modal-grid"
+                            harvestCard "harvest-map-img" "Map Extents" "Satellite background image capture" "PNG" DownloadMapImage
+                            harvestCard "harvest-terrain-grid" "Terrain Grid" "Elevation contour grid data" "CSV" DownloadTerrainGrid
+                        }
+                    | _ ->
+                        div {
+                            attr.style "font-size: 12px; color: #64748b; padding: 20px; text-align: center; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; margin-top: 10px;"
+                            text "Lock map in boundary editor or generate layout to harvest site and terrain data."
+                        }
+
+                | _ ->
+                    div {
+                        attr.style "font-size: 12px; color: #64748b; padding: 20px; text-align: center; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; margin-top: 10px;"
+                        text "No exportable outputs on the current screen. Switch to Tree, Layout, 3D, Variations, or Analysis to export drawings and datasets."
+                    }
+            }
+        }

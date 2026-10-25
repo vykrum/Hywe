@@ -505,6 +505,8 @@ type Model =
         ShowGallery: bool
         /// <summary> Whether about modal is open. </summary>
         ShowAboutModal: bool
+        /// <summary> Whether contextual harvest modal is open. </summary>
+        ShowHarvestModal: bool
         /// <summary> Flag indicating community gallery data is loading. </summary>
         IsLoadingGallery: bool
         /// <summary> Fetched gallery entries list. </summary>
@@ -731,6 +733,10 @@ type Message =
     | ToggleAboutModal
     /// <summary> Sets about dialog modal visibility directly. </summary>
     | SetShowAboutModal of bool
+    /// <summary> Toggles contextual harvest modal dialog visibility. </summary>
+    | ToggleHarvestModal
+    /// <summary> Sets contextual harvest modal dialog visibility directly. </summary>
+    | SetShowHarvestModal of bool
     /// <summary> Triggers asynchronous loading of community gallery entries. </summary>
     | LoadGalleryEntries
     /// <summary> Navigates to next page in community gallery view. </summary>

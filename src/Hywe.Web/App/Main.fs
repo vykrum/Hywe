@@ -110,6 +110,7 @@ type MyApp() =
                             view model dispatch this.JSRuntime
                             viewGalleryModal model dispatch
                             viewAboutModal model dispatch
+                            viewHarvestModal model dispatch
                         }
 
                         match model.ShowPrivacyAlert && model.CurrentScreen = MainScreen with
