@@ -193,6 +193,7 @@ let initModel =
         EditsCount = 0
         IsPresetsCollapsed = true
         IsWorkspaceCollapsed = true
+        IsHarvestCollapsed = true
         IsTreeCollapsed = false
         PendingConfirm = None
         UndoStack = []
@@ -1062,7 +1063,8 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | DownloadCoordCsv | DownloadMetricsCsv | DownloadAdjCsv | DownloadBatchCoordCsv 
     | DownloadBatchMetricsCsv | DownloadBatchAdjCsv | ToggleCoords
     | ToggleEditorMode | ExportPdfRequested | ToggleBoundary | ToggleViewLock | Download3DPng 
-    | Download3DSvg | DownloadBatchSvg | DownloadBatchPng | DownloadTreeSvg | DownloadTreePng | GenerateReport as msg ->
+    | Download3DSvg | DownloadBatchSvg | DownloadBatchPng | DownloadTreeSvg | DownloadTreePng 
+    | DownloadLayoutSvg | DownloadLayoutPng | DownloadMapImage | DownloadTerrainGrid | GenerateReport as msg ->
         handlePageHelperUpdate js msg model
 
     | SetBatchFinished ->
@@ -1285,6 +1287,12 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
 
     | ToggleWorkspaceCollapse ->
         { model with IsWorkspaceCollapsed = not model.IsWorkspaceCollapsed }, Cmd.none
+
+    | ToggleHarvestCollapse ->
+        { model with IsHarvestCollapsed = not model.IsHarvestCollapsed }, Cmd.none
+
+    | SetHarvestCollapse collapsed ->
+        { model with IsHarvestCollapsed = collapsed }, Cmd.none
 
     | ToggleTreeCollapse ->
         { model with IsTreeCollapsed = not model.IsTreeCollapsed }, Cmd.none

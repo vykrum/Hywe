@@ -219,34 +219,4 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                     }
                 }
             }
-
-        // --- DOWNLOAD GROUP ---
-        div {
-            attr.``style`` "width: 100%; display: flex; gap: 10px; margin-top: 20px; justify-content: center; align-items: center; flex-wrap: wrap;"
-            button {
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                let baseStyle = "font-size: 10px; padding: 6px 12px; transition: all 0.2s;"
-                if isCoordsVisible then 
-                    attr.``style`` (baseStyle + " background: #eee; color: #333;")
-                else 
-                    attr.``style`` baseStyle
-                attr.title "Toggle Coordinates View"
-                on.click (fun _ -> dispatch ToggleCoords)
-                text "Crd"
-            }
-            button {
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                attr.``style`` "font-size: 10px; padding: 6px 12px;"
-                attr.title "Area Metrics"
-                on.click (fun _ -> dispatch DownloadMetricsCsv)
-                text "ARE"
-            }
-            button {
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                attr.``style`` "font-size: 10px; padding: 6px 12px;"
-                attr.title "Adjacency Matrix"
-                on.click (fun _ -> dispatch DownloadAdjCsv)
-                text "Adj"
-            }
-        }
     }

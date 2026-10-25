@@ -479,6 +479,8 @@ type Model =
         IsPresetsCollapsed: bool
         /// <summary> Whether workspace panel drawer is collapsed. </summary>
         IsWorkspaceCollapsed: bool
+        /// <summary> Whether the harvest exports drawer is collapsed. </summary>
+        IsHarvestCollapsed: bool
         /// <summary> Whether the interactive tree or syntax editor is collapsed into a compact ribbon. </summary>
         IsTreeCollapsed: bool
         /// <summary> Pending action confirmation modal state. </summary>
@@ -677,6 +679,18 @@ type Message =
     | DownloadTreeSvg
     /// <summary> Triggers download of interactive tree as PNG image file. </summary>
     | DownloadTreePng
+    /// <summary> Toggles collapsed state of the harvest exports drawer. </summary>
+    | ToggleHarvestCollapse
+    /// <summary> Explicitly sets collapsed state of the harvest exports drawer. </summary>
+    | SetHarvestCollapse of bool
+    /// <summary> Triggers download of 2D layout plan as SVG. </summary>
+    | DownloadLayoutSvg
+    /// <summary> Triggers download of 2D layout plan as PNG. </summary>
+    | DownloadLayoutPng
+    /// <summary> Triggers download of map view as PNG. </summary>
+    | DownloadMapImage
+    /// <summary> Triggers download of terrain grid dataset. </summary>
+    | DownloadTerrainGrid
     /// <summary> Updates report generation options using a transformer function. </summary>
     | UpdateReportOptions of (ReportOptions -> ReportOptions)
     /// <summary> Triggers report document generation. </summary>
