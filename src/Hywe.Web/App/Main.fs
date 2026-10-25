@@ -89,7 +89,7 @@ type MyApp() =
             (fun msg model -> update this.JSRuntime msg model)
             (fun model dispatch -> 
                 concat {
-                    Shell.siteHeader
+                    Shell.siteHeader dispatch
                     div {
                         attr.id "page-content"
                         match model.CurrentScreen <> LoadingScreen with
@@ -146,7 +146,7 @@ type MyApp() =
                             }
                         | false -> empty()
 
-                        Shell.siteFooter model.CurrentScreen
+                        Shell.siteFooter model.CurrentScreen dispatch
                     }
                     Shell.loadingScreen model.CurrentScreen
                 }

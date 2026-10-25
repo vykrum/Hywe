@@ -415,6 +415,52 @@ textarea.hywe-input {
     z-index: 200;
 }
 
+.pre-about-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+}
+
+.pre-about-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+dialog#pre-about-dialog {
+    border: none;
+    border-radius: 12px;
+    padding: 32px 36px;
+    max-width: 820px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    color: #333333;
+    line-height: 1.6;
+    box-sizing: border-box;
+    z-index: 25000;
+}
+
+dialog#pre-about-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
 /* =====================
    INSTRUCTIONS
    ===================== */
