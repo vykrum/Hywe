@@ -808,19 +808,29 @@ let private viewHarvestDrawer (model: Model) (dispatch: Message -> unit) (js: IJ
             div {
                 attr.id "hywe-harvest-drawer"
                 attr.``class`` (if isCollapsed then "harvest-drawer collapsed" else "harvest-drawer")
+                attr.style (
+                    "position: fixed !important; right: 0 !important; bottom: 80px !important; z-index: 1850 !important; " +
+                    "display: flex !important; flex-direction: row !important; align-items: stretch !important; " +
+                    "pointer-events: auto !important; max-height: 80vh !important; box-sizing: border-box !important;"
+                )
 
                 // Vertical handle on the left of drawer body (facing left, sticking out from right edge)
                 div {
                     attr.id "harvest-drawer-btn"
                     attr.``class`` "harvest-drawer-handle"
+                    attr.style "width: 16px !important; min-width: 16px !important; box-sizing: border-box !important;"
                     attr.title (if isCollapsed then "Open Harvest (Exports)" else "Close Harvest")
                     on.click (fun _ -> dispatch ToggleHarvestCollapse)
-                    span { text "H a r v e s t" }
+                    span { 
+                        attr.style "white-space: pre;"
+                        text "Harvest" 
+                    }
                 }
 
                 // Drawer Content
                 div {
                     attr.``class`` "harvest-drawer-content"
+                    attr.style "width: 190px !important; min-width: 190px !important; max-width: 190px !important; box-sizing: border-box !important;"
 
                     div {
                         attr.``class`` "harvest-drawer-header"
