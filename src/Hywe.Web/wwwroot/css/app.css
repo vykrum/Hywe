@@ -3,6 +3,7 @@ body {
     width: 100%;
     height: 99%;
     margin: 0;
+    overflow-x: hidden;
     font-family: var(--font-sans);
     font-size: 14px;
     color: var(--color-text-main);
@@ -4595,3 +4596,211 @@ video.fullscreen-bg {
         opacity: 0;
     }
 }
+
+/* ==========================================================================
+   HARVEST (EXPORTS) DRAWER - Right Edge Overlay
+   ========================================================================== */
+.harvest-drawer {
+    position: fixed !important;
+    right: 0 !important;
+    bottom: 80px !important;
+    z-index: 1850 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    transition: transform 0.35s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+    will-change: transform !important;
+    pointer-events: auto !important;
+    max-height: 80vh;
+}
+
+.harvest-drawer.collapsed {
+    transform: translateX(calc(100% - 16px)) !important;
+}
+
+.harvest-drawer.collapsed .harvest-drawer-content {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease !important;
+}
+
+.harvest-drawer:not(.collapsed) .harvest-drawer-content {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transition: opacity 0.25s ease 0.05s !important;
+}
+
+/* The 16px vertical handle on the screen edge */
+.harvest-drawer-handle {
+    width: 16px !important;
+    min-width: 16px !important;
+    min-height: 100px !important;
+    background: #ffffff !important;
+    border: 1px solid #eeeeee !important;
+    border-right: none !important;
+    border-radius: 4px 0 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.04) !important;
+    transition: background 0.2s ease, border-color 0.2s ease !important;
+    user-select: none !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    padding: 10px 0 !important;
+    align-self: stretch !important;
+}
+
+.harvest-drawer-handle:hover {
+    background: #f8f8f8 !important;
+    border-color: #d8d8d8 !important;
+}
+
+.harvest-drawer-handle span {
+    writing-mode: vertical-rl !important;
+    transform: rotate(180deg) !important;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif !important;
+    font-size: 8px !important;
+    font-weight: 600 !important;
+    color: #666666 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.2px !important;
+    white-space: pre !important;
+}
+
+/* Drawer Content Panel */
+.harvest-drawer-content {
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    padding: 10px 12px !important;
+    border: 1px solid #eeeeee !important;
+    border-right: none !important;
+    border-radius: 6px 0 0 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08) !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    max-height: 80vh !important;
+}
+
+.harvest-drawer-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-bottom: 5px !important;
+    border-bottom: 1px solid #edf0f2 !important;
+    margin-bottom: 2px !important;
+}
+
+.harvest-drawer-title {
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    color: #4b5563 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+}
+
+.harvest-drawer-badge {
+    font-size: 8px !important;
+    font-weight: 600 !important;
+    color: #6b7280 !important;
+    background: #f3f4f6 !important;
+    padding: 1px 6px !important;
+    border-radius: 3px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.harvest-section-label {
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    color: #9ca3af !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    margin-top: 3px !important;
+}
+
+.harvest-action-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+}
+
+.harvest-action-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 6px 8px !important;
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 4px !important;
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.harvest-action-btn:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    color: #111827 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.harvest-action-btn:active {
+    transform: translateY(0) !important;
+}
+
+.harvest-action-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 1.8 !important;
+}
+
+.harvest-action-btn-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 5px 8px !important;
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 4px !important;
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+}
+
+.harvest-action-btn-row:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    color: #111827 !important;
+}
+
+.harvest-action-btn-row.active {
+    background: #f3f4f6 !important;
+    border-color: #374151 !important;
+    color: #111827 !important;
+}
