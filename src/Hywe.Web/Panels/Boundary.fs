@@ -599,24 +599,6 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo =
                 }
         }
 
-        // Bottom Action Bar
-        match model.UseMapBase, model.IsMapLocked, model.TopographyData with
-        | true, true, Some topoData ->
-            div {
-                attr.style "display: flex; justify-content: center; gap: 12px; margin-top: 10px; padding-bottom: 30px;"
-                button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                    on.click (fun _ -> FileManager.exportMapImage js)
-                    text "Download Map Image"
-                }
-                button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
-                    on.click (fun _ -> FileManager.exportMapData js topoData "terrain")
-                    text "Download Terrain Grid"
-                }
-            }
-        | _ -> empty()
-
         // Instructions Modal / Card (rendered cleanly at boundary view root level)
         instructionsModal model dispatch js
     }

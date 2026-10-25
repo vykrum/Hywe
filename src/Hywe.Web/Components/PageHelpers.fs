@@ -22,7 +22,7 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
     let baseModel, baseCmd =
         match panel with
         | TreePanel ->
-            { model with ActivePanel = TreePanel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
+            { model with ActivePanel = TreePanel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
         | BatchPanel ->
             let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
             match isStale with
@@ -39,10 +39,11 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                         LayoutCache = Cache.init markers
                         IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
+                        IsHarvestCollapsed = true
                     }
                 model', Cmd.ofMsg (GenerateNextBatchItem 0)
             | false -> 
-                { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
+                { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
         | BoundaryPanel ->
             let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
             let newState = FileManager.importFromHyw model.SrcOfTrth inner
@@ -54,9 +55,10 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                 PolygonExport = newExport
                 IsPresetsCollapsed = true
                 IsWorkspaceCollapsed = true 
+                IsHarvestCollapsed = true
             }, Cmd.none
         | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
-            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true }, Cmd.none
+            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
 
     if isLeavingBoundaryWithChanges then
         baseModel, Cmd.batch [ baseCmd; Cmd.ofMsg StartHyweave ]
@@ -430,6 +432,62 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                 js.InvokeVoidAsync("downloadSvgAsPng", fileName, finalSvg, metaJson).AsTask() |> Async.AwaitTask
             ) () (fun _ -> NoOp)
         Some (model, downloadCmd)
+
+    | DownloadLayoutSvg ->
+        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+        let fileName = "HyweLayout_" + datePart + ".svg"
+        let elv = model.Tree.ActiveLevel
+        let baseSqn = model.Sequences |> Map.tryFind 0 |> Option.defaultValue allSqns.[11]
+        let currentSqn = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue baseSqn
+        let currentSqnIdx = sqnToIndex currentSqn
+        let marker = toMarker elv
+        let meta = ExportHelpers.createExportMetadata model marker
+        let metaJson = ExportHelpers.toJson meta
+        let cmd = 
+            Cmd.OfAsync.perform (fun () -> async {
+                match Cache.get marker currentSqnIdx model.LayoutCache with
+                | Some cfg ->
+                    let rawSvg = Layout.generateSvgFromBatchConfig cfg 20.0
+                    let finalSvg = Titleblock.apply rawSvg meta
+                    let xmlHeader = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n"
+                    do! js.InvokeVoidAsync("downloadFile", fileName, xmlHeader + finalSvg, "image/svg+xml;charset=utf-8").AsTask() |> Async.AwaitTask
+                | None ->
+                    do! js.InvokeVoidAsync("downloadSvgFile", "layout-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask
+            }) () (fun _ -> NoOp)
+        Some (model, cmd)
+
+    | DownloadLayoutPng ->
+        let datePart = System.DateTime.Now.ToString("yyMMddmm")
+        let fileName = "HyweLayout_" + datePart + ".png"
+        let elv = model.Tree.ActiveLevel
+        let baseSqn = model.Sequences |> Map.tryFind 0 |> Option.defaultValue allSqns.[11]
+        let currentSqn = model.Sequences |> Map.tryFind model.Tree.ActiveLevel |> Option.defaultValue baseSqn
+        let currentSqnIdx = sqnToIndex currentSqn
+        let marker = toMarker elv
+        let meta = ExportHelpers.createExportMetadata model marker
+        let metaJson = ExportHelpers.toJson meta
+        let cmd =
+            Cmd.OfAsync.perform (fun () -> async {
+                match Cache.get marker currentSqnIdx model.LayoutCache with
+                | Some cfg ->
+                    let rawSvg = Layout.generateSvgFromBatchConfig cfg 20.0
+                    let finalSvg = Titleblock.apply rawSvg meta
+                    do! js.InvokeVoidAsync("downloadSvgAsPng", fileName, finalSvg, metaJson).AsTask() |> Async.AwaitTask
+                | None ->
+                    do! js.InvokeVoidAsync("downloadSvgElementAsPng", "layout-svg-output", fileName, metaJson).AsTask() |> Async.AwaitTask 
+            }) () (fun _ -> NoOp)
+        Some (model, cmd)
+
+    | DownloadMapImage ->
+        FileManager.exportMapImage js
+        Some (model, Cmd.none)
+
+    | DownloadTerrainGrid ->
+        let poly = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+        match poly.TopographyData with
+        | Some topoData -> FileManager.exportMapData js topoData "terrain"
+        | None -> ()
+        Some (model, Cmd.none)
 
     | UpdateReportOptions updateFn ->
         Some ({ model with ReportOptions = updateFn model.ReportOptions }, Cmd.none)
