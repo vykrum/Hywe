@@ -112,12 +112,6 @@ let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
         match totalPerimeter with
         | 0 -> 0.0
         | p -> (4.0 * System.Math.PI * float totalHexels) / float (p * p)
-    
-    let typology, typoDesc =
-        if compactnessCI >= 0.67 then "Centripetal Cluster", "Concentric layout with central common core"
-        elif compactnessCI >= 0.62 then "Biaxial / Zoned", "Balanced multi-branch grouping"
-        elif compactnessCI >= 0.55 then "Dendritic Spine", "Directional layout with distinct wings"
-        else "Linear Pavilion", "Extroverted layout with high exterior exposure"
         
     let compactnessBadge, compBg, compClr =
         if compactnessCI >= 0.67 then "Compact", "#ecfdf5", "#047857"
@@ -135,9 +129,7 @@ let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
             |> Array.map (fun c -> (prpVlu c.Rfid).Split('.').Length) 
             |> Array.max
             
-    {| Typology = typology
-       TypoDesc = typoDesc
-       CompactnessBadge = compactnessBadge
+    {| CompactnessBadge = compactnessBadge
        CompactnessScore = compactnessCI
        CompBg = compBg
        CompClr = compClr
@@ -148,7 +140,7 @@ let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
 
 let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: string) (subtext: string) =
     div {
-        attr.``style`` "flex: 1 1 calc(20% - 10px); min-width: 155px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
+        attr.``style`` "flex: 1 1 calc(25% - 10px); min-width: 170px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
         div {
             attr.``style`` "font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 6px;"
             text title
@@ -212,7 +204,7 @@ let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
 
 let renderSolarRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) =
     let openCount = float avl
-    let ori, oriBg, oriClr = getOrientationLabel solarVal avl
+    let ori, _, _ = getOrientationLabel solarVal avl
 
     tr {
         attr.``style`` $"background-color:{clr}; height: 32px;"
@@ -229,46 +221,29 @@ let renderSolarRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) 
         td { 
             attr.width "15%"
             attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
-            if avl <= 0 then
-                span {
-                    attr.``style`` "color: red; font-size: 10.5px; font-weight: 500;"
-                    text "0 (Landlocked)"
-                }
-            else
-                text (sprintf "%.0f" openCount) 
+            text (sprintf "%.0f" openCount) 
         }
         td {
             attr.width "20%"
-            attr.``style`` "padding: 6px 4px; text-align: center; border: 1px solid #eee; vertical-align: middle;"
-            div {
-                attr.``style`` $"display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; background: {oriBg}; color: {oriClr};"
-                text ori
-            }
+            attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee; font-size: 11px; color: #555;"
+            text ori
         }
         td {
             attr.width "20%"
-            attr.``style`` "padding: 6px 4px; text-align: center; border: 1px solid #eee; vertical-align: middle;"
+            attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee; font-size: 11px; color: #555;"
             match solarVal with
             | Some s -> attr.title (sprintf "Solar exposure rating: %.0f" s)
-            | None -> attr.empty()
+            | None -> attr.empty ()
 
             match solarVal with
+            | Some s when s <= 0.0 ->
+                text "None"
             | Some s ->
-                let tier, bgClr, textClr = 
-                    match s with
-                    | v when v <= 0.0 -> "None", "#f2f2f2", "#888888"
-                    | v when v < 160.0 -> "Low", "#e0f2fe", "#0369a1"
-                    | v when v < 235.0 -> "Moderate", "#fef3c7", "#b45309"
-                    | _ -> "High", "#fee2e2", "#b91c1c"
-                
-                div {
-                    attr.``style`` $"display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 500; font-size: 11px; line-height: 1.2; background: {bgClr}; color: {textClr};"
-                    text tier
-                }
-                div {
-                    attr.``style`` "font-size: 9.5px; color: #888; margin-top: 2px; font-family: var(--font-mono, monospace);"
-                    text (sprintf "%.0f" s)
-                }
+                let tier = 
+                    if s < 160.0 then "Low"
+                    elif s < 235.0 then "Moderate"
+                    else "High"
+                text (sprintf "%s (%.0f)" tier s)
             | None -> 
                 text "-"
         }
@@ -360,7 +335,6 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         div {
             attr.``style`` "width: 100%; display: flex; flex-wrap: wrap; gap: 12px;"
             renderKpiCard "Configuration Score" scoreObj.ScoreStr scoreObj.BgClr scoreObj.TextClr scoreObj.Subtext
-            renderKpiCard "Typology" kpis.Typology "#f1f5f9" "#0f172a" kpis.TypoDesc
             renderKpiCard "Plan Compactness" kpis.CompactnessBadge kpis.CompBg kpis.CompClr "Envelope efficiency & form factor"
             renderKpiCard "Exterior Access" exposedPctStr "#ecfdf5" "#047857" exposedDescStr
             renderKpiCard "Circulation Hierarchy" depthStr "#f8fafc" "#475569" "Spatial depth from arrival to private core"
