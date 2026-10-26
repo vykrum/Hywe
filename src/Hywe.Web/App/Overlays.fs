@@ -92,7 +92,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                     attr.style "padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa;"
                     h2 { 
                         attr.style "margin: 0; font-size: 1.2rem; color: #333; font-weight: 600;"
-                        text "Community Gallery" 
+                        text "Gallery" 
                     }
                     button {
                         attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
@@ -591,7 +591,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                 }
 
                 div {
-                    attr.style "display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #edf0f2; padding-bottom: 12px; margin-bottom: 16px;"
+                    attr.style "display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #edf0f2; padding-bottom: 12px; margin-bottom: 16px; padding-right: 38px;"
                     div {
                         h1 {
                             attr.style "margin: 0; font-size: 1.35rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;"

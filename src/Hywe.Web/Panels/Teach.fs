@@ -637,7 +637,7 @@ let view model dispatch =
                     span { attr.``class`` "hywe-label"; text "Thumbnail" }
                     span {
                         attr.style "font-size: 0.72rem; color: #868e96; font-style: italic;"
-                        text "Matches 60×60 community gallery card"
+                        text "Matches 60×60 gallery card"
                     }
                 }
                 div {

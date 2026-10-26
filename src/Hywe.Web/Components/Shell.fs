@@ -38,12 +38,19 @@ let loadingScreen (current: AppScreen) =
         
         match current with
         | LoadingScreen ->
+            div {
+                attr.``class`` "fullscreen-bg-fallback"
+                "aria-hidden" => "true"
+            }
             video {
                 attr.``class`` "fullscreen-bg"
                 attr.autoplay true
                 attr.muted true
                 attr.loop true
+                "poster" => "images/loader.jpeg"
                 "playsinline" => "playsinline"
+                "webkit-playsinline" => "webkit-playsinline"
+                "onerror" => "this.classList.add('video-hidden')"
                 source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
                 source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
             }
@@ -88,13 +95,20 @@ let introSplash (current: AppScreen) (dispatch: Message -> unit) =
         match current with
         | MainScreen -> empty()
         | _ ->
+            div {
+                attr.``class`` "fullscreen-bg-fallback"
+                "aria-hidden" => "true"
+            }
             video {
                 attr.id "intro-video"
                 attr.``class`` "fullscreen-bg"
                 attr.autoplay true
                 attr.muted true
                 attr.loop true
+                "poster" => "images/loader.jpeg"
                 "playsinline" => "playsinline"
+                "webkit-playsinline" => "webkit-playsinline"
+                "onerror" => "this.classList.add('video-hidden')"
                 source { attr.src "images/loader.webm"; attr.``type`` "video/webm" }
                 source { attr.src "images/loader.mp4"; attr.``type`` "video/mp4" }
             }
