@@ -215,7 +215,7 @@
     </script>
 
     <base href="/">
-    <link rel="stylesheet" href="css/app.css?v=9" />
+    <link rel="stylesheet" href="css/app.css?v=10" />
 
     <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
@@ -224,6 +224,15 @@
     <meta name="apple-mobile-web-app-title" content="Hywe" />
     <link rel="manifest" href="site.webmanifest" />
     <script src="scripts/install.js"></script>
+    <script>
+        // Opera Mini / lightweight browser detection to prevent native video placeholder widgets
+        (function() {
+            var isOperaMini = Boolean(window.operamini || Object.prototype.toString.call(window.operamini) === "[object OperaMini]" || (navigator.userAgent && /Opera Mini|Presto/i.test(navigator.userAgent)));
+            if (isOperaMini) {
+                document.documentElement.classList.add('is-opera-mini');
+            }
+        })();
+    </script>
 </head>
 
 <body>
@@ -338,7 +347,8 @@
         </dialog>
 
         <div id="loading-frame">
-            <video class="fullscreen-bg" autoplay muted loop playsinline>
+            <div class="fullscreen-bg-fallback" aria-hidden="true"></div>
+            <video class="fullscreen-bg" autoplay muted loop playsinline webkit-playsinline poster="images/loader.jpeg" onerror="this.classList.add('video-hidden')" onpause="if(!this.ended && this.currentTime===0){this.classList.add('video-hidden')}">
                 <source src="images/loader.webm" type="video/webm">
                 <source src="images/loader.mp4" type="video/mp4">
             </video>
@@ -424,6 +434,20 @@
     <script src="scripts/shell.js" defer></script>
     <script src="scripts/webgpu.js" defer></script>
     <script src="scripts/hymap.js" defer></script>
+    <script>
+        // Autoplay verification: gracefully fallback to animated background if autoplay is disallowed
+        document.addEventListener('DOMContentLoaded', function() {
+            var vids = document.querySelectorAll('video.fullscreen-bg');
+            vids.forEach(function(v) {
+                var p = v.play();
+                if (p !== undefined) {
+                    p.catch(function() {
+                        v.classList.add('video-hidden');
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

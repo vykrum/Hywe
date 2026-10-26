@@ -1,7 +1,7 @@
 html,
 body {
     width: 100%;
-    height: 99%;
+    height: 100%;
     margin: 0;
     overflow-x: hidden;
     font-family: var(--font-sans);
@@ -933,14 +933,107 @@ input[type=number] {
     }
 }
 
+/* ==========================================================
+   AMBIENT BACKGROUND (VIDEO + LIGHTWEIGHT BROWSER ANIMATION)
+   ========================================================== */
+
+/* Ambient drift animation for lightweight browsers / Opera Mini */
+@keyframes bg-ambient-drift {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-50.8%, -50.8%) scale(1.04);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.fullscreen-bg-fallback {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    height: 100lvh;
+    min-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: 100lvh;
+    z-index: 90;
+    pointer-events: none;
+    background: #ffffff url('../images/loader.jpeg') center center / cover no-repeat;
+    animation: bg-ambient-drift 10s ease-in-out infinite;
+    will-change: transform;
+}
+
 video.fullscreen-bg {
     position: fixed;
-    width: 100%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
     height: 100vh;
+    height: 100dvh;
+    height: 100lvh;
+    min-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: 100lvh;
     object-fit: cover;
     z-index: 100;
     pointer-events: none;
-    background-color: white;
+    background-color: transparent;
+}
+
+/* Aspect-ratio coverage for iPad (4:3) and portrait displays */
+@media (max-aspect-ratio: 16/9) {
+    video.fullscreen-bg,
+    .fullscreen-bg-fallback {
+        width: 177.78vh;
+        width: 177.78dvh;
+        width: 177.78lvh;
+        height: 100vh;
+        height: 100dvh;
+        height: 100lvh;
+        min-width: 100vw;
+        min-height: 100vh;
+        min-height: 100dvh;
+        min-height: 100lvh;
+    }
+}
+
+/* Aspect-ratio coverage for ultra-wide displays */
+@media (min-aspect-ratio: 16/9) {
+    video.fullscreen-bg,
+    .fullscreen-bg-fallback {
+        width: 100vw;
+        height: 56.25vw;
+        min-width: 100vw;
+        min-height: 100vh;
+        min-height: 100dvh;
+        min-height: 100lvh;
+    }
+}
+
+/* Prevent video placeholder from displaying on Opera Mini or when autoplay is blocked */
+.is-opera-mini video.fullscreen-bg,
+_:-o-prefocus, :root video.fullscreen-bg,
+video.fullscreen-bg.video-hidden {
+    display: none !important;
+}
+
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none;
+    opacity: 0;
 }
 
 /* =============================
@@ -956,6 +1049,8 @@ video.fullscreen-bg {
     opacity: 1;
     transition: opacity 0.8s ease;
     will-change: opacity;
+    overflow: hidden;
+    background: #ffffff url('../images/loader.jpeg') center center / cover no-repeat;
 }
 
 #introduction {
@@ -965,7 +1060,7 @@ video.fullscreen-bg {
     right: 0;
     bottom: 0;
     overflow-y: auto;
-    background: transparent;
+    background: #ffffff url('../images/loader.jpeg') center center / cover no-repeat;
     z-index: 800;
     opacity: 0;
     transition: opacity 0.8s ease;
