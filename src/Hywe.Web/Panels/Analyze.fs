@@ -204,12 +204,9 @@ let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
         }
         td {
             attr.width "20%"
-            attr.``style`` "padding: 6px 4px; text-align: center; border: 1px solid #eee; vertical-align: middle;"
+            attr.``style`` $"padding: 8px; text-align: center; border: 1px solid #eee; font-size: 11px; color: {aspClr};"
             attr.title aspTitle
-            div {
-                attr.``style`` $"display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 500; font-size: 11px; background: {aspBg}; color: {aspClr};"
-                text aspLabel
-            }
+            text aspLabel
         }
     }
 
