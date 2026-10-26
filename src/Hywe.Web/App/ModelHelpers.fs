@@ -1,4 +1,4 @@
-﻿module ModelHelpers
+module ModelHelpers
 
 open System
 open Microsoft.JSInterop
@@ -52,7 +52,7 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
         concat {
             icon
             span {
-                attr.style "font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 1px; color: inherit; opacity: 0.8;"
+                attr.style "font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; color: inherit; opacity: 0.8;"
                 text label
             }
         }
@@ -60,7 +60,7 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
     | Some m ->
         button {
             attr.``class`` btnCls
-            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 38px; gap: 2px; " + style)
+            attr.style ("padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 32px; gap: 1px; " + style)
             attr.title title
             on.click (fun _ -> dispatch m)
             content
@@ -68,7 +68,7 @@ let private drawerActionBtn (title: string) (label: string) (msg: Message option
     | None ->
         button {
             attr.``class`` btnCls
-            attr.style ("padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 38px; gap: 2px; opacity: 0.3; pointer-events: none; " + style)
+            attr.style ("padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 32px; gap: 1px; opacity: 0.3; pointer-events: none; " + style)
             attr.title title
             content
         }
@@ -145,10 +145,10 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 
                 div {
                     attr.``class`` "preset-drawer-content"
-                    attr.style "width: 200px; min-width: 200px; max-width: 200px; box-sizing: border-box; max-height: calc(100vh - 160px); overflow-y: auto;"
+                    attr.style "width: 145px; min-width: 145px; max-width: 145px; box-sizing: border-box; max-height: calc(100vh - 160px); overflow-y: auto;"
                     
                     div {
-                        attr.style "display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;"
+                        attr.style "display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px;"
                         
                         // Save
                         drawerActionBtn "Save" "Save" (Some SaveRequested) iconSave dispatch ""
@@ -175,66 +175,31 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                             ""
                     }
 
-                    // Single Contextual Harvest button
-                    match model.ActivePanel with
-                    | TeachPanel | ReportPanel -> empty()
-                    | _ ->
-                        let panelBadge =
-                            match model.ActivePanel with
-                            | TreePanel -> "Tree"
-                            | BoundaryPanel -> "Boundary"
-                            | LayoutPanel -> "Layout"
-                            | AnalyzePanel -> "Analysis"
-                            | ViewPanel -> "3D View"
-                            | BatchPanel -> "Variations"
-                            | _ -> ""
-
-                        button {
-                            attr.id "waggle-harvest-btn"
-                            attr.``class`` "drawer-harvest-trigger"
-                            attr.title "Open Harvest & Export window"
-                            "onclick:stopPropagation" => true
-                            on.click (fun _ -> 
-                                dispatch ToggleHarvestModal
-                                dispatch ToggleWorkspaceCollapse
-                            )
-                            div {
-                                attr.style "display: flex; align-items: center; gap: 6px;"
-                                rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
-                                span { text "Harvest" }
-                            }
-                            if panelBadge <> "" then
-                                span {
-                                    attr.``class`` "drawer-harvest-badge"
-                                    text panelBadge
-                                }
-                        }
-
                     div {
-                        attr.style "margin-top: 6px; padding-top: 6px; border-top: 1px solid #edf0f2; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; width: 100%; box-sizing: border-box;"
+                        attr.style "margin-top: 4px; padding-top: 4px; border-top: 1px solid #edf0f2; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; width: 100%; box-sizing: border-box;"
                         
                         // Header row with Presets
                         div {
-                            attr.style "font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 3px; width: 100%;"
+                            attr.style "font-size: 9.5px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #e0e0e0; margin-bottom: 2px; padding-bottom: 2px; width: 100%;"
                             text "Presets"
                         }
                         
                         let presetLink name label isActive =
                             if isActive then
                                 a {
-                                    attr.style "cursor: pointer; color: #666; font-size: 0.85rem; text-decoration: none;"
+                                    attr.style "cursor: pointer; color: #666; font-size: 0.78rem; text-decoration: none;"
                                     "onclick:stopPropagation" => true
                                     on.click (fun _ -> dispatch (ToggleConfirm (Some (ConfirmAction.LoadPreset (name, label)))))
                                     text label
                                 }
                             else
                                 span {
-                                    attr.style "color: #bbb; font-size: 0.85rem; cursor: not-allowed;"
+                                    attr.style "color: #bbb; font-size: 0.78rem; cursor: not-allowed;"
                                     text label
                                 }
 
                         div {
-                            attr.style "display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; margin-top: 2px;"
+                            attr.style "display: grid; grid-template-columns: 1fr 1fr; gap: 2px 4px; width: 100%; margin-top: 2px;"
                             presetLink "Simple" "Simple" true
                             presetLink "Branched" "Branch" true
                             presetLink "Stacked" "Stack" true
@@ -242,7 +207,42 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                         }
                         
                         div {
-                            attr.style "width: 100%; margin-top: 8px; padding-top: 6px; border-top: 1px solid #edf0f2; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;"
+                            attr.style "width: 100%; margin-top: 5px; padding-top: 5px; border-top: 1px solid #edf0f2; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 4px;"
+
+                            // Single Contextual Harvest button
+                            match model.ActivePanel with
+                            | TeachPanel | ReportPanel -> empty()
+                            | _ ->
+                                let panelBadge =
+                                    match model.ActivePanel with
+                                    | TreePanel -> "Tree"
+                                    | BoundaryPanel -> "Boundary"
+                                    | LayoutPanel -> "Layout"
+                                    | AnalyzePanel -> "Analysis"
+                                    | ViewPanel -> "3D View"
+                                    | BatchPanel -> "Variations"
+                                    | _ -> ""
+
+                                button {
+                                    attr.id "waggle-harvest-btn"
+                                    attr.``class`` "drawer-harvest-trigger"
+                                    attr.title "Open Harvest & Export window"
+                                    "onclick:stopPropagation" => true
+                                    on.click (fun _ -> 
+                                        dispatch ToggleHarvestModal
+                                        dispatch ToggleWorkspaceCollapse
+                                    )
+                                    div {
+                                        attr.style "display: flex; align-items: center; gap: 4px;"
+                                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>"""
+                                        span { text "Harvest" }
+                                    }
+                                    if panelBadge <> "" then
+                                        span {
+                                            attr.``class`` "drawer-harvest-badge"
+                                            text panelBadge
+                                        }
+                                }
 
                             // Prominent Gallery button
                             a {
@@ -252,13 +252,13 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                                     dispatch ToggleGallery
                                     dispatch ToggleWorkspaceCollapse
                                 )
-                                rawHtml """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>"""
-                                text "Community Gallery"
+                                rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>"""
+                                text "Gallery"
                             }
 
                             // Subtle About link
                             a {
-                                attr.style "cursor: pointer; color: #94a3b8; font-size: 10.5px; text-decoration: none; margin-top: 6px; transition: color 0.15s ease;"
+                                attr.style "cursor: pointer; color: #94a3b8; font-size: 10px; text-decoration: none; margin-top: 1px; transition: color 0.15s ease;"
                                 "onclick:stopPropagation" => true
                                 on.click (fun _ -> 
                                     dispatch ToggleAboutModal

@@ -679,13 +679,13 @@ input[type=number] {
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    padding: 8px 10px;
+    padding: 6px 7px;
     border: 1px solid #eee;
     border-left: none;
     border-radius: 0 6px 6px 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.06);
     box-sizing: border-box;
     max-height: calc(100vh - 160px);
@@ -698,13 +698,13 @@ input[type=number] {
     justify-content: space-between;
     width: 100%;
     box-sizing: border-box;
-    margin-top: 6px;
-    padding: 6px 8px;
+    margin-top: 0;
+    padding: 4px 6px;
     border-radius: 4px;
     background: #f8fafc;
     border: 1px solid #cbd5e1;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
     color: #1e293b;
     cursor: pointer;
@@ -718,29 +718,29 @@ input[type=number] {
 }
 
 .drawer-harvest-badge {
-    font-size: 8.5px;
+    font-size: 8px;
     font-weight: 700;
     background: #e2e8f0;
     color: #475569;
-    padding: 1px 6px;
-    border-radius: 8px;
+    padding: 1px 5px;
+    border-radius: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.3px;
 }
 
 .drawer-gallery-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     width: 100%;
     box-sizing: border-box;
-    margin-top: 6px;
-    padding: 7px 10px;
-    border-radius: 5px;
+    margin-top: 0;
+    padding: 5px 8px;
+    border-radius: 4px;
     background: #1e293b;
     border: 1px solid #0f172a;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
     color: #ffffff;
     letter-spacing: 0.3px;
