@@ -397,6 +397,11 @@ textarea.hywe-input {
     background: #363636;
     padding: 5px 0 0 5px;
     gap: 10px;
+    box-sizing: border-box;
+}
+
+.site-header > div:first-child {
+    flex-shrink: 0;
 }
 
 .site-header img:first-child {
@@ -408,11 +413,24 @@ textarea.hywe-input {
     font-size: 20px;
     font-weight: normal;
     padding: 0 10px 7px 10px;
+    white-space: nowrap;
+    width: 125px;
+    min-width: 125px;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .site-header .logo-acronym {
     opacity: 1;
     z-index: 200;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.site-header .logo-acronym img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
 }
 
 .pre-about-btn {
