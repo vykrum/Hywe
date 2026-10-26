@@ -676,7 +676,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                     div {
                         attr.``class`` "harvest-modal-grid"
                         harvestCard "harvest-batch-crd" "Hexel Coordinates" "Grid coordinates across all 24 permutations" "CSV" DownloadBatchCoordCsv
-                        harvestCard "harvest-batch-metrics" "Area Metrics" "Hexel count allocations across all variants" "CSV" DownloadBatchMetricsCsv
+                        harvestCard "harvest-batch-metrics" "Area Metrics" "Square footage & dimensions for all variants" "CSV" DownloadBatchMetricsCsv
                         harvestCard "harvest-batch-adj" "Adjacency Matrix" "Spatial adjacency relations across permutations" "CSV" DownloadBatchAdjCsv
                     }
 
@@ -685,7 +685,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                     div {
                         attr.``class`` "harvest-modal-grid"
                         harvestCard "harvest-ana-crd" "Room Hexel Coordinates" "Spatial discrete coordinates for layout hexels" "CSV" DownloadCoordCsv
-                        harvestCard "harvest-ana-metrics" "Area Allocation Metrics" "Detailed room hexel counts and proportions" "CSV" DownloadMetricsCsv
+                        harvestCard "harvest-ana-metrics" "Area Allocation Metrics" "Detailed room areas, boundaries, and ratios" "CSV" DownloadMetricsCsv
                         harvestCard "harvest-ana-adj" "Adjacency Matrix" "Room-to-room connectivity and adjacency data" "CSV" DownloadAdjCsv
                     }
 

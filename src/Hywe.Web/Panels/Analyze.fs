@@ -104,10 +104,11 @@ let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: s
 // --- ROW RENDERERS ---
 
 let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
+    let hxlAreaX = 4
     let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
-    let count = if isRootLvl0 then (prpVlu cxl.Size |> float) + 1.0 else (prpVlu cxl.Size |> float)
-    let reqSz = count
-    let achSz = float (Array.length cxl.Hxls)
+    let count = match isRootLvl0 with | true -> (prpVlu cxl.Size |> float) + 1.0 | false -> (prpVlu cxl.Size |> float)
+    let reqSz = count * float hxlAreaX
+    let achSz = (float (Array.length cxl.Hxls)) * float hxlAreaX
     let achCl = match achSz < (reqSz * 0.99) with | true -> "red" | false -> "#646464"
     let aspect = getRoomAspect cxl
     let aspLabel, aspBg, aspClr = getAspectLabel aspect
@@ -273,11 +274,12 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
         }
 
 let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (solarVals: float[] option) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) (useMapBase: bool) =
+    let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> 
         let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
-        let count = if isRootLvl0 then (prpVlu c.Size |> float) + 1.0 else (prpVlu c.Size |> float)
-        count)
-    let totalAch = cxCxl1 |> Array.sumBy (fun c -> float (Array.length c.Hxls))
+        let count = match isRootLvl0 with | true -> (prpVlu c.Size |> float) + 1.0 | false -> (prpVlu c.Size |> float)
+        count * float hxlAreaX)
+    let totalAch = cxCxl1 |> Array.sumBy (fun c -> (float (Array.length c.Hxls)) * float hxlAreaX)
     let totalOpen = cxlAvl |> Array.sumBy float
     
     let adjNames, adjMatrix = cxAdj1

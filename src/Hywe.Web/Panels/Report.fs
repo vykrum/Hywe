@@ -206,7 +206,7 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
         | _ -> "9.5px"
     let header = sprintf "<table class=\"report-table\" style=\"font-size: %s;\">\n        <thead>\n            <tr><th>Label</th><th>Required</th><th>Achieved</th><th>Open</th></tr>\n        </thead>\n        <tbody>\n" fontSize
         
-    let hxlAreaX = 1
+    let hxlAreaX = 4
     let rows = 
         cxls |> Array.mapi (fun i cxl ->
             let avl = match i < cxlAvl.Length with | true -> cxlAvl[i] | false -> 0
