@@ -15,8 +15,9 @@ let getRoomAspect (cxl: Cxl) =
         let dy = (Array.max ys) - (Array.min ys) + 1.0
         max dx dy / max 1.0 (min dx dy)
 
-let getAspectLabel aspect =
-    if aspect <= 1.35 then "Compact", "#ecfdf5", "#047857"
+let getAspectLabel aspect isCreated =
+    if not isCreated then "Unplaced", "#fef2f2", "#dc2626"
+    elif aspect <= 1.35 then "Compact", "#ecfdf5", "#047857"
     elif aspect <= 1.9 then "Proportionate", "#f1f5f9", "#334155"
     else "Elongated", "#fff7ed", "#c2410c"
 
@@ -29,6 +30,70 @@ let getOrientationLabel (solarVal: float option) (avl: int) =
         | Some s when s < 160.0 -> "North", "#e0f2fe", "#0369a1"
         | Some s when s < 235.0 -> "East / West", "#fef3c7", "#b45309"
         | _ -> "South", "#fee2e2", "#b91c1c"
+
+let computeConfigurationScore (cxCxl1: Cxl[]) (elv: int) =
+    let totalRooms = cxCxl1.Length
+    if totalRooms = 0 then
+        {| Score = 0.0
+           ScoreStr = "0%"
+           Badge = "Empty"
+           BgClr = "#f1f5f9"
+           TextClr = "#646464"
+           CreatedCount = 0
+           TotalRooms = 0
+           TargetsMetCount = 0
+           AllSpacesCreated = false
+           Subtext = "No spaces defined" |}
+    else
+        let createdCount = 
+            cxCxl1 
+            |> Array.filter (fun c -> c.Hxls.Length > 0) 
+            |> Array.length
+
+        let allSpacesCreated = (createdCount = totalRooms)
+        let completenessRatio = float createdCount / float totalRooms
+
+        let fulfillmentList =
+            cxCxl1
+            |> Array.map (fun c ->
+                let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
+                let count = match isRootLvl0 with | true -> (prpVlu c.Size |> float) + 1.0 | false -> (prpVlu c.Size |> float)
+                let ach = float c.Hxls.Length
+                let isMet = ach >= (count * 0.99)
+                let ratio = if count > 0.0 then min 1.0 (ach / count) else 1.0
+                isMet, ratio)
+
+        let targetsMetCount = fulfillmentList |> Array.filter fst |> Array.length
+        let avgFulfillment = fulfillmentList |> Array.map snd |> Array.average
+
+        // Standalone scoring:
+        // Completeness is primary: configurations with all spaces created receive a base of 60 points
+        // plus up to 40 points for targeted number compliance (60% - 100%).
+        // Configurations where any space is uncreated are scaled below 60% (0% - 59%).
+        let score =
+            if allSpacesCreated then
+                60.0 + (avgFulfillment * 40.0)
+            else
+                completenessRatio * 50.0 + (avgFulfillment * 9.0)
+
+        let badge, bgClr, textClr =
+            if score >= 99.5 then "Optimal", "#ecfdf5", "#047857"
+            elif allSpacesCreated && score >= 85.0 then "High Match", "#ecfdf5", "#047857"
+            elif allSpacesCreated then "Complete", "#f1f5f9", "#334155"
+            else "Incomplete", "#fff7ed", "#c2410c"
+
+        let subtext = sprintf "%d of %d spaces created • %d targets met" createdCount totalRooms targetsMetCount
+
+        {| Score = score
+           ScoreStr = sprintf "%.0f%%" score
+           Badge = badge
+           BgClr = bgClr
+           TextClr = textClr
+           CreatedCount = createdCount
+           TotalRooms = totalRooms
+           TargetsMetCount = targetsMetCount
+           AllSpacesCreated = allSpacesCreated
+           Subtext = subtext |}
 
 let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
     let allHxls = cxCxl1 |> Array.collect (fun c -> Array.append [| c.Base |] c.Hxls)
@@ -83,7 +148,7 @@ let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
 
 let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: string) (subtext: string) =
     div {
-        attr.``style`` "flex: 1 1 calc(25% - 10px); min-width: 170px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
+        attr.``style`` "flex: 1 1 calc(20% - 10px); min-width: 155px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
         div {
             attr.``style`` "font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 6px;"
             text title
@@ -109,9 +174,11 @@ let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
     let count = match isRootLvl0 with | true -> (prpVlu cxl.Size |> float) + 1.0 | false -> (prpVlu cxl.Size |> float)
     let reqSz = count * float hxlAreaX
     let achSz = (float (Array.length cxl.Hxls)) * float hxlAreaX
-    let achCl = match achSz < (reqSz * 0.99) with | true -> "red" | false -> "#646464"
+    let isCreated = cxl.Hxls.Length > 0
+    let achCl = match not isCreated || achSz < (reqSz * 0.99) with | true -> "red" | false -> "#646464"
     let aspect = getRoomAspect cxl
-    let aspLabel, aspBg, aspClr = getAspectLabel aspect
+    let aspLabel, aspBg, aspClr = getAspectLabel aspect isCreated
+    let aspTitle = if not isCreated then "Space not created (0 hexels generated)" else sprintf "Proportion aspect: %.2f" aspect
 
     tr {
         attr.``style`` $"background-color:{clr}; height: 32px;"
@@ -138,7 +205,7 @@ let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
         td {
             attr.width "20%"
             attr.``style`` "padding: 6px 4px; text-align: center; border: 1px solid #eee; vertical-align: middle;"
-            attr.title (sprintf "Proportion aspect: %.2f" aspect)
+            attr.title aspTitle
             div {
                 attr.``style`` $"display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 500; font-size: 11px; background: {aspBg}; color: {aspClr};"
                 text aspLabel
@@ -284,6 +351,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
     
     let adjNames, adjMatrix = cxAdj1
     let kpis = computeSummaryMetrics cxCxl1 cxlAvl
+    let scoreObj = computeConfigurationScore cxCxl1 elv
     let exposedPctStr = sprintf "%.0f%%" kpis.ExposedPct
     let exposedDescStr = sprintf "%d of %d spaces with perimeter contact" kpis.ExposedCount kpis.TotalRooms
     let depthStr = sprintf "%d Tiers" kpis.MaxDepth
@@ -294,6 +362,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         // --- TOP QUALITATIVE ARCHITECTURAL KPIS ---
         div {
             attr.``style`` "width: 100%; display: flex; flex-wrap: wrap; gap: 12px;"
+            renderKpiCard "Configuration Score" scoreObj.ScoreStr scoreObj.BgClr scoreObj.TextClr scoreObj.Subtext
             renderKpiCard "Typology" kpis.Typology "#f1f5f9" "#0f172a" kpis.TypoDesc
             renderKpiCard "Plan Compactness" kpis.CompactnessBadge kpis.CompBg kpis.CompClr "Envelope efficiency & form factor"
             renderKpiCard "Exterior Access" exposedPctStr "#ecfdf5" "#047857" exposedDescStr
@@ -309,7 +378,14 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                 attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
                 h3 { 
                     attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
-                    text "AREA METRICS" 
+                    div {
+                        attr.``style`` "display: flex; align-items: center; gap: 8px;"
+                        span { text "AREA METRICS" }
+                        span {
+                            attr.``style`` $"font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; background: {scoreObj.BgClr}; color: {scoreObj.TextClr};"
+                            text scoreObj.Badge
+                        }
+                    }
                     span {
                         attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
                         text $"[{sqn}]"
