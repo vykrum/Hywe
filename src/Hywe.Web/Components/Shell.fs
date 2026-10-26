@@ -4,7 +4,7 @@ open Bolero.Html
 open ModelTypes
 
 /// The top navigation header with branding
-let siteHeader (dispatch: Message -> unit) =
+let siteHeader (_dispatch: Message -> unit) =
     header {
         attr.``class`` "site-header"
         div {
@@ -23,15 +23,6 @@ let siteHeader (dispatch: Message -> unit) =
                 attr.width "200"
                 attr.height "45"
                 attr.alt "HYWE acronym"
-            }
-        }
-        div {
-            attr.style "margin-left: auto; margin-right: 15px; display: flex; align-items: center;"
-            button {
-                attr.``type`` "button"
-                attr.``class`` "pre-about-btn"
-                on.click (fun _ -> dispatch ToggleAboutModal)
-                text "About"
             }
         }
     }
