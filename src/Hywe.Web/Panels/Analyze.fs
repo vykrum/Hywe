@@ -385,7 +385,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         // --- TOP QUALITATIVE ARCHITECTURAL KPIS ---
         div {
             attr.``style`` "width: 100%; display: flex; flex-wrap: wrap; gap: 12px;"
-            renderKpiCard "Operator / Equivalence Class" sqn "#f1f5f9" "#334155" "Hexagonal sequence operator token"
+
             renderKpiCard "Plan Compactness (I_comp)" kpis.CompactnessBadge kpis.CompBg kpis.CompClr (sprintf "CI: %.3f • Envelope efficiency" kpis.CompactnessScore)
             renderKpiCard "Exterior Access (E_ext)" exposedPctStr "#ecfdf5" "#047857" exposedDescStr
             renderKpiCard "Circulation Hierarchy" depthStr "#f8fafc" "#475569" "Spatial depth from arrival to private core"
