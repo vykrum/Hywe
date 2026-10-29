@@ -210,7 +210,10 @@ let renderAreaTable (cxls: Cxl[]) (cxlAvl: int[]) (colorMap: Map<string, string>
     let rows = 
         cxls |> Array.mapi (fun i cxl ->
             let avl = match i < cxlAvl.Length with | true -> cxlAvl[i] | false -> 0
-            let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
+            let isRootLvl0 = 
+                let id = prpVlu cxl.Rfid
+                let stripped = if (id.StartsWith("L") || id.StartsWith("N")) && id.Contains(".") then id.Substring(id.IndexOf('.') + 1) else id
+                (stripped = "1" || prpVlu cxl.Name = "Root") && elv = 0
             let count = match isRootLvl0 with | true -> (prpVlu cxl.Size |> float) + 1.0 | false -> (prpVlu cxl.Size |> float)
             let reqSz = int (count * float hxlAreaX)
             let achSz = (Array.length cxl.Hxls) * hxlAreaX

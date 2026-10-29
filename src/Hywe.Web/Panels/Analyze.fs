@@ -31,6 +31,15 @@ let getOrientationLabel (solarVal: float option) (avl: int) =
         | Some s when s < 235.0 -> "East / West", "#fef3c7", "#b45309"
         | _ -> "South", "#fee2e2", "#b91c1c"
 
+let isRootLevel0 (rfid: string) (name: string) (elv: int) =
+    if elv <> 0 then false
+    else
+        let stripped =
+            if (rfid.StartsWith("L") || rfid.StartsWith("N")) && rfid.Contains(".") then
+                rfid.Substring(rfid.IndexOf('.') + 1)
+            else rfid
+        stripped = "1" || name = "Root"
+
 let computeConfigurationScore (cxCxl1: Cxl[]) (elv: int) =
     let totalRooms = cxCxl1.Length
     if totalRooms = 0 then
@@ -56,7 +65,7 @@ let computeConfigurationScore (cxCxl1: Cxl[]) (elv: int) =
         let fulfillmentList =
             cxCxl1
             |> Array.map (fun c ->
-                let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
+                let isRootLvl0 = isRootLevel0 (prpVlu c.Rfid) (prpVlu c.Name) elv
                 let count = match isRootLvl0 with | true -> (prpVlu c.Size |> float) + 1.0 | false -> (prpVlu c.Size |> float)
                 let ach = float c.Hxls.Length
                 let isMet = ach >= (count * 0.99)
@@ -162,7 +171,7 @@ let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: s
 
 let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
     let hxlAreaX = 4
-    let isRootLvl0 = (prpVlu cxl.Rfid = "1" || prpVlu cxl.Name = "Root") && elv = 0
+    let isRootLvl0 = isRootLevel0 (prpVlu cxl.Rfid) (prpVlu cxl.Name) elv
     let count = match isRootLvl0 with | true -> (prpVlu cxl.Size |> float) + 1.0 | false -> (prpVlu cxl.Size |> float)
     let reqSz = count * float hxlAreaX
     let achSz = (float (Array.length cxl.Hxls)) * float hxlAreaX
@@ -315,7 +324,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
 let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (solarVals: float[] option) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) (useMapBase: bool) =
     let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> 
-        let isRootLvl0 = (prpVlu c.Rfid = "1" || prpVlu c.Name = "Root") && elv = 0
+        let isRootLvl0 = isRootLevel0 (prpVlu c.Rfid) (prpVlu c.Name) elv
         let count = match isRootLvl0 with | true -> (prpVlu c.Size |> float) + 1.0 | false -> (prpVlu c.Size |> float)
         count * float hxlAreaX)
     let totalAch = cxCxl1 |> Array.sumBy (fun c -> (float (Array.length c.Hxls)) * float hxlAreaX)
@@ -385,7 +394,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         // --- TOP QUALITATIVE ARCHITECTURAL KPIS ---
         div {
             attr.``style`` "width: 100%; display: flex; flex-wrap: wrap; gap: 12px;"
-            renderKpiCard "Operator / Equivalence Class" sqn "#f1f5f9" "#334155" "Hexagonal sequence operator token"
+
             renderKpiCard "Plan Compactness (I_comp)" kpis.CompactnessBadge kpis.CompBg kpis.CompClr (sprintf "CI: %.3f • Envelope efficiency" kpis.CompactnessScore)
             renderKpiCard "Exterior Access (E_ext)" exposedPctStr "#ecfdf5" "#047857" exposedDescStr
             renderKpiCard "Circulation Hierarchy" depthStr "#f8fafc" "#475569" "Spatial depth from arrival to private core"
