@@ -140,7 +140,7 @@ let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
 
 let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: string) (subtext: string) =
     div {
-        attr.``style`` "flex: 1 1 calc(25% - 10px); min-width: 170px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
+        attr.``style`` "flex: 1 1 calc(20% - 10px); min-width: 155px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
         div {
             attr.``style`` "font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 6px;"
             text title
@@ -327,6 +327,57 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
     let exposedPctStr = sprintf "%.0f%%" kpis.ExposedPct
     let exposedDescStr = sprintf "%d of %d spaces with perimeter contact" kpis.ExposedCount kpis.TotalRooms
     let depthStr = sprintf "%d Tiers" kpis.MaxDepth
+    let stripPrefix (id: string) =
+        if (id.StartsWith("L") || id.StartsWith("N")) && id.Contains(".") then
+            id.Substring(id.IndexOf('.') + 1)
+        else id
+
+    let getParentId (id: string) =
+        match id.Split('.') with
+        | parts when parts.Length > 1 -> Some (String.concat "." parts.[0 .. parts.Length - 2])
+        | _ -> None
+
+    let targetEdges = 
+        cxCxl1 
+        |> Array.choose (fun c ->
+            let id = stripPrefix (prpVlu c.Rfid)
+            getParentId id |> Option.map (fun pid -> min id pid, max id pid))
+        |> Set.ofArray
+
+    let compiledEdges = 
+        seq {
+            for i in 0 .. cxCxl1.Length - 1 do
+                for j in i + 1 .. cxCxl1.Length - 1 do
+                    if i < adjMatrix.Length && j < adjMatrix.[i].Length && adjMatrix.[i].[j] then
+                        let id1 = stripPrefix (prpVlu cxCxl1.[i].Rfid)
+                        let id2 = stripPrefix (prpVlu cxCxl1.[j].Rfid)
+                        yield min id1 id2, max id1 id2
+        }
+        |> Set.ofSeq
+
+    let interCount = Set.intersect targetEdges compiledEdges |> Set.count |> float
+    let unionCount = Set.union targetEdges compiledEdges |> Set.count |> float
+
+    let deltaJ = 
+        match unionCount with
+        | 0.0 -> 0.0
+        | u -> 1.0 - (interCount / u)
+
+    let deltaJStr = sprintf "%.3f" deltaJ
+    let deltaJBg, deltaJClr =
+        if deltaJ <= 0.35 then "#ecfdf5", "#047857"
+        elif deltaJ <= 0.55 then "#f1f5f9", "#334155"
+        else "#fff7ed", "#c2410c"
+
+    let deltaA = totalAch - totalReq
+    let deltaAStr = 
+        if deltaA > 0.0 then sprintf "+%.0f units" deltaA
+        elif deltaA < 0.0 then sprintf "%.0f units" deltaA
+        else "0 units"
+    let deltaABg, deltaAClr =
+        if abs deltaA <= 4.0 then "#ecfdf5", "#047857"
+        elif abs deltaA <= 20.0 then "#f1f5f9", "#334155"
+        else "#fff7ed", "#c2410c"
 
     div {
         attr.``style`` "width: 100%; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;"
@@ -334,10 +385,12 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
         // --- TOP QUALITATIVE ARCHITECTURAL KPIS ---
         div {
             attr.``style`` "width: 100%; display: flex; flex-wrap: wrap; gap: 12px;"
-            renderKpiCard "Configuration Score" scoreObj.ScoreStr scoreObj.BgClr scoreObj.TextClr scoreObj.Subtext
-            renderKpiCard "Plan Compactness" kpis.CompactnessBadge kpis.CompBg kpis.CompClr "Envelope efficiency & form factor"
-            renderKpiCard "Exterior Access" exposedPctStr "#ecfdf5" "#047857" exposedDescStr
+            renderKpiCard "Operator / Equivalence Class" sqn "#f1f5f9" "#334155" "Hexagonal sequence operator token"
+            renderKpiCard "Plan Compactness (I_comp)" kpis.CompactnessBadge kpis.CompBg kpis.CompClr (sprintf "CI: %.3f • Envelope efficiency" kpis.CompactnessScore)
+            renderKpiCard "Exterior Access (E_ext)" exposedPctStr "#ecfdf5" "#047857" exposedDescStr
             renderKpiCard "Circulation Hierarchy" depthStr "#f8fafc" "#475569" "Spatial depth from arrival to private core"
+            renderKpiCard "Adjacency Delta (ΔJ)" deltaJStr deltaJBg deltaJClr (sprintf "%.0f shared / %.0f total graph edges" interCount unionCount)
+            renderKpiCard "Total Area Deviation (ΔA)" deltaAStr deltaABg deltaAClr (sprintf "Achieved %.0f vs required %.0f" totalAch totalReq)
         }
 
         // --- MAIN ANALYTICS TABLES ---
