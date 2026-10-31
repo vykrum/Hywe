@@ -321,7 +321,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             }
         }
 
-let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (solarVals: float[] option) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) (useMapBase: bool) =
+let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (cxClr1: string[]) (cxlAvl: int[]) (solarVals: float[] option) (cxAdj1: string[] * bool[][]) (ratio: float) (elv: int) (isCoordsVisible: bool) (_useMapBase: bool) =
     let hxlAreaX = 4
     let totalReq = cxCxl1 |> Array.sumBy (fun c -> 
         let isRootLvl0 = isRootLevel0 (prpVlu c.Rfid) (prpVlu c.Name) elv
@@ -472,8 +472,8 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                 viewAdjacencyTable sqn adjNames cxClr1 adjMatrix
             }
 
-            // 3. SOLAR ANALYSIS (Active when Map Base is enabled or solar data available)
-            if useMapBase then
+            // 3. SOLAR ANALYSIS
+            if true then
                 div {
                     attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
                     h3 { 
