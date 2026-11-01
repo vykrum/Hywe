@@ -213,7 +213,7 @@ let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
 
 let renderSolarRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) =
     let openCount = float avl
-    let ori, _, _ = getOrientationLabel solarVal avl
+
 
     tr {
         attr.``style`` $"background-color:{clr}; height: 32px;"
@@ -223,22 +223,17 @@ let renderSolarRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) 
             text (prpVlu cxl.Rfid) 
         }
         td { 
-            attr.width "30%"
+            attr.width "35%"
             attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
             text (prpVlu cxl.Name) 
         }
         td { 
-            attr.width "15%"
+            attr.width "25%"
             attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
             text (sprintf "%.0f" openCount) 
         }
         td {
-            attr.width "20%"
-            attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee; font-size: 11px; color: #555;"
-            text ori
-        }
-        td {
-            attr.width "20%"
+            attr.width "25%"
             attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee; font-size: 11px; color: #555;"
             match solarVal with
             | Some s -> attr.title (sprintf "Solar exposure rating: %.0f" s)
@@ -501,11 +496,6 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                                     }
                                     th { 
                                         attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd; cursor: help;"
-                                        attr.title "Primary outward-facing compass orientation"
-                                        text "Orientation" 
-                                    }
-                                    th { 
-                                        attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd; cursor: help;"
                                         attr.title "Relative solar exposure rating"
                                         text "Solar" 
                                     }
@@ -524,7 +514,6 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                                         attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
                                         text (sprintf "%.0f" totalOpen) 
                                     }
-                                    td { attr.``style`` "border: 1px solid #eee;" }
                                     td { attr.``style`` "border: 1px solid #eee;" }
                                 }
                             }
