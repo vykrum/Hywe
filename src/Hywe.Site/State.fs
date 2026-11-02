@@ -542,11 +542,28 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
     | ToggleBoundary isChecked ->
         async { 
             let newOuter = match isChecked && model.Outer.Length < 3 with | true -> initOuter | false -> model.Outer
+            let baseUpdated =
+                if not isChecked && model.UseMapBase then
+                    let scale = initWidth / model.LogicalWidth
+                    let safeW = initWidth
+                    let safeH = model.LogicalHeight * scale
+                    let newOut = newOuter |> Array.map (fun pt -> { pt with X = pt.X * scale; Y = pt.Y * scale })
+                    let newIslands = model.Islands |> Array.map (Array.map (fun pt -> { pt with X = pt.X * scale; Y = pt.Y * scale }))
+                    { model with LogicalWidth = safeW; LogicalHeight = safeH; Outer = newOut; Islands = newIslands; UseMapBase = false; IsMapLocked = false }
+                elif not isChecked then
+                    { model with UseMapBase = false; IsMapLocked = false; Outer = newOuter }
+                else
+                    { model with Outer = newOuter }
             return
                 { model with
                     UseBoundary = isChecked
                     PolygonEnabled = isChecked
-                    Outer = newOuter
+                    Outer = baseUpdated.Outer
+                    UseMapBase = baseUpdated.UseMapBase
+                    IsMapLocked = baseUpdated.IsMapLocked
+                    LogicalWidth = baseUpdated.LogicalWidth
+                    LogicalHeight = baseUpdated.LogicalHeight
+                    Islands = baseUpdated.Islands
                     UseAbsolute = match isChecked with
                                   | true -> false
                                   | false -> true
@@ -554,12 +571,14 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
         }
 
     | ToggleAbsolute isChecked -> async{ 
-                                            let updated = { model with UseAbsolute = isChecked }
+                                            let updated = if model.UseBoundary then { model with UseAbsolute = isChecked } else model
                                             return updated
                                         }
 
     | ToggleMapBase isChecked -> 
         async {
+            if not model.UseBoundary then return model
+            else
             let updated = { model with UseMapBase = isChecked; IsMapLocked = false }
             match isChecked with
             | true -> return updated

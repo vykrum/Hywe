@@ -23,22 +23,25 @@ let classList (classes: (string * bool) list) =
     |> List.choose (fun (cls, enabled) -> match enabled with true -> Some cls | false -> None)
     |> String.concat " "
 
-let toggleBtn label isActive onSelect =
+let toggleBtn label isActive isEnabled onSelect =
     button {
         attr.``class`` (classList [ "hywe-btn hywe-btn-sm", true; "hywe-btn-dark active", isActive; "hywe-btn-flat", not isActive ])
-        on.click (fun _ -> match isActive with false -> onSelect () | true -> ())
+        attr.disabled (not isEnabled)
+        on.click (fun _ -> match isEnabled && not isActive with true -> onSelect () | false -> ())
         text label
     }
 
 let toggleRow label isEnabled options =
     div {
+        let rowStyle = match isEnabled with true -> "" | false -> "opacity: 0.38; pointer-events: none;"
         attr.``class`` (classList [ "hywe-row", true; "disabled", not isEnabled ])
+        attr.style rowStyle
         span { attr.``class`` "hywe-label"; text label }
         div {
             attr.``class`` "hywe-btn-group"
             options
             |> List.map (fun (optLabel, isActive, onSelect) ->
-                toggleBtn optLabel isActive onSelect
+                toggleBtn optLabel isActive isEnabled onSelect
             )
             |> concatNodes
         }

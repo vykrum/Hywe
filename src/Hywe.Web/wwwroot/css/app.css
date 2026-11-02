@@ -272,6 +272,11 @@ a {
     height: 20px;
 }
 
+.hywe-row.disabled {
+    opacity: 0.38;
+    pointer-events: none;
+}
+
 .hywe-btn-group {
     display: flex;
     width: 140px;
