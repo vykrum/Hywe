@@ -627,7 +627,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         div { 
             attr.id "hywe-polygon-editor"
             attr.style (match model.ActivePanel = BoundaryPanel with true -> "display: block;" | false -> "display: none;")
-            Boundary.view currentInner (PolygonEditorMsg >> dispatch) js canUndo canRedo
+            Boundary.view currentInner (PolygonEditorMsg >> dispatch) js canUndo canRedo (viewBoundaryWeaveButton model dispatch)
         }
 
         match model.ActivePanel with
@@ -648,11 +648,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 viewHyweButton model dispatch
             }
 
-        | BoundaryPanel ->
-            div {
-                attr.style "display: flex; flex-direction: column; align-items: center; width: 100%; gap: 10px; margin-top: 15px;"
-                viewBoundaryWeaveButton model dispatch
-            }
+        | BoundaryPanel -> empty()
 
         | LayoutPanel ->
             div {
