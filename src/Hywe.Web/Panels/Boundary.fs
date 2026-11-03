@@ -483,9 +483,10 @@ let polygonEditorSvg model dispatch (js: IJSRuntime) =
         }
     }
 
-let view model dispatch (js: IJSRuntime) canUndo canRedo =
+let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
     div {
         controlAndInstructions model dispatch js canUndo canRedo
+        weaveButton
 
         // Hidden fields for JS interop callback
         let handleMapJsonTrigger elementId onParsed =
