@@ -1,4 +1,4 @@
-// --- Global Shader Storage ---
+﻿// --- Global Shader Storage ---
 window._gpuShaders = window._gpuShaders || { compute: "", render: "", post: "" };
 window.registerWebGPUShaders = (c, r, p) => { 
     console.log("WebGPU: Shaders registered.");
@@ -454,8 +454,9 @@ window.initWebGPUExtrudedPolygons = async (canvasId, meshes, colors, heights, ba
         const state = canvas._wgpuState;
         if (!state) return;
 
-        const w = Math.max(1, canvas.clientWidth);
-        const h = Math.max(1, canvas.clientHeight);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+        const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
         
         if (canvas.width !== w || canvas.height !== h || !state.msaaDepthTexture) { 
             canvas.width = w; canvas.height = h;

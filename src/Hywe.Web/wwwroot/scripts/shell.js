@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 // ============================================================================
 // Hywe Shell & Global Interop Utilities
 // Unified browser runtime bridge for PWA lifecycle, DOM interaction,
@@ -297,34 +297,79 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
         try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
     }
     const withTitleblock = window.applyArchitecturalTitleblock(svgString, metadata);
-    const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(withTitleblock);
+
+    // Parse viewBox or width/height attributes
+    let vbMinX = 0, vbMinY = 0, vbW = 800, vbH = 600;
+    const vbMatch = withTitleblock.match(/viewBox=["']\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)["']/i);
+    if (vbMatch) {
+        vbMinX = parseFloat(vbMatch[1]) || 0;
+        vbMinY = parseFloat(vbMatch[2]) || 0;
+        vbW = parseFloat(vbMatch[3]) || 800;
+        vbH = parseFloat(vbMatch[4]) || 600;
+    } else {
+        const wMatch = withTitleblock.match(/width=["']\s*([-\d.]+)["']/i);
+        const hMatch = withTitleblock.match(/height=["']\s*([-\d.]+)["']/i);
+        if (wMatch) vbW = parseFloat(wMatch[1]) || 800;
+        if (hMatch) vbH = parseFloat(hMatch[1]) || 600;
+    }
+    if (vbW <= 0) vbW = 800;
+    if (vbH <= 0) vbH = 600;
+
+    // High-resolution scaling: target ~3600px on the longest edge (print/presentation standard ~300 DPI)
+    const maxDim = Math.max(vbW, vbH);
+    const targetLongEdge = 3600;
+    const scale = Math.max(3.0, Math.min(6.0, targetLongEdge / maxDim));
+    const hiresW = Math.round(vbW * scale);
+    const hiresH = Math.round(vbH * scale);
+
+    // Inject high-res width and height into root <svg> so the browser vector engine
+    // rasterizes directly at hiresW x hiresH rather than upscaling an 800x600 bitmap
+    let hiresSvg = withTitleblock;
+    let replaced = false;
+    hiresSvg = hiresSvg.replace(/<svg\b([^>]*?)>/i, function (match, attrs) {
+        replaced = true;
+        let clean = attrs
+            .replace(/\bwidth=["'][^"']*["']/gi, "")
+            .replace(/\bheight=["'][^"']*["']/gi, "")
+            .trim();
+        if (!/viewBox\s*=/i.test(clean)) {
+            clean += ' viewBox="' + vbMinX + ' ' + vbMinY + ' ' + vbW + ' ' + vbH + '"';
+        }
+        return '<svg ' + clean + ' width="' + hiresW + '" height="' + hiresH + '">';
+    });
+
+    if (!replaced) {
+        hiresSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vbMinX + ' ' + vbMinY + ' ' + vbW + ' ' + vbH + '" width="' + hiresW + '" height="' + hiresH + '">' + hiresSvg + '</svg>';
+    }
+
+    let objectUrl = null;
+    let url;
+    try {
+        const svgBlob = new Blob([hiresSvg], { type: "image/svg+xml;charset=utf-8" });
+        objectUrl = URL.createObjectURL(svgBlob);
+        url = objectUrl;
+    } catch (e) {
+        url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(hiresSvg);
+    }
+
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = function () {
-        let nativeWidth = img.width || 800;
-        let nativeHeight = img.height || 600;
-
-        const vbMatch = withTitleblock.match(/viewBox=["'][^"']*?[\d.-]+\s+[\d.-]+\s+([\d.-]+)\s+([\d.-]+)["']/i) || 
-                        withTitleblock.match(/viewBox=["']([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)["']/i);
-
-        if (vbMatch) {
-            const w = parseFloat(vbMatch[vbMatch.length - 2]);
-            const h = parseFloat(vbMatch[vbMatch.length - 1]);
-            if (w > 0 && h > 0 && (nativeWidth <= 300 || w > nativeWidth)) {
-                nativeWidth = w;
-                nativeHeight = h;
-            }
+        if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch (_) {}
         }
 
-        const scale = 3;
         const canvas = document.createElement("canvas");
-        canvas.width = Math.round(nativeWidth * scale);
-        canvas.height = Math.round(nativeHeight * scale);
+        canvas.width = hiresW;
+        canvas.height = hiresH;
         const ctx = canvas.getContext("2d");
-
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, hiresW, hiresH);
+            ctx.drawImage(img, 0, 0, hiresW, hiresH);
+        }
 
         canvas.toBlob(function (pngBlob) {
             if (pngBlob !== null) {
@@ -349,6 +394,9 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
         }, "image/png");
     };
     img.onerror = function (e) {
+        if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch (_) {}
+        }
         console.error("Hywe: Failed to render SVG into Image for PNG conversion. Falling back to SVG download.", e);
         const xmlHeader = '<?xml version="1.0" standalone="no"?>\r\n';
         const fallbackSvgName = fileName.replace(/\.png$/i, ".svg");
@@ -356,7 +404,6 @@ window.downloadSvgAsPng = function (fileName, svgString, metadata) {
     };
     img.src = url;
 };
-
 window.downloadSvgElementAsPng = function (svgId, filename, metadata) {
     if (typeof metadata === "string") {
         try { metadata = JSON.parse(metadata); } catch (e) { metadata = {}; }
@@ -433,10 +480,20 @@ window.render3DTitleblockToCanvasAndDownload = function (filename, img3D, meta) 
     const shiftX = Math.round((sheetW - origW) / 2);
     const shiftY = bMargin + Math.round((drawingAreaH - origH) / 2);
 
+    // High resolution multiplier: scale canvas to ~3000px on the longest dimension
+    const maxDim = Math.max(sheetW, sheetH);
+    const scale = Math.max(2.0, Math.min(4.0, 3000.0 / Math.max(1, maxDim)));
+
     const canvas = document.createElement("canvas");
-    canvas.width = sheetW;
-    canvas.height = sheetH;
+    canvas.width = Math.round(sheetW * scale);
+    canvas.height = Math.round(sheetH * scale);
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.scale(scale, scale);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
     // 1. White Background
     ctx.fillStyle = "#ffffff";
@@ -499,44 +556,45 @@ window.render3DTitleblockToCanvasAndDownload = function (filename, img3D, meta) 
 
     // Wordmark
     ctx.fillStyle = "#0f172a";
-    ctx.font = `bold ${Math.round(11.5 * s)}px ${fontFam}`;
+    ctx.font = 'bold ' + Math.round(11.5 * s) + 'px ' + fontFam;
     ctx.fillText("H Y W E", wordmarkX + textPadX, barY + Math.round(barH * 0.45));
-
     ctx.fillStyle = "#64748b";
-    ctx.font = `500 ${Math.round(7.5 * s)}px ${fontFam}`;
+    ctx.font = '500 ' + Math.round(7.5 * s) + 'px ' + fontFam;
     ctx.fillText("www.hywe.in", wordmarkX + textPadX, barY + Math.round(barH * 0.74));
 
     // Project
     ctx.fillStyle = "#64748b";
-    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.font = 'bold ' + Math.round(6.5 * s) + 'px ' + fontFam;
     ctx.fillText("PROJECT", projX + textPadX, barY + Math.round(barH * 0.36));
     ctx.fillStyle = "#0f172a";
-    ctx.font = `600 ${Math.round(11 * s)}px ${fontFam}`;
+    ctx.font = '600 ' + Math.round(11 * s) + 'px ' + fontFam;
     ctx.fillText(projectTitle, projX + textPadX, barY + Math.round(barH * 0.72));
 
     // Author
     ctx.fillStyle = "#64748b";
-    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.font = 'bold ' + Math.round(6.5 * s) + 'px ' + fontFam;
     ctx.fillText("AUTHOR", authorX + textPadX, barY + Math.round(barH * 0.36));
     ctx.fillStyle = "#0f172a";
-    ctx.font = `500 ${Math.round(11 * s)}px ${fontFam}`;
+    ctx.font = '500 ' + Math.round(11 * s) + 'px ' + fontFam;
     ctx.fillText(author, authorX + textPadX, barY + Math.round(barH * 0.72));
 
     // Level
     ctx.fillStyle = "#64748b";
-    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.font = 'bold ' + Math.round(6.5 * s) + 'px ' + fontFam;
     ctx.fillText("LEVEL", levelX + textPadX, barY + Math.round(barH * 0.36));
     ctx.fillStyle = "#0f172a";
-    ctx.font = `600 ${Math.round(11 * s)}px ${fontFam}`;
+    ctx.font = '600 ' + Math.round(11 * s) + 'px ' + fontFam;
     ctx.fillText(level, levelX + textPadX, barY + Math.round(barH * 0.72));
 
     // Date
     ctx.fillStyle = "#64748b";
-    ctx.font = `bold ${Math.round(6.5 * s)}px ${fontFam}`;
+    ctx.font = 'bold ' + Math.round(6.5 * s) + 'px ' + fontFam;
     ctx.fillText("DATE", dateX + textPadX, barY + Math.round(barH * 0.36));
     ctx.fillStyle = "#0f172a";
-    ctx.font = `500 ${Math.round(10.5 * s)}px ${fontFam}`;
+    ctx.font = '500 ' + Math.round(10.5 * s) + 'px ' + fontFam;
     ctx.fillText(date, dateX + textPadX, barY + Math.round(barH * 0.72));
+
+    ctx.restore();
 
     // Export to PNG blob
     canvas.toBlob((blob) => {
@@ -547,7 +605,6 @@ window.render3DTitleblockToCanvasAndDownload = function (filename, img3D, meta) 
         }
     }, "image/png");
 };
-
 window.download3DView = async function (canvasId, filename, format, metadata) {
     console.log("[Hywe Debug] download3DView called:", { canvasId, filename, format, metadata });
     if (typeof metadata === "string") {
