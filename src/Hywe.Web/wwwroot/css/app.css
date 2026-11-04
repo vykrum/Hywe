@@ -2928,7 +2928,7 @@ video::-webkit-media-controls-start-playback-button {
     position: relative;
     width: 100%;
     max-width: 800px;
-    margin: 18px auto;
+    margin: 10px auto 18px auto;
     box-sizing: border-box;
 }
 
@@ -3151,6 +3151,11 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* Tablet & Moderate Mobile: Preserve 1 line strictly */
+@media (max-width: 600px) {
+    .boundary-svg-container {
+        margin: 6px auto 14px auto;
+    }
+}
 @media (max-width: 600px) {
     .boundary-toolbar {
         gap: 6px 12px;

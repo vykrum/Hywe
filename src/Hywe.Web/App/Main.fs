@@ -27,6 +27,9 @@ type MyApp() =
     member this.HandleRedo() = this.Dispatch Redo
 
     [<JSInvokable>]
+    member this.HandleStartHyweave() = this.Dispatch StartHyweave
+
+    [<JSInvokable>]
     member this.HandleHashChange(rawHash: string) =
         let (content, panel, isFromUrl) = FileManager.resolveHashChange rawHash
         this.Dispatch (LoadState (content, panel, isFromUrl))

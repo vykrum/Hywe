@@ -575,6 +575,40 @@ module ExportHelpers =
             (esc meta.Date)
             (esc meta.Level)
 
+    /// <summary> Parses a JSON string into an ExportMetadata record. </summary>
+    let fromJson (json: string) : ExportMetadata =
+        try
+            if System.String.IsNullOrWhiteSpace json then
+                { ProjectTitle = "Hywe Exploration"; Author = "Hywe Design Team"; Date = System.DateTime.Now.ToString("yyyy-MM-dd"); Level = "L0" }
+            else
+                use doc = System.Text.Json.JsonDocument.Parse json
+                let root = doc.RootElement
+                let getString (prop: string) (defaultVal: string) : string =
+                    let mutable elem = Unchecked.defaultof<System.Text.Json.JsonElement>
+                    if root.TryGetProperty(prop, &elem) && elem.ValueKind = System.Text.Json.JsonValueKind.String then
+                        elem.GetString()
+                    else
+                        defaultVal
+                let title = 
+                    match getString "projectTitle" "" with
+                    | "" -> getString "ProjectTitle" "Hywe Exploration"
+                    | t -> t
+                let author = 
+                    match getString "author" "" with
+                    | "" -> getString "Author" "Hywe Design Team"
+                    | a -> a
+                let date = 
+                    match getString "date" "" with
+                    | "" -> getString "Date" (System.DateTime.Now.ToString("yyyy-MM-dd"))
+                    | d -> d
+                let level = 
+                    match getString "level" "" with
+                    | "" -> getString "Level" "L0"
+                    | l -> l
+                { ProjectTitle = title; Author = author; Date = date; Level = level }
+        with _ ->
+            { ProjectTitle = "Hywe Exploration"; Author = "Hywe Design Team"; Date = System.DateTime.Now.ToString("yyyy-MM-dd"); Level = "L0" }
+
 /// <summary> Messages representing all possible state changes in the main module. </summary>
 type Message =
     /// <summary> Sets the active sequence operator index for the current architectural level. </summary>
