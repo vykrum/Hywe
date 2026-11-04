@@ -101,6 +101,9 @@ jobs:
         run: |
           find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.wasm' ! -name '*.wasm.gz' -exec gzip -9 -k {} \;
           find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.dll' ! -name '*.dll.gz' -exec gzip -9 -k {} \;
+          sudo apt-get install -y brotli
+          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.wasm' ! -name '*.wasm.br' -exec brotli -q 11 -k {} \;
+          find ${{ env.PUBLISH_DIR }}/wwwroot -name '*.dll' ! -name '*.dll.br' -exec brotli -q 11 -k {} \;
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

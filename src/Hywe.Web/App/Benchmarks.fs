@@ -12,6 +12,8 @@ open Microsoft.JSInterop
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Xyxel
+open ModelTypes
+open Titleblock
 
 /// <summary>
 /// Calculates the population standard deviation of an array of floating-point values.
@@ -174,6 +176,14 @@ let renderTable (headerLines: string list) (tableColumns: string list) (dataRows
 /// end-to-end latency analysis, multi-container synthesis, and AST perturbation sensitivity.
 /// </summary>
 type BenchmarkRunner() =
+    /// <summary>
+    /// Applies architectural titleblock framing to an SVG string using the pure F# Titleblock engine.
+    /// Exposes Titleblock.apply to JavaScript interop as the single source of truth.
+    /// </summary>
+    [<JSInvokable("ApplyArchitecturalTitleblock")>]
+    static member ApplyArchitecturalTitleblock(svgString: string, [<Optional; DefaultParameterValue("{}")>] metaJson: string) : string =
+        let meta = ExportHelpers.fromJson metaJson
+        Titleblock.apply svgString meta
     /// <summary>
     /// Measures cold and warm steady-state compilation latency across all canonical archetypes
     /// and 24 spatial sequence operators. Outputs metrics including minimum, maximum, average,

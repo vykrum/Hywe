@@ -151,6 +151,16 @@ let generateVisualElements (root: TreeNode) (colorMap: Map<string, string>) (for
 /// <summary>
 /// Renders a hierarchical tree into a self-contained SVG markup string.
 /// </summary>
+let private escapeXml (str: string) =
+    match str with
+    | null | "" -> ""
+    | s ->
+        s.Replace("&", "&amp;")
+         .Replace("<", "&lt;")
+         .Replace(">", "&gt;")
+         .Replace("\"", "&quot;")
+         .Replace("'", "&apos;")
+
 let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) (forcedW: float option) (forcedH: float option) =
     let elements, bounds = generateVisualElements root colorMap forcedW forcedH
 
@@ -168,7 +178,7 @@ let renderSvgToString (root: TreeNode) (colorMap: Map<string, string>) (forcedW:
                 sprintf """<polygon points="%s" fill="%s" stroke="%s" stroke-width="%s" />""" pts fill stroke sw
             | VText(x, y, sz, ta, fl, nm) ->
                 let fw = if sz >= 10 then "600" else "400"
-                sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" font-weight="%s" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz fw ta fl nm
+                sprintf """<text x="%f" y="%f" font-family="Outfit, sans-serif" font-size="%dpx" font-weight="%s" text-anchor="%s" dominant-baseline="middle" fill="%s">%s</text>""" x y sz fw ta fl (escapeXml nm)
         )
         
     elStrings |> List.iter (fun s -> sb.AppendLine(s) |> ignore)

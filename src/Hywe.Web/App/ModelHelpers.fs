@@ -13,8 +13,6 @@ open Hywe.Core
 open Tutorial
 open Overlays
 
-
-
 // View helpers
 let private iconSwitchNode model = drawMenuIcon (match model.EditorMode with Syntax -> pathSwitchNode | Interactive -> pathSwitchCode)
 let private iconSave             = drawMenuIcon pathSave

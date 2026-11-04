@@ -298,6 +298,16 @@ let svgCoxels
             }
 ///
 
+let private escapeXml (str: string) =
+    match str with
+    | null | "" -> ""
+    | s ->
+        s.Replace("&", "&amp;")
+         .Replace("<", "&lt;")
+         .Replace(">", "&gt;")
+         .Replace("\"", "&quot;")
+         .Replace("'", "&apos;")
+
 let generateSvgString
     (cxl : Cxl[])
     (bdr : (int*int)[][])
@@ -411,7 +421,7 @@ let generateSvgString
                     | [||] -> -10.0, -10.0
                     | _ -> (lx, ly)
 
-                let truncated = truncateName fullName
+                let truncated = escapeXml (truncateName fullName)
                 let fw = if i = 0 then "700" else "400"
                 let fl = if i = 0 then "#333333" else "#666666"
 
@@ -477,7 +487,7 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
             // Labels
             let tx = s.lx * scl + padd
             let ty = s.ly * scl + padd
-            let truncated = truncateName s.name
+            let truncated = escapeXml (truncateName s.name)
             let fw = if i = 0 then "700" else "400"
             let fl = if i = 0 then "#333333" else "#666666"
             
@@ -752,7 +762,7 @@ let alternateConfigurations
                                 if isSelected then
                                     let tx = ox + (s.lx * scale)
                                     let ty = oy + (s.ly * scale)
-                                    let truncated = truncateName s.name
+                                    let truncated = escapeXml (truncateName s.name)
 
                                     hzTx()
                                         .x($"{tx}")
