@@ -45,14 +45,17 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
             | false -> 
                 { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
         | BoundaryPanel ->
-            let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let newState = FileManager.importFromHyw model.SrcOfTrth inner
-            let finalPoly = match newState with Stable m | FreshlyImported m -> m
-            let newExport = syncPolygonState finalPoly
-            { model with 
+            let baseModel =
+                if model.EditorMode = Syntax then
+                    let inner = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+                    let newState = FileManager.importFromHyw model.SrcOfTrth inner
+                    let finalPoly = match newState with Stable m | FreshlyImported m -> m
+                    let newExport = syncPolygonState finalPoly
+                    { model with PolygonEditor = newState; PolygonExport = newExport }
+                else
+                    model
+            { baseModel with 
                 ActivePanel = BoundaryPanel
-                PolygonEditor = newState
-                PolygonExport = newExport
                 IsPresetsCollapsed = true
                 IsWorkspaceCollapsed = true 
                 IsHarvestCollapsed = true
