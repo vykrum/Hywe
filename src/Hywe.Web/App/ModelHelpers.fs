@@ -407,10 +407,10 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
                 match syntaxAltered with
                 | true ->
                     span { attr.``class`` "hyweave-prompt"; text "input altered" }
-                    span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
+                    span { attr.key "hy-tree-main-txt"; attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
                     span { attr.``class`` "hyweave-prompt"; text "to regenerate" }
                 | false -> 
-                    text "h y W E A V E"
+                    span { attr.key "hy-tree-idle-txt"; text "h y W E A V E" }
         }
     }
 
@@ -423,8 +423,10 @@ let private viewBoundaryWeaveButton (model: Model) (dispatch: Message -> unit) =
         | false -> match isChanged with true -> baseClass + " needs-update" | false -> baseClass
 
     div {
+        attr.key "boundary-hyweave-container"
         attr.``class`` "hyweave-container"
         button {
+            attr.key "boundary-hyweave-btn"
             attr.id "hywe-boundary-hyweave"
             attr.``class`` buttonClass
             attr.disabled model.IsCancelling 
@@ -451,11 +453,11 @@ let private viewBoundaryWeaveButton (model: Model) (dispatch: Message -> unit) =
             | false -> 
                 match isChanged with
                 | true ->
-                    span { attr.``class`` "hyweave-prompt"; text "boundary altered" }
-                    span { attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
-                    span { attr.``class`` "hyweave-prompt"; text "to apply changes" }
+                    span { attr.key "boundary-altered-prompt"; attr.``class`` "hyweave-prompt"; text "boundary altered" }
+                    span { attr.key "boundary-altered-main"; attr.``class`` "hyweave-main-text"; text "h y W E A V E" }
+                    span { attr.key "boundary-altered-apply"; attr.``class`` "hyweave-prompt"; text "to apply changes" }
                 | false -> 
-                    text "h y W E A V E"
+                    span { attr.key "boundary-idle-text"; text "h y W E A V E" }
         }
     }
 
@@ -623,6 +625,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
         let canUndo = model.UndoStack <> []
         let canRedo = model.RedoStack <> []
         div { 
+            attr.key "hywe-polygon-editor-panel"
             attr.id "hywe-polygon-editor"
             attr.style (match model.ActivePanel = BoundaryPanel with true -> "display: block;" | false -> "display: none;")
             Boundary.view currentInner (PolygonEditorMsg >> dispatch) js canUndo canRedo (viewBoundaryWeaveButton model dispatch)

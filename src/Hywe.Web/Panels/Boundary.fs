@@ -70,6 +70,7 @@ let renderNumericInput labelText (value: float) isDisabled msg =
 // Control panel with transposed horizontal rows for toggles and dimensions
 let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
     div {
+        attr.key "boundary-toolbar"
         attr.``class`` "boundary-toolbar"
 
         // Col 1: Segmented Pill Toggles
@@ -208,6 +209,7 @@ let instructionsModal model dispatch (js: IJSRuntime) =
         ]
 
         div {
+            attr.key "boundary-instructions-overlay"
             attr.``class`` "boundary-instructions-overlay"
             attr.style "position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;"
             on.click (fun _ -> closeGuide ())
@@ -379,7 +381,8 @@ let polygonEditorSvg model dispatch (js: IJSRuntime) =
         // Outer vertices
         model.Outer
         |> Array.mapi (fun i rawPt ->
-            renderVertex 0 i rawPt model.DisplayOuter.[i] "outerVertex" "outerVertexLabel"
+            let dispPt = if i < model.DisplayOuter.Length then model.DisplayOuter.[i] else rawPt
+            renderVertex 0 i rawPt dispPt "outerVertex" "outerVertexLabel"
         )
         |> concatNodes
 
@@ -388,7 +391,11 @@ let polygonEditorSvg model dispatch (js: IJSRuntime) =
         |> Array.mapi (fun i isl ->
             isl
             |> Array.mapi (fun j rawPt ->
-                renderVertex (i + 1) j rawPt model.DisplayIslands.[i].[j] "islandVertex" "islandVertexLabel"
+                let dispPt =
+                    if i < model.DisplayIslands.Length && j < model.DisplayIslands.[i].Length then
+                        model.DisplayIslands.[i].[j]
+                    else rawPt
+                renderVertex (i + 1) j rawPt dispPt "islandVertex" "islandVertexLabel"
             )
             |> concatNodes
         )
@@ -485,6 +492,7 @@ let polygonEditorSvg model dispatch (js: IJSRuntime) =
 
 let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
     div {
+        attr.key "boundary-view-root"
         controlAndInstructions model dispatch js canUndo canRedo
         weaveButton
 
@@ -505,16 +513,18 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
                         printfn "Error parsing map JSON from %s: %s" elementId ex.Message
             } |> Async.StartImmediate
 
-        input { attr.id "hymap-data"; attr.``type`` "hidden" }
+        input { attr.key "hymap-data"; attr.id "hymap-data"; attr.``type`` "hidden" }
         button {
+            attr.key "hymap-trigger"
             attr.id "hymap-trigger"
             attr.style "display:none;"
             on.click (fun _ -> handleMapJsonTrigger "hymap-data" (fun (w, h, raw) -> dispatch (MapTopographyReceived (w, h, raw))))
         }
 
         // Hidden fields for live dimension updates
-        input { attr.id "hymap-live-data"; attr.``type`` "hidden" }
+        input { attr.key "hymap-live-data"; attr.id "hymap-live-data"; attr.``type`` "hidden" }
         button {
+            attr.key "hymap-live-trigger"
             attr.id "hymap-live-trigger"
             attr.style "display:none;"
             on.click (fun _ -> handleMapJsonTrigger "hymap-live-data" (fun (w, h, _) -> dispatch (UpdateLogicalDimensions (w, h))))
@@ -566,6 +576,7 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
             // SVG Editor Layer
             let editorContent = polygonEditorSvg model dispatch js
             div {
+                attr.key "svg-editor-layer"
                 attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" svgPointerEvents)
                 match model.PolygonEnabled with
                 | true -> editorContent
