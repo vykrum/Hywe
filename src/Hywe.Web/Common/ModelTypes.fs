@@ -1,3 +1,6 @@
+/// <summary>
+/// Domain model types, Elmish state definitions, message unions, and geometric derivation helpers for Hywe.
+/// </summary>
 module ModelTypes
 
 open TreeTypes
@@ -5,7 +8,7 @@ open Types
 open Hywe.Core.Coxel
 open System
 
-/// Currently active main UI panel in the application shell.
+/// <summary> Specifies the currently active main UI panel in the application shell. </summary>
 type ActivePanel =
     | TreePanel
     | BoundaryPanel
@@ -16,24 +19,24 @@ type ActivePanel =
     | TeachPanel
     | ReportPanel
 
-/// Onboarding tutorial difficulty level.
+/// <summary> Specifies the onboarding tutorial difficulty level sequence. </summary>
 type TutorialLevel =
     | Basic
     | Hierarchy
     | Levels
     | Nests
 
-/// Hierarchy editing mode (interactive node graph vs DSL text syntax).
+/// <summary> Specifies the input methodology for editing the node hierarchy. </summary>
 type EditorMode =
     | Interactive
     | Syntax
 
-/// Active editor tab within workspace views.
+/// <summary> Specifies active editor tabs within workspace views. </summary>
 type EditorTab =
     | Boundary
     | Editor of isAdvanced: bool
 
-/// Calculated spatial, geometric, topological, color, and solar derivations from layout solver.
+/// <summary> Calculated spatial, geometric, topological, color, and solar derivations from the layout solver. </summary>
 type DerivedData = {
     cxCxl1: Cxl[]
     cxlAvl: int[]
@@ -48,8 +51,10 @@ type DerivedData = {
 
 // --- Constants & Helpers ---
 
+/// <summary> Standard phrase string used for generating unique alphanumeric labels for batch layout variations. </summary>
 let labelPhrase = "alternATE◦CONFIGURATions"
 
+/// <summary> Maps a zero-based variation index to a unique, formatted variation label string. </summary>
 let indexToLabel = function
     | i when i < 0 -> "a"
     | i when i < 24 -> string labelPhrase.[i]
@@ -58,10 +63,13 @@ let indexToLabel = function
         let second = labelPhrase.[i % 24]
         $"{first}{second}"
 
+/// <summary> Converts a hexadecimal color string to RGB integer components. </summary>
 let hexToRgb = Coloring.hexToRgb
+
+/// <summary> Generates deterministic pastel color hex codes based on a seed color and count. </summary>
 let generatePastels = Coloring.generatePastels
 
-/// Derives calculated spatial attributes from raw layout coxels, boundary contours, and solar parameters.
+/// <summary> Derives calculated spatial attributes (<see cref="DerivedData"/>) from raw layout coxels, boundary contours, and solar parameters. </summary>
 let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[]) (cxRto1: float[]) (elv: int) (latitude: float option) : DerivedData =
     let fallbackSqn = Hywe.Core.Hexel.VRCCNE 
     let activeSqn = 
@@ -151,6 +159,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
         cxSol1 = cxSol1
     }
 
+/// <summary> Default empty instance of <see cref="DerivedData"/> used before initial layout solving. </summary>
 let emptyDerivedData : DerivedData = {
     cxCxl1 = [||]
     cxlAvl = [||]
@@ -163,7 +172,7 @@ let emptyDerivedData : DerivedData = {
     cxSol1 = None
 }
 
-/// Action types requiring user confirmation in modal dialogs.
+/// <summary> Action types requiring user confirmation in modal dialogs before execution. </summary>
 type ConfirmAction =
     | ResetWorkspace
     | LoadPreset of name: string * label: string
@@ -171,11 +180,16 @@ type ConfirmAction =
     | SwitchTo of EditorTab
     | ResetBoundaryAction
 
+/// <summary> Default published timestamp string for document metadata. </summary>
 let PUBLISHED_DATE = "2022-08-15T00:00:00Z"
+
+/// <summary> Default modified timestamp string for document metadata. </summary>
 let MODIFIED_DATE = "2026-09-28T03:35:49Z"
+
+/// <summary> Number of community gallery entries displayed per page. </summary>
 let GALLERY_PAGE_SIZE = 12
 
-/// Serialized boundary string representations, dimensions, entry points, and geographic metadata.
+/// <summary> Export payload containing serialized boundary string representations, dimensions, entry points, and geographic metadata. </summary>
 type PolygonExportData = {
     OuterStr: string
     IslandsStr: string
@@ -189,7 +203,7 @@ type PolygonExportData = {
     MapScale: float
 }
 
-/// Minimal snapshot of undoable editor state.
+/// <summary> Minimal snapshot of undoable editor state. </summary>
 type UndoSnapshot = {
     SrcOfTrth: string
     Tree: SubModel
@@ -197,7 +211,7 @@ type UndoSnapshot = {
     Sequences: Map<int, string>
 }
 
-/// Design metadata and classification tags captured during AI exploration.
+/// <summary> Design metadata and classification tags captured during AI exploration and community submissions. </summary>
 type TeachMetadata = {
     Author: string
     ExplorationDescription: string
@@ -211,7 +225,7 @@ type TeachMetadata = {
     ThumbnailVariation: int
 }
 
-/// Application workflow view state.
+/// <summary> Application workflow view state (loading screen, onboarding intro, or main workspace interface). </summary>
 type AppScreen =
     | LoadingScreen
     | IntroScreen
@@ -219,12 +233,15 @@ type AppScreen =
 
 // Batch Export Types
 
+/// <summary> Renderable component shape data for batch export preview SVGs. </summary>
 type BatchComponent = {| color: string; points: float[]; name: string; lx: float; ly: float |}
 
+/// <summary> Complete layout variation configuration result produced during batch synthesis. </summary>
 type BatchConfgrtns = {| sqnName: string; shapes: BatchComponent[]; wtmkShapes: BatchComponent[] option; w: float; h: float; mapScale: float; cxCxl1: Cxl[]; cxElv1: float[]; cxlAvl: int[]; cxOuIl: (int*int)[][]; cxAdj1: string[] * bool[][] ; cxB36: string[]; cxRto1: float[]; cxClr1: string[]; cxSol1: float[] option |}
 
 // Report Types
 
+/// <summary> Section visibility flags and variation selection filters for exported reports. </summary>
 type LevelReportSections = {
     FlowChart    : bool
     BatchOverview: bool
@@ -233,6 +250,7 @@ type LevelReportSections = {
     IsFilterExpanded: bool
 }
 
+/// <summary> Options and configuration for generating PDF and HTML architectural documentation reports. </summary>
 type ReportOptions = {
     ProjectTitle  : string
     Author        : string
@@ -241,8 +259,10 @@ type ReportOptions = {
     Captured3DImage: string option
 }
 
+/// <summary> In-memory cache mapping level markers to arrays of 24 batch layout configurations. </summary>
 type LayoutCache = Map<string, BatchConfgrtns option []>
 
+/// <summary> Metadata entry representing a published community design exploration in the gallery. </summary>
 type GalleryEntry = {
     Id: string
     ExplorationDescription: string
@@ -260,7 +280,7 @@ type GalleryEntry = {
     IsFeatured: bool
 }
 
-/// Main application state model for Hywe Elmish architecture.
+/// <summary> Main application state model for Hywe Elmish architecture. </summary>
 type Model =
     {
         Sequences: Map<int, string>
@@ -327,6 +347,7 @@ type Model =
         PreTutorialSnapshot: UndoSnapshot option
     }
 
+/// <summary> Metadata header used when generating downloadable CSV and SVG exports. </summary>
 [<CLIMutable>]
 type ExportMetadata = {
     ProjectTitle: string
@@ -335,7 +356,9 @@ type ExportMetadata = {
     Level: string
 }
 
+/// <summary> Helper utilities for preparing export metadata and reports. </summary>
 module ExportHelpers =
+    /// <summary> Creates an <see cref="ExportMetadata"/> snapshot from current application model settings. </summary>
     let createExportMetadata (model: Model) (levelStr: string) : ExportMetadata =
         let pTitle = 
             if System.String.IsNullOrWhiteSpace model.ReportOptions.ProjectTitle then "Hywe Exploration" 
@@ -350,6 +373,7 @@ module ExportHelpers =
             Level = levelStr
         }
 
+    /// <summary> Serializes ExportMetadata to a clean JSON string to prevent JSInterop constructor reflection errors. </summary>
     let toJson (meta: ExportMetadata) : string =
         let esc (s: string) = 
             if isNull s then "\"\""
@@ -360,6 +384,7 @@ module ExportHelpers =
             (esc meta.Date)
             (esc meta.Level)
 
+    /// <summary> Parses a JSON string into an ExportMetadata record. </summary>
     let fromJson (json: string) : ExportMetadata =
         try
             if System.String.IsNullOrWhiteSpace json then
@@ -393,7 +418,7 @@ module ExportHelpers =
         with _ ->
             { ProjectTitle = "Hywe Exploration"; Author = "Hywe Design Team"; Date = System.DateTime.Now.ToString("yyyy-MM-dd"); Level = "L0" }
 
-/// Main Elmish application messages.
+/// <summary> Messages representing all possible state changes in the main application Elmish loop. </summary>
 type Message =
     | SetSqnIndex of int
     | SetSrcOfTrth of string
@@ -497,7 +522,7 @@ type Message =
     | TutorialAutoAdvance of step: int
     | NoOp
 
-/// Synchronizes the site polygon editor model state into PolygonExportData.
+/// <summary> Synchronizes the site polygon editor model state into a pure <see cref="PolygonExportData"/> cache. </summary>
 let syncPolygonState (p: PolygonEditorModel) =
     let outer, islands, absolute, entry, w, h, elv, baseS = State.exportPolygonStrings p
     
