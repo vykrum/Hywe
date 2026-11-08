@@ -2,6 +2,79 @@
 window.Hymap = {
     map: null,
     _loadingDeps: null,
+    savedCenter: null,
+    savedZoom: null,
+    _resizeObserver: null,
+    _wasHidden: false,
+    _lastWidth: 0,
+    _lastHeight: 0,
+
+    saveView: function() {
+        if (!this.map) return;
+        const container = document.getElementById('hymap-container');
+        if (container && container.offsetWidth > 50 && container.offsetHeight > 50) {
+            try {
+                const c = this.map.getCenter();
+                const z = this.map.getZoom();
+                if (c && typeof c.lat === 'number' && !isNaN(c.lat) && typeof c.lng === 'number' && !isNaN(c.lng) && typeof z === 'number' && !isNaN(z)) {
+                    this.savedCenter = c;
+                    this.savedZoom = z;
+                }
+            } catch (e) {
+                // Ignore transient states
+            }
+        }
+    },
+
+    refreshSize: function() {
+        const container = document.getElementById('hymap-container');
+        if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) {
+            return;
+        }
+
+        if (!this.map) {
+            this.init();
+            return;
+        }
+
+        if (this.map._container !== container) {
+            this.map.remove();
+            this.map = null;
+            this.init();
+            return;
+        }
+
+        this.map.invalidateSize({ pan: false, debounceMove: false });
+        if (this.savedCenter && this.savedZoom) {
+            this.map.setView(this.savedCenter, this.savedZoom, { animate: false });
+        }
+        this.updateDistanceLabel();
+    },
+
+    _setupResizeObserver: function(container) {
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
+        }
+        if (window.ResizeObserver && container) {
+            this._resizeObserver = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    const cr = entry.contentRect;
+                    if (cr.width > 50 && cr.height > 50) {
+                        if (this._wasHidden || Math.abs(cr.width - (this._lastWidth || 0)) > 2 || Math.abs(cr.height - (this._lastHeight || 0)) > 2) {
+                            this._wasHidden = false;
+                            this._lastWidth = cr.width;
+                            this._lastHeight = cr.height;
+                            this.refreshSize();
+                        }
+                    } else if (cr.width === 0 || cr.height === 0) {
+                        this._wasHidden = true;
+                    }
+                }
+            });
+            this._resizeObserver.observe(container);
+        }
+    },
 
     ensureDependencies: function() {
         if (window.L && window.L.Control && window.L.Control.Geocoder) {
@@ -58,24 +131,29 @@ window.Hymap = {
         }
 
         if (this.map) {
-            // Already initialized, just force it to recalculate its size
+            this._setupResizeObserver(container);
             setTimeout(() => {
-                this.map.invalidateSize();
-                this.updateDistanceLabel();
-            }, 100);
+                this.refreshSize();
+            }, 50);
             return;
         }
         // Initialize the map
         // Add a slight delay to ensure Bolero has rendered the container
         setTimeout(() => {
             if (this.map) return; // double check inside timeout
+            const initialCenter = this.savedCenter || [12.9716, 77.5946];
+            const initialZoom = this.savedZoom || 13;
+
             this.map = L.map('hymap-container', { 
                 maxZoom: 24, 
                 zoomControl: false,
                 attributionControl: false,
                 zoomSnap: 0.1,
                 zoomDelta: 0.1
-            }).setView([12.9716, 77.5946], 13);
+            }).setView(initialCenter, initialZoom);
+
+            this.saveView();
+            this._setupResizeObserver(container);
             
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -103,12 +181,17 @@ window.Hymap = {
                     bbox.getSouthWest()
                 ]);
                 this.map.fitBounds(poly.getBounds());
+                this.saveView();
             }).addTo(this.map);
             
             // Prevent zooming in too much by dynamically setting maxZoom so that map width remains >= 25m
             const updateMaxZoom = () => {
-                const centerLat = this.map.getCenter().lat;
+                if (!this.map) return;
                 const containerWidth = this.map.getSize().x;
+                if (containerWidth <= 0) return;
+                const center = this.map.getCenter();
+                if (!center) return;
+                const centerLat = center.lat;
                 const svg = document.getElementById('polygon-editor-svg');
                 let ratio = 0;
                 if (svg && svg.hasAttribute('data-padding-ratio')) {
@@ -121,12 +204,25 @@ window.Hymap = {
                 }
             };
             this.map.on('resize', updateMaxZoom);
-            this.map.on('move', updateMaxZoom);
+            this.map.on('move', () => {
+                updateMaxZoom();
+                this.saveView();
+                this.updateDistanceLabel();
+            });
+            this.map.on('moveend', () => {
+                this.saveView();
+                this.updateDistanceLabel();
+            });
+            this.map.on('zoomend', () => {
+                this.saveView();
+                this.updateDistanceLabel();
+            });
             updateMaxZoom();
             
-            // Update distance label
-            this.map.on('move', () => this.updateDistanceLabel());
-            this.map.whenReady(() => this.updateDistanceLabel());
+            this.map.whenReady(() => {
+                this.saveView();
+                this.updateDistanceLabel();
+            });
         }, 100);
     },
 
@@ -142,7 +238,12 @@ window.Hymap = {
 
     updateDistanceLabel: function() {
         if (!this.map) return;
+        const container = document.getElementById('hymap-container');
+        if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) return;
+
         const bounds = this.map.getBounds();
+        if (!bounds || !bounds.isValid()) return;
+
         const calcWidth = this.getCalculatedWidth(bounds);
         let exactHeight = this.map.distance(bounds.getNorthWest(), bounds.getSouthWest());
         const svg = document.getElementById('polygon-editor-svg');
@@ -150,6 +251,8 @@ window.Hymap = {
             const ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
             exactHeight = exactHeight * (1 - ratio);
         }
+
+        if (isNaN(calcWidth) || isNaN(exactHeight) || calcWidth < 10 || exactHeight < 10) return;
         
         let label = document.getElementById('hymap-distance-label');
         if (!label) {
@@ -176,6 +279,7 @@ window.Hymap = {
 
     lockMap: async function() {
         if (!this.map) return;
+        this.saveView();
 
         // 1. Freeze the map
         this.map.dragging.disable();
