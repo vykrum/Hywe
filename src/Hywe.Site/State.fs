@@ -731,6 +731,8 @@ let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorMod
         }
 
     | UpdateLogicalDimensions (newW, newH) -> async {
+        if newW < 10.0 || newH < 10.0 then return model
+        else
         // If we are in Map Base mode, the geographic dimensions are managed by the map bounds.
         // We should ONLY update the LogicalWidth/Height to match the map viewport, 
         // but NEVER scale the polygon's SVG coordinates. If the map is locked, we don't 

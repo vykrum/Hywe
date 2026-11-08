@@ -17,7 +17,7 @@ open TreeTypes
 
 let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
 
-let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
+let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
     let isLeavingBoundaryWithChanges = model.ActivePanel = BoundaryPanel && panel <> BoundaryPanel && model.NeedsHyweave
     let baseModel, baseCmd =
         match panel with
@@ -54,12 +54,21 @@ let handleSetActivePanel (model: Model) (panel: ActivePanel) : Model * Cmd<Messa
                     { model with PolygonEditor = newState; PolygonExport = newExport }
                 else
                     model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none
             { baseModel with 
                 ActivePanel = BoundaryPanel
                 IsPresetsCollapsed = true
                 IsWorkspaceCollapsed = true 
                 IsHarvestCollapsed = true
-            }, Cmd.none
+            }, mapCmd
         | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
             { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
 
@@ -189,7 +198,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
     | SetActivePanel panel ->
         if model.ActivePanel <> panel then
             Haptics.trigger js HapticPattern.Tick
-        Some (handleSetActivePanel model panel)
+        Some (handleSetActivePanel js model panel)
     
     | ToggleEditorMode ->
         Haptics.trigger js HapticPattern.Tick
@@ -500,14 +509,86 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             match model.EditorMode with
             | Interactive ->
                 Serialization.getOutput
-                    model.Tree
-                    model.Sequences
-                    model.PolygonExport.Width
-                    model.PolygonExport.Height
-                    model.PolygonExport.AbsStr
-                    model.PolygonExport.BaseStr
-                    model.PolygonExport.OuterStr
-                    model.PolygonExport.IslandsStr
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.Tree
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.Sequences
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.PolygonExport.Width
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.PolygonExport.Height
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.PolygonExport.AbsStr
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.PolygonExport.BaseStr
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.PolygonExport.OuterStr
+                    model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.PolygonExport.IslandsStr
             | Syntax -> model.SrcOfTrth
             
         Some ({ model with IsGeneratingReport = true; SrcOfTrth = currentSrc },
@@ -555,7 +636,16 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                                       let srcForBatch = ensureCategory currentSrc i
                                                       let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport baseLevel
                                                       let updatedCache = 
-                                                          model.Tree.Levels.Keys
+                                                          model
+            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
+            let mapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! Async.Sleep 60
+                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none.Tree.Levels.Keys
                                                           |> Seq.fold (fun cacheAcc l -> 
                                                               let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l model.PolygonExport
                                                               Cache.update (toMarker l) i cfg cacheAcc
