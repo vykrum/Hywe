@@ -4,18 +4,14 @@ window.Hymap = {
     _loadingDeps: null,
     savedCenter: null,
     savedZoom: null,
-    _resizeObserver: null,
-    _wasHidden: false,
     _isRestoring: false,
-    _lastWidth: 0,
-    _lastHeight: 0,
     _lastDispatchedWidth: 0,
     _lastDispatchedHeight: 0,
 
     saveView: function() {
         if (!this.map || this._isRestoring) return;
         const container = document.getElementById('hymap-container');
-        if (container && container.offsetWidth > 100 && container.offsetHeight > 100) {
+        if (container && container.offsetWidth > 50 && container.offsetHeight > 50) {
             try {
                 const c = this.map.getCenter();
                 const z = this.map.getZoom();
@@ -30,12 +26,12 @@ window.Hymap = {
     },
 
     refreshSize: function() {
-        if (!this.map || this._isRestoring) return;
+        if (!this.map) return;
         
         const tryRefresh = (attempt) => {
             const container = document.getElementById('hymap-container');
             if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) {
-                if (attempt < 6) {
+                if (attempt < 8) {
                     setTimeout(() => tryRefresh(attempt + 1), 50);
                 }
                 return;
@@ -53,58 +49,25 @@ window.Hymap = {
                 return;
             }
 
-            if (!this._resizeObserver) {
-                this._setupResizeObserver(container);
-            }
-
             this._isRestoring = true;
             try {
                 this.map.invalidateSize({ animate: false });
-                const targetCenter = this.savedCenter || [12.9716, 77.5946];
-                const targetZoom = this.savedZoom || 13;
-                this.map.setView(targetCenter, targetZoom, { reset: true, animate: false });
+                if (this.savedCenter && this.savedZoom) {
+                    this.map.setView(this.savedCenter, this.savedZoom, { animate: false });
+                }
                 this.updateDistanceLabel(false);
             } finally {
                 setTimeout(() => {
                     this._isRestoring = false;
-                }, 80);
+                }, 100);
             }
         };
 
         tryRefresh(0);
     },
 
-    _setupResizeObserver: function(container) {
-        if (this._resizeObserver) {
-            this._resizeObserver.disconnect();
-            this._resizeObserver = null;
-        }
-        if (window.ResizeObserver && container) {
-            this._resizeObserver = new ResizeObserver((entries) => {
-                for (const entry of entries) {
-                    const cr = entry.contentRect;
-                    if (cr.width > 50 && cr.height > 50) {
-                        if (this._wasHidden) {
-                            this._wasHidden = false;
-                            this._lastWidth = cr.width;
-                            this._lastHeight = cr.height;
-                            this.refreshSize();
-                        } else if (Math.abs(cr.width - (this._lastWidth || 0)) > 5 || Math.abs(cr.height - (this._lastHeight || 0)) > 5) {
-                            this._lastWidth = cr.width;
-                            this._lastHeight = cr.height;
-                            this.refreshSize();
-                        }
-                    } else if (cr.width === 0 || cr.height === 0) {
-                        this._wasHidden = true;
-                    }
-                }
-            });
-            this._resizeObserver.observe(container);
-        }
-    },
-
     ensureDependencies: function() {
-        if (window.L && window.L.Control && window.L.Control.Geocoder) {
+        if (window.L && window.L.Control && window.L.Control.Geocoder && window.turf) {
             return Promise.resolve();
         }
         if (this._loadingDeps) {
@@ -135,7 +98,9 @@ window.Hymap = {
             });
 
             const loadL = window.L ? Promise.resolve() : loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
-            loadL.then(() => {
+            const loadTurf = window.turf ? Promise.resolve() : loadScript('https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js');
+
+            Promise.all([loadL, loadTurf]).then(() => {
                 if (window.L && (!window.L.Control || !window.L.Control.Geocoder)) {
                     return loadScript('https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js');
                 }
@@ -150,24 +115,20 @@ window.Hymap = {
 
         await this.ensureDependencies();
 
-        // If the map exists but the container element was destroyed and recreated by Bolero,
-        // we must destroy the old map instance so Leaflet can attach to the new container.
         if (this.map && this.map._container !== container) {
             this.map.remove();
             this.map = null;
         }
 
         if (this.map) {
-            this._setupResizeObserver(container);
             setTimeout(() => {
                 this.refreshSize();
             }, 50);
             return;
         }
-        // Initialize the map
-        // Add a slight delay to ensure Bolero has rendered the container
+
         setTimeout(() => {
-            if (this.map) return; // double check inside timeout
+            if (this.map) return;
             const initialCenter = this.savedCenter || [12.9716, 77.5946];
             const initialZoom = this.savedZoom || 13;
 
@@ -180,7 +141,76 @@ window.Hymap = {
             }).setView(initialCenter, initialZoom);
 
             this.saveView();
-            this._setupResizeObserver(container);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxNativeZoom: 19,
+                maxZoom: 24,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(this.map);
+            
+            // Add attribution control at bottom-left
+            L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(this.map);
+
+            // Add custom zoom control
+            L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+            
+            // Add search control
+            L.Control.geocoder({
+                defaultMarkGeocode: false,
+                position: 'topleft'
+            }).on('markgeocode', (e) => {
+                const bbox = e.geocode.bbox;
+                const poly = L.polygon([
+                    bbox.getSouthEast(),
+                    bbox.getNorthEast(),
+                    bbox.getNorthWest(),
+                    bbox.getSouthWest()
+                ]);
+                this.map.fitBounds(poly.getBounds());
+                this.saveView();
+            }).addTo(this.map);
+            
+            // Prevent zooming in too much by dynamically setting maxZoom so that map width remains >= 25m
+            const updateMaxZoom = () => {
+                if (!this.map) return;
+                const containerWidth = this.map.getSize().x;
+                if (containerWidth <= 0) return;
+                const center = this.map.getCenter();
+                if (!center) return;
+                const centerLat = center.lat;
+                const svg = document.getElementById('polygon-editor-svg');
+                let ratio = 0;
+                if (svg && svg.hasAttribute('data-padding-ratio')) {
+                    ratio = parseFloat(svg.getAttribute('data-padding-ratio'));
+                }
+                const activeWidthPx = containerWidth * (1 - ratio);
+                if (activeWidthPx > 0) {
+                    const maxZ = Math.log2((activeWidthPx * 156543.03 * Math.cos(centerLat * Math.PI / 180)) / 25.0);
+                    this.map.setMaxZoom(maxZ);
+                }
+            };
+            this.map.on('resize', updateMaxZoom);
+            this.map.on('move', () => {
+                updateMaxZoom();
+                this.updateDistanceLabel(false);
+            });
+            this.map.on('dragend', () => {
+                this.saveView();
+                this.updateDistanceLabel(true);
+            });
+            this.map.on('zoomend', () => {
+                this.saveView();
+                this.updateDistanceLabel(true);
+            });
+            updateMaxZoom();
+            
+            this.map.whenReady(() => {
+                this.saveView();
+                this.updateDistanceLabel(false);
+            });
+        }, 100);
+    },
             
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

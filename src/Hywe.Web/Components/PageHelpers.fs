@@ -58,7 +58,7 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
             let mapCmd =
                 if editor.UseMapBase then
                     Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 100
+                        do! Async.Sleep 60
                         do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
                     }) () (fun _ -> NoOp)
                 else
@@ -70,7 +70,15 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
                 IsHarvestCollapsed = true
             }, mapCmd
         | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
-            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
+            let editor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+            let saveMapCmd =
+                if editor.UseMapBase then
+                    Cmd.OfAsync.perform (fun () -> async {
+                        do! js.InvokeVoidAsync("Hymap.saveView").AsTask() |> Async.AwaitTask
+                    }) () (fun _ -> NoOp)
+                else
+                    Cmd.none
+            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, saveMapCmd
 
     if isLeavingBoundaryWithChanges then
         baseModel, Cmd.batch [ baseCmd; Cmd.ofMsg StartHyweave ]
