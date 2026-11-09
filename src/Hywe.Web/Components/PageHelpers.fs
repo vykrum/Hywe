@@ -509,86 +509,14 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
             match model.EditorMode with
             | Interactive ->
                 Serialization.getOutput
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.Tree
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.Sequences
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.PolygonExport.Width
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.PolygonExport.Height
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.PolygonExport.AbsStr
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.PolygonExport.BaseStr
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.PolygonExport.OuterStr
-                    model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.PolygonExport.IslandsStr
+                    model.Tree
+                    model.Sequences
+                    model.PolygonExport.Width
+                    model.PolygonExport.Height
+                    model.PolygonExport.AbsStr
+                    model.PolygonExport.BaseStr
+                    model.PolygonExport.OuterStr
+                    model.PolygonExport.IslandsStr
             | Syntax -> model.SrcOfTrth
             
         Some ({ model with IsGeneratingReport = true; SrcOfTrth = currentSrc },
@@ -636,16 +564,7 @@ let update (js: IJSRuntime) (msg: Message) (model: Model) : (Model * Cmd<Message
                                                       let srcForBatch = ensureCategory currentSrc i
                                                       let fullData = Cache.computeFullLayout srcForBatch Hexel.sqnArray.[i] model.PolygonExport baseLevel
                                                       let updatedCache = 
-                                                          model
-            let editor = match baseModel.PolygonEditor with Stable m | FreshlyImported m -> m
-            let mapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none.Tree.Levels.Keys
+                                                          model.Tree.Levels.Keys
                                                           |> Seq.fold (fun cacheAcc l -> 
                                                               let cfg = Cache.fromFullLayout fullData Hexel.sqnArray.[i] l model.PolygonExport
                                                               Cache.update (toMarker l) i cfg cacheAcc
