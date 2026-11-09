@@ -2909,6 +2909,19 @@ video::-webkit-media-controls-start-playback-button {
     user-select: none;
 }
 
+/* Boundary Interop Hidden Triggers */
+#hymap-data,
+#hymap-trigger,
+#hymap-live-data,
+#hymap-live-trigger {
+    display: none !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 /* Boundary SVG Container */
 #map-and-svg-container,
 .boundary-svg-container {

@@ -513,7 +513,12 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
                         printfn "Error parsing map JSON from %s: %s" elementId ex.Message
             } |> Async.StartImmediate
 
-        input { attr.key "hymap-data"; attr.id "hymap-data"; attr.``type`` "hidden" }
+        input {
+            attr.key "hymap-data"
+            attr.id "hymap-data"
+            attr.``type`` "hidden"
+            attr.style "display:none;"
+        }
         button {
             attr.key "hymap-trigger"
             attr.id "hymap-trigger"
@@ -522,7 +527,12 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
         }
 
         // Hidden fields for live dimension updates
-        input { attr.key "hymap-live-data"; attr.id "hymap-live-data"; attr.``type`` "hidden" }
+        input {
+            attr.key "hymap-live-data"
+            attr.id "hymap-live-data"
+            attr.``type`` "hidden"
+            attr.style "display:none;"
+        }
         button {
             attr.key "hymap-live-trigger"
             attr.id "hymap-live-trigger"
