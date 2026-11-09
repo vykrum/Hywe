@@ -513,31 +513,37 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
                         printfn "Error parsing map JSON from %s: %s" elementId ex.Message
             } |> Async.StartImmediate
 
-        input {
-            attr.key "hymap-data"
-            attr.id "hymap-data"
-            attr.``type`` "hidden"
-            attr.style "display:none;"
-        }
-        button {
-            attr.key "hymap-trigger"
-            attr.id "hymap-trigger"
-            attr.style "display:none;"
-            on.click (fun _ -> handleMapJsonTrigger "hymap-data" (fun (w, h, raw) -> dispatch (MapTopographyReceived (w, h, raw))))
-        }
+        // Hidden JS interop bridge (enclosed in display:none container so no raw inputs ever render into flow)
+        div {
+            attr.key "hymap-bridge-container"
+            attr.style "display: none !important; position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none;"
+            
+            input {
+                attr.key "hymap-data"
+                attr.id "hymap-data"
+                attr.``type`` "hidden"
+                attr.style "display:none !important;"
+            }
+            button {
+                attr.key "hymap-trigger"
+                attr.id "hymap-trigger"
+                attr.style "display:none !important;"
+                on.click (fun _ -> handleMapJsonTrigger "hymap-data" (fun (w, h, raw) -> dispatch (MapTopographyReceived (w, h, raw))))
+            }
 
-        // Hidden fields for live dimension updates
-        input {
-            attr.key "hymap-live-data"
-            attr.id "hymap-live-data"
-            attr.``type`` "hidden"
-            attr.style "display:none;"
-        }
-        button {
-            attr.key "hymap-live-trigger"
-            attr.id "hymap-live-trigger"
-            attr.style "display:none;"
-            on.click (fun _ -> handleMapJsonTrigger "hymap-live-data" (fun (w, h, _) -> dispatch (UpdateLogicalDimensions (w, h))))
+            // Hidden fields for live dimension updates
+            input {
+                attr.key "hymap-live-data"
+                attr.id "hymap-live-data"
+                attr.``type`` "hidden"
+                attr.style "display:none !important;"
+            }
+            button {
+                attr.key "hymap-live-trigger"
+                attr.id "hymap-live-trigger"
+                attr.style "display:none !important;"
+                on.click (fun _ -> handleMapJsonTrigger "hymap-live-data" (fun (w, h, _) -> dispatch (UpdateLogicalDimensions (w, h))))
+            }
         }
 
         // Map and SVG Container

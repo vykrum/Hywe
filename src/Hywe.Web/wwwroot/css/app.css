@@ -2954,6 +2954,14 @@ video::-webkit-media-controls-start-playback-button {
     z-index: 0;
 }
 
+#hymap-container.leaflet-container,
+#hymap-container .leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
 #svg-editor-layer {
     position: absolute !important;
     top: 0 !important;
