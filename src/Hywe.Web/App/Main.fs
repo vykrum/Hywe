@@ -43,6 +43,14 @@ type MyApp() =
     [<JSInvokable>]
     member this.SetIsStandalone(isS: bool) = this.Dispatch (SetIsStandalone isS)
 
+    [<JSInvokable>]
+    member this.UpdateMapDimensions(w: float, h: float) =
+        this.Dispatch (PolygonEditorMsg (UpdateLogicalDimensions (w, h)))
+
+    [<JSInvokable>]
+    member this.ReceiveMapTopography(w: float, h: float, rawJson: string) =
+        this.Dispatch (PolygonEditorMsg (MapTopographyReceived (w, h, rawJson)))
+
     override this.OnAfterRenderAsync(firstRender) =
         let t = base.OnAfterRenderAsync(firstRender)
         match firstRender with
@@ -52,6 +60,7 @@ type MyApp() =
             this.JSRuntime.InvokeVoidAsync("registerUndoRedo", ref).AsTask() |> ignore
             this.JSRuntime.InvokeVoidAsync("registerPwaInstall", ref).AsTask() |> ignore
             this.JSRuntime.InvokeVoidAsync("registerHashChange", ref).AsTask() |> ignore
+            this.JSRuntime.InvokeVoidAsync("Hymap.registerInterop", ref).AsTask() |> ignore
         | false -> ()
         t
 
