@@ -2958,7 +2958,9 @@ video::-webkit-media-controls-start-playback-button {
 #hymap-container .leaflet-container {
     width: 100% !important;
     height: 100% !important;
-    position: relative !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     overflow: hidden !important;
 }
 

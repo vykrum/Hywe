@@ -496,56 +496,6 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
         controlAndInstructions model dispatch js canUndo canRedo
         weaveButton
 
-        // Hidden fields for JS interop callback
-        let handleMapJsonTrigger elementId onParsed =
-            async {
-                let! dataStr = js.InvokeAsync<string>("getElementValue", [| box elementId |]).AsTask() |> Async.AwaitTask
-                match System.String.IsNullOrWhiteSpace dataStr with
-                | true -> ()
-                | false ->
-                    try
-                        use doc = System.Text.Json.JsonDocument.Parse dataStr
-                        let root = doc.RootElement
-                        let w = root.GetProperty("widthMeters").GetDouble()
-                        let h = root.GetProperty("heightMeters").GetDouble()
-                        onParsed (w, h, dataStr)
-                    with ex ->
-                        printfn "Error parsing map JSON from %s: %s" elementId ex.Message
-            } |> Async.StartImmediate
-
-        // Hidden JS interop bridge (enclosed in display:none container so no raw inputs ever render into flow)
-        div {
-            attr.key "hymap-bridge-container"
-            attr.style "display: none !important; position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none;"
-            
-            input {
-                attr.key "hymap-data"
-                attr.id "hymap-data"
-                attr.``type`` "hidden"
-                attr.style "display:none !important;"
-            }
-            button {
-                attr.key "hymap-trigger"
-                attr.id "hymap-trigger"
-                attr.style "display:none !important;"
-                on.click (fun _ -> handleMapJsonTrigger "hymap-data" (fun (w, h, raw) -> dispatch (MapTopographyReceived (w, h, raw))))
-            }
-
-            // Hidden fields for live dimension updates
-            input {
-                attr.key "hymap-live-data"
-                attr.id "hymap-live-data"
-                attr.``type`` "hidden"
-                attr.style "display:none !important;"
-            }
-            button {
-                attr.key "hymap-live-trigger"
-                attr.id "hymap-live-trigger"
-                attr.style "display:none !important;"
-                on.click (fun _ -> handleMapJsonTrigger "hymap-live-data" (fun (w, h, _) -> dispatch (UpdateLogicalDimensions (w, h))))
-            }
-        }
-
         // Map and SVG Container
         let containerAspectRatio =
             match model.UseBoundary, model.UseMapBase, model.LogicalHeight > 0.0 with
