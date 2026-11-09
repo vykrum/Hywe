@@ -6,13 +6,16 @@ window.Hymap = {
     savedZoom: null,
     _resizeObserver: null,
     _wasHidden: false,
+    _isRestoring: false,
     _lastWidth: 0,
     _lastHeight: 0,
+    _lastDispatchedWidth: 0,
+    _lastDispatchedHeight: 0,
 
     saveView: function() {
-        if (!this.map) return;
+        if (!this.map || this._isRestoring) return;
         const container = document.getElementById('hymap-container');
-        if (container && container.offsetWidth > 50 && container.offsetHeight > 50) {
+        if (container && container.offsetWidth > 100 && container.offsetHeight > 100) {
             try {
                 const c = this.map.getCenter();
                 const z = this.map.getZoom();
@@ -27,28 +30,48 @@ window.Hymap = {
     },
 
     refreshSize: function() {
-        const container = document.getElementById('hymap-container');
-        if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) {
-            return;
-        }
+        if (!this.map || this._isRestoring) return;
+        
+        const tryRefresh = (attempt) => {
+            const container = document.getElementById('hymap-container');
+            if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) {
+                if (attempt < 6) {
+                    setTimeout(() => tryRefresh(attempt + 1), 50);
+                }
+                return;
+            }
 
-        if (!this.map) {
-            this.init();
-            return;
-        }
+            if (!this.map) {
+                this.init();
+                return;
+            }
 
-        if (this.map._container !== container) {
-            this.map.remove();
-            this.map = null;
-            this.init();
-            return;
-        }
+            if (this.map._container !== container) {
+                this.map.remove();
+                this.map = null;
+                this.init();
+                return;
+            }
 
-        this.map.invalidateSize({ pan: false, debounceMove: false });
-        if (this.savedCenter && this.savedZoom) {
-            this.map.setView(this.savedCenter, this.savedZoom, { animate: false });
-        }
-        this.updateDistanceLabel();
+            if (!this._resizeObserver) {
+                this._setupResizeObserver(container);
+            }
+
+            this._isRestoring = true;
+            try {
+                this.map.invalidateSize({ animate: false });
+                const targetCenter = this.savedCenter || [12.9716, 77.5946];
+                const targetZoom = this.savedZoom || 13;
+                this.map.setView(targetCenter, targetZoom, { reset: true, animate: false });
+                this.updateDistanceLabel(false);
+            } finally {
+                setTimeout(() => {
+                    this._isRestoring = false;
+                }, 80);
+            }
+        };
+
+        tryRefresh(0);
     },
 
     _setupResizeObserver: function(container) {
@@ -61,8 +84,12 @@ window.Hymap = {
                 for (const entry of entries) {
                     const cr = entry.contentRect;
                     if (cr.width > 50 && cr.height > 50) {
-                        if (this._wasHidden || Math.abs(cr.width - (this._lastWidth || 0)) > 2 || Math.abs(cr.height - (this._lastHeight || 0)) > 2) {
+                        if (this._wasHidden) {
                             this._wasHidden = false;
+                            this._lastWidth = cr.width;
+                            this._lastHeight = cr.height;
+                            this.refreshSize();
+                        } else if (Math.abs(cr.width - (this._lastWidth || 0)) > 5 || Math.abs(cr.height - (this._lastHeight || 0)) > 5) {
                             this._lastWidth = cr.width;
                             this._lastHeight = cr.height;
                             this.refreshSize();
@@ -206,22 +233,21 @@ window.Hymap = {
             this.map.on('resize', updateMaxZoom);
             this.map.on('move', () => {
                 updateMaxZoom();
-                this.saveView();
-                this.updateDistanceLabel();
+                this.updateDistanceLabel(false);
             });
-            this.map.on('moveend', () => {
+            this.map.on('dragend', () => {
                 this.saveView();
-                this.updateDistanceLabel();
+                this.updateDistanceLabel(true);
             });
             this.map.on('zoomend', () => {
                 this.saveView();
-                this.updateDistanceLabel();
+                this.updateDistanceLabel(true);
             });
             updateMaxZoom();
             
             this.map.whenReady(() => {
                 this.saveView();
-                this.updateDistanceLabel();
+                this.updateDistanceLabel(false);
             });
         }, 100);
     },
@@ -236,7 +262,7 @@ window.Hymap = {
         return exactWidth;
     },
 
-    updateDistanceLabel: function() {
+    updateDistanceLabel: function(triggerElmish = true) {
         if (!this.map) return;
         const container = document.getElementById('hymap-container');
         if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) return;
@@ -263,17 +289,25 @@ window.Hymap = {
             if (container) container.parentElement.appendChild(label);
         }
         if (label) {
-            label.innerText = `Map Width: ${Math.round(calcWidth)} meters`;
+            label.innerText = 'Map Width: ' + Math.round(calcWidth) + ' meters';
         }
         
-        const liveData = document.getElementById('hymap-live-data');
-        const liveTrigger = document.getElementById('hymap-live-trigger');
-        if (liveData && liveTrigger) {
-            liveData.value = JSON.stringify({
-                widthMeters: Math.round(calcWidth),
-                heightMeters: Math.round(exactHeight)
-            });
-            liveTrigger.click();
+        if (triggerElmish && !this._isRestoring) {
+            const roundedW = Math.round(calcWidth);
+            const roundedH = Math.round(exactHeight);
+            if (this._lastDispatchedWidth !== roundedW || this._lastDispatchedHeight !== roundedH) {
+                this._lastDispatchedWidth = roundedW;
+                this._lastDispatchedHeight = roundedH;
+                const liveData = document.getElementById('hymap-live-data');
+                const liveTrigger = document.getElementById('hymap-live-trigger');
+                if (liveData && liveTrigger) {
+                    liveData.value = JSON.stringify({
+                        widthMeters: roundedW,
+                        heightMeters: roundedH
+                    });
+                    liveTrigger.click();
+                }
+            }
         }
     },
 

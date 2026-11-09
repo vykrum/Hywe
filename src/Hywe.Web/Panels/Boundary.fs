@@ -540,8 +540,8 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
 
         let containerStyle =
             match model.UseBoundary, model.UseMapBase with
-            | false, false -> "aspect-ratio: 1 / 1; border: none; background: transparent;"
-            | _ -> sprintf "aspect-ratio: %s; border: 1px solid #e0e0e0; background: #f0f0f0;" containerAspectRatio
+            | false, false -> "position: relative; overflow: hidden; aspect-ratio: 1 / 1; border: none; background: transparent;"
+            | _ -> sprintf "position: relative; overflow: hidden; aspect-ratio: %s; border: 1px solid #e0e0e0; background: #f0f0f0;" containerAspectRatio
 
         let hymapPointerEvents =
             match model.UseMapBase, model.IsMapLocked with
@@ -563,13 +563,14 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
             // Hymap Layer Wrapper (Handles dynamic state so hymap-container itself is strictly static and NEVER re-rendered by Blazor)
             div {
                 attr.key "hymap-wrapper"
-                attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; %s" hymapPointerEvents)
+                attr.id "hymap-wrapper"
+                attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 0; overflow: hidden; %s" hymapPointerEvents)
                      
                 // Hymap Layer (Native) - Absolutely no children or dynamic attributes to ensure Leaflet DOM is fully preserved
                 div {
                     attr.key "hymap-container"
                     attr.id "hymap-container"
-                    attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"
+                    attr.style "position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden;"
                 }
             }
 
@@ -577,6 +578,7 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
             let editorContent = polygonEditorSvg model dispatch js
             div {
                 attr.key "svg-editor-layer"
+                attr.id "svg-editor-layer"
                 attr.style (sprintf "position: absolute; top: 0; left: 0; width: 100%%; height: 100%%; z-index: 1; pointer-events: %s;" svgPointerEvents)
                 match model.PolygonEnabled with
                 | true -> editorContent

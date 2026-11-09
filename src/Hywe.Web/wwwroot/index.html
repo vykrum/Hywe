@@ -218,7 +218,9 @@
     </script>
 
     <base href="/">
-    <link rel="stylesheet" href="css/app.css?v=11" />
+    <link rel="stylesheet" href="css/app.css?v=13" />
+    <link id="leaflet-css" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link id="leaflet-geocoder-css" rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
     <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
@@ -436,7 +438,7 @@
     <script src="_framework/blazor.webassembly.js" defer></script>
     <script src="scripts/shell.js" defer></script>
     <script src="scripts/webgpu.js" defer></script>
-    <script src="scripts/hymap.js" defer></script>
+    <script src="scripts/hymap.js?v=3" defer></script>
     <script>
         // Autoplay verification: gracefully fallback to animated background if autoplay is disallowed
         document.addEventListener('DOMContentLoaded', function() {
