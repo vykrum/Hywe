@@ -8,6 +8,7 @@ window.Hymap = {
     _lastDispatchedWidth: 0,
     _lastDispatchedHeight: 0,
     _dotnetRef: null,
+    _refreshTimer: null,
 
     registerInterop: function(ref) {
         this._dotnetRef = ref;
@@ -16,54 +17,79 @@ window.Hymap = {
     saveView: function() {
         if (!this.map || this._isRestoring) return;
         const container = document.getElementById('hymap-container');
-        if (container && container.offsetWidth > 50 && container.offsetHeight > 50) {
-            try {
-                const c = this.map.getCenter();
-                const z = this.map.getZoom();
-                if (c && typeof c.lat === 'number' && !isNaN(c.lat) && typeof c.lng === 'number' && !isNaN(c.lng) && typeof z === 'number' && !isNaN(z)) {
-                    this.savedCenter = c;
-                    this.savedZoom = z;
-                }
-            } catch (e) {
-                // Ignore transient states
+        // Leaflet calculates center using containerSize / 2. If the container is hidden or collapsed
+        // (e.g. display: none on panel switch), getCenter() erroneously returns the top-left coordinate.
+        // Therefore, only record coordinates when the container is visibly laid out.
+        if (!container || container.offsetWidth < 100 || container.offsetHeight < 100) {
+            return;
+        }
+        try {
+            const c = this.map.getCenter();
+            const z = this.map.getZoom();
+            if (c && typeof c.lat === 'number' && !isNaN(c.lat) && typeof c.lng === 'number' && !isNaN(c.lng) && typeof z === 'number' && !isNaN(z)) {
+                this.savedCenter = { lat: c.lat, lng: c.lng };
+                this.savedZoom = z;
             }
+        } catch (e) {
+            // Ignore transient states
         }
     },
 
     refreshSize: function() {
-        const tryRefresh = (attempt) => {
+        if (this._refreshTimer) {
+            clearTimeout(this._refreshTimer);
+            this._refreshTimer = null;
+        }
+
+        const applyLayout = () => {
             const container = document.getElementById('hymap-container');
-            if (!container || container.offsetWidth < 50 || container.offsetHeight < 50) {
-                if (attempt < 8) {
-                    setTimeout(() => tryRefresh(attempt + 1), 50);
-                }
-                return;
+            if (!container || container.offsetWidth < 100 || container.offsetHeight < 100) {
+                return false;
             }
 
             if (!this.map) {
                 this.init();
-                return;
+                return true;
             }
 
             if (this.map._container !== container) {
                 this.map.remove();
                 this.map = null;
                 this.init();
-                return;
+                return true;
             }
 
             this._isRestoring = true;
             try {
-                this.map.invalidateSize({ animate: false });
-                if (this.savedCenter && this.savedZoom) {
-                    this.map.setView(this.savedCenter, this.savedZoom, { animate: false });
-                }
+                this.map.invalidateSize({ pan: false, debounceMove: false });
+                const targetCenter = this.savedCenter || [12.9716, 77.5946];
+                const targetZoom = this.savedZoom || 13;
+                this.map.setView(targetCenter, targetZoom, { reset: true, animate: false });
                 this.updateDistanceLabel(false);
             } finally {
                 setTimeout(() => {
                     this._isRestoring = false;
-                }, 100);
+                }, 80);
             }
+            return true;
+        };
+
+        const tryRefresh = (attempt) => {
+            const container = document.getElementById('hymap-container');
+            if (!container || container.offsetWidth < 100 || container.offsetHeight < 100) {
+                if (attempt < 12) {
+                    this._refreshTimer = setTimeout(() => tryRefresh(attempt + 1), 40);
+                }
+                return;
+            }
+
+            // Primary restoration
+            applyLayout();
+
+            // Verification pass to guarantee CSS aspect-ratio and container reflow have completely settled
+            this._refreshTimer = setTimeout(() => {
+                applyLayout();
+            }, 120);
         };
 
         tryRefresh(0);
@@ -198,6 +224,10 @@ window.Hymap = {
                 updateMaxZoom();
                 this.updateDistanceLabel(false);
             });
+            this.map.on('moveend', () => {
+                this.saveView();
+                this.updateDistanceLabel(true);
+            });
             this.map.on('dragend', () => {
                 this.saveView();
                 this.updateDistanceLabel(true);
@@ -248,8 +278,8 @@ window.Hymap = {
             label = document.createElement('div');
             label.id = 'hymap-distance-label';
             label.style.cssText = "position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 1000; background: transparent; font-size: 12px; font-weight: 700; color: #1a1a1a; text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 1px 2px rgba(255,255,255,1); pointer-events: none; letter-spacing: 0.5px;";
-            const svgContainer = document.getElementById('map-and-svg-container') || container.parentElement;
-            if (svgContainer) svgContainer.appendChild(label);
+            const labelParent = document.getElementById('hymap-wrapper') || document.getElementById('map-and-svg-container') || container.parentElement;
+            if (labelParent) labelParent.appendChild(label);
         }
         if (label) {
             label.innerText = 'Map Width: ' + Math.round(calcWidth) + ' meters';
