@@ -19,6 +19,16 @@ let toMarker lvl = if lvl = 0 then "L0" else sprintf "L%d" lvl
 
 let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (panel: ActivePanel) : Model * Cmd<Message> =
     let isLeavingBoundaryWithChanges = model.ActivePanel = BoundaryPanel && panel <> BoundaryPanel && model.NeedsHyweave
+    let isLeavingBoundary = model.ActivePanel = BoundaryPanel && panel <> BoundaryPanel
+    let currentEditor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+    let saveMapCmd =
+        if isLeavingBoundary && currentEditor.UseMapBase then
+            Cmd.OfAsync.perform (fun () -> async {
+                do! js.InvokeVoidAsync("Hymap.saveView").AsTask() |> Async.AwaitTask
+            }) () (fun _ -> NoOp)
+        else
+            Cmd.none
+
     let baseModel, baseCmd =
         match panel with
         | TreePanel ->
@@ -70,20 +80,15 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
                 IsHarvestCollapsed = true
             }, mapCmd
         | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
-            let editor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
-            let saveMapCmd =
-                if editor.UseMapBase then
-                    Cmd.OfAsync.perform (fun () -> async {
-                        do! js.InvokeVoidAsync("Hymap.saveView").AsTask() |> Async.AwaitTask
-                    }) () (fun _ -> NoOp)
-                else
-                    Cmd.none
-            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, saveMapCmd
+            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
 
-    if isLeavingBoundaryWithChanges then
-        baseModel, Cmd.batch [ baseCmd; Cmd.ofMsg StartHyweave ]
-    else
-        baseModel, baseCmd
+    let hyweaveCmd =
+        if isLeavingBoundaryWithChanges then
+            Cmd.ofMsg StartHyweave
+        else
+            Cmd.none
+
+    baseModel, Cmd.batch [ baseCmd; saveMapCmd; hyweaveCmd ]
 
 let syncSyntaxToModel (code: string) (model: Model) : Model =
     let maybeSubModel =
