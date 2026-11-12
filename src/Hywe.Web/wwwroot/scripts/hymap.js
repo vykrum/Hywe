@@ -61,15 +61,40 @@ window.Hymap = {
 
             this._isRestoring = true;
             try {
-                this.map.invalidateSize({ pan: false, debounceMove: false });
+                // Synchronize Leaflet internal size cache with live container geometry
+                const w = container.clientWidth || container.offsetWidth;
+                const h = container.clientHeight || container.offsetHeight;
+                if (w > 0 && h > 0 && window.L && window.L.Point) {
+                    this.map._size = new L.Point(w, h);
+                    this.map._sizeChanged = false;
+                }
+
+                // Invalidate size with animate: false and reset: true
+                this.map.invalidateSize({ animate: false, pan: false, reset: true, debounceMove: false });
+
+                // Reset map pane to prevent residual pan translation from skewing tile origin
+                if (this.map._mapPane && window.L && window.L.DomUtil) {
+                    L.DomUtil.setPosition(this.map._mapPane, new L.Point(0, 0));
+                }
+
                 const targetCenter = this.savedCenter || [12.9716, 77.5946];
                 const targetZoom = this.savedZoom || 13;
-                this.map.setView(targetCenter, targetZoom, { reset: true, animate: false });
+                this.map.setView(targetCenter, targetZoom, { animate: false, reset: true });
+
+                // Force layer tiles to refresh to the active container frame
+                this.map.eachLayer(layer => {
+                    if (layer && typeof layer._update === 'function') {
+                        layer._update();
+                    }
+                });
+
                 this.updateDistanceLabel(false);
+            } catch (err) {
+                console.error("Hymap layout restoration error:", err);
             } finally {
                 setTimeout(() => {
                     this._isRestoring = false;
-                }, 80);
+                }, 100);
             }
             return true;
         };
@@ -77,8 +102,8 @@ window.Hymap = {
         const tryRefresh = (attempt) => {
             const container = document.getElementById('hymap-container');
             if (!container || container.offsetWidth < 100 || container.offsetHeight < 100) {
-                if (attempt < 12) {
-                    this._refreshTimer = setTimeout(() => tryRefresh(attempt + 1), 40);
+                if (attempt < 15) {
+                    this._refreshTimer = setTimeout(() => tryRefresh(attempt + 1), 30);
                 }
                 return;
             }
@@ -86,10 +111,17 @@ window.Hymap = {
             // Primary restoration
             applyLayout();
 
-            // Verification pass to guarantee CSS aspect-ratio and container reflow have completely settled
+            // Next animation frame for smooth synchronization with browser reflow
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(() => {
+                    applyLayout();
+                });
+            }
+
+            // Verification pass to guarantee CSS reflow and aspect-ratio have completely settled
             this._refreshTimer = setTimeout(() => {
                 applyLayout();
-            }, 120);
+            }, 100);
         };
 
         tryRefresh(0);

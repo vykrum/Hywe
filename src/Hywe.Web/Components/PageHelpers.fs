@@ -21,6 +21,16 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
     let isLeavingBoundaryWithChanges = model.ActivePanel = BoundaryPanel && panel <> BoundaryPanel && model.NeedsHyweave
     let isLeavingBoundary = model.ActivePanel = BoundaryPanel && panel <> BoundaryPanel
     let currentEditor = match model.PolygonEditor with Stable m | FreshlyImported m -> m
+
+    // Synchronously capture live map viewport before any panel switch hides the container
+    if isLeavingBoundary && currentEditor.UseMapBase then
+        try
+            match box js with
+            | :? Microsoft.JSInterop.IJSInProcessRuntime as inProc ->
+                inProc.InvokeVoid("Hymap.saveView")
+            | _ -> ()
+        with _ -> ()
+
     let saveMapCmd =
         if isLeavingBoundary && currentEditor.UseMapBase then
             Cmd.OfAsync.perform (fun () -> async {

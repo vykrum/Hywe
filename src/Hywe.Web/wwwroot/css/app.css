@@ -2927,15 +2927,16 @@ video::-webkit-media-controls-start-playback-button {
 .boundary-svg-container {
     position: relative !important;
     overflow: hidden !important;
-    width: 100%;
-    max-width: 800px;
-    margin: 10px auto 18px auto;
-    box-sizing: border-box;
-    min-height: 250px;
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 10px auto 18px auto !important;
+    box-sizing: border-box !important;
+    min-height: 250px !important;
 }
 
 #hymap-wrapper {
     position: absolute !important;
+    inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
@@ -2946,6 +2947,7 @@ video::-webkit-media-controls-start-playback-button {
 
 #hymap-container {
     position: absolute !important;
+    inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
@@ -2959,6 +2961,7 @@ video::-webkit-media-controls-start-playback-button {
     width: 100% !important;
     height: 100% !important;
     position: absolute !important;
+    inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
     overflow: hidden !important;
@@ -2966,6 +2969,7 @@ video::-webkit-media-controls-start-playback-button {
 
 #svg-editor-layer {
     position: absolute !important;
+    inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
