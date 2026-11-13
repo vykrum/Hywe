@@ -2923,6 +2923,12 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* Boundary SVG Container */
+#hywe-polygon-editor {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 #map-and-svg-container,
 .boundary-svg-container {
     position: relative !important;
@@ -2932,6 +2938,8 @@ video::-webkit-media-controls-start-playback-button {
     margin: 10px auto 18px auto !important;
     box-sizing: border-box !important;
     min-height: 250px !important;
+    contain: layout paint !important;
+    isolation: isolate !important;
 }
 
 #hymap-wrapper {
@@ -2939,10 +2947,13 @@ video::-webkit-media-controls-start-playback-button {
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
     overflow: hidden !important;
-    z-index: 0;
+    z-index: 0 !important;
+    contain: layout paint !important;
 }
 
 #hymap-container {
@@ -2950,10 +2961,12 @@ video::-webkit-media-controls-start-playback-button {
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
     overflow: hidden !important;
-    z-index: 0;
+    z-index: 0 !important;
 }
 
 #hymap-container.leaflet-container,
@@ -2964,7 +2977,10 @@ video::-webkit-media-controls-start-playback-button {
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     overflow: hidden !important;
+    z-index: 0 !important;
 }
 
 #svg-editor-layer {
@@ -2972,9 +2988,12 @@ video::-webkit-media-controls-start-playback-button {
     inset: 0 !important;
     top: 0 !important;
     left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    z-index: 1;
+    z-index: 1 !important;
+    overflow: hidden !important;
 }
 
 /* Boundary Toolbar: 3 columns strictly on 1 line (toggles + dimensions + actions) */
