@@ -78,8 +78,7 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
             let mapCmd =
                 if editor.UseMapBase then
                     Cmd.OfAsync.perform (fun () -> async {
-                        do! Async.Sleep 60
-                        do! js.InvokeVoidAsync("Hymap.refreshSize").AsTask() |> Async.AwaitTask
+                        do! js.InvokeVoidAsync("Hymap.ensurePositionCheck").AsTask() |> Async.AwaitTask
                     }) () (fun _ -> NoOp)
                 else
                     Cmd.none
