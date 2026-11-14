@@ -69,6 +69,34 @@ let hexToRgb = Coloring.hexToRgb
 /// <summary> Generates deterministic pastel color hex codes based on a seed color and count. </summary>
 let generatePastels = Coloring.generatePastels
 
+/// <summary> Safely parses a JSON string into a JsonDocument option using TryParseValue (pure Some/None). </summary>
+let private tryParseJsonDoc (json: string) : System.Text.Json.JsonDocument option =
+    match json with
+    | null -> None
+    | s when System.String.IsNullOrWhiteSpace s -> None
+    | s ->
+        let bytes = System.Text.Encoding.UTF8.GetBytes s
+        let mutable reader = System.Text.Json.Utf8JsonReader(System.ReadOnlySpan<byte>(bytes))
+        match System.Text.Json.JsonDocument.TryParseValue(&reader) with
+        | true, doc -> Some doc
+        | false, _ -> None
+
+/// <summary> Safely extracts the average latitude (north/south midpoint) from topography JSON extents. </summary>
+let private tryExtractLatitude (topoData: string) : float option =
+    tryParseJsonDoc topoData
+    |> Option.bind (fun doc ->
+        use doc = doc
+        match doc.RootElement.TryGetProperty "extents" with
+        | true, extents ->
+            match extents.TryGetProperty "north", extents.TryGetProperty "south" with
+            | (true, n), (true, s) when n.ValueKind = System.Text.Json.JsonValueKind.Number && s.ValueKind = System.Text.Json.JsonValueKind.Number ->
+                match n.TryGetDouble(), s.TryGetDouble() with
+                | (true, north), (true, south) -> Some ((north + south) / 2.0)
+                | _ -> None
+            | _ -> None
+        | _ -> None
+    )
+
 /// <summary> Derives calculated spatial attributes (<see cref="DerivedData"/>) from raw layout coxels, boundary contours, and solar parameters. </summary>
 let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[]) (cxRto1: float[]) (elv: int) (latitude: float option) : DerivedData =
     let fallbackSqn = Hywe.Core.Hexel.VRCCNE 
@@ -141,9 +169,7 @@ let deriveDataFromLayout (cxCxl1: Cxl[]) (cxOuIl: (int*int)[][]) (cxElv1: float[
 
                 match openEdges with
                 | [||] -> 0.0
-                | edges ->
-                    try Array.average edges
-                    with _ -> 0.0
+                | edges -> Array.average edges
             )
         )
 
@@ -358,65 +384,66 @@ type ExportMetadata = {
 
 /// <summary> Helper utilities for preparing export metadata and reports. </summary>
 module ExportHelpers =
+    let defaultMetadata = {
+        ProjectTitle = "Hywe Exploration"
+        Author = "Hywe Design Team"
+        Date = System.DateTime.Now.ToString("yyyy-MM-dd")
+        Level = "L0"
+    }
+
+    let private fallbackIfBlank fallback str =
+        str
+        |> Option.ofObj
+        |> Option.filter (not << System.String.IsNullOrWhiteSpace)
+        |> Option.defaultValue fallback
+
     /// <summary> Creates an <see cref="ExportMetadata"/> snapshot from current application model settings. </summary>
     let createExportMetadata (model: Model) (levelStr: string) : ExportMetadata =
-        let pTitle = 
-            if System.String.IsNullOrWhiteSpace model.ReportOptions.ProjectTitle then "Hywe Exploration" 
-            else model.ReportOptions.ProjectTitle
-        let pAuthor = 
-            if System.String.IsNullOrWhiteSpace model.ReportOptions.Author then "Hywe Design Team" 
-            else model.ReportOptions.Author
         {
-            ProjectTitle = pTitle
-            Author = pAuthor
+            ProjectTitle = model.ReportOptions.ProjectTitle |> fallbackIfBlank defaultMetadata.ProjectTitle
+            Author = model.ReportOptions.Author |> fallbackIfBlank defaultMetadata.Author
             Date = System.DateTime.Now.ToString("yyyy-MM-dd")
             Level = levelStr
         }
 
     /// <summary> Serializes ExportMetadata to a clean JSON string to prevent JSInterop constructor reflection errors. </summary>
     let toJson (meta: ExportMetadata) : string =
-        let esc (s: string) = 
-            if isNull s then "\"\""
-            else System.Text.Json.JsonSerializer.Serialize(s)
+        let esc = function
+            | null -> "\"\""
+            | s -> System.Text.Json.JsonSerializer.Serialize s
         sprintf "{\"projectTitle\":%s,\"author\":%s,\"date\":%s,\"level\":%s}"
             (esc meta.ProjectTitle)
             (esc meta.Author)
             (esc meta.Date)
             (esc meta.Level)
 
+    let private tryGetProperty (prop: string) (element: System.Text.Json.JsonElement) =
+        match element.TryGetProperty prop with
+        | true, p when p.ValueKind = System.Text.Json.JsonValueKind.String ->
+            p.GetString()
+            |> Option.ofObj
+            |> Option.filter (not << System.String.IsNullOrWhiteSpace)
+        | _ -> None
+
+    let private extractProp (root: System.Text.Json.JsonElement) (camel: string) (pascal: string) (fallback: string) =
+        tryGetProperty camel root
+        |> Option.orElseWith (fun () -> tryGetProperty pascal root)
+        |> Option.defaultValue fallback
+
     /// <summary> Parses a JSON string into an ExportMetadata record. </summary>
     let fromJson (json: string) : ExportMetadata =
-        try
-            if System.String.IsNullOrWhiteSpace json then
-                { ProjectTitle = "Hywe Exploration"; Author = "Hywe Design Team"; Date = System.DateTime.Now.ToString("yyyy-MM-dd"); Level = "L0" }
-            else
-                use doc = System.Text.Json.JsonDocument.Parse json
-                let root = doc.RootElement
-                let getString (prop: string) (defaultVal: string) : string =
-                    let mutable elem = Unchecked.defaultof<System.Text.Json.JsonElement>
-                    if root.TryGetProperty(prop, &elem) && elem.ValueKind = System.Text.Json.JsonValueKind.String then
-                        elem.GetString()
-                    else
-                        defaultVal
-                let title = 
-                    match getString "projectTitle" "" with
-                    | "" -> getString "ProjectTitle" "Hywe Exploration"
-                    | t -> t
-                let author = 
-                    match getString "author" "" with
-                    | "" -> getString "Author" "Hywe Design Team"
-                    | a -> a
-                let date = 
-                    match getString "date" "" with
-                    | "" -> getString "Date" (System.DateTime.Now.ToString("yyyy-MM-dd"))
-                    | d -> d
-                let level = 
-                    match getString "level" "" with
-                    | "" -> getString "Level" "L0"
-                    | l -> l
-                { ProjectTitle = title; Author = author; Date = date; Level = level }
-        with _ ->
-            { ProjectTitle = "Hywe Exploration"; Author = "Hywe Design Team"; Date = System.DateTime.Now.ToString("yyyy-MM-dd"); Level = "L0" }
+        tryParseJsonDoc json
+        |> Option.map (fun doc ->
+            use doc = doc
+            let root = doc.RootElement
+            {
+                ProjectTitle = extractProp root "projectTitle" "ProjectTitle" defaultMetadata.ProjectTitle
+                Author = extractProp root "author" "Author" defaultMetadata.Author
+                Date = extractProp root "date" "Date" defaultMetadata.Date
+                Level = extractProp root "level" "Level" defaultMetadata.Level
+            }
+        )
+        |> Option.defaultValue defaultMetadata
 
 /// <summary> Messages representing all possible state changes in the main application Elmish loop. </summary>
 type Message =
@@ -533,14 +560,6 @@ let syncPolygonState (p: PolygonEditorModel) =
         
     let lat = 
         p.TopographyData
-        |> Option.map (fun topoData ->
-            try
-                let node = System.Text.Json.Nodes.JsonNode.Parse(topoData)
-                let extents = node.["extents"]
-                let n = extents.["north"].GetValue<float>()
-                let s = extents.["south"].GetValue<float>()
-                (n + s) / 2.0
-            with _ -> 0.0
-        )
+        |> Option.map (tryExtractLatitude >> Option.defaultValue 0.0)
 
     { Elevation = elv; BaseStr = baseS; OuterStr = outer'; IslandsStr = islands'; AbsStr = absolute; EntryStr = entry'; Width = w'; Height = h'; Latitude = lat; MapScale = p.MapScale }
