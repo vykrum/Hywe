@@ -42,7 +42,7 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
     let baseModel, baseCmd =
         match panel with
         | TreePanel ->
-            { model with ActivePanel = TreePanel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
+            { model with ActivePanel = TreePanel; IsWorkspaceCollapsed = true }, Cmd.none
         | BatchPanel ->
             let isStale = Some model.SrcOfTrth <> model.LastBatchSrc
             match isStale with
@@ -57,13 +57,11 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
                         CancelToken = Some cts
                         BatchProgress = 0
                         LayoutCache = Cache.init markers
-                        IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
-                        IsHarvestCollapsed = true
                     }
                 model', Cmd.ofMsg (GenerateNextBatchItem 0)
             | false -> 
-                { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
+                { model with ActivePanel = panel; IsWorkspaceCollapsed = true }, Cmd.none
         | BoundaryPanel ->
             let baseModel =
                 if model.EditorMode = Syntax then
@@ -84,12 +82,10 @@ let handleSetActivePanel (js: Microsoft.JSInterop.IJSRuntime) (model: Model) (pa
                     Cmd.none
             { baseModel with 
                 ActivePanel = BoundaryPanel
-                IsPresetsCollapsed = true
                 IsWorkspaceCollapsed = true 
-                IsHarvestCollapsed = true
             }, mapCmd
         | LayoutPanel | AnalyzePanel | ViewPanel | TeachPanel | ReportPanel ->
-            { model with ActivePanel = panel; IsPresetsCollapsed = true; IsWorkspaceCollapsed = true; IsHarvestCollapsed = true }, Cmd.none
+            { model with ActivePanel = panel; IsWorkspaceCollapsed = true }, Cmd.none
 
     let hyweaveCmd =
         if isLeavingBoundaryWithChanges then

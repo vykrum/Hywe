@@ -129,7 +129,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 }
         }
         
-        // 2. Exchange Drawer (Always available, top drawer)
+        // 2. Waggle Exchange Drawer
         let isWorkspaceCollapsed = model.IsWorkspaceCollapsed
         concat {
             div {
@@ -138,11 +138,11 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             }
 
             div {
-                attr.``class`` (match isWorkspaceCollapsed with true -> "preset-drawer collapsed" | false -> "preset-drawer")
+                attr.``class`` (match isWorkspaceCollapsed with true -> "waggle-exchange collapsed" | false -> "waggle-exchange")
                 attr.style "top: 132px;"
                 
                 div {
-                    attr.``class`` "preset-drawer-content"
+                    attr.``class`` "waggle-exchange-content"
                     attr.style "width: 145px; min-width: 145px; max-width: 145px; box-sizing: border-box; max-height: calc(100vh - 160px); overflow-y: auto;"
                     
                     div {
@@ -282,7 +282,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 }
 
                 div {
-                    attr.``class`` "preset-drawer-handle"
+                    attr.``class`` "waggle-exchange-handle"
                     on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
                     span { 
                         attr.style "white-space: pre;"

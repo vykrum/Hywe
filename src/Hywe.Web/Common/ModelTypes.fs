@@ -344,9 +344,7 @@ type Model =
         IsGeneratingReport: bool
         SelectedPreset: string option
         EditsCount: int
-        IsPresetsCollapsed: bool
         IsWorkspaceCollapsed: bool
-        IsHarvestCollapsed: bool
         IsTreeCollapsed: bool
         PendingConfirm: ConfirmAction option
         UndoStack: UndoSnapshot list
@@ -489,7 +487,6 @@ type Message =
     | RecordResult of success: bool * errorMsg: string option * cache: LayoutCache
     | StartVoiceCapture
     | OnVoiceResult
-    | TogglePresetsCollapse
     | ToggleWorkspaceCollapse
     | ToggleTreeCollapse
     | SetTreeCollapse of bool
@@ -499,8 +496,6 @@ type Message =
     | Download3DPng
     | DownloadTreeSvg
     | DownloadTreePng
-    | ToggleHarvestCollapse
-    | SetHarvestCollapse of bool
     | DownloadLayoutSvg
     | DownloadLayoutPng
     | DownloadMapImage

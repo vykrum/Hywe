@@ -716,15 +716,8 @@ dialog#pre-about-dialog::backdrop {
 
 
 /* =====================
-   FLEX & FADE CONTAINERS
+   FADE CONTAINERS
    ===================== */
-.flex-container {
-    display: flex;
-    flex-direction: row;
-    width: 80%;
-    padding-top: 10px;
-}
-
 .fade-container {
     opacity: 0;
     transition: opacity 0.8s ease-in-out;
@@ -854,16 +847,10 @@ input[type=number] {
     box-sizing: border-box;
 }
 
-/* =====================
-   TOGGLE BUTTON
-   ===================== */
-.hywe-toggle-btn {
-    font-size: 12px;
-    color: var(--color-text-muted);
-    line-height: 1.2;
-    font-weight: 300;
-}
-
+/* ==========================================================================
+   WAGGLE EXCHANGE DRAWER
+   ========================================================================== */
+.waggle-exchange,
 .preset-drawer {
     position: fixed;
     top: 132px;
@@ -875,10 +862,12 @@ input[type=number] {
     will-change: transform;
 }
 
+.waggle-exchange.collapsed,
 .preset-drawer.collapsed {
     transform: translateX(calc(-100% + 16px));
 }
 
+.waggle-exchange-content,
 .preset-drawer-content {
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(12px);
@@ -999,6 +988,7 @@ input[type=number] {
     margin: 0;
 }
 
+.waggle-exchange-handle,
 .preset-drawer-handle {
     width: 16px;
     background: #fff;
@@ -1013,10 +1003,12 @@ input[type=number] {
     transition: background 0.2s ease;
 }
 
+.waggle-exchange-handle:hover,
 .preset-drawer-handle:hover {
     background: #fafafa;
 }
 
+.waggle-exchange-handle span,
 .preset-drawer-handle span {
     writing-mode: vertical-rl;
     font-size: 8px;
@@ -1038,25 +1030,6 @@ input[type=number] {
 
 .tree-floating-toggle-btn:hover {
     color: var(--color-primary-hover);
-}
-
-.sliver-handle span {
-    color: #555;
-    font-size: 8px;
-    font-weight: 700;
-    transform: rotate(-90deg);
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.hywe-toggle-btn:hover {
-    color: var(--color-text-main);
-}
-
-.hywe-toggle-btn.active {
-    color: var(--color-primary-hover);
-    font-weight: 500;
 }
 
 
@@ -1363,12 +1336,6 @@ video::-webkit-media-controls-start-playback-button {
 /* =====================
    CROSSFADE HELPERS
    ===================== */
-
-/* Hint to browser for GPU compositing during opacity transitions */
-.wc-opacity {
-    will-change: opacity;
-}
-
 .fade-in {
     opacity: 1 !important;
     transition: opacity 0.8s ease;
@@ -1432,24 +1399,6 @@ video::-webkit-media-controls-start-playback-button {
     color: var(--color-border);
     font-weight: normal;
 }
-
-.node-confirm-del,
-.node-confirm-elevate,
-.node-confirm-cancel {
-    cursor: pointer;
-    background: none;
-    border: none;
-}
-
-.node-confirm-del,
-.node-confirm-elevate {
-    font-weight: bold;
-    font-size: 10px;
-}
-
-.node-confirm-del { color: #E67E22; }
-.node-confirm-elevate { color: #3498db; }
-.node-confirm-cancel { color: var(--color-text-light); font-size: 9px; }
 
 .nodebutton2 {
     font-size: 10px;
