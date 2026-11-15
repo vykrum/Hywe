@@ -440,6 +440,109 @@ a {
     color: #ffffff;
 }
 
+/* Universal Prose / Semantic Typography System */
+.hywe-prose,
+.hywe-modal-content,
+.seo-intro {
+    color: var(--color-text-main);
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.hywe-prose h1,
+.hywe-modal-content h1,
+.seo-intro h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-primary-hover);
+    margin: 0 0 var(--spacing-md) 0;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 8px;
+}
+
+.hywe-prose h2,
+.hywe-modal-content h2,
+.seo-intro h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--color-primary);
+    margin: var(--spacing-xl) 0 var(--spacing-sm) 0;
+}
+
+.hywe-prose h3,
+.hywe-modal-content h3,
+.seo-intro h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #444;
+    margin: 18px 0 var(--spacing-sm) 0;
+}
+
+.hywe-prose p,
+.hywe-modal-content p,
+.seo-intro p {
+    font-weight: 300;
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--color-text-main);
+}
+
+.hywe-prose a,
+.hywe-modal-content a,
+.seo-intro a {
+    color: var(--color-primary);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+}
+
+.hywe-prose a:hover,
+.hywe-modal-content a:hover,
+.seo-intro a:hover {
+    color: var(--color-primary-hover);
+}
+
+.hywe-prose ul,
+.hywe-modal-content ul,
+.seo-intro ul {
+    margin: var(--spacing-sm) 0 var(--spacing-lg) var(--spacing-lg);
+    padding: 0;
+}
+
+.hywe-prose li,
+.hywe-modal-content li,
+.seo-intro li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.hywe-prose table,
+.hywe-modal-content table,
+.seo-intro table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 13px;
+}
+
+.hywe-prose th,
+.hywe-prose td,
+.hywe-modal-content th,
+.hywe-modal-content td,
+.seo-intro th,
+.seo-intro td {
+    border: 1px solid var(--color-border-hover);
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.hywe-prose th,
+.hywe-modal-content th,
+.seo-intro th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+}
+
 textarea.hywe-input {
     min-height: 80px;
     resize: vertical;
@@ -2723,91 +2826,8 @@ video::-webkit-media-controls-start-playback-button {
 .seo-intro {
     max-width: 800px;
     margin: 60px auto 40px;
-    padding: 24px;
-    color: #363636;
-    line-height: 1.6;
+    padding: var(--spacing-xl);
     font-size: 15px;
-}
-
-.seo-intro h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-.seo-intro h2 {
-    font-size: 18px;
-    font-weight: 500;
-    margin: 24px 0 8px;
-}
-
-.seo-intro p {
-    font-weight: 300;
-    margin-bottom: 12px;
-}
-
-.seo-intro a {
-    color: #1e2327;
-    font-weight: 500;
-}
-
-.seo-intro a:hover {
-    color: #000;
-}
-
-.seo-intro ul {
-    margin: 8px 0 16px 20px;
-    padding: 0;
-}
-
-.seo-intro li {
-    margin-bottom: 6px;
-}
-
-/* ==========================================================================
-   ABOUT MODAL CONTENT
-   ========================================================================== */
-
-.hywe-modal-content h1 {
-    margin-top: 0;
-    font-size: 22px;
-    font-weight: 600;
-    color: #222;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 8px;
-}
-
-.hywe-modal-content h2 {
-    font-size: 18px;
-    font-weight: 500;
-    margin-top: 20px;
-    color: #333;
-}
-
-.hywe-modal-content h3 {
-    font-size: 15px;
-    font-weight: 600;
-    margin-top: 18px;
-    color: #444;
-}
-
-.hywe-modal-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 15px 0;
-    font-size: 13px;
-}
-
-.hywe-modal-content th,
-.hywe-modal-content td {
-    border: 1px solid #e0e0e0;
-    padding: 8px 12px;
-    text-align: left;
-}
-
-.hywe-modal-content th {
-    background-color: #f7f7f7;
-    font-weight: 600;
 }
 
 

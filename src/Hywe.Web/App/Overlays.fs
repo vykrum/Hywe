@@ -404,7 +404,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
             
             section {
                 attr.id "about-hywe"
-                attr.``class`` "hywe-modal-content"
+                attr.``class`` "hywe-modal-content hywe-prose"
                 "onclick:stopPropagation" => true
                 
                 button {
