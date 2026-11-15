@@ -567,8 +567,9 @@ let view model dispatch (js: IJSRuntime) canUndo canRedo (weaveButton: Node) =
                         "Map is active. Click to lock",
                         """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>"""
 
-                div {
-                    attr.``class`` "hymap-lock-btn"
+                button {
+                    attr.``class`` "hywe-btn"
+                    attr.style "position: absolute; top: 6px; right: 6px; z-index: 2000; width: 22px; height: 22px; min-width: 22px; padding: 0; border-radius: 3px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);"
                     attr.title lockTitle
                     on.click (fun _ ->
                         let newState = not model.IsMapLocked
