@@ -3654,16 +3654,12 @@ video::-webkit-media-controls-start-playback-button {
    HYWE Tutorial System Styles
    ========================================================================== */
 
-/* Tutorial Banner (Minimalist Light Theme) */
+/* Tutorial Banner */
 .tutorial-banner {
     width: calc(100% - 24px);
     max-width: 960px;
-    background: #ffffff;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 10px 14px 10px;
+    padding: 10px 14px;
     margin: 4px auto 8px auto;
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 7px;
@@ -3809,49 +3805,7 @@ video::-webkit-media-controls-start-playback-button {
     align-items: center;
 }
 
-.tutorial-skip,
-.tutorial-autoplay {
-    font-size: 10px !important;
-    color: #64748b !important;
-    padding: 2px 6px !important;
-    height: 22px;
-}
-
-.tutorial-autoplay.active {
-    color: #6366f1 !important;
-    font-weight: 600;
-}
-
-.tutorial-skip:hover,
-.tutorial-autoplay:hover {
-    color: #1e293b !important;
-}
-
-.tutorial-back,
-.tutorial-next,
-.tutorial-next-module {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 10.5px !important;
-    padding: 3px 9px !important;
-    height: 24px;
-    cursor: pointer;
-    touch-action: manipulation;
-    user-select: none;
-}
-
-.tutorial-back svg,
-.tutorial-next svg,
-.tutorial-next-module svg,
-.tutorial-skip svg,
-.tutorial-autoplay svg {
-    pointer-events: none;
-}
-
-.tutorial-back:disabled {
-    opacity: 0.25;
-    cursor: default;
+.tutorial-nav svg {
     pointer-events: none;
 }
 
@@ -3933,34 +3887,6 @@ video::-webkit-media-controls-start-playback-button {
     outline-offset: 2px;
 }
 
-.tutorial-hl-badge-move .badge-move {
-    --thl-pulse-color: rgba(251, 191, 36, 0.9);
-    --thl-pulse-glow: rgba(230, 126, 34, 0.6);
-}
-
-.tutorial-hl-badge-add .badge-add {
-    --thl-pulse-color: rgba(99, 102, 241, 0.9);
-    --thl-pulse-glow: rgba(99, 102, 241, 0.6);
-}
-
-.tutorial-hl-badge-delete .badge-delete,
-.tutorial-hl-badge-delete .prop-btn-delete {
-    --thl-pulse-color: rgba(248, 113, 113, 0.9);
-    --thl-pulse-glow: rgba(248, 113, 113, 0.6);
-}
-
-.tutorial-hl-badge-elevate .badge-elevate,
-.tutorial-hl-badge-elevate .prop-btn-elevate {
-    --thl-pulse-color: rgba(96, 165, 250, 0.9);
-    --thl-pulse-glow: rgba(96, 165, 250, 0.6);
-}
-
-.tutorial-hl-badge-nest .badge-nest,
-.tutorial-hl-badge-nest .prop-btn-nest {
-    --thl-pulse-color: rgba(52, 211, 153, 0.9);
-    --thl-pulse-glow: rgba(52, 211, 153, 0.6);
-}
-
 /* level-nav (highlight the level tabs strip & breadcrumbs) */
 .tutorial-hl-level-nav .level-controls-container {
     animation: thlPulse 1.6s ease-out infinite;
@@ -3981,10 +3907,14 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* hyWEAVE button highlight (Generation Moment cue) */
-.tutorial-hl-hyweave-btn {
+.tutorial-hl-hyweave-btn,
+.tutorial-hl-hyweave #hywe-hyweave,
+.hyweave-container.tutorial-hl-hyweave #hywe-hyweave {
     animation: thlHyweavePulse 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite !important;
     outline: 2.5px solid rgba(139, 92, 246, 0.9) !important;
     outline-offset: 3px !important;
+    position: relative;
+    z-index: 10;
 }
 
 @keyframes thlHyweavePulse {
@@ -4005,21 +3935,22 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* props bar */
-.tutorial-hl-props-bar .node-properties-bar {
+.tutorial-hl-props-bar .node-properties-bar,
+.tutorial-hl-props-bar .prop-input {
     animation: thlPulse 1.6s ease-out infinite;
     --thl-pulse-color: rgba(251, 191, 36, 0.9);
     --thl-pulse-glow: rgba(251, 191, 36, 0.6);
-    border-radius: 8px;
     outline: 2px solid rgba(251, 191, 36, 0.6);
     outline-offset: 2px;
 }
 
+.tutorial-hl-props-bar .node-properties-bar {
+    border-radius: 8px;
+}
+
 .tutorial-hl-props-bar .prop-input {
-    animation: thlPulseAmber 1.6s ease-out infinite;
     border-radius: 4px;
     background: rgba(251, 191, 36, 0.2) !important;
-    outline: 2px solid rgba(251, 191, 36, 0.9);
-    outline-offset: 1px;
 }
 
 /* edit-name & edit-weight (sleek underline highlight for both inline label and weight inputs) */
@@ -4067,84 +3998,31 @@ video::-webkit-media-controls-start-playback-button {
     overflow-x: auto;
 }
 
-.tutorial-level-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    background: transparent;
-    font-size: 10px;
-    font-weight: 600;
-    color: #64748b;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-}
-
-.tutorial-level-btn:hover {
-    background: #ffffff;
-    color: #1e293b;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.tutorial-level-btn.active {
-    background: #ffffff;
-    color: #0f172a;
-    border-color: #cbd5e1;
-    font-weight: 700;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.tutorial-level-icon {
-    font-size: 11px;
-}
-
-.tutorial-level-name {
-    letter-spacing: 0.2px;
-}
-
-/* Target Highlights for Buttons & View Tabs */
-.tutorial-hl-hyweave #hywe-hyweave,
-#hywe-hyweave.tutorial-hl-hyweave-btn,
-.hyweave-container.tutorial-hl-hyweave #hywe-hyweave {
-    outline: 2px solid #6366f1 !important;
-    outline-offset: 0px !important;
-    box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.7), 0 0 12px rgba(99, 102, 241, 0.6) !important;
-    animation: glowPulse 1.25s infinite ease-in-out !important;
-    position: relative;
-    z-index: 10;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-.hywe-tab-strip.tutorial-hl-tab-layout button[title="Layout"],
-.hywe-tab-strip.tutorial-hl-tab-view button[title="3D"],
-.hywe-tab-strip.tutorial-hl-tab-batch button[title="Batch"],
-.hywe-tab-btn.tutorial-hl-tab {
-    outline: 2px solid #8b5cf6 !important;
-    outline-offset: -1px !important;
-    box-shadow: inset 0 0 8px rgba(139, 92, 246, 0.5), 0 0 8px rgba(139, 92, 246, 0.5) !important;
-    color: #8b5cf6 !important;
-    font-weight: 700 !important;
-    animation: glowPulse 1.25s infinite ease-in-out !important;
-    box-sizing: border-box !important;
-}
-
-/* Sequence / Variant Slider Highlight */
+/* Target Highlights for Tabs & Slider */
+.tutorial-hl-tab,
+.hywe-tab-btn.tutorial-hl-tab,
 #hywe-sequence-selector.tutorial-hl-slider,
 .tutorial-hl-slider #hywe-sequence-selector {
     outline: 2px solid #8b5cf6 !important;
-    outline-offset: 4px !important;
-    border-radius: 8px !important;
-    box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.4), 0 0 16px rgba(139, 92, 246, 0.6) !important;
+    outline-offset: -1px !important;
+    box-shadow: inset 0 0 8px rgba(139, 92, 246, 0.5), 0 0 8px rgba(139, 92, 246, 0.5) !important;
     animation: glowPulse 1.25s infinite ease-in-out !important;
     box-sizing: border-box !important;
 }
 
-@keyframes glowPulse {
+.tutorial-hl-tab {
+    color: #8b5cf6 !important;
+    font-weight: 700 !important;
+}
 
+#hywe-sequence-selector.tutorial-hl-slider,
+.tutorial-hl-slider #hywe-sequence-selector {
+    outline-offset: 4px !important;
+    border-radius: 8px !important;
+    box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.4), 0 0 16px rgba(139, 92, 246, 0.6) !important;
+}
+
+@keyframes glowPulse {
     0%,
     100% {
         filter: brightness(1);
@@ -4153,16 +4031,6 @@ video::-webkit-media-controls-start-playback-button {
     50% {
         filter: brightness(1.22);
     }
-}
-
-.tutorial-tab-btn {
-    margin-left: 6px;
-    color: #6366f1 !important;
-    border: 1px dashed rgba(99, 102, 241, 0.4) !important;
-}
-
-.tutorial-tab-btn:hover {
-    background: rgba(99, 102, 241, 0.08) !important;
 }
 
 /* Highlight badge tags for deterministic spatial configurations */
