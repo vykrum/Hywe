@@ -184,9 +184,12 @@ a {
 }
 
 .hywe-btn-ghost:hover:not(:disabled),
-.hywe-btn-flat:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.04);
+.hywe-btn-ghost.active,
+.hywe-btn-flat:hover:not(:disabled),
+.hywe-btn-flat.active {
+    background: #f0f0f0;
     color: #333;
+    border-color: #333;
 }
 
 .hywe-btn-gray,
@@ -348,7 +351,7 @@ a {
     margin: 16px 0;
 }
 
-/* Universal Badges & Chips */
+/* Universal Badges */
 .hywe-badge,
 .editor-title-badge,
 .prop-badge,
@@ -372,11 +375,47 @@ a {
     box-sizing: border-box;
 }
 
+/* Badge Color Modifiers */
+.prop-badge,
+.prop-badge.prop-badge-level { background: #3b82f6; color: #ffffff; }
+.prop-badge.prop-badge-nest { background: #2ecc71; color: #ffffff; }
+.prop-badge.prop-badge-root { background: #475569; color: #ffffff; }
+
+/* Universal Chips */
+.hywe-chip,
+.var-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: #ffffff;
+    border: 1px solid #dcdfe4;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-size: 11px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    box-sizing: border-box;
+    color: var(--color-text-main);
+}
+.hywe-chip:hover,
+.var-chip:hover {
+    border-color: #aaa;
+    background: #fafafa;
+}
+.hywe-chip.selected,
+.hywe-chip.active,
+.var-chip.selected {
+    background: #e8e8e8;
+    color: #111;
+    border-color: #d8d8d8;
+}
+
 /* Universal Inputs */
 .hywe-input,
-.prop-input,
-.workspace-meta-title,
-.workspace-meta-author {
+.prop-input {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: 4px;
@@ -390,9 +429,7 @@ a {
 }
 
 .hywe-input:focus,
-.prop-input:focus,
-.workspace-meta-title:focus,
-.workspace-meta-author:focus {
+.prop-input:focus {
     border-color: #0969da;
     box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.15);
 }
@@ -407,7 +444,7 @@ a {
     gap: 4px;
 }
 
-/* Universal Modal Overlays */
+/* Universal Modal System */
 .hywe-modal-overlay {
     position: fixed;
     inset: 0;
@@ -420,6 +457,62 @@ a {
     padding: 16px;
     box-sizing: border-box;
     z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.hywe-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hywe-modal-content {
+    background: #ffffff;
+    color: #333333;
+    width: 100%;
+    max-width: 820px;
+    max-height: 85vh;
+    border-radius: var(--radius-lg, 8px);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    position: relative;
+    overflow-y: auto;
+    padding: 28px 32px;
+    box-sizing: border-box;
+    line-height: 1.6;
+    font-size: 14px;
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hywe-modal-overlay.active .hywe-modal-content {
+    transform: scale(1);
+}
+
+.hywe-modal-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: #555;
+    transition: background 0.2s, color 0.2s;
+    margin-top: -10px;
+    margin-right: -10px;
+    z-index: 10;
+}
+
+.hywe-modal-close:hover {
+    background: var(--color-primary);
+    color: #ffffff;
 }
 
 textarea.hywe-input {
@@ -911,21 +1004,11 @@ input[type=number] {
     right: 14px;
     z-index: 25;
     padding: 2px;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #555;
-    transition: color 0.15s ease;
 }
 
 .tree-floating-toggle-btn:hover {
     color: #000;
 }
-
 
 .sliver-handle span {
     color: #555;
@@ -935,13 +1018,6 @@ input[type=number] {
     white-space: nowrap;
     text-transform: uppercase;
     letter-spacing: 1px;
-}
-
-.preset-btn.active {
-    /* Modifier for active state when using .hywe-btn */
-    background: #363636;
-    color: #fff;
-    border-color: #363636;
 }
 
 .hywe-toggle-btn:hover {
@@ -958,7 +1034,8 @@ input[type=number] {
    SPINNER & VIDEO
    ===================== */
 /* Animated loading indicator Ã¢â‚¬â€ used in hyWeave button and other loading states */
-.spinner {
+.spinner,
+.report-spinner {
     display: inline-block;
     flex-shrink: 0;
     width: 14px;
@@ -969,6 +1046,11 @@ input[type=number] {
     animation: spin 0.6s linear infinite;
     vertical-align: middle;
     margin-right: 5px;
+}
+.report-spinner {
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
 }
 
 @keyframes spin {
@@ -1270,11 +1352,8 @@ video::-webkit-media-controls-start-playback-button {
 /* =====================
    NODE INPUTS
    ===================== */
-.nodename {
-    width: 44px;
-    font-size: 10px;
-    margin-top: 5px;
-    color: #999;
+.nodename,
+.nodeweight {
     text-align: center;
     border: none;
     outline: none;
@@ -1282,6 +1361,21 @@ video::-webkit-media-controls-start-playback-button {
     border-bottom: 1px solid transparent;
     -webkit-tap-highlight-color: transparent;
     transition: border-bottom-color 0.2s;
+}
+
+.nodename {
+    width: 44px;
+    font-size: 10px;
+    margin-top: 5px;
+    color: #999;
+}
+
+.nodeweight {
+    width: 36px;
+    font-size: 12px;
+    margin-bottom: 3px;
+    color: #555;
+    font-weight: bold;
 }
 
 .nodename[readonly],
@@ -1292,32 +1386,16 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 .nodename:not([readonly]):hover,
-.nodename:not([readonly]):focus {
-    border-bottom: 1px solid #3498db;
-    color: #666;
-}
-
-.nodeweight {
-    width: 36px;
-    font-size: 12px;
-    margin-bottom: 3px;
-    color: #555;
-    font-weight: bold;
-    text-align: center;
-    border: none;
-    outline: none;
-    background: transparent !important;
-    border-bottom: 1px solid transparent;
-    -webkit-tap-highlight-color: transparent;
-    transition: border-bottom-color 0.2s;
-}
-
+.nodename:not([readonly]):focus,
 .nodeweight:not([readonly]):hover,
 .nodeweight:not([readonly]):focus {
     border-bottom: 1px solid #3498db;
-    color: #222;
-    /* High contrast while editing */
 }
+
+.nodename:not([readonly]):hover,
+.nodename:not([readonly]):focus { color: #666; }
+.nodeweight:not([readonly]):hover,
+.nodeweight:not([readonly]):focus { color: #222; }
 
 .nodename::placeholder {
     color: #eee;
@@ -1338,39 +1416,18 @@ video::-webkit-media-controls-start-playback-button {
     font-size: 10px;
 }
 
-.node-confirm-del {
-    color: #E67E22;
-}
+.node-confirm-del { color: #E67E22; }
+.node-confirm-elevate { color: #3498db; }
+.node-confirm-cancel { color: #999; font-size: 9px; }
 
-.node-confirm-elevate {
-    color: #3498db;
-}
-
-.node-confirm-cancel {
-    color: #999;
-    font-size: 9px;
-}
-
-.nodebutton0 {
-    font-size: 10px;
-    font-weight: bold;
-    width: 5px;
-    position: absolute;
-    top: 2px;
-    visibility: hidden;
-    pointer-events: none;
-    background: none !important;
-    border: none !important;
-    outline: none !important;
-}
-
-.nodebutton1,
 .nodebutton2 {
     font-size: 10px;
     font-weight: bold;
     width: 100%;
     position: absolute;
     left: 0;
+    bottom: 2px;
+    color: #2E86C1;
     text-align: center;
     opacity: 0.75;
     -webkit-tap-highlight-color: transparent;
@@ -1381,17 +1438,6 @@ video::-webkit-media-controls-start-playback-button {
     outline: none !important;
 }
 
-.nodebutton1 {
-    top: 2px;
-    color: #E67E22;
-}
-
-.nodebutton2 {
-    bottom: 2px;
-    color: #2E86C1;
-}
-
-.nodebutton1:hover,
 .nodebutton2:hover {
     opacity: 1;
 }
@@ -1463,23 +1509,6 @@ video::-webkit-media-controls-start-playback-button {
     z-index: 1000;
     font-size: 11px;
     box-sizing: border-box;
-}
-
-.prop-badge {
-    background: #3b82f6;
-    color: #ffffff;
-}
-
-.prop-badge.prop-badge-nest {
-    background: #2ecc71;
-}
-
-.prop-badge.prop-badge-root {
-    background: #475569;
-}
-
-.prop-badge.prop-badge-level {
-    background: #3b82f6;
 }
 
 .prop-field {
@@ -1889,85 +1918,27 @@ video::-webkit-media-controls-start-playback-button {
 .node-corner-badge.badge-delete,
 .node-corner-badge.badge-elevate,
 .node-corner-badge.badge-nest,
-.node-corner-badge.badge-add {
-    cursor: pointer;
-}
+.node-corner-badge.badge-add { cursor: pointer; }
 
-.node-corner-badge.badge-move,
-.node-corner-badge.badge-elevate {
-    top: 9px;
-}
+.node-corner-badge.badge-move, .node-corner-badge.badge-elevate { top: 9px; }
+.node-corner-badge.badge-delete, .node-corner-badge.badge-nest { top: 39px; }
+.node-corner-badge.badge-move, .node-corner-badge.badge-delete { left: -3px; }
+.node-corner-badge.badge-elevate, .node-corner-badge.badge-nest { right: -3px; }
 
-.node-corner-badge.badge-delete,
-.node-corner-badge.badge-nest {
-    top: 39px;
-}
+.node-corner-badge.badge-move { color: #64748b; cursor: grab; }
+.node-corner-badge.badge-move:hover, .node-corner-badge.badge-move:active { color: #2563eb; cursor: grabbing; }
 
-.node-corner-badge.badge-move,
-.node-corner-badge.badge-delete {
-    left: -3px;
-}
+.node-corner-badge.badge-delete { color: #ef4444; }
+.node-corner-badge.badge-delete:hover, .node-corner-badge.badge-delete:active { color: #b91c1c; }
 
-.node-corner-badge.badge-elevate,
-.node-corner-badge.badge-nest {
-    right: -3px;
-}
+.node-corner-badge.badge-elevate { color: #0284c7; }
+.node-corner-badge.badge-elevate:hover, .node-corner-badge.badge-elevate:active { color: #0369a1; }
 
-/* 1. Top-Left: Move (Four-sided arrow) */
-.node-corner-badge.badge-move {
-    color: #64748b;
-    cursor: grab;
-}
+.node-corner-badge.badge-nest { color: #059669; }
+.node-corner-badge.badge-nest:hover, .node-corner-badge.badge-nest:active { color: #047857; }
 
-.node-corner-badge.badge-move:hover,
-.node-corner-badge.badge-move:active {
-    color: #2563eb;
-    cursor: grabbing;
-}
-
-/* 2. Bottom-Left: Delete */
-.node-corner-badge.badge-delete {
-    color: #ef4444;
-}
-
-.node-corner-badge.badge-delete:hover,
-.node-corner-badge.badge-delete:active {
-    color: #b91c1c;
-}
-
-/* 3. Top-Right: Elevate */
-.node-corner-badge.badge-elevate {
-    color: #0284c7;
-}
-
-.node-corner-badge.badge-elevate:hover,
-.node-corner-badge.badge-elevate:active {
-    color: #0369a1;
-}
-
-/* 4. Bottom-Right: Nest (Box-in-box icon or N#) */
-.node-corner-badge.badge-nest {
-    color: #059669;
-}
-
-.node-corner-badge.badge-nest:hover,
-.node-corner-badge.badge-nest:active {
-    color: #047857;
-}
-
-/* 5. Bottom: Add (+) */
-.node-corner-badge.badge-add {
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #475569;
-}
-
-.node-corner-badge.badge-add:hover,
-.node-corner-badge.badge-add:active {
-    transform: translateX(-50%) scale(1.35);
-    color: #0f172a;
-}
+.node-corner-badge.badge-add { bottom: -5px; left: 50%; transform: translateX(-50%); color: #475569; }
+.node-corner-badge.badge-add:hover, .node-corner-badge.badge-add:active { transform: translateX(-50%) scale(1.35); color: #0f172a; }
 
 @keyframes badgePopIn {
     from {
@@ -2358,8 +2329,6 @@ video::-webkit-media-controls-start-playback-button {
 .license-footer a:hover { color: #aaa; text-decoration: underline; }
 #footer.visible .license-footer { opacity: 1; }
 
-.layout-download-btn.active { border-color: #333; color: #333; background: #f0f0f0; }
-
 /* =========================================
    POLYGON EDITOR
    ========================================= */
@@ -2587,29 +2556,6 @@ video::-webkit-media-controls-start-playback-button {
     margin-bottom: 4px;
 }
 
-.var-chip {
-    padding: 4px 6px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    text-align: center;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
-}
-
-.var-chip:hover {
-    border-color: #aaa;
-    background: #fafafa;
-}
-
-.var-chip.selected {
-    background: #e8e8e8;
-    color: #111;
-    border-color: #d8d8d8;
-}
-
 .report-toggle-row {
     display: flex;
     align-items: center;
@@ -2642,18 +2588,6 @@ video::-webkit-media-controls-start-playback-button {
     text-align: center;
     margin-top: 8px;
     min-height: 16px;
-}
-
-.report-spinner {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid #ccc;
-    border-top-color: #555;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-right: 6px;
-    vertical-align: middle;
 }
 
 /* ==========================================================================
@@ -2906,68 +2840,8 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* ==========================================================================
-   ABOUT MODAL
+   ABOUT MODAL CONTENT
    ========================================================================== */
-.hywe-modal-overlay {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-}
-
-.hywe-modal-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.hywe-modal-content {
-    background: #ffffff;
-    color: #333333;
-    width: 100%;
-    max-width: 820px;
-    max-height: 85vh;
-    border-radius: 12px;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-    position: relative;
-    overflow-y: auto;
-    padding: 32px 36px;
-    box-sizing: border-box;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-    line-height: 1.6;
-    font-size: 14px;
-    font-weight: 300;
-    transform: scale(0.95);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hywe-modal-overlay.active .hywe-modal-content {
-    transform: scale(1);
-}
-
-.hywe-modal-close {
-    position: sticky;
-    top: 0;
-    float: right;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 16px;
-    color: #555;
-    transition: background 0.2s, color 0.2s;
-    margin-top: -10px;
-    margin-right: -10px;
-    z-index: 10;
-}
-
-.hywe-modal-close:hover {
-    background: #333;
-    color: #fff;
-}
 
 .hywe-modal-content h1 {
     margin-top: 0;
