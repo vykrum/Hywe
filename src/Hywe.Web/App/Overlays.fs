@@ -390,9 +390,6 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
             }
         }
 
-/// <summary> Right-edge drawer handle button to open the About HYWE dialog (now integrated into Waggle Exchange). </summary>
-let viewAboutDrawerHandle (_: Message -> unit) = empty()
-
 /// <summary> Declarative About HYWE modal dialog. </summary>
 let viewAboutModal (model: Model) (dispatch: Message -> unit) =
     match model.ShowAboutModal with

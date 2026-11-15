@@ -357,8 +357,10 @@ let private viewEditorPanel (model: Model) (dispatch: Message -> unit) =
             | Some step ->
                 let stepDef = Tutorial.getStepDef model.TutorialLevel step
                 let highlightClass = Tutorial.badgeCssClass stepDef.Badge
+                let color = Tutorial.badgeColor stepDef.Badge
                 div {
                     attr.``class`` (if highlightClass <> "" then $"tutorial-tree-wrapper {highlightClass}" else "tutorial-tree-wrapper")
+                    attr.style (if color <> "transparent" then $"--thl-pulse-color: {color}; --thl-pulse-glow: {color}88;" else "")
                     NodeTree.viewTreeEditor model.Tree [||] (TreeMsg >> dispatch)
                 }
             | None ->

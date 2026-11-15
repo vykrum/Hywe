@@ -448,7 +448,7 @@ let private badgeIcon = function
     | BadgeSlider   -> """<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>"""
     | NoBadge       -> ""
 
-let private badgeColor = function
+let badgeColor = function
     | BadgeMove     -> "#e67e22"
     | BadgeAdd      -> "#4ade80"
     | BadgeDelete   -> "#f87171"
@@ -485,7 +485,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
     let isLast     = step = totalSteps - 1
 
     div {
-        attr.``class`` (if autoPlay then "tutorial-banner is-autoplay" else "tutorial-banner")
+        attr.``class`` (if autoPlay then "hywe-card tutorial-banner is-autoplay" else "hywe-card tutorial-banner")
 
         // Module Level Selector Pills (without icons)
         div {
@@ -493,10 +493,10 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             for lvl in TutorialLevel.allLevels do
                 let isLvlActive = lvl = level
                 button {
-                    attr.``class`` (if isLvlActive then "tutorial-level-btn active" else "tutorial-level-btn")
+                    attr.``class`` (if isLvlActive then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-ghost")
                     attr.title (TutorialLevel.name lvl)
                     on.click (fun _ -> dispatch (SetTutorialLevel lvl))
-                    span { attr.``class`` "tutorial-level-name"; text (TutorialLevel.shortName lvl) }
+                    text (TutorialLevel.shortName lvl)
                 }
         }
 
@@ -561,12 +561,12 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             div {
                 attr.``class`` "tutorial-left-actions"
                 button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost tutorial-skip"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
                     on.click (fun _ -> dispatch DismissTutorial)
                     text "Skip"
                 }
                 button {
-                    attr.``class`` (if autoPlay then "hywe-btn hywe-btn-sm hywe-btn-ghost tutorial-autoplay active" else "hywe-btn hywe-btn-sm hywe-btn-ghost tutorial-autoplay")
+                    attr.``class`` (if autoPlay then "hywe-btn hywe-btn-sm hywe-btn-ghost active" else "hywe-btn hywe-btn-sm hywe-btn-ghost")
                     attr.title (if autoPlay then "Pause auto advance" else "Auto advance steps")
                     on.click (fun _ -> dispatch ToggleTutorialAutoPlay)
                     if autoPlay then
@@ -578,7 +578,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             div {
                 attr.``class`` "tutorial-nav-arrows"
                 button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark tutorial-back"
+                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
                     attr.disabled isFirst
                     on.click (fun _ -> dispatch TutorialBack)
                     rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
@@ -588,7 +588,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     match TutorialLevel.nextLevel level with
                     | Some nxt ->
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost tutorial-next-module"
+                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
                             attr.title $"Proceed to {TutorialLevel.name nxt}"
                             on.click (fun _ -> dispatch (SetTutorialLevel nxt))
                             text $"Next: {TutorialLevel.shortName nxt} "
@@ -597,14 +597,14 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     | None -> ()
 
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-primary tutorial-next"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
                         on.click (fun _ -> dispatch DismissTutorial)
                         text "Start designing "
                         rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
                     }
                 else
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark tutorial-next"
+                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
                         on.click (fun _ -> dispatch TutorialNext)
                         text "Next "
                         rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
