@@ -58,12 +58,12 @@ let viewConfirmOverlay (model: Model) (dispatch: Message -> unit) =
                 div {
                     attr.style "display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                        attr.``class`` "hywe-btn"
                         on.pointerdown (fun _ -> dispatch (ToggleConfirm None))
                         text "Cancel"
                     }
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-dark"
+                        attr.``class`` "hywe-btn active"
                         on.pointerdown (fun _ -> dispatch onConfirm)
                         text confirmMsg
                     }
@@ -95,7 +95,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                         text "Gallery" 
                     }
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
+                        attr.``class`` "hywe-btn"
                         attr.style "font-size: 1.2rem; padding: 0 5px; line-height: 1;"
                         on.click (fun _ -> dispatch ToggleGallery)
                         text "×"
@@ -252,7 +252,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                                 // Right: Vertical Full-Height Load Button
                                                 button {
-                                                    attr.``class`` "hywe-btn hywe-btn-dark"
+                                                    attr.``class`` "hywe-btn"
                                                     attr.style "align-self: stretch; width: 18px; min-width: 18px; border: none; border-left: 1px solid #dee2e6; border-radius: 0; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: background 0.15s ease; box-sizing: border-box;"
                                                     attr.title "Load this configuration into workspace"
                                                     let loadLabel = match String.IsNullOrWhiteSpace entry.ExplorationDescription with true -> "configuration" | false -> entry.ExplorationDescription
@@ -299,7 +299,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                     // First Page Button
                                     button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.``class`` "hywe-btn"
                                         attr.title "First page"
                                         match currentPage <= 1 with
                                         | true ->
@@ -313,7 +313,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                     // Previous Page Button
                                     button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.``class`` "hywe-btn"
                                         attr.title "Previous page"
                                         match currentPage <= 1 with
                                         | true ->
@@ -341,7 +341,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
                                         match item with
                                         | Some pageNum ->
                                             button {
-                                                attr.``class`` "hywe-btn hywe-btn-sm"
+                                                attr.``class`` "hywe-btn"
                                                 match pageNum = currentPage with
                                                 | true ->
                                                     attr.disabled true
@@ -359,7 +359,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                     // Next Page Button
                                     button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.``class`` "hywe-btn"
                                         attr.title "Next page"
                                         match currentPage >= totalPages with
                                         | true ->
@@ -373,7 +373,7 @@ let viewGalleryModal (model: Model) (dispatch: Message -> unit) =
 
                                     // Last Page Button
                                     button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm"
+                                        attr.``class`` "hywe-btn"
                                         attr.title "Last page"
                                         match currentPage >= totalPages with
                                         | true ->

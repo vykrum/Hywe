@@ -532,13 +532,13 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                     div {
                         attr.``style`` "display: flex; gap: 10px;"
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                            attr.``class`` "hywe-btn"
                             attr.``style`` "font-size: 9px; padding: 4px 8px;"
                             on.click (fun _ -> dispatch DownloadCoordCsv)
                             text "Download CSV"
                         }
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                            attr.``class`` "hywe-btn"
                             attr.``style`` "font-size: 9px; padding: 4px 8px;"
                             on.click (fun _ -> dispatch ToggleCoords)
                             text "Close"

@@ -493,7 +493,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             for lvl in TutorialLevel.allLevels do
                 let isLvlActive = lvl = level
                 button {
-                    attr.``class`` (if isLvlActive then "hywe-btn hywe-btn-sm hywe-btn-dark active" else "hywe-btn hywe-btn-sm hywe-btn-ghost")
+                    attr.``class`` (if isLvlActive then "hywe-btn active" else "hywe-btn")
                     attr.title (TutorialLevel.name lvl)
                     on.click (fun _ -> dispatch (SetTutorialLevel lvl))
                     text (TutorialLevel.shortName lvl)
@@ -561,12 +561,12 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             div {
                 attr.``class`` "tutorial-left-actions"
                 button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
+                    attr.``class`` "hywe-btn"
                     on.click (fun _ -> dispatch DismissTutorial)
                     text "Skip"
                 }
                 button {
-                    attr.``class`` (if autoPlay then "hywe-btn hywe-btn-sm hywe-btn-ghost active" else "hywe-btn hywe-btn-sm hywe-btn-ghost")
+                    attr.``class`` (if autoPlay then "hywe-btn active" else "hywe-btn")
                     attr.title (if autoPlay then "Pause auto advance" else "Auto advance steps")
                     on.click (fun _ -> dispatch ToggleTutorialAutoPlay)
                     if autoPlay then
@@ -578,7 +578,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
             div {
                 attr.``class`` "tutorial-nav-arrows"
                 button {
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
+                    attr.``class`` "hywe-btn active"
                     attr.disabled isFirst
                     on.click (fun _ -> dispatch TutorialBack)
                     rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
@@ -588,7 +588,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     match TutorialLevel.nextLevel level with
                     | Some nxt ->
                         button {
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-ghost"
+                            attr.``class`` "hywe-btn"
                             attr.title $"Proceed to {TutorialLevel.name nxt}"
                             on.click (fun _ -> dispatch (SetTutorialLevel nxt))
                             text $"Next: {TutorialLevel.shortName nxt} "
@@ -597,14 +597,14 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     | None -> ()
 
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
+                        attr.``class`` "hywe-btn active"
                         on.click (fun _ -> dispatch DismissTutorial)
                         text "Start designing "
                         rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
                     }
                 else
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-dark"
+                        attr.``class`` "hywe-btn active"
                         on.click (fun _ -> dispatch TutorialNext)
                         text "Next "
                         rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"></polyline></svg>"""

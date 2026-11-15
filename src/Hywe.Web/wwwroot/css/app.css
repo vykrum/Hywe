@@ -83,149 +83,74 @@ a {
 }
 
 /* =====================
-   UNIFIED BUTTON SYSTEM
+   HYWE BUTTON (Single Standard)
    ===================== */
 .hywe-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 5px 12px;
-    border-radius: 4px;
+    gap: 6px;
+    padding: 4px 10px;
     font-family: var(--font-sans);
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-    border: 1px solid #dcdfe4;
-    background-color: #f8f9fa;
+    line-height: 1.2;
     color: #374151;
-    outline: none;
+    background: #ffffff;
+    border: 1px solid #dcdfe4;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    user-select: none;
     white-space: nowrap;
     text-decoration: none;
-    user-select: none;
     box-sizing: border-box;
-    gap: 6px;
+    outline: none;
+    transition: all 0.15s ease;
 }
 
 .hywe-btn:hover:not(:disabled) {
-    background-color: #f1f3f5;
+    background: #f1f3f5;
     border-color: #cbd2d9;
     color: #111827;
 }
 
-.hywe-btn:active:not(:disabled) {
-    background-color: #e9ecef;
-    transform: translateY(1px);
+.hywe-btn:active:not(:disabled),
+.hywe-btn.active {
+    background: #333333;
+    border-color: #222222;
+    color: #ffffff;
 }
 
 .hywe-btn:disabled,
-.hywe-btn[disabled] {
+.hywe-btn[disabled],
+.hywe-btn.disabled {
     opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
     box-shadow: none;
 }
 
-/* Sizes */
-.hywe-btn-sm {
-    padding: 3px 10px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.hywe-btn-lg {
+/* Instance Button Customizations */
+.report-generate-btn,
+.teach-commit-btn {
     padding: 10px 20px;
     font-size: 1rem;
+    background: #333333;
+    color: #ffffff;
+    border-color: #333333;
 }
 
-/* Shapes */
-.hywe-btn-pill {
-    border-radius: 20px;
+.report-generate-btn:hover:not(:disabled),
+.teach-commit-btn:hover:not(:disabled) {
+    background: #111111;
+    border-color: #000000;
 }
 
-.hywe-btn-fillet {
-    border-radius: 4px;
-}
-
-.hywe-btn-circle {
-    border-radius: 50%;
+.layout-download-btn {
+    width: 34px;
+    height: 34px;
     padding: 0;
-    width: 32px;
-    height: 32px;
-}
-
-/* Variants */
-.hywe-btn-dark {
-    background-color: #555;
-    color: #fff;
-    border-color: #555;
-}
-
-.hywe-btn-dark:hover:not(:disabled),
-.hywe-btn-dark.active {
-    background-color: #333;
-    border-color: #333;
-}
-
-.hywe-btn-ghost,
-.hywe-btn-flat {
-    background: transparent;
-    color: #888;
-}
-
-.hywe-btn-ghost {
-    border-color: #eee;
-}
-
-.hywe-btn-flat {
-    border-color: transparent;
-}
-
-.hywe-btn-ghost:hover:not(:disabled),
-.hywe-btn-ghost.active,
-.hywe-btn-flat:hover:not(:disabled),
-.hywe-btn-flat.active {
-    background: #f0f0f0;
-    color: #333;
-    border-color: #333;
-}
-
-.hywe-btn-gray,
-.hywe-btn-light {
-    color: #444;
-}
-
-.hywe-btn-gray {
-    background-color: #f2f2f2;
-    border-color: #e8e8e8;
-}
-
-.hywe-btn-gray:hover:not(:disabled),
-.hywe-btn-gray.active {
-    background-color: #e8e8e8;
-    border-color: #d8d8d8;
-    color: #111;
-}
-
-.hywe-btn-light {
-    background-color: #ffffff;
-    border-color: #eeeeee;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-}
-
-.hywe-btn-light:hover:not(:disabled),
-.hywe-btn-light.active {
-    background-color: #f8f8f8;
-    border-color: #e0e0e0;
-    color: #222;
-}
-
-.hard-reset-btn:hover {
-    background: rgba(255, 255, 255, 0.8) !important;
-    color: #333 !important;
-    transform: scale(1.1);
+    border-radius: 50%;
 }
 
 
@@ -2466,7 +2391,7 @@ video::-webkit-media-controls-start-playback-button {
     margin: 0;
 }
 
-.boundary-toolbar .hywe-btn-sm { padding: 3px 8px; font-size: 0.70rem; font-weight: 700; white-space: nowrap; }
+.boundary-toolbar .hywe-btn { padding: 3px 8px; font-size: 0.70rem; font-weight: 700; white-space: nowrap; }
 
 .dimension-fields { display: flex; flex-direction: column; gap: 8px; padding-left: 18px; border-left: 1px solid #e0e0e0; flex-shrink: 0; }
 .dimension-inputs { display: flex; flex-direction: column; gap: 8px; }
@@ -2501,7 +2426,7 @@ video::-webkit-media-controls-start-playback-button {
     .boundary-toolbar { gap: 6px 10px; padding: 8px 6px 5px; }
     .toggle-column { gap: 6px; }
     .boundary-toolbar .hywe-label { font-size: 0.82rem; min-width: 34px; }
-    .boundary-toolbar .hywe-btn-sm { font-size: 0.68rem; padding: 2px 5px; }
+    .boundary-toolbar .hywe-btn { font-size: 0.68rem; padding: 2px 5px; }
     .dimension-fields, .action-column { padding-left: 10px; gap: 6px; }
     .dimension-inputs { gap: 6px; }
     .boundaryInput, .boundary-scale-text { font-size: 0.85rem; width: 34px; }
@@ -2514,7 +2439,7 @@ video::-webkit-media-controls-start-playback-button {
     .toggle-column, .dimension-inputs, .action-column { gap: 4px; }
     .toggle-column .hywe-row, .field-group, .action-trio-row { gap: 2px; }
     .boundary-toolbar .hywe-label { font-size: 0.70rem; min-width: 26px !important; }
-    .boundary-toolbar .hywe-btn-sm { font-size: 0.62rem !important; padding: 1px 3px !important; letter-spacing: 0; }
+    .boundary-toolbar .hywe-btn { font-size: 0.62rem !important; padding: 1px 3px !important; letter-spacing: 0; }
     .dimension-fields, .action-column { padding-left: 5px; border-left-color: #e5e5e5; }
     .boundaryInput, .boundary-scale-text { font-size: 0.72rem !important; width: 26px; }
     .action-column .hywe-btn { font-size: 0.62rem; padding: 1px 3px; }

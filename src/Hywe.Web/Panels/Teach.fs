@@ -489,9 +489,9 @@ let private selectField (model: Model) dispatch (label: string) (current: string
         div {
             attr.``class`` "teach-option-group"
             for opt in options do
-                let activeClass = if current = opt then "hywe-btn-gray active teach-option" else "hywe-btn-light teach-option"
+                let activeClass = if current = opt then "active teach-option" else "teach-option"
                 button {
-                    attr.``class`` ("hywe-btn hywe-btn-sm " + activeClass)
+                    attr.``class`` ("hywe-btn " + activeClass)
                     on.mouseover (fun _ -> dispatch (SetHoveredInfo (descriptions |> Map.tryFind opt)))
                     on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
                     on.click (fun _ -> 
@@ -499,9 +499,9 @@ let private selectField (model: Model) dispatch (label: string) (current: string
                         dispatch (UpdateMetadata (fun m -> updater m nextVal)))
                     text opt
                 }
-            let otherActiveClass = if isCustom then "hywe-btn-gray active teach-option" else "hywe-btn-light teach-option"
+            let otherActiveClass = if isCustom then "active teach-option" else "teach-option"
             button {
-                attr.``class`` ("hywe-btn hywe-btn-sm " + otherActiveClass)
+                attr.``class`` ("hywe-btn " + otherActiveClass)
                 on.mouseover (fun _ -> dispatch (SetHoveredInfo (Some $"Enter a custom {label.ToLower()} tag.")))
                 on.mouseout (fun _ -> dispatch (SetHoveredInfo None))
                 on.click (fun _ -> 
@@ -659,7 +659,7 @@ let view model dispatch =
                                     text "Level"
                                 }
                                 elt "select" {
-                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light"
+                                    attr.``class`` "hywe-btn"
                                     attr.style "width: auto; min-width: 60px; height: 24px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid #dee2e6; background-color: #ffffff; color: #333; cursor: pointer; flex-shrink: 0; outline: none;"
                                     attr.value activeLevelMarker
                                     on.change (fun e -> dispatch (UpdateMetadata (fun m -> { m with ThumbnailLevel = unbox<string> e.Value })))
@@ -804,7 +804,7 @@ let view model dispatch =
                     }
             }
             button {
-                attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
+                attr.``class`` ("hywe-btn teach-commit-btn u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
                 attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
                 attr.title (if not canCommit then "Please set Weave name (at least 3 words) and Woven by above, and select Typology" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not canCommit)

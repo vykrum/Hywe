@@ -632,7 +632,7 @@ let viewReport (model: Model) dispatch =
                         renderToggleRow "Individual Variations" s.Variations (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with Variations = v } o.LevelSections }))
                         button {
                             attr.disabled (not s.Variations)
-                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light"
+                            attr.``class`` "hywe-btn"
                             attr.style (if s.Variations then "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #666; background: transparent; border: 1px solid #ddd;" else "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #aaa; background: transparent; border: 1px solid #eee; cursor: not-allowed;")
                             on.click (fun _ -> if s.Variations then updateOpts (fun o -> { o with LevelSections = Map.add marker { s with IsFilterExpanded = not s.IsFilterExpanded } o.LevelSections }))
                             text (if s.Variations && s.IsFilterExpanded then "Hide filters" else "Filter variations")
@@ -644,12 +644,12 @@ let viewReport (model: Model) dispatch =
                         div {
                             attr.``class`` "variation-grid-controls"
                             button {
-                                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
+                                attr.``class`` "hywe-btn report-mini-btn"
                                 on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with SelectedVariations = Set.ofList [0..23] } o.LevelSections }))
                                 text "All"
                             }
                             button {
-                                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light report-mini-btn"
+                                attr.``class`` "hywe-btn report-mini-btn"
                                 on.click (fun _ -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with SelectedVariations = Set.empty } o.LevelSections }))
                                 text "None"
                             }
@@ -688,7 +688,7 @@ let viewReport (model: Model) dispatch =
             }
         
         button {
-            attr.``class`` ("hywe-btn hywe-btn-dark hywe-btn-lg u-w-full u-max-w-800 u-mt-md" + (if model.IsGeneratingReport || not canGenerate then " disabled" else " active"))
+            attr.``class`` ("hywe-btn report-generate-btn u-w-full u-max-w-800 u-mt-md" + (if model.IsGeneratingReport || not canGenerate then " disabled" else " active"))
             attr.style (if not canGenerate then "opacity: 0.5; cursor: not-allowed;" else "")
             attr.title (if not canGenerate then "Please set Weave name (at least 3 words) and Woven by above" else "Generate Report (PDF)")
             attr.disabled (model.IsGeneratingReport || not canGenerate)
