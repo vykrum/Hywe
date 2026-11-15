@@ -439,9 +439,9 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
 
                 h2 { text "Define → Generate → Explore" }
                 div {
-                    attr.``class`` "about-feature-grid"
+                    attr.``class`` "hywe-auto-grid"
                     div {
-                        attr.``class`` "hywe-card about-feature-card"
+                        attr.``class`` "hywe-card hywe-card-accent"
                         strong { text "Define" }
                         p { text "Express architectural intent through hierarchical structure, spatial relationships, sequence, boundaries, and constraints." }
                         p {
@@ -450,7 +450,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                         }
                     }
                     div {
-                        attr.``class`` "hywe-card about-feature-card"
+                        attr.``class`` "hywe-card hywe-card-accent"
                         strong { text "Generate" }
                         p { text "HYWE translates this relational structure into spatial configurations using its discrete Hygrid model." }
                         p {
@@ -470,7 +470,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                         }
                     }
                     div {
-                        attr.``class`` "hywe-card about-feature-card"
+                        attr.``class`` "hywe-card hywe-card-accent"
                         strong { text "Explore" }
                         p { text "The generated configurations become a space for investigation." }
                         p {
@@ -528,20 +528,20 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                 }
 
                 div {
-                    attr.``class`` "about-links-grid"
+                    attr.``class`` "hywe-auto-grid"
                     let chip (title: string) (url: string) (displayUrl: string) =
                         a {
                             attr.href url
                             attr.target "_blank"
                             attr.rel "noopener noreferrer"
-                            attr.``class`` "about-link-chip"
+                            attr.``class`` "hywe-card-link"
                             div {
-                                attr.``class`` "about-link-chip-header"
+                                attr.``class`` "hywe-card-link-header"
                                 span { text title }
                                 span { text "→" }
                             }
                             div {
-                                attr.``class`` "about-link-chip-url"
+                                attr.``class`` "hywe-card-link-url"
                                 text displayUrl
                             }
                         }
