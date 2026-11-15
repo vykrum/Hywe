@@ -2470,7 +2470,6 @@ video::-webkit-media-controls-start-playback-button {
     color: #d35400;
 }
 
-
 /* =========================================
    POLYGON EDITOR
    ========================================= */
@@ -2484,7 +2483,7 @@ video::-webkit-media-controls-start-playback-button {
     font-size: 0.95rem;
     font-weight: 600;
     color: #666;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: inherit;
 }
 
 /* SVG drawing canvas for the polygon editor */
@@ -2496,156 +2495,52 @@ video::-webkit-media-controls-start-playback-button {
     display: block;
     overflow: visible;
     touch-action: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     outline: none;
 }
 
 /* Vertex Colors */
-.outerVertex {
-    fill: #BBB2C7;
-    cursor: move;
-}
+.outerVertex { fill: #BBB2C7; cursor: move; }
+.outerVertex:hover { fill: #C4B7D5; }
+.islandVertex { fill: #C6B2BE; cursor: move; }
+.islandVertex:hover { fill: #D3B6C8; }
+.outerVertex.selected, .islandVertex.selected { fill: #2563eb !important; }
 
-.outerVertex:hover {
-    fill: #C4B7D5;
-}
-
-.islandVertex {
-    fill: #C6B2BE;
-    cursor: move;
-}
-
-.islandVertex:hover {
-    fill: #D3B6C8;
-}
-
-.entryPoint {
-    color: #475569;
-    cursor: grab;
-    transition: color 0.15s ease;
-}
-
-.entryPoint:hover {
-    color: #2563eb;
-}
-
-.entryPoint:active {
-    color: #1d4ed8;
-    cursor: grabbing;
-}
+.entryPoint { color: #475569; cursor: grab; transition: color 0.15s ease; }
+.entryPoint:hover { color: #2563eb; }
+.entryPoint:active { color: #1d4ed8; cursor: grabbing; }
 
 /* Polygon Fills */
-.outerPolygon {
-    stroke: #E3DCCC;
-    fill: #CDDFE1;
-    pointer-events: stroke;
-    cursor: cell;
-    vector-effect: non-scaling-stroke;
-}
+.outerPolygon, .islandPolygon { stroke: #E3DCCC; vector-effect: non-scaling-stroke; }
+.outerPolygon:hover, .islandPolygon:hover { stroke: #D6CFAF; }
+.outerPolygon { fill: #CDDFE1; pointer-events: stroke; cursor: cell; }
+.islandPolygon { fill: #f0f0f0; pointer-events: visiblePainted; cursor: grab; }
+.islandPolygon:active { cursor: grabbing; }
 
-.outerPolygon:hover {
-    stroke: #D6CFAF;
-}
-
-.islandPolygon {
-    stroke: #E3DCCC;
-    fill: #f0f0f0;
-    pointer-events: visiblePainted;
-    cursor: grab;
-    vector-effect: non-scaling-stroke;
-}
-
-.islandPolygon:hover {
-    stroke: #D6CFAF;
-}
-
-.islandPolygon:active {
-    cursor: grabbing;
-}
-
-.polygon-editor-svg:focus {
-    outline: none;
-}
-
-.selectedVertexHalo {
-    animation: haloPulse 1.5s infinite ease-in-out;
-    vector-effect: non-scaling-stroke;
-}
-
+.selectedVertexHalo { animation: haloPulse 1.5s infinite ease-in-out; vector-effect: non-scaling-stroke; }
 @keyframes haloPulse {
-    0% {
-        stroke-opacity: 0.9;
-        stroke-width: 2.5px;
-    }
-
-    50% {
-        stroke-opacity: 0.4;
-        stroke-width: 3.5px;
-    }
-
-    100% {
-        stroke-opacity: 0.9;
-        stroke-width: 2.5px;
-    }
+    0%, 100% { stroke-opacity: 0.9; stroke-width: 2.5px; }
+    50% { stroke-opacity: 0.4; stroke-width: 3.5px; }
 }
 
-.outerVertex.selected,
-.islandVertex.selected {
-    fill: #2563eb !important;
-}
-
-.ghostVertex {
-    transition: r 0.15s ease-out;
-}
-
-.ghostVertexGroup {
-    pointer-events: none;
-    user-select: none;
-}
-
-.mapModeOpacity {
-    fill-opacity: 0.3;
-    stroke: #363636 !important;
-}
-
-.mapModeOpacity:hover {
-    stroke: #111111 !important;
-}
+.ghostVertex { transition: r 0.15s ease-out; }
+.mapModeOpacity { fill-opacity: 0.3; stroke: #363636 !important; }
+.mapModeOpacity:hover { stroke: #111111 !important; }
 
 /* Label Styles */
-.outerVertexLabel,
-.islandVertexLabel {
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+.outerVertexLabel, .islandVertexLabel {
     font-weight: 600;
     pointer-events: none;
     user-select: none;
 }
-
-.outerVertexLabel {
-    fill: #5A3E2B;
-}
-
-.islandVertexLabel {
-    fill: #5C1A1B;
-}
+.outerVertexLabel { fill: #5A3E2B; }
+.islandVertexLabel { fill: #5C1A1B; }
 
 /* Boundary Interop Hidden Triggers */
-#hymap-data,
-#hymap-trigger,
-#hymap-live-data,
-#hymap-live-trigger {
-    display: none !important;
-}
+#hymap-data, #hymap-trigger, #hymap-live-data, #hymap-live-trigger { display: none !important; }
 
-/* Boundary SVG Container */
-#hywe-polygon-editor {
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
-}
+/* Boundary Containers & Stacking */
+#hywe-polygon-editor { position: relative; width: 100%; box-sizing: border-box; }
 
 #map-and-svg-container,
 .boundary-svg-container {
@@ -2672,22 +2567,17 @@ video::-webkit-media-controls-start-playback-button {
     overflow: hidden !important;
 }
 
-#hymap-wrapper {
-    z-index: 0 !important;
-    contain: layout paint !important;
-}
-
+#hymap-wrapper,
 #hymap-container,
 #hymap-container.leaflet-container,
 #hymap-container .leaflet-container {
     z-index: 0 !important;
+    contain: layout paint !important;
 }
 
-#svg-editor-layer {
-    z-index: 1 !important;
-}
+#svg-editor-layer { z-index: 1 !important; }
 
-/* Boundary Toolbar: 3 columns strictly on 1 line (toggles + dimensions + actions) */
+/* Boundary Toolbar: 3 columns on 1 line (toggles + dimensions + actions) */
 .boundary-toolbar {
     position: relative;
     display: flex;
@@ -2695,7 +2585,7 @@ video::-webkit-media-controls-start-playback-button {
     align-items: center;
     justify-content: center;
     gap: 12px 20px;
-    padding: 10px 14px 6px 14px;
+    padding: 10px 14px 6px;
     margin: 0 auto;
     box-sizing: border-box;
     width: 100%;
@@ -2703,111 +2593,42 @@ video::-webkit-media-controls-start-playback-button {
     overflow: hidden;
 }
 
-/* Column 1: Toggles */
-.toggle-column {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.toggle-column .hywe-row,
-.field-group {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-}
+.toggle-column { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.toggle-column .hywe-row, .field-group { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 
 .boundary-toolbar .hywe-label {
     min-width: 42px;
     font-size: 0.92rem;
     font-weight: 600;
     color: #666;
-    font-family: 'Segoe UI', sans-serif;
     user-select: none;
     white-space: nowrap;
     text-align: left;
     margin: 0;
 }
 
-.boundary-toolbar .hywe-btn-sm {
-    padding: 3px 8px;
-    font-size: 0.70rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
+.boundary-toolbar .hywe-btn-sm { padding: 3px 8px; font-size: 0.70rem; font-weight: 700; white-space: nowrap; }
 
-/* Column 2: Dimensions & Scale */
-.dimension-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-left: 18px;
-    border-left: 1px solid #e0e0e0;
-    flex-shrink: 0;
-}
-
-.dimension-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+.dimension-fields { display: flex; flex-direction: column; gap: 8px; padding-left: 18px; border-left: 1px solid #e0e0e0; flex-shrink: 0; }
+.dimension-inputs { display: flex; flex-direction: column; gap: 8px; }
 
 .boundary-scale-text {
     font-size: 0.95rem;
     font-weight: 600;
     color: #666;
-    font-family: 'Segoe UI', sans-serif;
     text-align: right;
     padding-right: 4px;
     white-space: nowrap;
 }
 
-/* Column 3: Actions */
-.action-column {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    padding-left: 18px;
-    border-left: 1px solid #e0e0e0;
-    flex-shrink: 0;
-}
+.action-column { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding-left: 18px; border-left: 1px solid #e0e0e0; flex-shrink: 0; }
+.action-trio-row { display: flex; align-items: center; gap: 3px; width: 100%; box-sizing: border-box; }
+.action-trio-row .hywe-btn { flex: 1; padding: 3px 4px; font-size: 0.74rem; }
 
-/* Action Trio: Undo / Redo / Lock */
-.action-trio-row {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    width: 100%;
-    box-sizing: border-box;
-}
+.hywe-btn.active-locked { background: #333; border-color: #222; color: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+.hywe-btn.active-locked:hover { background: #111; border-color: #000; color: #fff; }
 
-.action-trio-row .hywe-btn {
-    flex: 1;
-    padding: 3px 4px;
-    font-size: 0.74rem;
-}
-
-.hywe-btn.active-locked {
-    background: #333;
-    border-color: #222;
-    color: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.hywe-btn.active-locked:hover {
-    background: #111;
-    border-color: #000;
-    color: #fff;
-}
-
-/* Locked Canvas Cursor */
-.polygon-editor-svg.editor-locked {
-    cursor: default !important;
-}
-
+.polygon-editor-svg.editor-locked,
 .polygon-editor-svg.editor-locked .outerVertex,
 .polygon-editor-svg.editor-locked .islandVertex,
 .polygon-editor-svg.editor-locked .entryPoint {
@@ -2815,152 +2636,29 @@ video::-webkit-media-controls-start-playback-button {
     pointer-events: none !important;
 }
 
-/* Tablet & Moderate Mobile: Preserve 1 line strictly */
+/* Tablet (<= 600px) */
 @media (max-width: 600px) {
-    .boundary-svg-container {
-        margin: 6px auto 14px auto;
-    }
-
-    .boundary-toolbar {
-        gap: 6px 12px;
-        padding: 8px 8px 5px 8px;
-    }
-
-    .toggle-column {
-        gap: 6px;
-    }
-
-    .boundary-toolbar .hywe-label {
-        font-size: 0.82rem;
-        min-width: 36px;
-    }
-
-    .boundary-toolbar .hywe-btn-sm {
-        font-size: 0.68rem;
-        padding: 2px 6px;
-    }
-
-    .dimension-fields,
-    .action-column {
-        padding-left: 12px;
-        gap: 6px;
-    }
-
-    .dimension-inputs {
-        gap: 6px;
-    }
-
-    .boundaryInput {
-        width: 36px;
-        font-size: 0.85rem;
-    }
-
-    .boundary-scale-text {
-        font-size: 0.85rem;
-    }
-
-    .action-column .hywe-btn {
-        font-size: 0.72rem;
-        padding: 2px 5px;
-    }
+    .boundary-svg-container { margin: 6px auto 14px auto; }
+    .boundary-toolbar { gap: 6px 10px; padding: 8px 6px 5px; }
+    .toggle-column { gap: 6px; }
+    .boundary-toolbar .hywe-label { font-size: 0.82rem; min-width: 34px; }
+    .boundary-toolbar .hywe-btn-sm { font-size: 0.68rem; padding: 2px 5px; }
+    .dimension-fields, .action-column { padding-left: 10px; gap: 6px; }
+    .dimension-inputs { gap: 6px; }
+    .boundaryInput, .boundary-scale-text { font-size: 0.85rem; width: 34px; }
+    .action-column .hywe-btn { font-size: 0.70rem; padding: 2px 4px; }
 }
 
-/* Narrow Mobile: All 3 columns stay strictly on 1 line with zero scroll */
+/* Mobile & Ultra-Compact (<= 440px) */
 @media (max-width: 440px) {
-    .boundary-toolbar {
-        gap: 3px 6px;
-        padding: 6px 4px 4px 4px;
-        justify-content: center;
-    }
-
-    .toggle-column {
-        gap: 4px;
-    }
-
-    .toggle-column .hywe-row {
-        gap: 2px;
-    }
-
-    .boundary-toolbar .hywe-label {
-        font-size: 0.72rem;
-        min-width: 28px !important;
-    }
-
-    .boundary-toolbar .hywe-btn-sm {
-        font-size: 0.65rem !important;
-        padding: 2px 4px !important;
-        letter-spacing: 0;
-    }
-
-    .dimension-fields,
-    .action-column {
-        padding-left: 6px;
-        gap: 4px;
-        border-left: 1px solid #e5e5e5;
-    }
-
-    .dimension-inputs {
-        gap: 4px;
-    }
-
-    .field-group {
-        gap: 2px;
-    }
-
-    .boundaryInput {
-        width: 28px;
-        font-size: 0.75rem;
-    }
-
-    .boundary-scale-text {
-        font-size: 0.75rem !important;
-    }
-
-    .action-trio-row {
-        gap: 2px;
-    }
-
-    .action-column .hywe-btn {
-        font-size: 0.66rem;
-        padding: 2px 3px;
-    }
-}
-
-/* Ultra-narrow devices (<= 360px) */
-@media (max-width: 360px) {
-    .boundary-toolbar {
-        gap: 2px 4px;
-        padding: 5px 2px 3px 2px;
-    }
-
-    .boundary-toolbar .hywe-label {
-        font-size: 0.66rem;
-        min-width: 24px !important;
-    }
-
-    .boundary-toolbar .hywe-btn-sm {
-        font-size: 0.60rem !important;
-        padding: 1px 3px !important;
-    }
-
-    .dimension-fields,
-    .action-column {
-        padding-left: 4px;
-    }
-
-    .boundaryInput {
-        width: 24px;
-        font-size: 0.70rem;
-    }
-
-    .boundary-scale-text {
-        font-size: 0.70rem !important;
-    }
-
-    .action-column .hywe-btn {
-        font-size: 0.60rem;
-        padding: 1px 2px;
-    }
+    .boundary-toolbar { gap: 3px 5px; padding: 5px 3px 3px; }
+    .toggle-column, .dimension-inputs, .action-column { gap: 4px; }
+    .toggle-column .hywe-row, .field-group, .action-trio-row { gap: 2px; }
+    .boundary-toolbar .hywe-label { font-size: 0.70rem; min-width: 26px !important; }
+    .boundary-toolbar .hywe-btn-sm { font-size: 0.62rem !important; padding: 1px 3px !important; letter-spacing: 0; }
+    .dimension-fields, .action-column { padding-left: 5px; border-left-color: #e5e5e5; }
+    .boundaryInput, .boundary-scale-text { font-size: 0.72rem !important; width: 26px; }
+    .action-column .hywe-btn { font-size: 0.62rem; padding: 1px 3px; }
 }
 
 
@@ -3009,8 +2707,18 @@ video::-webkit-media-controls-start-playback-button {
     margin-bottom: 0px;
 }
 
-.variation-selection-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding-top: 8px; }
-.variation-grid-controls { display: flex; gap: 10px; margin-bottom: 4px; }
+.variation-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.variation-grid-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+}
 
 .var-chip {
     padding: 4px 6px;
@@ -3024,8 +2732,16 @@ video::-webkit-media-controls-start-playback-button {
     user-select: none;
 }
 
-.var-chip:hover { border-color: #aaa; background: #fafafa; }
-.var-chip.selected { background: #e8e8e8; color: #111; border-color: #d8d8d8; }
+.var-chip:hover {
+    border-color: #aaa;
+    background: #fafafa;
+}
+
+.var-chip.selected {
+    background: #e8e8e8;
+    color: #111;
+    border-color: #d8d8d8;
+}
 
 .report-toggle-row {
     display: flex;
@@ -3038,9 +2754,28 @@ video::-webkit-media-controls-start-playback-button {
     user-select: none;
 }
 
-.report-toggle-row input[type=checkbox] { accent-color: #666; width: 14px; height: 14px; cursor: pointer; }
-.report-page-count { font-size: 11px; color: #999; text-align: center; margin-bottom: 10px; letter-spacing: 0.5px; }
-.report-status { font-size: 11px; color: #888; text-align: center; margin-top: 8px; min-height: 16px; }
+.report-toggle-row input[type=checkbox] {
+    accent-color: #666;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.report-page-count {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.report-status {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin-top: 8px;
+    min-height: 16px;
+}
 
 .report-spinner {
     display: inline-block;
@@ -3157,9 +2892,27 @@ video::-webkit-media-controls-start-playback-button {
     transition: all 0.15s ease;
 }
 
-.layout-legend-item:hover { background: #f8fafc; border-color: #cbd5e1; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06); }
-.layout-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0, 0, 0, 0.15); }
-.layout-legend-label { font-size: 0.78rem; font-weight: 500; color: #334155; line-height: 1.3; overflow-wrap: anywhere; }
+.layout-legend-item:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.layout-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.layout-legend-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
 
 /* Hymap Map Mode Controls - Compact & Corner Positioned */
 .hymap-lock-btn,
@@ -3190,7 +2943,9 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* Push Leaflet controls closer to corners & unify 22px micro sizing */
-#hymap-container .leaflet-control { margin: 6px !important; }
+#hymap-container .leaflet-control {
+    margin: 6px !important;
+}
 
 #hymap-container .leaflet-control-geocoder.leaflet-bar,
 #hymap-container .leaflet-control-geocoder-icon,
@@ -3218,8 +2973,13 @@ video::-webkit-media-controls-start-playback-button {
     border-radius: 0 !important;
 }
 
-#hymap-container .leaflet-control-zoom a:first-child { border-radius: 3px 3px 0 0 !important; }
-#hymap-container .leaflet-control-zoom a:last-child { border-radius: 0 0 3px 3px !important; }
+#hymap-container .leaflet-control-zoom a:first-child {
+    border-radius: 3px 3px 0 0 !important;
+}
+
+#hymap-container .leaflet-control-zoom a:last-child {
+    border-radius: 0 0 3px 3px !important;
+}
 
 /* Leaflet Attribution at bottom-left */
 #hymap-container .leaflet-control-attribution {
@@ -3243,13 +3003,40 @@ video::-webkit-media-controls-start-playback-button {
     font-size: 15px;
 }
 
-.seo-intro h1 { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
-.seo-intro h2 { font-size: 18px; font-weight: 500; margin: 24px 0 8px; }
-.seo-intro p { font-weight: 300; margin-bottom: 12px; }
-.seo-intro a { color: #1e2327; font-weight: 500; }
-.seo-intro a:hover { color: #000; }
-.seo-intro ul { margin: 8px 0 16px 20px; padding: 0; }
-.seo-intro li { margin-bottom: 6px; }
+.seo-intro h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.seo-intro h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 24px 0 8px;
+}
+
+.seo-intro p {
+    font-weight: 300;
+    margin-bottom: 12px;
+}
+
+.seo-intro a {
+    color: #1e2327;
+    font-weight: 500;
+}
+
+.seo-intro a:hover {
+    color: #000;
+}
+
+.seo-intro ul {
+    margin: 8px 0 16px 20px;
+    padding: 0;
+}
+
+.seo-intro li {
+    margin-bottom: 6px;
+}
 
 /* ==========================================================================
    ABOUT MODAL
@@ -3809,6 +3596,7 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 @keyframes glowPulse {
+
     0%,
     100% {
         filter: brightness(1);
