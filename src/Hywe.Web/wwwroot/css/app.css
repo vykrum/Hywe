@@ -713,7 +713,13 @@ input[type=number] {
     justify-content: space-between;
     width: 100%;
     margin-top: 0;
-    padding: 4px 8px;
+    padding: 3px 6px;
+    font-size: 9.5px;
+}
+
+.drawer-harvest-trigger .hywe-badge {
+    font-size: 7.5px;
+    padding: 1px 4px;
 }
 
 .drawer-gallery-link {
