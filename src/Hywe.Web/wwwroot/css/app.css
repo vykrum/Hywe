@@ -2411,13 +2411,7 @@ video::-webkit-media-controls-start-playback-button {
     }
 }
 
-/* Submit Button styling */
-/* Submit Button specific overrides if any */
-
-
-/* =====================
-   FOOTER LICENSE
-   ===================== */
+/* Footer License */
 .license-footer {
     font-size: 11px;
     color: #808080;
@@ -2426,49 +2420,11 @@ video::-webkit-media-controls-start-playback-button {
     opacity: 0.6;
     transition: opacity 0.3s ease;
 }
+.license-footer a { color: #808080; text-decoration: none; }
+.license-footer a:hover { color: #aaa; text-decoration: underline; }
+#footer.visible .license-footer { opacity: 1; }
 
-.license-footer a {
-    color: #808080;
-    text-decoration: none;
-}
-
-.license-footer a:hover {
-    color: #aaa;
-    text-decoration: underline;
-}
-
-#footer.visible .license-footer {
-    opacity: 1;
-}
-
-/* Download button anchored to the footer flow */
-.layout-download-btn.active {
-    border-color: #333;
-    color: #333;
-    background: #f0f0f0;
-}
-
-.view-lock-trigger {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s, transform 0.1s;
-    color: #999;
-}
-
-.view-lock-trigger:hover {
-    color: #333;
-    transform: scale(1.1);
-}
-
-.view-lock-trigger.locked {
-    color: #E67E22;
-}
-
-.view-lock-trigger.locked:hover {
-    color: #d35400;
-}
+.layout-download-btn.active { border-color: #333; color: #333; background: #f0f0f0; }
 
 /* =========================================
    POLYGON EDITOR
