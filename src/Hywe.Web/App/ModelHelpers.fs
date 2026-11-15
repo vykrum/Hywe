@@ -223,7 +223,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
                                 button {
                                     attr.id "waggle-harvest-btn"
-                                    attr.``class`` "drawer-harvest-trigger"
+                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light drawer-harvest-trigger"
                                     attr.title "Open Harvest & Export window"
                                     "onclick:stopPropagation" => true
                                     on.click (fun _ -> 
@@ -237,7 +237,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                                     }
                                     if panelBadge <> "" then
                                         span {
-                                            attr.``class`` "drawer-harvest-badge"
+                                            attr.``class`` "hywe-badge"
                                             text panelBadge
                                         }
                                 }

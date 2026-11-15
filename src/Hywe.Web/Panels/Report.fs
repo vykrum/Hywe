@@ -617,7 +617,7 @@ let viewReport (model: Model) dispatch =
             let isNest = marker.StartsWith("N")
             let s = match Map.tryFind marker opts.LevelSections with | Some sections -> sections | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             div {
-                attr.``class`` "report-level-card"
+                attr.``class`` "hywe-card report-level-card"
                 attr.style (if isNest then "margin-left: 40px;" else "")
                 div { attr.``class`` "report-level-header"; text (getMarkerTitle marker) }
                 div {

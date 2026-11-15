@@ -403,7 +403,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 div {
                     attr.``class`` "prop-stepper"
                     button {
-                        attr.``class`` "prop-step-btn"
+                        attr.``class`` "hywe-btn prop-step-btn"
                         attr.title "Decrease Area (-1)"
                         "disabled" => isAnchorForThisView
                         "onpointerdown:stopPropagation" => true
@@ -423,7 +423,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                         on.input (fun e -> dispatch (UpdateWeight (node.Id, string e.Value)))
                     }
                     button {
-                        attr.``class`` "prop-step-btn"
+                        attr.``class`` "hywe-btn prop-step-btn"
                         attr.title "Increase Area (+1)"
                         "disabled" => isAnchorForThisView
                         "onpointerdown:stopPropagation" => true
@@ -442,7 +442,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 attr.``class`` "prop-actions"
                 if nestIdOpt.IsNone then
                     button {
-                        attr.``class`` "prop-action-btn"
+                        attr.``class`` "hywe-btn hywe-btn-sm prop-action-btn"
                         attr.title "Add Child"
                         on.pointerdown (fun _ -> dispatch (AddChild node.Id))
                         SvgAdd().Elt()
@@ -450,7 +450,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     }
                 if Actions.deleteActionLogic.IsApplicable model node then
                     button {
-                        attr.``class`` "prop-action-btn prop-btn-delete"
+                        attr.``class`` "hywe-btn hywe-btn-sm prop-action-btn prop-btn-delete"
                         attr.title (if isRoot && model.ActiveNest.IsSome then "Delete Nest" else "Delete Node")
                         on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, ActionIds.Delete)))
                         SvgDelete().Elt()
@@ -458,7 +458,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                     }
                 if Actions.elevateActionLogic.IsApplicable model node then
                     button {
-                        attr.``class`` "prop-action-btn prop-btn-elevate"
+                        attr.``class`` "hywe-btn hywe-btn-sm prop-action-btn prop-btn-elevate"
                         attr.title "Elevate Node"
                         on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, ActionIds.Elevate)))
                         SvgElevate().Elt()
@@ -467,14 +467,14 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 match nestIdOpt with
                 | Some nId ->
                     button {
-                        attr.``class`` "prop-action-btn prop-btn-nest"
+                        attr.``class`` "hywe-btn hywe-btn-sm prop-action-btn prop-btn-nest"
                         attr.title $"Jump to Nest N{nId}"
                         on.pointerdown (fun _ -> dispatch (SetNest nId))
                         text $"N{nId}"
                     }
                 | None when Actions.nestActionLogic.IsApplicable model node ->
                     button {
-                        attr.``class`` "prop-action-btn prop-btn-nest"
+                        attr.``class`` "hywe-btn hywe-btn-sm prop-action-btn prop-btn-nest"
                         attr.title "Nest Node"
                         on.pointerdown (fun _ -> dispatch (PrepareAction (node.Id, ActionIds.Nest)))
                         SvgNest().Elt()
@@ -483,7 +483,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                 | _ -> ()
 
                 button {
-                    attr.``class`` "prop-action-btn prop-close-btn"
+                    attr.``class`` "hywe-btn hywe-btn-sm prop-action-btn prop-close-btn"
                     attr.title "Deselect"
                     on.pointerdown (fun _ -> dispatch (SelectNode None))
                     text "✕"

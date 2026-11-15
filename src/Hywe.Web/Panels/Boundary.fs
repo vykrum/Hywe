@@ -132,13 +132,13 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
             button {
                 attr.id "hywe-boundary-guide-btn"
                 attr.``type`` "button"
-                attr.``class`` (classList [ "boundary-instructions-link", true; "active", model.ShowInstructions ])
+                attr.``class`` (classList [ "hywe-btn hywe-btn-sm hywe-btn-light u-w-full", true; "active", model.ShowInstructions ])
                 on.click (fun _ -> dispatch ToggleInstructions)
                 text "Boundary Guide"
             }
             button {
                 attr.``type`` "button"
-                attr.``class`` "boundary-instructions-link"
+                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light u-w-full"
                 attr.disabled (not model.UseBoundary || model.UseMapBase || model.IsLocked)
                 on.click (fun _ -> dispatch RequestResetBoundary)
                 text "Reset Boundary"
@@ -153,7 +153,7 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
                 let trioBtn title disabled isActive onClick content =
                     button {
                         attr.``type`` "button"
-                        attr.``class`` (classList [ "boundary-trio-btn", true; "active-locked", isActive ])
+                        attr.``class`` (classList [ "hywe-btn hywe-btn-sm hywe-btn-light", true; "active-locked", isActive ])
                         attr.title title
                         attr.disabled disabled
                         on.click (fun _ -> onClick ())
@@ -210,13 +210,12 @@ let instructionsModal model dispatch (js: IJSRuntime) =
 
         div {
             attr.key "boundary-instructions-overlay"
-            attr.``class`` "boundary-instructions-overlay"
-            attr.style "position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;"
+            attr.``class`` "hywe-modal-overlay active"
             on.click (fun _ -> closeGuide ())
 
             div {
-                attr.``class`` "boundary-instructions-card"
-                attr.style "width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto; background: #ffffff; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); padding: 20px 22px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;"
+                attr.``class`` "hywe-modal-content"
+                attr.style "max-width: 440px; max-height: 85vh; overflow-y: auto;"
                 "onclick:stopPropagation" => true
                 "onpointerdown:stopPropagation" => true
 
