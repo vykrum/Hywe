@@ -3380,51 +3380,20 @@ video::-webkit-media-controls-start-playback-button {
    ========================================================================== */
 .seo-intro {
     max-width: 800px;
-    margin: 60px auto 40px auto;
+    margin: 60px auto 40px;
     padding: 24px;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     color: #363636;
     line-height: 1.6;
-}
-
-.seo-intro h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-.seo-intro h2 {
-    font-size: 18px;
-    font-weight: 500;
-    margin-top: 24px;
-    margin-bottom: 8px;
-}
-
-.seo-intro p {
     font-size: 15px;
-    font-weight: 300;
-    margin-bottom: 12px;
 }
 
-.seo-intro a {
-    color: #1e2327;
-    text-decoration: underline;
-    font-weight: 500;
-}
-
-.seo-intro a:hover {
-    color: #000;
-}
-
-.seo-intro ul {
-    margin: 8px 0 16px 20px;
-    padding: 0;
-}
-
-.seo-intro li {
-    font-size: 15px;
-    margin-bottom: 6px;
-}
+.seo-intro h1 { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+.seo-intro h2 { font-size: 18px; font-weight: 500; margin: 24px 0 8px; }
+.seo-intro p { font-weight: 300; margin-bottom: 12px; }
+.seo-intro a { color: #1e2327; font-weight: 500; }
+.seo-intro a:hover { color: #000; }
+.seo-intro ul { margin: 8px 0 16px 20px; padding: 0; }
+.seo-intro li { margin-bottom: 6px; }
 
 /* ==========================================================================
    ABOUT MODAL
