@@ -25,7 +25,7 @@ let classList (classes: (string * bool) list) =
 
 let toggleBtn label isActive isEnabled onSelect =
     button {
-        attr.``class`` (classList [ "hywe-btn hywe-btn-sm", true; "hywe-btn-dark active", isActive; "hywe-btn-flat", not isActive ])
+        attr.``class`` (classList [ "hywe-btn", true; "active", isActive ])
         attr.disabled (not isEnabled)
         on.click (fun _ -> match isEnabled && not isActive with true -> onSelect () | false -> ())
         text label
@@ -132,13 +132,13 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
             button {
                 attr.id "hywe-boundary-guide-btn"
                 attr.``type`` "button"
-                attr.``class`` (classList [ "hywe-btn hywe-btn-sm hywe-btn-light u-w-full", true; "active", model.ShowInstructions ])
+                attr.``class`` (classList [ "hywe-btn u-w-full", true; "active", model.ShowInstructions ])
                 on.click (fun _ -> dispatch ToggleInstructions)
                 text "Boundary Guide"
             }
             button {
                 attr.``type`` "button"
-                attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light u-w-full"
+                attr.``class`` "hywe-btn u-w-full"
                 attr.disabled (not model.UseBoundary || model.UseMapBase || model.IsLocked)
                 on.click (fun _ -> dispatch RequestResetBoundary)
                 text "Reset Boundary"
@@ -153,7 +153,7 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
                 let trioBtn title disabled isActive onClick content =
                     button {
                         attr.``type`` "button"
-                        attr.``class`` (classList [ "hywe-btn hywe-btn-sm hywe-btn-light", true; "active-locked", isActive ])
+                        attr.``class`` (classList [ "hywe-btn", true; "active-locked", isActive ])
                         attr.title title
                         attr.disabled disabled
                         on.click (fun _ -> onClick ())
@@ -224,7 +224,7 @@ let instructionsModal model dispatch (js: IJSRuntime) =
                     h4 { attr.style "margin: 0; font-size: 1.05rem; color: #111; font-weight: 600;"; text "Boundary Guide" }
                     button {
                         attr.``type`` "button"
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat"
+                        attr.``class`` "hywe-btn"
                         attr.style "padding: 2px 8px; font-size: 0.85rem;"
                         on.click (fun _ -> closeGuide ())
                         text "Close"

@@ -191,9 +191,7 @@ let initModel =
         CurrentScreen = LoadingScreen
         ViewLocked = false
         EditsCount = 0
-        IsPresetsCollapsed = true
         IsWorkspaceCollapsed = true
-        IsHarvestCollapsed = true
         IsTreeCollapsed = false
         PendingConfirm = None
         UndoStack = []
@@ -684,7 +682,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let m = pushUndo model |> applyAlterationSuffix js
         let nextCount = m.EditsCount + 1
         let isSecondEdit = nextCount = 2
-        let nextCollapse = isSecondEdit || model.IsPresetsCollapsed
         let nextWorkspaceCollapse = isSecondEdit || model.IsWorkspaceCollapsed
 
         let synced = PageHelpers.syncSyntaxToModel value m
@@ -699,7 +696,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
             LayoutCache = Map.empty
             NeedsHyweave = true
             EditsCount = nextCount 
-            IsPresetsCollapsed = nextCollapse 
             IsWorkspaceCollapsed = nextWorkspaceCollapse
         }, Cmd.OfAsync.perform (fun () -> async { FileManager.sync js value m.ActivePanel }) () (fun _ -> NoOp)
 
@@ -828,7 +824,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
         let newOutput = serializeModelTree updatedTree newSqns modelToUse.PolygonExport
 
         let isSecondEdit = nextCount = 2
-        let nextCollapse = isSecondEdit || modelToUse.IsPresetsCollapsed
         let nextWorkspaceCollapse = isSecondEdit || modelToUse.IsWorkspaceCollapsed
         
         let derivedData =
@@ -845,7 +840,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                 Derived = derivedData
                 NeedsHyweave = false
                 EditsCount = nextCount
-                IsPresetsCollapsed = nextCollapse
                 IsWorkspaceCollapsed = nextWorkspaceCollapse }
 
         match subMsg with
@@ -1207,7 +1201,6 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
                         Derived = Cache.deriveFromSource cleanContent newSqns newExport newTree.ActiveLevel
                         LayoutCache = Map.empty
                         NeedsHyweave = false
-                        IsPresetsCollapsed = true
                         IsWorkspaceCollapsed = true
                         IsTreeCollapsed = false
                         EditsCount = 0
@@ -1279,21 +1272,11 @@ let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Mess
     | TransitionToMain ->
         { model with 
             CurrentScreen = MainScreen
-            IsPresetsCollapsed = true 
             IsWorkspaceCollapsed = true
         }, Cmd.none
 
-    | TogglePresetsCollapse ->
-        { model with IsPresetsCollapsed = not model.IsPresetsCollapsed }, Cmd.none
-
     | ToggleWorkspaceCollapse ->
         { model with IsWorkspaceCollapsed = not model.IsWorkspaceCollapsed }, Cmd.none
-
-    | ToggleHarvestCollapse ->
-        { model with IsHarvestCollapsed = not model.IsHarvestCollapsed }, Cmd.none
-
-    | SetHarvestCollapse collapsed ->
-        { model with IsHarvestCollapsed = collapsed }, Cmd.none
 
     | ToggleTreeCollapse ->
         { model with IsTreeCollapsed = not model.IsTreeCollapsed }, Cmd.none

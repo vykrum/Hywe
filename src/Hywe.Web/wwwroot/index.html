@@ -219,6 +219,7 @@
 
     <base href="/">
     <link rel="stylesheet" href="css/app.css?v=17" />
+    <link rel="stylesheet" href="css/tutorial.css?v=1" />
     <link id="leaflet-css" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link id="leaflet-geocoder-css" rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
@@ -253,7 +254,7 @@
             </div>
         </header>
 
-        <dialog id="pre-about-dialog">
+        <dialog id="pre-about-dialog" class="hywe-prose">
             <button type="button" class="hywe-modal-close" onclick="document.getElementById('pre-about-dialog').close()" aria-label="Close dialog">✕</button>
             <h1>HYWE <span style="font-size: 15px; font-weight: 400; color: #666; margin-left: 8px;">Hygrid Woven Ensemble</span></h1>
             <p style="font-size: 15px; line-height: 1.6; color: #1a1a1a; margin: 16px 0 12px 0;">
@@ -267,13 +268,13 @@
             </p>
 
             <h2>Define → Generate → Explore</h2>
-            <div class="about-feature-grid">
-                <div class="about-feature-card">
+            <div class="hywe-auto-grid">
+                <div class="hywe-card hywe-card-accent">
                     <strong>Define</strong>
                     <p>Express architectural intent through hierarchical structure, spatial relationships, sequence, boundaries, and constraints.</p>
                     <p style="margin-top: 8px; color: #777; font-size: 12px;">Intent can be constructed visually or represented through HYWE's compact spatial syntax.</p>
                 </div>
-                <div class="about-feature-card">
+                <div class="hywe-card hywe-card-accent">
                     <strong>Generate</strong>
                     <p>HYWE translates this relational structure into spatial configurations using its discrete Hygrid model.</p>
                     <p style="margin-top: 8px; margin-bottom: 4px; font-weight: 500; font-size: 12px; color: #555;">The same underlying relationships can resolve into:</p>
@@ -285,7 +286,7 @@
                     </ul>
                     <p style="margin: 0; color: #777; font-size: 12px;">Because the process is deterministic, the same encoded intent produces the same configuration.</p>
                 </div>
-                <div class="about-feature-card">
+                <div class="hywe-card hywe-card-accent">
                     <strong>Explore</strong>
                     <p>The generated configurations become a space for investigation.</p>
                     <p style="margin-top: 8px; color: #666; font-size: 12px;">Inspect relationships, modify constraints, compare alternatives, analyse spatial properties, and explore permutations of the same underlying intent.</p>
@@ -327,26 +328,26 @@
                 The application, computational engine, documentation, and growing dataset form parts of the same ongoing research.
             </p>
 
-            <div class="about-links-grid">
-                <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header"><span>HYWE Wiki</span><span>→</span></div>
-                    <div class="about-link-chip-url">wiki.hywe.in</div>
+            <div class="hywe-auto-grid">
+                <a href="https://wiki.hywe.in" target="_blank" rel="noopener noreferrer" class="hywe-card-link">
+                    <div class="hywe-card-link-header"><span>HYWE Wiki</span><span>→</span></div>
+                    <div class="hywe-card-link-url">wiki.hywe.in</div>
                 </a>
-                <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header"><span>HYWE Engine</span><span>→</span></div>
-                    <div class="about-link-chip-url">repo.hywe.in</div>
+                <a href="https://repo.hywe.in" target="_blank" rel="noopener noreferrer" class="hywe-card-link">
+                    <div class="hywe-card-link-header"><span>HYWE Engine</span><span>→</span></div>
+                    <div class="hywe-card-link-url">repo.hywe.in</div>
                 </a>
-                <a href="https://data.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header"><span>HYWE Data</span><span>→</span></div>
-                    <div class="about-link-chip-url">data.hywe.in</div>
+                <a href="https://data.hywe.in" target="_blank" rel="noopener noreferrer" class="hywe-card-link">
+                    <div class="hywe-card-link-header"><span>HYWE Data</span><span>→</span></div>
+                    <div class="hywe-card-link-url">data.hywe.in</div>
                 </a>
-                <a href="https://linkedin.hywe.in" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header"><span>LinkedIn</span><span>→</span></div>
-                    <div class="about-link-chip-url">linkedin.hywe.in</div>
+                <a href="https://linkedin.hywe.in" target="_blank" rel="noopener noreferrer" class="hywe-card-link">
+                    <div class="hywe-card-link-header"><span>LinkedIn</span><span>→</span></div>
+                    <div class="hywe-card-link-url">linkedin.hywe.in</div>
                 </a>
-                <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer" class="about-link-chip">
-                    <div class="about-link-chip-header"><span>X (Twitter)</span><span>→</span></div>
-                    <div class="about-link-chip-url">x.com/_hywe_</div>
+                <a href="https://x.com/_hywe_" target="_blank" rel="noopener noreferrer" class="hywe-card-link">
+                    <div class="hywe-card-link-header"><span>X (Twitter)</span><span>→</span></div>
+                    <div class="hywe-card-link-url">x.com/_hywe_</div>
                 </a>
             </div>
         </dialog>
@@ -367,7 +368,7 @@
         </div>
 
         <!-- Semantic Static Content for Crawlers, LLMs, and Initial Indexing -->
-        <section class="seo-intro" id="about-hywe-overview">
+        <section class="seo-intro hywe-prose" id="about-hywe-overview">
             <h1>HYWE — Computational Spatial Design Environment</h1>
             <p>
                 HYWE is a computational spatial design environment for generating and exploring architectural layouts

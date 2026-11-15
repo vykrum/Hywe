@@ -29,7 +29,7 @@ let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node)
     match msg with
     | Some m ->
         button {
-            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-flat " + cls)
+            attr.``class`` ("hywe-btn " + cls)
             attr.style ("padding: 2px; " + style)
             attr.title title
             on.click (fun _ -> dispatch m)
@@ -37,7 +37,7 @@ let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node)
         }
     | None ->
         button {
-            attr.``class`` ("hywe-btn hywe-btn-sm hywe-btn-flat " + cls)
+            attr.``class`` ("hywe-btn " + cls)
             attr.style ("padding: 2px; " + style)
             attr.title title
             icon
@@ -45,7 +45,7 @@ let private toolbarBtn (title: string) (msg: Message option) (icon: Bolero.Node)
 
 // View helpers
 let private drawerActionBtn (title: string) (label: string) (msg: Message option) (icon: Bolero.Node) (dispatch: Message -> unit) (style: string) =
-    let btnCls = "hywe-btn hywe-btn-sm hywe-btn-flat"
+    let btnCls = "hywe-btn"
     let content =
         concat {
             icon
@@ -118,7 +118,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 div {
                     attr.style "margin-left: auto; margin-top: 6px; pointer-events: auto; display: flex; align-items: center;"
                     button {
-                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet"
+                        attr.``class`` "hywe-btn"
                         attr.title "Install as an App"
                         attr.style "display: flex; align-items: center; gap: 2px; padding: 1px 4px; border: 1px solid rgba(0,0,0,0.1); background: transparent; box-shadow: none; opacity: 0.6; transition: opacity 0.2s ease;"
                         on.click (fun _ -> dispatch InstallRequested)
@@ -129,7 +129,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 }
         }
         
-        // 2. Exchange Drawer (Always available, top drawer)
+        // 2. Waggle Exchange Drawer
         let isWorkspaceCollapsed = model.IsWorkspaceCollapsed
         concat {
             div {
@@ -138,11 +138,11 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
             }
 
             div {
-                attr.``class`` (match isWorkspaceCollapsed with true -> "preset-drawer collapsed" | false -> "preset-drawer")
+                attr.``class`` (match isWorkspaceCollapsed with true -> "waggle-exchange collapsed" | false -> "waggle-exchange")
                 attr.style "top: 132px;"
                 
                 div {
-                    attr.``class`` "preset-drawer-content"
+                    attr.``class`` "waggle-exchange-content"
                     attr.style "width: 145px; min-width: 145px; max-width: 145px; box-sizing: border-box; max-height: calc(100vh - 160px); overflow-y: auto;"
                     
                     div {
@@ -223,7 +223,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
 
                                 button {
                                     attr.id "waggle-harvest-btn"
-                                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-light drawer-harvest-trigger"
+                                    attr.``class`` "hywe-btn drawer-harvest-trigger"
                                     attr.title "Open Harvest & Export window"
                                     "onclick:stopPropagation" => true
                                     on.click (fun _ -> 
@@ -282,7 +282,7 @@ let private viewNodeCodeButtons (model: Model) (dispatch: Message -> unit) (js: 
                 }
 
                 div {
-                    attr.``class`` "preset-drawer-handle"
+                    attr.``class`` "waggle-exchange-handle"
                     on.click (fun _ -> dispatch ToggleWorkspaceCollapse)
                     span { 
                         attr.style "white-space: pre;"
@@ -375,7 +375,7 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
         | None -> false
     
     let buttonClass = 
-        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-dark hyWeaveButton"
+        let baseClass = "hywe-btn hyWeaveButton"
         let cls1 = match model.IsHyweaving with true -> baseClass + " stop-state" | false -> match syntaxAltered with true -> baseClass + " needs-update" | false -> baseClass
         match isHyweaveTutorialHl with true -> cls1 + " tutorial-hl-hyweave-btn" | false -> cls1
 
@@ -419,7 +419,7 @@ let private viewHyweButton (model: Model) (dispatch: Message -> unit) =
 let private viewBoundaryWeaveButton (model: Model) (dispatch: Message -> unit) =
     let isChanged = model.NeedsHyweave && not model.IsHyweaving
     let buttonClass = 
-        let baseClass = "hywe-btn hywe-btn-lg hywe-btn-dark hyWeaveButton"
+        let baseClass = "hywe-btn hyWeaveButton"
         match model.IsHyweaving with 
         | true -> baseClass + " stop-state" 
         | false -> match isChanged with true -> baseClass + " needs-update" | false -> baseClass
@@ -641,7 +641,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                 
                 button {
                     attr.id "tree-floating-mode-btn"
-                    attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-flat tree-floating-toggle-btn"
+                    attr.``class`` "hywe-btn tree-floating-toggle-btn"
                     attr.title (match model.EditorMode with Syntax -> "Switch to Interactive Node Graph" | Interactive -> "Switch to DSL Code Editor")
                     on.click (fun _ -> dispatch ToggleEditorMode)
                     iconSwitchNode model
@@ -759,7 +759,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     
                     // Floating Lock button
                     button {
-                        attr.``class`` ("hywe-btn hywe-btn-circle hywe-btn-flat layout-download-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
+                        attr.``class`` ("hywe-btn layout-download-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
                         attr.title (match model.ViewLocked with true -> "View Locked: Captured for cover" | false -> "Lock 3D view for report cover")
                         attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
                         on.pointerdown (fun _ -> dispatch ToggleViewLock)

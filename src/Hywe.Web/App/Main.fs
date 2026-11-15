@@ -143,14 +143,14 @@ type MyApp() =
                                     match model.InstallPromptAvailable with
                                     | true ->
                                         button {
-                                            attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-light"
+                                            attr.``class`` "hywe-btn"
                                             attr.style "width: 100%; font-size: 10px; font-weight: 600;"
                                             on.click (fun _ -> dispatch InstallRequested)
                                             text "INSTALL"
                                         }
                                     | false -> empty()
                                     button {
-                                        attr.``class`` "hywe-btn hywe-btn-sm hywe-btn-fillet hywe-btn-ghost"
+                                        attr.``class`` "hywe-btn"
                                         attr.style "width: 100%; color: white; opacity: 0.5; font-size: 10px;"
                                         on.click (fun _ -> dispatch (SetPrivacyAlert false))
                                         text "DISMISS"
