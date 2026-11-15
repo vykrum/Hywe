@@ -175,24 +175,6 @@ window.Hymap = {
                 link.href = 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css';
                 document.head.appendChild(link);
             }
-            if (!document.getElementById('hymap-styles')) {
-                const style = document.createElement('style');
-                style.id = 'hymap-styles';
-                style.textContent = `
-                    #hymap-container .leaflet-bar { border-radius: 3px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.25) !important; border: none !important; background: #ffffff; }
-                    #hymap-container .leaflet-control { margin: 6px !important; }
-                    #hymap-container .leaflet-control-geocoder.leaflet-bar,
-                    #hymap-container .leaflet-control-geocoder-icon,
-                    #hymap-container .leaflet-control-zoom.leaflet-bar a { width: 22px !important; height: 22px !important; min-width: 22px !important; min-height: 22px !important; line-height: 22px !important; }
-                    #hymap-container .leaflet-control-geocoder-icon { background-size: 13px 13px !important; border-radius: 3px !important; }
-                    #hymap-container .leaflet-control-geocoder-form input { height: 22px !important; font-size: 11px !important; padding: 0 4px !important; }
-                    #hymap-container .leaflet-control-zoom.leaflet-bar a { font-size: 13px !important; border-radius: 0 !important; }
-                    #hymap-container .leaflet-control-zoom a:first-child { border-radius: 3px 3px 0 0 !important; }
-                    #hymap-container .leaflet-control-zoom a:last-child { border-radius: 0 0 3px 3px !important; }
-                    #hymap-container .leaflet-control-attribution { font-size: 9px !important; background: rgba(255,255,255,0.65) !important; padding: 0 4px !important; line-height: 14px !important; border-radius: 2px !important; margin: 0 0 4px 6px !important; }
-                `;
-                document.head.appendChild(style);
-            }
 
             const loadScript = (src) => new Promise((res, rej) => {
                 const s = document.createElement('script');
