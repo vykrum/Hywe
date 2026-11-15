@@ -3427,47 +3427,8 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* ==========================================================================
-   ABOUT MODAL & SPECS DRAWER
+   ABOUT MODAL
    ========================================================================== */
-/* Mirrored right-edge Drawer Handle Button (matching Waggle Exchange) */
-.specs-drawer-handle {
-    position: absolute;
-    top: 132px;
-    right: 0;
-    z-index: 1802;
-    width: 16px;
-    height: 184px;
-    background: #ffffff;
-    border: 1px solid #eeeeee;
-    border-right: none;
-    border-radius: 4px 0 0 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.03);
-    transition: background 0.2s ease;
-    user-select: none;
-    outline: none;
-    box-sizing: border-box;
-}
-
-.specs-drawer-handle:hover {
-    background: #fafafa;
-}
-
-.specs-drawer-handle span {
-    writing-mode: vertical-rl;
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-    font-size: 8px;
-    font-weight: 600;
-    color: #666666;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    white-space: pre;
-    transform: rotate(180deg);
-}
-
 .hywe-modal-overlay {
     opacity: 0;
     pointer-events: none;
