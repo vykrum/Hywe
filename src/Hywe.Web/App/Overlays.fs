@@ -444,7 +444,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                 div {
                     attr.``class`` "about-feature-grid"
                     div {
-                        attr.``class`` "about-feature-card"
+                        attr.``class`` "hywe-card about-feature-card"
                         strong { text "Define" }
                         p { text "Express architectural intent through hierarchical structure, spatial relationships, sequence, boundaries, and constraints." }
                         p {
@@ -453,7 +453,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                         }
                     }
                     div {
-                        attr.``class`` "about-feature-card"
+                        attr.``class`` "hywe-card about-feature-card"
                         strong { text "Generate" }
                         p { text "HYWE translates this relational structure into spatial configurations using its discrete Hygrid model." }
                         p {
@@ -473,7 +473,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                         }
                     }
                     div {
-                        attr.``class`` "about-feature-card"
+                        attr.``class`` "hywe-card about-feature-card"
                         strong { text "Explore" }
                         p { text "The generated configurations become a space for investigation." }
                         p {
@@ -604,7 +604,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                         }
                     }
                     span {
-                        attr.``class`` "harvest-drawer-badge"
+                        attr.``class`` "hywe-badge"
                         attr.style "font-size: 10px; padding: 3px 8px; background: #e0f2fe; color: #0369a1; border-radius: 12px; font-weight: 600; text-transform: uppercase;"
                         text panelBadge
                     }
@@ -613,7 +613,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                 let harvestCard id title desc badge msg =
                     button {
                         attr.id id
-                        attr.``class`` "harvest-modal-card"
+                        attr.``class`` "hywe-card harvest-modal-card"
                         on.click (fun _ -> dispatch msg)
                         div {
                             attr.``class`` "harvest-modal-card-header"
@@ -623,7 +623,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                                 text title
                             }
                             span {
-                                attr.``class`` "harvest-modal-card-badge"
+                                attr.``class`` "hywe-badge"
                                 text badge
                             }
                         }
@@ -692,7 +692,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                     harvestSectionTitle "Interactive Inspectors"
                     button {
                         attr.id "harvest-toggle-coords"
-                        attr.``class`` "harvest-modal-card"
+                        attr.``class`` "hywe-card harvest-modal-card"
                         attr.style "width: 100%; box-sizing: border-box;"
                         on.click (fun _ -> dispatch ToggleCoords)
                         div {
@@ -702,7 +702,7 @@ let viewHarvestModal (model: Model) (dispatch: Message -> unit) =
                                 text "Coordinates Inspector Window"
                             }
                             span {
-                                attr.``class`` "harvest-modal-card-badge"
+                                attr.``class`` "hywe-badge"
                                 attr.style (if model.IsCoordsVisible then "background: #22c55e; color: #fff;" else "")
                                 text (if model.IsCoordsVisible then "ACTIVE" else "TOGGLE")
                             }

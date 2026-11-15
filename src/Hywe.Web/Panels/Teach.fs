@@ -641,7 +641,7 @@ let view model dispatch =
                     }
                 }
                 div {
-                    attr.``class`` "teach-thumbnail-card"
+                    attr.``class`` "hywe-card teach-thumbnail-card"
                     div {
                         attr.``class`` "teach-thumbnail-preview"
                         attr.title (sprintf "Gallery Thumbnail: %s (%s)" activeLevelMarker (indexToSqn activeVarIdx))
