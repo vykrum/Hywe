@@ -362,6 +362,14 @@ let renderNode
         }
     }
 
+/// <summary> Recursively finds the dot-delimited index path (e.g. "1", "1.2", "1.2.1") of a node. </summary>
+let rec private findNodeIndex (targetId: Guid) (prefix: string) (node: TreeNode) : string option =
+    if node.Id = targetId then Some prefix
+    else
+        node.Children 
+        |> List.indexed 
+        |> List.tryPick (fun (i, child) -> findNodeIndex targetId $"{prefix}.{i + 1}" child)
+
 /// <summary> Renders the properties dock bar for precision editing of the currently selected node. </summary>
 let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
     let currentTree = getCurrentTree model
@@ -374,6 +382,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             model.ActiveLevel > 0 && 
             (model.LevelAnchors |> Map.tryFind model.ActiveLevel = Some node.Id)
         let nestIdOpt = model.NestAnchors |> Map.tryPick (fun k v -> if v = node.Id then Some k else None)
+        let nodeIndex = findNodeIndex node.Id "1" currentTree |> Option.defaultValue "1"
         
         div {
             attr.``class`` "node-properties-bar"
@@ -391,6 +400,12 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
                         span { attr.``class`` "prop-badge prop-badge-level"; text $"L{model.ActiveLevel}" }
                     else
                         span { attr.``class`` "prop-badge prop-badge-level"; text $"L{node.Level}" }
+
+                span { 
+                    attr.``class`` "prop-badge prop-badge-idx"
+                    attr.title $"Node Index: {nodeIndex}"
+                    text $"#{nodeIndex}" 
+                }
             }
 
             div {
