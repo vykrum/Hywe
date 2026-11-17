@@ -68,8 +68,8 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="Bolero" Version="0.25.63" />
-		<PackageReference Include="Bolero.Build" Version="0.25.63" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0-preview.1.25120.3" />
+		<PackageReference Include="Bolero" Version="0.25.65" />
+		<PackageReference Include="Bolero.Build" Version="0.25.65" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.11" />
 	</ItemGroup>
 </Project>
