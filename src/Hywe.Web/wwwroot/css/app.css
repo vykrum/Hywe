@@ -1288,6 +1288,10 @@ video::-webkit-media-controls-start-playback-button {
     background: transparent !important;
     border-bottom: 1px solid transparent;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
     transition: border-bottom-color 0.2s;
 }
 

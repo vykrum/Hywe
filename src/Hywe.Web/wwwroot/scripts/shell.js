@@ -828,3 +828,15 @@ document.addEventListener('keydown', function (e) {
         window._undoRedoDotNet.invokeMethodAsync('HandleRedo'); 
     }
 });
+
+
+// --- Suppress Touch Selection Caret Handles on Node Inputs ---
+document.addEventListener('selectionchange', function () {
+    const active = document.activeElement;
+    if (active && active.classList && (active.classList.contains('nodename') || active.classList.contains('nodeweight'))) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+            sel.collapseToEnd();
+        }
+    }
+});
