@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 // ============================================================================
 // Hywe Shell & Global Interop Utilities
 // Unified browser runtime bridge for PWA lifecycle, DOM interaction,
