@@ -302,6 +302,7 @@ a {
 .prop-badge.prop-badge-level { background: #3b82f6; color: #ffffff; }
 .prop-badge.prop-badge-nest { background: #2ecc71; color: #ffffff; }
 .prop-badge.prop-badge-root { background: #475569; color: #ffffff; }
+.prop-badge.prop-badge-idx { background: #0f172a; color: #f8fafc; font-family: var(--font-mono); font-weight: 600; letter-spacing: 0.2px; }
 
 /* Universal Chips */
 .var-chip {
