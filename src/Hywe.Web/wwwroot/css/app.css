@@ -278,10 +278,7 @@ a {
 
 /* Universal Badges */
 .hywe-badge,
-.editor-title-badge,
-.prop-badge,
-.workspace-meta-badge,
-.layout-card-badge {
+.prop-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -307,7 +304,6 @@ a {
 .prop-badge.prop-badge-root { background: #475569; color: #ffffff; }
 
 /* Universal Chips */
-.hywe-chip,
 .var-chip {
     display: inline-flex;
     align-items: center;
@@ -325,13 +321,10 @@ a {
     box-sizing: border-box;
     color: var(--color-text-main);
 }
-.hywe-chip:hover,
 .var-chip:hover {
     border-color: #aaa;
     background: #fafafa;
 }
-.hywe-chip.selected,
-.hywe-chip.active,
 .var-chip.selected {
     background: #e8e8e8;
     color: #111;
@@ -546,62 +539,6 @@ a {
 textarea.hywe-input {
     min-height: 80px;
     resize: vertical;
-}
-
-.hywe-textarea {
-    min-height: 120px;
-    resize: vertical;
-    line-height: 1.5;
-}
-
-.reset-confirm-tooltip {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    transform: translateX(-50%);
-    margin-top: 8px;
-    background: #fff;
-    border: 1px solid #E67E22;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 4px 20px rgba(230, 126, 34, 0.15);
-    z-index: 10006;
-    min-width: 140px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    animation: fadeInScale 0.2s ease-out;
-    will-change: transform, opacity;
-}
-
-.reset-confirm-tooltip span {
-    font-size: 0.85rem;
-    color: #333;
-    font-weight: 500;
-    text-align: center;
-    text-transform: none;
-    letter-spacing: normal;
-}
-
-.reset-confirm-actions {
-    display: flex;
-    gap: 6px;
-}
-
-.reset-confirm-actions button {
-    flex: 1;
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) scale(0.95) translateY(-5px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(-50%) scale(1) translateY(0);
-    }
 }
 
 
@@ -850,8 +787,7 @@ input[type=number] {
 /* ==========================================================================
    WAGGLE EXCHANGE DRAWER
    ========================================================================== */
-.waggle-exchange,
-.preset-drawer {
+.waggle-exchange {
     position: fixed;
     top: 132px;
     left: 0;
@@ -862,13 +798,11 @@ input[type=number] {
     will-change: transform;
 }
 
-.waggle-exchange.collapsed,
-.preset-drawer.collapsed {
+.waggle-exchange.collapsed {
     transform: translateX(calc(-100% + 16px));
 }
 
-.waggle-exchange-content,
-.preset-drawer-content {
+.waggle-exchange-content {
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -988,8 +922,7 @@ input[type=number] {
     margin: 0;
 }
 
-.waggle-exchange-handle,
-.preset-drawer-handle {
+.waggle-exchange-handle {
     width: 16px;
     background: #fff;
     border: 1px solid var(--color-border);
@@ -1003,13 +936,11 @@ input[type=number] {
     transition: background 0.2s ease;
 }
 
-.waggle-exchange-handle:hover,
-.preset-drawer-handle:hover {
+.waggle-exchange-handle:hover {
     background: #fafafa;
 }
 
-.waggle-exchange-handle span,
-.preset-drawer-handle span {
+.waggle-exchange-handle span {
     writing-mode: vertical-rl;
     font-size: 8px;
     font-weight: 600;
@@ -1038,8 +969,7 @@ input[type=number] {
    ===================== */
 /* Animated loading indicator Ã¢â‚¬â€ used in hyWeave button and other loading states */
 .spinner,
-.report-spinner,
-.hywe-spinner {
+.report-spinner {
     display: inline-block;
     flex-shrink: 0;
     width: 14px;
@@ -1358,6 +1288,10 @@ video::-webkit-media-controls-start-playback-button {
     background: transparent !important;
     border-bottom: 1px solid transparent;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
     transition: border-bottom-color 0.2s;
 }
 
@@ -2376,7 +2310,7 @@ video::-webkit-media-controls-start-playback-button {
 .islandVertexLabel { fill: #5C1A1B; }
 
 /* Boundary Interop Hidden Triggers */
-#hymap-data, #hymap-trigger, #hymap-live-data, #hymap-live-trigger { display: none !important; }
+#hymap-data, #hymap-trigger { display: none !important; }
 
 /* Boundary Containers & Stacking */
 #hywe-polygon-editor { position: relative; width: 100%; box-sizing: border-box; }
@@ -2595,13 +2529,6 @@ video::-webkit-media-controls-start-playback-button {
     min-width: 0;
 }
 
-.workspace-meta-icon {
-    display: inline-flex;
-    align-items: center;
-    color: var(--color-text-light);
-    flex-shrink: 0;
-}
-
 .workspace-meta-title,
 .workspace-meta-author {
     background: transparent;
@@ -2629,12 +2556,6 @@ video::-webkit-media-controls-start-playback-button {
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
-}
-
-.workspace-meta-by {
-    font-size: 0.75rem;
-    color: var(--color-text-light);
-    user-select: none;
 }
 
 .workspace-meta-author {

@@ -217,6 +217,10 @@ let private renderInlineControls
             attr.``class`` "nodename"
             attr.value node.Name
             "readonly" => (state.IsAnchorForThisView || not state.IsSelected)
+            "autocomplete" => "off"
+            "autocorrect" => "off"
+            "autocapitalize" => "off"
+            "spellcheck" => "false"
             on.stopPropagation "pointerdown" true
             on.stopPropagation "click" true
             on.pointerdown (fun _ -> 
@@ -235,6 +239,10 @@ let private renderInlineControls
             attr.``class`` "nodeweight"
             attr.value node.Weight
             "readonly" => (state.IsAnchorForThisView || not state.IsSelected)
+            "autocomplete" => "off"
+            "autocorrect" => "off"
+            "autocapitalize" => "off"
+            "spellcheck" => "false"
             on.stopPropagation "pointerdown" true
             on.stopPropagation "click" true
             on.pointerdown (fun _ -> 
