@@ -108,7 +108,7 @@ a {
     transition: all 0.15s ease;
 }
 
-.hywe-btn:hover:not(:disabled) {
+.hywe-btn:hover:not(:disabled):not(.active) {
     background: #f1f3f5;
     border-color: #cbd2d9;
     color: #111827;
@@ -118,6 +118,12 @@ a {
 .hywe-btn.active {
     background: #333333;
     border-color: #222222;
+    color: #ffffff;
+}
+
+.hywe-btn.active:hover:not(:disabled) {
+    background: #222222;
+    border-color: #111111;
     color: #ffffff;
 }
 
