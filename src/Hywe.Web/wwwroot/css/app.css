@@ -166,7 +166,7 @@ a {
 .hywe-label {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #666;
+    color: var(--color-text-muted);
     font-family: 'Segoe UI', sans-serif;
     user-select: none;
     white-space: nowrap;
@@ -192,7 +192,7 @@ a {
     width: 140px;
     border-radius: 6px;
     overflow: hidden;
-    border: 1.5px solid #333;
+    border: 1.5px solid var(--color-text-main);
 }
 
 .hywe-btn-group .hywe-btn {
@@ -203,7 +203,7 @@ a {
 }
 
 .hywe-btn-group .hywe-btn+.hywe-btn {
-    border-left: 1.5px solid #333;
+    border-left: 1.5px solid var(--color-text-main);
 }
 
 /* Universal Cards & Panels */
@@ -231,7 +231,7 @@ a {
 .hywe-card-accent p {
     margin: 0;
     font-size: 12px;
-    color: #666;
+    color: var(--color-text-muted);
     line-height: 1.45;
 }
 
@@ -1591,6 +1591,7 @@ video::-webkit-media-controls-start-playback-button {
 
 .node-outer.is-selected {
     cursor: default;
+    box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.28) !important;
 }
 
 .node-inner {
@@ -1790,11 +1791,6 @@ video::-webkit-media-controls-start-playback-button {
     }
 }
 
-/* Node Selected State */
-.node-outer.is-selected {
-    box-shadow: 0 0 0 2.5px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.28) !important;
-}
-
 /* =====================
    NODE FIVE CORNER BADGES (Hexagon vertices except top)
    ===================== */
@@ -1878,17 +1874,6 @@ video::-webkit-media-controls-start-playback-button {
     opacity: 0.15;
 }
 
-/* Halo Effect for Elevated Nodes */
-.node-outer.is-elevated {
-    background-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
-    border: 1px solid #3498db;
-}
-
-.node-outer.is-elevated .node-inner {
-    background-color: #ebf5fb;
-}
-
 /* Level Tabs UI */
 .level-controls-container {
     display: flex;
@@ -1906,7 +1891,7 @@ video::-webkit-media-controls-start-playback-button {
 .level-label {
     font-size: 10px;
     font-weight: 700;
-    color: #999;
+    color: var(--color-text-light);
     letter-spacing: 1px;
     margin-right: 4px;
 }
@@ -1945,7 +1930,7 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 .hyWeaveButton {
-    background-color: #363636;
+    background-color: var(--color-primary);
     width: 100%;
     height: 42px;
     border: 2px solid transparent;
