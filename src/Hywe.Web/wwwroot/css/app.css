@@ -10,8 +10,6 @@ body {
     -webkit-text-size-adjust: 100%;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
 }
 
@@ -51,36 +49,13 @@ a {
 /* =====================
    UNIVERSAL UTILITIES
    ===================== */
-.u-flex-col {
-    display: flex;
-    flex-direction: column;
-}
-
-.u-items-center {
-    align-items: center;
-}
-
-.u-gap-xl {
-    gap: var(--spacing-xl);
-}
-
-.u-p-lg {
-    padding: var(--spacing-lg);
-}
-
-.u-w-full {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.u-max-w-800 {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.u-mt-md {
-    margin-top: var(--spacing-md);
-}
+.u-flex-col { display: flex; flex-direction: column; }
+.u-items-center { align-items: center; }
+.u-gap-xl { gap: var(--spacing-xl); }
+.u-p-lg { padding: var(--spacing-lg); }
+.u-w-full { width: 100%; box-sizing: border-box; }
+.u-max-w-800 { max-width: 800px; margin: 0 auto; }
+.u-mt-md { margin-top: var(--spacing-md); }
 
 /* =====================
    HYWE BUTTON (Single Standard)
@@ -394,7 +369,7 @@ a {
 
 .hywe-modal-content {
     background: #ffffff;
-    color: #333333;
+    color: var(--color-text-main);
     width: 100%;
     max-width: 820px;
     max-height: 85vh;
@@ -441,17 +416,14 @@ a {
 }
 
 /* Universal Prose / Semantic Typography System */
-.hywe-prose,
-.hywe-modal-content,
-.seo-intro {
+.hywe-prose {
     color: var(--color-text-main);
     line-height: 1.6;
     font-size: 14px;
 }
 
 .hywe-prose h1,
-.hywe-modal-content h1,
-.seo-intro h1 {
+.hywe-modal-content h1 {
     font-size: 22px;
     font-weight: 600;
     color: var(--color-primary-hover);
@@ -461,8 +433,7 @@ a {
 }
 
 .hywe-prose h2,
-.hywe-modal-content h2,
-.seo-intro h2 {
+.hywe-modal-content h2 {
     font-size: 18px;
     font-weight: 500;
     color: var(--color-primary);
@@ -470,8 +441,7 @@ a {
 }
 
 .hywe-prose h3,
-.hywe-modal-content h3,
-.seo-intro h3 {
+.hywe-modal-content h3 {
     font-size: 15px;
     font-weight: 600;
     color: #444;
@@ -479,16 +449,14 @@ a {
 }
 
 .hywe-prose p,
-.hywe-modal-content p,
-.seo-intro p {
+.hywe-modal-content p {
     font-weight: 300;
     margin: 0 0 var(--spacing-md) 0;
     color: var(--color-text-main);
 }
 
 .hywe-prose a,
-.hywe-modal-content a,
-.seo-intro a {
+.hywe-modal-content a {
     color: var(--color-primary);
     font-weight: 500;
     text-decoration: underline;
@@ -497,28 +465,24 @@ a {
 }
 
 .hywe-prose a:hover,
-.hywe-modal-content a:hover,
-.seo-intro a:hover {
+.hywe-modal-content a:hover {
     color: var(--color-primary-hover);
 }
 
 .hywe-prose ul,
-.hywe-modal-content ul,
-.seo-intro ul {
+.hywe-modal-content ul {
     margin: var(--spacing-sm) 0 var(--spacing-lg) var(--spacing-lg);
     padding: 0;
 }
 
 .hywe-prose li,
-.hywe-modal-content li,
-.seo-intro li {
+.hywe-modal-content li {
     margin-bottom: 6px;
     line-height: 1.5;
 }
 
 .hywe-prose table,
-.hywe-modal-content table,
-.seo-intro table {
+.hywe-modal-content table {
     width: 100%;
     border-collapse: collapse;
     margin: 15px 0;
@@ -528,17 +492,14 @@ a {
 .hywe-prose th,
 .hywe-prose td,
 .hywe-modal-content th,
-.hywe-modal-content td,
-.seo-intro th,
-.seo-intro td {
+.hywe-modal-content td {
     border: 1px solid var(--color-border-hover);
     padding: 8px 12px;
     text-align: left;
 }
 
 .hywe-prose th,
-.hywe-modal-content th,
-.seo-intro th {
+.hywe-modal-content th {
     background-color: #f7f7f7;
     font-weight: 600;
 }
@@ -979,15 +940,19 @@ input[type=number] {
 .report-spinner {
     display: inline-block;
     flex-shrink: 0;
-    width: 14px;
-    height: 14px;
     border: 2px solid var(--color-border-hover);
     border-top: 2px solid var(--color-primary);
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
     vertical-align: middle;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
     margin-right: 5px;
 }
+
 .report-spinner {
     width: 12px;
     height: 12px;
@@ -1028,11 +993,9 @@ video.fullscreen-bg {
     width: 100vw;
     height: 100vh;
     height: 100dvh;
-    height: 100lvh;
     min-width: 100vw;
     min-height: 100vh;
     min-height: 100dvh;
-    min-height: 100lvh;
     pointer-events: none;
 }
 
@@ -1056,14 +1019,11 @@ video.fullscreen-bg {
     .fullscreen-bg-fallback {
         width: 177.78vh;
         width: 177.78dvh;
-        width: 177.78lvh;
         height: 100vh;
         height: 100dvh;
-        height: 100lvh;
         min-width: 100vw;
         min-height: 100vh;
         min-height: 100dvh;
-        min-height: 100lvh;
     }
 }
 
@@ -1077,14 +1037,11 @@ video.fullscreen-bg {
         min-width: 100vw;
         min-height: 100vh;
         min-height: 100dvh;
-        min-height: 100lvh;
     }
 }
 
 /* Prevent video placeholder from displaying on Opera Mini or when autoplay is blocked */
 .is-opera-mini video.fullscreen-bg,
-_:-o-prefocus,
-:root video.fullscreen-bg,
 video.fullscreen-bg.video-hidden {
     display: none !important;
 }
@@ -1102,31 +1059,28 @@ video::-webkit-media-controls-start-playback-button {
 /* =============================
    INTRO / LOADING / TRANSITIONS
    ============================= */
-#loading-frame {
-    position: fixed;
-    top: 37px;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 900;
-    opacity: 1;
-    transition: opacity 0.8s ease;
-    will-change: opacity;
-    overflow: hidden;
-    background: #ffffff url('../images/loader.jpeg') center center / cover no-repeat;
-}
-
+#loading-frame,
 #introduction {
     position: fixed;
     top: 37px;
-    left: 0;
     right: 0;
     bottom: 0;
-    overflow-y: auto;
+    left: 0;
+    transition: opacity 0.8s ease;
     background: #ffffff url('../images/loader.jpeg') center center / cover no-repeat;
+}
+
+#loading-frame {
+    z-index: 900;
+    opacity: 1;
+    will-change: opacity;
+    overflow: hidden;
+}
+
+#introduction {
     z-index: 800;
     opacity: 0;
-    transition: opacity 0.8s ease;
+    overflow-y: auto;
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
 }
@@ -1320,21 +1274,19 @@ video::-webkit-media-controls-start-playback-button {
 .nodename[readonly],
 .nodeweight[readonly] {
     cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
 }
 
 .nodename:not([readonly]):hover,
-.nodename:not([readonly]):focus,
+.nodename:not([readonly]):focus {
+    border-bottom: 1px solid #3498db;
+    color: var(--color-text-muted);
+}
+
 .nodeweight:not([readonly]):hover,
 .nodeweight:not([readonly]):focus {
     border-bottom: 1px solid #3498db;
+    color: #222;
 }
-
-.nodename:not([readonly]):hover,
-.nodename:not([readonly]):focus { color: var(--color-text-muted); }
-.nodeweight:not([readonly]):hover,
-.nodeweight:not([readonly]):focus { color: #222; }
 
 .nodename::placeholder {
     color: var(--color-border);
@@ -1387,8 +1339,6 @@ video::-webkit-media-controls-start-playback-button {
     /* Flex center can cut off content on overflow */
     text-align: center;
     -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     -webkit-overflow-scrolling: touch;
     /* Smooth scrolling on iOS */
@@ -2091,19 +2041,16 @@ video::-webkit-media-controls-start-playback-button {
     fill: #d97706;
 }
 
-.hywe-tab-btn.tab-program:hover .tree-icon-trunk {
-    fill: #000000;
-}
-
 .hywe-tab-btn.tab-program:hover {
     background: rgba(0, 0, 0, 0.04);
 }
 
 .hywe-tab-btn.tab-program.active {
-    padding: 2px 6px;
     background: rgba(0, 0, 0, 0.04);
+    padding: 2px 6px;
 }
 
+.hywe-tab-btn.tab-program:hover .tree-icon-trunk,
 .hywe-tab-btn.tab-program.active .tree-icon-trunk {
     fill: #000000;
 }
@@ -2419,11 +2366,10 @@ video::-webkit-media-controls-start-playback-button {
     .boundary-toolbar { gap: 3px 5px; padding: 5px 3px 3px; }
     .toggle-column, .dimension-inputs, .action-column { gap: 4px; }
     .toggle-column .hywe-row, .field-group, .action-trio-row { gap: 2px; }
-    .boundary-toolbar .hywe-label { font-size: 0.70rem; min-width: 26px !important; }
-    .boundary-toolbar .hywe-btn { font-size: 0.62rem !important; padding: 1px 3px !important; letter-spacing: 0; }
+    .boundary-toolbar .hywe-label { font-size: 0.70rem; min-width: 26px; }
+    .boundary-toolbar .hywe-btn { font-size: 0.62rem; padding: 1px 3px; letter-spacing: 0; }
     .dimension-fields, .action-column { padding-left: 5px; border-left-color: #e5e5e5; }
-    .boundaryInput, .boundary-scale-text { font-size: 0.72rem !important; width: 26px; }
-    .action-column .hywe-btn { font-size: 0.62rem; padding: 1px 3px; }
+    .boundaryInput, .boundary-scale-text { font-size: 0.72rem; width: 26px; }
 }
 
 
