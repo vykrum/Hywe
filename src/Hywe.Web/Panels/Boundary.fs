@@ -33,9 +33,7 @@ let toggleBtn label isActive isEnabled onSelect =
 
 let toggleRow label isEnabled options =
     div {
-        let rowStyle = match isEnabled with true -> "" | false -> "opacity: 0.38; pointer-events: none;"
         attr.``class`` (classList [ "hywe-row", true; "disabled", not isEnabled ])
-        attr.style rowStyle
         span { attr.``class`` "hywe-label"; text label }
         div {
             attr.``class`` "hywe-btn-group"
@@ -105,12 +103,10 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
 
             let areDimensionsDisabled = not model.UseBoundary || model.UseMapBase
             let dimInputsClass = classList [ "dimension-inputs", true; "disabled", areDimensionsDisabled ]
-            let dimInputsStyle = match areDimensionsDisabled with true -> "opacity: 0.3; pointer-events: none;" | false -> ""
             let scaleRatio = match model.UseMapBase with true -> model.MapScale | false -> 1.0
 
             div {
                 attr.``class`` dimInputsClass
-                attr.style dimInputsStyle
 
                 renderNumericInput "Width:" model.DisplayWidth areDimensionsDisabled (UpdateLogicalWidth >> dispatch)
                 renderNumericInput "Height:" model.DisplayHeight areDimensionsDisabled (UpdateLogicalHeight >> dispatch)
@@ -215,7 +211,7 @@ let instructionsModal model dispatch (js: IJSRuntime) =
 
             div {
                 attr.``class`` "hywe-modal-content"
-                attr.style "max-width: 440px; max-height: 85vh; overflow-y: auto;"
+                attr.style "max-width: 440px;"
                 "onclick:stopPropagation" => true
                 "onpointerdown:stopPropagation" => true
 
