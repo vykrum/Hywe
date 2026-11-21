@@ -688,7 +688,7 @@ let viewReport (model: Model) dispatch =
             }
         
         button {
-            attr.``class`` ("hywe-btn report-generate-btn u-w-full u-max-w-800 u-mt-md" + (if model.IsGeneratingReport || not canGenerate then " disabled" else " active"))
+            attr.``class`` ("hywe-btn hywe-btn-primary u-w-full u-max-w-800 u-mt-md" + (if model.IsGeneratingReport || not canGenerate then " disabled" else " active"))
             attr.style (if not canGenerate then "opacity: 0.5; cursor: not-allowed;" else "")
             attr.title (if not canGenerate then "Please set Weave name (at least 3 words) and Woven by above" else "Generate Report (PDF)")
             attr.disabled (model.IsGeneratingReport || not canGenerate)

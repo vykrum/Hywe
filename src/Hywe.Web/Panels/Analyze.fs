@@ -149,7 +149,8 @@ let computeSummaryMetrics (cxCxl1: Cxl[]) (cxlAvl: int[]) =
 
 let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: string) (subtext: string) =
     div {
-        attr.``style`` "flex: 1 1 calc(20% - 10px); min-width: 155px; background: #ffffff; border: 1px solid #eee; border-radius: 6px; padding: 12px 14px; box-sizing: border-box;"
+        attr.``class`` "hywe-card"
+        attr.``style`` "flex: 1 1 calc(20% - 10px); min-width: 155px; padding: 12px 14px;"
         div {
             attr.``style`` "font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 6px;"
             text title
@@ -157,7 +158,7 @@ let renderKpiCard (title: string) (value: string) (badgeBg: string) (badgeClr: s
         div {
             attr.``style`` "display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"
             span {
-                attr.``style`` $"display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 13px; background: {badgeBg}; color: {badgeClr};"
+                attr.``style`` $"display: inline-block; padding: 3px 8px; border-radius: var(--radius-sm); font-weight: 600; font-size: 13px; background: {badgeBg}; color: {badgeClr};"
                 text value
             }
         }
@@ -213,8 +214,6 @@ let renderAreaRow (cxl: Cxl) (clr: string) (ratio: float) (elv: int) =
 
 let renderSolarRow (cxl: Cxl) (clr: string) (avl: int) (solarVal: float option) =
     let openCount = float avl
-
-
     tr {
         attr.``style`` $"background-color:{clr}; height: 32px;"
         td { 
@@ -273,7 +272,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
         div {
             attr.``style`` "width: 100%; box-sizing: border-box;"
             h3 { 
-                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 20px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
+                attr.``style`` "font-size: 14px; color: #444; margin-bottom: 20px; border-left: 4px solid #888; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;"
                 text "ADJACENCY MATRIX" 
                 span {
                     attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
@@ -283,7 +282,7 @@ let viewAdjacencyTable (sqnName: string) (names: string[]) (colors: string[]) (m
             div {
                 attr.``style`` "overflow-x: auto;"
                 table {
-                    attr.``style`` "table-layout: fixed; width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
+                    attr.``style`` "table-layout: fixed; width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; opacity: 0.85;"
                     thead {
                         tr {
                             attr.``style`` "height: 32px;"
@@ -405,12 +404,12 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
             div {
                 attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
                 h3 { 
-                    attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
+                    attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #888; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;"
                     div {
                         attr.``style`` "display: flex; align-items: center; gap: 8px;"
                         span { text "AREA METRICS" }
                         span {
-                            attr.``style`` $"font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; background: {scoreObj.BgClr}; color: {scoreObj.TextClr};"
+                            attr.``style`` $"font-size: 10px; padding: 2px 7px; border-radius: var(--radius-sm); font-weight: 600; background: {scoreObj.BgClr}; color: {scoreObj.TextClr};"
                             text scoreObj.Badge
                         }
                     }
@@ -423,7 +422,7 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                 div {
                     attr.``style`` "overflow-x: auto;"
                     table {
-                        attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
+                        attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; opacity: 0.85;"
                         thead {
                             tr {
                                 attr.``style`` "height: 32px;"
@@ -467,59 +466,58 @@ let viewHyweAnalyze (dispatch: Message -> unit) (sqn: string) (cxCxl1: Cxl[]) (c
                 viewAdjacencyTable sqn adjNames cxClr1 adjMatrix
             }
 
-            // 3. SOLAR ANALYSIS
-            if true then
-                div {
-                    attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
-                    h3 { 
-                        attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; font-family: 'Outfit', system-ui, sans-serif; display: flex; justify-content: space-between; align-items: center;"
-                        text "SOLAR ANALYSIS" 
-                        span {
-                            attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
-                            text $"[{sqn}]"
-                        }
+            // 3. ENVELOPE ANALYSIS
+            div {
+                attr.``style`` "flex: 1 1 calc(50% - 15px); min-width: 250px; max-width: 100%;"
+                h3 { 
+                    attr.``style`` "font-size: 14px; color: #444; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; display: flex; justify-content: space-between; align-items: center;"
+                    text "ENVELOPE ANALYSIS" 
+                    span {
+                        attr.``style`` "font-size: 10px; color: #aaa; font-weight: normal; margin-left: 10px; letter-spacing: 1px;"
+                        text $"[{sqn}]"
                     }
+                }
 
-                    div {
-                        attr.``style`` "overflow-x: auto;"
-                        table {
-                            attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; font-family: 'Outfit', system-ui, sans-serif; opacity: 0.85;"
-                            thead {
-                                tr {
-                                    attr.``style`` "height: 32px;"
-                                    th { attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"; text "Index" }
-                                    th { attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"; text "Label" }
-                                    th { 
-                                        attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd; cursor: help;"
-                                        attr.title "Exterior boundary contact count"
-                                        text "Open" 
-                                    }
-                                    th { 
-                                        attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd; cursor: help;"
-                                        attr.title "Relative solar exposure rating"
-                                        text "Solar" 
-                                    }
+                div {
+                    attr.``style`` "overflow-x: auto;"
+                    table {
+                        attr.``style`` "width: 100%; border-collapse: collapse; font-size: 11px; color: #646464; opacity: 0.85;"
+                        thead {
+                            tr {
+                                attr.``style`` "height: 32px;"
+                                th { attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"; text "Index" }
+                                th { attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd;"; text "Label" }
+                                th { 
+                                    attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd; cursor: help;"
+                                    attr.title "Exterior boundary contact count"
+                                    text "Open" 
+                                }
+                                th { 
+                                    attr.``style`` "border: 1px solid #eee; padding: 8px; background: #fdfdfd; cursor: help;"
+                                    attr.title "Relative solar exposure rating"
+                                    text "Solar" 
                                 }
                             }
-                            tbody {
-                                for i in 0 .. cxCxl1.Length - 1 do
-                                    let sVal = match solarVals with | Some arr -> Some arr.[i] | None -> None
-                                    renderSolarRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] sVal
-                            }
-                            tfoot {
-                                tr {
-                                    attr.``style`` "font-weight: bold; border-top: 2px solid #ddd; height: 32px;"
-                                    td { attr.colspan 2; attr.``style`` "border: 1px solid #eee; text-align: center; font-size: 10.5px; color: #888;"; text "Total Open" }
-                                    td { 
-                                        attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
-                                        text (sprintf "%.0f" totalOpen) 
-                                    }
-                                    td { attr.``style`` "border: 1px solid #eee;" }
+                        }
+                        tbody {
+                            for i in 0 .. cxCxl1.Length - 1 do
+                                let sVal = match solarVals with | Some arr -> Some arr.[i] | None -> None
+                                renderSolarRow cxCxl1.[i] cxClr1.[i] cxlAvl.[i] sVal
+                        }
+                        tfoot {
+                            tr {
+                                attr.``style`` "font-weight: bold; border-top: 2px solid #ddd; height: 32px;"
+                                td { attr.colspan 2; attr.``style`` "border: 1px solid #eee; text-align: center; font-size: 10.5px; color: #888;"; text "Total Open" }
+                                td { 
+                                    attr.``style`` "padding: 8px; text-align: center; border: 1px solid #eee;"
+                                    text (sprintf "%.0f" totalOpen) 
                                 }
+                                td { attr.``style`` "border: 1px solid #eee;" }
                             }
                         }
                     }
                 }
+            }
         }
 
         // --- COORDINATES WINDOW ---

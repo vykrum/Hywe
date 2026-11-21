@@ -67,10 +67,10 @@ let private computeVisualState (model: SubModel) (node: TreeNode) (isAffected: b
           if isConfirming then
               match model.ActiveActionId with
               | ActionIds.Delete -> yield "is-confirming"
-              | ActionIds.Elevate -> yield "is-elevating is-elevated"
-              | ActionIds.Nest -> yield "is-nesting is-nested"
+              | ActionIds.Elevate -> yield "is-elevated"
+              | ActionIds.Nest -> yield "is-nested"
               | _ -> ()
-          if isNestAnchor then yield "is-nesting is-nested"
+          if isNestAnchor then yield "is-nested"
           if model.DraggingId = Some node.Id && not isRoot then yield "is-dragging"
           if isDropTarget then
               match model.DropTargetMode with
@@ -78,7 +78,7 @@ let private computeVisualState (model: SubModel) (node: TreeNode) (isAffected: b
               | Some DropBefore -> yield "is-drop-target drop-before"
               | Some DropAfter -> yield "is-drop-target drop-after"
               | None -> yield "is-drop-target"
-          if isElevated then yield "is-elevated is-elevating" ]
+          if isElevated then yield "is-elevated" ]
         |> String.concat " "
 
     let outerStyle =
@@ -388,7 +388,7 @@ let renderPropertiesBar (model: SubModel) (dispatch: SubMsg -> unit) : Node =
             attr.``class`` "node-properties-bar"
             
             div {
-                attr.``class`` "prop-section-info"
+                attr.``class`` "prop-field"
                 match model.ActiveNest with
                 | Some nId ->
                     span { attr.``class`` "prop-badge prop-badge-level"; text $"L{node.Level}" }

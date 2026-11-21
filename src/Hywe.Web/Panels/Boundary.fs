@@ -153,7 +153,7 @@ let controlAndInstructions model dispatch (js: IJSRuntime) canUndo canRedo =
                 let trioBtn title disabled isActive onClick content =
                     button {
                         attr.``type`` "button"
-                        attr.``class`` (classList [ "hywe-btn", true; "active-locked", isActive ])
+                        attr.``class`` (classList [ "hywe-btn", true; "active", isActive ])
                         attr.title title
                         attr.disabled disabled
                         on.click (fun _ -> onClick ())

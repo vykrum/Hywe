@@ -804,7 +804,7 @@ let view model dispatch =
                     }
             }
             button {
-                attr.``class`` ("hywe-btn teach-commit-btn u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
+                attr.``class`` ("hywe-btn hywe-btn-primary u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
                 attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
                 attr.title (if not canCommit then "Please set Weave name (at least 3 words) and Woven by above, and select Typology" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not canCommit)
