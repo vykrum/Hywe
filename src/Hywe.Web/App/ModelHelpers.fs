@@ -322,15 +322,12 @@ let private viewSessionMetadataBar (model: Model) (dispatch: Message -> unit) =
         div {
             attr.``class`` "workspace-meta-right"
 
-            div {
-                attr.``class`` "workspace-meta-author-wrapper"
-                input {
-                    attr.``class`` "workspace-meta-author"
-                    attr.placeholder "Woven by..."
-                    attr.title "Woven by (required before committing to dataset or generating report)"
-                    attr.value model.TeachMetadata.Author
-                    on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
-                }
+            input {
+                attr.``class`` "workspace-meta-author"
+                attr.placeholder "Woven by..."
+                attr.title "Woven by (required before committing to dataset or generating report)"
+                attr.value model.TeachMetadata.Author
+                on.input (fun e -> dispatch (SetAuthor (unbox<string> e.Value)))
             }
         }
     }
@@ -759,7 +756,7 @@ let private viewHywePanels (model: Model) (dispatch: Message -> unit) (js: IJSRu
                     
                     // Floating Lock button
                     button {
-                        attr.``class`` ("hywe-btn layout-download-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
+                        attr.``class`` ("hywe-btn" + (match model.ViewLocked with true -> " active" | false -> ""))
                         attr.title (match model.ViewLocked with true -> "View Locked: Captured for cover" | false -> "Lock 3D view for report cover")
                         attr.style "position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; z-index: 10; border: none; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);"
                         on.pointerdown (fun _ -> dispatch ToggleViewLock)

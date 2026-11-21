@@ -112,8 +112,7 @@ a {
 }
 
 /* Instance Button Customizations */
-.report-generate-btn,
-.teach-commit-btn {
+.hywe-btn-primary {
     padding: 10px 20px;
     font-size: 1rem;
     background: #333333;
@@ -121,17 +120,9 @@ a {
     border-color: #333333;
 }
 
-.report-generate-btn:hover:not(:disabled),
-.teach-commit-btn:hover:not(:disabled) {
+.hywe-btn-primary:hover:not(:disabled) {
     background: #111111;
     border-color: #000000;
-}
-
-.layout-download-btn {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border-radius: 50%;
 }
 
 
@@ -335,8 +326,6 @@ a {
 }
 
 /* Universal Inline Meta / Dot Rows */
-.prop-section-info,
-.workspace-meta-author-wrapper,
 .tutorial-dots,
 .tutorial-nav-arrows {
     display: flex;
@@ -1579,40 +1568,40 @@ video::-webkit-media-controls-start-playback-button {
 }
 
 /* Elevated Nodes (Blue) */
-.node-outer:is(.is-elevated, .is-elevating) {
+.node-outer.is-elevated {
     background-color: #3498db !important;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
     filter: drop-shadow(0 0 4px rgba(52, 152, 219, 0.5));
 }
 
-.node-outer:is(.is-elevated, .is-elevating) .node-inner {
+.node-outer.is-elevated .node-inner {
     background-color: #ebf5fb !important;
 }
 
-.node-outer:is(.is-elevated, .is-elevating) .nodename {
+.node-outer.is-elevated .nodename {
     color: #2980b9;
 }
 
-.node-outer:is(.is-elevated, .is-elevating) .nodeweight {
+.node-outer.is-elevated .nodeweight {
     color: #2471a3;
 }
 
 /* Nested Nodes (Green) */
-.node-outer:is(.is-nested, .is-nesting) {
+.node-outer.is-nested {
     background-color: #2ecc71 !important;
     box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.4);
     filter: drop-shadow(0 0 4px rgba(46, 204, 113, 0.5));
 }
 
-.node-outer:is(.is-nested, .is-nesting) .node-inner {
+.node-outer.is-nested .node-inner {
     background-color: #eafaf1 !important;
 }
 
-.node-outer:is(.is-nested, .is-nesting) .nodename {
+.node-outer.is-nested .nodename {
     color: #27ae60;
 }
 
-.node-outer:is(.is-nested, .is-nesting) .nodeweight {
+.node-outer.is-nested .nodeweight {
     color: #1e8449;
 }
 
@@ -2321,9 +2310,6 @@ video::-webkit-media-controls-start-playback-button {
 .action-column { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding-left: 18px; border-left: 1px solid var(--color-border-hover); flex-shrink: 0; }
 .action-trio-row { display: flex; align-items: center; gap: 3px; width: 100%; box-sizing: border-box; }
 .action-trio-row .hywe-btn { flex: 1; padding: 3px 4px; font-size: 0.74rem; }
-
-.hywe-btn.active-locked { background: var(--color-primary); border-color: var(--color-primary-hover); color: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
-.hywe-btn.active-locked:hover { background: var(--color-primary-hover); border-color: #000; color: #fff; }
 
 .polygon-editor-svg.editor-locked,
 .polygon-editor-svg.editor-locked .outerVertex,
