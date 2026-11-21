@@ -5,7 +5,6 @@ open Bolero.Html
 open Microsoft.JSInterop
 open System
 open System.Text
-open System.Text.Json
 open ModelTypes
 open Hywe.Core
 open Hywe.Core.Hexel
@@ -57,37 +56,6 @@ let labelPosition
                 | _ -> inward ((x + avgx) / 2.0, (y + avgy) / 2.0) (step - 1)
 
         inward (cx, cy) 3
-///
-
-/// <summary> Scale and Shift origin</summary>
-/// <param name="scl"> Scale </param>
-/// <param name="hxo"> Array of Hexels arrays </param>
-/// <returns> Property array to feed into the Cluster function 
-/// Hexel coordinates array * width * height </returns>
-let crd 
-    (scl : int) 
-    (hxo : Hxl[][]) = 
-    // Location to Coordinates
-    let cdn 
-        (hxo:Hxl[]) 
-        (scl:int) =
-        Array.map (fun a -> match a with 
-                            |AV(x,y,z) -> ((x*scl),(y*scl),z)
-                            |RV(x,y,z) -> ((x*scl),(y*scl),z)
-                            |EX(x,y,z) -> ((x*scl),(y*scl),z)) hxo
-
-    let hxXY01 = Array.map (fun x -> cdn x scl) hxo
-    let (a,_,_) = (Array.concat hxXY01) |> Array.minBy(fun (x,_,_) -> x)
-    let hxShfX = 0 - a + (4*scl)
-    let (_,b,_) = (Array.concat hxXY01) |> Array.minBy(fun (_,x,_) -> x)
-    let hxShfY = 0 - b + (4*scl)
-    let (c,_,_) = (Array.concat hxXY01) |> Array.maxBy(fun (x,_,_) -> x)
-    let hxMxmX = c + hxShfX + (4*scl)
-    let (_,d,_) = (Array.concat hxXY01) |> Array.maxBy(fun (_,x,_) -> x)
-    let hxMxmY = d + hxShfY + (4*scl)
-    let hxXY02 = Array.map(fun aa -> Array.map (fun (x,y,z)-> (x + hxShfX), (y + hxShfY),z)aa) hxXY01
-    (hxXY02,hxMxmX,hxMxmY)
-///
 
 /// <summary> Nested Coxels SVG </summary>
 /// <param name="cxl"> Array of coxels </param>
@@ -161,7 +129,7 @@ let svgCoxels
         // Calculate global shifts to normalize the layout within the SVG viewport
         let allPoints = Array.concat [| Array.concat crd1; Array.concat wtmkCrd1; bdrPoints |]
         match allPoints with
-        | [||] -> div { attr.style "padding: 20px; color: #888; font-family: 'Outfit', system-ui, sans-serif;"; text "Base Unavailable" }
+        | [||] -> div { attr.style "padding: 20px; color: #888;"; text "Base Unavailable" }
         | _ ->
             let minX1 = fst (Array.minBy fst allPoints)
             let maxX1 = fst (Array.maxBy fst allPoints)
@@ -296,7 +264,6 @@ let svgCoxels
                         .Elt()
             
             }
-///
 
 let private escapeXml (str: string) =
     match str with
@@ -307,130 +274,6 @@ let private escapeXml (str: string) =
          .Replace(">", "&gt;")
          .Replace("\"", "&quot;")
          .Replace("'", "&apos;")
-
-let generateSvgString
-    (cxl : Cxl[])
-    (bdr : (int*int)[][])
-    (elv : int)
-    (clr : string[])
-    (scl : int) = 
-    
-    match cxl with
-    | [||] -> ""
-    | _ ->
-        // Vertices
-        let sqn = cxl |> Array.map (fun x ->x.Seqn)
-        let cr1 = cxl |> Array.map (fun x -> svgCxlPrm x elv) 
-        let crd = Array.map2 (fun a b -> svgCleanPolygon a b) sqn cr1
-
-        // Shift and Scale Vertices
-        let padd = float (5*scl)
-        let crd1 = 
-            Array.map2 (fun s pts -> 
-                pts |> Array.map (fun p -> 
-                    let (cx, cy) = svgToCartesian s p
-                    cx * float scl, cy * float scl)
-            ) sqn crd
-
-        // --- Coordinate Transformation & Offsetting ---
-        let fallbackSqn = Hexel.VRCCNE 
-        let activeSqn = 
-            cxl 
-            |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
-            |> Option.map (fun c -> c.Seqn)
-            |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
-
-        // Calculate scaled boundary points to include in bounds
-        let bdrPoints = 
-            bdr |> Array.collect (fun pts ->
-                pts |> Array.map (fun (x, y) -> 
-                    let (cx, cy) = toCartesian activeSqn (x, y)
-                    cx * float scl, cy * float scl)
-            )
-
-        // Calculate global shifts to normalize the layout within the SVG viewport
-        let allPoints = Array.concat [| Array.concat crd1; bdrPoints |]
-        match allPoints with
-        | [||] -> ""
-        | _ ->
-            let minX1 = fst (Array.minBy fst allPoints)
-            let maxX1 = fst (Array.maxBy fst allPoints)
-            let minY1 = snd (Array.minBy snd allPoints)
-            let maxY1 = snd (Array.maxBy snd allPoints)
-            
-            // Shift points into the positive coordinate space with padding
-            let shfX = (-1.0 * minX1) + padd
-            let shfY = (-1.0 * minY1) + padd
-        
-            // Transform all vertices (already calculated as midpoints in cxlPrm)
-            let crd2 = Array.map (fun x -> Array.map(fun (a,b) -> float a+shfX, float b+shfY)x) crd1
-            
-            let wdt = int ((maxX1 - minX1)+(padd*2.0)+15.0)
-            let hgt = int ((maxY1 - minY1)+(padd*1.0)+0.0)
-            
-            // Labels
-            let lPs = Array.map(fun a -> 
-                                        let gx, gy = cxlCnt a
-                                        let x, y = toCartesian a.Seqn (gx, gy)
-                                        (x * float scl) + shfX, (y * float scl) + shfY) cxl
-            let lbl = Array.map2 (fun a b -> (prpVlu a.Name),b) cxl lPs
-
-            let sb = System.Text.StringBuilder()
-            let append (s: string) = sb.Append(s) |> ignore
-
-            append $"""<?xml version="1.0" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {wdt} {hgt}">
-"""
-            let prp = Array.zip crd2 clr
-            for (xxyy, color) in prp do
-                let xy =
-                    xxyy
-                    |> Array.collect (fun (x, y) -> [|string x; string y|])
-                    |> String.concat ","
-                append $"""    <polygon points="{xy}" fill="{color}" opacity="0.75" />
-"""
-
-            // Boundary Outlines
-            for boundary in bdr do
-                let xy =
-                    boundary
-                    |> Array.collect (fun (x, y) -> 
-                        let fallbackSqn = Hexel.VRCCNE 
-                        let activeSqn = 
-                            cxl 
-                            |> Array.tryFind (fun c -> let (_, _, z) = hxlCrd c.Base in z = elv)
-                            |> Option.map (fun c -> c.Seqn)
-                            |> Option.defaultValue (if Array.isEmpty cxl then fallbackSqn else (Array.head cxl).Seqn)
-                        let (cx, cy) = toCartesian activeSqn (x, y)
-                        [| string ((cx * float scl) + shfX); string ((cy * float scl) + shfY) |])
-                    |> String.concat ","
-
-                append $"""    <polygon points="{xy}" stroke="#000000" fill="none" stroke-width="2" opacity="0.1" />
-"""
-
-            let prp = Array.map2 (fun (crd, col) lblItem -> crd, col, lblItem) (Array.zip crd2 clr) lbl
-
-            let svgScale = float wdt / 800.0
-            let labelFontSize = sprintf "%.1fpx" (max 10.0 (13.0 * svgScale))
-            let dotRadius = sprintf "%.1f" (max 3.5 (4.5 * svgScale))
-            let textYOffset = max 7.0 (9.0 * svgScale)
-
-            for i, (xxyy, color, (fullName, (lx, ly))) in prp |> Array.indexed do
-                let x, y =
-                    match xxyy with
-                    | [||] -> -10.0, -10.0
-                    | _ -> (lx, ly)
-
-                let truncated = escapeXml (truncateName fullName)
-                let fw = if i = 0 then "700" else "400"
-                let fl = if i = 0 then "#333333" else "#666666"
-
-                append $"""    <text x="{x}" y="{y - textYOffset}" font-weight="{fw}" fill="{fl}" font-size="{labelFontSize}" font-family="Outfit, system-ui, sans-serif" text-anchor="middle" style="text-transform: lowercase; pointer-events: none;">{truncated}</text>
-"""
-                append $"""    <circle cx="{x}" cy="{y}" r="{dotRadius}" fill="{color}" />
-"""
-            append "</svg>"
-            sb.ToString()
 
 let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
     let padd = 5.0 * scl
@@ -499,35 +342,6 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
     append "</svg>"
     sb.ToString()
 
-
-// Batch types moved to ModelTypes
-
-/// Extracts high-fidelity coordinates for Geometry generation
-let getBtchCrds (cxl: Cxl[]) =
-    // Estimate capacity: 10 chars per int * 3 ints per hex * total hexes
-    let totalHexes = cxl |> Array.sumBy (fun x -> x.Hxls.Length)
-    let sb = StringBuilder(totalHexes * 30) 
-
-    cxl |> Array.iteri (fun i item ->
-        // Add comma separator for all but the first row
-        match i with
-        | 0 -> ()
-        | _ -> sb.Append(" , ") |> ignore
-        
-        item.Hxls |> Array.iteri (fun j hxl ->
-            let (a, b, c) = hxlCrd hxl
-            // Add space for all but the first tuple in a row
-            match j with
-            | 0 -> ()
-            | _ -> sb.Append(" ") |> ignore
-            
-            sb.Append(a).Append(" ")
-              .Append(b).Append(" ")
-              .Append(c) |> ignore
-        )
-    )
-    sb.ToString()
-
 /// Extracts high-fidelity coordinates for Geometry generation
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
     let sqn = cxl |> Array.map (fun x -> x.Seqn)
@@ -581,16 +395,6 @@ let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
             )
 
         {| shapes = shapes; w = currentWidth; h = currentHeight |}
-
-let getDatasetWithLabels (configs: BatchConfgrtns[]) : (string * float[])[][] =
-    configs 
-    |> Array.map (fun config ->
-        config.shapes 
-        |> Array.map (fun shape ->
-            // Returns a tuple: ("Room Name", [| x1; y1; x2; y2... |])
-            (shape.name, shape.points)
-        )
-    )
 
 let alternateConfigurations 
     (isTutorial: bool)
@@ -794,18 +598,3 @@ let alternateConfigurations
         let batchLegendItems = uniqueShapes |> Array.map (fun s -> s.name, s.color)
         viewLegend batchLegendItems
     }
-
-let serializeConfiguration 
-    (batchOption: BatchConfgrtns[] option) : string =
-    batchOption
-    |> Option.defaultValue [||]
-    |> Array.map (fun config ->
-        config.sqnName, 
-        config.shapes |> Array.map (fun s -> 
-            // Rounding points to 2 decimal places to save string space
-            let roundedPoints = s.points |> Array.map (fun p -> System.Math.Round(p, 2))
-            (s.name, roundedPoints)
-        )
-    )
-    |> readOnlyDict
-    |> JsonSerializer.Serialize
