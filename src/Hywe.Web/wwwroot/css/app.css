@@ -1805,9 +1805,10 @@ video::-webkit-media-controls-start-playback-button {
 /* Level Tabs UI */
 .level-controls-container {
     display: flex;
-    flex-direction: row;
     align-items: center;
     gap: 12px;
+    width: fit-content;
+    margin: 4px auto 8px;
     padding: 4px 16px;
     background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(4px);
@@ -1840,9 +1841,31 @@ video::-webkit-media-controls-start-playback-button {
     font-weight: 800;
 }
 
+.level-tab.nest {
+    margin-left: 2px;
+}
+
+.level-tab.nest.active {
+    color: #2ecc71;
+}
+
 .level-tab:hover:not(.active) {
     color: #000;
     background: rgba(0, 0, 0, 0.05);
+}
+
+.level-input-wrapper {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+}
+
+.level-tab.level-input {
+    width: 40px;
+    text-align: center;
+    outline: none;
+    padding: 2px 0;
+    cursor: text;
 }
 
 
