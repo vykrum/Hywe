@@ -317,8 +317,6 @@ let renderNode = NodeElement.renderNode
 let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> unit) : Node =      
 
     let currentLvlRoot = getCurrentTree model
-    let displayTree = currentLvlRoot
-    let laidOutDisplayTree = displayTree
 
     let confirmingSubtree = model.ConfirmingId |> Option.bind (fun id -> TreeOps.findNodeById id currentLvlRoot)
     let isAffected nodeId =
@@ -334,10 +332,10 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
              .color(color).width(width).Elt()
 
     let rec flattenTree node = node :: (node.Children |> List.collect flattenTree)
-    let nodes = flattenTree laidOutDisplayTree
-    let lines = laidOutDisplayTree.Children |> List.collect (fun c -> 
+    let nodes = flattenTree currentLvlRoot
+    let lines = currentLvlRoot.Children |> List.collect (fun c -> 
         let rec collect n = n.Children |> List.collect (fun child -> renderConnection n child :: collect child)
-        renderConnection laidOutDisplayTree c :: collect c)
+        renderConnection currentLvlRoot c :: collect c)
     
     let maxX = if nodes.IsEmpty then 60.0 else nodes |> List.map (fun n -> n.X) |> List.max
     let maxY = if nodes.IsEmpty then 60.0 else nodes |> List.map (fun n -> n.Y + 35.0) |> List.max
@@ -351,14 +349,9 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
                 renderAll child $"{prefix}.{i + 1}" colorList allNodes
         }
 
-
-    let allNodes = flattenTree currentLvlRoot
     let elevations = Serialization.getElevations model
     let maxLevel = if model.Levels.IsEmpty then 0 else model.Levels.Keys |> Seq.max
-    let containerClasses = 
-        [ yield "tree-container"
-          if model.DraggingId.IsSome then yield "is-dragging-any" ]
-        |> String.concat " "
+    let containerClasses = if model.DraggingId.IsSome then "tree-container is-dragging-any" else "tree-container"
 
     let touchAction = if model.DraggingId.IsSome || model.PendingDragId.IsSome then "none" else "pan-x pan-y pinch-zoom"
 
@@ -366,7 +359,6 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
         // Level Nav
         div {
             attr.``class`` "level-controls-container"
-            attr.style "width: fit-content; margin: 4px auto 8px auto; z-index: 1000;"
             span { attr.``class`` "level-label"; text "LEVELS:" }
             forEach (List.init (maxLevel + 1) id) (fun i ->
                 let elv = if i < elevations.Length then elevations.[i] else 0.0
@@ -384,11 +376,8 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
                     |> List.filter (fun (_, tree) -> tree.Level = i)
                     |> List.map (fun (nId, _) ->
                         let isActive = model.ActiveNest = Some nId
-                        let fw = if isActive then "bold" else "normal"
-                        let colorStyle = if isActive then "color: #2ecc71;" else ""
                         button {
-                            attr.``class`` (if isActive then "level-tab active" else "level-tab")
-                            attr.style $"margin-left: 2px; font-weight: {fw}; {colorStyle}"
+                            attr.``class`` (if isActive then "level-tab nest active" else "level-tab nest")
                             on.pointerdown (fun _ -> dispatch (SetNest nId))
                             text $"N{nId}"
                         }
@@ -405,11 +394,10 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
             let baseOfTop = if elevations.Length > 1 then elevations.[elevations.Length - 2] else 0.0
             
             div {
-                attr.style "display: inline-flex; align-items: center; margin-left: 4px;"
+                attr.``class`` "level-input-wrapper"
                 input {
                     attr.``type`` "text"
-                    attr.``class`` "level-tab"
-                    attr.style "width: 40px; text-align: center; outline: none; padding: 2px 0;"
+                    attr.``class`` "level-tab level-input"
                     attr.value (if topElv = floor topElv then string (int topElv) else string topElv)
                     on.input (fun ev -> 
                         let newVal = string ev.Value
@@ -439,7 +427,7 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
                 svg {
                     attr.``class`` "tree-svg"
                     attr.style $"width:{canvasWidth}px; height:{canvasHeight}px;"
-                    forEach lines (fun line -> line)
+                    forEach lines id
                     match model.DraggingId, model.DropTargetId, model.DragPos with
                     | Some _, Some targetId, Some pt ->
                         match TreeOps.findNodeById targetId currentLvlRoot with
@@ -449,7 +437,7 @@ let viewTreeEditor (model: SubModel) (colorList: string[]) (dispatch: SubMsg -> 
                         | None -> empty()
                     | _ -> empty()
                 }
-                renderAll laidOutDisplayTree "1" colorList nodes
+                renderAll currentLvlRoot "1" colorList nodes
 
                 match model.DraggingId, model.DragPos with
                 | Some dragId, Some pt ->

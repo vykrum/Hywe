@@ -1286,7 +1286,7 @@ video::-webkit-media-controls-start-playback-button {
     position: absolute;
     left: 0;
     bottom: 2px;
-    color: #2E86C1;
+    color: #999;
     text-align: center;
     opacity: 0.75;
     -webkit-tap-highlight-color: transparent;
@@ -1300,6 +1300,32 @@ video::-webkit-media-controls-start-playback-button {
 .nodebutton2:hover {
     opacity: 1;
 }
+
+.node-action-input,
+.node-action-btn {
+    width: 54px;
+    border: none !important;
+}
+
+.node-action-input {
+    position: absolute;
+    top: 8px;
+    left: 3px;
+    background: transparent !important;
+    text-align: center;
+}
+
+.node-action-btn {
+    margin: auto;
+    padding: 0;
+    background: none !important;
+    cursor: pointer;
+}
+
+.node-action-btn.delete { color: #e67e22; }
+.node-action-btn.elevate { color: #3498db; font-weight: bold; transform: translateY(5px); }
+.node-action-btn.nest { color: #2ecc71; font-size: 10px; transform: translateY(5px); }
+.node-action-tag { color: #2ecc71; pointer-events: none; }
 
 @keyframes slideDownFadeIn {
     from {
@@ -1805,9 +1831,10 @@ video::-webkit-media-controls-start-playback-button {
 /* Level Tabs UI */
 .level-controls-container {
     display: flex;
-    flex-direction: row;
     align-items: center;
     gap: 12px;
+    width: fit-content;
+    margin: 4px auto 8px;
     padding: 4px 16px;
     background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(4px);
@@ -1840,9 +1867,31 @@ video::-webkit-media-controls-start-playback-button {
     font-weight: 800;
 }
 
+.level-tab.nest {
+    margin-left: 2px;
+}
+
+.level-tab.nest.active {
+    color: #2ecc71;
+}
+
 .level-tab:hover:not(.active) {
     color: #000;
     background: rgba(0, 0, 0, 0.05);
+}
+
+.level-input-wrapper {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+}
+
+.level-tab.level-input {
+    width: 40px;
+    text-align: center;
+    outline: none;
+    padding: 2px 0;
+    cursor: text;
 }
 
 
