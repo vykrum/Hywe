@@ -3,7 +3,6 @@ module Report
 open Bolero.Html
 open ModelTypes
 open System
-open System.Text
 open Hywe.Core
 open Hywe.Core.Coxel
 open TreeTypes
@@ -575,6 +574,7 @@ let viewReport (model: Model) dispatch =
     let hasTitle = expWords >= 3 && opts.ProjectTitle.Trim().Length >= 8
     let hasAuthor = not (String.IsNullOrWhiteSpace opts.Author)
     let canGenerate = hasTitle && hasAuthor
+    let markers = getOrderedMarkers model.Tree
     
     let renderToggleRow textLabel isChecked onChange =
         elt "label" {
@@ -602,38 +602,34 @@ let viewReport (model: Model) dispatch =
         renderToggleRow "Cover Page" opts.IncludeCover (fun v -> updateOpts (fun o -> { o with IncludeCover = v }))
         
         if opts.IncludeCover then
-            let color, msg = 
-                if model.ViewLocked then 
-                    "#4caf50", "(3D view locked: will be included in cover page)"
-                else 
-                    "#e65100", "Please lock 3D view for inclusion in cover page"
+            let isLocked = model.ViewLocked
+            let noticeClass = if isLocked then "report-cover-notice locked" else "report-cover-notice unlocked"
+            let msg = if isLocked then "(3D view locked: will be included in cover page)" else "Please lock 3D view for inclusion in cover page"
 
             div {
-                attr.style (sprintf "font-size: 11px; color: %s; margin: -5px 0 10px 25px; font-style: italic;" color)
+                attr.``class`` noticeClass
                 text msg
             }
 
-        forEach (getOrderedMarkers model.Tree) <| fun marker ->
+        forEach markers <| fun marker ->
             let isNest = marker.StartsWith("N")
             let s = match Map.tryFind marker opts.LevelSections with | Some sections -> sections | None -> { FlowChart = true; BatchOverview = true; Variations = true; SelectedVariations = Set.ofList [0..23]; IsFilterExpanded = false }
             div {
-                attr.``class`` "hywe-card report-level-card"
-                attr.style (if isNest then "margin-left: 40px;" else "")
+                attr.``class`` (if isNest then "hywe-card report-level-card is-nest" else "hywe-card report-level-card")
                 div { attr.``class`` "report-level-header"; text (getMarkerTitle marker) }
                 div {
-                    attr.style "display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 5px;"
+                    attr.``class`` "report-section-toggles"
                     div {
-                        attr.style "display: flex; flex-direction: column;"
+                        attr.``class`` "report-toggle-group"
                         renderToggleRow "Flow Chart" s.FlowChart (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with FlowChart = v } o.LevelSections }))
                         renderToggleRow "Batch Overview (Grid)" s.BatchOverview (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with BatchOverview = v } o.LevelSections }))
                     }
                     div {
-                        attr.style "display: flex; flex-direction: column; align-items: flex-start; gap: 8px;"
+                        attr.``class`` "report-toggle-group with-action"
                         renderToggleRow "Individual Variations" s.Variations (fun v -> updateOpts (fun o -> { o with LevelSections = Map.add marker { s with Variations = v } o.LevelSections }))
                         button {
                             attr.disabled (not s.Variations)
-                            attr.``class`` "hywe-btn"
-                            attr.style (if s.Variations then "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #666; background: transparent; border: 1px solid #ddd;" else "margin-left: 24px; padding: 4px 10px; font-size: 11px; font-weight: normal; text-transform: none; color: #aaa; background: transparent; border: 1px solid #eee; cursor: not-allowed;")
+                            attr.``class`` "hywe-btn report-filter-toggle"
                             on.click (fun _ -> if s.Variations then updateOpts (fun o -> { o with LevelSections = Map.add marker { s with IsFilterExpanded = not s.IsFilterExpanded } o.LevelSections }))
                             text (if s.Variations && s.IsFilterExpanded then "Hide filters" else "Filter variations")
                         }
@@ -669,7 +665,7 @@ let viewReport (model: Model) dispatch =
                     }
             }
 
-        let reportPages = buildPageManifest opts (getOrderedMarkers model.Tree)
+        let reportPages = buildPageManifest opts markers
         div {
             attr.``class`` "report-page-count"
             text (sprintf "Report ready — %d pages" reportPages.Length)
@@ -683,13 +679,12 @@ let viewReport (model: Model) dispatch =
                 elif opts.ProjectTitle.Trim().Length < 8 then "Weave name (min 8 characters)"
             ]
             div {
-                attr.style "color: #dc2626; font-size: 0.85rem; font-weight: 500; text-align: center; margin-top: 4px;"
+                attr.``class`` "report-warning"
                 text (sprintf "Missing: %s" (String.concat ", " missing))
             }
         
         button {
             attr.``class`` ("hywe-btn hywe-btn-primary u-w-full u-max-w-800 u-mt-md" + (if model.IsGeneratingReport || not canGenerate then " disabled" else " active"))
-            attr.style (if not canGenerate then "opacity: 0.5; cursor: not-allowed;" else "")
             attr.title (if not canGenerate then "Please set Weave name (at least 3 words) and Woven by above" else "Generate Report (PDF)")
             attr.disabled (model.IsGeneratingReport || not canGenerate)
             on.click (fun _ -> dispatch GenerateReport)
