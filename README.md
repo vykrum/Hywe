@@ -2,7 +2,7 @@
 ### **Hy**grid **W**oven **E**nsemble
 *A computational spatial design environment for early-stage architecture.*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![NuGet: Hywe.Core](https://img.shields.io/nuget/v/Hywe.Core.svg)](https://www.nuget.org/packages/Hywe.Core) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22967097.svg)](https://doi.org/10.5281/zenodo.22967097) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![NuGet: Hywe.Core](https://img.shields.io/nuget/v/Hywe.Core.svg)](https://www.nuget.org/packages/Hywe.Core) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24472629.svg)](https://doi.org/10.5281/zenodo.24472629) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
 
 **[Launch HYWE (hywe.in)](https://hywe.in)** · **[Wiki & Research Reference](https://wiki.hywe.in)** · **[Spatial Dataset](https://data.hywe.in)**
 
@@ -174,10 +174,10 @@ If you utilize HYWE or the HYWE Spatial Dataset in academic or computational des
   title = {HYWE: A Computational Spatial Design Environment for Deterministic Relational Spatial Configuration},
   year = {2026},
   publisher = {Zenodo and Hugging Face},
-  doi = {10.5281/zenodo.22967097},
-  url = {https://doi.org/10.5281/zenodo.22967097},
+  doi = {10.5281/zenodo.24472629},
+  url = {https://doi.org/10.5281/zenodo.24472629},
   orcid = {0009-0000-2438-7308},
-  note = {Software archive via Zenodo (DOI: 10.5281/zenodo.22967097); Spatial Dataset via Hugging Face (https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)}
+  note = {Software archive via Zenodo (DOI: 10.5281/zenodo.24472629); Spatial Dataset via Hugging Face (https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)}
 }
 ```
 
