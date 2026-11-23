@@ -2420,6 +2420,10 @@ video::-webkit-media-controls-start-playback-button {
     gap: 4px;
 }
 
+.report-level-card.is-nest {
+    margin-left: 40px;
+}
+
 .report-level-header {
     font-weight: 600;
     font-size: 1rem;
@@ -2427,6 +2431,41 @@ video::-webkit-media-controls-start-playback-button {
     border-bottom: 1px solid var(--color-border-hover);
     padding-bottom: 4px;
     margin-bottom: 0px;
+}
+
+.report-section-toggles {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+}
+
+.report-toggle-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-toggle-group.with-action {
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.report-filter-toggle {
+    margin-left: 24px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: normal;
+    text-transform: none;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px solid var(--color-border);
+}
+
+.report-filter-toggle:disabled {
+    color: var(--color-text-light);
+    border-color: var(--color-border-light);
+    cursor: not-allowed;
 }
 
 .variation-selection-grid {
@@ -2440,6 +2479,11 @@ video::-webkit-media-controls-start-playback-button {
     display: flex;
     gap: 10px;
     margin-bottom: 4px;
+}
+
+.report-mini-btn {
+    padding: 2px 8px;
+    font-size: 0.72rem;
 }
 
 .report-toggle-row {
@@ -2460,12 +2504,29 @@ video::-webkit-media-controls-start-playback-button {
     cursor: pointer;
 }
 
+.report-cover-notice {
+    font-size: 11px;
+    margin: -5px 0 10px 25px;
+    font-style: italic;
+}
+
+.report-cover-notice.locked { color: #4caf50; }
+.report-cover-notice.unlocked { color: #e65100; }
+
 .report-page-count {
     font-size: 11px;
     color: var(--color-text-light);
     text-align: center;
     margin-bottom: 10px;
     letter-spacing: 0.5px;
+}
+
+.report-warning {
+    color: #dc2626;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 4px;
 }
 
 .report-status {
