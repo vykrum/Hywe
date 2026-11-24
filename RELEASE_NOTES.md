@@ -6,6 +6,16 @@ All notable changes to the `Hywe.Core` NuGet package and engine are documented i
 
 ## [2026.11.24] — 2026-11-24
 
+<!-- Release notes generated using configuration in .github/release.yml at v2026.11.24 -->
+
+
+
+**Full Changelog**: https://github.com/vykrum/Hywe/compare/v2026.11.23...v2026.11.24
+
+---
+
+## [2026.11.24] — 2026-11-24
+
 ### Highlights
 - Comprehensive XML documentation and IntelliSense code usage examples across all 7 core modules (`Hexel`, `Coxel`, `Goxel`, `Lexel`, `Xyxel`, `Nexel`, `Zaxel`).
 - Multi-page documentation overhaul with dedicated module reference pages, interactive code tooltips, and syntax-highlighted examples.
