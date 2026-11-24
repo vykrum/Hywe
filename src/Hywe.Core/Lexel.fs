@@ -60,8 +60,15 @@ module Lexel =
 
     /// <summary> 
     /// Processes a Hywe attribute block into a structured record.
-    /// Handles Sequence (Q), Level (L), Base (B), Scale (X), Entry (E), OuterBoundary (O), etc.
+    /// Handles Sequence (Q), Level (L), Base (B), Scale (X), Entry (E), OuterBoundary (O), Islands (I), Thickness (T), Width (W), and Height (H).
     /// </summary>
+    /// <param name="block">Raw string of the attribute block, e.g. "(Q=VRCWEE/L=0/W=20/H=30)".</param>
+    /// <returns>A populated LexelAttributes record.</returns>
+    /// <example>
+    /// <code>
+    /// let attrs = Lexel.parseAttributes "(Q=VRCWEE/L=0/X=1.0/W=20/H=30)"
+    /// </code>
+    /// </example>
     let parseAttributes (block: string) : LexelAttributes =
         let attrs = 
             block.Trim('(', ')').Split('/', StringSplitOptions.RemoveEmptyEntries)
@@ -90,6 +97,15 @@ module Lexel =
     /// Processes Hywe node blocks and organizes them into a hierarchical tree.
     /// Handles (ID/Area/Label/Extrusion/B=Base) format and dot-notation grouping.
     /// </summary>
+    /// <param name="markerPrefix">Prefix marker (e.g. "L0" or "N1") prepended to generated node IDs.</param>
+    /// <param name="blocks">List of node block strings, e.g. ["(1/25/Living)"; "(1.1/12/Dining)"].</param>
+    /// <returns>A list of node groups forming the hierarchical spatial tree.</returns>
+    /// <example>
+    /// <code>
+    /// let blocks = [ "(1/25/Living)"; "(1.1/12/Dining)"; "(1.2/8/Kitchen)" ]
+    /// let tree = Lexel.parseNodes "L0" blocks
+    /// </code>
+    /// </example>
     let parseNodes (markerPrefix: string) (blocks: string list) : LexelNode list list =
         let nodes = 
             blocks |> List.choose (fun b ->
@@ -125,8 +141,16 @@ module Lexel =
         |> List.sortBy (fun g -> g.[0].Id)
 
     /// <summary> 
-    /// Unified entry point for processing a single Xyxel segment (attributes + nodes).
+    /// Unified entry point for parsing and processing a single Xyxel segment containing attributes and node blocks.
     /// </summary>
+    /// <param name="markerPrefix">Level or nest marker prefix (e.g. "L0").</param>
+    /// <param name="input">Raw segment input containing parenthesis-delimited blocks.</param>
+    /// <returns>Option containing the parsed Attributes and Tree.</returns>
+    /// <example>
+    /// <code>
+    /// let segment = Lexel.processXyxel "L0" "(Q=VRCWEE/W=30)(1/20/Hall)(1.1/10/Room)"
+    /// </code>
+    /// </example>
     let processXyxel (markerPrefix: string) (input: string) =
         Regex.Matches(input.Trim(), @"\(([^)]*)\)")
         |> Seq.cast<Match>
@@ -141,9 +165,16 @@ module Lexel =
                 |}
 
     /// <summary> 
-    /// Processes a multi-marker Hywe string, splitting it into individual segments and processing each.
-    /// Handles L# and N# markers.
+    /// Processes a full multi-marker Hywe specification string, splitting into individual level (L#) and nest (N#) segments.
     /// </summary>
+    /// <param name="input">Full multi-level Hywe string.</param>
+    /// <returns>List of parsed LexelBlock items (Level or Nest).</returns>
+    /// <example>
+    /// <code>
+    /// let spec = "L0(Q=VRCWEE)(1/20/Hall)L1(Q=HRCWNN)(1/15/Master)"
+    /// let blocks = Lexel.processFullString spec
+    /// </code>
+    /// </example>
     let processFullString (input: string) : LexelBlock list =
         Regex.Matches(input.Trim(), @"([^()]*?)((?:\([^)]*\))+(?=(?:[^()]*\(|$)))")
         |> Seq.cast<Match>
@@ -160,8 +191,15 @@ module Lexel =
         |> Seq.toList
 
     /// <summary> 
-    /// Utility to extract sequence mapping from a full Hywe string.
+    /// Extracts a level index to traversal sequence string mapping from a full Hywe string.
     /// </summary>
+    /// <param name="input">Full multi-level Hywe string.</param>
+    /// <returns>Map from level index (0-based) to sequence name (e.g. 0 -> "VRCWEE").</returns>
+    /// <example>
+    /// <code>
+    /// let sqnMap = Lexel.extractSequences "L0(Q=VRCWEE)(1/10/Room)L1(Q=HRCWNN)(1/10/Office)"
+    /// </code>
+    /// </example>
     let extractSequences (input: string) : Map<int, string> =
         processFullString input
         |> List.mapi (fun i s -> 
@@ -171,8 +209,17 @@ module Lexel =
 
     /// <summary> 
     /// Injects or updates a specific level's sequence (Q=) within a full Hywe string.
-    /// Supports L# and N# markers.
+    /// Supports both level (L#) and nest (N#) markers.
     /// </summary>
+    /// <param name="input">Full Hywe specification string.</param>
+    /// <param name="lvl">Zero-based level index to modify.</param>
+    /// <param name="sqn">New traversal sequence string (e.g. "HRCWNN").</param>
+    /// <returns>Modified specification string with updated Q= sequence parameter.</returns>
+    /// <example>
+    /// <code>
+    /// let updatedSpec = Lexel.injectSqn "L0(Q=VRCWEE)(1/10/Room)" 0 "HRCWNN"
+    /// </code>
+    /// </example>
     let injectSqn (input: string) (lvl: int) (sqn: string) : string =
         let markers = Regex.Split(input, @"(?=[LN]\d+)") |> Array.filter (not << String.IsNullOrWhiteSpace)
         match lvl >= 0 && lvl < markers.Length with

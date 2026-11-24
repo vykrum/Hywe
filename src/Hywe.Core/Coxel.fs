@@ -28,11 +28,27 @@ module Coxel =
             Hxls : Hxl[]
         }  
 
-    /// <summary> Property value types </summary>
+    /// <summary>
+    /// Extracts the string value from any Coxel property (Prp) tag (Label, Refid, or Count).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let label = Coxel.prpVlu (Coxel.Label "Lobby") // "Lobby"
+    /// let count = Coxel.prpVlu (Coxel.Count 15)      // "15"
+    /// </code>
+    /// </example>
     let prpVlu = function 
         | Label s | Refid s -> s
         | Count i -> string i
 
+    /// <summary>
+    /// Serializes all cell coordinates of a Coxel into space-separated Base34 coordinate pairs (e.g. "0.0 2.0 1.-2").
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let coordsStr = Coxel.getCxlCoordsString room
+    /// </code>
+    /// </example>
     let getCxlCoordsString (cxl: Cxl) =
         Array.append [|cxl.Base|] cxl.Hxls 
         |> Array.map (fun h -> 
@@ -40,11 +56,28 @@ module Coxel =
             sprintf "%s.%s" (toBase34 (int64 x)) (toBase34 (int64 y)))
         |> String.concat " "
 
+    /// <summary>
+    /// Serializes only the anchor base coordinate of a Coxel into a single Base34 coordinate pair (e.g. "0.0").
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let baseStr = Coxel.getBaseCoordString room
+    /// </code>
+    /// </example>
     let getBaseCoordString (cxl: Cxl) =
         let (x, y, _) = hxlCrd cxl.Base
         sprintf "%s.%s" (toBase34 (int64 x)) (toBase34 (int64 y))
 
-    /// <summary> Creating an array of coxels. </summary>
+    /// <summary>
+    /// The primary deterministic spatial clustering engine. Concurrently grows multiple room clusters from their respective seed bases up to their target capacities while avoiding collisions and obstacles.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let livingBase = Hexel.Hxl.AV(0, 0, 0) |> Hexel.hxlVld Hexel.Sqn.VRCWEE
+    /// let program = [| (livingBase, Coxel.Refid "1.0", Coxel.Count 15, Coxel.Label "Living") |]
+    /// let rooms = Coxel.coxel Hexel.Sqn.VRCWEE 0 program [||]
+    /// </code>
+    /// </example>
     let coxel (sqn : Sqn) (elv : int) (ini : (Hxl*Prp*Prp*Prp)[]) (occ : Hxl[]) = 
         let bas = ini |> Array.map (fun (h, _, p, _) -> h, int (prpVlu p))
         let szn = ini |> Array.map (fun (_, _, y, z) -> y, z)
@@ -124,7 +157,21 @@ module Coxel =
                     }
             ) szn idn cl1
 
-    /// <summary> Generate child coxels. </summary>
+    /// <summary>
+    /// Generates child Coxels hierarchically grown around a parent Coxel host according to a branch specification.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="bsCx">Parent host Coxel.</param>
+    /// <param name="tre">Array of (RefId, Count, Label) specifications for the branch.</param>
+    /// <param name="occ">Already occupied hexels.</param>
+    /// <returns>Updated parent Coxel, generated child Coxels, and updated occupied hexels.</returns>
+    /// <example>
+    /// <code>
+    /// let branch = [| (Refid "1", Count 4, Label "Living"); (Refid "1.1", Count 2, Label "Balcony") |]
+    /// let updatedParent, children, newOcc = Coxel.coxelChildren Hexel.Sqn.VRCWEE 0 parentCxl branch occ
+    /// </code>
+    /// </example>
     let coxelChildren (sqn : Sqn) (elv : int) (bsCx : Cxl) (tre : (Prp*Prp*Prp)[]) (occ : Hxl[]) =
         let cnt = (Array.length tre) - 1
         
@@ -175,7 +222,34 @@ module Coxel =
                 
         updatedBsCx, finalCxc, chOc1
 
-    /// <summary> Create the base/root coxel for a layout. </summary>
+    /// <summary>
+    /// Creates the base/root Coxel for a layout, either initialized from entry point coordinates or inherited from a parent Coxel.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="bsAtr">Base coordinate string (e.g. "0" or "10,20").</param>
+    /// <param name="entryFallback">Fallback coordinate hexel if bsAtr is "0".</param>
+    /// <param name="id">Property identifier for the root.</param>
+    /// <param name="ct">Property count / cell capacity.</param>
+    /// <param name="lb">Property label.</param>
+    /// <param name="occ">Already occupied hexels.</param>
+    /// <param name="bsHxSetOverride">Optional parent Coxel to inherit footprint from.</param>
+    /// <returns>Tuple of the constructed root Coxel and the updated occupied hexel array.</returns>
+    /// <example>
+    /// <code>
+    /// let rootCxl, occ =
+    ///     Coxel.createBaseCoxel
+    ///         Hexel.Sqn.VRCWEE
+    ///         0
+    ///         "0"
+    ///         (Hexel.identity 0)
+    ///         (Refid "1")
+    ///         (Count 6)
+    ///         (Label "Hall")
+    ///         [||]
+    ///         None
+    /// </code>
+    /// </example>
     let createBaseCoxel (sqn : Sqn) (elv : int) (bsAtr : string) (entryFallback : Hxl) (id : Prp) (ct : Prp) (lb : Prp) (occ : Hxl[]) (bsHxSetOverride : Cxl option) =
         match bsHxSetOverride with
         | Some parentCxl ->
@@ -224,7 +298,14 @@ module Coxel =
                 let updatedOcc = Array.concat [| occ; [|bsHx|]; refinedHxls |] |> hxlUni 1
                 rootCxl, updatedOcc
 
-    /// <summary> Count open/exposed Hexels. </summary>
+    /// <summary>
+    /// Calculates the number of exposed, unblocked perimeter hexels for each room in an array of Coxels.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let exposures = Coxel.cxlExp rooms Hexel.Sqn.VRCWEE 0
+    /// </code>
+    /// </example>
     let cxlExp (cxl : Cxl[]) (sqn : Sqn) (elv : int)= 
         let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> hxlUni 1 
         let occSet = hxlSet occ
@@ -233,7 +314,14 @@ module Coxel =
             hx |> Array.filter(fun x -> (availableSet sq elv x oc) > 0) |> Array.length
         cxl |> Array.map (fun a -> cxlAvl a sqn occSet)
 
-    /// <summary> Categorize constituent Hexels within a Coxel. </summary>
+    /// <summary>
+    /// Categorizes and extracts all constituent cells of a Coxel into structural zones (Core, Periphery, Border, Available).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let breakdown = Coxel.cxlHxl room 0
+    /// </code>
+    /// </example>
     let cxlHxl (cxl : Cxl) (elv : int) = 
         let bndSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) = 
             let arr (hxl : Hxl[]) (opt : bool) = 
@@ -346,6 +434,14 @@ module Coxel =
         let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
         match crossProduct = 0 with | true -> Collinear | false -> Turning
 
+    /// <summary>
+    /// Computes the continuous 2D perimeter boundary coordinates along the outer edge of a room cluster.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let perimeterCoords = Coxel.cxlPrm room 0
+    /// </code>
+    /// </example>
     let cxlPrm (cxl : Cxl) (elv : int) =
         let rec clean points =
             match points with
@@ -373,7 +469,14 @@ module Coxel =
         |> clean
         |> List.toArray
 
-    /// <summary> Coxel Center </summary>
+    /// <summary>
+    /// Computes the geometric centroid cell coordinate (x, y) of a room cluster, finding the nearest member hexel to the true mathematical center.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let (cx, cy) = Coxel.cxlCnt room
+    /// </code>
+    /// </example>
     let cxlCnt (cxl : Cxl): int * int = 
         match cxl.Hxls with
         | [||] -> (-10, -10) 
@@ -393,7 +496,14 @@ module Coxel =
             let finalX, finalY, _ = hxlCrd closestHxl
             (finalX, finalY)
 
-    /// <summary> Functional Adjacency Matrix Calculation. </summary>
+    /// <summary>
+    /// Computes the topological spatial adjacency matrix across all room clusters, determining which spaces share common boundary walls.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let names, adjacencyMatrix = Coxel.cxlAdj rooms
+    /// </code>
+    /// </example>
     let cxlAdj (cxls: Cxl[]) =
         match cxls with
         | [||] -> [||], [||]
