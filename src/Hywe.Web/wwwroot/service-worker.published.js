@@ -39,7 +39,8 @@ async function onFetch(event) {
     if (event.request.method !== 'GET') {
         return fetch(event.request);
     }
-    const shouldServeIndexHtml = event.request.mode === 'navigate';
+    const isApiDoc = new URL(event.request.url).pathname.startsWith('/api');
+    const shouldServeIndexHtml = event.request.mode === 'navigate' && !isApiDoc;
     const request = shouldServeIndexHtml ? 'index.html' : event.request;
     const cache = await caches.open(cacheName);
     const cachedResponse = await cache.match(request);
