@@ -90,6 +90,8 @@ jobs:
           dotnet fsdocs build --clean \
             --projects src/Hywe.Core/Hywe.Core.fsproj \
             --parameters root https://hywe.in/api/ \
+              fsdocs-license-link https://github.com/vykrum/Hywe/blob/main/LICENSE \
+              fsdocs-release-notes-link https://github.com/vykrum/Hywe/blob/main/RELEASE_NOTES.md \
             --output ${{ env.PUBLISH_DIR }}/wwwroot/api
 
       - name: Clean up debug symbols (.pdb)
