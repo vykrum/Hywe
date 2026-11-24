@@ -27,7 +27,7 @@ The computational pipeline translates abstract spatial graphs into fully resolve
 
 ---
 
-## 1. Module: `Hywe.Core.Hexel`
+## 1. Hexel (Lattice)
 
 The `Hexel` module defines the atomic unit of the Hygrid lattice and provides the discrete arithmetic, sequence operators, parity validation, and neighbor traversal functions.
 
@@ -100,7 +100,7 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 
 ---
 
-## 2. Module: `Hywe.Core.Coxel`
+## 2. Coxel (Clustering)
 
 A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, room, or functional space.
 
@@ -138,7 +138,7 @@ A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, r
 
 ---
 
-## 3. Module: `Hywe.Core.Goxel`
+## 3. Goxel (Geometry)
 
 The `Goxel` module translates discrete integer lattice coordinates into continuous vector geometry, boundary polygons, and linear segments.
 
@@ -181,7 +181,7 @@ The `Goxel` module translates discrete integer lattice coordinates into continuo
 
 ---
 
-## 4. Module: `Hywe.Core.Lexel`
+## 4. Lexel (AST)
 
 The `Lexel` module parses architectural program declarations and `.hyw` domain-specific syntax into strongly-typed abstract syntax trees.
 
@@ -212,7 +212,7 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 ---
 
-## 5. Module: `Hywe.Core.Xyxel`
+## 5. Xyxel (Layout)
 
 `Xyxel` handles planar layout planning, boundary fitting, and 2D spatial arrangement.
 
@@ -239,7 +239,7 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 ---
 
-## 6. Module: `Hywe.Core.Nexel`
+## 6. Nexel (Nesting)
 
 `Nexel` provides recursive spatial nesting, allowing architectural sub-programmes to be nested inside parent room boundaries.
 
@@ -254,7 +254,7 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 ---
 
-## 7. Module: `Hywe.Core.Zaxel`
+## 7. Zaxel (3D Stacking)
 
 `Zaxel` manages multi-level vertical aggregation, floor-to-floor stacking, and 3D volumetric massing data structures.
 

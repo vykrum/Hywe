@@ -25,6 +25,12 @@
     <script type="application/javascript" src="{{root}}content/fsdocs-details-set-expanded.js"></script>
     <link href="{{root}}content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
     <link href="{{root}}content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    <script>
+        // Forward generic empty /reference/index.html to the unified Hywe.Core API page
+        if (window.location.pathname.endsWith('/reference/index.html') || window.location.pathname.endsWith('/reference/')) {
+            window.location.replace('{{root}}reference/hywe-core.html');
+        }
+    </script>
     {{fsdocs-head-extra}}
     {{fsdocs-watch-script}}
 </head>
@@ -37,26 +43,20 @@
             <input type="checkbox" name="mobile-menu" />
             <ul class="menu">
                 <li class="nav-header">Links</li>
-                <li class="license-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
-                </li>
-                <li class="release-notes-menu-item builtin-menu-item nav-item"><a class="nav-link"
-                                        href="{{fsdocs-release-notes-link}}">Release
-                    Notes</a></li>
-                <li class="repository-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
-                    Repository</a></li>
+                <li class="license-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a></li>
+                <li class="release-notes-menu-item builtin-menu-item nav-item"><a class="nav-link" href="https://github.com/vykrum/Hywe/blob/main/RELEASE_NOTES.md">Release Notes</a></li>
+                <li class="repository-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source Repository</a></li>
                 <li class="nav-header">Documentation</li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}index.html">API Overview</a></li>
-                <li class="nav-header">Core Modules</li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-hexel.html">Hexel (Lattice)</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-coxel.html">Coxel (Clustering)</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-goxel.html">Goxel (Geometry)</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-lexel.html">Lexel (AST)</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-xyxel.html">Xyxel (Layout)</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-nexel.html">Nexel (Nesting)</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-zaxel.html">Zaxel (Multilevel)</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}index.html">Overview & Architecture</a></li>
                 <li class="nav-header">API Reference</li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/index.html">All Namespaces</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core.html">Hywe.Core Namespace</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core.html">Hywe.Core (All Modules)</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-hexel.html">Hexel API</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-coxel.html">Coxel API</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-goxel.html">Goxel API</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-lexel.html">Lexel API</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-xyxel.html">Xyxel API</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-nexel.html">Nexel API</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-zaxel.html">Zaxel API</a></li>
             </ul>
         </div>
         <a href="{{fsdocs-logo-link}}">
@@ -75,26 +75,20 @@
 <aside id="fsdocs-main-menu">
     <ul class="menu">
         <li class="nav-header">Links</li>
-        <li class="license-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a>
-        </li>
-        <li class="release-notes-menu-item builtin-menu-item nav-item"><a class="nav-link"
-                                href="{{fsdocs-release-notes-link}}">Release
-            Notes</a></li>
-        <li class="repository-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source
-            Repository</a></li>
+        <li class="license-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-license-link}}">License</a></li>
+        <li class="release-notes-menu-item builtin-menu-item nav-item"><a class="nav-link" href="https://github.com/vykrum/Hywe/blob/main/RELEASE_NOTES.md">Release Notes</a></li>
+        <li class="repository-menu-item builtin-menu-item nav-item"><a class="nav-link" href="{{fsdocs-repository-link}}">Source Repository</a></li>
         <li class="nav-header">Documentation</li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}index.html">API Overview</a></li>
-        <li class="nav-header">Core Modules</li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-hexel.html">Hexel (Lattice)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-coxel.html">Coxel (Clustering)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-goxel.html">Goxel (Geometry)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-lexel.html">Lexel (AST)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-xyxel.html">Xyxel (Layout)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-nexel.html">Nexel (Nesting)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-zaxel.html">Zaxel (Multilevel)</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}index.html">Overview & Architecture</a></li>
         <li class="nav-header">API Reference</li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/index.html">All Namespaces</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core.html">Hywe.Core Namespace</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core.html">Hywe.Core (All Modules)</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-hexel.html">Hexel API</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-coxel.html">Coxel API</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-goxel.html">Goxel API</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-lexel.html">Lexel API</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-xyxel.html">Xyxel API</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-nexel.html">Nexel API</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{root}}reference/hywe-core-zaxel.html">Zaxel API</a></li>
     </ul>
 </aside>
 <main>
