@@ -25,7 +25,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       - name: Setup .NET
@@ -87,30 +86,41 @@ jobs:
           cat release_body.md
 
       - name: Update RELEASE_NOTES.md
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          TODAY: ${{ steps.meta.outputs.date }}
         shell: bash
         run: |
-          VERSION="${{ steps.meta.outputs.version }}"
-          TODAY="${{ steps.meta.outputs.date }}"
+          python3 - <<'EOF'
+          import os
 
-          python3 - <<EOF
-          with open('RELEASE_NOTES.md', 'r') as f:
-              content = f.read()
+          version = os.environ.get('VERSION', 'unknown')
+          today = os.environ.get('TODAY', 'unknown')
 
-          with open('release_body.md', 'r') as f:
-              body = f.read().strip()
+          body = ""
+          if os.path.exists('release_body.md'):
+              with open('release_body.md', 'r', encoding='utf-8') as f:
+                  body = f.read().strip()
 
-          new_section = f"## [{VERSION}] — {TODAY}\n\n{body}\n\n---\n\n"
+          new_entry = f"## [{version}] — {today}\n\n{body}\n\n---\n\n"
 
-          # Insert right after the header if present, otherwise at top
-          header_marker = "All notable changes to the \`Hywe.Core\` NuGet package and engine are documented in this file.\n\n---\n\n"
-          if header_marker in content:
-              parts = content.split(header_marker, 1)
-              updated = parts[0] + header_marker + new_section + parts[1]
+          content = ""
+          if os.path.exists('RELEASE_NOTES.md'):
+              with open('RELEASE_NOTES.md', 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+          marker = "---\n\n"
+          idx = content.find(marker)
+          if idx != -1:
+              updated = content[:idx + len(marker)] + new_entry + content[idx + len(marker):]
+          elif content.strip():
+              updated = content.rstrip() + "\n\n---\n\n" + new_entry
           else:
-              updated = new_section + content
+              updated = "# Hywe.Core Release Notes\n\nAll notable changes to the `Hywe.Core` NuGet package and engine are documented in this file.\n\n---\n\n" + new_entry
 
-          with open('RELEASE_NOTES.md', 'w') as f:
+          with open('RELEASE_NOTES.md', 'w', encoding='utf-8') as f:
               f.write(updated)
+          print(f"Successfully updated RELEASE_NOTES.md for {version}")
           EOF
 
       - name: Update CITATION.cff
@@ -118,8 +128,10 @@ jobs:
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
           TODAY="${{ steps.meta.outputs.date }}"
-          sed -i -E "s/^version: .*/version: \"$VERSION\"/" CITATION.cff
-          sed -i -E "s/^date-released: .*/date-released: \"$TODAY\"/" CITATION.cff
+          if [ -f CITATION.cff ]; then
+            sed -i -E "s/^version: .*/version: \"$VERSION\"/" CITATION.cff
+            sed -i -E "s/^date-released: .*/date-released: \"$TODAY\"/" CITATION.cff
+          fi
 
       - name: Update Version in Hywe.Core.fsproj
         shell: bash
@@ -169,7 +181,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CITATION.cff RELEASE_NOTES.md src/Hywe.Core/Hywe.Core.fsproj
           git diff --staged --quiet || git commit -m "chore(release): $VERSION [skip ci]"
-          git push origin main
+          git push origin HEAD
 
       - name: Create GitHub Release
         if: ${{ !inputs.dry_run }}
