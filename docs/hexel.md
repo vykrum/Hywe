@@ -83,3 +83,92 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
   Classifies cells into available, reserved, or boundary status relative to site obstacles.
 * **`hxlChkSet : Sqn -> int -> HashSet<Hxl> -> Hxl[] -> Hxl[]`**  
   High-performance hash set variant of `hxlChk`.
+
+---
+
+## Usage Examples
+
+### 1. Creating and Deconstructing Hexels
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Hexel
+
+// Origin anchor cell at ground elevation (z = 0)
+let origin = Hexel.identity 0 // RV(0, 0, 0)
+
+// Creating an available cell at coordinate (2, 0, 0)
+let cell = Hxl.AV(2, 0, 0)
+
+// Deconstructing to raw coordinates
+let x, y, z = Hexel.hxlCrd cell
+printfn "Cell coordinates: x=%d, y=%d, z=%d" x y z
+
+// Compact Base34 encoding
+let b34 = Hexel.toBase34 100L
+printfn "Base34: %s" b34
+```
+
+### 2. Validating Coordinate Parity
+
+The Hygrid lattice enforces parity rules (`% 2` and `% 4`) to maintain integer grid connectivity across vertical and horizontal weaves:
+
+```fsharp
+// Snapping arbitrary input coordinates to the nearest legal lattice cell
+let rawPoint = Hxl.AV(1, 1, 0)
+let legalCell = Hexel.hxlVld Sqn.VRCWEE rawPoint
+
+let lx, ly, _ = Hexel.hxlCrd legalCell
+printfn "Snapped legal coordinates: (%d, %d)" lx ly
+```
+
+### 3. Traversal and Neighbor Discovery
+
+Each sequence operator defines the heading and clockwise/counterclockwise order of the 6 surrounding cells:
+
+```fsharp
+// Get the 7 relative coordinate offsets (origin + 6 neighbors)
+let offsets = Hexel.sequence Sqn.VRCWEE
+
+// Compute the 7 absolute neighbor cells centered on the origin
+let host = Hxl.AV(0, 0, 0)
+let neighbors = Hexel.adjacent Sqn.VRCWEE host
+
+for n in neighbors do
+    let nx, ny, nz = Hexel.hxlCrd n
+    printfn "Neighbor: (%d, %d, %d)" nx ny nz
+```
+
+### 4. Availability & Cluster Expansion
+
+```fsharp
+// Create a fast lookup set of occupied obstacles
+let occupied = [| Hxl.AV(2, 0, 0); Hxl.AV(1, -2, 0) |]
+let occSet = Hexel.hxlSet occupied
+
+// Check how many free neighbors remain around origin
+let freeNeighbors = Hexel.availableSet Sqn.VRCWEE 0 host occSet
+printfn "Free adjacent cells: %d" freeNeighbors
+
+// Advance a cluster seed towards the next optimal growth step
+let seed = (host, 5) // (seed cell, remaining capacity)
+match Hexel.incrementSet Sqn.VRCWEE 0 seed occSet with
+| nextCell, remaining when remaining >= 0 ->
+    printfn "Next cell in cluster: %A" nextCell
+| _ ->
+    printfn "Cluster expansion blocked"
+```
+
+### 5. Boundary Tracing & Exterior Buffer
+
+```fsharp
+let cluster = [| Hxl.AV(0, 0, 0); Hxl.AV(2, 0, 0); Hxl.AV(1, 2, 0) |]
+
+// Trace the continuous ordered outer perimeter
+let perimeter = Hexel.bndSqn Sqn.VRCWEE 0 cluster
+
+// Compute a 1-ring outer buffer around the cluster
+let bufferRing = Hexel.hxlOfs Sqn.VRCWEE 0 cluster
+printfn "Buffer ring cell count: %d" bufferRing.Length
+```
+

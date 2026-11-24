@@ -33,7 +33,17 @@ module Hexel =
         | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE 
         | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> Horizontal
 
-    /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel. </summary>
+    /// <summary>
+    /// Sequence Locations: Relative (dx, dy) coordinate offsets of adjacent/neighbouring hexels relative to the host hexel.
+    /// Index 0 is always the host origin (0, 0), followed by 6 neighboring offsets ordered by sequence heading and chirality.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <returns>Array of 7 (dx, dy) integer coordinate offset pairs.</returns>
+    /// <example>
+    /// <code>
+    /// let offsets = Hexel.sequence Hexel.Sqn.VRCWEE
+    /// </code>
+    /// </example>
     let sequence (sqn:Sqn) =  
         match sqn with 
         | VRCWEE -> [| 0,0;  2, 0;  1,-2; -1,-2; -2, 0; -1, 2;  1, 2|]
@@ -66,6 +76,16 @@ module Hexel =
         HRCWNN; HRCCNN; HRCWNE; HRCCNE; HRCWSE; HRCCSE; HRCWSS; HRCCSS; HRCWSW; HRCCSW; HRCWNW; HRCCNW
     |]
 
+    /// <summary>
+    /// Converts a Sqn sequence union case to its canonical string representation (e.g. "VRCWEE").
+    /// </summary>
+    /// <param name="sqn">Sequence union case.</param>
+    /// <returns>String name of the sequence.</returns>
+    /// <example>
+    /// <code>
+    /// let name = Hexel.sqnToString Hexel.Sqn.VRCWEE // "VRCWEE"
+    /// </code>
+    /// </example>
     let sqnToString (sqn: Sqn) =
         match sqn with
         | VRCWEE -> "VRCWEE" | VRCCEE -> "VRCCEE" | VRCWSE -> "VRCWSE" | VRCCSE -> "VRCCSE" 
@@ -218,7 +238,20 @@ module Hexel =
             | None -> (hxlVld sqn (identity elv),-1)
         | _ -> (hxlVld sqn (identity elv),-1)
 
-    /// <summary> Increment Hexel using HashSet for performance. </summary>
+    /// <summary>
+    /// Computes the next optimal expansion hexel for a spatial cluster using a HashSet for high-performance O(1) occupancy checks.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="hxo">Seed hexel and weight tuple.</param>
+    /// <param name="occ">HashSet of currently occupied obstacle hexels.</param>
+    /// <returns>Option containing next candidate hexel and weight, or invalid hexel tuple if blocked.</returns>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// let next = Hexel.incrementSet Hexel.Sqn.VRCWEE 0 (Hexel.Hxl.AV(0, 0, 0), 1) occSet
+    /// </code>
+    /// </example>
     let incrementSet (sqn : Sqn) (elv : int) (hxo : Hxl * int) (occ : System.Collections.Generic.HashSet<Hxl>) = 
         match hxo with 
         | x, y when y >= 0 -> 
@@ -279,7 +312,20 @@ module Hexel =
                 countFree (i + 1) (match not (occ.Contains(n)) && n <> hxo with | true -> acc + 1 | false -> acc)
         match adj.Length > 1 with | true -> countFree 1 0 | false -> 0
 
-    /// <summary> Optimized version of hxlChk using a HashSet for performance. </summary>
+    /// <summary>
+    /// Classifies an array of hexels into available (AV) or boundary/reserved (RV) status using a HashSet for high performance.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="occSet">HashSet of occupied hexels.</param>
+    /// <param name="hxl">Candidate hexels to classify.</param>
+    /// <returns>Classified array of hexels.</returns>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// let checkedCells = Hexel.hxlChkSet Hexel.Sqn.VRCWEE 0 occSet [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlChkSet (sqn : Sqn) (elv : int) (occSet : System.Collections.Generic.HashSet<Hxl>) (hxl : Hxl[]) = 
         hxl |> Array.map (fun x -> 
             let (x1,y1,z1) = hxlCrd x
@@ -288,11 +334,35 @@ module Hexel =
             | false -> 
                 match (availableSet sqn elv x occSet) < 1 with | true -> RV(x1,y1,z1) | false -> AV(x1,y1,z1))
 
+    /// <summary>
+    /// Classifies candidate hexels against an occupied obstacle array into available (AV) or reserved (RV) state.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="occ">Occupied obstacle hexels.</param>
+    /// <param name="hxl">Hexels to classify.</param>
+    /// <returns>Classified array of hexels.</returns>
+    /// <example>
+    /// <code>
+    /// let classified = Hexel.hxlChk Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0) |] [| Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlChk (sqn : Sqn) (elv : int) (occ : Hxl[]) (hxl : Hxl[]) = 
         let occSet = hxlSet (Array.append occ hxl)
         hxlChkSet sqn elv occSet hxl
 
-    ///<summary> Add Hexel at Narrow Bridge. </summary>
+    /// <summary>
+    /// Detects and fills internal cavities or voids trapped within an enclosed cluster of hexels.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="hxl">Cluster of hexels.</param>
+    /// <returns>Hexel array with internal bridge gaps filled.</returns>
+    /// <example>
+    /// <code>
+    /// let filled = Hexel.hxlFil Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(4, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlFil (sqn : Sqn) (elv : int) (hxl : Hxl[]) = 
         let hxx = hxl |> hxlUni 1     
         let hx1 = hxx |> Array.map (fun x -> adjacent sqn x)
@@ -306,7 +376,21 @@ module Hexel =
                     | false -> [||]
         Array.append hxx hx2 |> hxlChk sqn elv [||]
 
-    /// <summary> Increment Hexels using a HashSet for occupancy. </summary>
+    /// <summary>
+    /// Advances multiple active cluster seeds simultaneously using a HashSet for high performance.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="hxo">Array of active (seed hexel, weight) tuples.</param>
+    /// <param name="occSet">HashSet of occupied cells.</param>
+    /// <returns>Array of next (hexel, weight) steps for each seed.</returns>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// let active = [| (Hexel.Hxl.AV(0, 0, 0), 4); (Hexel.Hxl.AV(8, 0, 0), 2) |]
+    /// let advanced = Hexel.incrementsSet Hexel.Sqn.VRCWEE 0 active occSet
+    /// </code>
+    /// </example>
     let incrementsSet (sqn : Sqn) (elv : int) (hxo : (Hxl*int)[]) (occSet : System.Collections.Generic.HashSet<Hxl>) = 
         let replaceDuplicateSet (sqn : Sqn) (elv : int) (hxo : (Hxl*int)[]) (inc : (Hxl*int)[]) (occSet : System.Collections.Generic.HashSet<Hxl>) =   
             let localBatchSet = System.Collections.Generic.HashSet<Hxl>()
