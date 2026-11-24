@@ -22,9 +22,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Verify Branch is main
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "::error ::PublishRelease can only be executed on the 'main' branch (current branch is '${{ github.ref_name }}'). Please merge your changes into 'main' first."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Setup .NET
@@ -172,7 +181,7 @@ jobs:
             --source "https://api.nuget.org/v3/index.json" \
             --skip-duplicate
 
-      - name: Commit and Push Release Updates
+      - name: Commit and Push Release Updates to main
         if: ${{ !inputs.dry_run }}
         shell: bash
         run: |
@@ -181,7 +190,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CITATION.cff RELEASE_NOTES.md src/Hywe.Core/Hywe.Core.fsproj
           git diff --staged --quiet || git commit -m "chore(release): $VERSION [skip ci]"
-          git push origin HEAD
+          git push origin main
 
       - name: Create GitHub Release
         if: ${{ !inputs.dry_run }}
