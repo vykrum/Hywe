@@ -31,7 +31,7 @@ The computational pipeline translates abstract spatial graphs into fully resolve
 
 The `Hexel` module defines the atomic unit of the Hygrid lattice and provides the discrete arithmetic, sequence operators, parity validation, and neighbor traversal functions.
 
-### Types
+### Hexel Types
 
 | Type | Kind | Description |
 | :--- | :--- | :--- |
@@ -40,7 +40,7 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 | `Sqn` | Struct Union | The 24 canonical sequence operators (Q₂₄): 12 Vertical (`VRCWEE`..`VRCCNE`) and 12 Horizontal (`HRCWNN`..`HRCCNW`). |
 | `(|Vertical|Horizontal|)` | Active Pattern | Categorizes any `Sqn` into either vertical or horizontal grid orientation. |
 
-### Functions
+### Hexel Functions
 
 #### Coordinate Arithmetic & Validation
 * **`hxlCrd : Hxl -> int * int * int`**  
@@ -104,14 +104,14 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 
 A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, room, or functional space.
 
-### Types
+### Coxel Types
 
 | Type | Kind | Description |
 | :--- | :--- | :--- |
 | `Prp` | Union | Architectural space metadata tag: `Label of string`, `Refid of string`, or `Count of int`. |
 | `Cxl` | Record | Encapsulates a resolved room: `{ Name: Prp; Rfid: Prp; Size: Prp; Seqn: Sqn; Base: Hxl; Hxls: Hxl[] }`. |
 
-### Functions
+### Coxel Functions
 
 * **`prpVlu : Prp -> string`**  
   Extracts the string representation from any `Prp` tag.
@@ -142,7 +142,7 @@ A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, r
 
 The `Goxel` module translates discrete integer lattice coordinates into continuous vector geometry, boundary polygons, and linear segments.
 
-### Functions
+### Goxel Functions
 
 * **`hxlLin : Sqn -> int -> Hxl -> Hxl -> Hxl[]`**  
   Computes a discrete Bresenham-like raster line of hexels connecting two coordinates on the hybrid integer lattice.
@@ -185,7 +185,7 @@ The `Goxel` module translates discrete integer lattice coordinates into continuo
 
 The `Lexel` module parses architectural program declarations and `.hyw` domain-specific syntax into strongly-typed abstract syntax trees.
 
-### Types
+### Lexel Types
 
 | Type | Kind | Description |
 | :--- | :--- | :--- |
@@ -195,7 +195,7 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 | `NestBlock` | Record | Nested sub-configuration embedded within a parent room. |
 | `LexelBlock` | Union | Container union: `Level of LevelBlock` or `Nest of NestBlock`. |
 
-### Functions
+### Lexel Functions
 
 * **`parseNodes : string -> string list -> LexelNode list list`**  
   Parses raw string tokens (e.g. `["(1/15/Living)"; "(1.1/8/Entry)"]`) into hierarchical trees of `LexelNode` instances.
@@ -216,13 +216,13 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 `Xyxel` handles planar layout planning, boundary fitting, and 2D spatial arrangement.
 
-### Types
+### Xyxel Types
 
 * **`LayoutTree`**: Scaled representation of the architectural program tree with total requested area.
 * **`LayoutOptions`**: Configuration options for layout synthesis (elevation, boundary overrides, entry points).
 * **`LayoutContext`**: Complete resolved context containing boundary constraints, keep-out islands, and scaled node trees.
 
-### Functions
+### Xyxel Functions
 
 * **`prepareLayoutContext : Map<string, string> -> LayoutTree -> LayoutOptions -> LayoutContext`**  
   Prepares site boundary polylines, voids, and scaled program trees into an executable layout synthesis context.
@@ -243,7 +243,7 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 `Nexel` provides recursive spatial nesting, allowing architectural sub-programmes to be nested inside parent room boundaries.
 
-### Functions
+### Nexel Functions
 
 * **`generateNestLayout : NestBlock -> Coxel.Cxl -> float -> Coxel.Cxl[] -> string option -> Coxel.Cxl[] * (int * int * int * int) * float`**  
   Synthesizes an internal sub-layout within the boundary footprint of a host room.
@@ -258,11 +258,11 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 `Zaxel` manages multi-level vertical aggregation, floor-to-floor stacking, and 3D volumetric massing data structures.
 
-### Types
+### Zaxel Types
 
 * **`BuildState`**: State accumulator for multi-level buildings: `{ Cxls: Cxl[]; Bounds: (int * int * int * int)[]; Elvs: (int * int)[]; Ratio: float; ... }`.
 
-### Functions
+### Zaxel Functions
 
 * **`generateMultiLevelLayout : string -> string -> Hxl[] -> (int * Sqn) option -> string option -> string option -> BuildState`**  
   Parses a complete multi-level `.hyw` architectural dossier, resolves all floor levels and nested spaces, and outputs the volumetric building state.
