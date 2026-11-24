@@ -547,6 +547,7 @@ let viewAboutModal (model: Model) (dispatch: Message -> unit) =
                         }
                     chip "HYWE Wiki" "https://wiki.hywe.in" "wiki.hywe.in"
                     chip "HYWE Engine" "https://repo.hywe.in" "repo.hywe.in"
+                    chip "HYWE API" "https://api.hywe.in" "api.hywe.in"
                     chip "HYWE Data" "https://data.hywe.in" "data.hywe.in"
                     chip "LinkedIn" "https://linkedin.hywe.in" "linkedin.hywe.in"
                     chip "X (Twitter)" "https://x.com/_hywe_" "x.com/_hywe_"
