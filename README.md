@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Language: F#](https://img.shields.io/badge/Language-F%23-30B0C7.svg)](https://fsharp.org/) [![NuGet: Hywe.Core](https://img.shields.io/nuget/v/Hywe.Core.svg)](https://www.nuget.org/packages/Hywe.Core) [![Platform: WebAssembly](https://img.shields.io/badge/Platform-WebAssembly-654FF0.svg)](https://webassembly.org/) [![Graphics: WebGPU](https://img.shields.io/badge/Graphics-WebGPU-orange.svg)](https://gpuweb.github.io/gpuweb/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24472629.svg)](https://doi.org/10.5281/zenodo.24472629) [![Dataset: Hugging Face](https://img.shields.io/badge/Dataset-%F0%9F%A4%97%20Hugging%20Face-ffd21e)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
 
-**[Launch HYWE (hywe.in)](https://hywe.in)** · **[Wiki & Research Reference](https://wiki.hywe.in)** · **[API Reference](https://api.hywe.in)** · **[Spatial Dataset](https://data.hywe.in)**
+**[Launch HYWE (hywe.in)](https://hywe.in)** · **[Wiki & Research Reference](https://wiki.hywe.in)** · **[API Reference](https://hywe.in/api/)** · **[Spatial Dataset](https://data.hywe.in)**
 
 ---
 
@@ -14,7 +14,7 @@
 >
 > - **[HYWE Web App](https://hywe.in)** (`hywe.in`) — Direct-manipulation spatial design environment.
 > - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Open-source computational engine.
-> - **[HYWE API Docs](https://api.hywe.in)** (`api.hywe.in`) — Standalone .NET engine API documentation and type reference.
+> - **[HYWE API Docs](https://hywe.in/api/)** (`hywe.in/api`) — Standalone .NET engine API documentation and type reference.
 > - **[HYWE Wiki](https://wiki.hywe.in)** (`wiki.hywe.in`) — Comprehensive research documentation, ontology, and specifications.
 > - **[HYWE Spatial Dataset](https://data.hywe.in)** (`data.hywe.in`) — Structured corpus of procedural design intent and deterministic configurations.
 
