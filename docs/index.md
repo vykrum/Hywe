@@ -23,7 +23,7 @@ dotnet add package Hywe.Core
 
 The computational pipeline translates abstract spatial graphs into fully resolved 2D floorplans and 3D volumetric massing across seven decoupled stages:
 
-$$\text{Lexel (AST)} \longrightarrow \text{Hexel (Lattice)} \longrightarrow \text{Coxel (Clustering)} \longrightarrow \text{Goxel (Geometry)} \longrightarrow \text{Xyxel / Nexel / Zaxel}$$
+> **Lexel (AST)** &rarr; **Hexel (Lattice)** &rarr; **Coxel (Clustering)** &rarr; **Goxel (Geometry)** &rarr; **Xyxel / Nexel / Zaxel**
 
 ---
 
@@ -37,7 +37,7 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 | :--- | :--- | :--- |
 | `Point` | Struct | Integer 2D Cartesian coordinate: `{ X: int; Y: int }`. |
 | `Hxl` | Struct Union | Atomic cell state: `AV(x, y, z)` (Available), `RV(x, y, z)` (Reserved/Occupied), `EX(x, y, z)` (External). |
-| `Sqn` | Struct Union | The 24 canonical sequence operators ($\mathcal{Q}_{24}$): 12 Vertical (`VRCWEE`..`VRCCNE`) and 12 Horizontal (`HRCWNN`..`HRCCNW`). |
+| `Sqn` | Struct Union | The 24 canonical sequence operators (Q₂₄): 12 Vertical (`VRCWEE`..`VRCCNE`) and 12 Horizontal (`HRCWNN`..`HRCCNW`). |
 | `(|Vertical|Horizontal|)` | Active Pattern | Categorizes any `Sqn` into either vertical or horizontal grid orientation. |
 
 ### Functions
@@ -68,7 +68,7 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 * **`available : Sqn -> int -> obj -> Hxl[] -> int`**  
   Counts free neighbor cells around a candidate hexel given an array of occupied obstacles.
 * **`availableSet : Sqn -> int -> Hxl -> HashSet<Hxl> -> int`**  
-  High-performance $O(1)$ variant of `available` using a hash set of occupied cells.
+  High-performance O(1) variant of `available` using a hash set of occupied cells.
 * **`increment : Sqn -> int -> Hxl * int -> Hxl[] -> (Hxl * int) option`**  
   Computes the next optimal expansion hexel for a growing spatial cluster.
 * **`incrementSet : Sqn -> int -> Hxl * int -> HashSet<Hxl> -> (Hxl * int) option`**  
@@ -78,7 +78,7 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 * **`incrementsSet : Sqn -> int -> (Hxl * int)[] -> HashSet<Hxl> -> (Hxl * int)[]`**  
   High-performance hash set variant of `increments`.
 * **`hxlSet : Hxl seq -> HashSet<Hxl>`**  
-  Constructs a `System.Collections.Generic.HashSet<Hxl>` from any sequence of hexels for $O(1)$ membership checks.
+  Constructs a `System.Collections.Generic.HashSet<Hxl>` from any sequence of hexels for O(1) membership checks.
 * **`getHxls : (Hxl * int)[] -> Hxl[]`**  
   Extracts the underlying `Hxl` array from an array of weighted tuples.
 
