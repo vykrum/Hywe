@@ -8,7 +8,7 @@
 
 ---
 
-![HYWE Banner](https://vykrum.github.io/Hywe/images/hyweLogoBanner.png)
+![HYWE Banner](src/Hywe.Web/wwwroot/images/hyweLogoBanner.png)
 
 > **HYWE** is a computational design environment and open research project where **structured intent** transforms into **spatial configurations** through **deterministic computation**.
 >
