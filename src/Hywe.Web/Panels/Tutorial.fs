@@ -213,26 +213,32 @@ let private makeSingleNodeModel () : SubModel =
 let private rootOf (sm: SubModel) = sm.Levels.[sm.ActiveLevel]
 let private sel (sm: SubModel) idOpt = { sm with SelectedNodeId = idOpt }
 
+let private updateAndLayout updater (sm: SubModel) : SubModel =
+    let newRoot = updater (rootOf sm)
+    let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
+    { sm with Levels = sm.Levels |> Map.add sm.ActiveLevel laidOut } |> Coloring.colorModel
+
+let private updateNode (nodeId: Guid) f (sm: SubModel) : SubModel =
+    sm |> updateAndLayout (TreeOps.updateNodeById nodeId f)
+
+let private reorderNode (sourceId: Guid) (targetId: Guid) reorderOp (sm: SubModel) : SubModel =
+    match TreeOps.extractNode sourceId (rootOf sm) with
+    | Some rs, Some ex -> sm |> updateAndLayout (fun _ -> reorderOp targetId ex rs)
+    | _ -> sm
+
 let private addNamedChild (parentId: Guid) (name: string) (weight: string) (sm: SubModel) : SubModel =
-    let r = rootOf sm
     let child = {
         Id = Guid.NewGuid(); Name = name; Weight = weight
         X = 0.0; Y = 0.0; Children = []; Level = sm.ActiveLevel
         Extrusion = 3.0; Base = None; Color = None }
-    let newRoot = TreeOps.updateNodeById parentId (fun n -> { n with Children = n.Children @ [child] }) r
-    let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-    { sm with Levels = sm.Levels |> Map.add sm.ActiveLevel laidOut } |> Coloring.colorModel
+    sm |> updateNode parentId (fun n -> { n with Children = n.Children @ [child] })
 
 let private buildBaseSnapshots () =
     let s0 = makeSingleNodeModel ()
     let rootNode0 = rootOf s0
     let rootId = rootNode0.Id
 
-    let s1base =
-        let r = rootOf s0
-        let newRoot = TreeOps.updateNodeById rootId (fun n -> { n with Name = "Entry"; Weight = "25" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { s0 with Levels = s0.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
+    let s1base = s0 |> updateNode rootId (fun n -> { n with Name = "Entry"; Weight = "25" })
 
     let s2a_base = addNamedChild rootId "Studio" "24" s1base
     let rootNode2a = rootOf s2a_base
@@ -249,23 +255,9 @@ let private buildBaseSnapshots () =
     let sp3Node = rootNode2c.Children |> List.find (fun n -> n.Name.Contains("Bath"))
     let sp3Id = sp3Node.Id
 
-    let s2d2_base =
-        let r = rootOf s2c_base
-        let newRoot = TreeOps.updateNodeById sp1Id (fun n -> { n with Weight = "36" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { s2c_base with Levels = s2c_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-
-    let s2e2_base =
-        let r = rootOf s2d2_base
-        let newRoot = TreeOps.updateNodeById sp2Id (fun n -> { n with Name = "Bedroom" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { s2d2_base with Levels = s2d2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-
-    let s2f2_base =
-        let r = rootOf s2e2_base
-        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Name = "Bath" }) r
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { s2e2_base with Levels = s2e2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
+    let s2d2_base = s2c_base |> updateNode sp1Id (fun n -> { n with Weight = "36" })
+    let s2e2_base = s2d2_base |> updateNode sp2Id (fun n -> { n with Name = "Bedroom" })
+    let s2f2_base = s2e2_base |> updateNode sp3Id (fun n -> { n with Name = "Bath" })
 
     let s3 = sel s2f2_base (Some sp3Id)
 
@@ -273,28 +265,14 @@ let private buildBaseSnapshots () =
     let dragPtLeft = { SvgX = child2Node.X - 35.0; SvgY = child2Node.Y }
     let s4a = { s3 with DraggingId = Some sp3Id; DragPos = Some dragPtLeft; DropTargetId = Some sp2Id; DropTargetMode = Some DropBefore }
 
-    let s4bbase =
-        let (rootWithoutSource, extracted) = TreeOps.extractNode sp3Id (rootOf s2f2_base)
-        match rootWithoutSource, extracted with
-        | Some rs, Some ex ->
-            let reordered = TreeOps.insertBefore sp2Id ex rs
-            let laidOut = fst (TreeOps.layoutTree reordered 0 50.0)
-            { s2f2_base with Levels = s2f2_base.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-        | _ -> s2f2_base
+    let s4bbase = s2f2_base |> reorderNode sp3Id sp2Id TreeOps.insertBefore
 
     let rootNodeS4b = rootOf s4bbase
     let child1NodeS4b = TreeOps.findNodeById sp1Id rootNodeS4b |> Option.get
     let dragPtChild = { SvgX = child1NodeS4b.X; SvgY = child1NodeS4b.Y + 45.0 }
     let s5a = { sel s4bbase (Some sp3Id) with DraggingId = Some sp3Id; DragPos = Some dragPtChild; DropTargetId = Some sp1Id; DropTargetMode = Some DropAsChild }
 
-    let s5bbase =
-        let (rootWithoutSource, extracted) = TreeOps.extractNode sp3Id (rootOf s4bbase)
-        match rootWithoutSource, extracted with
-        | Some rs, Some ex ->
-            let reordered = TreeOps.attachChild sp1Id ex rs
-            let laidOut = fst (TreeOps.layoutTree reordered 0 50.0)
-            { s4bbase with Levels = s4bbase.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
-        | _ -> s4bbase
+    let s5bbase = s4bbase |> reorderNode sp3Id sp1Id TreeOps.attachChild
 
     let s6a = sel s5bbase (Some sp2Id)
     let s6b = { s6a with ConfirmingId = Some sp2Id; ActiveActionId = ActionIds.Elevate; SelectedNodeId = Some sp2Id }
@@ -358,12 +336,7 @@ let basicSnapshots : SubModel[] =
 let hierarchySnapshots : SubModel[] =
     let cleanS2f2 = baseSnaps.CleanS2f2
     let sp3Id = baseSnaps.Sp3Id
-    let rootNode = rootOf cleanS2f2
-
-    let sWeightEdit =
-        let newRoot = TreeOps.updateNodeById sp3Id (fun n -> { n with Weight = "150" }) rootNode
-        let laidOut = fst (TreeOps.layoutTree newRoot 0 50.0)
-        { cleanS2f2 with Levels = cleanS2f2.Levels |> Map.add 0 laidOut } |> Coloring.colorModel
+    let sWeightEdit = cleanS2f2 |> updateNode sp3Id (fun n -> { n with Weight = "150" })
 
     [|
         baseSnaps.S3           // Step 0: Initiate Node Relocation
@@ -467,6 +440,16 @@ let badgeColor = function
     | NoBadge       -> "transparent"
 
 // ─────────────────────────────────────────────
+// Navigation & Action Icon SVGs
+// ─────────────────────────────────────────────
+
+let private iconPause = """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>"""
+let private iconPlay  = """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>"""
+let private iconBack  = """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
+let private iconNext  = """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
+let private iconCheck = """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
+
+// ─────────────────────────────────────────────
 // View
 // ─────────────────────────────────────────────
 
@@ -531,7 +514,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     if def.Badge <> NoBadge then
                         span {
                             attr.``class`` "tutorial-badge-chip"
-                            attr.style $"background:{badgeColor def.Badge}18; border-color:{badgeColor def.Badge}44; color:{badgeColor def.Badge};"
+                            attr.style $"--chip-color:{badgeColor def.Badge};"
                             rawHtml (badgeIcon def.Badge)
                         }
                     span {
@@ -570,9 +553,11 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     attr.title (if autoPlay then "Pause auto advance" else "Auto advance steps")
                     on.click (fun _ -> dispatch ToggleTutorialAutoPlay)
                     if autoPlay then
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="pointer-events:none;"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg><span style="pointer-events:none;"> Pause</span>"""
+                        rawHtml iconPause
+                        text " Pause"
                     else
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="pointer-events:none;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span style="pointer-events:none;"> Auto</span>"""
+                        rawHtml iconPlay
+                        text " Auto"
                 }
             }
             div {
@@ -581,7 +566,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                     attr.``class`` "hywe-btn active"
                     attr.disabled isFirst
                     on.click (fun _ -> dispatch TutorialBack)
-                    rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="15 18 9 12 15 6"></polyline></svg>"""
+                    rawHtml iconBack
                     text " Back"
                 }
                 if isLast then
@@ -592,7 +577,7 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                             attr.title $"Proceed to {TutorialLevel.name nxt}"
                             on.click (fun _ -> dispatch (SetTutorialLevel nxt))
                             text $"Next: {TutorialLevel.shortName nxt} "
-                            rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
+                            rawHtml iconNext
                         }
                     | None -> ()
 
@@ -600,14 +585,14 @@ let viewTutorialBanner (level: TutorialLevel) (tutorialStep: int) (autoPlay: boo
                         attr.``class`` "hywe-btn active"
                         on.click (fun _ -> dispatch DismissTutorial)
                         text "Start designing "
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
+                        rawHtml iconCheck
                     }
                 else
                     button {
                         attr.``class`` "hywe-btn active"
                         on.click (fun _ -> dispatch TutorialNext)
                         text "Next "
-                        rawHtml """<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="9 18 15 12 9 6"></polyline></svg>"""
+                        rawHtml iconNext
                     }
             }
         }
