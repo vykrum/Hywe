@@ -125,6 +125,10 @@ A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, r
   Calculates perimeter exposure metrics and exterior boundary availability for an array of rooms.
 * **`cxlHxl : Cxl -> int -> Hxl[]`**  
   Extracts all member hexels of a `Cxl` at a given elevation.
+* **`cxlPrm : Sqn -> int -> Cxl -> (int * int)[]`**  
+  Computes the continuous perimeter boundary coordinates along the outer edge of a room cluster.
+* **`cxlCnt : Cxl -> int * int`**  
+  Computes the geometric centroid cell coordinate `(x, y)` of a room cluster, finding the nearest member hexel to the true mathematical center.
 * **`cxlAdj : Cxl[] -> string[] * bool[][]`**  
   Computes the topological spatial adjacency matrix across all room clusters, determining which spaces share common boundary walls.
 * **`getCxlCoordsString : Cxl -> string`**  
@@ -146,6 +150,10 @@ The `Goxel` module translates discrete integer lattice coordinates into continuo
   Converts a series of 2D polygon vertices into a closed, filled set of discrete lattice hexels.
 * **`cleanPolygon : Sqn -> (int * int)[] -> (int * int)[]`**  
   Normalizes polygon vertices by removing collinear points, deduplicating sequential coordinates, and smoothing lattice sawtooth artifacts.
+* **`dedupeSequential : (int * int)[] -> (int * int)[]`**  
+  Removes consecutive duplicate vertex coordinates from a polygon point array.
+* **`ensureClosed : (int * int)[] -> (int * int)[]`**  
+  Appends the start vertex to the end if not already identical, guaranteeing a closed polygon ring.
 * **`removeSawtooth : Sqn -> (int * int)[] -> (int * int)[]`**  
   Eliminates discrete stair-step / sawtooth artifacts along lattice boundary paths.
 * **`removeCollinear : (int * int)[] -> (int * int)[]`**  
@@ -166,6 +174,10 @@ The `Goxel` module translates discrete integer lattice coordinates into continuo
   Parses a serialized coordinate stream into floating-point vertex tuples.
 * **`parsePolyIslands : string -> (float * float)[][]`**  
   Parses multiple serialized island/void polygons.
+* **`parseCoords : string -> (int * int)[]`**  
+  Parses space- or comma-separated integer coordinates into coordinate pairs.
+* **`parseIslands : string -> (int * int)[][]`**  
+  Parses semicolon-delimited multiple interior island/void polygon vertex arrays.
 
 ---
 
@@ -189,6 +201,14 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
   Parses raw string tokens (e.g. `["(1/15/Living)"; "(1.1/8/Entry)"]`) into hierarchical trees of `LexelNode` instances.
 * **`parseAttributes : string -> LexelAttributes`**  
   Parses header attribute blocks (e.g. `"[Q:VRCWEE;L:0;W:40;H:40]"`) into strongly-typed `LexelAttributes`.
+* **`processXyxel : string -> string -> {| Attributes: LexelAttributes; Tree: LexelNode list list |} option`**  
+  Unified parser processing both attribute blocks and node declarations for a single floor level.
+* **`processFullString : string -> LexelBlock list`**  
+  Top-level parser splitting an entire multi-level `.hyw` architectural program into structured `Level` and `Nest` blocks.
+* **`extractSequences : string -> Map<int, string>`**  
+  Extracts the mapping of level indices to their active sequence operators (`Q=...`).
+* **`injectSqn : string -> int -> string -> string`**  
+  Updates or inserts a sequence operator specification into a specific level marker within a `.hyw` program string.
 
 ---
 
@@ -206,12 +226,16 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
 
 * **`prepareLayoutContext : Map<string, string> -> LayoutTree -> LayoutOptions -> LayoutContext`**  
   Prepares site boundary polylines, voids, and scaled program trees into an executable layout synthesis context.
+* **`generateBaseCxl : LayoutContext -> (Coxel.Cxl * Hxl[]) option`**  
+  Synthesizes the primary anchor root room and establishes initial boundary occupancy obstacles.
 * **`generateCxlLayout : LayoutContext -> (Coxel.Cxl * Hxl[]) option -> Hxl[] -> Coxel.Cxl[] * (int * int * int * int) * float`**  
   Executes full planar layout compilation, returning resolved room clusters, bounding box, and scaling ratio.
 * **`applyReproportioning : int64 -> LayoutTree -> float option -> LayoutTree * float`**  
   Proportionally scales program target areas to fit within the physical net area of site boundaries.
 * **`calculateTargetRatio : Map<string, string> -> LayoutTree -> LayoutOptions -> float`**  
   Computes the optimal packing scale ratio.
+* **`tryParseUnion<'T> : string -> 'T option`**  
+  Generic reflection helper parsing string representation into strongly-typed discriminated union cases.
 
 ---
 
