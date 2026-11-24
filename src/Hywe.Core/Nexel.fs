@@ -16,14 +16,29 @@ module Nexel =
     }
 
     /// <summary> 
-    /// Checks if a marker is a Nest marker (e.g., N1, N2).
+    /// Checks whether a section marker identifier represents a nested sub-layout marker (e.g. "N1", "N2").
     /// </summary>
+    /// <param name="marker">Marker string to inspect.</param>
+    /// <returns>True if the marker starts with 'N'; otherwise false.</returns>
+    /// <example>
+    /// <code>
+    /// let isNest = Nexel.isNestMarker "N1" // true
+    /// let isLevel = Nexel.isNestMarker "L0" // false
+    /// </code>
+    /// </example>
     let isNestMarker (marker: string) =
         not (String.IsNullOrEmpty(marker)) && marker.StartsWith("N")
 
     /// <summary> 
-    /// Extracts the nest index from a marker.
+    /// Extracts the integer index from a nested sub-layout marker (e.g. extracts 1 from "N1").
     /// </summary>
+    /// <param name="marker">Nest marker string.</param>
+    /// <returns>Some integer index if successfully parsed; otherwise None.</returns>
+    /// <example>
+    /// <code>
+    /// let nestIdx = Nexel.getNestIndex "N2" // Some 2
+    /// </code>
+    /// </example>
     let getNestIndex (marker: string) =
         Some marker
         |> Option.filter isNestMarker
@@ -32,7 +47,22 @@ module Nexel =
             | true, v -> Some v
             | _ -> None)
 
-    /// <summary> Generates nested layout using the Xyxel layout engine. </summary>
+    /// <summary>
+    /// Generates a nested spatial layout confined within the perimeter boundary of a host parent Coxel.
+    /// </summary>
+    /// <param name="nest">Parsed NestBlock containing attributes and sub-tree nodes.</param>
+    /// <param name="hostCxl">Host parent Coxel whose boundary contains the nested layout.</param>
+    /// <param name="hostThickness">Host slab thickness.</param>
+    /// <param name="allCxls">All previously generated Coxels across the floor plan.</param>
+    /// <param name="sqnStrOverride">Optional sequence override string.</param>
+    /// <returns>Option containing generated nested Coxel array, boundary vertex arrays, and applied ratio.</returns>
+    /// <example>
+    /// <code>
+    /// match Nexel.generateNestLayout nestBlock hostCxl 3.0 allRooms None with
+    /// | Some (nestedRooms, bounds, ratio) -> ()
+    /// | None -> ()
+    /// </code>
+    /// </example>
     let generateNestLayout (nest: NestBlock) (hostCxl: Coxel.Cxl) (hostThickness: float) (allCxls: Coxel.Cxl[]) (sqnStrOverride: string option) =
         let attrs = nest.Attributes
         let elv = 

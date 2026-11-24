@@ -33,7 +33,17 @@ module Hexel =
         | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE 
         | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> Horizontal
 
-    /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel. </summary>
+    /// <summary>
+    /// Sequence Locations: Relative (dx, dy) coordinate offsets of adjacent/neighbouring hexels relative to the host hexel.
+    /// Index 0 is always the host origin (0, 0), followed by 6 neighboring offsets ordered by sequence heading and chirality.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <returns>Array of 7 (dx, dy) integer coordinate offset pairs.</returns>
+    /// <example>
+    /// <code>
+    /// let offsets = Hexel.sequence Hexel.Sqn.VRCWEE
+    /// </code>
+    /// </example>
     let sequence (sqn:Sqn) =  
         match sqn with 
         | VRCWEE -> [| 0,0;  2, 0;  1,-2; -1,-2; -2, 0; -1, 2;  1, 2|]
@@ -66,6 +76,16 @@ module Hexel =
         HRCWNN; HRCCNN; HRCWNE; HRCCNE; HRCWSE; HRCCSE; HRCWSS; HRCCSS; HRCWSW; HRCCSW; HRCWNW; HRCCNW
     |]
 
+    /// <summary>
+    /// Converts a Sqn sequence union case to its canonical string representation (e.g. "VRCWEE").
+    /// </summary>
+    /// <param name="sqn">Sequence union case.</param>
+    /// <returns>String name of the sequence.</returns>
+    /// <example>
+    /// <code>
+    /// let name = Hexel.sqnToString Hexel.Sqn.VRCWEE // "VRCWEE"
+    /// </code>
+    /// </example>
     let sqnToString (sqn: Sqn) =
         match sqn with
         | VRCWEE -> "VRCWEE" | VRCCEE -> "VRCCEE" | VRCWSE -> "VRCWSE" | VRCCSE -> "VRCCSE" 
@@ -76,17 +96,38 @@ module Hexel =
         | HRCWSW -> "HRCWSW" | HRCCSW -> "HRCCSW" | HRCWNW -> "HRCWNW" | HRCCNW -> "HRCCNW"
 
 
-    /// <summary> Identity Hexel. </summary>
+    /// <summary>
+    /// Returns the lattice origin anchor cell at the specified elevation: RV(0, 0, elv).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let origin = Hexel.identity 0 // RV(0, 0, 0)
+    /// </code>
+    /// </example>
     let identity (elv:int) = RV(0,0, elv)
 
-    /// <summary> Extract coordinates from hexel. </summary>
+    /// <summary>
+    /// Deconstructs any Hxl instance and returns its raw (x, y, z) integer coordinate triple.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let (x, y, z) = Hexel.hxlCrd (Hexel.Hxl.AV(2, 4, 0))
+    /// </code>
+    /// </example>
     let inline hxlCrd (h: Hxl) =
         match h with
         | AV(x,y,z) -> x,y,z
         | RV(x,y,z) -> x,y,z
         | EX(x,y,z) -> x,y,z
 
-    /// <summary> Converts an integer to a Base34 string (excludes I and O). </summary>
+    /// <summary>
+    /// Converts an integer coordinate or index to HYWE's compact Base34 string representation (excludes 'I' and 'O').
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let b34 = Hexel.toBase34 35L // "11"
+    /// </code>
+    /// </example>
     let toBase34 (value: int64) =
         let chars = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
         let rec convert v acc =
@@ -96,7 +137,14 @@ module Hexel =
         let prefix = match value < 0L with | true -> "-" | false -> ""
         prefix + convert (abs value) ""
 
-    /// <summary> Valid Hexels. </summary>
+    /// <summary>
+    /// Validates and snaps an arbitrary coordinate to the nearest legal discrete lattice cell based on modulo parity rules.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let snapped = Hexel.hxlVld Hexel.Sqn.VRCWEE (Hexel.Hxl.AV(1, 1, 0))
+    /// </code>
+    /// </example>
     let hxlVld (sqn : Sqn) (hxl : Hxl) = 
         let validate s x y z =
             match s, x, y with
@@ -114,7 +162,14 @@ module Hexel =
         | RV _ -> RV vld
         | EX _ -> EX vld
 
-    /// <summary> Change all hexel types to a uniform type.</summary>
+    /// <summary>
+    /// Change all hexel types in an array to a uniform occupancy state (1 = AV, 2 = RV, 3 = EX).
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let occupiedCells = Hexel.hxlUni 2 [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlUni (opt : int) (hxl : Hxl[]) = 
         let constructor x y z = 
                 match opt with
@@ -124,19 +179,48 @@ module Hexel =
                 | _ -> AV(x,y,z)
         hxl |> Array.map (fun h -> let (x,y,z) = hxlCrd h in constructor x y z)
 
-    /// <summary> Create a HashSet of AV hexels for O(1) lookup. </summary>
+    /// <summary>
+    /// Creates a System.Collections.Generic.HashSet of AV hexels for high-performance O(1) membership lookups.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(2, 0, 0) |]
+    /// let isOccupied = occSet.Contains(Hexel.Hxl.AV(0, 0, 0)) // true
+    /// </code>
+    /// </example>
     let hxlSet (hxls: Hxl seq) = 
         System.Collections.Generic.HashSet<Hxl>(hxls |> Seq.map (fun h -> let x,y,z = hxlCrd h in AV(x,y,z)))
 
-    /// <summary> Get Hexel from Tuple. </summary>
+    /// <summary>
+    /// Extracts the underlying Hxl array from an array of weighted (Hxl * int) tuples.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let hexels = Hexel.getHxls [| (Hexel.Hxl.AV(0, 0, 0), 10); (Hexel.Hxl.AV(2, 0, 0), 5) |]
+    /// </code>
+    /// </example>
     let getHxls (hxo : (Hxl*int)[]) = hxo |> Array.map fst
 
-    /// <summary> Adjacent Hexels. </summary>
+    /// <summary>
+    /// Computes the 7 neighboring hexel cells centered on the host hexel, ordered by sequence heading and chirality.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let neighbors = Hexel.adjacent Hexel.Sqn.VRCWEE (Hexel.Hxl.AV(0, 0, 0))
+    /// </code>
+    /// </example>
     let adjacent (sqn : Sqn) (hxo : Hxl) =
         let x, y, z = hxlCrd hxo
         sequence sqn |> Array.map (fun (a, b) -> AV(x + a, y + b, z))
 
-    /// <summary> Increment Hexel. </summary>
+    /// <summary>
+    /// Computes the next optimal expansion hexel for a growing spatial cluster while avoiding obstacles.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let next = Hexel.increment Hexel.Sqn.VRCWEE 0 (Hexel.Hxl.AV(0, 0, 0), 1) [||]
+    /// </code>
+    /// </example>
     let increment (sqn : Sqn) (elv : int) (hxo : Hxl * int) (occ : Hxl[]) = 
         let occ = Array.concat [| occ; [|(fst hxo)|]; [|identity elv|] |] |> hxlUni 1
         match hxo with 
@@ -154,7 +238,20 @@ module Hexel =
             | None -> (hxlVld sqn (identity elv),-1)
         | _ -> (hxlVld sqn (identity elv),-1)
 
-    /// <summary> Increment Hexel using HashSet for performance. </summary>
+    /// <summary>
+    /// Computes the next optimal expansion hexel for a spatial cluster using a HashSet for high-performance O(1) occupancy checks.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="hxo">Seed hexel and weight tuple.</param>
+    /// <param name="occ">HashSet of currently occupied obstacle hexels.</param>
+    /// <returns>Option containing next candidate hexel and weight, or invalid hexel tuple if blocked.</returns>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// let next = Hexel.incrementSet Hexel.Sqn.VRCWEE 0 (Hexel.Hxl.AV(0, 0, 0), 1) occSet
+    /// </code>
+    /// </example>
     let incrementSet (sqn : Sqn) (elv : int) (hxo : Hxl * int) (occ : System.Collections.Generic.HashSet<Hxl>) = 
         match hxo with 
         | x, y when y >= 0 -> 
@@ -180,7 +277,14 @@ module Hexel =
             | None -> (hxlVld sqn (identity elv), -1)
         | _ -> (hxlVld sqn (identity elv), -1)
 
-    /// <summary> Available Adjacent Hexels. </summary>
+    /// <summary>
+    /// Counts free neighbor cells around a candidate hexel given an array of occupied obstacle cells.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let freeCount = Hexel.available Hexel.Sqn.VRCWEE 0 (Hexel.Hxl.AV(0, 0, 0)) [||]
+    /// </code>
+    /// </example>
     let available (sqn : Sqn) (elv : int) (hxo : obj) (occ : Hxl[]) =  
         let occ = occ |> hxlUni 1
         let hx1 = match hxo with 
@@ -189,7 +293,15 @@ module Hexel =
                     | _ -> identity elv
         hx1 |> adjacent sqn |> Array.except (Array.append occ [|hx1|]) |> Array.length
 
-    /// <summary> Available Adjacent Hexels using HashSet for performance. </summary>
+    /// <summary>
+    /// High-performance O(1) variant of available using a HashSet of occupied cells.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(2, 0, 0) |]
+    /// let freeCount = Hexel.availableSet Hexel.Sqn.VRCWEE 0 (Hexel.Hxl.AV(0, 0, 0)) occSet
+    /// </code>
+    /// </example>
     let availableSet (sqn : Sqn) (elv : int) (hxo : Hxl) (occ : System.Collections.Generic.HashSet<Hxl>) =  
         let adj = adjacent sqn hxo
         let rec countFree i acc =
@@ -200,7 +312,20 @@ module Hexel =
                 countFree (i + 1) (match not (occ.Contains(n)) && n <> hxo with | true -> acc + 1 | false -> acc)
         match adj.Length > 1 with | true -> countFree 1 0 | false -> 0
 
-    /// <summary> Optimized version of hxlChk using a HashSet for performance. </summary>
+    /// <summary>
+    /// Classifies an array of hexels into available (AV) or boundary/reserved (RV) status using a HashSet for high performance.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="occSet">HashSet of occupied hexels.</param>
+    /// <param name="hxl">Candidate hexels to classify.</param>
+    /// <returns>Classified array of hexels.</returns>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// let checkedCells = Hexel.hxlChkSet Hexel.Sqn.VRCWEE 0 occSet [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlChkSet (sqn : Sqn) (elv : int) (occSet : System.Collections.Generic.HashSet<Hxl>) (hxl : Hxl[]) = 
         hxl |> Array.map (fun x -> 
             let (x1,y1,z1) = hxlCrd x
@@ -209,11 +334,35 @@ module Hexel =
             | false -> 
                 match (availableSet sqn elv x occSet) < 1 with | true -> RV(x1,y1,z1) | false -> AV(x1,y1,z1))
 
+    /// <summary>
+    /// Classifies candidate hexels against an occupied obstacle array into available (AV) or reserved (RV) state.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="occ">Occupied obstacle hexels.</param>
+    /// <param name="hxl">Hexels to classify.</param>
+    /// <returns>Classified array of hexels.</returns>
+    /// <example>
+    /// <code>
+    /// let classified = Hexel.hxlChk Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0) |] [| Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlChk (sqn : Sqn) (elv : int) (occ : Hxl[]) (hxl : Hxl[]) = 
         let occSet = hxlSet (Array.append occ hxl)
         hxlChkSet sqn elv occSet hxl
 
-    ///<summary> Add Hexel at Narrow Bridge. </summary>
+    /// <summary>
+    /// Detects and fills internal cavities or voids trapped within an enclosed cluster of hexels.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="hxl">Cluster of hexels.</param>
+    /// <returns>Hexel array with internal bridge gaps filled.</returns>
+    /// <example>
+    /// <code>
+    /// let filled = Hexel.hxlFil Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(4, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlFil (sqn : Sqn) (elv : int) (hxl : Hxl[]) = 
         let hxx = hxl |> hxlUni 1     
         let hx1 = hxx |> Array.map (fun x -> adjacent sqn x)
@@ -227,7 +376,21 @@ module Hexel =
                     | false -> [||]
         Array.append hxx hx2 |> hxlChk sqn elv [||]
 
-    /// <summary> Increment Hexels using a HashSet for occupancy. </summary>
+    /// <summary>
+    /// Advances multiple active cluster seeds simultaneously using a HashSet for high performance.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="elv">Elevation layer.</param>
+    /// <param name="hxo">Array of active (seed hexel, weight) tuples.</param>
+    /// <param name="occSet">HashSet of occupied cells.</param>
+    /// <returns>Array of next (hexel, weight) steps for each seed.</returns>
+    /// <example>
+    /// <code>
+    /// let occSet = Hexel.hxlSet [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// let active = [| (Hexel.Hxl.AV(0, 0, 0), 4); (Hexel.Hxl.AV(8, 0, 0), 2) |]
+    /// let advanced = Hexel.incrementsSet Hexel.Sqn.VRCWEE 0 active occSet
+    /// </code>
+    /// </example>
     let incrementsSet (sqn : Sqn) (elv : int) (hxo : (Hxl*int)[]) (occSet : System.Collections.Generic.HashSet<Hxl>) = 
         let replaceDuplicateSet (sqn : Sqn) (elv : int) (hxo : (Hxl*int)[]) (inc : (Hxl*int)[]) (occSet : System.Collections.Generic.HashSet<Hxl>) =   
             let localBatchSet = System.Collections.Generic.HashSet<Hxl>()
@@ -249,12 +412,27 @@ module Hexel =
                 next)
         replaceDuplicateSet sqn elv hxo inc occSet
 
-    /// <summary> Increment Hexels. </summary>
+    /// <summary>
+    /// Advances multiple active cluster seeds simultaneously while preventing mutual collision.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let activeSeeds = [| (Hexel.Hxl.AV(0, 0, 0), 10); (Hexel.Hxl.AV(8, 0, 0), 5) |]
+    /// let nextSeeds = Hexel.increments Hexel.Sqn.VRCWEE 0 activeSeeds [||]
+    /// </code>
+    /// </example>
     let increments (sqn : Sqn) (elv : int) (hxo : (Hxl*int)[]) (occ : Hxl[]) = 
         let occSet = hxlSet occ
         incrementsSet sqn elv hxo occSet
 
-    /// <summary> Boundary Hexels Ring. </summary>
+    /// <summary>
+    /// Traces and returns the ordered continuous outer boundary perimeter hexels of a cluster.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let boundary = Hexel.bndSqn Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let bndSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) = 
         let rec arr (sqn : Sqn) (elv : int) (hxl : Hxl[]) (acc : Hxl[]) (cnt : int) (opt : bool) = 
             match cnt with 
@@ -274,7 +452,14 @@ module Hexel =
         let bln = Array.map(fun x -> let (x1,y1,_) = hxlCrd (Array.head x) in let (x2,y2,_) = hxlCrd (Array.last x) in (x2 - x1 >= 0) && (y1 - y2 >= 0)) ar3
         match Array.contains false bln with | true -> Array.rev ar2 | false -> ar2
 
-    /// <summary> Hexel Ring Segment Sequence. </summary>
+    /// <summary>
+    /// Sorts a collection of hexels into a continuous sequence path.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let path = Hexel.cntSqn Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0); Hexel.Hxl.AV(2, 0, 0) |]
+    /// </code>
+    /// </example>
     let cntSqn (sqn : Sqn) (elv : int) (hxo : Hxl[]) =      
         let hxl = hxlUni 1 hxo
         let rec ctSq (sqn : Sqn) (hxl : Hxl[]) (acc : Hxl[]) (cnt : int) = 
@@ -294,11 +479,25 @@ module Hexel =
         let ar1 = match cnt = Array.length(arr) with | true -> arr | false -> ctSq sqn (Array.rev hxlSort) ([|Array.last hxlSort|]) cnt
         match hxo with | [||] -> [||] | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with | true -> ar1 | false -> hxlUni 2 ar1
 
-    /// <summary> Hexel Ring Offset. </summary>
+    /// <summary>
+    /// Calculates a single-ring exterior offset/buffer surrounding a collection of hexels.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let buffer = Hexel.hxlOfs Hexel.Sqn.VRCWEE 0 [| Hexel.Hxl.AV(0, 0, 0) |]
+    /// </code>
+    /// </example>
     let hxlOfs (sqn : Sqn) (elv : int) (hxl : Hxl[]) = 
         hxl |> hxlUni 1 |> Array.map(fun x -> adjacent sqn x) |> Array.concat |> Array.distinct |> Array.except (hxlUni 1 hxl) |> cntSqn sqn elv
 
-    /// <summary> Restored Hexel Types </summary>
+    /// <summary>
+    /// Filters original hexels, retaining only those whose coordinates match any in the target array.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let filtered = Hexel.hxlRst originalHexels candidateHexels
+    /// </code>
+    /// </example>
     let hxlRst (org : Hxl[]) (hxl : Hxl[]) =
         let crd = Array.map hxlCrd hxl
         org |> Array.filter (fun x -> (crd |> Array.contains (hxlCrd x)))

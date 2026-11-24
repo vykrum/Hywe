@@ -27,7 +27,24 @@ module Zaxel =
         RootI: string option
     }
 
-    /// <summary> Recursively processes all levels using a purely functional state-carrying approach. </summary>
+    /// <summary>
+    /// Recursively processes and generates a complete multi-level architectural layout from a multi-marker Hywe string.
+    /// Resolves global scaling ratios across elevations, constructs rooms for each level and nested block, and calculates floor slab elevations.
+    /// </summary>
+    /// <param name="fullStr">Full multi-level Hywe string (e.g. "L0(Q=VRCWEE/W=30)(1/20/Hall)L1(Q=HRCWNN)(1/15/Bed)").</param>
+    /// <param name="entryAtrFallback">Fallback entry coordinate string (e.g. "0,0").</param>
+    /// <param name="initialOcc">Array of initially occupied or obstacle hexels.</param>
+    /// <param name="seqOverride">Optional level index and sequence override tuple.</param>
+    /// <param name="ouStrOverride">Optional outer boundary string override.</param>
+    /// <param name="ilStrOverride">Optional island obstacle string override.</param>
+    /// <returns>4-tuple of (generated Coxels array, boundary vertex arrays per level, slab elevation levels, applied scaling ratios).</returns>
+    /// <example>
+    /// <code>
+    /// let hyweCode = "L0(Q=VRCWEE/W=30)(1/20/Hall)(1.1/10/Kitchen)L1(Q=HRCWNN)(1/15/Bed)"
+    /// let rooms, bounds, elvs, ratios =
+    ///     Zaxel.generateMultiLevelLayout hyweCode "0,0" [||] None None None
+    /// </code>
+    /// </example>
     let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) (seqOverride: (int * Sqn) option) (ouStrOverride: string option) (ilStrOverride: string option) =
         let parsedLevels = processFullString fullStr
         

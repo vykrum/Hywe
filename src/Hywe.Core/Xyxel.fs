@@ -14,7 +14,17 @@ module Xyxel =
     open Goxel
     open Lexel
 
-    /// <summary> Parses a string into a discriminated union case safely. </summary>
+    /// <summary>
+    /// Attempts to parse a string value into an F# discriminated union case value by name (case-insensitive).
+    /// </summary>
+    /// <typeparam name="'T">The discriminated union type.</typeparam>
+    /// <param name="s">String representation of the case name.</param>
+    /// <returns>Some case value if matched; otherwise None.</returns>
+    /// <example>
+    /// <code>
+    /// let sqnOpt = Xyxel.tryParseUnion&lt;Hexel.Sqn&gt; "VRCWEE"
+    /// </code>
+    /// </example>
     let tryParseUnion<'T> (s: string) : 'T option =
         match FSharpType.IsUnion typeof<'T> with
         | false -> None
@@ -60,7 +70,20 @@ module Xyxel =
         Parent: Cxl option
     }
 
-    /// <summary> Scales node areas to fit boundary. Purely functional transformation. </summary>
+    /// <summary>
+    /// Proportionally scales architectural room areas to fit within a bounded boundary polygon, preserving relative sizing.
+    /// </summary>
+    /// <param name="boundaryArea">Total available area of the boundary polygon in grid units.</param>
+    /// <param name="tree">Raw architectural room tree.</param>
+    /// <param name="ratioOverride">Optional scaling ratio override.</param>
+    /// <returns>Tuple of the scaled room tree (Refid, Count, Label)[][] and the final applied ratio.</returns>
+    /// <example>
+    /// <code>
+    /// let raw = [| [| ("1", 40, "Living"); ("1.1", 20, "Kitchen") |] |]
+    /// let tree = Xyxel.LayoutTree.Create raw
+    /// let scaledTree, ratio = Xyxel.applyReproportioning 400L tree None
+    /// </code>
+    /// </example>
     let applyReproportioning (boundaryArea: int64) (tree: LayoutTree) (ratioOverride: float option) =
         let isUnbound = boundaryArea <= 0L
         
@@ -86,7 +109,22 @@ module Xyxel =
             )
         tree, ratio
 
-    /// <summary> Resolves all attributes and performs scaling to prepare for layout. </summary>
+    /// <summary>
+    /// Resolves all attributes, parses boundary geometries, and calculates scaling ratios into a LayoutContext ready for layout execution.
+    /// </summary>
+    /// <param name="attrs">Map of attribute key-value pairs (e.g. "Q", "L", "W", "H", "O", "I").</param>
+    /// <param name="tree">Architectural layout tree.</param>
+    /// <param name="opts">Contextual options and overrides.</param>
+    /// <returns>A fully resolved LayoutContext ready for generation.</returns>
+    /// <example>
+    /// <code>
+    /// let attrs = Map.ofList [ ("Q", "VRCWEE"); ("W", "30"); ("H", "30") ]
+    /// let raw = [| [| ("1", 30, "Living"); ("1.1", 15, "Kitchen") |] |]
+    /// let tree = Xyxel.LayoutTree.Create raw
+    /// let opts = { EntryFallback = "0,0"; InitialOcc = [||]; Seq = None; Width = Some 30; Height = Some 30; OuterStr = None; IslandsStr = None; ParentCxl = None; Ratio = None; Elevation = Some 0 }
+    /// let ctx = Xyxel.prepareLayoutContext attrs tree opts
+    /// </code>
+    /// </example>
     let prepareLayoutContext (attrs: Map<string, string>) (tree: LayoutTree) (opts: LayoutOptions) =
         let seq = 
             opts.Seq 
@@ -155,7 +193,21 @@ module Xyxel =
             Parent = opts.ParentCxl
         }
 
-    /// <summary> Calculates the ideal ratio for a given layout configuration without preparing the full context. </summary>
+    /// <summary>
+    /// Calculates the ideal room area scaling ratio for a given layout configuration without preparing the full LayoutContext.
+    /// </summary>
+    /// <param name="attrs">Map of attribute key-value pairs.</param>
+    /// <param name="tree">Architectural layout tree.</param>
+    /// <param name="opts">Contextual options and overrides.</param>
+    /// <returns>Computed area scaling ratio float.</returns>
+    /// <example>
+    /// <code>
+    /// let attrs = Map.ofList [ ("W", "20"); ("H", "20") ]
+    /// let tree = Xyxel.LayoutTree.Create [| [| ("1", 20, "Room") |] |]
+    /// let opts = { EntryFallback = "0,0"; InitialOcc = [||]; Seq = None; Width = Some 20; Height = Some 20; OuterStr = None; IslandsStr = None; ParentCxl = None; Ratio = None; Elevation = Some 0 }
+    /// let ratio = Xyxel.calculateTargetRatio attrs tree opts
+    /// </code>
+    /// </example>
     let calculateTargetRatio (attrs: Map<string, string>) (tree: LayoutTree) (opts: LayoutOptions) =
         let bdWd = opts.Width |> Option.orElse (attrs |> Map.tryFind "W" |> Option.bind (function Int v -> Some v | _ -> None) |> Option.filter (fun v -> v > 0)) |> Option.defaultValue 0
         let bdHt = opts.Height |> Option.orElse (attrs |> Map.tryFind "H" |> Option.bind (function Int v -> Some v | _ -> None)) |> Option.defaultValue bdWd
@@ -189,7 +241,18 @@ module Xyxel =
         let _, ratio = applyReproportioning ntArea tree opts.Ratio
         ratio
 
-    /// <summary> Extracts the first node as the base coxel for layout. </summary>
+    /// <summary>
+    /// Extracts the root node from the LayoutContext, establishes boundary obstacle hexels, and generates the initial base Coxel.
+    /// </summary>
+    /// <param name="ctx">Resolved layout context.</param>
+    /// <returns>Option containing a tuple of the root Coxel and the updated occupied hexels.</returns>
+    /// <example>
+    /// <code>
+    /// match Xyxel.generateBaseCxl ctx with
+    /// | Some (rootCxl, occ) -> ()
+    /// | None -> ()
+    /// </code>
+    /// </example>
     let generateBaseCxl (ctx: LayoutContext) =
         let bndSet = 
             match Goxel.polygonWithHolesArea ctx.Boundary ctx.Islands > 0L with
@@ -223,7 +286,21 @@ module Xyxel =
             let rootCxl, nextOcc = createBaseCoxel ctx.Seq ctx.Elevation ctx.EntryAtr ctx.EntryFallback id ct lb occ ctx.Parent
             Some (rootCxl, nextOcc)
 
-    /// <summary> Core layout construction for a single level, starting from a pre-generated base coxel. </summary>
+    /// <summary>
+    /// Executes spatial construction for a single level, growing child Coxels recursively from the root Coxel according to the architectural tree.
+    /// </summary>
+    /// <param name="ctx">Resolved layout context.</param>
+    /// <param name="rootCxl">Root base Coxel.</param>
+    /// <param name="nextOcc">Occupied hexel coordinates including boundaries and previous rooms.</param>
+    /// <returns>Tuple of generated Coxel array, boundary polygon vertex arrays, and applied scaling ratio.</returns>
+    /// <example>
+    /// <code>
+    /// match Xyxel.generateBaseCxl ctx with
+    /// | Some (rootCxl, occ) ->
+    ///     let rooms, bounds, ratio = Xyxel.generateCxlLayout ctx rootCxl occ
+    /// | None -> ()
+    /// </code>
+    /// </example>
     let generateCxlLayout (ctx: LayoutContext) (rootCxl: Cxl) (nextOcc: Hxl[]) : Cxl[] * (int*int)[][] * float =
         let seq = rootCxl.Seqn
         let _, _, elv = hxlCrd rootCxl.Base
