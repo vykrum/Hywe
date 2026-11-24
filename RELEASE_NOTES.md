@@ -4,6 +4,25 @@ All notable changes to the `Hywe.Core` NuGet package and engine are documented i
 
 ---
 
+## [2026.11.24] — 2026-11-24
+
+### Highlights
+- Comprehensive XML documentation and IntelliSense code usage examples across all 7 core modules (`Hexel`, `Coxel`, `Goxel`, `Lexel`, `Xyxel`, `Nexel`, `Zaxel`).
+- Multi-page documentation overhaul with dedicated module reference pages, interactive code tooltips, and syntax-highlighted examples.
+- Automated release management pipeline with Zenodo DOI sync and NuGet Trusted Publishing.
+
+### Modules & Documentation
+- **`Hywe.Core.Hexel`**: Added complete `<summary>`, `<param>`, `<returns>`, and `<example><code>` usage blocks for coordinate validation (`hxlVld`), neighbor offsets (`sequence`, `adjacent`), cluster growth (`increment`, `availableSet`), and perimeter analysis (`bndSqn`, `hxlOfs`).
+- **`Hywe.Core.Coxel`**: Added usage examples for concurrent clustering (`coxel`), child room expansion (`coxelChildren`), root initialization (`createBaseCoxel`), perimeter exposure (`cxlExp`), and topological adjacency matrix computation (`cxlAdj`).
+- **`Hywe.Core.Goxel`**: Added usage examples for vector line drawing (`hxlLin`), discrete polygon fill (`hxlPgn`), geometry cleanup (`cleanPolygon`, `removeSawtooth`), and Shoelace area calculations with hole subtraction (`polygonWithHolesArea`).
+- **`Hywe.Core.Lexel`**: Added usage examples for syntax attribute parsing (`parseAttributes`), node AST parsing (`parseNodes`), multi-level spec processing (`processFullString`), and sequence injection (`injectSqn`).
+- **`Hywe.Core.Xyxel`**: Added usage examples for discriminated union parsing (`tryParseUnion`), site boundary area scaling (`applyReproportioning`), and layout generation (`generateCxlLayout`).
+- **`Hywe.Core.Nexel`**: Added usage examples for nested sub-layout markers (`isNestMarker`) and embedded parent-space nesting (`generateNestLayout`).
+- **`Hywe.Core.Zaxel`**: Added usage examples for volumetric massing and multi-level floor plan generation (`generateMultiLevelLayout`).
+- **Web Documentation**: Added dedicated module pages (`hexel.md`, `coxel.md`, `goxel.md`, `lexel.md`, `xyxel.md`, `nexel.md`, `zaxel.md`) with copy-pasteable F# code recipes.
+
+---
+
 ## [2026.11.23] — 2026-11-23
 
 ### Highlights
