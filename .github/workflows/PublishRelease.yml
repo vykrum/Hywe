@@ -1,0 +1,187 @@
+name: PublishRelease
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'SemVer/CalVer package version (e.g. 2026.11.24). Leave empty to use today date YYYY.M.D'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (verify build & notes without committing or publishing)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write  # Required for NuGet Trusted Publishing (OIDC)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Determine Version and Release Date
+        id: meta
+        shell: bash
+        run: |
+          RAW_VER="${{ github.event.inputs.version }}"
+          if [ -z "$RAW_VER" ]; then
+            # Default to today's CalVer (YYYY.M.D without leading zeros)
+            RAW_VER=$(date -u +'%Y.%-m.%-d')
+          fi
+
+          # Strip leading 'v' or 'V'
+          CLEAN_VER="${RAW_VER#[vV]}"
+
+          # Normalize leading zeros for NuGet SemVer compliance
+          NORMALIZED_VER=$(echo "$CLEAN_VER" | awk -F. '{ for(i=1; i<=NF; i++) { if($i ~ /^[0-9]+$/) $i=int($i) } print }' OFS=.)
+          TODAY=$(date -u +'%Y-%m-%d')
+
+          echo "version=$NORMALIZED_VER" >> $GITHUB_OUTPUT
+          echo "tag=v$NORMALIZED_VER" >> $GITHUB_OUTPUT
+          echo "date=$TODAY" >> $GITHUB_OUTPUT
+
+          echo "Target Version: $NORMALIZED_VER"
+          echo "Release Date:   $TODAY"
+          echo "Git Tag:        v$NORMALIZED_VER"
+
+      - name: Generate Release Notes via GitHub API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          
+          # Try GitHub's automated release notes API
+          gh api "repos/${{ github.repository }}/releases/generate-notes" \
+            -f tag_name="$TAG" \
+            -q .body > release_body.md 2>/dev/null || true
+
+          # Fallback to git log between previous tag and HEAD if needed
+          if [ ! -s release_body.md ]; then
+            PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$PREV_TAG" ]; then
+              echo "### Changes since $PREV_TAG" > release_body.md
+              git log "$PREV_TAG..HEAD" --pretty=format:"* %s (%h)" >> release_body.md
+            else
+              echo "### Changes" > release_body.md
+              git log -n 15 --pretty=format:"* %s (%h)" >> release_body.md
+            fi
+          fi
+
+          echo "--- Generated Notes ---"
+          cat release_body.md
+
+      - name: Update RELEASE_NOTES.md
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          TODAY="${{ steps.meta.outputs.date }}"
+
+          python3 - <<EOF
+          with open('RELEASE_NOTES.md', 'r') as f:
+              content = f.read()
+
+          with open('release_body.md', 'r') as f:
+              body = f.read().strip()
+
+          new_section = f"## [{VERSION}] — {TODAY}\n\n{body}\n\n---\n\n"
+
+          # Insert right after the header if present, otherwise at top
+          header_marker = "All notable changes to the \`Hywe.Core\` NuGet package and engine are documented in this file.\n\n---\n\n"
+          if header_marker in content:
+              parts = content.split(header_marker, 1)
+              updated = parts[0] + header_marker + new_section + parts[1]
+          else:
+              updated = new_section + content
+
+          with open('RELEASE_NOTES.md', 'w') as f:
+              f.write(updated)
+          EOF
+
+      - name: Update CITATION.cff
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          TODAY="${{ steps.meta.outputs.date }}"
+          sed -i -E "s/^version: .*/version: \"$VERSION\"/" CITATION.cff
+          sed -i -E "s/^date-released: .*/date-released: \"$TODAY\"/" CITATION.cff
+
+      - name: Update Version in Hywe.Core.fsproj
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          sed -i -E "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" src/Hywe.Core/Hywe.Core.fsproj
+
+      - name: Pack Hywe.Core
+        run: |
+          dotnet pack src/Hywe.Core/Hywe.Core.fsproj \
+            --configuration Release \
+            -p:PackageVersion=${{ steps.meta.outputs.version }} \
+            --output ./artifacts
+
+      # Authenticate via OpenID Connect (Trusted Publishing)
+      - name: NuGet OIDC Login (Trusted Publishing)
+        if: ${{ !inputs.dry_run }}
+        id: nuget_oidc
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER || 'vykrum' }}
+        continue-on-error: true
+        env:
+          HAS_SECRET: ${{ secrets.NUGET_API_KEY != '' }}
+
+      - name: Push to NuGet.org
+        if: ${{ !inputs.dry_run }}
+        shell: bash
+        run: |
+          KEY="${{ steps.nuget_oidc.outputs.NUGET_API_KEY || secrets.NUGET_API_KEY }}"
+          if [ -z "$KEY" ]; then
+            echo "::error ::Authentication failed. Neither NuGet Trusted Publishing (OIDC) nor NUGET_API_KEY secret was resolved."
+            exit 1
+          fi
+
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --api-key "$KEY" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate
+
+      - name: Commit and Push Release Updates
+        if: ${{ !inputs.dry_run }}
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CITATION.cff RELEASE_NOTES.md src/Hywe.Core/Hywe.Core.fsproj
+          git diff --staged --quiet || git commit -m "chore(release): $VERSION [skip ci]"
+          git push origin main
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+
+          gh release create "$TAG" \
+            --title "Release $VERSION" \
+            --notes-file release_body.md \
+            ./artifacts/*.nupkg \
+            ./artifacts/*.snupkg

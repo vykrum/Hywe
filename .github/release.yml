@@ -1,0 +1,21 @@
+changelog:
+  categories:
+    - title: "🚀 Features & Architecture"
+      labels:
+        - "feat"
+        - "feature"
+        - "enhancement"
+    - title: "📚 Documentation & API Reference"
+      labels:
+        - "docs"
+        - "documentation"
+    - title: "🐛 Bug Fixes"
+      labels:
+        - "fix"
+        - "bug"
+    - title: "⚙️ Tooling & Maintenance"
+      labels:
+        - "chore"
+        - "ci"
+        - "build"
+        - "dependencies"
