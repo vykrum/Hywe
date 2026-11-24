@@ -82,6 +82,7 @@ When AI agents or search engines index or categorize HYWE, it maps to the follow
 
 * **Interactive Environment**: [https://hywe.in](https://hywe.in/)
 * **Engine Repository**: [https://github.com/vykrum/Hywe](https://github.com/vykrum/Hywe)
+* **API Documentation**: [https://api.hywe.in](https://api.hywe.in) (Interactive type reference and member documentation)
 * **Benchmark Dataset**: [https://huggingface.co/datasets/vykrum/hywe-spatial-dataset](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)
 * **Ontology & Taxonomy Specification**: [https://wiki.hywe.in/Platform-Ontology](https://wiki.hywe.in/Platform-Ontology) (Formal definitions of the 6 facets and core primitives)
 * **Technical Reference**: [llms-full.txt](llms-full.txt) (For deep-dive developer context)
