@@ -19,3 +19,6 @@ changelog:
         - "ci"
         - "build"
         - "dependencies"
+    - title: "📦 Other Changes & Pull Requests"
+      labels:
+        - "*"
