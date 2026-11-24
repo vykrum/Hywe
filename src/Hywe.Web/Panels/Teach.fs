@@ -13,7 +13,6 @@ open TreeTypes
 open PageElements
 open Types
 open Graphics
-open Layout
 
 // --- UTILITIES & TRANSCRIPTION ---
 
@@ -513,7 +512,7 @@ let private selectField (model: Model) dispatch (label: string) (current: string
         match currentTip with | Some tip -> div { attr.``class`` "teach-row-tip"; text tip } | None -> ()
         if isCustom then
             div {
-                attr.style "width: 100%; display: flex; flex-direction: column; gap: 2px;"
+                attr.``class`` "teach-custom-wrapper"
                 input {
                     attr.``class`` "hywe-input"
                     attr.placeholder (sprintf "Enter custom %s..." (label.ToLower()))
@@ -522,7 +521,7 @@ let private selectField (model: Model) dispatch (label: string) (current: string
                 }
                 if not (label.StartsWith("Typology")) then
                     span {
-                        attr.style "font-size: 0.72rem; color: #95a5a6; font-style: italic; margin-left: 2px;"
+                        attr.``class`` "teach-custom-hint"
                         text "Leave blank to record as N/A, or enter your custom classification."
                     }
             }
@@ -562,13 +561,13 @@ let view model dispatch =
             h2 { attr.``class`` "teach-intro-title"; text "Teach HYWE" }
             p { attr.``class`` "teach-intro-text"; text "Contribute an architectural exploration to the HYWE Spatial Dataset. Each contribution records design intent alongside its structured relational representation and deterministic spatial configurations." }
             div {
-                attr.style "display: flex; gap: 8px; justify-content: center; margin-top: 8px;"
+                attr.``class`` "teach-badge-group"
                 span {
-                    attr.style "background: #f1f3f5; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;"
+                    attr.``class`` "teach-badge"
                     text (sprintf "%d %s" currentLevelsCount (if currentLevelsCount = 1 then "Level" else "Levels"))
                 }
                 span {
-                    attr.style "background: #f1f3f5; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;"
+                    attr.``class`` "teach-badge"
                     text (sprintf "%d %s" currentNodesCount (if currentNodesCount = 1 then "Node" else "Nodes"))
                 }
             }
@@ -659,8 +658,7 @@ let view model dispatch =
                                     text "Level"
                                 }
                                 elt "select" {
-                                    attr.``class`` "hywe-btn"
-                                    attr.style "width: auto; min-width: 60px; height: 24px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid #dee2e6; background-color: #ffffff; color: #333; cursor: pointer; flex-shrink: 0; outline: none;"
+                                    attr.``class`` "teach-level-select"
                                     attr.value activeLevelMarker
                                     on.change (fun e -> dispatch (UpdateMetadata (fun m -> { m with ThumbnailLevel = unbox<string> e.Value })))
                                     forEach levelOptions <| fun (marker, lbl) ->
@@ -671,7 +669,7 @@ let view model dispatch =
                                 }
                             }
                             span {
-                                attr.style "font-size: 0.72rem; color: #495057; font-weight: 600; font-family: monospace; background: #f1f3f5; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.3px;"
+                                attr.``class`` "teach-seq-badge"
                                 text (sprintf "%s · %s" (labelPhrase.[activeVarIdx].ToString()) (indexToSqn activeVarIdx))
                             }
                         }
@@ -705,8 +703,7 @@ let view model dispatch =
                     }
                     if not (String.IsNullOrWhiteSpace model.UserDescription) then
                         button {
-                            attr.``class`` "mic-button"
-                            attr.style "color: #e74c3c;"
+                            attr.``class`` "mic-button clear-btn"
                             attr.title "Clear Description"
                             on.click (fun _ -> dispatch (SetDescription ""))
                             rawHtml """<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>"""
@@ -715,8 +712,7 @@ let view model dispatch =
             }
             textarea {
                 attr.id "hynteract-desc-input"
-                attr.``class`` "hywe-input"
-                attr.style "min-height: 75px; resize: vertical;"
+                attr.``class`` "hywe-input teach-desc-textarea"
                 attr.placeholder "Describe your design nuances, circulation logic, or spatial atmosphere in your own words (or use voice capture to dictate)..."
                 attr.value model.UserDescription
                 on.input (fun e -> dispatch (SetDescription (unbox<string> e.Value)))
@@ -760,14 +756,14 @@ let view model dispatch =
             match repeatIter with
             | Some iter ->
                 div {
-                    attr.style "font-size: 0.78rem; color: #2563eb; text-align: center; margin-bottom: 4px;"
+                    attr.``class`` "teach-status-msg info"
                     text (sprintf "ℹ Existing weave found for this weaver — will be recorded as iteration #%d." iter)
                 }
             | None -> ()
 
             if hasUrlWarning then
                 div {
-                    attr.style "font-size: 0.85rem; color: #dc2626; font-weight: 500; text-align: center; margin: 0; max-width: 80%;"
+                    attr.``class`` "teach-status-msg warning"
                     text "⚠ External URLs and links are prohibited in dataset submissions."
                 }
             elif not canCommit then
@@ -779,19 +775,19 @@ let view model dispatch =
                     if not hasTypology then "Typology"
                 ]
                 div {
-                    attr.style "color: #dc2626; font-size: 0.85rem; font-weight: 500; text-align: center; margin: 0; max-width: 80%;"
+                    attr.``class`` "teach-status-msg warning"
                     text (sprintf "Missing: %s" (String.concat ", " missing))
                 }
             else
                 p { 
-                    attr.style "font-size: 0.85em; color: #7f8c8d; font-style: italic; text-align: center; margin: 0; max-width: 80%;"
+                    attr.``class`` "teach-status-msg ready"
                     if String.IsNullOrWhiteSpace model.UserDescription then
                         text "Ready to commit. Sharing your spatial insights above greatly enriches the dataset."
                     else
                         text "Ready to commit. Your spatial narrative will be paired with the structural breakdown."
                 }
             div {
-                attr.style "display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;"
+                attr.``class`` "teach-stats-row"
                 if cachedLayoutsCount = totalLayouts then
                     span {
                         attr.style "color: #27ae60; font-size: 0.78rem; font-weight: 600;"
@@ -805,7 +801,6 @@ let view model dispatch =
             }
             button {
                 attr.``class`` ("hywe-btn hywe-btn-primary u-w-full u-max-w-800 u-mt-md" + (if isBusy || not canCommit then " disabled" else " active"))
-                attr.style (if not canCommit then "opacity: 0.5; cursor: not-allowed;" else "")
                 attr.title (if not canCommit then "Please set Weave name (at least 3 words) and Woven by above, and select Typology" else "Commit this intent to the dataset")
                 attr.disabled (isBusy || not canCommit)
                 on.click (fun _ -> dispatch RecordToHynteract)
@@ -814,22 +809,14 @@ let view model dispatch =
             match model.TeachErrorMessage with
             | Some errMsg ->
                 div {
-                    attr.style "background: #fdf2f2; border: 1px solid #f8b4b4; border-radius: 6px; padding: 8px 14px; margin-top: 8px; width: 100%; max-width: 600px; text-align: center;"
-                    span {
-                        attr.style "color: #c81e1e; font-size: 0.85rem; font-weight: 600;"
-                        text (sprintf "✕ %s" errMsg)
-                    }
+                    attr.``class`` "teach-alert error"
+                    text (sprintf "✕ %s" errMsg)
                 }
             | None ->
-                match model.ShowSuccessMessage with
-                | true ->
+                if model.ShowSuccessMessage then
                     div {
-                        attr.style "background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 14px; margin-top: 8px; width: 100%; max-width: 600px; text-align: center;"
-                        span {
-                            attr.style "color: #166534; font-size: 0.85rem; font-weight: 600;"
-                            text "✓ Spatial intent successfully submitted for review."
-                        }
+                        attr.``class`` "teach-alert success"
+                        text "✓ Spatial intent successfully submitted for review."
                     }
-                | false -> ()
         }
     }
