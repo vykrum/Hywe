@@ -82,6 +82,16 @@ jobs:
             -p:PublishTrimmed=true \
             -o ${{ env.PUBLISH_DIR }}
 
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Build fsdocs documentation into wwwroot/api
+        run: |
+          dotnet fsdocs build --clean \
+            --projects src/Hywe.Core/Hywe.Core.fsproj \
+            --parameters root https://hywe.in/api/ \
+            --output ${{ env.PUBLISH_DIR }}/wwwroot/api
+
       - name: Clean up debug symbols (.pdb)
         run: find ${{ env.PUBLISH_DIR }}/wwwroot -name "*.pdb" -type f -delete
 

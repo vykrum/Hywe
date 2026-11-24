@@ -6,7 +6,11 @@ obj/
 *.suo
 *.cache/
 *.config
+!.config/
+!.config/**
 *.db
+.fsdocs/
+output/
 
 # ASP.NET / Blazor
 wwwroot/dist/
