@@ -7,6 +7,8 @@ env:
 
 on:
   push:
+    branches: [main, updates]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -16,7 +18,24 @@ permissions:
   id-token: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Run Hywe.Core Tests
+        run: dotnet test tests/Hywe.Core.Tests/Hywe.Core.Tests.fsproj --configuration Release
+
   build:
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
@@ -126,6 +145,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
