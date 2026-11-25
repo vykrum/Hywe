@@ -1,8 +1,5 @@
 ---
-title: Overview
-category: Documentation
-categoryindex: 1
-index: 1
+title: Hywe.Core API Reference
 ---
 
 <meta http-equiv="refresh" content="0; url=reference/hywe-core.html" />
