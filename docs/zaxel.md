@@ -50,8 +50,10 @@ let buildState =
         None 
         None
 
-printfn "Synthesized building contains %d total rooms across levels" buildState.Cxls.Length
-for room in buildState.Cxls do
-    printfn "Room %s at elevation" (Coxel.prpVlu room.Name)
+let roomNames =
+    buildState.Cxls
+    |> Array.map (fun room -> Coxel.prpVlu room.Name)
+
+printfn "Synthesized %d rooms: %s" roomNames.Length (String.concat ", " roomNames)
 ```
 

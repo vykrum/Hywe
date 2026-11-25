@@ -132,11 +132,13 @@ let offsets = Hexel.sequence Sqn.VRCWEE
 
 // Compute the 7 absolute neighbor cells centered on the origin
 let host = Hxl.AV(0, 0, 0)
-let neighbors = Hexel.adjacent Sqn.VRCWEE host
+let neighborCoords =
+    host
+    |> Hexel.adjacent Sqn.VRCWEE
+    |> Array.map Hexel.hxlCrd
 
-for n in neighbors do
-    let nx, ny, nz = Hexel.hxlCrd n
-    printfn "Neighbor: (%d, %d, %d)" nx ny nz
+neighborCoords
+|> Array.iter (fun (nx, ny, nz) -> printfn "Neighbor: (%d, %d, %d)" nx ny nz)
 ```
 
 ### 4. Availability & Cluster Expansion

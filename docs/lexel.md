@@ -73,11 +73,12 @@ let nodeTokens = [
     "(2/20/Kitchen)"
 ]
 
-let parsedForest = Lexel.parseNodes "0,0" nodeTokens
-for group in parsedForest do
-    for node in group do
-        printfn "Node %s: Area=%d, Label=%s, Base=%A" 
-            node.Id node.Area node.Label node.Base
+nodeTokens
+|> Lexel.parseNodes "0,0"
+|> List.collect id
+|> List.iter (fun node ->
+    printfn "Node %s: Area=%d, Label=%s, Base=%A"
+        node.Id node.Area node.Label node.Base)
 ```
 
 ### 3. Parsing Complete Multi-Level `.hyw` Programs
@@ -90,12 +91,11 @@ let hyweSpec =
     "L0(Q=VRCWEE/W=30/H=20)(1/20/Living)(1.1/10/Entry)" +
     "L1(Q=HRCWNN/W=30/H=20)(2/15/MasterBed)(2.1/6/Ensuite)"
 
-let blocks = Lexel.processFullString hyweSpec
-for block in blocks do
-    match block with
-    | Lexel.Level lvl ->
-        printfn "Level %s has %d node groups" lvl.Marker lvl.Tree.Length
-    | Lexel.Nest nest ->
-        printfn "Nest %s has %d node groups" nest.Marker nest.Tree.Length
+hyweSpec
+|> Lexel.processFullString
+|> List.map (function
+    | Lexel.Level lvl -> sprintf "Level %s has %d node groups" lvl.Marker lvl.Tree.Length
+    | Lexel.Nest nest -> sprintf "Nest %s has %d node groups" nest.Marker nest.Tree.Length)
+|> List.iter (printfn "%s")
 ```
 

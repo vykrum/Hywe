@@ -87,12 +87,10 @@ let program = [|
 // Grow clusters with no initial obstacles
 let rooms = Coxel.coxel sqn 0 program [||]
 
-printfn "Generated %d rooms" rooms.Length
-for room in rooms do
-    printfn "Room %s (%s): %d hexels" 
-        (Coxel.prpVlu room.Name) 
-        (Coxel.prpVlu room.Rfid) 
-        room.Hxls.Length
+rooms
+|> Array.map (fun room -> Coxel.prpVlu room.Name, Coxel.prpVlu room.Rfid, room.Hxls.Length)
+|> Array.iter (fun (name, refid, count) ->
+    printfn "Room %s (%s): %d hexels" name refid count)
 ```
 
 ### 3. Calculating Centroids, Boundaries, and Adjacency
@@ -104,11 +102,9 @@ open Hywe.Core.Coxel
 
 let sqn = Hexel.Sqn.VRCWEE
 
-// Centroid of a room
-let (cx, cy) = Coxel.cxlCnt rooms.[0]
-
-// Outer continuous perimeter coordinates
-let perimeterPts = Coxel.cxlPrm sqn 0 rooms.[0]
+// Centroid and continuous outer perimeter of the primary room
+let primaryCentroid  = rooms |> Array.tryHead |> Option.map Coxel.cxlCnt
+let primaryPerimeter = rooms |> Array.tryHead |> Option.map (Coxel.cxlPrm sqn 0)
 
 // Topological wall adjacency matrix across all rooms
 let roomLabels, adjMatrix = Coxel.cxlAdj rooms
