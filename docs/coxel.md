@@ -44,3 +44,73 @@ A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, r
   Serializes all cell coordinates of a Coxel into space-separated Base34 coordinate pairs (e.g. `"0.0 2.0 1.-2"`).
 * **`getBaseCoordString : Cxl -> string`**  
   Serializes only the anchor base coordinate of a Coxel into Base34.
+
+---
+
+## Usage Examples
+
+### 1. Extracting Coxel Property Values
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Coxel
+
+let labelProp = Coxel.Label "Living Room"
+let refidProp = Coxel.Refid "1.0"
+let countProp = Coxel.Count 18
+
+let labelStr = Coxel.prpVlu labelProp // "Living Room"
+let countStr = Coxel.prpVlu countProp // "18"
+```
+
+### 2. Growing Spatial Room Clusters
+
+Grow room clusters concurrently on the discrete Hygrid lattice from initial seed positions up to target capacities:
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+
+let sqn = Hexel.Sqn.VRCWEE
+
+// Define initial seed positions snapped to the lattice parity
+let livingSeed = Hexel.Hxl.AV(0, 0, 0) |> Hexel.hxlVld sqn
+let diningSeed = Hexel.Hxl.AV(4, 2, 0) |> Hexel.hxlVld sqn
+
+// Define architectural room definitions: (Seed, Refid, Area, Label)
+let program = [|
+    (livingSeed, Coxel.Refid "1.0", Coxel.Count 15, Coxel.Label "Living")
+    (diningSeed, Coxel.Refid "2.0", Coxel.Count 10, Coxel.Label "Dining")
+|]
+
+// Grow clusters with no initial obstacles
+let rooms = Coxel.coxel sqn 0 program [||]
+
+printfn "Generated %d rooms" rooms.Length
+for room in rooms do
+    printfn "Room %s (%s): %d hexels" 
+        (Coxel.prpVlu room.Name) 
+        (Coxel.prpVlu room.Rfid) 
+        room.Hxls.Length
+```
+
+### 3. Calculating Centroids, Boundaries, and Adjacency
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+
+let sqn = Hexel.Sqn.VRCWEE
+
+// Centroid of a room
+let (cx, cy) = Coxel.cxlCnt rooms.[0]
+
+// Outer continuous perimeter coordinates
+let perimeterPts = Coxel.cxlPrm sqn 0 rooms.[0]
+
+// Topological wall adjacency matrix across all rooms
+let roomLabels, adjMatrix = Coxel.cxlAdj rooms
+```
+

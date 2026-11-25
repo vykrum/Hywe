@@ -37,3 +37,65 @@ The `Lexel` module parses architectural program declarations and `.hyw` domain-s
   Extracts the mapping of level indices to their active sequence operators (`Q=...`).
 * **`injectSqn : string -> int -> string -> string`**  
   Updates or inserts a sequence operator specification into a specific level marker within a `.hyw` program string.
+
+---
+
+## Usage Examples
+
+### 1. Parsing Header Attribute Blocks
+
+Parse `.hyw` architectural header metadata into structured records:
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Lexel
+
+// Parse attributes specifying sequence, elevation, scale, and boundary dimensions
+let attrs = Lexel.parseAttributes "(Q=VRCWEE/L=0/X=1.0/W=40/H=30)"
+
+printfn "Sequence: %A, Level: %A, Width: %A, Height: %A" 
+    attrs.Sequence attrs.Level attrs.Width attrs.Height
+```
+
+### 2. Parsing Hierarchical Architectural Node Declarations
+
+Parse room and sub-space hierarchy declarations:
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Lexel
+
+// Hierarchy: (1/25/Living) is parent, (1.1/10/Entry) and (1.2/8/Storage) are children
+let nodeTokens = [
+    "(1/25/Living)"
+    "(1.1/10/Entry)"
+    "(1.2/8/Storage)"
+    "(2/20/Kitchen)"
+]
+
+let parsedForest = Lexel.parseNodes "0,0" nodeTokens
+for group in parsedForest do
+    for node in group do
+        printfn "Node %s: Area=%d, Label=%s, Base=%A" 
+            node.Id node.Area node.Label node.Base
+```
+
+### 3. Parsing Complete Multi-Level `.hyw` Programs
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Lexel
+
+let hyweSpec = 
+    "L0(Q=VRCWEE/W=30/H=20)(1/20/Living)(1.1/10/Entry)" +
+    "L1(Q=HRCWNN/W=30/H=20)(2/15/MasterBed)(2.1/6/Ensuite)"
+
+let blocks = Lexel.processFullString hyweSpec
+for block in blocks do
+    match block with
+    | Lexel.Level lvl ->
+        printfn "Level %s has %d node groups" lvl.Marker lvl.Tree.Length
+    | Lexel.Nest nest ->
+        printfn "Nest %s has %d node groups" nest.Marker nest.Tree.Length
+```
+

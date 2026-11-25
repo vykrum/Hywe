@@ -87,6 +87,7 @@ jobs:
 
       - name: Build fsdocs documentation into wwwroot/api
         run: |
+          dotnet build src/Hywe.Core/Hywe.Core.fsproj
           dotnet fsdocs build --clean \
             --projects src/Hywe.Core/Hywe.Core.fsproj \
             --parameters root https://hywe.in/api/ \
