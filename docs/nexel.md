@@ -5,8 +5,9 @@ categoryindex: 2
 index: 6
 ---
 
+<meta http-equiv="refresh" content="0; url=reference/hywe-core-nexel.html" />
+<script>window.location.replace("reference/hywe-core-nexel.html");</script>
+
 # Nexel (Nesting)
 
-`Nexel` provides recursive spatial nesting, allowing architectural sub-programmes to be nested inside parent room boundaries.
-
-> **[View Full Nexel API Reference & XML Examples](reference/hywe-core-nexel.html)** — Auto-generated directly from `src/Hywe.Core/Nexel.fs`.
+Redirecting to **[Nexel API Reference & XML Examples](reference/hywe-core-nexel.html)**...

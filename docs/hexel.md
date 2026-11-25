@@ -5,8 +5,9 @@ categoryindex: 2
 index: 1
 ---
 
+<meta http-equiv="refresh" content="0; url=reference/hywe-core-hexel.html" />
+<script>window.location.replace("reference/hywe-core-hexel.html");</script>
+
 # Hexel (Lattice)
 
-The `Hexel` module defines the atomic unit of the Hygrid lattice and provides the discrete arithmetic, sequence operators, parity validation, and neighbor traversal functions.
-
-> **[View Full Hexel API Reference & XML Examples](reference/hywe-core-hexel.html)** — Auto-generated directly from `src/Hywe.Core/Hexel.fs`.
+Redirecting to **[Hexel API Reference & XML Examples](reference/hywe-core-hexel.html)**...

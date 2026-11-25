@@ -5,8 +5,9 @@ categoryindex: 2
 index: 2
 ---
 
+<meta http-equiv="refresh" content="0; url=reference/hywe-core-coxel.html" />
+<script>window.location.replace("reference/hywe-core-coxel.html");</script>
+
 # Coxel (Clustering)
 
-A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, room, or functional space.
-
-> **[View Full Coxel API Reference & XML Examples](reference/hywe-core-coxel.html)** — Auto-generated directly from `src/Hywe.Core/Coxel.fs`.
+Redirecting to **[Coxel API Reference & XML Examples](reference/hywe-core-coxel.html)**...
