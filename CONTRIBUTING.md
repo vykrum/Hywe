@@ -39,6 +39,8 @@ The creator of HYWE is primarily a designer exploring the boundaries of design c
 2. Clone the repo: `git clone https://github.com/vykrum/Hywe.git`
 3. Run the project: `dotnet watch run --project src/Hywe.Web`
 4. Access the app at `https://localhost:51592` (or `http://localhost:51593`). The ports are defined in `src/Hywe.Web/Properties/launchSettings.json`.
+5. Run automated tests locally anytime: `dotnet test` (runs unit, property-based, and XML-example verification tests; CI also runs this automatically on PRs).
+6. Run native `Hywe.Core` benchmarks (optional): `dotnet run -c Release --project benchmarks/Hywe.Core.Benchmarks`
 
 ## Code of Conduct
 By contributing, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
