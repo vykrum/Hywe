@@ -10,7 +10,7 @@
     <Company>Hywe</Company>
     <Description>Deterministic spatial topology and integer lattice packing engine for the Hygrid Woven Ensemble (HYWE).</Description>
     <PackageTags>architecture;spatial-design;computational-design;topology;fsharp;hywe;hygrid;generative;geometry</PackageTags>
-    <PackageProjectUrl>https://hywe.in</PackageProjectUrl>
+    <PackageProjectUrl>https://hywe.in/api/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/vykrum/Hywe</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
