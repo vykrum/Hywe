@@ -62,6 +62,7 @@
 		<Compile Include="App/ModelHelpers.fs" />
 		<Compile Include="Components/Shell.fs" />
 		<Compile Include="App/AppState.fs" />
+		<Compile Include="../../benchmarks/Hywe.Core.Benchmarks/BenchmarkCases.fs" />
 		<Compile Include="App/Benchmarks.fs" />
 		<Compile Include="App/Main.fs" />
 		<Compile Include="App/Startup.fs" />

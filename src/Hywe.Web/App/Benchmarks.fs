@@ -12,6 +12,7 @@ open Microsoft.JSInterop
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 open Hywe.Core.Xyxel
+open Hywe.Benchmarks.Cases
 open ModelTypes
 open Titleblock
 
@@ -27,94 +28,6 @@ let calculateSD (values: float[]) =
         let avg = Array.average values
         let sumOfSquares = values |> Array.sumBy (fun v -> (v - avg) ** 2.0)
         sqrt (sumOfSquares / n)
-
-/// <summary>
-/// Canonical 24 discrete hexagonal sequence operator tokens representing all permutations
-/// of grid orientation (Vertical/Horizontal), winding order (Clockwise/Counter-Clockwise),
-/// and starting compass directional offsets.
-/// </summary>
-let operators = [|
-    "VRCWEE"; "VRCCEE"; "VRCWSE"; "VRCCSE"; "VRCWSW"; "VRCCSW"; "VRCWWW"; "VRCCWW"; "VRCWNW"; "VRCCNW"; "VRCWNE"; "VRCCNE";
-    "HRCWNN"; "HRCCNN"; "HRCWNE"; "HRCCNE"; "HRCWSE"; "HRCCSE"; "HRCWSS"; "HRCCSS"; "HRCWSW"; "HRCCSW"; "HRCWNW"; "HRCCNW"
-|]
-
-/// <summary>
-/// Predefined canonical architectural archetypes used across empirical benchmark runs:
-/// <list type="bullet">
-/// <item><description><c>CIF-10</c>: Complex Institutional Floorplate (10 nodes, multi-tier healthcare suite).</description></item>
-/// <item><description><c>Radial-Star</c>: Concentric hub-and-spoke archetype (7 nodes radiating from a central core).</description></item>
-/// <item><description><c>Deep-Spine</c>: Linear progressive spine archetype (7-node linear descent chain).</description></item>
-/// </list>
-/// </summary>
-let presets = [|
-    "CIF-10", LayoutTree.Create [| [| 
-        ("1", 60, "Primary Intake");
-        ("1.1", 40, "Acute Care");
-        ("1.1.1", 30, "Critical Care");
-        ("1.1.2", 25, "Resuscitation");
-        ("1.2", 45, "Diagnostic Imaging");
-        ("1.2.1", 35, "Specialized Scan");
-        ("1.3", 20, "Clinical Support");
-        ("1.4", 50, "Public Arrival");
-        ("1.4.1", 35, "Consultation Suites");
-        ("1.4.2", 20, "Service Core")
-    |] |]
-    "Radial-Star", LayoutTree.Create [| [|
-        ("1", 60, "Central Hub");
-        ("1.1", 40, "Sector A");
-        ("1.2", 40, "Sector B");
-        ("1.3", 40, "Sector C");
-        ("1.4", 40, "Sector D");
-        ("1.5", 40, "Sector E");
-        ("1.6", 40, "Sector F")
-    |] |]
-    "Deep-Spine", LayoutTree.Create [| [|
-        ("1", 50, "Spine-1");
-        ("1.1", 50, "Spine-2");
-        ("1.1.1", 50, "Spine-3");
-        ("1.1.1.1", 50, "Spine-4");
-        ("1.1.1.1.1", 50, "Spine-5");
-        ("1.1.1.1.1.1", 50, "Spine-6");
-        ("1.1.1.1.1.1.1", 50, "Spine-7")
-    |] |]
-|]
-
-/// <summary>
-/// Sequence operator names pre-parsed into their strongly-typed <see cref="Sqn"/> discriminated union representations.
-/// </summary>
-let parsedOperators = 
-    operators 
-    |> Array.map (fun opName -> opName, tryParseUnion<Sqn> opName |> Option.get)
-
-/// <summary>
-/// Compiles a <see cref="LayoutTree"/> against a target sequence operator (<see cref="Sqn"/>),
-/// generating the resolved array of compiled <see cref="Cxl"/> units.
-/// Isolates core AST resolution and spatial packing from DOM, SVG, and WebGPU passes.
-/// </summary>
-/// <param name="tree">The hierarchical layout tree representing architectural programmatic intent.</param>
-/// <param name="sqn">The hexagonal sequence operator governing growth direction, winding, and alignment.</param>
-/// <returns>An array of compiled <see cref="Cxl"/> structures containing geometric and relational allocations.</returns>
-/// <exception cref="System.Exception">Thrown when base hexel generation fails for the specified sequence operator.</exception>
-let runCompilation (tree: LayoutTree) (sqn: Sqn) =
-    let opts = {
-        EntryFallback = "0,0"
-        InitialOcc = [||]
-        Seq = Some sqn
-        Width = Some 100
-        Height = Some 100
-        OuterStr = None
-        IslandsStr = None
-        ParentCxl = None
-        Ratio = Some 1.0 
-        Elevation = Some 0
-    }
-    
-    let ctx = prepareLayoutContext Map.empty tree opts
-    match generateBaseCxl ctx with
-    | Some (baseCxl, nextOcc) -> 
-        let layout, _, _ = generateCxlLayout ctx baseCxl nextOcc
-        layout
-    | None -> failwithf "Failed to generate base hexel for %s" (sqnToString sqn)
 
 /// <summary>
 /// Measures the wall-clock execution time of an action in milliseconds using high-resolution <see cref="Stopwatch"/>.
@@ -195,7 +108,7 @@ type BenchmarkRunner() =
     static member RunPerformanceBenchmark ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
             formatMarkdownHeader 
-                "Performance Benchmark — Production / WebAssembly" 
+                "Performance Benchmark â€” Production / WebAssembly" 
                 "Latency and standard deviation metrics for generating canonical topological presets." 
                 clientInfo
 
@@ -296,7 +209,7 @@ type BenchmarkRunner() =
     /// <summary>
     /// Evaluates six quantitative spatial descriptors across canonical architectural archetypes:
     /// graph depth (<c>D</c>), compactness index (<c>CI</c>), branching factor (<c>B</c>),
-    /// outer perimeter (<c>P</c>), adjacency divergence (<c>ΔJ</c>), and programmatic area deviation (<c>σ_A</c>).
+    /// outer perimeter (<c>P</c>), adjacency divergence (<c>Î”J</c>), and programmatic area deviation (<c>Ïƒ_A</c>).
     /// </summary>
     /// <param name="clientInfo">Optional client browser environment information string.</param>
     /// <returns>A formatted Markdown table containing structural and geometric quality descriptors.</returns>
@@ -304,12 +217,12 @@ type BenchmarkRunner() =
     static member RunQualityBenchmarks ([<Optional; DefaultParameterValue("")>] clientInfo: string) =
         let header = 
             formatMarkdownHeader 
-                "Quality Benchmark — Quantitative Topological Descriptors" 
+                "Quality Benchmark â€” Quantitative Topological Descriptors" 
                 "Empirical evaluation of six quantitative spatial descriptors across canonical architectural archetypes." 
                 clientInfo
 
         let columns = [
-            "| Layout | Operator | Depth (D) | Compactness (CI) | Branching (B) | Perimeter (P) | Adjacency Delta (ΔJ) | Area Dev (σ_A) |"
+            "| Layout | Operator | Depth (D) | Compactness (CI) | Branching (B) | Perimeter (P) | Adjacency Delta (Î”J) | Area Dev (Ïƒ_A) |"
             "|--------|----------|:---------:|:----------------:|:-------------:|:-------------:|:--------------------:|:--------------:|"
         ]
 
@@ -521,7 +434,7 @@ type BenchmarkRunner() =
 
     /// <summary>
     /// Measures compilation scaling under simultaneous multi-container growth configurations
-    /// (<c>N_containers × 20 nodes</c>), evaluating performance under multi-cluster spatial constraints.
+    /// (<c>N_containers Ã— 20 nodes</c>), evaluating performance under multi-cluster spatial constraints.
     /// </summary>
     /// <param name="clientInfo">Optional client browser environment information string.</param>
     /// <returns>A formatted Markdown table containing latency metrics across container scaling factors.</returns>

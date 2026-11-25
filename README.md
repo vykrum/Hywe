@@ -151,7 +151,8 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ## Documentation & Research Reference
 
-* **[HYWE API Reference (hywe.in/api)](https://hywe.in/api/)**: Auto-generated .NET API documentation and XML examples for the `Hywe.Core` NuGet package (`dotnet add package Hywe.Core`).
+* **[HYWE API Reference (hywe.in/api)](https://hywe.in/api/)**: Auto-generated .NET API documentation and XML examples for the `Hywe.Core` NuGet package.
+* **[HYWE Core API Guide (Wiki)](https://wiki.hywe.in/Hywe-Core-API)**: NuGet installation, F#/C# quickstarts, and repository structure.
 * **[Hugging Face Dataset (vykrum/hywe-spatial-dataset)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)**: Open benchmark corpus of machine-readable architectural spatial configurations.
 * **[HYWE Wiki (wiki.hywe.in)](https://wiki.hywe.in)**:
   * **01 — Understand**: [[Philosophy]](https://wiki.hywe.in/Computational-Spatial-Design) · [[Ontology]](https://wiki.hywe.in/Platform-Ontology) · [[Guarantees]](https://wiki.hywe.in/Guarantees-and-Non-Guarantees)
@@ -159,6 +160,22 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
   * **03 — Engine**: [[Canonical Conformance Spec]](https://wiki.hywe.in/Canonical-Conformance-Specification) · [[Hygrid]](https://wiki.hywe.in/Hygrid) · [[Formal Model]](https://wiki.hywe.in/Formal-Model)
   * **04 — Research**: [[Benchmarks]](https://wiki.hywe.in/Benchmarks) · [[Research Questions]](https://wiki.hywe.in/Research-Questions) · [[Data Collection]](https://wiki.hywe.in/Data-Collection)
 * **[Agent & LLM Reference (llms.txt)](llms.txt)**: Machine-readable architectural guide.
+
+### Using `Hywe.Core` (.NET NuGet Package)
+
+```bash
+dotnet add package Hywe.Core
+```
+
+```fsharp
+open Hywe.Core
+
+let sqn = Hexel.Sqn.VRCWEE
+let seed = Hexel.Hxl.AV(0, 0, 0) |> Hexel.hxlVld sqn
+let rooms = Coxel.coxel sqn 0 [| (seed, Coxel.Refid "1.0", Coxel.Count 15, Coxel.Label "Living") |] [||]
+```
+
+See the **[HYWE Core API Guide](https://wiki.hywe.in/Hywe-Core-API)** for C# usage and **[hywe.in/api](https://hywe.in/api/)** for the full type reference.
 
 ---
 
