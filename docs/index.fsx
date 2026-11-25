@@ -32,13 +32,13 @@ The computational pipeline translates abstract spatial graphs into fully resolve
 
 | Module | Stage | Key Capabilities |
 | :--- | :--- | :--- |
-| **[Hexel (Lattice)](hexel.html)** | Stage 1 | Atomic cell representation (`Hxl`), Q₂₄ sequence operators (`Sqn`), lattice arithmetic, parity validation, neighbor traversal, and O(1) collision checks. |
-| **[Coxel (Clustering)](coxel.html)** | Stage 2 | Spatial clustering engine (`coxel`), concurrent growth, perimeter exposure (`cxlExp`), room boundaries, and spatial adjacency matrices (`cxlAdj`). |
-| **[Goxel (Geometry)](goxel.html)** | Stage 3 | Continuous vector geometry bridge, discrete raster lines (`hxlLin`), polygon fills (`hxlPgn`), Shoelace area, and boundary smoothing. |
-| **[Lexel (AST)](lexel.html)** | Input AST | Architectural syntax parser for `.hyw` program trees, attribute blocks, and hierarchical graph representations. |
-| **[Xyxel (Layout)](xyxel.html)** | Stage 4 | 2D planar floorplan compilation, site boundary constraint solving, keep-out void avoidance, and proportional scaling. |
-| **[Nexel (Nesting)](nexel.html)** | Stage 5 | Recursive spatial nesting compiler for embedding nested sub-layouts within host room boundaries. |
-| **[Zaxel (3D Stacking)](zaxel.html)** | Stage 6 | Multi-level vertical aggregation, floor-to-floor elevation calculation, and 3D volumetric massing accumulator. |
+| **[Hexel (Lattice)](reference/hywe-core-hexel.html)** | Stage 1 | Atomic cell representation (`Hxl`), Q₂₄ sequence operators (`Sqn`), lattice arithmetic, parity validation, neighbor traversal, and O(1) collision checks. |
+| **[Coxel (Clustering)](reference/hywe-core-coxel.html)** | Stage 2 | Spatial clustering engine (`coxel`), concurrent growth, perimeter exposure (`cxlExp`), room boundaries, and spatial adjacency matrices (`cxlAdj`). |
+| **[Goxel (Geometry)](reference/hywe-core-goxel.html)** | Stage 3 | Continuous vector geometry bridge, discrete raster lines (`hxlLin`), polygon fills (`hxlPgn`), Shoelace area, and boundary smoothing. |
+| **[Lexel (AST)](reference/hywe-core-lexel.html)** | Input AST | Architectural syntax parser for `.hyw` program trees, attribute blocks, and hierarchical graph representations. |
+| **[Xyxel (Layout)](reference/hywe-core-xyxel.html)** | Stage 4 | 2D planar floorplan compilation, site boundary constraint solving, keep-out void avoidance, and proportional scaling. |
+| **[Nexel (Nesting)](reference/hywe-core-nexel.html)** | Stage 5 | Recursive spatial nesting compiler for embedding nested sub-layouts within host room boundaries. |
+| **[Zaxel (3D Stacking)](reference/hywe-core-zaxel.html)** | Stage 6 | Multi-level vertical aggregation, floor-to-floor elevation calculation, and 3D volumetric massing accumulator. |
 
 ---
 

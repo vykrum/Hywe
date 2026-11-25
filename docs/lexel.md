@@ -5,8 +5,9 @@ categoryindex: 2
 index: 4
 ---
 
+<meta http-equiv="refresh" content="0; url=reference/hywe-core-lexel.html" />
+<script>window.location.replace("reference/hywe-core-lexel.html");</script>
+
 # Lexel (AST)
 
-The `Lexel` module parses architectural program declarations and `.hyw` domain-specific syntax into strongly-typed abstract syntax trees.
-
-> **[View Full Lexel API Reference & XML Examples](reference/hywe-core-lexel.html)** — Auto-generated directly from `src/Hywe.Core/Lexel.fs`.
+Redirecting to **[Lexel API Reference & XML Examples](reference/hywe-core-lexel.html)**...

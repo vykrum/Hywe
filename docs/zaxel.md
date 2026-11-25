@@ -5,8 +5,9 @@ categoryindex: 2
 index: 7
 ---
 
+<meta http-equiv="refresh" content="0; url=reference/hywe-core-zaxel.html" />
+<script>window.location.replace("reference/hywe-core-zaxel.html");</script>
+
 # Zaxel (3D Stacking)
 
-`Zaxel` manages multi-level vertical aggregation, floor-to-floor stacking, and 3D volumetric massing data structures.
-
-> **[View Full Zaxel API Reference & XML Examples](reference/hywe-core-zaxel.html)** — Auto-generated directly from `src/Hywe.Core/Zaxel.fs`.
+Redirecting to **[Zaxel API Reference & XML Examples](reference/hywe-core-zaxel.html)**...
