@@ -217,23 +217,21 @@ jobs:
         id: nuget_oidc
         uses: NuGet/login@v1
         with:
-          user: ${{ vars.NUGET_USER || 'vykrum' }}
-        continue-on-error: true
-        env:
-          HAS_SECRET: ${{ secrets.NUGET_API_KEY != '' }}
+          user: vykrum
 
       - name: Push to NuGet.org
         if: steps.check_release.outputs.skip != 'true'
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_oidc.outputs.NUGET_API_KEY }}
         shell: bash
         run: |
-          KEY="${{ steps.nuget_oidc.outputs.NUGET_API_KEY || secrets.NUGET_API_KEY }}"
-          if [ -z "$KEY" ]; then
-            echo "::error ::Authentication failed. Neither NuGet Trusted Publishing (OIDC) nor NUGET_API_KEY secret was resolved."
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error ::NuGet Trusted Publishing (OIDC) did not return an API key."
             exit 1
           fi
 
           dotnet nuget push "./artifacts/*.nupkg" \
-            --api-key "$KEY" \
+            --api-key "$NUGET_API_KEY" \
             --source "https://api.nuget.org/v3/index.json" \
             --skip-duplicate
 
