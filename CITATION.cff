@@ -8,12 +8,12 @@ authors:
 abstract: "A computational spatial design environment powered by deterministic design computation, integer-lattice spatial topology, and edge-native WebAssembly. HYWE formalizes and explores early-stage architectural spatial configurations from relational graphs, circulation sequences, and programmatic constraints."
 version: "2026.11.24"
 date-released: "2026-11-24"
-doi: "10.5281/zenodo.24472629"
+doi: "10.5281/zenodo.24472628"
 url: "https://hywe.in"
 repository-code: "https://github.com/vykrum/Hywe"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.24472629"
+    value: "10.5281/zenodo.24472628"
     description: "Permanent Zenodo Software Archive and Concept DOI"
   - type: url
     value: "https://huggingface.co/datasets/vykrum/hywe-spatial-dataset"
@@ -40,6 +40,6 @@ preferred-citation:
       orcid: "https://orcid.org/0009-0000-2438-7308"
   title: "HYWE: A Deterministic Computational Framework and Benchmark Dataset for Architectural Spatial Intent"
   year: 2026
-  doi: "10.5281/zenodo.24472629"
-  url: "https://doi.org/10.5281/zenodo.24472629"
+  doi: "10.5281/zenodo.24472628"
+  url: "https://doi.org/10.5281/zenodo.24472628"
   notes: "Includes the HYWE Spatial Dataset published on Hugging Face (https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)"
