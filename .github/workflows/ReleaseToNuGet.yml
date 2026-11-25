@@ -203,6 +203,10 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Run Hywe.Core Tests
+        if: steps.check_release.outputs.skip != 'true'
+        run: dotnet test tests/Hywe.Core.Tests/Hywe.Core.Tests.fsproj --configuration Release
+
       - name: Pack Hywe.Core
         if: steps.check_release.outputs.skip != 'true'
         run: |
