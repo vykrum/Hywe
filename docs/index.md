@@ -43,6 +43,8 @@ The computational pipeline translates abstract spatial graphs into fully resolve
 
 ## Complete Working Example
 
+### F#
+
 ```fsharp
 open System
 open Hywe.Core
@@ -65,11 +67,47 @@ let obstacles = [||]
 let rooms = Coxel.coxel sqn level program obstacles
 
 // 4. Output results
-for room in rooms do
+rooms
+|> Array.iter (fun room ->
     printfn "Room: %s (ID: %s)" (Coxel.prpVlu room.Name) (Coxel.prpVlu room.Rfid)
     printfn "  Anchor Base: %A" (Hexel.hxlCrd room.Base)
     printfn "  Cells Allocated: %d" (room.Hxls.Length + 1)
-    printfn "  Base34 Coordinates: %s\n" (Coxel.getCxlCoordsString room)
+    printfn "  Base34 Coordinates: %s\n" (Coxel.getCxlCoordsString room))
+```
+
+### C#
+
+`Hywe.Core` is a standard .NET assembly (`net8.0` / `net10.0`) and can be consumed directly from C#:
+
+```csharp
+using System;
+using Hywe.Core;
+
+// 1. Configure sequence and base elevation
+var sqn = Hexel.Sqn.VRCWEE;
+var level = 0;
+
+// 2. Define program nodes: (BaseSeed, RefID, AreaCount, RoomLabel)
+var livingBase = Hexel.hxlVld(sqn, Hexel.Hxl.NewAV(0, 0, level));
+var diningBase = Hexel.hxlVld(sqn, Hexel.Hxl.NewAV(8, 0, level));
+
+var program = new[]
+{
+    Tuple.Create(livingBase, Coxel.Prp.NewRefid("1.0"), Coxel.Prp.NewCount(15), Coxel.Prp.NewLabel("Living Room")),
+    Tuple.Create(diningBase, Coxel.Prp.NewRefid("2.0"), Coxel.Prp.NewCount(10), Coxel.Prp.NewLabel("Dining Area"))
+};
+
+// 3. Synthesize spatial clusters
+var rooms = Coxel.coxel(sqn, level, program, Array.Empty<Hexel.Hxl>());
+
+// 4. Output results
+Array.ForEach(rooms, room =>
+{
+    Console.WriteLine($"Room: {Coxel.prpVlu(room.Name)} (ID: {Coxel.prpVlu(room.Rfid)})");
+    Console.WriteLine($"  Anchor Base: {Hexel.hxlCrd(room.Base)}");
+    Console.WriteLine($"  Cells Allocated: {room.Hxls.Length + 1}");
+    Console.WriteLine($"  Base34 Coordinates: {Coxel.getCxlCoordsString(room)}\n");
+});
 ```
 
 ---
