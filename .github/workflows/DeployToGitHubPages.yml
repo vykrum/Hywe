@@ -73,6 +73,7 @@ jobs:
           sed -i -E "s/let MODIFIED_DATE = \".*\"/let MODIFIED_DATE = \"$CURRENT_DATETIME\"/g" src/Hywe.Web/Common/ModelTypes.fs
           sed -i -E "s/<meta property=\"article:modified_time\" content=\".*\" \/>/<meta property=\"article:modified_time\" content=\"$CURRENT_DATETIME\" \/>/g" src/Hywe.Web/wwwroot/index.html
           sed -i -E "s/\"dateModified\": \".*\"/\"dateModified\": \"$CURRENT_DATETIME\"/g" src/Hywe.Web/wwwroot/index.html
+          sed -i -E "s/<meta property=\"article:published_time\" content=\".*\" \/>/<meta property=\"article:published_time\" content=\"$CURRENT_DATETIME\" \/>/g" docs/_template.html
 
       - name: Publish Bolero app (Release + Trimming + AOT for GH Pages)
         run: |
