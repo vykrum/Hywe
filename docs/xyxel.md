@@ -33,3 +33,59 @@ index: 5
   Computes the optimal packing scale ratio.
 * **`tryParseUnion<'T> : string -> 'T option`**  
   Generic reflection helper parsing string representation into strongly-typed discriminated union cases.
+
+---
+
+## Usage Examples
+
+### 1. Preparing Layout Context and Synthesizing Floor Plans
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.Xyxel
+
+// Define architectural room tree: (Id, TargetArea, Label)[][]
+let rawTree = [|
+    [| ("1", 25, "Living"); ("1.1", 10, "Dining") |]
+    [| ("2", 15, "Kitchen") |]
+|]
+let layoutTree = Xyxel.LayoutTree.Create rawTree
+
+let options : Xyxel.LayoutOptions = {
+    EntryFallback = "0,0"
+    InitialOcc    = [||]
+    Seq           = Some Hexel.Sqn.VRCWEE
+    Width         = Some 40
+    Height        = Some 30
+    OuterStr      = None
+    IslandsStr    = None
+    ParentCxl     = None
+    Ratio         = None
+    Elevation     = Some 0
+}
+
+let context = Xyxel.prepareLayoutContext Map.empty layoutTree options
+
+// Generate the anchor base room
+let baseResult = Xyxel.generateBaseCxl context
+
+// Compile full planar room layout
+let rooms, bounds, appliedRatio = Xyxel.generateCxlLayout context baseResult [||]
+printfn "Generated %d rooms with packing ratio %f" rooms.Length appliedRatio
+```
+
+### 2. Reflection-Based Union Parsing
+
+```fsharp
+open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Xyxel
+
+// Safely parse sequence operator from string
+match Xyxel.tryParseUnion<Hexel.Sqn> "VRCWEE" with
+| Some sqn -> printfn "Parsed valid sequence: %A" sqn
+| None     -> printfn "Unknown sequence operator"
+```
+
