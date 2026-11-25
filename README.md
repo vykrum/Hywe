@@ -151,6 +151,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ## Documentation & Research Reference
 
+* **[HYWE API Reference (hywe.in/api)](https://hywe.in/api/)**: Auto-generated .NET API documentation and XML examples for the `Hywe.Core` NuGet package (`dotnet add package Hywe.Core`).
 * **[Hugging Face Dataset (vykrum/hywe-spatial-dataset)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)**: Open benchmark corpus of machine-readable architectural spatial configurations.
 * **[HYWE Wiki (wiki.hywe.in)](https://wiki.hywe.in)**:
   * **01 — Understand**: [[Philosophy]](https://wiki.hywe.in/Computational-Spatial-Design) · [[Ontology]](https://wiki.hywe.in/Platform-Ontology) · [[Guarantees]](https://wiki.hywe.in/Guarantees-and-Non-Guarantees)
