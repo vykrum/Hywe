@@ -1,3 +1,4 @@
+(**
 ---
 title: Xyxel (Layout)
 category: Modules
@@ -25,9 +26,9 @@ index: 5
   Prepares site boundary polylines, voids, and scaled program trees into an executable layout synthesis context.
 * **`generateBaseCxl : LayoutContext -> (Coxel.Cxl * Hxl[]) option`**  
   Synthesizes the primary anchor root room and establishes initial boundary occupancy obstacles.
-* **`generateCxlLayout : LayoutContext -> (Coxel.Cxl * Hxl[]) option -> Hxl[] -> Coxel.Cxl[] * (int * int * int * int) * float`**  
-  Executes full planar layout compilation, returning resolved room clusters, bounding box, and scaling ratio.
-* **`applyReproportioning : int64 -> LayoutTree -> float option -> LayoutTree * float`**  
+* **`generateCxlLayout : LayoutContext -> Coxel.Cxl -> Hxl[] -> Coxel.Cxl[] * (int * int)[][] * float`**  
+  Executes full planar layout compilation, returning resolved room clusters, boundary polygons, and scaling ratio.
+* **`applyReproportioning : int64 -> LayoutTree -> float option -> (Prp * Prp * Prp)[][] * float`**  
   Proportionally scales program target areas to fit within the physical net area of site boundaries.
 * **`calculateTargetRatio : Map<string, string> -> LayoutTree -> LayoutOptions -> float`**  
   Computes the optimal packing scale ratio.
@@ -39,8 +40,10 @@ index: 5
 ## Usage Examples
 
 ### 1. Preparing Layout Context and Synthesizing Floor Plans
-
-```fsharp
+*)
+(*** hide ***)
+#r "../src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll"
+(** *)
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Coxel
@@ -68,24 +71,20 @@ let options : Xyxel.LayoutOptions = {
 
 let context = Xyxel.prepareLayoutContext Map.empty layoutTree options
 
-// Generate the anchor base room
-let baseResult = Xyxel.generateBaseCxl context
+// Generate the anchor base room and compile full planar room layout
+match Xyxel.generateBaseCxl context with
+| Some (rootCxl, nextOcc) ->
+    let rooms, bounds, appliedRatio = Xyxel.generateCxlLayout context rootCxl nextOcc
+    printfn "Generated %d rooms with packing ratio %f" rooms.Length appliedRatio
+| None ->
+    printfn "Could not place anchor base room"
+(*** include-output ***)
 
-// Compile full planar room layout
-let rooms, bounds, appliedRatio = Xyxel.generateCxlLayout context baseResult [||]
-printfn "Generated %d rooms with packing ratio %f" rooms.Length appliedRatio
-```
-
+(**
 ### 2. Reflection-Based Union Parsing
-
-```fsharp
-open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Xyxel
-
+*)
 // Safely parse sequence operator from string
 match Xyxel.tryParseUnion<Hexel.Sqn> "VRCWEE" with
 | Some sqn -> printfn "Parsed valid sequence: %A" sqn
 | None     -> printfn "Unknown sequence operator"
-```
-
+(*** include-output ***)

@@ -1,3 +1,4 @@
+(**
 ---
 title: Overview
 category: Documentation
@@ -44,8 +45,10 @@ The computational pipeline translates abstract spatial graphs into fully resolve
 ## Complete Working Example
 
 ### F#
-
-```fsharp
+*)
+(*** hide ***)
+#r "../src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll"
+(** *)
 open System
 open Hywe.Core
 
@@ -73,8 +76,8 @@ rooms
     printfn "  Anchor Base: %A" (Hexel.hxlCrd room.Base)
     printfn "  Cells Allocated: %d" (room.Hxls.Length + 1)
     printfn "  Base34 Coordinates: %s\n" (Coxel.getCxlCoordsString room))
-```
-
+(*** include-output ***)
+(**
 ### C#
 
 `Hywe.Core` is a standard .NET assembly (`net8.0` / `net10.0`) and can be consumed directly from C#:
@@ -118,3 +121,4 @@ Array.ForEach(rooms, room =>
 - **[HYWE Wiki](https://wiki.hywe.in)** — Conceptual foundations, mathematical proofs, and user guides.
 - **[GitHub Repository](https://github.com/vykrum/Hywe)** — Source code, issue tracker, and contributions.
 - **[NuGet Package](https://www.nuget.org/packages/Hywe.Core)** — Download the package on NuGet.org.
+*)

@@ -1,3 +1,4 @@
+(**
 ---
 title: Coxel (Clustering)
 category: Modules
@@ -34,7 +35,7 @@ A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, r
   Calculates perimeter exposure metrics and exterior boundary availability for an array of rooms.
 * **`cxlHxl : Cxl -> int -> Hxl[]`**  
   Extracts all member hexels of a `Cxl` at a given elevation.
-* **`cxlPrm : Sqn -> int -> Cxl -> (int * int)[]`**  
+* **`cxlPrm : Cxl -> int -> (int * int)[]`**  
   Computes the continuous perimeter boundary coordinates along the outer edge of a room cluster.
 * **`cxlCnt : Cxl -> int * int`**  
   Computes the geometric centroid cell coordinate `(x, y)` of a room cluster, finding the nearest member hexel to the true mathematical center.
@@ -50,9 +51,12 @@ A **Coxel** (*Collection of Hexels*) represents a discrete architectural zone, r
 ## Usage Examples
 
 ### 1. Extracting Coxel Property Values
-
-```fsharp
+*)
+(*** hide ***)
+#r "../src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll"
+(** *)
 open Hywe.Core
+open Hywe.Core.Hexel
 open Hywe.Core.Coxel
 
 let labelProp = Coxel.Label "Living Room"
@@ -61,17 +65,14 @@ let countProp = Coxel.Count 18
 
 let labelStr = Coxel.prpVlu labelProp // "Living Room"
 let countStr = Coxel.prpVlu countProp // "18"
-```
+printfn "Label: %s, Count: %s" labelStr countStr
+(*** include-output ***)
 
+(**
 ### 2. Growing Spatial Room Clusters
 
 Grow room clusters concurrently on the discrete Hygrid lattice from initial seed positions up to target capacities:
-
-```fsharp
-open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Coxel
-
+*)
 let sqn = Hexel.Sqn.VRCWEE
 
 // Define initial seed positions snapped to the lattice parity
@@ -91,22 +92,16 @@ rooms
 |> Array.map (fun room -> Coxel.prpVlu room.Name, Coxel.prpVlu room.Rfid, room.Hxls.Length)
 |> Array.iter (fun (name, refid, count) ->
     printfn "Room %s (%s): %d hexels" name refid count)
-```
+(*** include-output ***)
 
+(**
 ### 3. Calculating Centroids, Boundaries, and Adjacency
-
-```fsharp
-open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Coxel
-
-let sqn = Hexel.Sqn.VRCWEE
-
+*)
 // Centroid and continuous outer perimeter of the primary room
 let primaryCentroid  = rooms |> Array.tryHead |> Option.map Coxel.cxlCnt
-let primaryPerimeter = rooms |> Array.tryHead |> Option.map (Coxel.cxlPrm sqn 0)
+let primaryPerimeter = rooms |> Array.tryHead |> Option.map (fun cxl -> Coxel.cxlPrm cxl 0)
 
 // Topological wall adjacency matrix across all rooms
 let roomLabels, adjMatrix = Coxel.cxlAdj rooms
-```
-
+printfn "Centroid: %A, Perimeter vertices: %d" primaryCentroid (primaryPerimeter |> Option.map Array.length |> Option.defaultValue 0)
+(*** include-output ***)

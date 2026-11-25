@@ -1,3 +1,4 @@
+(**
 ---
 title: Goxel (Geometry)
 category: Modules
@@ -66,8 +67,10 @@ The `Goxel` module translates discrete integer lattice coordinates into continuo
 ### 1. Rasterizing Lines on the Hybrid Lattice
 
 Compute discrete hexel cells forming a line between two lattice points:
-
-```fsharp
+*)
+(*** hide ***)
+#r "../src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll"
+(** *)
 open Hywe.Core
 open Hywe.Core.Hexel
 open Hywe.Core.Goxel
@@ -78,31 +81,23 @@ let endPt   = Hexel.Hxl.AV(10, 8, 0) |> Hexel.hxlVld sqn
 
 let lineHexels = Goxel.hxlLin sqn 0 startPt endPt
 printfn "Line contains %d hexels" lineHexels.Length
-```
+(*** include-output ***)
 
+(**
 ### 2. Rasterizing 2D Polygons into Lattice Hexels
 
 Fill a closed 2D polygon with discrete lattice cells:
-
-```fsharp
-open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Goxel
-
-let sqn = Hexel.Sqn.VRCWEE
+*)
 let boundaryVertices = [| (0, 0); (20, 0); (20, 20); (0, 20); (0, 0) |]
 
 // Rasterize into discrete hexel collection
 let filledHexels = Goxel.hxlPgn sqn 0 boundaryVertices
 printfn "Rasterized polygon filled with %d hexels" filledHexels.Length
-```
+(*** include-output ***)
 
+(**
 ### 3. Polygon Metrics, Area, and Point-in-Polygon Tests
-
-```fsharp
-open Hywe.Core
-open Hywe.Core.Goxel
-
+*)
 let outer = [| (0, 0); (30, 0); (30, 30); (0, 30); (0, 0) |]
 let courtyardHole = [| (10, 10); (20, 10); (20, 20); (10, 20); (10, 10) |]
 
@@ -114,6 +109,6 @@ let (minX, minY, maxX, maxY) = Goxel.bounds outer
 let (cx, cy) = Goxel.centroid outer
 
 // Point-in-polygon containment test
-let inside = Goxel.pointInPolygon (15, 15) outer // true
-```
-
+let inside = Goxel.pointInPolygon (15, 15) outer
+printfn "Net area: %d, Centroid: (%d, %d), Inside: %b" netArea cx cy inside
+(*** include-output ***)

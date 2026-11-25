@@ -1,3 +1,4 @@
+(**
 ---
 title: Hexel (Lattice)
 category: Modules
@@ -54,9 +55,9 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
   Counts free neighbor cells around a candidate hexel given an array of occupied obstacles.
 * **`availableSet : Sqn -> int -> Hxl -> HashSet<Hxl> -> int`**  
   High-performance O(1) variant of `available` using a hash set of occupied cells.
-* **`increment : Sqn -> int -> Hxl * int -> Hxl[] -> (Hxl * int) option`**  
+* **`increment : Sqn -> int -> Hxl * int -> Hxl[] -> Hxl * int`**  
   Computes the next optimal expansion hexel for a growing spatial cluster.
-* **`incrementSet : Sqn -> int -> Hxl * int -> HashSet<Hxl> -> (Hxl * int) option`**  
+* **`incrementSet : Sqn -> int -> Hxl * int -> HashSet<Hxl> -> Hxl * int`**  
   High-performance hash set variant of `increment`.
 * **`increments : Sqn -> int -> (Hxl * int)[] -> Hxl[] -> (Hxl * int)[]`**  
   Advances multiple active cluster seeds simultaneously while preventing collision.
@@ -89,8 +90,10 @@ The `Hexel` module defines the atomic unit of the Hygrid lattice and provides th
 ## Usage Examples
 
 ### 1. Creating and Deconstructing Hexels
-
-```fsharp
+*)
+(*** hide ***)
+#r "../src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll"
+(** *)
 open Hywe.Core
 open Hywe.Core.Hexel
 
@@ -107,26 +110,26 @@ printfn "Cell coordinates: x=%d, y=%d, z=%d" x y z
 // Compact Base34 encoding
 let b34 = Hexel.toBase34 100L
 printfn "Base34: %s" b34
-```
+(*** include-output ***)
 
+(**
 ### 2. Validating Coordinate Parity
 
 The Hygrid lattice enforces parity rules (`% 2` and `% 4`) to maintain integer grid connectivity across vertical and horizontal weaves:
-
-```fsharp
+*)
 // Snapping arbitrary input coordinates to the nearest legal lattice cell
 let rawPoint = Hxl.AV(1, 1, 0)
 let legalCell = Hexel.hxlVld Sqn.VRCWEE rawPoint
 
 let lx, ly, _ = Hexel.hxlCrd legalCell
 printfn "Snapped legal coordinates: (%d, %d)" lx ly
-```
+(*** include-output ***)
 
+(**
 ### 3. Traversal and Neighbor Discovery
 
 Each sequence operator defines the heading and clockwise/counterclockwise order of the 6 surrounding cells:
-
-```fsharp
+*)
 // Get the 7 relative coordinate offsets (origin + 6 neighbors)
 let offsets = Hexel.sequence Sqn.VRCWEE
 
@@ -139,11 +142,11 @@ let neighborCoords =
 
 neighborCoords
 |> Array.iter (fun (nx, ny, nz) -> printfn "Neighbor: (%d, %d, %d)" nx ny nz)
-```
+(*** include-output ***)
 
+(**
 ### 4. Availability & Cluster Expansion
-
-```fsharp
+*)
 // Create a fast lookup set of occupied obstacles
 let occupied = [| Hxl.AV(2, 0, 0); Hxl.AV(1, -2, 0) |]
 let occSet = Hexel.hxlSet occupied
@@ -159,11 +162,11 @@ match Hexel.incrementSet Sqn.VRCWEE 0 seed occSet with
     printfn "Next cell in cluster: %A" nextCell
 | _ ->
     printfn "Cluster expansion blocked"
-```
+(*** include-output ***)
 
+(**
 ### 5. Boundary Tracing & Exterior Buffer
-
-```fsharp
+*)
 let cluster = [| Hxl.AV(0, 0, 0); Hxl.AV(2, 0, 0); Hxl.AV(1, 2, 0) |]
 
 // Trace the continuous ordered outer perimeter
@@ -172,5 +175,4 @@ let perimeter = Hexel.bndSqn Sqn.VRCWEE 0 cluster
 // Compute a 1-ring outer buffer around the cluster
 let bufferRing = Hexel.hxlOfs Sqn.VRCWEE 0 cluster
 printfn "Buffer ring cell count: %d" bufferRing.Length
-```
-
+(*** include-output ***)

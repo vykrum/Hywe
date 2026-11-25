@@ -1,3 +1,4 @@
+(**
 ---
 title: Nexel (Nesting)
 category: Modules
@@ -13,7 +14,7 @@ index: 6
 
 ## Functions
 
-* **`generateNestLayout : NestBlock -> Coxel.Cxl -> float -> Coxel.Cxl[] -> string option -> Coxel.Cxl[] * (int * int * int * int) * float`**  
+* **`generateNestLayout : NestBlock -> Coxel.Cxl -> float -> Coxel.Cxl[] -> string option -> (Coxel.Cxl[] * (int * int)[][] * float) option`**  
   Synthesizes an internal sub-layout within the boundary footprint of a host room.
 * **`isNestMarker : string -> bool`**  
   Determines whether a block header identifier corresponds to an interior nest.
@@ -25,9 +26,14 @@ index: 6
 ## Usage Examples
 
 ### 1. Inspecting Nested Sub-Layout Markers
-
-```fsharp
+*)
+(*** hide ***)
+#r "../src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll"
+(** *)
 open Hywe.Core
+open Hywe.Core.Hexel
+open Hywe.Core.Coxel
+open Hywe.Core.Lexel
 open Hywe.Core.Nexel
 
 let marker1 = "N1"
@@ -35,21 +41,22 @@ let marker2 = "L0"
 
 let isN1 = Nexel.isNestMarker marker1 // true
 let isL0 = Nexel.isNestMarker marker2 // false
-
 let nestIdx = Nexel.getNestIndex marker1 // Some 1
-```
 
+printfn "isN1=%b, isL0=%b, nestIdx=%A" isN1 isL0 nestIdx
+(*** include-output ***)
+
+(**
 ### 2. Synthesizing Nested Sub-Rooms Inside a Host Room
+*)
+// Generate a host room (e.g. Master Suite) to serve as the nesting boundary
+let sqn = Hexel.Sqn.VRCWEE
+let hostSeed = Hexel.Hxl.AV(0, 0, 0) |> Hexel.hxlVld sqn
+let allExistingRooms =
+    Coxel.coxel sqn 0 [| (hostSeed, Coxel.Refid "1", Coxel.Count 30, Coxel.Label "MasterSuite") |] [||]
 
-```fsharp
-open Hywe.Core
-open Hywe.Core.Hexel
-open Hywe.Core.Coxel
-open Hywe.Core.Lexel
-open Hywe.Core.Nexel
+let hostRoom = Array.head allExistingRooms
 
-// Assume hostRoom was generated as a parent room (e.g. Master Bedroom)
-// and nestBlock was parsed from "N1(Q=VRCWEE)(1/6/WalkInCloset)(2/8/MasterBath)"
 let nestBlock : Lexel.NestBlock = {
     Marker = "N1"
     Attributes = Lexel.parseAttributes "(Q=VRCWEE)"
@@ -57,9 +64,9 @@ let nestBlock : Lexel.NestBlock = {
 }
 
 // Generate the sub-layout confined inside the host room perimeter
-let subRooms, bounds, ratio = 
-    Nexel.generateNestLayout nestBlock hostRoom 3.0 allExistingRooms None
-
-printfn "Generated %d nested sub-rooms" subRooms.Length
-```
-
+match Nexel.generateNestLayout nestBlock hostRoom 3.0 allExistingRooms None with
+| Some (subRooms, _, _) ->
+    printfn "Generated %d nested sub-rooms inside %s" subRooms.Length (Coxel.prpVlu hostRoom.Name)
+| None ->
+    printfn "Host room could not accommodate nested layout"
+(*** include-output ***)
