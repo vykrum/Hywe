@@ -179,12 +179,6 @@ let siteFooter (current: AppScreen) (dispatch: Message -> unit) =
                 attr.target "_blank"
                 img { attr.width "20"; attr.height "20"; attr.src "https://vykrum.github.io/Hywe/images/hugging-face.svg"; attr.alt "HuggingFace"; attr.style "display: block;" }
             }
-            a {
-                attr.href "https://hywe.in/api/"
-                attr.target "_blank"
-                attr.rel "noopener noreferrer"
-                img { attr.width "20"; attr.height "20"; attr.src "images/api.svg"; attr.alt "API Reference"; attr.title "API Reference"; attr.style "display: block;" }
-            }
         }
         div {
             attr.``class`` "license-footer"
