@@ -14,7 +14,7 @@
 >
 > - **[HYWE Web App](https://hywe.in)** (`hywe.in`) — Direct-manipulation spatial design environment.
 > - **[HYWE Engine](https://github.com/vykrum/Hywe)** (`repo.hywe.in`) — Open-source computational engine.
-> - **[HYWE API Docs](https://hywe.in/api/)** (`hywe.in/api`) — Standalone .NET engine API documentation and type reference.
+> - **[HYWE API Docs](https://hywe.in/api/)** (`api.hywe.in`) — Standalone .NET engine API documentation and type reference.
 > - **[HYWE Wiki](https://wiki.hywe.in)** (`wiki.hywe.in`) — Comprehensive research documentation, ontology, and specifications.
 > - **[HYWE Spatial Dataset](https://data.hywe.in)** (`data.hywe.in`) — Structured corpus of procedural design intent and deterministic configurations.
 
@@ -151,7 +151,7 @@ $$\text{Design Intent} \longrightarrow \text{HYWE Syntax} \longrightarrow \text{
 
 ## Documentation & Research Reference
 
-* **[HYWE API Reference (hywe.in/api)](https://hywe.in/api/)**: Auto-generated .NET API documentation and XML examples for the `Hywe.Core` NuGet package.
+* **[HYWE API Reference (api.hywe.in)](https://hywe.in/api/)**: Auto-generated .NET API documentation and XML examples for the `Hywe.Core` NuGet package.
 * **[HYWE Core API Guide (Wiki)](https://wiki.hywe.in/Hywe-Core-API)**: NuGet installation, F#/C# quickstarts, and repository structure.
 * **[Hugging Face Dataset (vykrum/hywe-spatial-dataset)](https://huggingface.co/datasets/vykrum/hywe-spatial-dataset)**: Open benchmark corpus of machine-readable architectural spatial configurations.
 * **[HYWE Wiki (wiki.hywe.in)](https://wiki.hywe.in)**:
@@ -175,7 +175,7 @@ let seed = Hexel.Hxl.AV(0, 0, 0) |> Hexel.hxlVld sqn
 let rooms = Coxel.coxel sqn 0 [| (seed, Coxel.Refid "1.0", Coxel.Count 15, Coxel.Label "Living") |] [||]
 ```
 
-See the **[HYWE Core API Guide](https://wiki.hywe.in/Hywe-Core-API)** for C# usage and **[hywe.in/api](https://hywe.in/api/)** for the full type reference.
+See the **[HYWE Core API Guide](https://wiki.hywe.in/Hywe-Core-API)** for C# usage and **[api.hywe.in](https://hywe.in/api/)** for the full type reference.
 
 ---
 
