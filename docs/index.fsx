@@ -44,6 +44,8 @@ The engine compiles abstract architectural programs into resolved 2D floorplans 
 
 ## Application Examples
 
+> **`.hyw` Program Syntax:** Architectural programs are written as marker-prefixed strings (`L#` for levels, `N#` for nested spaces) followed by `(Key=Value/...)` attributes and `(ID/Area/Label)` nodes. See the full [**`.hyw` Grammar Specification**](https://wiki.hywe.in/Grammar) on the Wiki.
+
 ### F# (End-to-End Multi-Level `.hyw` Compilation)
 *)
 (*** hide ***)
