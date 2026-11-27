@@ -59,14 +59,21 @@ module Lexel =
     // --- Primary API ---
 
     /// <summary> 
-    /// Processes a Hywe attribute block into a structured record.
-    /// Handles Sequence (Q), Level (L), Base (B), Scale (X), Entry (E), OuterBoundary (O), Islands (I), Thickness (T), Width (W), and Height (H).
+    /// Processes a Hywe attribute block into a structured <see cref="LexelAttributes"/> record.
     /// </summary>
-    /// <param name="block">Raw string of the attribute block, e.g. "(Q=VRCWEE/L=0/W=20/H=30)".</param>
-    /// <returns>A populated LexelAttributes record.</returns>
+    /// <remarks>
+    /// Parses slash-delimited <c>Key=Value</c> pairs inside parentheses:
+    /// <c>Q</c> (Sequence, default <c>"VRCWEE"</c>), <c>L</c> (Level, default <c>0</c>),
+    /// <c>B</c> (Base), <c>X</c> (Scale), <c>E</c> (Entry), <c>O</c> (OuterBoundary),
+    /// <c>I</c> (Islands), <c>T</c> (Thickness), <c>W</c> (Width), and <c>H</c> (Height).
+    /// Unrecognized or malformed tokens are ignored.
+    /// </remarks>
+    /// <param name="block">Raw attribute block string, e.g. <c>"(Q=VRCWEE/L=0/W=20/H=30)"</c>.</param>
+    /// <returns>A populated <see cref="LexelAttributes"/> record with defaults applied for omitted keys.</returns>
     /// <example>
     /// <code>
     /// let attrs = Lexel.parseAttributes "(Q=VRCWEE/L=0/X=1.0/W=20/H=30)"
+    /// let seqName, widthOpt = attrs.Sequence, attrs.Width
     /// </code>
     /// </example>
     let parseAttributes (block: string) : LexelAttributes =
@@ -95,15 +102,21 @@ module Lexel =
 
     /// <summary> 
     /// Processes Hywe node blocks and organizes them into a hierarchical tree.
-    /// Handles (ID/Area/Label/Extrusion/B=Base) format and dot-notation grouping.
     /// </summary>
-    /// <param name="markerPrefix">Prefix marker (e.g. "L0" or "N1") prepended to generated node IDs.</param>
-    /// <param name="blocks">List of node block strings, e.g. ["(1/25/Living)"; "(1.1/12/Dining)"].</param>
-    /// <returns>A list of node groups forming the hierarchical spatial tree.</returns>
+    /// <remarks>
+    /// Supports 3-, 4-, and 5-part slash-delimited node tokens:
+    /// <c>(ID/Area/Label)</c>, <c>(ID/Area/Label/Extrusion)</c>, <c>(ID/Area/Label/B=Base)</c>, and <c>(ID/Area/Label/Extrusion/B=Base)</c>.
+    /// Parent-child relationships are inferred from dot notation (e.g. <c>1.1</c> is a direct child of <c>1</c>),
+    /// and each returned group is sorted by parent <c>Id</c> with the parent node first followed by its direct children.
+    /// </remarks>
+    /// <param name="markerPrefix">Prefix marker (e.g. <c>"L0"</c> or <c>"N1"</c>) prepended to generated node IDs.</param>
+    /// <param name="blocks">List of raw parenthesized node block strings, e.g. <c>["(1/25/Living)"; "(1.1/12/Dining)"]</c>.</param>
+    /// <returns>A list of <see cref="LexelNode"/> groups (<c>parent :: children</c>) forming the hierarchical spatial tree.</returns>
     /// <example>
     /// <code>
     /// let blocks = [ "(1/25/Living)"; "(1.1/12/Dining)"; "(1.2/8/Kitchen)" ]
     /// let tree = Lexel.parseNodes "L0" blocks
+    /// let labels = tree |> List.collect id |> List.map (fun n -> n.Label)
     /// </code>
     /// </example>
     let parseNodes (markerPrefix: string) (blocks: string list) : LexelNode list list =
@@ -143,12 +156,18 @@ module Lexel =
     /// <summary> 
     /// Unified entry point for parsing and processing a single Xyxel segment containing attributes and node blocks.
     /// </summary>
-    /// <param name="markerPrefix">Level or nest marker prefix (e.g. "L0").</param>
-    /// <param name="input">Raw segment input containing parenthesis-delimited blocks.</param>
-    /// <returns>Option containing the parsed Attributes and Tree.</returns>
+    /// <remarks>
+    /// Extracts all parenthesized tokens in order: the first token is parsed via <see cref="parseAttributes"/>,
+    /// and all subsequent tokens are parsed into a grouped hierarchy via <see cref="parseNodes"/>.
+    /// </remarks>
+    /// <param name="markerPrefix">Level or nest marker prefix (e.g. <c>"L0"</c> or <c>"N1"</c>).</param>
+    /// <param name="input">Raw segment input containing parenthesis-delimited attribute and node blocks.</param>
+    /// <returns><c>Some</c> anonymous record with <c>Attributes</c> and <c>Tree</c>, or <c>None</c> if no blocks are present.</returns>
     /// <example>
     /// <code>
-    /// let segment = Lexel.processXyxel "L0" "(Q=VRCWEE/W=30)(1/20/Hall)(1.1/10/Room)"
+    /// match Lexel.processXyxel "L0" "(Q=VRCWEE/W=30)(1/20/Hall)(1.1/10/Room)" with
+    /// | Some segment -> printfn "Seq: %s, Groups: %d" segment.Attributes.Sequence segment.Tree.Length
+    /// | None -> ()
     /// </code>
     /// </example>
     let processXyxel (markerPrefix: string) (input: string) =
@@ -165,14 +184,20 @@ module Lexel =
                 |}
 
     /// <summary> 
-    /// Processes a full multi-marker Hywe specification string, splitting into individual level (L#) and nest (N#) segments.
+    /// Processes a full multi-marker Hywe specification string, splitting into individual level (<c>L#</c>) and nest (<c>N#</c>) segments.
     /// </summary>
-    /// <param name="input">Full multi-level Hywe string.</param>
-    /// <returns>List of parsed LexelBlock items (Level or Nest).</returns>
+    /// <remarks>
+    /// Segments prefixed with <c>N</c> (e.g. <c>N1</c>) become <see cref="LexelBlock.Nest"/> blocks; all other markers
+    /// (defaulting to <c>"L0"</c> if no marker prefix is supplied) become <see cref="LexelBlock.Level"/> blocks.
+    /// </remarks>
+    /// <param name="input">Full multi-level Hywe specification string.</param>
+    /// <returns>Ordered list of parsed <see cref="LexelBlock"/> items (<c>Level</c> or <c>Nest</c>).</returns>
     /// <example>
     /// <code>
     /// let spec = "L0(Q=VRCWEE)(1/20/Hall)L1(Q=HRCWNN)(1/15/Master)"
-    /// let blocks = Lexel.processFullString spec
+    /// let markers =
+    ///     Lexel.processFullString spec
+    ///     |> List.map (function Lexel.Level l -> l.Marker | Lexel.Nest n -> n.Marker)
     /// </code>
     /// </example>
     let processFullString (input: string) : LexelBlock list =

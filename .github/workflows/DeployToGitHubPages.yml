@@ -108,12 +108,57 @@ jobs:
       - name: Build fsdocs documentation into wwwroot/api
         run: |
           dotnet build src/Hywe.Core/Hywe.Core.fsproj
-          dotnet fsdocs build --clean --strict --ignoreuncategorized \
+          dotnet fsdocs build --clean --strict --eval --ignoreuncategorized \
             --projects src/Hywe.Core/Hywe.Core.fsproj \
+            --sourcerepo https://github.com/vykrum/Hywe/tree/main \
             --parameters root https://hywe.in/api/ \
               fsdocs-license-link https://github.com/vykrum/Hywe/blob/main/LICENSE \
               fsdocs-release-notes-link https://github.com/vykrum/Hywe/blob/main/RELEASE_NOTES.md \
             --output ${{ env.PUBLISH_DIR }}/wwwroot/api
+
+      - name: Set per-page canonical, og:url, and sitemap entries for API docs
+        run: |
+          python3 - <<'EOF'
+          import os
+          from datetime import datetime, timezone
+
+          api_dir = os.path.join("${{ env.PUBLISH_DIR }}", "wwwroot", "api")
+          sitemap_path = os.path.join("${{ env.PUBLISH_DIR }}", "wwwroot", "sitemap.xml")
+          today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+          api_urls = []
+
+          for root_dir, _, files in os.walk(api_dir):
+              for f in sorted(files):
+                  if not f.endswith(".html"):
+                      continue
+                  full_path = os.path.join(root_dir, f)
+                  rel = os.path.relpath(full_path, api_dir).replace("\\", "/")
+                  page_url = "https://hywe.in/api/" if rel == "index.html" else f"https://hywe.in/api/{rel}"
+
+                  with open(full_path, "r", encoding="utf-8") as fh:
+                      html = fh.read()
+
+                  target = '<meta property="og:url" content="https://hywe.in/api/">'
+                  replacement = f'<link rel="canonical" href="{page_url}" />\n    <meta property="og:url" content="{page_url}" />'
+                  if target in html:
+                      html = html.replace(target, replacement, 1)
+                      with open(full_path, "w", encoding="utf-8") as fh:
+                          fh.write(html)
+
+                  if rel != "reference/index.html":
+                      api_urls.append(page_url)
+
+          if os.path.exists(sitemap_path) and api_urls:
+              with open(sitemap_path, "r", encoding="utf-8") as fh:
+                  sitemap = fh.read()
+              entries = "\n".join(
+                  f"  <url>\n    <loc>{u}</loc>\n    <lastmod>{today}</lastmod>\n  </url>"
+                  for u in sorted(api_urls)
+              )
+              sitemap = sitemap.replace("</urlset>", f"{entries}\n</urlset>")
+              with open(sitemap_path, "w", encoding="utf-8") as fh:
+                  fh.write(sitemap)
+          EOF
 
       - name: Clean up debug symbols (.pdb)
         run: find ${{ env.PUBLISH_DIR }}/wwwroot -name "*.pdb" -type f -delete
