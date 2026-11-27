@@ -109,8 +109,8 @@ Array.ForEach(rooms, room =>
 
 ## Ecosystem Links
 
-- **[HYWE Web App](https://hywe.in)** — Interactive browser-based spatial design environment.
-- **[HYWE Wiki](https://wiki.hywe.in)** — Conceptual foundations, formal specifications, and benchmarks.
-- **[GitHub Repository](https://github.com/vykrum/Hywe)** — Source code, test suite, and issue tracker.
-- **[NuGet Package](https://www.nuget.org/packages/Hywe.Core)** — `dotnet add package Hywe.Core`.
+- [**HYWE Web App**](https://hywe.in) — Interactive browser-based spatial design environment.
+- [**HYWE Wiki**](https://wiki.hywe.in) — Conceptual foundations, formal specifications, and benchmarks.
+- [**GitHub Repository**](https://github.com/vykrum/Hywe) — Source code, test suite, and issue tracker.
+- [**NuGet Package**](https://www.nuget.org/packages/Hywe.Core) — `dotnet add package Hywe.Core`.
 *)
