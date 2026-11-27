@@ -29,20 +29,28 @@ module Zaxel =
 
     /// <summary>
     /// Recursively processes and generates a complete multi-level architectural layout from a multi-marker Hywe string.
-    /// Resolves global scaling ratios across elevations, constructs rooms for each level and nested block, and calculates floor slab elevations.
     /// </summary>
-    /// <param name="fullStr">Full multi-level Hywe string (e.g. "L0(Q=VRCWEE/W=30)(1/20/Hall)L1(Q=HRCWNN)(1/15/Bed)").</param>
-    /// <param name="entryAtrFallback">Fallback entry coordinate string (e.g. "0,0").</param>
+    /// <remarks>
+    /// Executes in two passes over the AST from <see cref="Lexel.processFullString"/>:
+    /// <list type="number">
+    /// <item><description><b>Pass 1 (Attribute &amp; Ratio Resolution):</b> Propagates inherited <c>W</c>, <c>H</c>, <c>O</c>, and <c>I</c> attributes across levels and computes a consistent global scaling ratio when bounded.</description></item>
+    /// <item><description><b>Pass 2 (Synthesis &amp; Stacking):</b> Builds each <c>Level</c> via <see cref="Xyxel"/>, resolves any <c>Nest</c> blocks inside their host rooms via <see cref="Nexel"/>, and accumulates floor slab elevations.</description></item>
+    /// </list>
+    /// Repeated calls with identical inputs are completely deterministic.
+    /// </remarks>
+    /// <param name="fullStr">Full multi-level Hywe string (e.g. <c>"L0(Q=VRCWEE/W=30)(1/20/Hall)L1(Q=HRCWNN)(1/15/Bed)"</c>).</param>
+    /// <param name="entryAtrFallback">Fallback entry coordinate string (e.g. <c>"0,0"</c>) when <c>E=</c> is omitted.</param>
     /// <param name="initialOcc">Array of initially occupied or obstacle hexels.</param>
-    /// <param name="seqOverride">Optional level index and sequence override tuple.</param>
+    /// <param name="seqOverride">Optional zero-based level index and <see cref="Hexel.Sqn"/> sequence override.</param>
     /// <param name="ouStrOverride">Optional outer boundary string override.</param>
     /// <param name="ilStrOverride">Optional island obstacle string override.</param>
-    /// <returns>4-tuple of (generated Coxels array, boundary vertex arrays per level, slab elevation levels, applied scaling ratios).</returns>
+    /// <returns>A 4-tuple <c>(rooms, bounds, elvs, ratios)</c>: all synthesized Coxels, per-level boundary vertex polygons, floor slab elevation values, and applied scaling ratios.</returns>
     /// <example>
     /// <code>
     /// let hyweCode = "L0(Q=VRCWEE/W=30)(1/20/Hall)(1.1/10/Kitchen)L1(Q=HRCWNN)(1/15/Bed)"
     /// let rooms, bounds, elvs, ratios =
     ///     Zaxel.generateMultiLevelLayout hyweCode "0,0" [||] None None None
+    /// let roomNames = rooms |> Array.map (fun r -> Coxel.prpVlu r.Name)
     /// </code>
     /// </example>
     let generateMultiLevelLayout (fullStr: string) (entryAtrFallback: string) (initialOcc: Hxl[]) (seqOverride: (int * Sqn) option) (ouStrOverride: string option) (ilStrOverride: string option) =

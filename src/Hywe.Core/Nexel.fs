@@ -50,16 +50,22 @@ module Nexel =
     /// <summary>
     /// Generates a nested spatial layout confined within the perimeter boundary of a host parent Coxel.
     /// </summary>
-    /// <param name="nest">Parsed NestBlock containing attributes and sub-tree nodes.</param>
+    /// <remarks>
+    /// Inherits the <c>z</c> elevation from <c>hostCxl.Base</c>, converts all other rooms in <c>allCxls</c>
+    /// into boundary obstacles, and packs the <c>nest.Tree</c> sub-rooms inside <c>hostCxl</c>'s cleaned polygon
+    /// using <see cref="Xyxel.prepareLayoutContext"/> and <see cref="Xyxel.generateCxlLayout"/>.
+    /// </remarks>
+    /// <param name="nest">Parsed <see cref="Lexel.NestBlock"/> containing attributes and sub-tree nodes.</param>
     /// <param name="hostCxl">Host parent Coxel whose boundary contains the nested layout.</param>
     /// <param name="hostThickness">Host slab thickness.</param>
-    /// <param name="allCxls">All previously generated Coxels across the floor plan.</param>
-    /// <param name="sqnStrOverride">Optional sequence override string.</param>
-    /// <returns>Option containing generated nested Coxel array, boundary vertex arrays, and applied ratio.</returns>
+    /// <param name="allCxls">All previously generated Coxels across the floor plan (used as obstacle exclusions).</param>
+    /// <param name="sqnStrOverride">Optional sequence override string (e.g. <c>Some "HRCWNN"</c>).</param>
+    /// <returns><c>Some (nestedRooms, bounds, ratio)</c> on success; <c>None</c> if the nested layout could not be placed.</returns>
     /// <example>
     /// <code>
     /// match Nexel.generateNestLayout nestBlock hostCxl 3.0 allRooms None with
-    /// | Some (nestedRooms, bounds, ratio) -> ()
+    /// | Some (nestedRooms, bounds, ratio) ->
+    ///     printfn "Nested %d rooms at ratio %f" nestedRooms.Length ratio
     /// | None -> ()
     /// </code>
     /// </example>

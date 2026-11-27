@@ -110,12 +110,21 @@ module Xyxel =
         tree, ratio
 
     /// <summary>
-    /// Resolves all attributes, parses boundary geometries, and calculates scaling ratios into a LayoutContext ready for layout execution.
+    /// Resolves all attributes, parses boundary geometries, and calculates scaling ratios into a <see cref="LayoutContext"/> ready for layout execution.
     /// </summary>
-    /// <param name="attrs">Map of attribute key-value pairs (e.g. "Q", "L", "W", "H", "O", "I").</param>
-    /// <param name="tree">Architectural layout tree.</param>
-    /// <param name="opts">Contextual options and overrides.</param>
-    /// <returns>A fully resolved LayoutContext ready for generation.</returns>
+    /// <remarks>
+    /// Boundary resolution follows this precedence:
+    /// (1) <c>X="1"</c> forces an unbounded layout;
+    /// (2) <c>opts.OuterStr</c> if non-empty;
+    /// (3) <c>"O"</c> attribute if non-empty;
+    /// (4) perimeter of <c>opts.ParentCxl</c> when <c>Width &gt; 0</c>;
+    /// (5) axis-aligned rectangle <c>[0,0]..[W,H]</c> when <c>Width &gt; 0</c>.
+    /// Net boundary area (outer minus <c>Islands</c>) is then used to scale <c>tree</c> via <see cref="applyReproportioning"/>.
+    /// </remarks>
+    /// <param name="attrs">Map of attribute key-value pairs (e.g. <c>"Q"</c>, <c>"L"</c>, <c>"W"</c>, <c>"H"</c>, <c>"O"</c>, <c>"I"</c>).</param>
+    /// <param name="tree">Architectural layout tree (<see cref="LayoutTree"/>).</param>
+    /// <param name="opts">Contextual options and overrides (<see cref="LayoutOptions"/>).</param>
+    /// <returns>A fully resolved <see cref="LayoutContext"/> ready for <see cref="generateBaseCxl"/> and <see cref="generateCxlLayout"/>.</returns>
     /// <example>
     /// <code>
     /// let attrs = Map.ofList [ ("Q", "VRCWEE"); ("W", "30"); ("H", "30") ]
@@ -242,14 +251,19 @@ module Xyxel =
         ratio
 
     /// <summary>
-    /// Extracts the root node from the LayoutContext, establishes boundary obstacle hexels, and generates the initial base Coxel.
+    /// Extracts the root node from the <see cref="LayoutContext"/>, establishes boundary obstacle hexels, and generates the initial base Coxel.
     /// </summary>
+    /// <remarks>
+    /// When <c>ctx.Boundary</c> encloses a positive net area, all integer lattice coordinates within a 30-unit padded
+    /// bounding box that lie outside <c>ctx.Boundary</c> or inside any <c>ctx.Islands</c> void are marked as obstacles
+    /// before placing the root room via <see cref="Coxel.createBaseCoxel"/>.
+    /// </remarks>
     /// <param name="ctx">Resolved layout context.</param>
-    /// <returns>Option containing a tuple of the root Coxel and the updated occupied hexels.</returns>
+    /// <returns><c>Some (rootCxl, nextOcc)</c> if <c>ctx.ScaledTree</c> contains at least one entry; otherwise <c>None</c>.</returns>
     /// <example>
     /// <code>
     /// match Xyxel.generateBaseCxl ctx with
-    /// | Some (rootCxl, occ) -> ()
+    /// | Some (rootCxl, occ) -> printfn "Root room: %s" (Coxel.prpVlu rootCxl.Name)
     /// | None -> ()
     /// </code>
     /// </example>
@@ -289,15 +303,21 @@ module Xyxel =
     /// <summary>
     /// Executes spatial construction for a single level, growing child Coxels recursively from the root Coxel according to the architectural tree.
     /// </summary>
+    /// <remarks>
+    /// Iteratively folds over <c>ctx.ScaledTree</c> branches, invoking <see cref="Coxel.coxelChildren"/> to grow
+    /// child rooms against the updated parent and cumulative obstacle set, then extracts cleaned outer perimeter
+    /// polygons for each synthesized Coxel.
+    /// </remarks>
     /// <param name="ctx">Resolved layout context.</param>
-    /// <param name="rootCxl">Root base Coxel.</param>
-    /// <param name="nextOcc">Occupied hexel coordinates including boundaries and previous rooms.</param>
-    /// <returns>Tuple of generated Coxel array, boundary polygon vertex arrays, and applied scaling ratio.</returns>
+    /// <param name="rootCxl">Root base Coxel produced by <see cref="generateBaseCxl"/>.</param>
+    /// <param name="nextOcc">Occupied hexel coordinates including boundaries and the root room.</param>
+    /// <returns>A 3-tuple <c>(rooms, bounds, ratio)</c> containing all synthesized Coxels, cleaned 2D perimeter polygons, and the applied scaling ratio.</returns>
     /// <example>
     /// <code>
     /// match Xyxel.generateBaseCxl ctx with
     /// | Some (rootCxl, occ) ->
     ///     let rooms, bounds, ratio = Xyxel.generateCxlLayout ctx rootCxl occ
+    ///     printfn "Compiled %d rooms at ratio %f" rooms.Length ratio
     /// | None -> ()
     /// </code>
     /// </example>
