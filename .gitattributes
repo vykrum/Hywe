@@ -16,15 +16,10 @@
 *.png binary
 
 # GitHub Linguist Language Configuration
-# Ensures GitHub identifies Hywe as a 100% F# project
+# Exclude build/project metadata while letting authored languages (F#, JS, CSS, HTML) detect naturally
 *.fs text diff=fsharp linguist-language=F# linguist-detectable=true
 *.fsx text diff=fsharp linguist-language=F# linguist-detectable=true
 *.fsproj text linguist-detectable=false
-
-*.js linguist-detectable=false
-*.css linguist-detectable=false
-*.html linguist-detectable=false
 *.xml linguist-detectable=false
 *.props linguist-detectable=false
 *.svg linguist-detectable=false
-src/Hywe.Web/wwwroot/** linguist-detectable=false
