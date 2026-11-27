@@ -19,6 +19,11 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- fsdocs Metadata -->
+    <FsDocsSourceRepository>https://github.com/vykrum/Hywe/tree/main</FsDocsSourceRepository>
+    <FsDocsLicenseLink>https://github.com/vykrum/Hywe/blob/main/LICENSE</FsDocsLicenseLink>
+    <FsDocsReleaseNotesLink>https://github.com/vykrum/Hywe/blob/main/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
   </PropertyGroup>
 
   <ItemGroup>

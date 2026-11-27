@@ -110,6 +110,7 @@ jobs:
           dotnet build src/Hywe.Core/Hywe.Core.fsproj
           dotnet fsdocs build --clean --strict --ignoreuncategorized \
             --projects src/Hywe.Core/Hywe.Core.fsproj \
+            --sourcerepo https://github.com/vykrum/Hywe/tree/main \
             --parameters root https://hywe.in/api/ \
               fsdocs-license-link https://github.com/vykrum/Hywe/blob/main/LICENSE \
               fsdocs-release-notes-link https://github.com/vykrum/Hywe/blob/main/RELEASE_NOTES.md \
