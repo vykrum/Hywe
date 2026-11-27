@@ -15,6 +15,13 @@ title: Hywe.Core API Documentation
 dotnet add package Hywe.Core
 ```
 
+Or reference it directly in an F# Interactive script (`.fsx` via `dotnet fsi`):
+
+```fsharp
+#r "nuget: Hywe.Core"                              // From NuGet (standalone scripts)
+// #r "src/Hywe.Core/bin/Debug/net10.0/Hywe.Core.dll" // Local repo build
+```
+
 ---
 
 ## Architectural Pipeline & Modules
