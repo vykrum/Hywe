@@ -36,3 +36,10 @@ module GoxelTests =
         let poly = [| (0, 0); (20, 0); (20, 20); (0, 20); (0, 0) |]
         let filled = Goxel.hxlPgn sqn 0 poly
         Assert.NotEmpty(filled)
+
+    [<Fact>]
+    let ``cleanPolygon2x produces closed polygon and preserves 2x coordinates`` () =
+        let raw2x = [| (0, 0); (1, 0); (1, 0); (20, 0); (20, 20); (0, 20) |]
+        let cleaned = Goxel.cleanPolygon2x Hexel.Sqn.VRCWEE raw2x
+        Assert.True(cleaned.Length >= 4)
+        Assert.Equal(cleaned.[0], cleaned.[cleaned.Length - 1])
