@@ -434,15 +434,7 @@ module Coxel =
         let crossProduct = (y2 - y1) * (x3 - x2) - (y3 - y2) * (x2 - x1)
         match crossProduct = 0 with | true -> Collinear | false -> Turning
 
-    /// <summary>
-    /// Computes the continuous 2D perimeter boundary coordinates along the outer edge of a room cluster.
-    /// </summary>
-    /// <example>
-    /// <code>
-    /// let perimeterCoords = Coxel.cxlPrm room 0
-    /// </code>
-    /// </example>
-    let cxlPrm (cxl : Cxl) (elv : int) =
+    let private cxlPrmWith (divisor : int) (cxl : Cxl) (elv : int) =
         let rec clean points =
             match points with
             | p1 :: p2 :: p3 :: rest ->
@@ -461,13 +453,38 @@ module Coxel =
             |> Array.choose (fun n -> 
                 let (ix, iy, _) = hxlCrd n
                 match insideSet.Contains(AV(ix, iy, elv)) with
-                | true -> Some ( (ox + ix) / 2, (oy + iy) / 2 )
+                | true -> Some ( (ox + ix) / divisor, (oy + iy) / divisor )
                 | false -> None)
         )
         |> Array.distinct
         |> Array.toList
         |> clean
         |> List.toArray
+
+    /// <summary>
+    /// Computes the continuous 2D perimeter boundary coordinates along the outer edge of a room cluster.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// let perimeterCoords = Coxel.cxlPrm room 0
+    /// </code>
+    /// </example>
+    let cxlPrm (cxl : Cxl) (elv : int) =
+        cxlPrmWith 2 cxl elv
+
+    /// <summary>
+    /// Computes the continuous 2D perimeter boundary coordinates along the outer edge of a room cluster in 2x half-unit integer coordinates (preserving .5 midpoints without truncation).
+    /// </summary>
+    /// <param name="cxl">The room cluster Coxel.</param>
+    /// <param name="elv">The elevation layer index.</param>
+    /// <returns>Array of 2x-scaled (x, y) integer boundary coordinates.</returns>
+    /// <example>
+    /// <code>
+    /// let perimeter2x = Coxel.cxlPrm2x room 0
+    /// </code>
+    /// </example>
+    let cxlPrm2x (cxl : Cxl) (elv : int) =
+        cxlPrmWith 1 cxl elv
 
     /// <summary>
     /// Computes the geometric centroid cell coordinate (x, y) of a room cluster, finding the nearest member hexel to the true mathematical center.

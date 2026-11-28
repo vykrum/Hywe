@@ -91,18 +91,9 @@ module Goxel =
         | 0 -> ([| stt; enn |] |> Array.distinct) 
         | _ -> result
 
-    /// <summary>
-    /// Removes aliasing/sawtooth artifacts from a sequence of hex coordinates along the primary axis.
-    /// </summary>
-    /// <param name="sqn">Traversal sequence.</param>
-    /// <param name="arr">Array of integer 2D coordinate points.</param>
-    /// <returns>Filtered array of points with oscillating sawtooth artifacts removed.</returns>
-    /// <example>
-    /// <code>
-    /// let smoothed = Goxel.removeSawtooth Hexel.Sqn.VRCWEE [| (0, 0); (2, 1); (4, 0); (6, 1); (8, 0) |]
-    /// </code>
-    /// </example>
-    let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
+    let private removeSawtoothWith (scale : int) (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
+        let primaryStep = 2 * scale
+        let secondaryStep = scale
         match arr.Length with
         | 0 -> [||]
         | n ->
@@ -116,7 +107,7 @@ module Goxel =
                 | false -> acc |> List.rev |> Array.concat
                 | true ->
                     let rec findGroupEnd j =
-                        match j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) = 2 with
+                        match j + 1 < n && abs(primary arr.[j+1] - primary arr.[j]) = primaryStep with
                         | true -> findGroupEnd (j + 1)
                         | false -> j
                     
@@ -131,7 +122,7 @@ module Goxel =
                             match k < j with
                             | false -> true
                             | true ->
-                                match abs(secondary arr.[k+1] - secondary arr.[k]) <> 1 with
+                                match abs(secondary arr.[k+1] - secondary arr.[k]) <> secondaryStep with
                                 | true -> false
                                 | false -> checkOscillating (k + 1)
                         
@@ -148,6 +139,20 @@ module Goxel =
                             processGroups (j + 1) (newPts :: acc)
             
             processGroups 0 []
+
+    /// <summary>
+    /// Removes aliasing/sawtooth artifacts from a sequence of hex coordinates along the primary axis.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="arr">Array of integer 2D coordinate points.</param>
+    /// <returns>Filtered array of points with oscillating sawtooth artifacts removed.</returns>
+    /// <example>
+    /// <code>
+    /// let smoothed = Goxel.removeSawtooth Hexel.Sqn.VRCWEE [| (0, 0); (2, 1); (4, 0); (6, 1); (8, 0) |]
+    /// </code>
+    /// </example>
+    let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
+        removeSawtoothWith 1 sqn arr
 
     /// <summary>
     /// Deduplicates consecutive identical coordinate points in a sequence.
@@ -339,6 +344,59 @@ module Goxel =
         |> dedupeSequential
         |> removeSawtooth sqn
         |> dedupeSequential
+        |> ensureClosed
+        |> removeCollinear
+        |> normalizeWinding true
+
+    let private removeHooks (pts: (int * int)[]) =
+        let isHook (p1: int * int) (p2: int * int) (p3: int * int) =
+            match p1 = p3 with
+            | true -> true
+            | false ->
+                let dx1, dy1 = float (fst p1 - fst p2), float (snd p1 - snd p2)
+                let dx2, dy2 = float (fst p3 - fst p2), float (snd p3 - snd p2)
+                let d1 = sqrt (dx1 * dx1 + dy1 * dy1)
+                let d2 = sqrt (dx2 * dx2 + dy2 * dy2)
+                match d1 > 0.001 && d2 > 0.001 with
+                | true ->
+                    let dot = (dx1 / d1) * (dx2 / d2) + (dy1 / d1) * (dy2 / d2)
+                    dot > 0.97
+                | false -> false
+
+        let rec loop (current: (int * int)[]) =
+            match current.Length with
+            | n when n < 4 -> current
+            | n ->
+                let kept =
+                    current
+                    |> Array.mapi (fun i p2 ->
+                        let p1 = current.[(i + n - 1) % n]
+                        let p3 = current.[(i + 1) % n]
+                        p2, isHook p1 p2 p3)
+                    |> Array.choose (fun (p, hooked) -> if hooked then None else Some p)
+                match kept.Length < n && kept.Length >= 3 with
+                | true -> loop kept
+                | false -> current
+        loop pts
+
+    /// <summary>
+    /// Cleans a 2x half-unit scaled polygon (e.g. from Coxel.cxlPrm2x) by deduplicating sequential points, removing acute hooks and sawtooth aliasing at 2x grid scale, closing the loop, removing collinear points, and normalizing winding to clockwise.
+    /// </summary>
+    /// <param name="sqn">Traversal sequence.</param>
+    /// <param name="pts">Raw input 2x-scaled polygon vertices.</param>
+    /// <returns>Cleaned, validated, clockwise 2x-scaled polygon vertices.</returns>
+    /// <example>
+    /// <code>
+    /// let cleaned2x = Goxel.cleanPolygon2x Hexel.Sqn.VRCWEE [| (0, 0); (20, 0); (20, 20); (0, 20) |]
+    /// </code>
+    /// </example>
+    let cleanPolygon2x sqn pts =
+        pts
+        |> dedupeSequential
+        |> removeHooks
+        |> removeSawtoothWith 2 sqn
+        |> dedupeSequential
+        |> removeHooks
         |> ensureClosed
         |> removeCollinear
         |> normalizeWinding true

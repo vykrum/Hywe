@@ -159,9 +159,9 @@ let extrudePolygons
         // 1. Helper: Point conversion
         let toPoly (x: Cxl) =
             let (_, _, z) = Hexel.hxlCrd x.Base
-            svgCxlPrm x z
-            |> svgCleanPolygon x.Seqn
-            |> Array.map (svgToCartesian x.Seqn)
+            Coxel.cxlPrm2x x z
+            |> Goxel.cleanPolygon2x x.Seqn
+            |> Array.map (fun (px, py) -> svgToCartesian x.Seqn (float px * 0.5, float py * 0.5))
             |> fun pts -> 
                 match pts with
                 | [||] -> [||]

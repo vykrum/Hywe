@@ -85,15 +85,15 @@ let svgCoxels
     | _ ->
         // Vertices
         let sqn = cxl |> Array.map (fun x ->x.Seqn)
-        let cr1 = cxl |> Array.map (fun x -> svgCxlPrm x elv) 
-        let crd = Array.map2 (fun a b -> svgCleanPolygon a b) sqn cr1
+        let cr1 = cxl |> Array.map (fun x -> Coxel.cxlPrm2x x elv) 
+        let crd = Array.map2 (fun a b -> Goxel.cleanPolygon2x a b) sqn cr1
 
         // Shift and Scale Vertices
         let padd = float (5*scl)
         let crd1 = 
             Array.map2 (fun s pts -> 
-                pts |> Array.map (fun p -> 
-                    let (cx, cy) = svgToCartesian s p
+                pts |> Array.map (fun (x, y) -> 
+                    let (cx, cy) = svgToCartesian s (float x * 0.5, float y * 0.5)
                     cx * float scl, cy * float scl)
             ) sqn crd
 
@@ -117,12 +117,12 @@ let svgCoxels
 
         // Watermark Vertices
         let wtmkSqn = wtmkCxls |> Array.map (fun x ->x.Seqn)
-        let wtmkCr1 = wtmkCxls |> Array.map (fun x -> svgCxlPrm x elv)
-        let wtmkCrd = Array.map2 (fun a b -> svgCleanPolygon a b) wtmkSqn wtmkCr1
+        let wtmkCr1 = wtmkCxls |> Array.map (fun x -> Coxel.cxlPrm2x x elv)
+        let wtmkCrd = Array.map2 (fun a b -> Goxel.cleanPolygon2x a b) wtmkSqn wtmkCr1
         let wtmkCrd1 = 
             Array.map2 (fun s pts -> 
-                pts |> Array.map (fun p -> 
-                    let (cx, cy) = svgToCartesian s p
+                pts |> Array.map (fun (x, y) -> 
+                    let (cx, cy) = svgToCartesian s (float x * 0.5, float y * 0.5)
                     cx * float scl, cy * float scl)
             ) wtmkSqn wtmkCrd
 
@@ -345,13 +345,13 @@ let generateSvgFromBatchConfig (cfg: BatchConfgrtns) (scl: float) =
 /// Extracts high-fidelity coordinates for Geometry generation
 let getStaticGeometry (cxl: Cxl[]) (colors: string[]) (elv: int) (scl: int) =
     let sqn = cxl |> Array.map (fun x -> x.Seqn)
-    let cr1 = cxl |> Array.map (fun x -> svgCxlPrm x elv) 
+    let cr1 = cxl |> Array.map (fun x -> Coxel.cxlPrm2x x elv) 
     let coords = 
         Array.map2 (fun s pts -> 
             pts 
-            |> svgCleanPolygon s
-            |> Array.map (fun p -> 
-                let (cx, cy) = svgToCartesian s p
+            |> Goxel.cleanPolygon2x s
+            |> Array.map (fun (x, y) -> 
+                let (cx, cy) = svgToCartesian s (float x * 0.5, float y * 0.5)
                 cx * float scl, cy * float scl)
         ) sqn cr1
     

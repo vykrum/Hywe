@@ -48,3 +48,14 @@ module CoxelTests =
         let rooms = Coxel.coxel sqn 0 [| (seed, Coxel.Refid "1", Coxel.Count 12, Coxel.Label "Hall") |] [||]
         let perimeter = Coxel.cxlPrm rooms.[0] 0
         Assert.NotEmpty(perimeter)
+
+    [<Fact>]
+    let ``cxlPrm2x preserves half-unit midpoints as odd 2x integer coordinates`` () =
+        let sqn = Hexel.Sqn.VRCWEE
+        let seed = Hexel.Hxl.AV(0, 0, 0) |> Hexel.hxlVld sqn
+        let rooms = Coxel.coxel sqn 0 [| (seed, Coxel.Refid "1", Coxel.Count 12, Coxel.Label "Hall") |] [||]
+        let perimeter2x = Coxel.cxlPrm2x rooms.[0] 0
+        Assert.NotEmpty(perimeter2x)
+        // At least some boundary midpoints between adjacent hexels have odd sum (ox + ix) or (oy + iy)
+        let hasOddHalfUnits = perimeter2x |> Array.exists (fun (x, y) -> abs (x % 2) = 1 || abs (y % 2) = 1)
+        Assert.True(hasOddHalfUnits)
