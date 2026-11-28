@@ -54,22 +54,23 @@ The engine compiles abstract architectural programs into resolved 2D floorplans 
 open Hywe.Core
 
 // 1. Define a multi-level architectural program in .hyw syntax
-let hyweSpec =
-    "L0(Q=VRCWEE/W=30/H=20)(1/20/Living)(1.1/10/Entry)" +
-    "L1(Q=HRCWNN/W=30/H=20)(2/15/MasterBed)(2.1/6/Ensuite)"
+let hyweCode =
+    "L0(Q=VRCWEE/W=30/H=20)(1/20/Living)(1.1/10/Entry)(1.2/12/Kitchen)" +
+    "L1(Q=HRCWNN/W=30/H=20)(1/15/MasterBed)(1.1/6/Ensuite)"
 
 // 2. Synthesize all levels, boundaries, and elevations deterministically
-let rooms, bounds, elvs, ratios =
-    Zaxel.generateMultiLevelLayout hyweSpec "0,0" [||] None None None
+let rooms, _, _, _ =
+    Zaxel.generateMultiLevelLayout hyweCode "0,0" [||] None None None
 
-// 3. Inspect synthesized rooms functionally
+// 3. Extract constituent hexel coordinates (x, y, z) for each room
 rooms
-|> Array.iter (fun room ->
-    printfn "%s (%s): base=%A, cells=%d"
-        (Coxel.prpVlu room.Name)
-        (Coxel.prpVlu room.Rfid)
-        (Hexel.hxlCrd room.Base)
-        (room.Hxls.Length + 1))
+|> Array.iter (fun cxl ->
+    let coords = cxl.Hxls |> Array.map Hexel.hxlCrd
+    printfn "%s (%s) [%d hexels]: %A"
+        (Coxel.prpVlu cxl.Name)
+        (Coxel.prpVlu cxl.Rfid)
+        coords.Length
+        coords)
 (*** include-output ***)
 (**
 ### C# (Direct .NET Interoperability)
